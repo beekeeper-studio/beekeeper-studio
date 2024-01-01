@@ -121,7 +121,8 @@
             @click.prevent="newTable"
             title="New Table"
             class="create-table"
-            :disabled="!canCreateTable"
+            :disabled="tablesLoading"
+            v-if="canCreateTable"
           >
             <i class="material-icons">add</i>
           </button>
@@ -231,7 +232,7 @@
         return this.connection.supportedFeatures().customRoutines
       },
       canCreateTable() {
-        return !this.tablesLoading && !this.dialectData.disabledFeatures?.createTable
+        return !this.dialectData.disabledFeatures?.createTable
       },
       loadedWithPins() {
         return !this.tablesLoading && this.pinnedEntities.length > 0
