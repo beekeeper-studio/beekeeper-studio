@@ -776,6 +776,8 @@ export default Vue.extend({
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
+        resizeColumnsMode: 'guide',
+        resizeColumnsHandles: 'header-only',
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
