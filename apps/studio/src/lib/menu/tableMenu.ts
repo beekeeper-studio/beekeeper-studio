@@ -145,10 +145,7 @@ export function pasteRange(range: Tabulator.RangeComponent) {
   } else {
     const table = range.getCells()[0].getTable()
     const rows = table.modules.spreadsheet.getRows().slice(range.getTop())
-    /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
-    // @ts-ignore
-    // TODO: use range.getLeft(), which is not available in tabulator yet
-    const columns = table.modules.spreadsheet.getColumns().slice(range._range.left + 1)
+    const columns = table.modules.spreadsheet.getColumns().slice(range.getLeft() + 1)
     const cells: Tabulator.CellComponent[][] = rows.map((row) => {
       const arr = [];
       row.getCells().forEach((cell) => {

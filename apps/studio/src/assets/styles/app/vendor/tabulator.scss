@@ -17,6 +17,8 @@ $cell-padding:           $gutter-w;
 $header-highlight:       mix($query-editor-bg, $theme-base, 95%);
 $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
 
+$columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
+
 // Mixin
 @mixin cell-shadow($bg) {
   box-shadow: inset -1px 0 rgba(black, 0.2),
@@ -801,5 +803,32 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
         }
       }
     }
+  }
+}
+
+.tabulator-col-resize-guide {
+  background-color: $columnResizeGuideColor;
+  opacity: 1;
+  margin-left: 1px;
+}
+
+.tabulator-col-resize-handle:hover {
+  position: relative;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 3px;
+    height: 60%;
+    transform: translate(0, -50%);
+    background-color: transparentize($columnResizeGuideColor, 0.4);
+    backdrop-filter: invert(100%);
+    border-radius: 999px;
+  }
+  &::before {
+    left: 4.5px;
+  }
+  &::after {
+    right: 4.5px;
   }
 }
