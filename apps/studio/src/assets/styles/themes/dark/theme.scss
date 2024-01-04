@@ -100,20 +100,18 @@ $row-handle-selected: lighten($query-editor-bg, 10%);
     }
 
     // New Pagination
-    .tabulator-paginator > div {
-      input[type="number"] {
-        color: $statusbar-text-default!important;
-        border-color: rgba($statusbar-text-default, 0.2);
-        &:hover, &:focus {
-          border-color: rgba($statusbar-text-default, 0.25);
-        }
+    .tabulator-paginator > div input[type="number"], .table-limiter {
+      color: $statusbar-text-default!important;
+      border-color: rgba($statusbar-text-default, 0.2);
+      &:hover, &:focus {
+        border-color: rgba($statusbar-text-default, 0.25);
       }
-      a {
-        .material-icons {
-          color: rgba($statusbar-text-default, 0.68);
-          &:hover {
-            color: $statusbar-text-default;
-          }
+    }
+    .tabulator-paginator > div a {
+      .material-icons {
+        color: rgba($statusbar-text-default, 0.68);
+        &:hover {
+          color: $statusbar-text-default;
         }
       }
     }

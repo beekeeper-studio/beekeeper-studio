@@ -61,4 +61,11 @@
   }
 
 
+  .table-limiter-container {
+    display: flex;
+    min-width: 130px;
+    & > span {
+      white-space: nowrap;
+    }
+  }
 }

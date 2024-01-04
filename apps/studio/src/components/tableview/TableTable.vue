@@ -95,6 +95,11 @@
           </span>
         </div> -->
 
+        <div class="table-limiter-container statusbar-item">
+          <span>Limit rows:</span>
+          <table-limiter @change="(n) => limit = n" :initialValue="limit" />
+        </div>
+
         <template v-if="pendingChangesCount > 0">
           <x-button
             class="btn btn-flat"
@@ -257,6 +262,7 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
+import TableLimiter from './TableLimiter.vue'
 
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
@@ -264,7 +270,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, TableLimiter },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["connection", "initialFilters", "active", 'tab', 'table'],
   data() {
@@ -688,7 +694,10 @@ export default Vue.extend({
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
-    }
+    },
+    limit() {
+      this.tabulator.setPageSize(this.limit)
+    },
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
@@ -1280,7 +1289,7 @@ export default Vue.extend({
       const orderBy = [
         _.pick(this.tabulator.getSorters()[0], ["field", "dir"]),
       ];
-      const limit = this.tabulator.getPageSize() ?? this.limit;
+      const limit = this.limit;
       const offset = (this.tabulator.getPage() - 1) * limit;
       const selects = ["*"];
 
