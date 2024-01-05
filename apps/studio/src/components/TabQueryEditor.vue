@@ -1088,9 +1088,16 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           this.runningQuery = this.connection.query(query)
+
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute()
           const queryEndTime = new Date()
+
+          // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
+          if (!document.hasFocus()) {
+            new window.Notification("Query Complete", {body: `${this.tab.title}'s query has executed successfully'`})
+          }
+
           // eslint-disable-next-line
           // @ts-ignore
           this.executeTime = queryEndTime - queryStartTime
