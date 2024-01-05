@@ -46,15 +46,10 @@
           this.tabulator.blockRedraw()
         }
       },
-      tableData: {
-        handler() {
-          this.tabulator.replaceData(this.tableData)
-        }
-      },
-      tableColumns: {
-        handler() {
-          this.tabulator.setColumns(this.tableColumns)
-        }
+      result() {
+        // This is better than just setting data because
+        // the whole dataset has changed.
+        this.initializeTabulator()
       },
       tableHeight() {
         this.tabulator.setHeight(this.actualTableHeight)
@@ -135,30 +130,36 @@
       }
     },
     async mounted() {
-      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
-        spreadsheet: true,
-        data: this.tableData, //link data to table
-        reactiveData: true,
-        renderHorizontal: 'virtual',
-        columns: this.tableColumns, //define table columns
-        height: this.actualTableHeight,
-        nestedFieldSeparator: false,
-        rowHeader: {
-          contextMenu: (_, cell) => {
-            return copyActionsMenu({
-              range: cell.getRange(),
-              connection: this.connection,
-              table: 'mytable',
-              schema: this.connection.defaultSchema(),
-            })
-          }
-        },
-        downloadConfig: {
-          columnHeaders: true
-        },
-      });
+      this.initializeTabulator()
     },
     methods: {
+      initializeTabulator() {
+        if (this.tabulator) {
+          this.tabulator.destroy()
+        }
+        this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+          spreadsheet: true,
+          data: this.tableData, //link data to table
+          reactiveData: true,
+          renderHorizontal: 'virtual',
+          columns: this.tableColumns, //define table columns
+          height: this.actualTableHeight,
+          nestedFieldSeparator: false,
+          rowHeader: {
+            contextMenu: (_, cell) => {
+              return copyActionsMenu({
+                range: cell.getRange(),
+                connection: this.connection,
+                table: 'mytable',
+                schema: this.connection.defaultSchema(),
+              })
+            }
+          },
+          downloadConfig: {
+            columnHeaders: true
+          },
+        });
+      },
       copySelection() {
         if (!document.activeElement.classList.contains('tabulator-tableholder')) return
         copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
