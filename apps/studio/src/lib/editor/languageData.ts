@@ -6,6 +6,8 @@ export interface LanguageData {
   label: string;
   editorMode: Record<string, unknown>;
   wrapTextByDefault?: boolean;
+  noMinify?: boolean;
+  noBeautify?: boolean
 }
 
 export const TextLanguage: LanguageData = {
@@ -18,6 +20,8 @@ export const TextLanguage: LanguageData = {
   beautify: (v) => v,
   minify: (v) => v,
   wrapTextByDefault: true,
+  noMinify: true,
+  noBeautify: true
 }
 
 export const Languages: LanguageData[] = [

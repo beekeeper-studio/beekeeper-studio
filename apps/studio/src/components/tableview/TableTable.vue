@@ -433,6 +433,7 @@ export default Vue.extend({
         return (_, cell: Tabulator.CellComponent) => {
           const range = cell.getRange()
           const menu = [
+            this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
             { separator: true },
             ...copyActionsMenu({
@@ -445,7 +446,6 @@ export default Vue.extend({
             ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
-            this.openEditorMenu(cell),
           ]
 
           if (keyDatas?.length > 0) {
@@ -886,7 +886,7 @@ export default Vue.extend({
     },
     openEditorMenu(cell: Tabulator.CellComponent) {
       return {
-        label: createMenuItem("Open cell in Editor"),
+        label: createMenuItem("Edit in modal"),
         disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
