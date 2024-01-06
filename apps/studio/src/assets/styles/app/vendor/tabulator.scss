@@ -71,6 +71,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     &.deleted,
     &.edit-error {
       box-shadow: inset 0 -1px rgba($theme-base, .1);
+      --row-box-shadow: inset 0 -1px #{rgba($theme-base, .1)};
       .tabulator-cell {
         &:hover {
           background: rgba($theme-base, 0.05);
@@ -87,6 +88,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
         cursor: default!important;
         &:hover {
           background: transparent!important;
+          --row-hover-bg-color: transparent;
         }
         .tabulator-bks-checkbox {
           input {
@@ -593,9 +595,10 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     inset: 0;
     background-color: var(--row-bg-color);
     z-index: -10;
+    box-shadow: var(--row-box-shadow, none);
   }
   &:hover::before {
-    background-color: rgba($theme-base, 0.10);
+    background-color: var(--row-hover-bg-color, rgba($theme-base, 0.10));
   }
 }
 

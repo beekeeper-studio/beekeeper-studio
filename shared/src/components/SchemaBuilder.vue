@@ -318,6 +318,7 @@ export default Vue.extend({
       &.tabulator-row-even,
       &:nth-child(odd) {
         background: rgba($theme-base, 0.05);
+        --row-bg-color: #{rgba($theme-base, 0.05)};
       }
       .tabulator-cell {
         min-height: $row-height;
@@ -376,6 +377,8 @@ export default Vue.extend({
         // Read Only
         &.read-only,
         &.read-only:hover {
+          --row-bg-color: transparent;
+          --row-hover-bg-color: transparent;
           background: transparent!important;
           cursor: default;
           input {
