@@ -163,6 +163,9 @@
       if (table !== oldTable) alias = true;
     }
 
+    if (alias) editor.activeAlias = aliasTable;
+    else editor.activeAlias = undefined;
+
     var columns = editor.options.getColumns ? await editor.options.getColumns(table): getTable(table)
 
     if (columns && columns.columns)
@@ -256,6 +259,13 @@
 
     if (defaultTable.columns)
       defaultTable = defaultTable.columns;
+
+    /*
+     * Getting info of which alias is in autocomplete.
+     * Useful for leaving alias to be unquoted in postgres
+     * which is handled outside of this module
+     */
+    editor.activeAlias = undefined;
 
     var cur = editor.getCursor();
     var result = [];

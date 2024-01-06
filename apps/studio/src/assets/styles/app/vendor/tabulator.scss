@@ -2,7 +2,6 @@ $errorColor:             $brand-danger;
 $foreign-key-width:      20px;
 
 $row-height:             30px;
-$row-highlight:          lighten($query-editor-bg, 1%);
 $row-add:                #18855F;
 $row-delete:             #8A3937;
 $row-error:              #38201F;
@@ -14,6 +13,11 @@ $cell-success:           $row-add;
 $cell-radius:            2px;
 
 $cell-padding:           $gutter-w;
+
+$header-highlight:       mix($query-editor-bg, $theme-base, 95%);
+$header-selected:        mix($query-editor-bg, $theme-primary, 10%);
+
+$columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 
 // Mixin
 @mixin cell-shadow($bg) {
@@ -98,8 +102,21 @@ $cell-padding:           $gutter-w;
   background: transparent;
   width: min-content;
   min-width: 100%;
-  &:nth-child(odd) {
-    background: rgba($theme-base, 0.015);
+  &.tabulator-row-odd {
+    background-color: rgba($theme-base, 0.015);
+  }
+  &.tabulator-spreadsheet-selected.tabulator-row-even:hover {
+    background-color: transparent;
+  }
+  &.tabulator-spreadsheet-highlight .tabulator-cell.tabulator-frozen.tabulator-spreadsheet-row-header {
+    background-color: $header-highlight !important;
+    color: $text-dark;
+  }
+  &.tabulator-spreadsheet-selected .tabulator-cell.tabulator-frozen.tabulator-spreadsheet-row-header {
+    background-color: $header-selected !important;
+    color: black;
+    font-weight: bold;
+    border-radius: 0;
   }
   &.inserted {
     .tabulator-cell {
@@ -126,16 +143,24 @@ $cell-padding:           $gutter-w;
     min-height: $row-height;
     height: $row-height;
     line-height: $row-height;
-    border-radius: $cell-radius;
     cursor: default;
+    &:not(.tabulator-spreadsheet-row-header) {
+      border-radius: $cell-radius;
+    }
     &:first-of-type {
       padding-left: $cell-padding * 1.5;
     }
     &:last-of-type {
       padding-right: $cell-padding * 1.5;
     }
-    i.fk-link {
-      display:none;
+    &.tabulator-frozen.tabulator-spreadsheet-row-header {
+      padding: 0;
+      background-color: $query-editor-bg;
+      border-right: 0 !important;
+      box-shadow: 1px 0 $border-color;
+      &:hover {
+        background-color: rgba($theme-base, 0.10);
+      }
     }
     pre {
       margin: 0;
@@ -169,14 +194,6 @@ $cell-padding:           $gutter-w;
       background: $selection;
       border-color: $input-highlight;
       color: $db-select-text;
-    }
-
-    &.selected {
-      background: rgba($theme-base, 0.10) !important;
-      opacity: 1!important;
-      &:hover {
-        background: rgba($theme-base, 0.10) !important;
-      }
     }
 
     &.copied {
@@ -232,35 +249,18 @@ $cell-padding:           $gutter-w;
         }
       }
     }
-    &.foreign-key {
-      padding-right: $foreign-key-width - 6px;
-    }
-    &.foreign-key-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-end;
-      width: $foreign-key-width!important;
-      min-width: $foreign-key-width!important;
-      padding-left: 0!important;
-      padding-right: 0.35rem!important;
-      margin-left: -$foreign-key-width;
-      cursor: pointer!important;
-      &:hover {
-        background: transparent!important;
-      }
-      .material-icons {
-        font-size: 14px;
-        line-height: 22px;
-        color: $text-light;
-        cursor: pointer;
-      }
-      .tabulator-col-resize-handle.prev {
-        display: none;
-      }
-    }
     &.tabulator-frozen {
       border: 0 !important;
       background-color: transparent;
+    }
+
+    .cell-link-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      :not(.fk-link) {
+        flex-grow: 1;
+      }
     }
   }
 
@@ -299,28 +299,33 @@ $cell-padding:           $gutter-w;
     &.edit-success {
       @include cell-shadow(rgba($query-editor-bg, 0.75));
     }
-  }
 
-  &.tabulator-selectable {
     &:hover {
-      background: rgba($theme-base, 0.05);
+      background-color: rgba($theme-base, 0.05);
       cursor: default;
-      i.fk-link {
-        display: inline-block;
-        &:hover {
-          color: white;
-        }
-      }
-      &.tabulator-selected {
-        background: rgba($theme-base, 0.1);
+      &.tabulator-spreadsheet-selected:not(.tabulator-spreadsheet-only-cell-selected) {
+        background-color: rgba($theme-base, 0.05);
       }
     }
-    &.tabulator-selected {
-      background: rgba($theme-base, 0.1);
+    &.tabulator-spreadsheet-selected:not(.tabulator-spreadsheet-only-cell-selected) {
+      background-color: rgba($theme-base, 0.05);
     }
-
   }
 
+  i.fk-link {
+    display:none;
+    cursor: pointer;
+    color: $text-light;
+    font-size: 14px;
+  }
+  &:hover {
+    i.fk-link {
+      display: inline-block;
+      &:hover {
+        color: $theme-base;
+      }
+    }
+  }
 }
 
 // Editable Hover
@@ -332,7 +337,9 @@ $cell-padding:           $gutter-w;
     }
     &.primary-key {
       cursor: default;
-      opacity: 0.5;
+      & > * {
+        opacity: 0.5;
+      }
       &:hover {
         background: transparent;
       }
@@ -390,14 +397,50 @@ $cell-padding:           $gutter-w;
     background: transparent;
     border: 0;
     width: -webkit-fill-available;
-    box-shadow: inset 0 -1px $border-color;
+    box-shadow: 0 1px $border-color;
     .tabulator-col {
       background: transparent;
       border-color: transparent;
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
-
+      &:not(.tabulator-spreadsheet-row-header):not(.tabulator-spreadsheet-selected) {
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+      }
+      &.tabulator-spreadsheet-highlight {
+        background-color: $header-highlight;
+      }
+      &.tabulator-spreadsheet-selected {
+        background-color: $header-selected;
+        color: black;
+      }
+      &.tabulator-spreadsheet-row-header {
+        background-color: transparent;
+      }
+      .tabulator-header-popup-button {
+        display: none;
+        position: relative;
+        &::before {
+          transition: opacity 0.15s;
+          content: "";
+          position: absolute;
+          width: 24px;
+          height: 24px;
+          transform: translate(-50%, -50%);
+          top: 50%;
+          left: 50%;
+          border-radius: 9999px;
+          background-color: rgba($theme-base, 0.1);
+          opacity: 0;
+        }
+        &:hover {
+          opacity: 1;
+          &::before {
+            opacity: 1;
+          }
+        }
+      }
       .tabulator-col-title {
         color: $text-dark;
       }
@@ -406,21 +449,15 @@ $cell-padding:           $gutter-w;
         padding-left: $gutter-w * 1.5;
       }
       &:last-of-type .tabulator-col-content {
-        padding-right: $gutter-w * 1.5;
+        padding-right: $gutter-w * 0.5;
       }
-      .badge {
+      & .badge {
         background: transparent;
         color: $text-lighter;
         padding: 0 0.1rem;
       }
-      &.tabulator-sortable{
-        border-radius: 2px;
-        &:hover {
-          background: rgba($theme-base, 0.035);
-        }
-        .tabulator-col-title {
-          padding-right: 16px;
-        }
+      &.tabulator-spreadsheet-selected .badge {
+        color: black;
       }
       &.tabulator-sortable[aria-sort="ascending"] {
         .tabulator-col-content {
@@ -466,9 +503,15 @@ $cell-padding:           $gutter-w;
 
         }
       }
-      &.primary-key {
-        &:before {
-          color: $theme-secondary;
+      &.primary-key:before {
+        color: $theme-secondary;
+      }
+      &.tabulator-spreadsheet-selected {
+        &.primary-key:before {
+          color: black;
+        }
+        &.foreign-key:before {
+          color: mix($theme-primary, black, 60%);
         }
       }
       &.foreign-key-button {
@@ -541,19 +584,20 @@ $cell-padding:           $gutter-w;
 // Applied when not dragging rows so frozen cells can be transparent
 .tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
   position: relative;
-  background-color: $query-editor-bg !important;
+  &:not(.edited) {
+    background-color: $query-editor-bg;
+  }
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-color: rgba($theme-base, 0.05);
+    background-color: var(--row-bg-color);
     z-index: -10;
   }
   &:hover::before {
     background-color: rgba($theme-base, 0.10);
   }
 }
-
 
 .tabulator-edit-select-list {
   background: $theme-bg;
@@ -681,7 +725,7 @@ $cell-padding:           $gutter-w;
   padding: 0.3rem 0;
 
   .tabulator-menu-item {
-    &:hover {
+    &:hover, &.tabulator-spreadsheet-menu-item-focused {
       background: rgba($theme-base, 0.05);
     }
     color: $text-dark;
@@ -712,5 +756,79 @@ $cell-padding:           $gutter-w;
       background: $brand-info;
       color: white;
     }
+  }
+}
+
+.tabulator-range-overlay {
+  .tabulator-range, .tabulator-range-cell-active {
+    border-color: darken($theme-primary, 20%);
+    border-width: 1px;
+  }
+  .tabulator-range::after {
+    background-color: darken($theme-primary, 20%);
+  }
+  .tabulator-range.copied {
+    border-style: dashed;
+  }
+}
+
+.spreadsheet-table {
+  .tabulator-header {
+    outline: none;
+    .tabulator-col {
+
+      &:not(.tabulator-spreadsheet-selected):hover {
+        background: rgba($theme-base, 0.035);
+        .tabulator-header-popup-button {
+          display: inline-block;
+        }
+      }
+
+      &.tabulator-spreadsheet-selected .tabulator-col-title {
+        color: inherit;
+      }
+
+      .tabulator-col-title {
+        display: flex;
+        flex-direction: row-reverse;
+        overflow: visible;
+        .title {
+          flex-grow: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          & > * {
+            display: inline;
+          }
+        }
+      }
+    }
+  }
+}
+
+.tabulator-col-resize-guide {
+  background-color: $columnResizeGuideColor;
+  opacity: 1;
+  margin-left: 1px;
+}
+
+.tabulator-col-resize-handle:hover {
+  position: relative;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 3px;
+    height: 60%;
+    transform: translate(0, -50%);
+    background-color: transparentize($columnResizeGuideColor, 0.4);
+    backdrop-filter: invert(100%);
+    border-radius: 999px;
+  }
+  &::before {
+    left: 4.5px;
+  }
+  &::after {
+    right: 4.5px;
   }
 }

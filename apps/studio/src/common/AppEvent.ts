@@ -22,12 +22,14 @@ export enum AppEvent {
   promptLogin = 'cloud_signin',
   promptQueryImport = 'cloud_q_import',
   promptConnectionImport = 'cloud_c_import',
-  hideEntity = 'hideEntity',
-  hideSchema = 'hideSchema',
+  toggleHideEntity = 'toggleHideEntity',
+  toggleHideSchema = 'toggleHideSchema',
   deleteDatabaseElement = 'deleteDatabaseElement',
   dropDatabaseElement = 'dropDatabaseElement',
   duplicateDatabaseTable = 'duplicateDatabaseTable',
-  upgradeModal = 'showUpgradeModal'
+  upgradeModal = 'showUpgradeModal',
+  toggleExpandTableList = 'toggleExpandTableList',
+  togglePinTableList = 'togglePinTableList',
 }
 
 export interface RootBinding {
@@ -48,9 +50,9 @@ export const AppEventMixin = Vue.extend({
         this.$root.$off(event, handler)
       })
     },
-    trigger<T>(event: AppEvent, options: T) {
-      log.debug('trigger', event, options)
-      this.$root.$emit(event.toString(), options)
+    trigger(event: AppEvent, ...args: any) {
+      log.debug('trigger', event, args)
+      this.$root.$emit(event.toString(), ...args)
     }
   }
 

@@ -14,6 +14,7 @@ export default {
   workspaceCheckInterval: 5000, // 5 seconds
   dataCheckInterval: 1000 * 30, // 30 secs
   errorNoticeTimeout: 60 * 1000, // 1 minute
+  tableListItemHeight: 22.8, // in pixels
 }
 
 
