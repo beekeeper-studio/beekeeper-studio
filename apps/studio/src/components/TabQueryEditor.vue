@@ -1094,8 +1094,10 @@
           const queryEndTime = new Date()
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
-          if (!document.hasFocus()) {
-            new window.Notification("Query Complete", {body: `${this.tab.title}'s query has executed successfully'`})
+          if (!document.hasFocus() && window.Notification && Notification.permission === "granted") {
+            new window.Notification("Query Complete", {
+              body: `${this.tab.title} has been executed successfully.`,
+            });
           }
 
           // eslint-disable-next-line
