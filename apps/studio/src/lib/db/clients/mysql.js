@@ -710,9 +710,31 @@ export async function listDatabases(conn, filter) {
     .map((row) => row.Database);
 }
 
+function filterAutoColumns(tableInsert, columns) {
+  for (let i = 0; i < tableInsert.data.length; i++) {
+    const v = tableInsert.data[i]
+
+    for (const key in v) {
+      const foundColumn = columns.findIndex((c) => c.columnName == key)
+
+      if (foundColumn !== -1) {
+        const extra = columns[foundColumn].extra ? columns[foundColumn].extra.toLowerCase() : ""
+
+        if (extra.includes("auto_increment")) {
+          delete v[key]
+        }
+      }
+    }
+
+    tableInsert.data[i] = v
+  }
+
+  return tableInsert
+}
+
 async function getInsertQuery(conn, database, tableInsert) {
   const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
-  return buildInsertQuery(knex, tableInsert, columns)
+  return buildInsertQuery(knex, filterAutoColumns(tableInsert, columns), columns)
 }
 
 export function getQuerySelectTop(conn, table, limit) {
