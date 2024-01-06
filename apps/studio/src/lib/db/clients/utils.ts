@@ -182,6 +182,13 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
           item[ic] = parseInt(item[ic].split("'")[1], 2)
         }
       }
+
+      // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
+      if (ic.includes('?')) {
+        const newIc = ic.replaceAll('?', '\\?');
+        item[newIc] = item[ic];
+        delete item[ic];
+      }
     })
 
   })
@@ -206,6 +213,11 @@ export function buildUpdateQueries(knex, updates: TableUpdate[]) {
     update.primaryKeys.forEach(({column, value}) => {
       where[column] = value
     })
+
+    // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
+    if (update.column.includes('?')) {
+      update.column = update.column.replaceAll('?', '\\?');
+    }
 
     updateblob[update.column] = update.value
 

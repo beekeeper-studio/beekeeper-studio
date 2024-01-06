@@ -8,6 +8,12 @@ $color-defaults: (
   pink:         $brand-pink,
 );
 
+@each $key, $val in $color-defaults {
+  .connection-label-color-#{$key} {
+    --connection-label-color: #{nth($val, 1)};
+  }
+}
+
 .connection-label {
   display: inline-flex;
   background-color: transparent;

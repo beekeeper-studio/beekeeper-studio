@@ -1,8 +1,11 @@
+.turbo/
 .idea/
+.cache/
 .vscode/
 ./data/
 node_modules/
 dist/
+site/
 tmp/
 temp/
 test.db

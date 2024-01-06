@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "files": ["src/main.ts"],
+  "vueCompilerOptions": {
+    "target": 2.7
+  },
   "compilerOptions": {
     "target": "es2018",
     "module": "esnext",

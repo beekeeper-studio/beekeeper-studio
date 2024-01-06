@@ -196,7 +196,7 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         this.$root.$emit('favoriteClick', item)
       },
       async remove(favorite) {
-        if (window.confirm("Really delete?")) {
+        if (await this.$confirm("Really delete?")) {
           await this.$store.dispatch('data/queries/remove', favorite)
         }
       },
