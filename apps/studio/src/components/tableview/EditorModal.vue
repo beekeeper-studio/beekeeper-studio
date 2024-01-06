@@ -1,7 +1,7 @@
 <template>
   <portal to="modals">
-    <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @opened="onOpen">
-      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop @keypress.stop>
+    <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @opened="onOpen" @keydown.stop @keyup.stop @keypress.stop>
+      <div class="dialog-content" tabindex="0">
         <div class="top">
           <div class="dialog-c-title">
             Editing as
