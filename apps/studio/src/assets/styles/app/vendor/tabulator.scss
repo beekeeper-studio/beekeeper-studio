@@ -423,6 +423,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       .tabulator-header-popup-button {
         display: none;
         position: relative;
+        z-index: 1;
         &::before {
           transition: opacity 0.15s;
           content: "";
@@ -435,6 +436,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
           border-radius: 9999px;
           background-color: rgba($theme-base, 0.1);
           opacity: 0;
+          z-index: -1;
         }
         &:hover {
           opacity: 1;
@@ -780,8 +782,13 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     outline: none;
     .tabulator-col {
 
-      &:not(.tabulator-spreadsheet-selected):hover {
-        background: rgba($theme-base, 0.035);
+      &:hover {
+        &:not(.tabulator-spreadsheet-selected) {
+          background: rgba($theme-base, 0.035);
+        }
+        &.tabulator-spreadsheet-selected .tabulator-header-popup-button::before {
+          background-color: darken($header-selected, 10%);
+        }
         .tabulator-header-popup-button {
           display: inline-block;
         }
