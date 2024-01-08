@@ -181,6 +181,21 @@
         </div>
       </modal>
     </portal>
+
+    <confirmation-modal name="core-tabs-close-confirmation" ref="closeConfirmation">
+      <template v-slot:title>
+        <div class="dialog-c-title">
+          Really close
+            <span class="tab-like" v-if="closingTab">
+              <tab-icon :tab="closingTab" /> {{ closingTab.title }}
+            </span>
+          ?
+        </div>
+      </template>
+      <template v-slot:message>
+        You will lose unsaved changes
+      </template>
+    </confirmation-modal>
   </div>
 </template>
 
@@ -205,6 +220,7 @@ import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
+import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import pluralize from 'pluralize'
@@ -222,7 +238,8 @@ export default Vue.extend({
     TableBuilder,
     TabWithTable,
     TabIcon,
-    PendingChangesButton
+    PendingChangesButton,
+    ConfirmationModal,
   },
   data() {
     return {
@@ -241,6 +258,7 @@ export default Vue.extend({
       // below are connected to the modal for duplicate
       dbDuplicateTableParams: null,
       duplicateTableName: null,
+      closingTab: null,
     }
   },
   watch: {
@@ -614,11 +632,10 @@ export default Vue.extend({
       }
     },
     async close(tab: OpenTab) {
-      if (tab.unsavedchanges) {
-        const confirmed = await this.$confirm(
-          `really close [icon here] ${tab.title}?`,
-          "you will lose unsaved changes"
-        )
+      if (tab.unsavedChanges) {
+        this.closingTab = tab
+        const confirmed = await this.$refs.closeConfirmation.confirm();
+        this.closingTab = null
         if (!confirmed) return
       }
 
