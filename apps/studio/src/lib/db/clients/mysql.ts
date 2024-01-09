@@ -1298,3 +1298,7 @@ export default async function (
   await client.connect();
   return client;
 }
+
+export const testOnly = {
+  parseFields,
+}
