@@ -1,3 +1,6 @@
+import * as YAML from 'js-yaml'
+import _ from 'lodash'
+
 export interface LanguageData {
   isValid: (raw: string) => boolean;
   beautify: (raw: string) => string;
@@ -20,6 +23,29 @@ export const TextLanguage: LanguageData = {
   beautify: (v) => v,
   minify: (v) => v,
   wrapTextByDefault: true,
+  noMinify: true,
+  noBeautify: true
+}
+
+export const YamlLanguage: LanguageData = {
+  name: 'yaml',
+  label: "YAML",
+  editorMode: {
+    name: 'yaml',
+    statementIndent: 2,
+
+  },
+  isValid: (v) => {
+    try {
+      const doc = YAML.load(v);
+      return _.isObject(doc)
+      return true;
+    } catch (ex) {
+      return false;
+    }
+  },
+  beautify: (v) => v,
+  minify: (v) => v,
   noMinify: true,
   noBeautify: true
 }
@@ -112,6 +138,7 @@ export const Languages: LanguageData[] = [
         .replace(/>\s*</g, "><");
     },
   },
+  YamlLanguage
 ];
 
 export function getLanguageByContent(content: string): LanguageData | undefined {

@@ -255,7 +255,7 @@ export default Vue.extend({
     debouncedCheckForErrors: _.debounce(function() {
       const isValid = this.language.isValid(this.content)
       this.error = isValid ? "" : `Invalid ${this.language?.label} content`
-    }, 50),
+    }, 150),
     toggleWrapText() {
       this.wrapText = !this.wrapText
       this.editor?.setOption("lineWrapping", this.wrapText)
