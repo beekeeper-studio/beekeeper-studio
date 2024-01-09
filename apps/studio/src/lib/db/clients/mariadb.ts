@@ -1,7 +1,7 @@
 import { IDbConnectionDatabase, IDbConnectionServer } from "../client";
 import { MysqlClient } from "./mysql";
 
-export class MariaDB extends MysqlClient {}
+export class MariaDBClient extends MysqlClient {}
 
 export default async function (
   server: IDbConnectionServer,
