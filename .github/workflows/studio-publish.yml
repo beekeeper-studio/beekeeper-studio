@@ -50,11 +50,11 @@ jobs:
       - run: "gem install -N ./deb-s3-0.11.2.gem"
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
-      - name: Install python 3.8 (not Mac)
+      - name: "Install python 3.8 (NOT Mac, NOT Ubuntu-arm)"
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
-        if: "!startsWith(matrix.os, 'macos')"
+        if: "!startsWith(matrix.os, 'macos') && !matrix.os == 'ubuntu-arm64'"
 
       - name: Install python 3.8 (mac)
         if: "startsWith(matrix.os, 'macos')"
