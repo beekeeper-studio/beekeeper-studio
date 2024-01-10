@@ -52,7 +52,7 @@ $dialog-font-size: 12px;
 }
 
 .CodeMirror-dialog button {
-  @extend .btn;
+  @include btn;
   @extend .btn-flat;
   @extend .btn-small;
 }

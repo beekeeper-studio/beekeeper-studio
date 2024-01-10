@@ -207,7 +207,7 @@ hr {
   text-align: center;
   box-shadow: none;
   @extend .noselect;
-  @extend .layout-center !optional;
+  @include layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
     background: rgba($theme-base, 0.1);
@@ -682,7 +682,7 @@ input[type=file] {
 }
 .card {
   background: lighten($theme-bg, 6%);
-  @extend .card-shadow;
+  @include card-shadow;
 }
 .card-flat {
   background: rgba($theme-base, 0.04);

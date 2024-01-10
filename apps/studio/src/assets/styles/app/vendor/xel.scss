@@ -765,7 +765,7 @@ x-menu {
   text-transform: none;
   font-weight: 400;
   min-width: 150px;
-  @extend .card-shadow-hover;
+  @include card-shadow-hover;
   --open-transition: none;
   --close-transition: none;
   x-menuitem {
@@ -826,7 +826,7 @@ x-menuitem {
     align-items: center;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;    
+    text-overflow: ellipsis;
     text-align: left;
     span {
       display: inline-flex;
