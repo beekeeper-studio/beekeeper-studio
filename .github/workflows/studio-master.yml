@@ -68,7 +68,13 @@ jobs:
       - name: Check dependencies
         run: "yarn install --frozen-lockfile --network-timeout 100000"
 
+
       - name: Build Electron app
+        if: "!startsWith(matrix.os, 'macos')"
+        run: "yarn run electron:build --publish never"
+
+      - name: Build Electron app
+        if: "startsWith(matrix.os, 'macos')"
         run: "yarn run electron:build --publish never"
         env:
           PYTHON_PATH: "/opt/homebrew/opt/python@3.8/libexec/bin/python3"
