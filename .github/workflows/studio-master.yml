@@ -34,7 +34,6 @@ jobs:
           echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
           export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
           export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
-          sudo ln -s /opt/homebrew/opt/python@3.8/libexec/bin/python3 /usr/bin/python
 
       - name: Verify Python Version
         if: "startsWith(matrix.os, 'windows')"
@@ -71,6 +70,9 @@ jobs:
 
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
+        env:
+          PYTHON_PATH: "/opt/homebrew/opt/python@3.8/libexec/bin/python3"
+          PYTHONPATH: "/opt/homebrew/opt/python@3.8/libexec/bin/python3"
 
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
