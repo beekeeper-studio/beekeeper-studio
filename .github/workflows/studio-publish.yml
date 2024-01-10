@@ -51,7 +51,7 @@ jobs:
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
       - name: Install python for node-gyp
-        uses: actions/setup-python@latest
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
 
