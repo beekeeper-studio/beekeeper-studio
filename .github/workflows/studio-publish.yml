@@ -78,7 +78,7 @@ jobs:
         shell: powershell
 
       - name: Verify Python Version
-        if: "!startsWith(matrix.os, 'windows')"
+        if: "!startsWith(matrix.os, 'windows') && !matrix.os == 'ubuntu-arm64'"
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
