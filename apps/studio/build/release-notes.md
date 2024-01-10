@@ -1,60 +1,68 @@
 
-# Release 3.9 - Slow burn, but less slow now
+# 4.1 - Spreadsheet mode, pop-out editors, Wayland support, and more
 
-My wife had heart surgery in Feb (she's doing great!) and I've been helping her recover, so it's been a while since the last Beekeeper Studio release (It's not a coincidence that I put out a super stable release at the end of Jan).
+This was intended to be a small point release after the release of 4.0. I guess things got a little out of hand :-).
 
-If you are a customer of the commercial edition - 🙏 Thank you, your financial support makes all of this possible.
+## Headline Features
 
-If you use the community edition, please consider upgrading to the [commercial edition](https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition). Every purchase supports me, and the continued development of the community edition.
+### Spreadsheet style table interactions!
 
-I also have a few part time folks helping me keep Beekeeper Studio features rolling:
-- @wmontgomery
-- @not-night-but
-- @davidkaufman
-
-Big thanks to them for their help.
-
-## Highlights ✨
-
-- [x] Added support for PostgreSQL partitions in the table structure view (@not-night-but)
-- [x] Added support for Query Magic enum substitution (@not-night-but)
-- [x] Added support for alphanumeric sorting of pinned tables (@tomaskudlicka)
-- [x] Added the ability to pin saved connections (just like pinned tables) (@not-night-but)
+You can do a bunch of stuff with tables that 'just makes sense' now including:
+- Selecting rows / columns
+- Selecting a range of cells
+- Copying data from the selected cells/columns/rows
+- Pasting data into a table across multiple cells
+- Navigating with the keyboard
 
 
-## More awesome features 🍭 and 🐞 fixes
-
-- [x] Added support to copy table data modifications to SQL instead of applying them automatically
-- [x] Added the ability to select field names in the table structure view when they're not editable
-- [x] Huuuuuge upgrade from Electron 13 to Electron 22
-- [x] Colo(u)r sorting of connections fixed
-- [x] SSH2 library upgraded
-- [x] Fixing column names in the JSON download
-- [x] ...more stuff below, man this took a while to write
 
 
-## Merged PRs
-
-
-85e68d52 Merge pull request #1558 from beekeeper-studio/partitions-fix-96
-a44371d2 Merge pull request #1548 from beekeeper-studio/partitions
-4719c4ce Merge pull request #1525 from MaximeRaynal/master
-7512516c Merge pull request #1551 from tomaskudlicka/feat/pin-tables-sorting
-d61910a7 Merge pull request #1541 from beekeeper-studio/copy-to-sql
-8a97f1db Merge pull request #1530 from beekeeper-studio/pinned-connections
-93694b93 Merge pull request #1512 from beekeeper-studio/1472-selectable-fields
-94f733fb Merge pull request #1502 from krystxf/fix/materialized_view
-8333115d Merge pull request #1537 from beekeeper-studio/interval-sorting
-3ab8ca5a Merge pull request #1511 from beekeeper-studio/electron-15
-50154381 Merge pull request #1492 from beekeeper-studio/dependabot/npm_and_yarn/http-cache-semantics-4.1.1
-470e1d2c Merge pull request #1509 from beekeeper-studio/editing-disabled
-13a4b9c0 Merge pull request #1513 from beekeeper-studio/colour-sorting
-7d931d6c Merge pull request #1516 from beekeeper-studio/mainline-ssh2
-68f09176 Merge pull request #1510 from beekeeper-studio/electron-remote-migration
-245f58d9 Merge pull request #1447 from beekeeper-studio/dependabot/npm_and_yarn/decode-uri-component-0.2.2
-e777f106 Merge pull request #1464 from beekeeper-studio/feature/747_find-replace-in-editor
-02409764 Merge pull request #1487 from leduard/master
-1cda1804 Merge pull request #1494 from davidkaufman/issue-1493-colnames-json-download
-0b475e0b Merge pull request #1473 from beekeeper-studio/dependabot/npm_and_yarn/knex-2.4.0
-76718b81 Merge pull request #1480 from henryliang2/master
-aefa5ff0 Merge pull request #1482 from beekeeper-studio/bugfix/empty-value-on-select
+7a22a90a Merge pull request #1841 from beekeeper-studio/fix/language-editor
+6ee968eb Merge pull request #1844 from beekeeper-studio/fix/spreadsheet
+4feefabc Merge pull request #1826 from beekeeper-studio/fix/tabulator
+6792d832 Merge pull request #1827 from beekeeper-studio/bugfix/the-nullening
+8960c657 Merge pull request #1832 from beekeeper-studio/local-docs-again
+32d86f2d Merge pull request #1825 from beekeeper-studio/fix/tabulator-styles
+492458ac Merge pull request #1824 from beekeeper-studio/wayland-native
+744d50a2 Merge pull request #1784 from beekeeper-studio/bugfix/1750_Relations-Tables
+64feac0f Merge pull request #1803 from beekeeper-studio/language-editor
+bd4df166 Merge pull request #1819 from beekeeper-studio/feat/paste-in-multiple-cells
+4fcc2449 Merge pull request #1823 from beekeeper-studio/fix/sql-server-concat
+d0f5fe63 Merge pull request #1820 from beekeeper-studio/fix/green-column-name
+cc2645cf Merge pull request #1822 from beekeeper-studio/fix/broken-sure-dialog
+99a8bbb4 Merge pull request #1817 from beekeeper-studio/bugfix/1807_array-arrfulness
+28f82983 Merge pull request #1793 from Christof-P/feat/add-color-coding-to-edit-form
+ab68e50b Merge pull request #1815 from beekeeper-studio/fix/sql-query-identifier
+db939c4b Merge pull request #1812 from beekeeper-studio/fix/spreadsheet-navigation
+cac86af2 Merge pull request #1794 from Christof-P/feat/multi-select-quick-search
+93ed237b Merge pull request #1740 from beekeeper-studio/fix/quoted-alias
+fa2b88a9 Merge pull request #1810 from beekeeper-studio/bugfix/1808_editing-issue
+884a487a Merge pull request #1785 from jc00ke/update-linux-deb-install-docs
+177307b7 Merge pull request #1777 from beekeeper-studio/dependabot/npm_and_yarn/axios-1.6.0
+d64d685a Merge pull request #1802 from beekeeper-studio/fix/set-vim-mode
+c51e75f6 Merge pull request #1797 from maxoliverbr/fix-translations
+e475f5ad Merge pull request #1773 from beekeeper-studio/fix/non-reflective-table-columns
+202709d7 Merge pull request #1781 from beekeeper-studio/fix/unuse-native-modals
+bbeff863 Merge pull request #1799 from beekeeper-studio/fix/virtual-table-list
+f5b5758b Merge pull request #1747 from beekeeper-studio/feat/initial-spreadsheet
+24798bec Merge pull request #1800 from beekeeper-studio/fix/slow-column-resize
+8491b141 Merge pull request #1745 from p-Jimenez/show-table-comments
+7ac2da36 Merge pull request #1792 from beekeeper-studio/fix/persistent-bg-column
+df1a2a36 Merge pull request #1764 from beekeeper-studio/sqlite-client-class
+54476146 Merge pull request #1788 from beekeeper-studio/sweep/add-prefix-to-error-messages
+eff24858 Merge pull request #1789 from MasterOdin/patch-1
+a8a92439 Merge pull request #1771 from beekeeper-studio/fix/virtual-table-list
+42b7ff3e Merge pull request #1776 from beekeeper-studio/fix/escape-view-names
+b1579e5b Merge pull request #1770 from trivikr/remove-aws-sdk
+2b85a154 Merge pull request #1763 from beekeeper-studio/dependabot/npm_and_yarn/browserify-sign-4.2.2
+6f2dd3db Merge pull request #1744 from beekeeper-studio/dependabot/npm_and_yarn/babel/traverse-7.23.2
+2a0ee5c8 Merge pull request #1736 from beekeeper-studio/fix/1735
+a6f4b324 Merge pull request #1760 from beekeeper-studio/fix/illegible-conn-type
+83e2a42f Merge pull request #1697 from mohamedelhefni/feature-1685
+7e889e89 Merge pull request #1722 from beekeeper-studio/fix/1721
+4dcad062 Merge pull request #1708 from azmy60/fix/invalid-array-in-copy
+7a953d3f Merge pull request #1725 from beekeeper-studio/feature/Vue-Linter
+ff385701 Merge pull request #1718 from beekeeper-studio/fix/debounce-filter-builder
+5dc95adc Merge pull request #1711 from beekeeper-studio/fix/tabulator-bool-option
+1d92b24e Merge pull request #1717 from austinwilcox/fixVimEsc
+ead61f9f Merge pull request #1715 from iifawzi/feat/1714-compound-foreign-keys
