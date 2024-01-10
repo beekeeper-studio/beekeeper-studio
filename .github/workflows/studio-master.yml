@@ -33,6 +33,7 @@ jobs:
           # Add Python 3.8 to PATH
           echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
           export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
+          export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
 
       - name: Verify Python Version
         if: "startsWith(matrix.os, 'windows')"
