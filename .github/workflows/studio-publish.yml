@@ -54,7 +54,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
-        if: "!startsWith(matrix.os, 'macos') && !matrix.os == 'ubuntu-arm64'"
+        if: "!startsWith(matrix.os, 'macos') && (matrix.os != 'ubuntu-arm64')"
 
       - name: Install python 3.8 (mac)
         if: "startsWith(matrix.os, 'macos')"
@@ -78,7 +78,7 @@ jobs:
         shell: powershell
 
       - name: Verify Python Version
-        if: "!startsWith(matrix.os, 'windows') && !matrix.os == 'ubuntu-arm64'"
+        if: "!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')"
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
