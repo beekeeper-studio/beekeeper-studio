@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest, ubuntu-arm64]
+        os: [ubuntu-20.04, windows-latest, ubuntu-arm64, macos-13-xlarge]
 
     steps:
       - name: Import GPG key
@@ -117,6 +117,7 @@ jobs:
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
           skip_build: true
+          args: ${{ startsWith(matrix.os, 'macos') && '--arm64 --x64' || '' }}
           use_vue_cli: true
           max_attempts: 2
 
