@@ -50,10 +50,42 @@ jobs:
       - run: "gem install -N ./deb-s3-0.11.2.gem"
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
-      - name: Install python for node-gyp
+      - name: Install python 3.8 (not Mac)
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
+        if: "!startsWith(matrix.os, 'macos')"
+
+      - name: Install python 3.8 (mac)
+        if: "startsWith(matrix.os, 'macos')"
+        run: |
+          # Install Python 3.8
+          brew install python@3.8
+          # Add Python 3.8 to PATH
+          echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
+          export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
+          export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
+
+      - name: Verify Python Version
+        if: "startsWith(matrix.os, 'windows')"
+        run: |
+          $PYTHON_VERSION = python --version | Out-String
+          Write-Output "Installed Python version: $PYTHON_VERSION"
+          if (-not $PYTHON_VERSION.StartsWith("Python 3.8")) {
+            Write-Output "Error: Python version does not start with 3.8"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Verify Python Version
+        if: "!startsWith(matrix.os, 'windows')"
+        run: |
+          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
+          echo "Installed Python version: $PYTHON_VERSION"
+          if [[ ! $PYTHON_VERSION == 3.8* ]]; then
+            echo "Error: Python version does not start with 3.8"
+            exit 1
+          fi
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
@@ -137,6 +169,8 @@ jobs:
           BT_TOKEN: "${{secrets.bintray_apikey}}"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
+          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHONPATH' }}"
 
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
