@@ -153,7 +153,6 @@
   "resolutions": {
     "watchpack": "1.6.1",
     "node-pre-gyp": "0.12.0",
-    "electron-builder": "22.10.5",
     "nan": "2.17.0"
   }
 }
