@@ -35,6 +35,18 @@ jobs:
           export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
 
       - name: Verify Python Version
+        if: "startsWith(matrix.os, 'windows')"
+        run: |
+          $PYTHON_VERSION = python --version | Out-String
+          Write-Output "Installed Python version: $PYTHON_VERSION"
+          if (-not $PYTHON_VERSION.StartsWith("Python 3.8")) {
+            Write-Output "Error: Python version does not start with 3.8"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Verify Python Version
+        if: "!startsWith(matrix.os, 'windows')"
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
