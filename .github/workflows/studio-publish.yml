@@ -50,6 +50,11 @@ jobs:
       - run: "gem install -N ./deb-s3-0.11.2.gem"
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
+      - name: Install python for node-gyp
+        uses: actions/setup-python@latest
+        with:
+          python-version: 3.8
+
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
         with:
