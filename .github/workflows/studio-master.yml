@@ -34,7 +34,7 @@ jobs:
           echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
           export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
 
-    - name: Verify Python Version
+      - name: Verify Python Version
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
