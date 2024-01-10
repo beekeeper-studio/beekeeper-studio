@@ -20,14 +20,14 @@ jobs:
         uses: actions/checkout@v1
 
       - name: Install python 3.8 (not Mac)
-        if: "!startsWith(matrix.os, 'macos')"
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
+        if: "!startsWith(matrix.os, 'macos')"
 
       - name: Install python 3.8 (mac)
         if: "startsWith(matrix.os, 'macos')"
-        run:
+        run: |
           # Install Python 3.8
           brew install python@3.8
           # Add Python 3.8 to PATH
