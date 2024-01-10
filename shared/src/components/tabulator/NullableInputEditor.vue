@@ -77,6 +77,7 @@ export default Vue.extend({
     },
     onBlur() {
       log.debug('blur, not submitting')
+      this.$emit('cancel')
     },
     submit() {
       log.debug('nullable submitted')
