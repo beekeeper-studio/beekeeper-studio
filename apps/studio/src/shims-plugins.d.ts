@@ -2,7 +2,7 @@ import {NativePlugin} from './lib/NativeWrapper'
 import Vue from 'vue'
 import Noty from 'noty'
 import { RootBinding, AppEvent } from './common/AppEvent'
-import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
+import { BeekeeperPlugin, PromptResult } from './plugins/BeekeeperPlugin'
 
 // 2. Specify a file with the types you want to augment
 //    Vue has the constructor type in types/vue.d.ts
@@ -23,6 +23,8 @@ declare module 'vue/types/vue' {
     }
     $confirm: Promise<boolean>
     $confirmModalId: string
+    $prompt: Promise<PromptResult>
+    $promptModalId: string
 
     // TODO: figure out how to add these automatically from AppEvent.ts
     registerHandlers(bindings: RootBinding[]): void

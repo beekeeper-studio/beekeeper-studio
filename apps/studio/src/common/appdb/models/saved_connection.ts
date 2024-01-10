@@ -258,6 +258,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     return this._sshMode
   }
 
+  @Column({ type: 'integer', nullable: true })
+  connectionFolderId: Nullable<number>
+
   private smellsLikeUrl(url: string): boolean {
     return url.includes("://")
   }

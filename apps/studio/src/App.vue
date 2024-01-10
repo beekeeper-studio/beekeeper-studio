@@ -25,6 +25,7 @@
     />
     <data-manager />
     <confirmation-modal />
+    <prompt-modal :name="this.$promptModalId" />
   </div>
 </template>
 
@@ -42,12 +43,13 @@ import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
+import PromptModal from '@/components/common/modals/PromptModal.vue'
 
 export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal, PromptModal,
   },
   data() {
     return {

@@ -80,7 +80,14 @@
                     @click.prevent="importFromLocal"
                     title="Import connections from local workspace"
                   ><i class="material-icons">save_alt</i></a>
-                  <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+                  <a
+                    @click.prevent="refresh"
+                    v-tooltip="`Refresh`"
+                  ><i class="material-icons">refresh</i></a>
+                  <a
+                    @click.prevent="createFolder"
+                    v-tooltip="`Create new folder`"
+                  ><i class="material-icons-outlined">create_new_folder</i></a>
                   <sidebar-sort-buttons
                     v-model="sort"
                     :sort-options="sortables"
@@ -132,37 +139,14 @@
               v-else
               class="list-body"
             >
-              <sidebar-folder
-                v-for="{ folder, connections } in foldersWithConnections"
-                :key="`${folder.id}-${connections.length}`"
-                :title="`${folder.name} (${connections.length})`"
-                placeholder="No Items"
-                :expanded-initially="true"
-              >
-                <connection-list-item
-                  v-for="c in connections"
-                  :key="c.id"
-                  :config="c"
-                  :selected-config="selectedConfig"
-                  :show-duplicate="true"
-                  :pinned="pinnedConnections.includes(c)"
-                  @edit="edit"
-                  @remove="remove"
-                  @duplicate="duplicate"
-                  @doubleClick="connect"
-                />
-              </sidebar-folder>
-              <connection-list-item
-                v-for="c in lonelyConnections"
-                :key="c.id"
-                :config="c"
+              <saved-connection-tree
+                ref="savedConnectionTree"
                 :selected-config="selectedConfig"
-                :show-duplicate="true"
-                :pinned="pinnedConnections.includes(c)"
-                @edit="edit"
-                @remove="remove"
-                @duplicate="duplicate"
-                @doubleClick="connect"
+                :sort="sort"
+                @edit:connection="edit"
+                @remove:connection="remove"
+                @duplicate:connection="duplicate"
+                @doubleClick:connection="connect"
               />
             </nav>
           </div>
@@ -208,15 +192,16 @@
   import SidebarLoading from '@/components/common/SidebarLoading.vue'
   import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import Split from 'split.js'
-import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
+import Vue from 'vue'
+import SavedConnectionTree from './SavedConnectionTree.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
   export default {
-    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons },
+    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarSortButtons, SavedConnectionTree },
     props: ['selectedConfig'],
     data: () => ({
       split: null,
@@ -246,7 +231,7 @@ const log = rawLog.scope('connection-sidebar');
     },
     computed: {
       ...mapState('data/connections', {'connectionConfigs': 'items', 'connectionsLoading': 'loading', 'connectionsError': 'error'}),
-      ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
+      ...mapState('data/connectionFolders', { 'foldersLoading': 'loading', 'foldersError': 'error' }),
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
@@ -259,27 +244,6 @@ const log = rawLog.scope('connection-sidebar');
       },
       noPins() {
         return !this.pinnedConnections?.length;
-      },
-      foldersSupported() {
-        return !this.foldersUnsupported
-      },
-      lonelyConnections() {
-        const folderIds = this.folders.map((c) => c.id)
-        return this.sortedConnections.filter((config) => {
-          return !config.connectionFolderId || !folderIds.includes(config.connectionFolderId)
-        })
-      },
-      foldersWithConnections() {
-        if (this.loading) return []
-
-        const result = this.folders.map((folder) => {
-          return {
-            folder,
-            connections: this.sortedConnections.filter((c) => c.connectionFolderId === folder.id)
-          }
-        })
-
-        return result
       },
       loading() {
         return this.connectionsLoading || this.foldersLoading
@@ -341,6 +305,8 @@ const log = rawLog.scope('connection-sidebar');
       ])
       this.sort.field = field
       this.sort.order = order
+
+      this.$refs.savedConnectionTree.refresh()
     },
     methods: {
       buildSplit() {
@@ -354,14 +320,27 @@ const log = rawLog.scope('connection-sidebar');
         })
       },
       importFromLocal() {
-        console.log("triggering import")
         this.$root.$emit(AppEvent.promptConnectionImport)
       },
       async refresh() {
-        this.$store.dispatch('data/connectionFolders/load')
-        this.$store.dispatch('data/connections/load')
+        await this.$store.dispatch('data/connectionFolders/load')
+        await this.$store.dispatch('data/connections/load')
         await this.$store.dispatch('pinnedConnections/loadPins');
         await this.$store.dispatch('pinnedConnections/reorder');
+
+        this.$refs.savedConnectionTree.refresh()
+      },
+      async createFolder() {
+        const { canceled, value } = await this.$prompt({
+          title: "Create a new folder",
+        })
+
+        if (canceled) return
+
+        await this.$store.dispatch('data/connectionFolders/create', { name: value })
+        await this.$store.dispatch('data/connectionFolders/load')
+
+        this.$refs.savedConnectionTree.refresh();
       },
       edit(config) {
         this.$emit('edit', config)

@@ -21,6 +21,19 @@ interface MenuProps {
   event: Event
 }
 
+export interface PromptOptions {
+  title?: string;
+  placeholder?: string;
+  confirmText?: string;
+  cancelText?: string;
+  initialValue?: string;
+}
+
+export interface PromptResult {
+  canceled: boolean;
+  value: string;
+}
+
 export const BeekeeperPlugin = {
   closeTab(id?: string) {
     this.$root.$emit(AppEvent.closeTab, id)
@@ -118,6 +131,21 @@ export default {
           onConfirm: () => resolve(true),
         })
       })
+    }
+
+    Vue.prototype.$promptModalId = uuidv4()
+    Vue.prototype.$prompt = function(options: PromptOptions = {}, modalName?: string): Promise<PromptResult> {
+      return new Promise<PromptResult>((resolve, reject) => {
+        try {
+          this.$modal.show(modalName || Vue.prototype.$promptModalId, {
+            ...options,
+            onConfirm: resolve,
+            onCancel: resolve,
+          });
+        } catch (e) {
+          reject(e);
+        }
+      });
     }
 
   }

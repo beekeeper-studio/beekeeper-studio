@@ -42,6 +42,7 @@ export interface IConnection extends ISimpleConnection {
   password: Nullable<string>
   sshPassword: Nullable<string>
   sshKeyfilePassword: Nullable<string>
+  connectionFolderId: Nullable<number>
 }
 
 export interface ICloudSavedConnection extends IConnection {

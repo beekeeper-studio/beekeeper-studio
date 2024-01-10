@@ -38,6 +38,7 @@
 <style lang="scss" scoped>
   .sort-buttons {
     display: flex;
+    gap: 0.4rem;
     .btn.actions-btn {
       min-width: 0;
       padding: 0;
