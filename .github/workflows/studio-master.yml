@@ -13,11 +13,25 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-11, ubuntu-20.04, windows-latest]
+        os: [macos-13-xlarge, ubuntu-20.04, windows-latest]
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
+
+      - name: Install python 3.8 (not Mac)
+        uses: actions/setup-python@v5
+        if: "!startsWith(matrix.os, 'macos')"
+        with:
+          python-version: 3.8
+
+      - name: Install python 3.8 (mac)
+        if: "startsWith(matrix.os, 'macos')"
+        run:
+          # Install Python 3.8
+          brew install python@3.8
+          # Add Python 3.8 to PATH
+          echo "/usr/local/opt/python@3.8/bin" >> $GITHUB_PATH
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
