@@ -109,7 +109,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditor),
           formatter: this.cellFormatter,
           tooltip: true,
-          frozen: true,
+          // frozen: true,
           minWidth: 100,
           editorParams: {
           }
