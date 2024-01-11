@@ -7,6 +7,7 @@
         :list="folder.items"
         group="saved-connections"
         @start="handleStartMoving($event, folder)"
+        :sort="false"
       >
         <connection-list-item
           v-for="c in folder.items"
@@ -26,13 +27,15 @@
         :key="`${folder.id}-${folder.items.length}`"
         :title="`${folder.name} (${folder.items.length})`"
         placeholder="No Items"
-        :expanded-initially="true"
+        :expanded="folder.expanded"
+        @expand="handleFolderExpand($event, folder)"
         @contextmenu="handleFolderContextmenu($event, folder)"
       >
         <draggable
           :list="folder.items"
           group="saved-connections"
           @start="handleStartMoving($event, folder)"
+          :sort="false"
         >
           <connection-list-item
             v-for="c in folder.items"
@@ -67,6 +70,7 @@ export interface Folder {
   description: string;
   entity?: ConnectionFolder;
   items: SavedConnection[];
+  expanded: boolean;
 }
 
 export default Vue.extend({
@@ -112,25 +116,22 @@ export default Vue.extend({
     },
   },
   watch: {
+    sort() {
+      this.refresh();
+    },
+    connectionConfigs(newConfigs, oldConfigs) {
+      if (newConfigs.length !== oldConfigs.length) {
+        this.refresh();
+      }
+    },
     folders: {
       async handler() {
-        // Should run only when moving items
-        if (!this.movingItem) return;
-
-        const newFolder = this.folders.find((folder: Folder) =>
-          folder.items.find((item) => item === this.movingItem)
-        );
-
-        if (!newFolder) return;
-
-        const connection = this.movingItem;
-
-        // IMPORTANT: nullening before dispatching saveConnection to prevent looping
-        this.movingItem = null;
-
-        connection.connectionFolderId = newFolder.id;
-
-        this.$store.dispatch("saveConnection", connection);
+        if (this.movingItem) {
+          const item = this.movingItem;
+          // IMPORTANT: nullening before dispatching saveConnection to prevent looping
+          this.movingItem = null;
+          this.handleItemMoved(item);
+        }
       },
       deep: true,
     },
@@ -143,6 +144,7 @@ export default Vue.extend({
         name: "",
         description: "",
         items: [],
+        expanded: true,
       };
 
       for (const folder of this.connectionFolders) {
@@ -152,6 +154,7 @@ export default Vue.extend({
           description: folder.description,
           entity: folder,
           items: [],
+          expanded: true,
         });
       }
 
@@ -174,13 +177,34 @@ export default Vue.extend({
       const index = event.oldIndex;
       this.movingItem = fromFolder.items[index];
     },
+    async handleItemMoved(movedItem: SavedConnection) {
+      const newFolder = this.folders.find((folder: Folder) =>
+        folder.items.find((item) => item === movedItem)
+      );
+
+      if (!newFolder) return;
+
+      movedItem.connectionFolderId = newFolder.id;
+
+      await this.$store.dispatch("saveConnection", movedItem);
+    },
+    handleFolderExpand(_event: any, folder: Folder) {
+      Vue.set(folder, "expanded", !folder.expanded);
+    },
     handleFolderContextmenu(event: any, folder: Folder) {
       this.$bks.openMenu({
         item: folder,
         options: [
           {
+            name: folder.expanded ? "Collapse" : "Expand",
+            slug: "expand-or-collapse",
+            handler: () => {
+              this.handleFolderExpand(event, folder);
+            },
+          },
+          {
             name: "Rename",
-            slug: "",
+            slug: "rename",
             handler: async () => {
               const { canceled, value } = await this.$prompt({
                 title: "Rename a folder",
@@ -201,7 +225,7 @@ export default Vue.extend({
           },
           {
             name: "Remove",
-            slug: "",
+            slug: "remove",
             handler: async () => {
               const confirmed = await this.$confirm(
                 "Are you sure?",

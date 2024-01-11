@@ -21,8 +21,8 @@
         >folder</i>
         <span
           class="table-name truncate expand"
-          :title="schema"
-        >{{ schema }}</span>
+          :title="title"
+        >{{ title }}</span>
       </a>
     </div>
   </div>
@@ -30,6 +30,6 @@
 
 <script lang="ts">
 	export default {
-    props: ["schema", "expanded"],
+    props: ["title", "expanded"],
 	}
 </script>

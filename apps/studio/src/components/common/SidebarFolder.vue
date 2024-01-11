@@ -11,7 +11,7 @@
         class="folder-btn"
         :class="{'open': expanded}"
         role="button"
-        @click.prevent="manuallyExpanded = !manuallyExpanded"
+        @click.prevent="$emit('expand', $event)"
       >
         <span class="btn-fab open-close">
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -50,31 +50,10 @@
 
 <script type="text/javascript">
 	export default {
-    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections"],
-    data() {
-      return {
-        manuallyExpanded: false,
-      }
-    },
-    mounted() {
-      this.manuallyExpanded = this.expandedInitially
-    },
+    props: ["title", "skipDisplay", "expanded", "placeholder"],
     computed: {
       hasSlot() {
         return !!this.$slots.default
-      },
-      expanded() {
-        return this.manuallyExpanded
-      }
-    },
-    watch: {
-      forceExpand() {
-        this.manuallyExpanded = this.forceExpand
-      },
-      forceCollapse() {
-        if (this.forceCollapse) {
-          this.manuallyExpanded = false
-        }
       },
     },
 	}
@@ -82,7 +61,7 @@
 
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
-  
+
   .schema > .sub-items {
     padding-left: 18px!important;
   }

@@ -9,12 +9,24 @@
     >
       <div class="dialog-content">
         <slot name="title">
-          <div class="dialog-c-title" v-html="titleHtml" />
+          <div
+            class="dialog-c-title"
+            v-html="titleHtml"
+          />
         </slot>
-        <input v-model="value" :placeholder="placeholder" ref="inputRef" @keyup.enter="handleConfirm" />
+        <input
+          v-model="value"
+          :placeholder="placeholder"
+          ref="inputRef"
+          @keyup.enter="handleConfirm"
+        >
       </div>
       <div class="vue-dialog-buttons">
-        <button class="btn btn-flat" type="button" @click.prevent="cancel">
+        <button
+          class="btn btn-flat"
+          type="button"
+          @click.prevent="cancel"
+        >
           {{ cancelText }}
         </button>
         <button
