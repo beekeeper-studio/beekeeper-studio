@@ -21,27 +21,37 @@ export default function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
     if (!line) {
       return;
     }
-    //TODO: Change this up so that we can enter command mode for some keybindings
-    //One of the commands might look something like this: vmap K :m '<-2<CR>gv=gv
-    //This is a simple version to add some very basic keybindings
-    //Currently this will support your basic keybindings like: nmap gl $ which is a helix keybinding
+
     const words = line.split(" ");
-    if (words.length !== 3) {
+    let newCommand: IMapping;
+    if (words.length > 3) {
+      newCommand = {
+        mappingMode: words[0],
+        lhs: words[1],
+        rhs: words.slice(2).join(" "),
+        mode:
+          words[0] === "nmap"
+            ? "normal"
+            : words[0] === "imap"
+            ? "insert"
+            : "visual",
+      };
+    } else if (words.length !== 3) {
       console.error(`Unable to parse this command: ${line}.`);
       return;
+    } else {
+      newCommand = {
+        mappingMode: words[0],
+        lhs: words[1],
+        rhs: words[2],
+        mode:
+          words[0] === "nmap"
+            ? "normal"
+            : words[0] === "imap"
+            ? "insert"
+            : "visual",
+      };
     }
-
-    const newCommand: IMapping = {
-      mappingMode: words[0],
-      lhs: words[1],
-      rhs: words[2],
-      mode:
-        words[0] === "nmap"
-          ? "normal"
-          : words[0] === "imap"
-          ? "insert"
-          : "visual",
-    };
 
     if (keyMappingModes.includes(newCommand.mappingMode) === false) {
       console.error(
