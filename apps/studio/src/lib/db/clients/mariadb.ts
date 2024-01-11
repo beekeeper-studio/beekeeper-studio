@@ -7,7 +7,7 @@ export default async function (
   server: IDbConnectionServer,
   database: IDbConnectionDatabase
 ) {
-  const client = new MysqlClient(server, database);
+  const client = new MariaDBClient(server, database);
   await client.connect();
   return client;
 }

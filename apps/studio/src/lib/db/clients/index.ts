@@ -1,6 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
 import mysql from './mysql';
+import mariadb from './mariadb';
 import postgresql from './postgresql';
 import sqlserver from './sqlserver';
 import sqlite from './sqlite';
@@ -150,7 +151,7 @@ export default {
   sqlite,
   cassandra,
   redshift: postgresql,
-  mariadb: mysql,
+  mariadb,
   cockroachdb: postgresql,
   bigquery,
 };

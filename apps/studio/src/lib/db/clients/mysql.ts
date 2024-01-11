@@ -163,7 +163,10 @@ function configDatabase(
   return config;
 }
 
-function resolveDefault(version: MysqlClient["version"], defaultValue: string) {
+function resolveDefault(
+  version: MysqlClient["versionInfo"],
+  defaultValue: string
+) {
   // adapted from https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/pull/998/files
   if (version.isMySql) return defaultValue;
 
@@ -206,7 +209,7 @@ function isMultipleQuery(fields: any[]) {
   return Array.isArray(fields[0]) || fields[0] === undefined;
 }
 
-function parseFields(fields: any[], rowsAsArray: boolean) {
+function parseFields(fields: any[], rowsAsArray?: boolean) {
   if (!fields) return [];
   return fields.map((field, idx) => {
     return { id: rowsAsArray ? `c${idx}` : field.name, ...field };
@@ -268,7 +271,7 @@ function filterDatabase(
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
-  version: {
+  versionInfo: {
     versionString: string;
     version: number;
     isMySql: boolean;
@@ -293,15 +296,15 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
-    this.version = await this.getVersion();
+    this.versionInfo = await this.getVersion();
   }
 
   async disconnect() {
-    this.conn.pool.end();
+    this.conn?.pool.end();
   }
 
   versionString() {
-    return this.version?.versionString;
+    return this.versionInfo?.versionString;
   }
 
   async getVersion() {
@@ -351,7 +354,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return data;
   }
 
-  // abstract listTableIndexes(db: string, table: string, schema?: string): Promise<TableIndex[]>;
   async listTableIndexes(
     _database: string,
     table: string,
@@ -735,11 +737,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     charset: string,
     collation: string
   ): Promise<void> {
-    const sql = `create database ${this.wrapIdentifier(
-      databaseName
-    )} character set ${this.wrapIdentifier(
-      charset
-    )} collate ${this.wrapIdentifier(collation)}`;
+    const sql = `
+      create database ${this.wrapIdentifier(databaseName)}
+        character set ${this.wrapIdentifier(charset)}
+        collate ${this.wrapIdentifier(collation)}
+    `;
+
     await this.driverExecuteSingle(sql);
   }
 
@@ -811,9 +814,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       const where = whereList.join(" AND ");
 
       return {
-        query: `UPDATE ${this.wrapIdentifier(
-          update.table
-        )} SET ${this.wrapIdentifier(update.column)} = ? WHERE ${where}`,
+        query: `
+          UPDATE ${this.wrapIdentifier(update.table)}
+            SET ${this.wrapIdentifier(update.column)} = ?
+            WHERE ${where}
+        `,
         params: params,
       };
     });
@@ -839,10 +844,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       const where = whereList.join(" AND ");
 
       return {
-        query: `select * from ${this.wrapIdentifier(
-          update.table
-        )} where ${where}`,
-        params: params,
+        query: `
+          select * from ${this.wrapIdentifier(update.table)} where ${where}
+        `,
+        params,
       };
     });
 
@@ -871,9 +876,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      const sql = `TRUNCATE ${MysqlData.wrapLiteral(
-        typeOfElement
-      )} ${this.wrapIdentifier(elementName)}`;
+      const sql = `
+        TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)}
+          ${this.wrapIdentifier(elementName)}
+      `;
       await this.driverExecuteSingle(sql, { connection });
     });
   }
@@ -884,9 +890,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      const sql = `DROP ${MysqlData.wrapLiteral(
-        typeOfElement
-      )} ${this.wrapIdentifier(elementName)}`;
+      const sql = `
+        DROP ${MysqlData.wrapLiteral(typeOfElement)}
+          ${this.wrapIdentifier(elementName)}
+      `;
       await this.driverExecuteSingle(sql, { connection });
     });
   }
@@ -905,12 +912,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     duplicateTableName: string,
     _schema?: string
   ): string {
-    let sql = `CREATE TABLE ${this.wrapIdentifier(
-      duplicateTableName
-    )} LIKE ${this.wrapIdentifier(tableName)};`;
-    sql += `INSERT INTO ${this.wrapIdentifier(
-      duplicateTableName
-    )} SELECT * FROM ${this.wrapIdentifier(tableName)};`;
+    let sql = `
+      CREATE TABLE ${this.wrapIdentifier(duplicateTableName)}
+        LIKE ${this.wrapIdentifier(tableName)};
+    `;
+    sql += `
+      INSERT INTO ${this.wrapIdentifier(duplicateTableName)}
+        SELECT * FROM ${this.wrapIdentifier(tableName)};
+    `;
     return sql;
   }
 
@@ -965,7 +974,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         });
       },
 
-      async cancel() {
+      cancel: async () => {
         if (!pid) {
           throw new Error("Query not ready to be canceled");
         }
@@ -984,12 +993,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async executeQuery(
     queryText: string,
-    options?: { rowsAsArray?: boolean; connection?: mysql.PoolConnection }
+    options: { rowsAsArray?: boolean; connection?: mysql.PoolConnection } = {}
   ): Promise<NgQueryResult[]> {
     const { fields, data } = await this.driverExecuteSingle(queryText, {
       params: {},
-      rowsAsArray: options?.rowsAsArray,
-      connection: options?.connection,
+      rowsAsArray: options.rowsAsArray,
+      connection: options.connection,
     });
 
     if (!data) {
@@ -1000,7 +1009,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
     if (!isMultipleQuery(fields)) {
       return [
-        parseRowQueryResult(data, fields, commands[0], options?.rowsAsArray),
+        parseRowQueryResult(data, fields, commands[0], options.rowsAsArray),
       ];
     }
 
@@ -1009,7 +1018,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         data[idx],
         fields[idx],
         commands[idx],
-        options?.rowsAsArray
+        options.rowsAsArray
       )
     );
   }
@@ -1036,9 +1045,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
             rowsAsArray: options.rowsAsArray,
           },
           (err, data, fields) => {
-            if (err && err.code === mysqlErrors.EMPTY_QUERY)
+            if (err && err.code === mysqlErrors.EMPTY_QUERY) {
               return resolve({ data: [], fields: [] });
-            if (err) return reject(getRealError(connection, err));
+            }
+
+            if (err) {
+              return reject(getRealError(connection, err));
+            }
 
             logger().info(`Running Query Finished`);
             resolve({ data, fields });
@@ -1086,16 +1099,34 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     });
   }
 
+  async runWithTransaction(
+    func: (connection: mysql.PoolConnection) => Promise<any>
+  ): Promise<void> {
+    await this.runWithConnection(async (connection) => {
+      try {
+        await this.driverExecuteSingle("START TRANSACTION");
+        const result = await func(connection);
+        await this.driverExecuteSingle("COMMIT");
+        return result;
+      } catch (ex) {
+        await this.driverExecuteSingle("ROLLBACK");
+        console.error(ex);
+        throw ex;
+      }
+    });
+  }
+
   async alterTableSql(change: AlterTableSpec): Promise<string> {
-    const { table } = change;
-    const columns = await this.listTableColumns(null, table);
-    const builder = new MySqlChangeBuilder(table, columns);
+    const columns = await this.listTableColumns(null, change.table);
+    const builder = new MySqlChangeBuilder(change.table, columns);
     return builder.alterTable(change);
   }
 
   async alterTable(change: AlterTableSpec): Promise<void> {
-    const sql = await this.alterTableSql(change);
-    await this.executeQuery(sql);
+    await this.runWithTransaction(async (connection) => {
+      const sql = await this.alterTableSql(change);
+      return await this.driverExecuteSingle(sql, { connection });
+    });
   }
 
   getBuilder(table: string, _schema?: string): ChangeBuilderBase {
@@ -1142,12 +1173,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async getTableReferences(table: string, _schema?: string): Promise<string[]> {
     const sql = `
-    SELECT referenced_table_name as 'referenced_table_name'
-    FROM information_schema.key_column_usage
-    WHERE referenced_table_name IS NOT NULL
-    AND table_schema = database()
-    AND table_name = ?
-  `;
+      SELECT referenced_table_name as 'referenced_table_name'
+      FROM information_schema.key_column_usage
+      WHERE referenced_table_name IS NOT NULL
+      AND table_schema = database()
+      AND table_name = ?
+    `;
 
     const params = [table];
 
@@ -1165,7 +1196,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
     const { data } = await this.driverExecuteSingle(sql);
 
-    return data.map((row) => row["Create Table"]).join(";");
+    return data.map((row) => row["Create Table"])[0];
   }
 
   async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
@@ -1210,7 +1241,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         .map(
           (row) => `
             SET FOREIGN_KEY_CHECKS = 0;
-            TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(
+            TRUNCATE TABLE
+              ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(
             row.table_name
           )};
             SET FOREIGN_KEY_CHECKS = 1;
@@ -1250,9 +1282,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     description: string,
     _schema?: string
   ): Promise<string> {
-    const query = `ALTER TABLE ${this.wrapIdentifier(
-      table
-    )} COMMENT = '${escapeString(description)}'`;
+    const query = `
+      ALTER TABLE ${this.wrapIdentifier(table)}
+        COMMENT = '${escapeString(description)}'
+    `;
     await this.driverExecuteSingle(query);
     const result = await this.getTableProperties(table);
     return result.description;
@@ -1273,17 +1306,20 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   async listCollations(charset: string): Promise<string[]> {
     const sql = "show collation where charset = ?";
     const params = [charset];
-    const { data } = await this.driverExecuteSingle(sql, {
-      params,
-    });
+    const { data } = await this.driverExecuteSingle(sql, { params });
     return data.map((row) => row.Collation).sort();
   }
 
   createDatabaseSQL(): string {
-    throw new Error("Method not implemented.");
+    const sql = `
+      create database "mydatabase"
+        character set "utf8mb4"
+        collate "utf8mb4_general_ci"
+    `;
+    return sql;
   }
 
-  async getSchema(connection: mysql.PoolConnection) {
+  async getSchema(connection?: mysql.PoolConnection) {
     const sql = "SELECT database() AS 'schema'";
     const { data } = await this.driverExecuteSingle(sql, { connection });
     return data[0].schema;
@@ -1301,4 +1337,4 @@ export default async function (
 
 export const testOnly = {
   parseFields,
-}
+};
