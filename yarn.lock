@@ -11389,9 +11389,9 @@ no-case@^2.2.0:
     lower-case "^1.1.1"
 
 node-abi@^3.3.0, node-abi@^3.34.0:
-  version "3.51.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.51.0.tgz#970bf595ef5a26a271307f8a4befa02823d4e87d"
-  integrity sha512-SQkEP4hmNWjlniS5zdnfIXTk1x7Ome85RDzHlTbBtzE97Gfwz/Ipw4v/Ryk20DWIy3yCNVLVlGKApCnmvYoJbA==
+  version "3.54.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.54.0.tgz#f6386f7548817acac6434c6cba02999c9aebcc69"
+  integrity sha512-p7eGEiQil0YUV3ItH4/tBb781L5impVmmx2E9FRKF7d18XXzp4PGT2tdYMFY6wQqgxD0IwNZOiSJ0/K0fSi/OA==
   dependencies:
     semver "^7.3.5"
 
@@ -14764,9 +14764,9 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@beekeeper-studio/tabulator#486c3a6179dca630c744e03e478cf0ba53dd7570:
-  version "5.5.2"
-  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/486c3a6179dca630c744e03e478cf0ba53dd7570"
+tabulator-tables@beekeeper-studio/tabulator#f4217f7be7d0fe4880e49f311a5076ff01e4f981:
+  version "5.5.2-bks1"
+  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/f4217f7be7d0fe4880e49f311a5076ff01e4f981"
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"
