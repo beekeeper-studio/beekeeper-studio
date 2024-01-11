@@ -7,6 +7,7 @@ export default {
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name VARCHAR(255) NOT NULL,
           description VARCHAR(255),
+          expanded BOOLEAN NOT NULL DEFAULT TRUE,
           createdAt DATETIME NOT NULL DEFAULT (datetime('now')),
           updatedAt DATETIME NOT NULL DEFAULT (datetime('now')),
           version INTEGER NOT NULL DEFAULT 0

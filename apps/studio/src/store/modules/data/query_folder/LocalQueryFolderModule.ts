@@ -27,6 +27,8 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       // TODO: implement
     },
     async clone(_c, item) { return item},
+    // eslint-disable-next-line
+    // @ts-ignore
     async reload(_c, id) { return {id, name: "Not implemented"}}
   }
 }

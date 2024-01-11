@@ -9,4 +9,7 @@ export class ConnectionFolder extends ApplicationEntity {
 
   @Column({ type: "varchar", nullable: true })
   description: Nullable<string>;
+
+  @Column({ type: "boolean", default: true })
+  expanded: boolean;
 }

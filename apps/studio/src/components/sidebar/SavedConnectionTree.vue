@@ -128,7 +128,7 @@ export default Vue.extend({
       async handler() {
         if (this.movingItem) {
           const item = this.movingItem;
-          // IMPORTANT: nullening before dispatching saveConnection to prevent looping
+          // IMPORTANT: make it null here to prevent looping
           this.movingItem = null;
           this.handleItemMoved(item);
         }
@@ -154,7 +154,7 @@ export default Vue.extend({
           description: folder.description,
           entity: folder,
           items: [],
-          expanded: true,
+          expanded: folder.expanded,
         });
       }
 
@@ -189,7 +189,12 @@ export default Vue.extend({
       await this.$store.dispatch("saveConnection", movedItem);
     },
     handleFolderExpand(_event: any, folder: Folder) {
-      Vue.set(folder, "expanded", !folder.expanded);
+      const expanded = !folder.expanded;
+      Vue.set(folder, "expanded", expanded);
+      this.$store.dispatch("data/connectionFolders/update", {
+        id: folder.id,
+        expanded,
+      });
     },
     handleFolderContextmenu(event: any, folder: Folder) {
       this.$bks.openMenu({
@@ -266,7 +271,7 @@ export default Vue.extend({
         name: input,
       });
       await this.$store.dispatch("data/connectionFolders/load");
-      this.$refs.savedConnectionTree.refresh();
+      this.refresh();
     },
     editConnection() {
       this.$emit("edit:connection", ...arguments);
