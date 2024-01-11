@@ -1,7 +1,8 @@
 <template>
   <portal to="modals">
     <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @opened="onOpen">
-      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop @keypress.stop>
+      <!-- Trap the key events so it doesn't conflict with the parent elements -->
+      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop="handleKeyUp" @keypress.stop>
         <div class="top">
           <div class="dialog-c-title">
             Editing as
@@ -268,6 +269,11 @@ export default Vue.extend({
     minify() {
       this.content = this.language.minify(this.content)
       this.editor.setValue(this.content)
+    },
+    handleKeyUp(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        this.$modal.hide(this.modalName)
+      }
     }
   },
 });
