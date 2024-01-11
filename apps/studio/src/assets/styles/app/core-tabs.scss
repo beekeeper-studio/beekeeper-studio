@@ -212,9 +212,11 @@
   }
 
   .tab-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     line-height: 2rem ;
     background-color: rgba($theme-base, 0.1);
-    padding: 5px;
     padding-left: 7px;
     padding-right: 7px;
     margin-right: 5px;
@@ -407,6 +409,10 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+    }
+    .left-section {
+      padding-left: 0.45rem;
+      padding-right: 0.25rem;
     }
     .multiple-filter  {
       flex-grow: 1;

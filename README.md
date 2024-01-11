@@ -128,6 +128,9 @@ git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
 yarn install # installs dependencies
 
+# if using Node 16.17+:
+export NODE_OPTIONS=--openssl-legacy-provider
+
 # Now you can start the app:
 yarn run electron:serve ## the app will now start
 ```

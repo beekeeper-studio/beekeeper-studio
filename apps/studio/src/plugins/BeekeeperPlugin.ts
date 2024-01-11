@@ -3,6 +3,7 @@ import Vue from 'vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import path from 'path'
+import { uuidv4 } from "@/lib/uuid"
 
 export interface ContextOption {
   name: string,
@@ -106,5 +107,18 @@ export default {
   install(Vue) {
     Vue.prototype.$app = BeekeeperPlugin
     Vue.prototype.$bks = BeekeeperPlugin
+
+    Vue.prototype.$confirmModalId = uuidv4()
+    Vue.prototype.$confirm = function(title: string, message?: string): Promise<boolean> {
+      return new Promise<boolean>((resolve) => {
+        this.$modal.show(Vue.prototype.$confirmModalId, {
+          title,
+          message,
+          onCancel: () => resolve(false),
+          onConfirm: () => resolve(true),
+        })
+      })
+    }
+
   }
 }

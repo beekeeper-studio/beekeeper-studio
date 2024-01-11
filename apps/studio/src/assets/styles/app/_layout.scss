@@ -73,7 +73,7 @@ hr {
   background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba($theme-base, 0.2);
+  background: mix($theme-base, $theme-bg, 20%);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-button {
