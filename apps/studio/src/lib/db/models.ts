@@ -163,6 +163,7 @@ export interface TableUpdate {
   column: string;
   primaryKeys: PKSelector[]
   schema?: string;
+  // FIXME: Make this `dataType`, the same as we use for TableColumn
   columnType?: string;
   value: any;
 }

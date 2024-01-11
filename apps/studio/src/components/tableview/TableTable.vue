@@ -1127,11 +1127,6 @@ export default Vue.extend({
           })
         })
 
-        const matchingPrimaryKeys =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
-
-        const filteredUpdates = _.filter(this.pendingChanges.updates, matchingPrimaryKeys)
-        discardedUpdates.push(...filteredUpdates)
-
         const payload = {
           table: this.table.name,
           row,
@@ -1140,6 +1135,13 @@ export default Vue.extend({
         }
 
         payloads.push(payload)
+
+        const matchingPrimaryKeys =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
+
+        const filteredUpdates = _.filter(this.pendingChanges.updates, matchingPrimaryKeys)
+        discardedUpdates.push(...filteredUpdates)
+
+
 
         row.getElement().classList.add('deleted')
 
