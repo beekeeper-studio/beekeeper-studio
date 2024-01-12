@@ -69,6 +69,11 @@
           class="actions btn-group"
           ref="actions"
         >
+          <x-button v-if="showDryRun" class="btn btn-flat btn-small" :disabled="$config.isCommunity" @click="dryRun = !dryRun">
+            <x-label>Dry Run</x-label>
+            <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
+            <input v-else type="checkbox" v-model="dryRun">
+          </x-button>
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -97,9 +102,6 @@
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
-                </x-menuitem>
-                <x-menuitem @click.prevent="submitDryRunQuery">
-                  <x-label>Estimate Query Cost</x-label>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
@@ -326,7 +328,7 @@
   import pluralize from 'pluralize'
 
   import platformInfo from '@/common/platform_info'
-  import { splitQueries, extractParams } from '../lib/db/sql_tools'
+  import { splitQueries } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
@@ -341,7 +343,6 @@
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   import { OpenTab } from '@/common/appdb/models/OpenTab'
-  import { makeDBHint, findTableOrViewByWord } from '@/lib/editor'
   import { removeQueryQuotes } from '@/lib/db/sql_tools';
 
   const log = rawlog.scope('query-editor')
@@ -380,6 +381,7 @@
         originalText: "",
         initialized: false,
         blankQuery: new FavoriteQuery(),
+        dryRun: false
       }
     },
     computed: {
@@ -414,6 +416,9 @@
       },
       queryTitle() {
         return this.query?.title
+      },
+      showDryRun() {
+        return this.dialect == 'bigquery'
       },
       unsavedText: {
         get () {
@@ -1067,16 +1072,7 @@
           this.error = 'No query to run'
         }
       },
-      async submitDryRunQuery() {
-        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue();
-        this.runningType = this.hasSelectedText ? 'selection' : 'everything';
-        if (text.trim()) {
-          this.submitQuery(text, false, true);
-        } else { 
-          this.error = 'No query to run'
-        }
-      },
-      async submitQuery(rawQuery, fromModal = false, dryRun = false) {
+      async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
         this.running = true
         this.error = null
@@ -1100,7 +1096,7 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = this.connection.query(query, { dryRun: dryRun })
+          this.runningQuery = this.connection.query(query, { dryRun: this.dryRun })
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute()
           const queryEndTime = new Date()
