@@ -139,11 +139,16 @@ export default Vue.extend({
     },
     folders: {
       async handler() {
-        // console.log("momo folder handler", this.folders);
-        if (this.movingItem) {
-          const item = this.movingItem;
-          // IMPORTANT: reset here to prevent looping
-          this.resetMovingItem();
+        if (!this.movingItem) return;
+
+        const item: SavedConnection = this.movingItem;
+        const folder: Folder = this.movingItemFolder;
+
+        // IMPORTANT: reset here to prevent looping
+        this.resetMovingItem();
+
+        // check if item is moved to another folder
+        if (!folder.items.includes(item)) {
           this.handleItemMoved(item);
         }
       },
@@ -240,6 +245,11 @@ export default Vue.extend({
       const movingItemFolder: Folder = this.movingItemFolder;
       // immediately reset movingItem to prevent looping from folders watcher
       this.resetMovingItem();
+
+      // check if we're in the same folder
+      if (targetFolder === movingItemFolder) {
+        return;
+      }
 
       movingItemFolder.items.splice(movingItemIndex, 1);
       targetFolder.items.push(movingItem);
