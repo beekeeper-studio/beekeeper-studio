@@ -258,6 +258,7 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
+import pluralize from 'pluralize'
 
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
@@ -365,6 +366,7 @@ export default Vue.extend({
       result[this.ctrlOrCmd('v')] = this.pasteSelection.bind(this)
       result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this, undefined)
       result['delete'] = this.deleteTableSelection.bind(this)
+      result['tab'] = this.handleTab.bind(this)
       return result
     },
 
@@ -433,6 +435,7 @@ export default Vue.extend({
         return (_, cell: Tabulator.CellComponent) => {
           const range = cell.getRange()
           const menu = [
+            this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
             { separator: true },
             ...copyActionsMenu({
@@ -445,7 +448,6 @@ export default Vue.extend({
             ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
-            this.openEditorMenu(cell),
           ]
 
           if (keyDatas?.length > 0) {
@@ -705,6 +707,11 @@ export default Vue.extend({
     }
   },
   methods: {
+    handleTab(e: KeyboardEvent) {
+      // do nothing?
+      log.debug('tab pressed')
+
+    },
     copySelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
       copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
@@ -772,6 +779,8 @@ export default Vue.extend({
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
+        resizeColumnsMode: 'guide',
+        resizeColumnsHandles: 'header-only',
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
@@ -880,7 +889,7 @@ export default Vue.extend({
     },
     openEditorMenu(cell: Tabulator.CellComponent) {
       return {
-        label: createMenuItem("Open cell in Editor"),
+        label: createMenuItem("Edit in modal"),
         disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
@@ -1014,7 +1023,9 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
 
-      if (currentEdit?.oldValue == cell.getValue()) {
+      if (typeof currentEdit?.oldValue === 'undefined' && cell.getValue() === null) {
+        // don't do anything because of an issue found when trying to set to null, undefined == null so was getting rid of the need to make a change\
+      } else if (currentEdit?.oldValue == cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
         return
@@ -1120,11 +1131,6 @@ export default Vue.extend({
           })
         })
 
-        const matchingPrimaryKeys =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
-
-        const filteredUpdates = _.filter(this.pendingChanges.updates, matchingPrimaryKeys)
-        discardedUpdates.push(...filteredUpdates)
-
         const payload = {
           table: this.table.name,
           row,
@@ -1134,6 +1140,13 @@ export default Vue.extend({
         }
 
         payloads.push(payload)
+
+        const matchingPrimaryKeys =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
+
+        const filteredUpdates = _.filter(this.pendingChanges.updates, matchingPrimaryKeys)
+        discardedUpdates.push(...filteredUpdates)
+
+
 
         row.getElement().classList.add('deleted')
 

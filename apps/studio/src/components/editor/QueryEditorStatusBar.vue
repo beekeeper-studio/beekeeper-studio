@@ -160,15 +160,24 @@ export default {
   },
 
   watch: {
+    value(newValue, oldValue) {
+      // fixes bug where result doesn't change because selectedResult doesn't change
+      // FIXME: We shouldn't be storing selectedResult state at all,
+      // just relying on the value prop and emitting 'input'
+      if (this.selectedResult !== newValue)
+        this.selectedResult = newValue
+    },
     results() {
       if (this.results && this.results.length > 1 && !this.hasUsedDropdown) {
         this.showHint = true
         setTimeout(() => this.showHint = false, 2000)
       }
     },
-    selectedResult(newValue) {
+    selectedResult(newValue, oldValue) {
         this.$emit('input', this.selectedResult);
-        this.hasUsedDropdown = true
+        if (this.hasUsedDropdown === false) {
+          this.hasUsedDropdown = true
+        }
     }
   },
   computed: {

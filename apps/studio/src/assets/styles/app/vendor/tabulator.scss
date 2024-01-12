@@ -17,6 +17,8 @@ $cell-padding:           $gutter-w;
 $header-highlight:       mix($query-editor-bg, $theme-base, 95%);
 $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
 
+$columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
+
 // Mixin
 @mixin cell-shadow($bg) {
   box-shadow: inset -1px 0 rgba(black, 0.2),
@@ -69,6 +71,7 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
     &.deleted,
     &.edit-error {
       box-shadow: inset 0 -1px rgba($theme-base, .1);
+      --row-box-shadow: inset 0 -1px #{rgba($theme-base, .1)};
       .tabulator-cell {
         &:hover {
           background: rgba($theme-base, 0.05);
@@ -85,6 +88,7 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
         cursor: default!important;
         &:hover {
           background: transparent!important;
+          --row-hover-bg-color: transparent;
         }
         .tabulator-bks-checkbox {
           input {
@@ -419,6 +423,7 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
       .tabulator-header-popup-button {
         display: none;
         position: relative;
+        z-index: 1;
         &::before {
           transition: opacity 0.15s;
           content: "";
@@ -431,6 +436,7 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
           border-radius: 9999px;
           background-color: rgba($theme-base, 0.1);
           opacity: 0;
+          z-index: -1;
         }
         &:hover {
           opacity: 1;
@@ -591,9 +597,10 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
     inset: 0;
     background-color: var(--row-bg-color);
     z-index: -10;
+    box-shadow: var(--row-box-shadow, none);
   }
   &:hover::before {
-    background-color: rgba($theme-base, 0.10);
+    background-color: var(--row-hover-bg-color, rgba($theme-base, 0.10));
   }
 }
 
@@ -775,8 +782,13 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
     outline: none;
     .tabulator-col {
 
-      &:not(.tabulator-spreadsheet-selected):hover {
-        background: rgba($theme-base, 0.035);
+      &:hover {
+        &:not(.tabulator-spreadsheet-selected) {
+          background: rgba($theme-base, 0.035);
+        }
+        &.tabulator-spreadsheet-selected .tabulator-header-popup-button::before {
+          background-color: darken($header-selected, 10%);
+        }
         .tabulator-header-popup-button {
           display: inline-block;
         }
@@ -802,4 +814,36 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
       }
     }
   }
+}
+
+.tabulator-col-resize-guide {
+  background-color: $columnResizeGuideColor;
+  opacity: 1;
+  margin-left: 1px;
+}
+
+.tabulator-col-resize-handle:hover {
+  position: relative;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 3px;
+    height: 60%;
+    transform: translate(0, -50%);
+    background-color: transparentize($columnResizeGuideColor, 0.4);
+    backdrop-filter: invert(100%);
+    border-radius: 999px;
+  }
+  &::before {
+    left: 4.5px;
+  }
+  &::after {
+    right: 4.5px;
+  }
+}
+
+.tabulator-tooltip {
+  background-color: #292A2D;
+  color: lightgray;
 }
