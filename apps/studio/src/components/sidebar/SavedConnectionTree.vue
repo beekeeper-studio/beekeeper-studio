@@ -2,12 +2,14 @@
   <div>
     <template v-for="folder in folders">
       <draggable
-        v-if="folder.id == null"
+        v-if="folder.id === ROOT_FOLDER_ID"
         :key="`--root-${folder.items.length}`"
-        :list="folder.items"
         group="saved-connections"
-        @start="handleStartMoving($event, folder)"
+        v-model="folder.items"
         :sort="false"
+        :forceFallback="true"
+        @start="handleStartMoving($event, folder)"
+        @end="handleEndMoving($event, folder)"
       >
         <connection-list-item
           v-for="c in folder.items"
@@ -24,18 +26,22 @@
       </draggable>
       <sidebar-folder
         v-else
+        ref="folderRefs"
         :key="`${folder.id}-${folder.items.length}`"
         :title="`${folder.name} (${folder.items.length})`"
+        :wrapperAttrs="{ 'data-folder-id': folder.id }"
         placeholder="No Items"
         :expanded="folder.expanded"
         @expand="handleFolderExpand($event, folder)"
         @contextmenu="handleFolderContextmenu($event, folder)"
       >
         <draggable
-          :list="folder.items"
+          v-model="folder.items"
           group="saved-connections"
-          @start="handleStartMoving($event, folder)"
           :sort="false"
+          :forceFallback="true"
+          @start="handleStartMoving($event, folder)"
+          @end="handleEndMoving($event, folder)"
         >
           <connection-list-item
             v-for="c in folder.items"
@@ -73,13 +79,20 @@ export interface Folder {
   expanded: boolean;
 }
 
+// use 0 because sqlite indexing starts at 1
+const ROOT_FOLDER_ID = 0;
+
 export default Vue.extend({
   props: ["selectedConfig", "sort"],
   components: { SidebarFolder, Draggable, ConnectionListItem },
   data() {
     return {
       movingItem: null,
+      movingItemIndex: null,
+      movingItemFolder: null,
       folders: [],
+      mouseUpEventsRegistered: false,
+      ROOT_FOLDER_ID,
     };
   },
   computed: {
@@ -126,10 +139,11 @@ export default Vue.extend({
     },
     folders: {
       async handler() {
+        // console.log("momo folder handler", this.folders);
         if (this.movingItem) {
           const item = this.movingItem;
-          // IMPORTANT: make it null here to prevent looping
-          this.movingItem = null;
+          // IMPORTANT: reset here to prevent looping
+          this.resetMovingItem();
           this.handleItemMoved(item);
         }
       },
@@ -140,7 +154,7 @@ export default Vue.extend({
     async refresh() {
       const updatedFolders: Folder[] = [];
       const rootFolder: Folder = {
-        id: null,
+        id: ROOT_FOLDER_ID,
         name: "",
         description: "",
         items: [],
@@ -173,18 +187,96 @@ export default Vue.extend({
 
       this.folders = updatedFolders;
     },
-    handleStartMoving(event: any, fromFolder: Folder) {
-      const index = event.oldIndex;
-      this.movingItem = fromFolder.items[index];
+    resetMovingItem() {
+      this.movingItem = null;
+      this.movingItemIndex = null;
+      this.movingItemFolder = null;
     },
-    async handleItemMoved(movedItem: SavedConnection) {
-      const newFolder = this.folders.find((folder: Folder) =>
-        folder.items.find((item) => item === movedItem)
+    registerMouseUpEvents() {
+      if (this.mouseUpEventsRegistered) return;
+
+      for (let i = 0; i < this.$refs.folderRefs.length; i++) {
+        const folderRef = this.$refs.folderRefs[i];
+        if (!folderRef.expanded) {
+          folderRef.$el.addEventListener("mouseup", this.handleFolderMouseUp);
+        }
+      }
+
+      window.addEventListener("mouseup", this.handleWindowMouseUp);
+      this.mouseUpEventsRegistered = true;
+    },
+    unregisterMouseUpEvents() {
+      if (!this.mouseUpEventsRegistered) return;
+
+      for (const folderRef of this.$refs.folderRefs) {
+        folderRef.$el.removeEventListener("mouseup", this.handleFolderMouseUp);
+      }
+
+      window.removeEventListener("mouseup", this.handleWindowMouseUp);
+      this.mouseUpEventsRegistered = false;
+    },
+    handleFolderMouseUp(event: MouseEvent) {
+      this.unregisterMouseUpEvents();
+
+      if (!this.movingItem) {
+        console.warn(
+          "No moving item! Do we register `handleFolderMouseUp` by accident?"
+        );
+        return;
+      }
+
+      const folderId = Number.parseInt(
+        (event.currentTarget as HTMLElement).getAttribute("data-folder-id")
+      );
+      const targetFolder = this.folders.find(
+        (folder: Folder) => folder.id === folderId
       );
 
-      if (!newFolder) return;
+      if (!targetFolder) {
+        console.warn(`Target folder not found! (folder id: ${folderId})`);
+        return;
+      }
 
-      movedItem.connectionFolderId = newFolder.id;
+      const movingItem: SavedConnection = this.movingItem;
+      const movingItemIndex: number = this.movingItemIndex;
+      const movingItemFolder: Folder = this.movingItemFolder;
+      // immediately reset movingItem to prevent looping from folders watcher
+      this.resetMovingItem();
+
+      movingItemFolder.items.splice(movingItemIndex, 1);
+      targetFolder.items.push(movingItem);
+
+      this.handleItemMoved(movingItem, targetFolder);
+    },
+    handleWindowMouseUp() {
+      this.unregisterMouseUpEvents();
+    },
+    handleEndMoving() {
+      this.unregisterMouseUpEvents();
+    },
+    handleStartMoving(event: any, fromFolder: Folder) {
+      this.registerMouseUpEvents();
+
+      const index = event.oldIndex;
+      this.movingItem = fromFolder.items[index];
+      this.movingItemIndex = index;
+      this.movingItemFolder = fromFolder;
+    },
+    async handleItemMoved(movedItem: SavedConnection, targetFolder?: Folder) {
+      this.unregisterMouseUpEvents();
+
+      if (!targetFolder) {
+        targetFolder = this.folders.find((folder: Folder) =>
+          folder.items.find((item) => item === movedItem)
+        );
+      }
+
+      if (!targetFolder) {
+        console.warn("Target folder not found!");
+        return;
+      }
+
+      movedItem.connectionFolderId = targetFolder.id;
 
       await this.$store.dispatch("saveConnection", movedItem);
     },

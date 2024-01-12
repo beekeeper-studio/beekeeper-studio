@@ -2,6 +2,7 @@
   <div
     class="schema-wrapper"
     @contextmenu="$emit('contextmenu', $event)"
+    v-bind="wrapperAttrs || {}"
   >
     <div
       class="folder-group schema"
@@ -50,7 +51,7 @@
 
 <script type="text/javascript">
 	export default {
-    props: ["title", "skipDisplay", "expanded", "placeholder"],
+    props: ["title", "skipDisplay", "expanded", "placeholder", "wrapperAttrs"],
     computed: {
       hasSlot() {
         return !!this.$slots.default
