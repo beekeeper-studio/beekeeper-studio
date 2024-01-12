@@ -197,9 +197,7 @@ export default Vue.extend({
 
       for (let i = 0; i < this.$refs.folderRefs.length; i++) {
         const folderRef = this.$refs.folderRefs[i];
-        if (!folderRef.expanded) {
-          folderRef.$el.addEventListener("mouseup", this.handleFolderMouseUp);
-        }
+        folderRef.$el.addEventListener("mouseup", this.handleFolderMouseUp);
       }
 
       window.addEventListener("mouseup", this.handleWindowMouseUp);
