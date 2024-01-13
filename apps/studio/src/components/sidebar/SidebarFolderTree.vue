@@ -1,36 +1,27 @@
 <template>
   <div>
-    <template v-for="folder in folders">
+    <template v-for="folder in folderTreeData">
       <draggable
         v-if="folder.id === ROOT_FOLDER_ID"
-        :key="`--root-${folder.items.length}`"
-        group="saved-connections"
         v-model="folder.items"
+        group="saved-connections"
+        :key="`--root-${folder.items.length}`"
         :sort="false"
-        :forceFallback="true"
+        :force-fallback="true"
         @start="handleStartMoving($event, folder)"
         @end="handleEndMoving($event, folder)"
       >
-        <connection-list-item
-          v-for="c in folder.items"
-          :key="c.id"
-          :config="c"
-          :selected-config="selectedConfig"
-          :show-duplicate="true"
-          :pinned="pinnedConnections.includes(c)"
-          @edit="editConnection"
-          @remove="removeConnection"
-          @duplicate="duplicateConnection"
-          @doubleClick="doubleClickConnection"
-        />
+        <template v-for="item in folder.items">
+          <slot :item="item" />
+        </template>
       </draggable>
       <sidebar-folder
         v-else
         ref="folderRefs"
+        placeholder="No Items"
         :key="`${folder.id}-${folder.items.length}`"
         :title="`${folder.name} (${folder.items.length})`"
-        :wrapperAttrs="{ 'data-folder-id': folder.id }"
-        placeholder="No Items"
+        :wrapper-attrs="{ 'data-folder-id': folder.id }"
         :expanded="folder.expanded"
         @expand="handleFolderExpand($event, folder)"
         @contextmenu="handleFolderContextmenu($event, folder)"
@@ -39,22 +30,22 @@
           v-model="folder.items"
           group="saved-connections"
           :sort="false"
-          :forceFallback="true"
+          :force-fallback="true"
           @start="handleStartMoving($event, folder)"
           @end="handleEndMoving($event, folder)"
+          :component-data="{
+            attrs: {
+              class: 'folder-tree-draggable-body',
+            },
+          }"
         >
-          <connection-list-item
-            v-for="c in folder.items"
-            :key="c.id"
-            :config="c"
-            :selected-config="selectedConfig"
-            :show-duplicate="true"
-            :pinned="pinnedConnections.includes(c)"
-            @edit="editConnection"
-            @remove="removeConnection"
-            @duplicate="duplicateConnection"
-            @doubleClick="doubleClickConnection"
-          />
+          <template v-for="item in folder.items">
+            <!--
+              NOTE: passing item directly like v-bind="item" would cause
+              the item to lose some properties if it's a class instance.
+              -->
+            <slot :item="item" />
+          </template>
         </draggable>
       </sidebar-folder>
     </template>
@@ -64,84 +55,35 @@
 <script lang="ts">
 import Vue from "vue";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
-import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
-import { mapState, mapGetters } from "vuex";
 import SidebarFolder from "@/components/common/SidebarFolder.vue";
 import Draggable from "vuedraggable";
-import ConnectionListItem from "./connection/ConnectionListItem.vue";
+import {
+  buildFolderTreeData,
+  ROOT_FOLDER_ID,
+  Folder as IFolder,
+} from "@/lib/folderTree";
 
-export interface Folder {
-  id: number | null;
-  name: string;
-  description: string;
-  entity?: ConnectionFolder;
-  items: SavedConnection[];
-  expanded: boolean;
-}
-
-// use 0 because sqlite indexing starts at 1
-const ROOT_FOLDER_ID = 0;
+type Folder = IFolder<any>;
 
 export default Vue.extend({
-  props: ["selectedConfig", "sort"],
-  components: { SidebarFolder, Draggable, ConnectionListItem },
+  props: ["folders", "items", "folderKey"],
+  components: { SidebarFolder, Draggable },
   data() {
     return {
       movingItem: null,
       movingItemIndex: null,
       movingItemFolder: null,
-      folders: [],
       mouseUpEventsRegistered: false,
       ROOT_FOLDER_ID,
+      folderTreeData: [],
     };
   },
-  computed: {
-    ...mapGetters({
-      pinnedConnections: "pinnedConnections/pinnedConnections",
-    }),
-    ...mapState("data/connectionFolders", {
-      connectionFolders: "items",
-    }),
-    ...mapState("data/connections", { connectionConfigs: "items" }),
-    sortedConnections() {
-      let result = [];
-      if (this.sort.field === "labelColor") {
-        const mappings = {
-          default: -1,
-          red: 0,
-          orange: 1,
-          yellow: 2,
-          green: 3,
-          blue: 4,
-          purple: 5,
-          pink: 6,
-        };
-        result = _.orderBy(
-          this.connectionConfigs,
-          (c) => mappings[c.labelColor]
-        );
-      } else {
-        result = _.orderBy(this.connectionConfigs, this.sort.field);
-      }
-
-      if (this.sort.order == "desc") result = result.reverse();
-      return result;
-    },
-  },
   watch: {
-    sort() {
-      this.refresh();
-    },
-    connectionConfigs(newConfigs, oldConfigs) {
-      if (newConfigs.length !== oldConfigs.length) {
-        this.refresh();
-      }
-    },
-    folders: {
+    folderTreeData: {
       async handler() {
         if (!this.movingItem) return;
 
-        const item: SavedConnection = this.movingItem;
+        const item = this.movingItem;
         const folder: Folder = this.movingItemFolder;
 
         // IMPORTANT: reset here to prevent looping
@@ -155,42 +97,16 @@ export default Vue.extend({
       deep: true,
     },
   },
+  mounted() {
+    this.refresh();
+  },
   methods: {
-    async refresh() {
-      const updatedFolders: Folder[] = [];
-      const rootFolder: Folder = {
-        id: ROOT_FOLDER_ID,
-        name: "",
-        description: "",
-        items: [],
-        expanded: true,
-      };
-
-      for (const folder of this.connectionFolders) {
-        updatedFolders.push({
-          id: folder.id,
-          name: folder.name,
-          description: folder.description,
-          entity: folder,
-          items: [],
-          expanded: folder.expanded,
-        });
-      }
-
-      for (const connection of this.sortedConnections) {
-        if (!connection.connectionFolderId) {
-          rootFolder.items.push(connection);
-        } else {
-          const folder = updatedFolders.find(
-            (f) => f.id === connection.connectionFolderId
-          );
-          folder.items.push(connection);
-        }
-      }
-
-      updatedFolders.push(rootFolder);
-
-      this.folders = updatedFolders;
+    refresh() {
+      this.folderTreeData = buildFolderTreeData({
+        folders: this.folders,
+        items: this.items,
+        folderKey: this.folderKey,
+      });
     },
     resetMovingItem() {
       this.movingItem = null;
@@ -228,10 +144,18 @@ export default Vue.extend({
         return;
       }
 
+      const currentTarget = event.currentTarget as HTMLElement;
+
+      // When the ghost item is already in the folder, let sortablejs take care
+      // of it so we could prevent calling handleItemMoved twice.
+      if (currentTarget.querySelectorAll('.sortable-ghost').length > 0) {
+        return;
+      }
+
       const folderId = Number.parseInt(
-        (event.currentTarget as HTMLElement).getAttribute("data-folder-id")
+        currentTarget.getAttribute("data-folder-id")
       );
-      const targetFolder = this.folders.find(
+      const targetFolder = this.folderTreeData.find(
         (folder: Folder) => folder.id === folderId
       );
 
@@ -274,7 +198,7 @@ export default Vue.extend({
       this.unregisterMouseUpEvents();
 
       if (!targetFolder) {
-        targetFolder = this.folders.find((folder: Folder) =>
+        targetFolder = this.folderTreeData.find((folder: Folder) =>
           folder.items.find((item) => item === movedItem)
         );
       }
@@ -284,17 +208,12 @@ export default Vue.extend({
         return;
       }
 
-      movedItem.connectionFolderId = targetFolder.id;
-
-      await this.$store.dispatch("saveConnection", movedItem);
+      this.$emit("itemMoved", movedItem, targetFolder);
     },
     handleFolderExpand(_event: any, folder: Folder) {
       const expanded = !folder.expanded;
       Vue.set(folder, "expanded", expanded);
-      this.$store.dispatch("data/connectionFolders/update", {
-        id: folder.id,
-        expanded,
-      });
+      this.$emit("folderExpand", folder, expanded);
     },
     handleFolderContextmenu(event: any, folder: Folder) {
       this.$bks.openMenu({
@@ -318,10 +237,7 @@ export default Vue.extend({
 
               if (canceled) return;
 
-              await this.$store.dispatch("data/connectionFolders/update", {
-                id: folder.id,
-                name: value,
-              });
+              await this.$emit("folderRename", folder, value);
 
               Vue.set(folder, "name", value);
             },
@@ -339,17 +255,7 @@ export default Vue.extend({
 
               if (!confirmed) return;
 
-              for (const item of folder.items) {
-                await this.$store.dispatch("data/connections/update", {
-                  id: item.id,
-                  connectionFolderId: null,
-                });
-              }
-
-              await this.$store.dispatch(
-                "data/connectionFolders/remove",
-                folder.entity
-              );
+              await this.$emit("folderRemove", folder);
 
               this.refresh();
             },
@@ -359,31 +265,6 @@ export default Vue.extend({
         ],
         event,
       });
-    },
-    async createFolder() {
-      const { canceled, input } = await this.$prompt({
-        title: "Create a new folder",
-      });
-
-      if (canceled) return;
-
-      await this.$store.dispatch("data/connectionFolders/create", {
-        name: input,
-      });
-      await this.$store.dispatch("data/connectionFolders/load");
-      this.refresh();
-    },
-    editConnection() {
-      this.$emit("edit:connection", ...arguments);
-    },
-    removeConnection() {
-      this.$emit("remove:connection", ...arguments);
-    },
-    duplicateConnection() {
-      this.$emit("duplicate:connection", ...arguments);
-    },
-    doubleClickConnection() {
-      this.$emit("doubleClick:connection", ...arguments);
     },
   },
 });

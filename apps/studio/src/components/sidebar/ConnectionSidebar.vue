@@ -139,15 +139,29 @@
               v-else
               class="list-body"
             >
-              <saved-connection-tree
-                ref="savedConnectionTree"
-                :selected-config="selectedConfig"
-                :sort="sort"
-                @edit:connection="edit"
-                @remove:connection="remove"
-                @duplicate:connection="duplicate"
-                @doubleClick:connection="connect"
-              />
+              <sidebar-folder-tree
+                ref="folderTree"
+                :folders="folders"
+                :items="sortedConnections"
+                folder-key="connectionFolderId"
+                @itemMoved="handleItemMoved"
+                @folderExpand="handleFolderExpand"
+                @folderRename="handleFolderRename"
+                @folderRemove="handleFolderRemove"
+                v-slot="{ item: c }"
+              >
+                <connection-list-item
+                  :key="c.id"
+                  :config="c"
+                  :selected-config="selectedConfig"
+                  :show-duplicate="true"
+                  :pinned="pinnedConnections.includes(c)"
+                  @edit="edit"
+                  @remove="remove"
+                  @duplicate="duplicate"
+                  @doubleClick="connect"
+                />
+              </sidebar-folder-tree>
             </nav>
           </div>
         </div>
@@ -196,12 +210,13 @@ import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Vue from 'vue'
-import SavedConnectionTree from './SavedConnectionTree.vue'
+import SidebarFolderTree from './SidebarFolderTree.vue'
+import { buildFolderTreeData } from '@/lib/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
   export default {
-    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarSortButtons, SavedConnectionTree },
+    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarSortButtons, SidebarFolderTree },
     props: ['selectedConfig'],
     data: () => ({
       split: null,
@@ -231,7 +246,7 @@ const log = rawLog.scope('connection-sidebar');
     },
     computed: {
       ...mapState('data/connections', {'connectionConfigs': 'items', 'connectionsLoading': 'loading', 'connectionsError': 'error'}),
-      ...mapState('data/connectionFolders', { 'foldersLoading': 'loading', 'foldersError': 'error' }),
+      ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error' }),
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
@@ -305,8 +320,6 @@ const log = rawLog.scope('connection-sidebar');
       ])
       this.sort.field = field
       this.sort.order = order
-
-      this.$refs.savedConnectionTree.refresh()
     },
     methods: {
       buildSplit() {
@@ -328,7 +341,7 @@ const log = rawLog.scope('connection-sidebar');
         await this.$store.dispatch('pinnedConnections/loadPins');
         await this.$store.dispatch('pinnedConnections/reorder');
 
-        this.$refs.savedConnectionTree.refresh()
+        this.$refs.folderTree.refresh()
       },
       async createFolder() {
         const { canceled, value } = await this.$prompt({
@@ -340,7 +353,37 @@ const log = rawLog.scope('connection-sidebar');
         await this.$store.dispatch('data/connectionFolders/create', { name: value })
         await this.$store.dispatch('data/connectionFolders/load')
 
-        this.$refs.savedConnectionTree.refresh();
+        this.$refs.folderTree.refresh()
+      },
+      handleItemMoved(movedItem, targetFolder) {
+        movedItem.connectionFolderId = targetFolder.id;
+        this.$store.dispatch("saveConnection", movedItem);
+      },
+      handleFolderExpand(folder, expanded) {
+        this.$store.dispatch("data/connectionFolders/update", {
+          id: folder.id,
+          expanded,
+        });
+      },
+      async handleFolderRename(folder, name) {
+        await this.$store.dispatch("data/connectionFolders/update", {
+          id: folder.id,
+          name,
+        });
+      },
+      async handleFolderRemove(folder) {
+        for (const item of folder.items) {
+          await this.$store.dispatch("data/connections/update", {
+            id: item.id,
+            connectionFolderId: null,
+          });
+        }
+
+        await this.$store.dispatch(
+          "data/connectionFolders/remove",
+          folder.entity
+        );
+        await this.$store.dispatch('data/connectionFolders/load')
       },
       edit(config) {
         this.$emit('edit', config)
