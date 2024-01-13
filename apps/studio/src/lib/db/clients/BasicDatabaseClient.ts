@@ -40,7 +40,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
     this.knex = knex;
     this.contextProvider = contextProvider
   }
-  listTablePartitions(_table: string): Promise<TablePartition[]> {
+  listTablePartitions(_table: string, _schema: string): Promise<TablePartition[]> {
     return Promise.resolve([])
   }
   alterPartitionSql(_changes: AlterPartitionsSpec): string {
