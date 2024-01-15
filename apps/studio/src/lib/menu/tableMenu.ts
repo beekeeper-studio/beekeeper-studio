@@ -195,11 +195,11 @@ export function copyActionsMenu(options: {
   const { range, connection, table, schema } = options;
   return [
     {
-      label: createMenuItem("Copy as Plain text"),
+      label: createMenuItem("Copy", "Control+C"),
       action: () => copyRange({ range, type: "plain" }),
     },
     {
-      label: createMenuItem("Copy as TSV for Excel", "Control+C"),
+      label: createMenuItem("Copy as TSV for Excel"),
       action: () => copyRange({ range, type: "tsv" }),
     },
     {

@@ -712,12 +712,7 @@ export default Vue.extend({
     },
     copySelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
-      const range: Tabulator.RangeComponent = this.tabulator.getActiveRange()
-      if (range.getCells().length === 1) {
-        copyRange({ range, type: 'plain' })
-      } else {
-        copyRange({ range, type: 'tsv' })
-      }
+      copyRange({ range: this.tabulator.getActiveRange(), type: 'plain' })
     },
     pasteSelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
