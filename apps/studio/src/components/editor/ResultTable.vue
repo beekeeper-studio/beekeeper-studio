@@ -96,7 +96,10 @@
         return this.result.fields.map((column, index) => {
           const title = column.name || `Result ${index}`
           const result = {
-            title: `<span class="title">${escapeHtml(title)}</span>`,
+            title,
+            titleFormatter() {
+              return `<span class="title">${escapeHtml(title)}</span>`
+            },
             field: column.id,
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
