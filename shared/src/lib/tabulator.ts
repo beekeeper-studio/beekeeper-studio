@@ -28,9 +28,6 @@ function yesNoResult(value: boolean) {
 
 export default {
   niceString(value: any, truncate = false) {
-    if (_.isNil(value)) {
-      return ''
-    }
     let cellValue = value.toString();
     if(_.isArray(value) || _.isObject(value)) {
       cellValue = JSON.stringify(value)
