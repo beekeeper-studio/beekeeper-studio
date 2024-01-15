@@ -91,27 +91,33 @@ export function createMenuItem(label: string, shortcut = "") {
 
 export async function copyRange(options: {
   range: Tabulator.RangeComponent;
-  type: "tsv" | "tsv-no-escapes" | "json" | "markdown" | "sql";
+  type: "plain" | "tsv" | "json" | "markdown" | "sql";
   connection?: DatabaseClient;
   table?: string;
   schema?: string;
 }) {
   let text = "";
   switch (options.type) {
+    case "plain":  {
+      const cells = options.range.getCells();
+      if (cells.length === 1) {
+        text = cells[0].getValue();
+      } else {
+        text = Papa.unparse(options.range.getData(), {
+          header: false,
+          delimiter: "\t",
+          quotes: false,
+          escapeFormulae: false,
+        });
+      }
+      break;
+    }
     case "tsv":
       text = Papa.unparse(options.range.getData(), {
         header: false,
         delimiter: "\t",
         quotes: true,
         escapeFormulae: true,
-      });
-      break;
-    case "tsv-no-escapes":
-      text = Papa.unparse(options.range.getData(), {
-        header: false,
-        delimiter: "\t",
-        quotes: false,
-        escapeFormulae: false,
       });
       break;
     case "json":
@@ -190,7 +196,7 @@ export function copyActionsMenu(options: {
   return [
     {
       label: createMenuItem("Copy as Plain text"),
-      action: () => copyRange({ range, type: "tsv-no-escapes" }),
+      action: () => copyRange({ range, type: "plain" }),
     },
     {
       label: createMenuItem("Copy as TSV for Excel", "Control+C"),

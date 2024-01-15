@@ -162,7 +162,12 @@
       },
       copySelection() {
         if (!document.activeElement.classList.contains('tabulator-tableholder')) return
-        copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
+        const range = this.tabulator.getActiveRange()
+        if (range.getCells().length === 1) {
+          copyRange({ range, type: 'plain' })
+        } else {
+          copyRange({ range, type: 'tsv' })
+        }
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
