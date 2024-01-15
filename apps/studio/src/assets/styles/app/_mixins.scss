@@ -61,4 +61,59 @@
   }
 }
 
+@mixin form-control {
+  position: relative;
+  display: flex;
+  height: $input-height;
+  padding: 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: normal;
+  line-height: $input-height;
+  color: $text;
+  background: transparent;
+  border-radius: $input-radius;
+  border: 1px solid $border-color;
+  outline: none;
+  box-shadow: none;
+  width: 100%;
+  transition: border-color 0.15s ease-in-out;
+}
 
+@mixin bk-form-input {
+  @include form-control;
+  &:focus {
+    border-color: $input-highlight;
+  }
+}
+
+@mixin btn-flat {
+  color: $theme-base;
+  background: rgba($theme-base, 0.06);
+  &:hover, &:focus {
+    background: rgba($theme-base, 0.12);
+  }
+}
+
+@mixin btn-small {
+  font-size: 0.85rem;
+  padding: 0 .65rem;
+  min-width: 0;
+  height: 24px;
+  line-height: 24px;
+  border-radius: $btn-border-radius-small;
+  x-label {
+    line-height: 24px;
+  }
+}
+
+@mixin noselect {
+        -ms-user-select: none;
+    -webkit-user-select: none;
+            user-select: none;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

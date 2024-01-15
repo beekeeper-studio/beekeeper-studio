@@ -20,7 +20,7 @@
       flex-direction: row;
       align-items: center;
       padding: 0;
-      margin-bottom: $gutter-h / 2;
+      margin-bottom: calc($gutter-h / 2);
       label {
         width: 85px;
         font-size: 80%;

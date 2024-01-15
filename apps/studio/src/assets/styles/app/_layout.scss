@@ -17,15 +17,13 @@ a {
   }
 }
 i {
-  @extend .noselect;
+  @include noselect;
 }
 .expand {
   flex-grow: 1;
 }
 .truncate {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  @include truncate;
 }
 .sub {
   font-weight: bold;
@@ -34,9 +32,7 @@ i {
   letter-spacing: 0.05rem;
 }
 .noselect {
-        -ms-user-select: none;
-    -webkit-user-select: none;
-            user-select: none;
+  @include noselect;
 }
 .clickable,
 .cursor-pointer {
@@ -138,11 +134,7 @@ hr {
 }
 
 .btn-flat {
-  color: $theme-base;
-  background: rgba($theme-base, 0.06);
-  &:hover, &:focus {
-    background: rgba($theme-base, 0.12);
-  }
+  @include btn-flat;
 }
 .btn-link {
   color: $theme-base;
@@ -206,7 +198,7 @@ hr {
   margin: 0;
   text-align: center;
   box-shadow: none;
-  @extend .noselect;
+  @include noselect;
   @include layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
@@ -317,21 +309,7 @@ hr {
   }
 }
 .form-control {
-  position: relative;
-  display: flex;
-  height: $input-height;
-  padding: 0 0.75rem;
-  font-size: 0.9rem;
-  font-weight: normal;
-  line-height: $input-height;
-  color: $text;
-  background: transparent;
-  border-radius: $input-radius;
-  border: 1px solid $border-color;
-  outline: none;
-  box-shadow: none;
-  width: 100%;
-  transition: border-color 0.15s ease-in-out;
+  @include form-control;
 }
 
 label {
@@ -343,7 +321,7 @@ label {
 }
 
 input, select, textarea, .bk-form-input {
-  @extend .form-control;
+  @include form-control;
   &:focus {
     border-color: $input-highlight;
   }

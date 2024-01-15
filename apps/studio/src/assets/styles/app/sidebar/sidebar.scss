@@ -368,7 +368,7 @@
       // padding-bottom: $gutter-h * 0.5;
     }
     .title {
-      @extend .truncate;
+      @include truncate;
     }
     .badge {
       display: inline-flex;
@@ -378,7 +378,7 @@
       font-size: 0.8rem;
       margin: 0;
       span {
-        @extend .truncate;
+        @include truncate;
       }
     }
     .actions {

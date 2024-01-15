@@ -96,7 +96,7 @@
     .save-actions {
       margin-top: $gutter-h;
       .save {
-        @extend .btn-flat;
+        @include btn-flat;
       }
     }
   }

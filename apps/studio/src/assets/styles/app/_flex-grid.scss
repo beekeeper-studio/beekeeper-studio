@@ -62,13 +62,13 @@ $gutter: 1rem;
   }
   &.gutter {
     width: initial !important; // split.js class overlap fix
-    margin-left: -$gutter / 2;
-    margin-right: -$gutter / 2;
+    margin-left: calc(-1 * $gutter / 2);
+    margin-right: calc(-1 * $gutter / 2);
     >.col {
-      padding-left: $gutter / 2;
-      padding-right: $gutter / 2;
-      margin-top: $gutter / 2;
-      margin-bottom: $gutter / 2;
+      padding-left: calc($gutter / 2);
+      padding-right: calc($gutter / 2);
+      margin-top: calc($gutter / 2);
+      margin-bottom: calc($gutter / 2);
     }
   }
 }

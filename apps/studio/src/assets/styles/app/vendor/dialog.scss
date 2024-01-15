@@ -43,7 +43,7 @@ $dialog-font-size: 12px;
 }
 
 .CodeMirror-dialog input {
-  @extend .bk-form-input;
+  @include bk-form-input;
   width: 15em !important; /* search.js puts an inline 10em on the search input for whatever reason */
   margin-right: 0.5rem;
   margin-left: 0.5rem;
@@ -53,6 +53,6 @@ $dialog-font-size: 12px;
 
 .CodeMirror-dialog button {
   @include btn;
-  @extend .btn-flat;
-  @extend .btn-small;
+  @include btn-flat;
+  @include btn-small;
 }

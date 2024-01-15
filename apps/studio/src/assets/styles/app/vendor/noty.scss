@@ -25,7 +25,7 @@
   }
 }
 #noty_layout__bottomRight {
-  bottom: $statusbar-height + ($gutter-h / 2);
+  bottom: $statusbar-height + calc($gutter-h / 2);
   right: $gutter-h;
 }
 .noty_progressbar {
