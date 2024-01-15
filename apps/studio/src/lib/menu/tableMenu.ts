@@ -91,7 +91,7 @@ export function createMenuItem(label: string, shortcut = "") {
 
 export async function copyRange(options: {
   range: Tabulator.RangeComponent;
-  type: "tsv" | "json" | "markdown" | "sql";
+  type: "tsv" | "tsv-no-escapes" | "json" | "markdown" | "sql";
   connection?: DatabaseClient;
   table?: string;
   schema?: string;
@@ -104,6 +104,14 @@ export async function copyRange(options: {
         delimiter: "\t",
         quotes: true,
         escapeFormulae: true,
+      });
+      break;
+    case "tsv-no-escapes":
+      text = Papa.unparse(options.range.getData(), {
+        header: false,
+        delimiter: "\t",
+        quotes: false,
+        escapeFormulae: false,
       });
       break;
     case "json":
@@ -180,6 +188,10 @@ export function copyActionsMenu(options: {
 }) {
   const { range, connection, table, schema } = options;
   return [
+    {
+      label: createMenuItem("Copy as Plain text"),
+      action: () => copyRange({ range, type: "tsv-no-escapes" }),
+    },
     {
       label: createMenuItem("Copy as TSV for Excel", "Control+C"),
       action: () => copyRange({ range, type: "tsv" }),
