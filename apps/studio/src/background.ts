@@ -5,7 +5,6 @@ import log from 'electron-log'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-import yargs from 'yargs-parser'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
@@ -119,11 +118,9 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  const slice = platformInfo.isDevelopment ? 2 : 1
-  const parsedArgs = yargs(process.argv.slice(slice))
 
   // this gets positional arguments
-  const options = parsedArgs._.map((url: string) => ({ url }))
+  const options = platformInfo.parsedArgs._.map((url: string) => ({ url }))
   const settings = await initBasics()
 
   if (options.length > 0) {
