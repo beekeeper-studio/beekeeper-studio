@@ -279,6 +279,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch!important;
   padding-left: $gutter-w - 0.4rem;
+  padding-bottom: 0.6rem;
   &.list-body-empty {
     flex: 0;
   }
