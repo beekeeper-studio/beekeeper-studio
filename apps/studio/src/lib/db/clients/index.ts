@@ -7,6 +7,7 @@ import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
 import bigquery from './bigquery.js';
+import { DBClientFactories } from '../types';
 
 
 export function findClient(key: string): Client | undefined {
@@ -144,7 +145,7 @@ export const CLIENTS: ClientConfig[] = [
 ];
 
 
-export default {
+const factories: DBClientFactories = {
   mysql,
   postgresql,
   sqlserver,
@@ -155,3 +156,5 @@ export default {
   cockroachdb: postgresql,
   bigquery,
 };
+
+export default factories;

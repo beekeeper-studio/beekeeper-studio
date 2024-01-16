@@ -1,12 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
 import {
-  ClientError,
-  DatabaseElement,
-  IDbConnectionDatabase,
-  IDbConnectionServer,
-} from "../client";
-import {
   AppContextProvider,
   BasicDatabaseClient,
   ExecutionContext,
@@ -23,7 +17,13 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
+  ClientError,
 } from "./utils";
+import {
+  IDbConnectionDatabase,
+  IDbConnectionServer,
+  DatabaseElement,
+} from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
 import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";

@@ -1,6 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team, 2020 Beekeeper Studio team
 import connectTunnel from './tunnel';
-import type clients from './clients';
+import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
@@ -156,7 +156,7 @@ export interface IDbConnectionDatabase {
   connecting: boolean,
 }
 
-export class DBConnection {
+export class DBConnection implements DatabaseClient {
   connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
@@ -236,6 +236,8 @@ export class DBConnection {
   duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
   duplicateTableSql = bind.bind(null, 'duplicateTableSql', this.server, this.database)
 
+  wrapIdentifier = wrap.bind(null, this.database)
+
   async currentDatabase() {
     return this.database.database
   }
@@ -274,9 +276,7 @@ async function connect(server: IDbConnectionServer, database: IDbConnectionDatab
     }
 
     if (server.config.client) {
-      // fix for circular import issues when importing database client from unit tests
-      // e.g. import MysqlClient from '@/lib/db/clients/mysql'
-      const driver = (await import('./clients')).default[server.config.client];
+      const driver = clients[server.config.client];
 
       const connection = await driver(server, database)
       database.connection = connection;

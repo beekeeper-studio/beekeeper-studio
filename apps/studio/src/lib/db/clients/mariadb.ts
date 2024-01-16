@@ -1,4 +1,4 @@
-import { IDbConnectionDatabase, IDbConnectionServer } from "../client";
+import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { MysqlClient } from "./mysql";
 
 export class MariaDBClient extends MysqlClient {}
