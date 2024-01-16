@@ -557,7 +557,7 @@ export default Vue.extend({
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
             allowEmpty: true,
-            preserveObject: column.dataType.startsWith('_'),
+            preserveObject: column.dataType?.startsWith('_'),
             onPreserveObjectFail: (value: unknown) => {
               log.error('Failed to preserve object for', value)
               return true
@@ -568,7 +568,7 @@ export default Vue.extend({
           },
         }
 
-        if (/^(bool|boolean)$/i.test(column.dataType)) {
+        if (column.dataType && /^(bool|boolean)$/i.test(column.dataType)) {
           const trueVal = this.dialectData.boolean?.true ?? true
           const falseVal = this.dialectData.boolean?.false ?? false
           const values = [falseVal, trueVal]
