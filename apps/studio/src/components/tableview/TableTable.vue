@@ -858,8 +858,8 @@ export default Vue.extend({
         {
           label:
             range.getTop() === range.getBottom()
-              ? createMenuItem("Clone row")
-              : createMenuItem(`Clone rows ${rowRangeLabel}`),
+              ? createMenuItem("Clone row", "Control+D")
+              : createMenuItem(`Clone rows ${rowRangeLabel}`, "Control+D"),
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable,
         },
