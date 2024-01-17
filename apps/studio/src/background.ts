@@ -51,7 +51,7 @@ log.debug(JSON.stringify(platformInfo, null, 2))
 // be closed automatically when the JavaScript object is garbage collected.
 let settings: IGroupedUserSettings
 let menuHandler
-log.info("registering schema")
+log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 let initialized = false
@@ -64,14 +64,14 @@ async function initBasics() {
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
-  log.info("getting settings")
+  log.debug("getting settings")
   settings = await UserSetting.all()
 
-  log.info("setting up the menu")
+  log.debug("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
-  log.info("Building the window")
-  log.info("managing updates")
+  log.debug("Building the window")
+  log.debug("managing updates")
   manageUpdates()
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     const url = args[0]
