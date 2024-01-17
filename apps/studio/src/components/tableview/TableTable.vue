@@ -496,10 +496,10 @@ export default Vue.extend({
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
+        const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
-          undefined;
-        const hasKeyDatas = keyDatas && keyDatas.length > 0
+          this.countInitialColumnWidth(column.columnName, column.dataType, isPK || hasKeyDatas);
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (hasKeyDatas) {
@@ -777,8 +777,6 @@ export default Vue.extend({
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
-        resizeColumnsMode: 'guide',
-        resizeColumnsHandles: 'header-only',
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
@@ -936,6 +934,18 @@ export default Vue.extend({
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
+    },
+    countInitialColumnWidth(columnName: string, dataType: string, isKey: boolean) {
+      const charWidth = 5 // approximately
+      const keyWidth = 20 // approximately
+      const headerWithoutTitle = 76 // approximately
+      const offset = 10
+      const titleWidth = (columnName.length + dataType.length) * charWidth
+      let initialWidth = headerWithoutTitle + titleWidth + offset
+      if (isKey) {
+        initialWidth += keyWidth
+      }
+      return initialWidth
     },
     // TODO: this is not attached to anything. but it might be needed?
     allowHeaderSort(column) {
