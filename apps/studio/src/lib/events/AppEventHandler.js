@@ -1,4 +1,7 @@
 import { AppEvent } from "../../common/AppEvent"
+import rawLog from 'electron-log'
+
+const log = rawLog.scope("AppEventHandler")
 
 export default class {
 
@@ -24,7 +27,7 @@ export default class {
 
   forward(event) {
     const emit = () => {
-      console.log("FORWADING:", event)
+      log.debug("Received from electron, forwarding to app", event)
       this.vueApp.$emit(event)
     }
     this.ipcRenderer.on(event, emit.bind(this))
