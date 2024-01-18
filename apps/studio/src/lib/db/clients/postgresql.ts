@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'fs';
 
-import pg, { PoolClient, QueryResult, PoolConfig } from 'pg';
+import pg, { QueryResult, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _  from 'lodash'
 import knexlib from 'knex'
@@ -118,9 +118,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     logger().debug('connected');
     // TODO (@day): these should all just be private member functions
-    this._defaultSchema = await getSchema(this.conn);
-    this.dataTypes = await getTypes(this.conn);
-    this.version = await getVersion(this.conn);
+    this._defaultSchema = await this.getSchema();
+    this.version = await this.getVersion();
+    this.dataTypes = await this.getTypes();
   }
 
   async disconnect(): Promise<void> {
@@ -544,39 +544,35 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
-      // TODO (@day): there will probably be some context issues here. bind this
-      execute(): Promise<NgQueryResult[]> {
-        // TODO (@day): this needs to be handled better
-        return runWithConnection(this.conn, async () => {
-          const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
-          const rows = dataPid.rows
+      async execute(): Promise<NgQueryResult[]> {
+        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
+        const rows = dataPid.rows
 
-          pid = rows[0].pid;
+        pid = rows[0].pid;
 
-          try {
-            const data = await Promise.race([
-              cancelable.wait(),
-              this.executeQuery(queryText, {arrayMode: true}),
-            ]);
+        try {
+          const data = await Promise.race([
+            cancelable.wait(),
+            this.executeQuery(queryText, {arrayMode: true}),
+          ]);
 
-            pid = null;
+          pid = null;
 
-            if(!data) {
-              return []
-            }
-
-            return data
-          } catch (err) {
-            if (canceling && err.code === pgErrors.CANCELED) {
-              canceling = false;
-              err.sqlectronError = 'CANCELED_BY_USER';
-            }
-
-            throw err;
-          } finally {
-            cancelable.discard();
+          if(!data) {
+            return []
           }
-        });
+
+          return data
+        } catch (err) {
+          if (canceling && err.code === pgErrors.CANCELED) {
+            canceling = false;
+            err.sqlectronError = 'CANCELED_BY_USER';
+          }
+
+          throw err;
+        } finally {
+          cancelable.discard();
+        }
       },
 
       async cancel(): Promise<void> {
@@ -606,7 +602,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const arrayMode: boolean = options?.arrayMode;
     const data = await this.driverExecuteMultiple(queryText, { arrayMode });
 
-    const commands = identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText).map((item) => item.type);
 
     // TODO (@day): fix this shit
     return data.map((_result, idx) => parseRowQueryResult(/*result*/null, commands[idx], arrayMode));
@@ -664,9 +660,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async getTableProperties(table: string, schema?: string): Promise<TableProperties> {
     // TODO (@day): remove
     if (this.version.isRedshift) {
-      return getTablePropertiesRedshift()
+      return null;
     }
-    const identifier = wrapTable(table, schema)
+    const identifier = this.wrapTable(table, schema)
 
     const statements = [
       `pg_indexes_size('${identifier}') as index_size`,
@@ -699,8 +695,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       this.getTableKeys("", table, schema),
       triggersPromise,
       partitionsPromise,
-      // TODO (@day): this should be a protected? function
-      getTableOwner(this.conn, table, schema)
+      this.getTableOwner(table, schema)
     ])
 
     const props = result.rows.length > 0 ? result.rows[0] : {}
@@ -763,29 +758,26 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async truncateAllTables(_db: string, schema?: string): Promise<void> {
-    // TODO (@day): fix the conn
-    await runWithConnection(this.conn, async () => {
-      const sql = `
-        SELECT quote_ident(table_name) as table_name
-        FROM information_schema.tables
-        WHERE table_schema = $1
-        AND table_type NOT LIKE '%VIEW%'
-      `;
+    const sql = `
+      SELECT quote_ident(table_name) as table_name
+      FROM information_schema.tables
+      WHERE table_schema = $1
+      AND table_type NOT LIKE '%VIEW%'
+    `;
 
-      const params = [
-        schema,
-      ];
+    const params = [
+      schema,
+    ];
 
-      const data = await this.driverExecuteSingle(sql, { params });
-      const rows = data.rows
+    const data = await this.driverExecuteSingle(sql, { params });
+    const rows = data.rows
 
-      const truncateAll = rows.map((row) => `
-        TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(row.table_name)}
-        RESTART IDENTITY CASCADE;
-      `).join('');
+    const truncateAll = rows.map((row) => `
+      TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(row.table_name)}
+      RESTART IDENTITY CASCADE;
+    `).join('');
 
-      await this.driverExecuteMultiple(truncateAll);
-    });
+    await this.driverExecuteMultiple(truncateAll);
   }  
 
   async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -864,7 +856,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async getTableLength(table: string, schema?: string): Promise<number> {
-    const tableType = await getEntityType(this.conn, table, schema)
+    const tableType = await this.getEntityType(table, schema)
     const forceSlow = !tableType || tableType !== 'BASE_TABLE'
     const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version: this.version, forceSlow})
     const countResults = await this.driverExecuteSingle(countQuery, { params: params })
@@ -874,7 +866,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
-    const qs = await _selectTopSql(this.conn, table, offset, limit, orderBy, filters, schema, selects)
+    const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params })
     return {
       result: result.rows,
@@ -883,7 +875,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {
-    const qs = await _selectTopSql(this.conn, table, offset, limit, orderBy, filters, schema, selects, true)
+    const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects, true)
     return qs.query
   }
 
@@ -934,7 +926,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async setTableDescription(table: string, description: string, schema?: string): Promise<string> {
-    const identifier = wrapTable(table, schema)
+    const identifier = this.wrapTable(table, schema)
     const comment  = escapeString(description)
     const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`
     await this.driverExecuteSingle(sql)
@@ -943,21 +935,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    // TODO (@day): fix
-    await runWithConnection(this.conn, async () => {
-      const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
-      await this.driverExecuteSingle(sql)
-    });
+    await this.driverExecuteSingle(sql)
   }
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    // TODO (@day): fix
-    await runWithConnection(this.conn, async () => {
-      const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+    const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
-      await this.driverExecuteSingle(sql)
-    });
+    await this.driverExecuteSingle(sql)
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
@@ -1020,6 +1006,19 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(query);
   }
 
+
+  async getMaterializedViewCreateScript(view: string, schema: string) {
+    const createViewSql = `CREATE OR REPLACE MATERIALIZED VIEW ${wrapIdentifier(schema)}.${view} AS`;
+
+    const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
+
+    const params = [view];
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
+  }
+
   protected async rawExecuteQuery(q: string, options: any): Promise<QueryResult | QueryResult[]> {
     const connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect(); 
 
@@ -1029,6 +1028,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       connection.release();
     }
   }
+
+  // ************************************************************************************
+  // PRIVATE HELPER FUNCTIONS
+  // NOTE (@day): some of this may need to be protected so redshift and cockroach have access to them
+  // ************************************************************************************
 
   private async runQuery(connection: pg.PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
     const args = {
@@ -1062,7 +1066,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           const column = columns.find((c) => c.columnName === key);
           // fix: we used to serialize arrays before this, now we pass them as
           // json arrays properly
-          return normalizeValue(value, column.dataType);
+          return this.normalizeValue(value, column.dataType);
         })
       })
       return result;
@@ -1076,7 +1080,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   private async updateValues(rawUpdates: TableUpdate[]): Promise<TableUpdateResult[]> {
     const updates = rawUpdates.map((update) => {
       const result = { ...update };
-      result.value = normalizeValue(update.value, update.columnType);
+      result.value = this.normalizeValue(update.value, update.columnType);
       return result;
     })
     log.info("applying updates", updates);
@@ -1093,6 +1097,155 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(buildDeleteQueries(this.knex, deletes).join(";"));
 
     return true
+  }
+
+  /**
+   * Gets the version details for the connection.
+   *
+   * Example version strings:
+   * CockroachDB CCL v1.1.0 (linux amd64, built 2017/10/12 14:50:18, go1.8.3)
+   * CockroachDB CCL v20.1.1 (x86_64-unknown-linux-gnu, built 2020/05/19 14:46:06, go1.13.9)
+   *
+   * PostgreSQL 9.4.26 on x86_64-pc-linux-gnu (Debian 9.4.26-1.pgdg90+1), compiled by gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516, 64-bit
+   * PostgreSQL 12.3 (Debian 12.3-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit
+   *
+   * PostgreSQL 8.0.2 on i686-pc-linux-gnu, compiled by GCC gcc (GCC) 3.4.2 20041017 (Red Hat 3.4.2-6.fc3), Redshift 1.0.12103
+   */
+  private async getVersion(): Promise<VersionInfo> {
+    const { version } = (await this.driverExecuteSingle("select version()")).rows[0]
+
+    if (!version) {
+      return {
+        version: '',
+        isPostgres: false,
+        isCockroach: false,
+        isRedshift: false,
+        number: 0,
+        hasPartitions: false
+      }
+    }
+
+    const isCockroach = version.toLowerCase().includes('cockroachdb')
+    const isRedshift = version.toLowerCase().includes('redshift')
+    const isPostgres = !isCockroach && !isRedshift
+    const number = parseInt(
+        version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
+        10
+      );
+    return {
+      version,
+      isPostgres,
+      isCockroach,
+      isRedshift,
+      number,
+      hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
+    }
+  }
+  
+  private async getTypes(): Promise<any> {
+    let sql: string;
+    // TODO (@day): split this up
+    if ((this.version.isPostgres && this.version.number < 80300) || this.version.isRedshift) {
+      sql = `
+        SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+        FROM        pg_type t
+        LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+        WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
+        AND     t.typname !~ '^_'
+        AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
+      `
+    } else {
+      sql = `
+        SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+        FROM        pg_type t
+        LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+        WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
+        AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
+        AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
+      `
+    }
+
+    const data = await this.driverExecuteSingle(sql);
+    const result: any = {}
+    data.rows.forEach((row: any) => {
+      result[row.typeid] = row.typename
+    })
+    _.merge(result, _.invert(pg.types.builtins))
+    result[1009] = 'array'
+    return result
+  }
+
+  private async getEntityType(
+    table: string,
+    schema: string
+  ): Promise<string | null> {
+    const query = `
+      select table_type as tt from information_schema.tables
+      where table_name = $1 and table_schema = $2
+      `
+    const result = await this.driverExecuteSingle(query, { params: [table, schema]})
+    return result.rows[0]? result.rows[0]['tt'] : null
+  }
+
+  private async _selectTopSql(
+    table: string,
+    offset: number,
+    limit: number,
+    orderBy: OrderBy[],
+    filters: TableFilter[] | string,
+    schema = "public",
+    selects = ["*"],
+    inlineParams?: boolean,
+  ): Promise<STQResults> {
+    return buildSelectTopQueries({
+      table,
+      offset,
+      limit,
+      orderBy,
+      filters,
+      selects,
+      schema,
+      version: this.version,
+      inlineParams
+    })
+  }
+  
+  private wrapTable(table: string, schema?: string) {
+    if (!schema) return wrapIdentifier(table);
+    return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`;
+  }
+
+  private async getTableOwner(table: string, schema: string) {
+    const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
+    const result = await this.driverExecuteSingle(sql, { params: [table, schema]});
+    return result.rows[0]?.tableowner;
+  }
+
+  // If a type starts with an underscore - it's an array
+  // so we need to turn the string representation back to an array
+  // if a type is BYTEA, decodes BASE64 URL encoded to hex
+  private normalizeValue(value: string, columnType: string) {
+    if (columnType?.startsWith('_') && _.isString(value)) {
+      return JSON.parse(value)
+    } else if (columnType === 'bytea' && value) {
+      return '\\x' + base64.decode(value, 'hex')
+    }
+    return value
+  }
+  
+  private async getSchema() {
+    const sql = 'SELECT CURRENT_SCHEMA() AS schema';
+
+    const data = await this.driverExecuteSingle(sql);
+    return data.rows[0].schema;
+  }
+
+  private identifyCommands(queryText: string) {
+    try {
+      return identify(queryText);
+    } catch (err) {
+      return [];
+    }
   }
 
 }
@@ -1117,82 +1270,6 @@ pg.types.setTypeParser(pg.types.builtins.INTERVAL,    'text', (val) => val); // 
  * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
  */
 pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
-
-/**
- * Gets the version details for the connection.
- *
- * Example version strings:
- * CockroachDB CCL v1.1.0 (linux amd64, built 2017/10/12 14:50:18, go1.8.3)
- * CockroachDB CCL v20.1.1 (x86_64-unknown-linux-gnu, built 2020/05/19 14:46:06, go1.13.9)
- *
- * PostgreSQL 9.4.26 on x86_64-pc-linux-gnu (Debian 9.4.26-1.pgdg90+1), compiled by gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516, 64-bit
- * PostgreSQL 12.3 (Debian 12.3-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit
- *
- * PostgreSQL 8.0.2 on i686-pc-linux-gnu, compiled by GCC gcc (GCC) 3.4.2 20041017 (Red Hat 3.4.2-6.fc3), Redshift 1.0.12103
- */
-async function getVersion(conn: HasPool): Promise<VersionInfo> {
-  const { version } = (await driverExecuteSingle(conn, {query: "select version()"})).rows[0]
-
-  if (!version) {
-    return {
-      version: '',
-      isPostgres: false,
-      isCockroach: false,
-      isRedshift: false,
-      number: 0,
-      hasPartitions: false
-    }
-  }
-
-  const isCockroach = version.toLowerCase().includes('cockroachdb')
-  const isRedshift = version.toLowerCase().includes('redshift')
-  const isPostgres = !isCockroach && !isRedshift
-  const number = parseInt(
-      version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
-      10
-    );
-  return {
-    version,
-    isPostgres,
-    isCockroach,
-    isRedshift,
-    number,
-    hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
-  }
-}
-
-async function getTypes(conn: HasPool): Promise<any> {
-  const version = await getVersion(conn)
-  let sql
-  if ((version.isPostgres && version.number < 80300) || version.isRedshift) {
-    sql = `
-      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
-      FROM        pg_type t
-      LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-      WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
-      AND     t.typname !~ '^_'
-      AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
-    `
-  } else {
-    sql = `
-      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
-      FROM        pg_type t
-      LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-      WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
-      AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
-      AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
-    `
-  }
-
-  const data = await driverExecuteSingle(conn, { query: sql })
-  const result: any = {}
-  data.rows.forEach((row: any) => {
-    result[row.typeid] = row.typename
-  })
-  _.merge(result, _.invert(pg.types.builtins))
-  result[1009] = 'array'
-  return result
-}
 
 export function buildSelectTopQueries(options: STQOptions): STQResults {
   const filters = options.filters
@@ -1277,100 +1354,36 @@ export function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
-async function getEntityType(
-  conn: HasPool,
-  table: string,
-  schema: string
-): Promise<string | null> {
-  const query = `
-    select table_type as tt from information_schema.tables
-    where table_name = $1 and table_schema = $2
-    `
-  const result = await driverExecuteSingle(conn, { query, params: [table, schema]})
-  return result.rows[0]? result.rows[0]['tt'] : null
-}
 
-// TODO (@day): do we want this?
-async function _selectTopSql(
-  conn: HasPool,
-  table: string,
-  offset: number,
-  limit: number,
-  orderBy: OrderBy[],
-  filters: TableFilter[] | string,
-  schema = "public",
-  selects = ["*"],
-  inlineParams?: boolean,
-): Promise<STQResults> {
-  const version = await getVersion(conn)
-  return buildSelectTopQueries({
-    table,
-    offset,
-    limit,
-    orderBy,
-    filters,
-    selects,
-    schema,
-    version,
-    inlineParams
-  })
-}
+async function listCockroachIndexes(_conn: Conn, _table: string, _schema: string): Promise<TableIndex[]> {
+  // const sql = `
+  //  show indexes from ${tableName(table, schema)};
+  // `
 
-async function listCockroachIndexes(conn: Conn, table: string, schema: string): Promise<TableIndex[]> {
-  const sql = `
-   show indexes from ${tableName(table, schema)};
-  `
+  // const result = await driverExecuteSingle(conn, { query: sql })
+  return [];
+  // const grouped = _.groupBy(result.rows, 'index_name')
+  // return Object.keys(grouped).map((indexName: string, idx) => {
+  //   const columns = grouped[indexName].filter((c) => !c.implicit)
+  //   const first: any = grouped[indexName][0]
+  //   return {
+  //     id: idx.toString(),
+  //     name: indexName,
+  //     table: table,
+  //     schema: schema,
+  //     // v21.2 onwards changes index names for primary keys
+  //     primary: first.index_name === 'primary' || first.index_name.endsWith('pkey'),
+  //     unique: !first.non_unique,
+  //     columns: _.sortBy(columns, ['seq_in_index']).map((c: any) => ({
+  //       name: c.column_name,
+  //       order: c.direction
+  //     }))
 
-  const result = await driverExecuteSingle(conn, { query: sql })
-  const grouped = _.groupBy(result.rows, 'index_name')
-  return Object.keys(grouped).map((indexName: string, idx) => {
-    const columns = grouped[indexName].filter((c) => !c.implicit)
-    const first: any = grouped[indexName][0]
-    return {
-      id: idx.toString(),
-      name: indexName,
-      table: table,
-      schema: schema,
-      // v21.2 onwards changes index names for primary keys
-      primary: first.index_name === 'primary' || first.index_name.endsWith('pkey'),
-      unique: !first.non_unique,
-      columns: _.sortBy(columns, ['seq_in_index']).map((c: any) => ({
-        name: c.column_name,
-        order: c.direction
-      }))
-
-    }
-  })
+  //   }
+  // })
 
 }
 
-function wrapTable(table: string, schema?: string) {
-  if (!schema) return wrapIdentifier(table)
-  return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`
-}
-
-async function getTableOwner(conn: HasPool, table: string, schema: string) {
-  const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
-  const result = await driverExecuteSingle(conn, { query: sql, params: [table, schema]})
-  return result.rows[0]?.tableowner
-}
-
-
-export async function getTablePropertiesRedshift() {
-  return null
-}
-
-// If a type starts with an underscore - it's an array
-// so we need to turn the string representation back to an array
-// if a type is BYTEA, decodes BASE64 URL encoded to hex
-function normalizeValue(value: string, columnType: string) {
-  if (columnType?.startsWith('_') && _.isString(value)) {
-    return JSON.parse(value)
-  } else if (columnType === 'bytea' && value) {
-    return '\\x' + base64.decode(value, 'hex')
-  }
-  return value
-}
 
 // TODO (@day): move this up or out into its own file
 const postgres10CreateScript = `
@@ -1508,78 +1521,11 @@ const defaultCreateScript = `
 
 `
 
-export async function getMaterializedViewCreateScript(conn: Conn, view: string, schema: string) {
-  const createViewSql = `CREATE OR REPLACE MATERIALIZED VIEW ${wrapIdentifier(schema)}.${view} AS`;
-
-  const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
-
-  const params = [view];
-
-  const data = await driverExecuteSingle(conn, { query: sql, params });
-
-  return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
-}
-
 export function wrapIdentifier(value: string): string {
   if (value === '*') return value;
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;
-}
-
-async function getSchema(conn: Conn) {
-  const sql = 'SELECT CURRENT_SCHEMA() AS schema';
-
-  const data = await driverExecuteQuery(conn, { query: sql });
-  return data[0].rows[0].schema;
-}
-
-export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
-  await runWithConnection(conn, async (connection) => {
-    const connClient = { connection };
-    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
-
-    await driverExecuteSingle(connClient, { query: sql })
-  });
-}
-
-export async function createDatabase(conn, databaseName, charset) {
-  const {isPostgres, number: versionAsInteger } = await getVersion(conn)
-
-  let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
-
-  // postgres 9 seems to freak out if the charset isn't wrapped in single quotes and also requires the template https://www.postgresql.org/docs/9.3/sql-createdatabase.html
-  // later version don't seem to care
-  if (isPostgres && versionAsInteger < 100000) {
-    sql = `create database ${wrapIdentifier(databaseName)} encoding '${charset}' template template0`;
-  }
-
-  await driverExecuteQuery(conn, { query: sql })
-}
-
-export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
-  await runWithConnection(conn, async (connection) => {
-    const connClient = { connection };
-    const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
-
-    await driverExecuteSingle(connClient, { query: sql })
-  });
-}
-
-export async function duplicateTable(conn: Conn, tableName: string,  duplicateTableName: string, schema: string) {
-  const sql = duplicateTableSql(tableName, duplicateTableName, schema);
-
-  await driverExecuteQuery(conn, { query: sql });
-}
-
-export function duplicateTableSql(tableName: string,  duplicateTableName: string, schema: string) {
-  const sql = `
-    CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
-    SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
-  `;
-
-  return sql;
-
 }
 
 async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
@@ -1715,64 +1661,6 @@ function parseRowQueryResult(data: QueryResult, command: string, rowResults: boo
   };
 }
 
-
-function identifyCommands(queryText: string) {
-  try {
-    return identify(queryText);
-  } catch (err) {
-    return [];
-  }
-}
-
-interface PostgresQueryArgs {
-  query: string
-  params?: any[]
-  multiple?: boolean
-  arrayMode?: boolean
-}
-
-async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult> {
-  return (await driverExecuteQuery(conn, queryArgs))[0]
-}
-
-function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
-
-  const runQuery = (connection: pg.PoolClient): Promise<QueryResult[]> => {
-    const args = {
-      text: queryArgs.query,
-      values: queryArgs.params,
-      multiResult: queryArgs.multiple,
-      rowMode: queryArgs.arrayMode ? 'array' : undefined
-    };
-
-    // node-postgres has support for Promise query
-    // but that always returns the "fields" property empty
-    return new Promise((resolve, reject) => {
-      log.info('RUNNING', queryArgs.query, queryArgs.params)
-      connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
-        if (err) return reject(err);
-        const qr = Array.isArray(data) ? data : [data]
-        resolve(qr)
-      });
-    });
-  };
-
-
-  if (isConnection(conn)) {
-    return runQuery(conn.connection)
-  } else {
-    return runWithConnection(conn, runQuery);
-  }
-}
-
-async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>): Promise<T> {
-  const connection: PoolClient = isConnection(x) ? x.connection : await x.pool.connect()
-  try {
-    return await run(connection);
-  } finally {
-    connection.release();
-  }
-}
 
 export const testOnly = {
   parseRowQueryResult,
