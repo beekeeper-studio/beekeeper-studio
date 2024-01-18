@@ -1,6 +1,6 @@
 import { Module } from "tabulator-tables";
 
-export class CustomTabulatorModule extends Module {
+export class HeaderSortTabulatorModule extends Module {
   static moduleInitOrder = 100;
 
   initialize() {
