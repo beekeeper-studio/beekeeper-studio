@@ -31,13 +31,10 @@
           >Close Tab</a>
         </div>
       </div>
-      <textarea
-        name="editor"
-        class="editor"
-        ref="editor"
-        id=""
-        cols="30"
-        rows="10"
+      <text-editor
+        ref="textEditor"
+        :lang="connectionType"
+        :initializeOnMount="false"
       />
       <span class="expand" />
       <div class="toolbar text-right">
@@ -327,6 +324,7 @@
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
+  import TextEditor from '@/components/common/TextEditor.vue'
 
   import { format } from 'sql-formatter';
 
@@ -347,7 +345,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, TextEditor },
     props: {
       tab: OpenTab,
       active: Boolean
@@ -690,13 +688,7 @@
         const startingValue = this.unsavedText || this.query?.text || editorDefault
         this.query.title = this.activeTab.title
 
-        console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
-
-        if (this.editor) {
-          this.editor.toTextArea();
-          this.editor = null;
-        }
 
         if (this.split) {
           this.split.destroy();
@@ -744,43 +736,7 @@
             runQueryKeyMap["Esc"] = this.cancelQuery
           }
 
-          const modes = {
-            'mysql': 'text/x-mysql',
-            'postgresql': 'text/x-pgsql',
-            'sqlserver': 'text/x-mssql',
-            'mariadb': 'text/x-mariadb',
-            'sqlite': 'text/x-sqlite',
-            'cassandra': 'text/x-cassandra',
-            'redshift': 'text/x-pgsql',
-          };
-
-          const extraKeys = {}
-
-          extraKeys[this.cmCtrlOrCmd('F')] = 'findPersistent'
-          extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
-          extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
-
-
-          this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
-            lineNumbers: true,
-            mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
-            tabSize: 2,
-            theme: 'monokai',
-            extraKeys: {
-              "Ctrl-Space": "autocomplete",
-              "Shift-Tab": "indentLess",
-              ...extraKeys
-            },
-            options: {
-              closeOnBlur: false
-            },
-            // eslint-disable-next-line
-            // @ts-ignore
-            hint: CodeMirror.hint.sql,
-            hintOptions: this.hintOptions,
-            keyMap: this.userKeymap,
-            getColumns: this.getColumnsForAutocomplete
-          } as CodeMirror.EditorConfiguration)
+          this.editor = this.$refs.textEditor.initialize()
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
           this.editor.on("keydown", (_cm, e) => {
@@ -789,6 +745,8 @@
             }
           })
 
+          this.editor.setOption('hintOptions', this.hintOptions)
+          this.editor.setOption('getColumns', this.getColumnsForAutocomplete)
 
 
 
