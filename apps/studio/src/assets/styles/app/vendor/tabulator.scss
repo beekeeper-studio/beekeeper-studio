@@ -810,6 +810,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
           min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
+          padding-right: 2px;
           & > * {
             display: inline;
           }
