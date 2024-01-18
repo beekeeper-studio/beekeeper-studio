@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'fs';
 
-import pg, { PoolClient, QueryResult, PoolConfig, FieldDef } from 'pg';
+import pg, { PoolClient, QueryResult, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _  from 'lodash'
 import knexlib from 'knex'
@@ -12,15 +12,14 @@ import logRaw from 'electron-log'
 import { IDbConnectionServerConfig, DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../client'
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, applyChangesSql } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
+import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -77,37 +76,20 @@ const postgresContext = {
   }
 };
 
-type PostgresResult = {
-  rows: any[],
-  fields: FieldDef[]
-};
-
-export class PostgresClient extends BasicDatabaseClient<PostgresResult> {
+export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
   dataTypes: any;
+  server: any;
+  database: IDbConnectionDatabase;
   
   // hmmmmm
   constructor(server: any, database: IDbConnectionDatabase) {
     super(knex, postgresContext);
 
-    configDatabase(server, database).then(async (dbConfig) => {
-      this.conn = {
-        pool: new pg.Pool(dbConfig)
-      };
-      await this.onConnected();
-    });
-  }
-
-  // TODO (@day): maybe put this in connect
-  private async onConnected(): Promise<void> {
-    logger().debug('connected');
-    // TODO (@day): these should all just be private member functions
-    this._defaultSchema = await getSchema(this.conn);
-    this.dataTypes = await getTypes(this.conn);
-    this.version = await getVersion(this.conn);
-
+    this.server = server;
+    this.database = database;
   }
 
   versionString(): string {
@@ -126,9 +108,19 @@ export class PostgresClient extends BasicDatabaseClient<PostgresResult> {
       editPartitions: hasPartitions
     };
   }
-  connect(): Promise<void> {
+  async connect(): Promise<void> {
     // maybe the connection stuff in the constructor can just go here
-    throw new Error('Method not implemented.');
+    const dbConfig = await configDatabase(this.server, this.database);
+
+    this.conn = {
+      pool: new pg.Pool(dbConfig)
+    };
+
+    logger().debug('connected');
+    // TODO (@day): these should all just be private member functions
+    this._defaultSchema = await getSchema(this.conn);
+    this.dataTypes = await getTypes(this.conn);
+    this.version = await getVersion(this.conn);
   }
 
   async disconnect(): Promise<void> {
@@ -642,30 +634,27 @@ export class PostgresClient extends BasicDatabaseClient<PostgresResult> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
-    await runWithConnection(this.conn, async (connection) => {
-      const cli = { connection }
-      await this.driverExecuteSingle('BEGIN')
-      log.debug("Applying changes", changes)
-      try {
-        if (changes.inserts) {
-          await insertRows(cli, changes.inserts)
-        }
-
-        if (changes.updates) {
-          results = await updateValues(cli, changes.updates)
-        }
-
-        if (changes.deletes) {
-          await deleteRows(cli, changes.deletes)
-        }
-
-        await this.driverExecuteSingle('COMMIT')
-      } catch (ex) {
-        log.error("query exception: ", ex)
-        await this.driverExecuteSingle('ROLLBACK');
-        throw ex
+    await this.driverExecuteSingle('BEGIN')
+    log.debug("Applying changes", changes)
+    try {
+      if (changes.inserts) {
+        await this.insertRows(changes.inserts);
       }
-    })
+
+      if (changes.updates) {
+        results = await this.updateValues(changes.updates)
+      }
+
+      if (changes.deletes) {
+        await this.deleteRows(changes.deletes)
+      }
+
+      await this.driverExecuteSingle('COMMIT')
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      await this.driverExecuteSingle('ROLLBACK');
+      throw ex
+    }
 
     return results
   }
@@ -1015,8 +1004,95 @@ export class PostgresClient extends BasicDatabaseClient<PostgresResult> {
   createDatabaseSQL(): string {
     throw new Error('Method not implemented.');
   }
-  protected rawExecuteQuery(q: string, options: any): Promise<PostgresResult | PostgresResult[]> {
-    throw new Error('Method not implemented.');
+
+  
+  alterPartitionSql(payload: AlterPartitionsSpec): string {
+    const { table } = payload;
+    const builder = new PostgresqlChangeBuilder(table);
+    const creates = builder.createPartitions(payload.adds);
+    const alters = builder.alterPartitions(payload.alterations);
+    const detaches = builder.detachPartitions(payload.detaches);
+    return [creates, alters, detaches].filter((f) => !!f).join(";")
+  }
+
+  async alterPartition(payload: AlterPartitionsSpec): Promise<void> {
+    const query = this.alterPartitionSql(payload)
+    await this.driverExecuteSingle(query);
+  }
+
+  protected async rawExecuteQuery(q: string, options: any): Promise<QueryResult | QueryResult[]> {
+    const connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect(); 
+
+    try {
+      return await this.runQuery(connection, q, options)
+    } finally {
+      connection.release();
+    }
+  }
+
+  private async runQuery(connection: pg.PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
+    const args = {
+      text: query,
+      values: options.params,
+      multiResult: options.multiple,
+      rowMode: options.arrayMode ? 'array' : undefined
+    };
+
+    // node-postgres has support for Promise query
+    // but that always returns the "fields" property empty
+    return new Promise((resolve, reject) => {
+      log.info('RUNNING', query, options.params);
+      connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
+        if (err) return reject(err);
+        resolve(data);
+      });
+    });
+  }
+
+  private async insertRows(rawInserts: TableInsert[]) {
+    const columnsList = await Promise.all(rawInserts.map((insert) => {
+      return this.listTableColumns(null, insert.table, insert.schema);
+    }));
+
+    const fixedInserts = rawInserts.map((insert, idx) => {
+      const result = { ...insert};
+      const columns = columnsList[idx];
+      result.data = result.data.map((obj) => {
+        return _.mapValues(obj, (value, key) => {
+          const column = columns.find((c) => c.columnName === key);
+          // fix: we used to serialize arrays before this, now we pass them as
+          // json arrays properly
+          return normalizeValue(value, column.dataType);
+        })
+      })
+      return result;
+    })
+
+    await this.driverExecuteSingle(buildInsertQueries(this.knex, fixedInserts).join(";"));
+
+    return true;
+  }
+
+  private async updateValues(rawUpdates: TableUpdate[]): Promise<TableUpdateResult[]> {
+    const updates = rawUpdates.map((update) => {
+      const result = { ...update };
+      result.value = normalizeValue(update.value, update.columnType);
+      return result;
+    })
+    log.info("applying updates", updates);
+    let results: TableUpdateResult[] = [];
+    await this.driverExecuteSingle(buildUpdateQueries(this.knex, updates).join(";"));
+    // NOTE (@day): this could be a weird issue, we shall see
+    const data = await this.driverExecuteSingle(buildSelectQueriesFromUpdates(this.knex, updates).join(";"));
+    results = [data.rows[0]];
+
+    return results;
+  }
+
+  private async deleteRows(deletes: TableDelete[]) {
+    await this.driverExecuteSingle(buildDeleteQueries(this.knex, deletes).join(";"));
+
+    return true
   }
 
 }
@@ -1284,82 +1360,6 @@ export async function getTablePropertiesRedshift() {
   return null
 }
 
-// this allows us to test without a valid connection
-async function Builder(conn?: HasPool) {
-  if (!conn) return PostgresqlChangeBuilder
-  const v = await getVersion(conn)
-  return v.isRedshift ? RedshiftChangeBuilder : PostgresqlChangeBuilder
-}
-
-export async function alterTableSql(conn: HasPool, change: AlterTableSpec): Promise<string> {
-  const Cls = await Builder(conn)
-  const builder = new Cls(change.table, change.schema)
-  return builder.alterTable(change)
-}
-
-export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
-  const version = await getVersion(_conn)
-
-  await runWithConnection(_conn, async (connection) => {
-
-    const cli = { connection }
-    const sql = await alterTableSql(_conn, change)
-    // redshift doesn't support alter table within transactions.
-    const transaction = !version.isRedshift && change.alterations?.length
-    try {
-      if (transaction) await driverExecuteQuery(cli, { query: 'BEGIN' })
-      await driverExecuteQuery(cli, { query: sql })
-      if (transaction) await driverExecuteQuery(cli, { query: 'COMMIT' })
-    } catch (ex) {
-      log.error("ALTERTABLE", ex)
-      if (transaction) await driverExecuteQuery(cli, { query: 'ROLLBACK'})
-      throw ex
-    }
-  })
-}
-
-export function alterIndexSql(payload: IndexAlterations): string | null {
-  const { table, schema, additions, drops } = payload
-  const changeBuilder = new PostgresqlChangeBuilder(table, schema)
-  const newIndexes = changeBuilder.createIndexes(additions)
-  const droppers = changeBuilder.dropIndexes(drops)
-  return [newIndexes, droppers].filter((f) => !!f).join(";")
-}
-
-export async function alterIndex(conn: HasPool, payload: IndexAlterations) {
-  const sql = alterIndexSql(payload);
-  await executeWithTransaction(conn, { query: sql });
-}
-
-
-export function alterRelationSql(payload: RelationAlterations): string {
-  const { table, schema } = payload
-  const builder = new PostgresqlChangeBuilder(table, schema)
-  const creates = builder.createRelations(payload.additions)
-  const drops = builder.dropRelations(payload.drops)
-  return [creates, drops].filter((f) => !!f).join(";")
-}
-
-export async function alterRelation(conn, payload: RelationAlterations): Promise<void> {
-  const query = alterRelationSql(payload)
-  await executeWithTransaction(conn, { query });
-}
-
-
-export function alterPartitionSql(payload: AlterPartitionsSpec): string {
-  const { table } = payload;
-  const builder = new PostgresqlChangeBuilder(table);
-  const creates = builder.createPartitions(payload.adds);
-  const alters = builder.alterPartitions(payload.alterations);
-  const detaches = builder.detachPartitions(payload.detaches);
-  return [creates, alters, detaches].filter((f) => !!f).join(";")
-}
-
-export async function alterPartition(conn, payload: AlterPartitionsSpec): Promise<void> {
-  const query = alterPartitionSql(payload)
-  await executeWithTransaction(conn, { query });
-}
-
 // If a type starts with an underscore - it's an array
 // so we need to turn the string representation back to an array
 // if a type is BYTEA, decodes BASE64 URL encoded to hex
@@ -1370,61 +1370,6 @@ function normalizeValue(value: string, columnType: string) {
     return '\\x' + base64.decode(value, 'hex')
   }
   return value
-}
-
-
-async function insertRows(cli: any, rawInserts: TableInsert[]) {
-  const columnsList = await Promise.all(rawInserts.map((insert) => {
-    return listTableColumns(cli, null, insert.table, insert.schema)
-  }))
-
-  // expect({ insertRows: "rawInserts"}).toEqual(rawInserts)
-  const fixedInserts = rawInserts.map((insert, idx) => {
-    const result = { ...insert}
-    const columns = columnsList[idx]
-    result.data = result.data.map((obj) => {
-      return _.mapValues(obj, (value, key) => {
-        const column = columns.find((c) => c.columnName === key)
-        // fix: we used to sealize arrays before this, now we pass them as
-        // json arrays properly
-        return normalizeValue(value, column.dataType)
-      })
-    })
-    return result
-  })
-
-  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, fixedInserts).join(";") })
-
-  return true
-}
-
-async function updateValues(cli: any, rawUpdates: TableUpdate[]): Promise<TableUpdateResult[]> {
-
-
-  const updates = rawUpdates.map((update) => {
-    const result = { ...update}
-    result.value = normalizeValue(update.value, update.columnType)
-    return result
-  })
-  log.info("applying updates", updates)
-  let results: TableUpdateResult[] = []
-  await driverExecuteQuery(cli, { query: buildUpdateQueries(knex, updates).join(";") })
-  const data = await driverExecuteSingle(cli, { query: buildSelectQueriesFromUpdates(knex, updates).join(";"), multiple: true })
-  results = [data.rows[0]]
-
-  return results
-}
-
-async function deleteRows(cli: any, deletes: TableDelete[]) {
-  await driverExecuteQuery(cli, { query: buildDeleteQueries(knex, deletes).join(";") })
-
-  return true
-}
-
-export async function getInsertQuery(conn: HasPool, database: string, tableInsert: TableInsert): Promise<string> {
-  const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
-
-  return buildInsertQuery(knex, tableInsert, columns, _.toString)
 }
 
 // TODO (@day): move this up or out into its own file
@@ -1790,22 +1735,6 @@ async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: Postgr
   return (await driverExecuteQuery(conn, queryArgs))[0]
 }
 
-async function executeWithTransaction(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
-  const fullQuery = joinQueries([
-    'BEGIN', queryArgs.query, 'COMMIT'
-  ])
-  return await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
-      return await driverExecuteQuery(cli, { ...queryArgs, query: fullQuery})
-    } catch (ex) {
-      log.error("executeWithTransaction", ex)
-      await driverExecuteSingle(cli, { query: "ROLLBACK" })
-      throw ex;
-    }
-  })
-}
-
 function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
 
   const runQuery = (connection: pg.PoolClient): Promise<QueryResult[]> => {
@@ -1847,7 +1776,7 @@ async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>)
 
 export const testOnly = {
   parseRowQueryResult,
-  alterTableSql
+  // alterTableSql
 }
 
 export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {

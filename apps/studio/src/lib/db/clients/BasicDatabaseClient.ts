@@ -46,13 +46,20 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   alterPartitionSql(_changes: AlterPartitionsSpec): string {
     return ''
   }
-  alterPartition: (changes: AlterPartitionsSpec) => Promise<void> = () => Promise.resolve();
-  getMaterializedViewCreateScript?: (view: string, schema?: string) => Promise<string[]> = () => Promise.resolve([]);
+
+  async alterPartition(_changes: AlterPartitionsSpec): Promise<void> {
+    return;
+  }
+
+  async getMaterializedViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+    return [];
+  }
+  
   abstract versionString(): string;
+
   defaultSchema(): string | null {
     return null
   }
-
 
   abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
 

@@ -330,7 +330,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       size: length, 
       indexes, 
       relations, 
-      triggers
+      triggers,
+      partitions: []
     }  
   }
 
