@@ -213,33 +213,34 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         r.routine_name as name,
         r.routine_type as routine_type,
         r.data_type as data_type
-      FROM INFORMATION_SCHEMA>ROUTINES r
-      WHERE r.routine_schema NOT IN ('sys', 'information_schema',
+      FROM INFORMATION_SCHEMA.ROUTINES r
+      where r.routine_schema not in ('sys', 'information_schema',
                                   'pg_catalog', 'performance_schema')
       ${schemaFilter ? `AND ${schemaFilter}` : ''}
       ORDER BY routine_schema, routine_name
     `;
 
     const paramsSQL = `
-      SELECT
-        r.routine_schema as routine_schema,
-        r.specific_name as specific_name,
-        p.parameter_name as parameter_name,
-        p.character_maximum_length as char_length,
-        p.data_type as data_type
-      FROM information_schema.routines r
-      LEFT JOIN information_schema.parameters p
-                ON p.specific_schema = r.routine_schema
-                AND p.specific_name = r.specific_name
-      WHERE r.routine_schema not in ('sys', 'information_schema',
-                                    'pg_catalog', 'performance_schema')
-        ${schemaFilter ? `AND ${schemaFilter}` : ''}
+      select
+          r.routine_schema as routine_schema,
+          r.specific_name as specific_name,
+          p.parameter_name as parameter_name,
+          p.character_maximum_length as char_length,
+          p.data_type as data_type
+    from information_schema.routines r
+    left join information_schema.parameters p
+              on p.specific_schema = r.routine_schema
+              and p.specific_name = r.specific_name
+    where r.routine_schema not in ('sys', 'information_schema',
+                                  'pg_catalog', 'performance_schema')
+      ${schemaFilter ? `AND ${schemaFilter}` : ''}
 
-          AND p.parameter_mode = 'IN'
-          ORDER BY r.routine_schema
-                  r.specific_name,
-                  p.ordinal_position;
-    `;
+        AND p.parameter_mode = 'IN'
+    order by r.routine_schema,
+            r.specific_name,
+            p.ordinal_position;
+
+    `
 
     const data = await this.driverExecuteSingle(sql);
     const paramsData = await this.driverExecuteSingle(paramsSQL);
