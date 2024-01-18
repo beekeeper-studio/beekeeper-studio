@@ -496,10 +496,10 @@ export default Vue.extend({
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
+        const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
-        const hasKeyDatas = keyDatas && keyDatas.length > 0
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (hasKeyDatas) {
@@ -777,8 +777,6 @@ export default Vue.extend({
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
-        resizeColumnsMode: 'guide',
-        resizeColumnsHandles: 'header-only',
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,

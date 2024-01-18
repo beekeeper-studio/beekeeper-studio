@@ -53,6 +53,7 @@ import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
+import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 
 (async () => {
 
@@ -97,6 +98,13 @@ import rawLog from 'electron-log'
     Tabulator.defaultOptions.layout = "fitDataFill";
     // @ts-expect-error default options not fully typed
     Tabulator.defaultOptions.menuContainer = ".beekeeper-studio-wrapper";
+    // @ts-expect-error default options not fully typed
+    Tabulator.defaultOptions.headerSortClickElement = 'icon';
+    // @ts-expect-error default options not fully typed
+    Tabulator.defaultOptions.resizeColumnsMode = 'guide';
+    // @ts-expect-error default options not fully typed
+    Tabulator.defaultOptions.resizeColumnsHandles = 'header-only';
+    Tabulator.registerModule([HeaderSortTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
