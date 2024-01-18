@@ -1,3 +1,5 @@
+import type { ConnectionType } from "@/common/interfaces/IConnection";
+
 export interface LanguageData {
   isValid: (raw: string) => boolean;
   beautify: (raw: string) => string;
@@ -121,4 +123,86 @@ export function getLanguageByContent(content: string): LanguageData | undefined 
 
 export function getLanguageByName(name: string): LanguageData | undefined {
   return Languages.find((lang) => lang.name === name);
+}
+
+type Language = ConnectionType | "text" | "html" | "json";
+
+interface CodeMirrorLanguage {
+  mode: string | Record<string, unknown>;
+  hint?: unknown;
+}
+
+export function resolveLanguage(lang: Language): CodeMirrorLanguage {
+  switch (lang) {
+    case "mysql":
+      return {
+        mode: "text/x-mysql",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
+    case "mariadb":
+      return {
+        mode: "text/x-mariadb",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
+    case "postgresql":
+    case "redshift":
+    case "cockroachdb":
+      return {
+        mode: "text/x-pgsql",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
+    case "sqlserver":
+      return {
+        mode: "text/x-mssql",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
+    case "sqlite":
+      return {
+        mode: "text/x-sqlite",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
+    case "cassandra":
+      return {
+        mode: "text/x-cassandra",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
+    case "bigquery":
+      return {
+        mode: "text/x-sql",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
+    case "html":
+      return {
+        mode: {
+          name: "htmlmixed",
+          tags: {
+            style: [
+              ["type", /^text\/(x-)?scss$/, "text/x-scss"],
+              [null, null, "css"],
+            ],
+            custom: [[null, null, "customMode"]],
+          },
+        },
+      };
+    case "json":
+      return {
+        mode: {
+          name: "javascript",
+          json: true,
+          statementIndent: 2,
+        },
+      };
+    case "text":
+    default:
+      return {
+        mode: "text",
+      };
+  }
 }

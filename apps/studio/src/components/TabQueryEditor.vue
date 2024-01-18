@@ -739,12 +739,6 @@
           this.editor = this.$refs.textEditor.initialize()
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
-          this.editor.on("keydown", (_cm, e) => {
-            if (this.$store.state.menuActive) {
-              e.preventDefault()
-            }
-          })
-
           this.editor.setOption('hintOptions', this.hintOptions)
           this.editor.setOption('getColumns', this.getColumnsForAutocomplete)
 
@@ -765,13 +759,6 @@
               }
               this.$root.$emit(AppEvent.newTab)
             })
-
-
-            if(!codeMirrorVimInstance) {
-              console.error("Could not find code mirror vim instance");
-            } else {
-              setKeybindingsFromVimrc(codeMirrorVimInstance);
-            }
           }
 
           this.editor.on("paste", (_cm, e) => {
@@ -797,13 +784,7 @@
           // TODO: make this not suck
           this.editor.on('keyup', this.maybeAutoComplete)
           this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
-          this.editor.focus()
-
-          setTimeout(() => {
-            // this fixes the editor not showing because it doesn't think it's dom element is in view.
-            // its a hit and miss error
-            this.editor.refresh()
-          }, 1)
+          this.$refs.textEditor.focus()
 
           // this gives the dom a chance to kick in and render these
           // before we try to read their heights

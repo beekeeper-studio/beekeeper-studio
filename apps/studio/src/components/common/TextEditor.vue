@@ -11,76 +11,8 @@
 
 <script lang="ts">
 import CodeMirror from "codemirror";
-import type { ConnectionType } from "@/common/interfaces/IConnection";
-
-type Language = ConnectionType | "text" | "json";
-
-interface CodeMirrorLanguage {
-  mode: string | Record<string, unknown>;
-  hint?: unknown;
-}
-
-function resolveLanguage(lang: Language): CodeMirrorLanguage {
-  switch (lang) {
-    case "mysql":
-      return {
-        mode: "text/x-mysql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "mariadb":
-      return {
-        mode: "text/x-mariadb",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "postgresql":
-    case "redshift":
-    case "cockroachdb":
-      return {
-        mode: "text/x-pgsql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "sqlserver":
-      return {
-        mode: "text/x-mssql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "sqlite":
-      return {
-        mode: "text/x-sqlite",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "cassandra":
-      return {
-        mode: "text/x-cassandra",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "bigquery":
-      return {
-        mode: "text/x-sql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "json":
-      return {
-        mode: {
-          name: "javascript",
-          json: true,
-          statementIndent: 2,
-        },
-      };
-    case "text":
-    default:
-      return {
-        mode: "text",
-      };
-  }
-}
+import { resolveLanguage } from '@/lib/editor/languageData'
+import setKeybindingsFromVimrc from '@/lib/readVimrc'
 
 export default {
   props: ["initialValue", "lang", "initializeOnMount"],
@@ -144,11 +76,34 @@ export default {
         this.value = cm.getValue();
       });
 
+      cm.on("keydown", (_cm, e) => {
+        if (this.$store.state.menuActive) {
+          e.preventDefault()
+        }
+      })
+
+      if (this.userKeymap === "vim") {
+        const codeMirrorVimInstance = this.$refs.editor.parentNode.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+        if (!codeMirrorVimInstance) {
+          console.error("Could not find code mirror vim instance");
+        } else {
+          setKeybindingsFromVimrc(codeMirrorVimInstance);
+        }
+      }
+
       this.editor = cm;
 
       this.$emit("initialized", cm);
 
       return cm;
+    },
+    focus() {
+      this.editor.focus()
+      setTimeout(() => {
+        // this fixes the editor not showing because it doesn't think it's dom element is in view.
+        // its a hit and miss error
+        this.editor.refresh()
+      }, 1)
     },
     destroyEditor() {
       if (this.editor) {
