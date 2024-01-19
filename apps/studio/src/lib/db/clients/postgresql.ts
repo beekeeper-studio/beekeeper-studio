@@ -108,6 +108,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async connect(): Promise<void> {
+    // For tests
+    if (!this.server && !this.database) {
+      return;
+    }
     const dbConfig = await this.configDatabase(this.server, this.database);
 
     this.conn = {
@@ -598,7 +602,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
 
-    return data.map((result, idx) => parseRowQueryResult(result, commands[idx], arrayMode));
+    return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
@@ -998,6 +1002,32 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     } finally {
       connection.release();
     }
+  }
+
+  // ************************************************************************************
+  // PUBLIC FOR TESTING
+  // ************************************************************************************
+
+  parseFields(fields: any[], rowResults: boolean) {
+    return fields.map((field, idx) => {
+      field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+      field.id = rowResults ? `c${idx}` : field.name
+      return field
+    })
+  }
+
+  parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
+    const fields = this.parseFields(data.fields, rowResults)
+    const fieldIds = fields.map(f => f.id)
+    const isSelect = data.command === 'SELECT';
+    const rowCount = data.rowCount || data.rows?.length || 0
+    return {
+      command: command || data.command,
+      rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
+      fields: fields,
+      rowCount: rowCount,
+      affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
+    };
   }
 
   // ************************************************************************************
@@ -1536,39 +1566,6 @@ export function wrapIdentifier(value: string): string {
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;
-}
-
-function parseFields(fields: any[], rowResults: boolean) {
-  return fields.map((field, idx) => {
-    field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
-    field.id = rowResults ? `c${idx}` : field.name
-    return field
-  })
-}
-
-function parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
-  const fields = parseFields(data.fields, rowResults)
-  const fieldIds = fields.map(f => f.id)
-  const isSelect = data.command === 'SELECT';
-  const rowCount = data.rowCount || data.rows?.length || 0
-  return {
-    command: command || data.command,
-    rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
-    fields: fields,
-    rowCount: rowCount,
-    affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
-  };
-}
-
-function alterTableSql(change: AlterTableSpec): Promise<string> {
-  const { table, schema } = change
-  const builder = this.getBuilder(table, schema)
-  return builder.alterTable(change)
-}
-
-export const testOnly = {
-  parseRowQueryResult,
-  alterTableSql
 }
 
 export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
