@@ -10,13 +10,12 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { IDbConnectionServerConfig, DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../client'
-import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
-import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
+import { HasPool, VersionInfo, HasConnection } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
 import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
@@ -42,9 +41,6 @@ const pgErrors = {
 
 const dataTypes: any = {}
 
-function tableName(table: string, schema?: string): string{
-  return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
-}
 
 // TODO (@day): Do we need these two structs?
 export interface STQOptions {
@@ -95,9 +91,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   versionString(): string {
     return this.version.version.split(" on ")[0];
   }
+
   getBuilder(table: string, schema?: string): ChangeBuilderBase {
     return new PostgresqlChangeBuilder(table, schema);
   }
+
   supportedFeatures(): SupportedFeatures {
     const hasPartitions = this.version.number >= 100000;
     return {
@@ -108,16 +106,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       editPartitions: hasPartitions
     };
   }
+
   async connect(): Promise<void> {
-    // maybe the connection stuff in the constructor can just go here
-    const dbConfig = await configDatabase(this.server, this.database);
+    const dbConfig = await this.configDatabase(this.server, this.database);
 
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };
 
     logger().debug('connected');
-    // TODO (@day): these should all just be private member functions
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
@@ -127,7 +124,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this.conn.pool.end();
   }
 
-  // TODO (@day): wtf is db doing here
   async listTables(_db: string, filter?: FilterOptions): Promise<TableOrView[]> {
     const schemaFilter = buildSchemaFilter(filter, 'table_schema');
 
@@ -168,6 +164,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     return data.rows;
   }
+
   async listTablePartitions(table: string, schema: string): Promise<TablePartition[]> {
     if (!this.version.hasPartitions) return null;
 
@@ -335,11 +332,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  // TODO (@day): remove cockroach code
   async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
-    // unsupported https://www.cockroachlabs.com/docs/stable/sql-feature-support.html
-
-    if (this.version.isCockroach) return []
     // action_timing has taken over from condition_timing
     // condition_timing was last used in PostgreSQL version 9.0
     // which is not supported anymore since 08 Oct 2015.
@@ -376,10 +369,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async listTableIndexes(_db: string, table: string, schema?: string): Promise<TableIndex[]> {
-
-    // TODO (@day): move to cockroach client
-    if (this.version.isCockroach) return await listCockroachIndexes(this.conn, table, schema)
-
     const sql = `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
@@ -545,6 +534,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
+      // NOTE (@day): this feels weird. Make sure it works properly 
       async execute(): Promise<NgQueryResult[]> {
         const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
         const rows = dataPid.rows
@@ -599,14 +589,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       },
     };
   }
+
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
     const data = await this.driverExecuteMultiple(queryText, { arrayMode });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
 
-    // TODO (@day): fix this shit
-    return data.map((_result, idx) => parseRowQueryResult(/*result*/null, commands[idx], arrayMode));
+    return data.map((result, idx) => parseRowQueryResult(result, commands[idx], arrayMode));
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
@@ -625,9 +615,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     return data.rows.map((row) => row.datname);
   }
+
   applyChangesSql(changes: TableChanges): string {
     return applyChangesSql(changes, this.knex)
   }
+
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
@@ -655,14 +647,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     return results
   }
+
   getQuerySelectTop(table: string, limit: number, schema?: string): string {
     return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
   }
+
   async getTableProperties(table: string, schema?: string): Promise<TableProperties> {
-    // TODO (@day): remove
-    if (this.version.isRedshift) {
-      return null;
-    }
     const identifier = this.wrapTable(table, schema)
 
     const statements = [
@@ -671,17 +661,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         `obj_description('${identifier}'::regclass) as description`
     ]
 
-    if (this.version.isPostgres && this.version.number < 90000) {
+    if (this.version.number < 90000) {
       statements[0] = `0 as index_size`
     }
 
     const sql = `SELECT ${statements.join(",")}`
 
-    const detailsPromise =  this.version.isPostgres ? this.driverExecuteSingle(sql) :
-      Promise.resolve({ rows:[]})
+    const detailsPromise =  this.driverExecuteSingle(sql);
 
-    const triggersPromise = this.version.isPostgres ? this.listTableTriggers(table, schema) : Promise.resolve([])
-    const partitionsPromise = this.version.isPostgres ? this.listTablePartitions(table, schema) : Promise.resolve([]);
+    const triggersPromise = this.listTableTriggers(table, schema);
+    const partitionsPromise = this.listTablePartitions(table, schema);
 
     const [
       result,
@@ -811,8 +800,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async getPrimaryKeys(_db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
-    const tablename = PD.escapeString(tableName(table, schema), true)
-    const psqlQuery = `
+    const tablename = PD.escapeString(this.tableName(table, schema), true)
+    const query = `
       SELECT
         a.attname as column_name,
         format_type(a.atttypid, a.atttypmod) AS data_type,
@@ -824,27 +813,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       AND    i.indisprimary
       ORDER BY a.attnum
     `
-
-    const redshiftQuery = `
-      select tco.constraint_schema,
-            tco.constraint_name,
-            kcu.ordinal_position as position,
-            kcu.column_name as column_name,
-            kcu.table_schema,
-            kcu.table_name
-      from information_schema.table_constraints tco
-      join information_schema.key_column_usage kcu
-          on kcu.constraint_name = tco.constraint_name
-          and kcu.constraint_schema = tco.constraint_schema
-          and kcu.constraint_name = tco.constraint_name
-      where tco.constraint_type = 'PRIMARY KEY'
-      ${schema ? `and kcu.table_schema = '${escapeString(schema)}'` : ''}
-      and kcu.table_name = '${escapeString(table)}'
-      order by tco.constraint_schema,
-              tco.constraint_name,
-              kcu.ordinal_position;
-    `
-    const query = this.version.isRedshift ? redshiftQuery : psqlQuery
     const data = await this.driverExecuteSingle(query)
     if (data.rows) {
       return data.rows.map((r) => ({
@@ -1031,6 +999,114 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   // ************************************************************************************
+  // PROTECTED HELPER FUNCTIONS
+  // ************************************************************************************
+
+  protected tableName(table: string, schema?: string): string{
+    return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
+  }
+  
+  protected wrapTable(table: string, schema?: string) {
+    if (!schema) return wrapIdentifier(table);
+    return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`;
+  }
+
+  protected async getTableOwner(table: string, schema: string) {
+    const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
+    const result = await this.driverExecuteSingle(sql, { params: [table, schema]});
+    return result.rows[0]?.tableowner;
+  }
+
+  protected async configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
+    const config: PoolConfig = {
+      host: server.config.host,
+      port: server.config.port || undefined,
+      password: server.config.password || undefined,
+      database: database.database,
+      max: 5, // max idle connections per time (30 secs)
+      connectionTimeoutMillis: globals.psqlTimeout,
+      idleTimeoutMillis: globals.psqlIdleTimeout,
+    };
+
+    return this.configurePool(config, server, null);
+  }
+
+  protected configurePool(config: PoolConfig, server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, tempUser: string) {
+    if (tempUser) {
+      config.user = tempUser
+    } else if (server.config.user) {
+      config.user = server.config.user
+    } else if (server.config.osUser) {
+      config.user = server.config.osUser
+    }
+
+    if(server.config.socketPathEnabled) {
+      config.host = server.config.socketPath;
+      config.port = null;
+      return config;
+    }
+
+    if (server.sshTunnel) {
+      config.host = server.config.localHost;
+      config.port = server.config.localPort;
+    }
+
+    if (server.config.ssl) {
+
+      config.ssl = { }
+
+      if (server.config.sslCaFile) {
+        config.ssl.ca = readFileSync(server.config.sslCaFile);
+      }
+
+      if (server.config.sslCertFile) {
+        config.ssl.cert = readFileSync(server.config.sslCertFile);
+      }
+
+      if (server.config.sslKeyFile) {
+        config.ssl.key = readFileSync(server.config.sslKeyFile);
+      }
+      if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
+        // TODO: provide this as an option in settings
+        // not per-connection
+        // How it works:
+        // if false, cert can be self-signed
+        // if true, has to be from a public CA
+        // Heroku certs are self-signed.
+        // if you provide ca/cert/key files, it overrides this
+        config.ssl.rejectUnauthorized = false
+      } else {
+        config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
+      }
+    }
+    return config;
+  }
+
+  protected async getTypes(): Promise<any> {
+    let sql = `
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      FROM        pg_type t
+      LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+      WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
+      AND     n.nspname NOT IN ('pg_catalog', 'information_schema')
+    `
+    if (this.version.number < 80300) {
+      sql += ` AND     t.typname !~ '^_';`;
+    } else {
+      sql += ` AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid);`;
+    }
+
+    const data = await this.driverExecuteSingle(sql);
+    const result: any = {}
+    data.rows.forEach((row: any) => {
+      result[row.typeid] = row.typename
+    })
+    _.merge(result, _.invert(pg.types.builtins))
+    result[1009] = 'array'
+    return result
+  }
+
+  // ************************************************************************************
   // PRIVATE HELPER FUNCTIONS
   // NOTE (@day): some of this may need to be protected so redshift and cockroach have access to them
   // ************************************************************************************
@@ -1143,38 +1219,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
   
-  private async getTypes(): Promise<any> {
-    let sql: string;
-    // TODO (@day): split this up
-    if ((this.version.isPostgres && this.version.number < 80300) || this.version.isRedshift) {
-      sql = `
-        SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
-        FROM        pg_type t
-        LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-        WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
-        AND     t.typname !~ '^_'
-        AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
-      `
-    } else {
-      sql = `
-        SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
-        FROM        pg_type t
-        LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-        WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
-        AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
-        AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
-      `
-    }
-
-    const data = await this.driverExecuteSingle(sql);
-    const result: any = {}
-    data.rows.forEach((row: any) => {
-      result[row.typeid] = row.typename
-    })
-    _.merge(result, _.invert(pg.types.builtins))
-    result[1009] = 'array'
-    return result
-  }
+  
 
   private async getEntityType(
     table: string,
@@ -1211,16 +1256,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     })
   }
   
-  private wrapTable(table: string, schema?: string) {
-    if (!schema) return wrapIdentifier(table);
-    return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`;
-  }
+  
 
-  private async getTableOwner(table: string, schema: string) {
-    const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
-    const result = await this.driverExecuteSingle(sql, { params: [table, schema]});
-    return result.rows[0]?.tableowner;
-  }
+  
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
@@ -1354,37 +1392,6 @@ export function buildSelectTopQueries(options: STQOptions): STQResults {
     query, countQuery, params
   }
 }
-
-
-async function listCockroachIndexes(_conn: Conn, _table: string, _schema: string): Promise<TableIndex[]> {
-  // const sql = `
-  //  show indexes from ${tableName(table, schema)};
-  // `
-
-  // const result = await driverExecuteSingle(conn, { query: sql })
-  return [];
-  // const grouped = _.groupBy(result.rows, 'index_name')
-  // return Object.keys(grouped).map((indexName: string, idx) => {
-  //   const columns = grouped[indexName].filter((c) => !c.implicit)
-  //   const first: any = grouped[indexName][0]
-  //   return {
-  //     id: idx.toString(),
-  //     name: indexName,
-  //     table: table,
-  //     schema: schema,
-  //     // v21.2 onwards changes index names for primary keys
-  //     primary: first.index_name === 'primary' || first.index_name.endsWith('pkey'),
-  //     unique: !first.non_unique,
-  //     columns: _.sortBy(columns, ['seq_in_index']).map((c: any) => ({
-  //       name: c.column_name,
-  //       order: c.direction
-  //     }))
-
-  //   }
-  // })
-
-}
-
 
 // TODO (@day): move this up or out into its own file
 const postgres10CreateScript = `
@@ -1527,117 +1534,6 @@ export function wrapIdentifier(value: string): string {
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;
-}
-
-async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
-
-  let optionsString = undefined
-  if (server.config.client === 'cockroachdb') {
-    const cluster = server.config.options?.cluster || undefined
-    if (cluster) {
-      optionsString = `--cluster=${cluster}`
-    }
-  }
-
-  // If a temporary user is used to connect to the database, we populate it below.
-  let tempUser: string;
-
-  // If the password for the database can expire, we populate passwordResolver with a callback
-  // that can be used to resolve the latest password.
-  let passwordResolver: () => Promise<string>;
-
-  // For Redshift Only -- IAM authentication and credential exchange
-  const redshiftOptions = server.config.redshiftOptions;
-  if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
-    const awsCreds: AWSCredentials = {
-      accessKeyId: redshiftOptions.accessKeyId,
-      secretAccessKey: redshiftOptions.secretAccessKey
-    };
-
-    const clusterConfig: ClusterCredentialConfiguration = {
-      awsRegion: redshiftOptions.awsRegion,
-      clusterIdentifier: redshiftOptions.clusterIdentifier,
-      dbName: database.database,
-      dbUser: server.config.user,
-      dbGroup: redshiftOptions.databaseGroup,
-      durationSeconds: server.config.options.tokenDurationSeconds
-    };
-
-    const credentialResolver = RedshiftCredentialResolver.getInstance();
-
-    // We need resolve credentials once to get the temporary database user, which does not change
-    // on each call to get credentials.
-    // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
-    tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
-
-    // Set the password resolver to resolve the Redshift credentials and return the password.
-    passwordResolver = async() => {
-      return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
-    }
-  }
-
-  const config: PoolConfig = {
-    host: server.config.host,
-    port: server.config.port || undefined,
-    password: passwordResolver || server.config.password || undefined,
-    database: database.database,
-    max: 5, // max idle connections per time (30 secs)
-    connectionTimeoutMillis: globals.psqlTimeout,
-    idleTimeoutMillis: globals.psqlIdleTimeout,
-    // not in the typings, but works.
-    // @ts-expect-error Fix Typings
-    options: optionsString
-  };
-
-  if (tempUser) {
-    config.user = tempUser
-  } else if (server.config.user) {
-    config.user = server.config.user
-  } else if (server.config.osUser) {
-    config.user = server.config.osUser
-  }
-
-  if(server.config.socketPathEnabled) {
-    config.host = server.config.socketPath;
-    config.port = null;
-    return config;
-  }
-
-  if (server.sshTunnel) {
-    config.host = server.config.localHost;
-    config.port = server.config.localPort;
-  }
-
-  if (server.config.ssl) {
-
-    config.ssl = {
-    }
-
-    if (server.config.sslCaFile) {
-      config.ssl.ca = readFileSync(server.config.sslCaFile);
-    }
-
-    if (server.config.sslCertFile) {
-      config.ssl.cert = readFileSync(server.config.sslCertFile);
-    }
-
-    if (server.config.sslKeyFile) {
-      config.ssl.key = readFileSync(server.config.sslKeyFile);
-    }
-    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
-      // TODO: provide this as an option in settings
-      // not per-connection
-      // How it works:
-      // if false, cert can be self-signed
-      // if true, has to be from a public CA
-      // Heroku certs are self-signed.
-      // if you provide ca/cert/key files, it overrides this
-      config.ssl.rejectUnauthorized = false
-    } else {
-      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
-    }
-  }
-  return config;
 }
 
 function parseFields(fields: any[], rowResults: boolean) {
