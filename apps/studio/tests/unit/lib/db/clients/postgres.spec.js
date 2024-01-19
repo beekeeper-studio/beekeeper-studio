@@ -56,7 +56,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
         }
       ],
     }
-    const result = await testOnly.alterTableSql(null, input)
+    const result = await testOnly.alterTableSql(input)
     const expected = 'ALTER TABLE "public"."foo" RENAME COLUMN "bar" TO "baz";'
     expect(result).toBe(expected)
   })
@@ -73,7 +73,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
         }
       ]
     }
-    const result = await testOnly.alterTableSql(null, input);
+    const result = await testOnly.alterTableSql(input);
     const expected = 'ALTER TABLE "public"."foo" ALTER COLUMN "bar" TYPE varchar(255);'
     expect(result).toBe(expected)
   })
@@ -92,7 +92,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
       ]
     }
 
-    const result = await testOnly.alterTableSql(null, input);
+    const result = await testOnly.alterTableSql(input);
     const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "bar" varchar(255) NULL DEFAULT \'Hello Fella\';'
     expect(result).toBe(expected)
   })
@@ -110,7 +110,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
       ],
       drops: ['c']
     }
-    const result = await testOnly.alterTableSql(null, input)
+    const result = await testOnly.alterTableSql(input)
     const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "a" int NOT NULL, DROP COLUMN "c", ALTER COLUMN "b" TYPE char;COMMENT ON COLUMN "public"."foo"."d" IS \'comment!\';'
     expect(result).toBe(expected);
   })
