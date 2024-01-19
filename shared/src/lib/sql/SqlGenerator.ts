@@ -2,6 +2,8 @@ import { Dialect, KnexDialect, Schema, SchemaItem } from '../dialects/models'
 import {Knex} from 'knex'
 import knexlib from 'knex'
 import { BigQueryClient } from '../knex-bigquery'
+import knexFirebirdDialect from "knex-firebird-dialect"
+import { identify } from 'sql-query-identifier'
 
 interface GeneratorConnection {
   dbConfig: any
@@ -26,7 +28,7 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['bigquery'].includes(v)
+    this.isNativeKnex = !['bigquery', 'firebird'].includes(v)
     this.createKnexLib()
   }
 
@@ -48,7 +50,7 @@ export class SqlGenerator {
       k = this.knex.schema.withSchema(schema.schema ? schema.schema : this._connection.dbName)
     }
 
-    const sql = k.createTable(schema.name, (table) => {
+    let sql = k.createTable(schema.name, (table) => {
 
       const primaries = schema.columns.filter(c => this.getPrimaries(c))
       if (primaries.length > 0) {
@@ -65,6 +67,13 @@ export class SqlGenerator {
       })
     }).toQuery()
 
+    // HACK: firebird knex includes the database path in the query which breaks
+    // the sql syntax
+    if (this.dialect === 'firebird') {
+      const queries = identify(sql, { strict: false, dialect: "generic" })
+      sql = queries.reduce((prev, curr) => prev + curr.text.replace(`${this.connection.dbName}.`, ''), '')
+    }
+
     return sql
   }
 
@@ -80,22 +89,38 @@ export class SqlGenerator {
   }
 
   private async createKnexLib () {
-    const { dbConfig  } = this.connection
+    const { dbConfig, dbName } = this.connection
     if (!this.dialect || !this.connection) return
     if (this.isNativeKnex) {
-      this.knex = knexlib({client: this.knexDialect})
+        this.knex = knexlib({ client: this.knexDialect })
     } else {
-      const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
-      this.knex = knexlib({
-        // ewwwwwwwww
-        client: BigQueryClient as any,
-        connection: {
-          projectId: dbConfig.bigQueryOptions?.projectId,
-          keyFilename: dbConfig.bigQueryOptions?.keyFilename,
-          // for testing
-          apiEndpoint
-        } as any
-      })
+      if (this.dialect === 'firebird') {
+        this.knex = knexlib({
+          client: knexFirebirdDialect,
+          connection: {
+            host: dbConfig.host,
+            port: dbConfig.port,
+            database: dbName,
+            user: dbConfig.user,
+            password: dbConfig.password,
+            // eslint-disable-next-line
+            // @ts-ignore
+            blobAsText: true,
+          },
+        })
+      } else if (this.dialect === 'bigquery') {
+        const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
+        this.knex = knexlib({
+          // ewwwwwwwww
+          client: BigQueryClient as any,
+          connection: {
+            projectId: dbConfig.bigQueryOptions?.projectId,
+            keyFilename: dbConfig.bigQueryOptions?.keyFilename,
+            // for testing
+            apiEndpoint
+          } as any
+        })
+      }
     }
   }
 

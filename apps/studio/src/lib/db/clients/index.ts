@@ -6,6 +6,7 @@ import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
 import bigquery from './bigquery.js';
+import firebird from './firebird';
 
 
 export function findClient(key: string): Client | undefined {
@@ -140,6 +141,15 @@ export const CLIENTS: ClientConfig[] = [
       'scriptCreateTable',
     ],
   },
+  {
+    key: 'firebird',
+    name: 'Firebird',
+    defaultPort: 3050,
+    disabledFeatures: [
+      'server:schema',
+      'server:socketPath',
+    ],
+  },
 ];
 
 
@@ -153,4 +163,5 @@ export default {
   mariadb: mysql,
   cockroachdb: postgresql,
   bigquery,
+  firebird,
 };

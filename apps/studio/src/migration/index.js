@@ -33,6 +33,7 @@ import redshiftOptions from './20220817_add_redshift_options'
 import connectionPins from './20230308_create_connection_pins'
 import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
+import firebirdConnection from './20240107_add_firebird_dev_connection'
 
 const logger = createLogger('migrations')()
 
@@ -47,7 +48,8 @@ const realMigrations = [
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
-  createHiddenEntities, createHiddenSchemas, connectionPins, fixKeymapType, bigQueryOptions
+  createHiddenEntities, createHiddenSchemas, connectionPins, fixKeymapType, bigQueryOptions,
+  firebirdConnection,
 ]
 
 // fixtures require the models

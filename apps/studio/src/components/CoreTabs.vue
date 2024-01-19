@@ -516,6 +516,7 @@ export default Vue.extend({
     },
     createQuery(optionalText, queryTitle?) {
       // const text = optionalText ? optionalText : ""
+      console.log("Creating tab")
       let qNum = 0
       let tabName = "New Query"
       do {

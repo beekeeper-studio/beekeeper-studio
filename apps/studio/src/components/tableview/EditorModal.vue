@@ -1,10 +1,11 @@
 <template>
   <portal to="modals">
     <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @opened="onOpen">
-      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop @keypress.stop>
+      <!-- Trap the key events so it doesn't conflict with the parent elements -->
+      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop="handleKeyUp" @keypress.stop>
         <div class="top">
           <div class="dialog-c-title">
-            Editing Cell Content as
+            Editing as
           </div>
 
           <select class="form-control language-select" v-model="languageName">
@@ -23,7 +24,10 @@
             <i class="material-icons">settings</i>
             <i class="material-icons">arrow_drop_down</i>
             <x-menu style="--align: end">
-              <x-menuitem @click.prevent="format" v-show="language.name !== 'text'">
+              <x-menuitem
+                @click.prevent="format"
+                v-show="!language.noBeautify"
+              >
                 <x-label>Format {{ language?.label }}</x-label>
               </x-menuitem>
               <x-menuitem @click.prevent="minify">
@@ -51,12 +55,19 @@
           <button class="btn btn-sm btn-flat" @click.prevent="copy">
             Copy
           </button>
-          <x-buttons>
+          <x-button
+            v-if="language.noMinify"
+            class="btn btn-primary btn-sm"
+            @click.prevent="save"
+          >
+            <x-label>Apply</x-label>
+          </x-button>
+          <x-buttons v-else>
             <x-button
               class="btn btn-primary btn-small"
               @click.prevent="saveAndMinify"
             >
-              <x-label>Minify & Save</x-label>
+              <x-label>Minify & Apply</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
@@ -65,7 +76,7 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu style="--align: end">
                 <x-menuitem @click.prevent="save">
-                  <x-label>Only Save</x-label>
+                  <x-label>Apply (no minify)</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -258,6 +269,11 @@ export default Vue.extend({
     minify() {
       this.content = this.language.minify(this.content)
       this.editor.setValue(this.content)
+    },
+    handleKeyUp(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        this.$modal.hide(this.modalName)
+      }
     }
   },
 });

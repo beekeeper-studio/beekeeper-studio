@@ -234,6 +234,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import pluralize from 'pluralize'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -433,6 +434,7 @@ export default Vue.extend({
         return (_, cell: Tabulator.CellComponent) => {
           const range = cell.getRange()
           const menu = [
+            this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
             { separator: true },
             ...copyActionsMenu({
@@ -445,7 +447,6 @@ export default Vue.extend({
             ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
-            this.openEditorMenu(cell),
           ]
 
           if (keyDatas?.length > 0) {
@@ -495,10 +496,10 @@ export default Vue.extend({
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
+        const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
-        const hasKeyDatas = keyDatas && keyDatas.length > 0
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (hasKeyDatas) {
@@ -556,18 +557,19 @@ export default Vue.extend({
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
             allowEmpty: true,
-            preserveObject: column.dataType.startsWith('_'),
+            preserveObject: column.dataType?.startsWith('_'),
             onPreserveObjectFail: (value: unknown) => {
               log.error('Failed to preserve object for', value)
               return true
             },
+            typeHint: column.dataType.toLowerCase()
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
           },
         }
 
-        if (/^(bool|boolean)$/i.test(column.dataType)) {
+        if (column.dataType && /^(bool|boolean)$/i.test(column.dataType)) {
           const trueVal = this.dialectData.boolean?.true ?? true
           const falseVal = this.dialectData.boolean?.false ?? false
           const values = [falseVal, trueVal]
@@ -711,7 +713,7 @@ export default Vue.extend({
     },
     copySelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
-      copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
+      copyRange({ range: this.tabulator.getActiveRange(), type: 'plain' })
     },
     pasteSelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
@@ -776,8 +778,6 @@ export default Vue.extend({
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
-        resizeColumnsMode: 'guide',
-        resizeColumnsHandles: 'header-only',
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
@@ -857,8 +857,8 @@ export default Vue.extend({
         {
           label:
             range.getTop() === range.getBottom()
-              ? createMenuItem("Clone row")
-              : createMenuItem(`Clone rows ${rowRangeLabel}`),
+              ? createMenuItem("Clone row", "Control+D")
+              : createMenuItem(`Clone rows ${rowRangeLabel}`, "Control+D"),
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable,
         },
@@ -886,7 +886,7 @@ export default Vue.extend({
     },
     openEditorMenu(cell: Tabulator.CellComponent) {
       return {
-        label: createMenuItem("Open cell in Editor"),
+        label: createMenuItem("Edit in modal"),
         disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
@@ -917,6 +917,7 @@ export default Vue.extend({
         return {
           table: this.table.name,
           schema: this.table.schema,
+          dataset: this.database,
           data: [result]
         }
       })
@@ -1040,6 +1041,7 @@ export default Vue.extend({
           key: key,
           table: this.table.name,
           schema: this.table.schema,
+          dataset: this.database,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
           primaryKeys,
@@ -1126,19 +1128,22 @@ export default Vue.extend({
           })
         })
 
+        const payload = {
+          table: this.table.name,
+          row,
+          schema: this.table.schema,
+          dataset: this.database,
+          primaryKeys,
+        }
+
+        payloads.push(payload)
+
         const matchingPrimaryKeys =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
 
         const filteredUpdates = _.filter(this.pendingChanges.updates, matchingPrimaryKeys)
         discardedUpdates.push(...filteredUpdates)
 
-        const payload = {
-          table: this.table.name,
-          row,
-          schema: this.table.schema,
-          primaryKeys,
-        }
 
-        payloads.push(payload)
 
         row.getElement().classList.add('deleted')
 
