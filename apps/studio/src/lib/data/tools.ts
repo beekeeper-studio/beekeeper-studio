@@ -89,6 +89,7 @@ export const Mutators = {
 
   /** Stringify json data for MySQL column */
   jsonMutator(value: any): JsonFriendly {
+    if (_.isString(value) || _.isNull(value)) return value
     return JSON.stringify(value)
   },
 }

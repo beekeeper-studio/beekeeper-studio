@@ -8,6 +8,7 @@ import fs from 'fs'
 import path from 'path'
 import { buildSelectTopQueries, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
+import _ from 'lodash';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false},
@@ -388,6 +389,25 @@ function testWith(dockerTag, socket = false) {
         { updates: [], inserts: [newRow], deletes: []}
       )
       expect(result).not.toBeNull()
+    })
+
+    it("should be able to list table columns with correct types", async () => {
+      await util.knex.schema.createTable('various_types', (table) => {
+        table.integer("id").primary()
+        table.specificType('amount', 'double precision')
+      })
+
+      const columns = await util.connection.listTableColumns('various_types', 'public');
+      expect(columns.map((row) => _.pick(row, ['columnName', 'dataType']))).toEqual([
+        {
+          columnName: 'id',
+          dataType: 'int4(32,0)'
+        },
+        {
+          columnName: 'amount',
+          dataType: 'float8(53)'
+        }
+      ])
     })
 
     describe("Common Tests", () => {

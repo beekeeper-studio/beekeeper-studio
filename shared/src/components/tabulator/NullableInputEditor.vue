@@ -103,7 +103,8 @@ export default Vue.extend({
   watch: {
     rendered() {
       if (this.rendered) {
-        this.value = helpers.niceString(this.cell.getValue())
+        const cellValue = this.cell.getValue()
+        this.value = _.isNil(cellValue) ? '' : helpers.niceString(cellValue)
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {

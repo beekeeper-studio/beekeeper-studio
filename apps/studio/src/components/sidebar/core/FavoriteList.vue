@@ -148,7 +148,7 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         return this.folders.map((folder) => {
           return {
             folder,
-            queries: this.savedQueries.filter((q) => 
+            queries: this.savedQueries.filter((q) =>
               q.queryFolderId === folder.id
             )
           }

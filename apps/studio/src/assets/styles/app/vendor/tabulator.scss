@@ -406,6 +406,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
+      flex-direction: row;
       &:not(.tabulator-spreadsheet-row-header):not(.tabulator-spreadsheet-selected) {
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
@@ -421,9 +422,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
         background-color: transparent;
       }
       .tabulator-header-popup-button {
-        display: none;
         position: relative;
         z-index: 1;
+        color: $text-lighter;
         &::before {
           transition: opacity 0.15s;
           content: "";
@@ -440,6 +441,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
         }
         &:hover {
           opacity: 1;
+          color: inherit;
           &::before {
             opacity: 1;
           }
@@ -458,10 +460,8 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       & .badge {
         background: transparent;
         color: $text-lighter;
-        padding: 0 0.1rem;
-      }
-      &.tabulator-spreadsheet-selected .badge {
-        color: black;
+        padding: 0;
+        margin: 0 0 0 0.3rem;
       }
       &.tabulator-sortable[aria-sort="ascending"] {
         .tabulator-col-content {
@@ -490,40 +490,30 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
         }
       }
       &.foreign-key, &.primary-key {
-        padding-left: $foreign-key-width!important;
+        .tabulator-col-content {
+          width: calc(100% - #{$foreign-key-width});
+        }
         &:before{
+          $font-size: 13px;
           content: 'vpn_key';
           font-family: 'Material Icons';
-          font-size: 13px;
-          position: absolute;
-          top: 0;
-          left: 0;
-          bottom: 0;
+          font-size: $font-size;
+          color: $theme-primary;
+          padding-left: $foreign-key-width - $font-size;
           display: inline-flex;
           align-items: center;
-          justify-content: flex-end;
-          color: $theme-primary;
-          width: $foreign-key-width;
-
         }
       }
       &.primary-key:before {
         color: $theme-secondary;
       }
-      &.tabulator-spreadsheet-selected {
-        &.primary-key:before {
-          color: black;
-        }
-        &.foreign-key:before {
-          color: mix($theme-primary, black, 60%);
-        }
-      }
       &.foreign-key-button {
         display: none;
       }
       .tabulator-col-content {
-        padding: 0 8px;
+        padding: 0 4px 0 8px;
         line-height: 32px;
+        width: 100%;
         .tabulator-arrow {
           top: 14px;
           border-width: 4px!important;
@@ -782,33 +772,68 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     outline: none;
     .tabulator-col {
 
-      &:hover {
-        &:not(.tabulator-spreadsheet-selected) {
-          background: rgba($theme-base, 0.035);
+      &:hover:not(.tabulator-spreadsheet-selected) {
+        background: rgba($theme-base, 0.035);
+      }
+
+      &.tabulator-spreadsheet-selected {
+        &.primary-key:before {
+          color: black;
         }
-        &.tabulator-spreadsheet-selected .tabulator-header-popup-button::before {
-          background-color: darken($header-selected, 10%);
+        &.foreign-key:before {
+          color: mix($theme-primary, black, 60%);
         }
-        .tabulator-header-popup-button {
-          display: inline-block;
+        .tabulator-col-content .tabulator-col-title-holder .tabulator-col-title {
+          color: inherit;
+          .badge, .tabulator-header-popup-button {
+            color: black;
+          }
+          .tabulator-col-sorter.tabulator-col-sorter-element {
+            & .tabulator-arrow, &:hover .tabulator-arrow {
+              border-top-color: black;
+              border-bottom-color: black;
+            }
+          }
+          .tabulator-header-popup-button::before, .tabulator-col-sorter.tabulator-col-sorter-element:hover {
+            background-color: darken($header-selected, 10%);
+          }
         }
       }
 
-      &.tabulator-spreadsheet-selected .tabulator-col-title {
-        color: inherit;
-      }
-
-      .tabulator-col-title {
+      .tabulator-col-content .tabulator-col-title-holder .tabulator-col-title {
         display: flex;
         flex-direction: row-reverse;
+        align-items: center;
         overflow: visible;
+        padding: 0;
         .title {
-          flex-grow: 1;
           min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
+          padding-right: 2px;
           & > * {
             display: inline;
+          }
+        }
+        .tabulator-col-sorter.tabulator-col-sorter-element {
+          margin-left: auto;
+          width: 24px;
+          height: 24px;
+          min-width: 24px;
+          min-height: 24px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          inset: 0;
+          border-radius: 9999px;
+          &:hover {
+            cursor: pointer;
+            background-color: rgba($theme-base, 0.1);
+            div.tabulator-arrow {
+              border-top-color: $theme-base;
+              border-bottom-color: $theme-base;
+            }
           }
         }
       }
@@ -824,6 +849,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 
 .tabulator-col-resize-handle:hover {
   position: relative;
+  width: 6px;
   &::before, &::after {
     content: '';
     position: absolute;
