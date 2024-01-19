@@ -12,7 +12,6 @@ describe("Postgres UNIT tests (no connection required)", () => {
   })
 
   it("Should parseRowQueryResult when array", () => {
-    const f = client.parseRowQueryResult
     const data = {
       command: 'SELECT',
       fields: [{name: 'foo'}],
@@ -26,13 +25,10 @@ describe("Postgres UNIT tests (no connection required)", () => {
       affectedRows: undefined,
       command: 'SELECT'
     }
-    expect(f(data, undefined, true)).toStrictEqual(expected)
-
-
+    expect(client.parseQueryRowResult(data, undefined, true)).toStrictEqual(expected)
   })
 
   it("should parseRowQueryResult when object", () => {
-    const f = client.parseRowQueryResult
     const data = {
       command: 'SELECT',
       fields: [{name: 'foo'}],
@@ -46,7 +42,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
       affectedRows: undefined,
       command: 'SELECT'
     }
-    expect(f(data, undefined, false)).toStrictEqual(expected)
+    expect(client.parseQueryRowResult(data, undefined, false)).toStrictEqual(expected)
   })
 
   it("Should generate correct alter table rename statement", async () => {
