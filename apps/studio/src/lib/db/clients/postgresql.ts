@@ -18,7 +18,7 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -1558,10 +1558,15 @@ function parseRowQueryResult(data: QueryResult, command: string, rowResults: boo
   };
 }
 
+function alterTableSql(change: AlterTableSpec): Promise<string> {
+  const { table, schema } = change
+  const builder = this.getBuilder(table, schema)
+  return builder.alterTable(change)
+}
 
 export const testOnly = {
   parseRowQueryResult,
-  // alterTableSql
+  alterTableSql
 }
 
 export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
