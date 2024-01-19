@@ -9,6 +9,7 @@ volumes:
   mariadb:
   cockroachdb:
   bigquery:
+  firebird:
 
 services:
 
@@ -111,3 +112,14 @@ services:
       - 9050:9050
       - 9060:9060
     entrypoint: sh -c 'chmod +x /docker_init/data.sh; /docker_init/data.sh'
+  firebird:
+    image: jacobalberty/firebird:v4.0.1
+    volumes:
+      - ./dev/docker_firebird:/docker_init
+    ports:
+      - 3050:3050
+    environment:
+      - ISC_PASSWORD=masterkey
+      - EnableLegacyClientAuth=true
+    command: sh -c 'chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /usr/local/firebird/docker-entrypoint.sh firebird;'
+

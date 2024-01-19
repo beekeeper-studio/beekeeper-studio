@@ -80,11 +80,11 @@
       },
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        console.log(this.selectedDatabase)
-        if (this.connection.connectionType === 'sqlite') {
+        if (this.connection.connectionType.match(/sqlite|firebird/)) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
-          return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url: `${fileLocation.join('/')}/${db}.db` })
+          const url = this.connection.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
+          return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()
         this.selectedDatabase = db
