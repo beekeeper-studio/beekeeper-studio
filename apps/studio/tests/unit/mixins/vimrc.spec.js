@@ -1,7 +1,7 @@
 import { createVimCommands } from "../../../../studio/src/lib/readVimrc"
 
 describe("Vimrc Parsing", () => {
-  it("Should parse all the commands here, and supply all the IMapping commands to be sent into the setKeybindingsFromVimrc", () => {
+  it("Should parse all the commands here, and supply all the IMapping commands to be sent into the setKeybindingsFromVimrc.", () => {
     const vimrcSampleContent = [
       "nmap gl $",
       "nmap gh ^",
@@ -27,7 +27,7 @@ describe("Vimrc Parsing", () => {
 })
 
 describe("Vimrc Parsing", () => {
-  it("Should parse all the commands here, and skip the invalid ones, and supply all the IMapping commands to be sent into the setKeybindingsFromVimrc", () => {
+  it("Should parse all the commands here, and skip the invalid ones, and supply all the IMapping commands to be sent into the setKeybindingsFromVimrc.", () => {
     const vimrcSampleContent = [
       "nmap gl $",
       "nmap gh ^",
@@ -51,7 +51,7 @@ describe("Vimrc Parsing", () => {
 })
 
 describe("Vimrc Parsing", () => {
-  it("Should parse all the commands here, and return no valid commands to be passed into codemirror", () => {
+  it("Should parse all the commands here, and return no valid commands.", () => {
     const vimrcSampleContent = [
       "i l :test", //Not a valid command because i is not a valid mapping mode
       "nnoremap <leader>l :test", //Not a valid command because nnoremap is not a current valid mapping mode, but it should be in the future.
