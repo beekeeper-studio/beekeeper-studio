@@ -104,6 +104,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   background: transparent;
   width: min-content;
   min-width: 100%;
+  &.tabulator-row-even {
+    background: transparent;
+  }
   &.tabulator-row-odd {
     background-color: rgba($theme-base, 0.015);
   }
@@ -420,6 +423,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       }
       &.tabulator-spreadsheet-row-header {
         background-color: transparent;
+        border: none;
       }
       .tabulator-header-popup-button {
         position: relative;
@@ -759,7 +763,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     border-color: darken($theme-primary, 20%);
     border-width: 1px;
   }
-  .tabulator-range::after {
+  .tabulator-range.tabulator-range-active::after {
     background-color: darken($theme-primary, 20%);
   }
   .tabulator-range.copied {
