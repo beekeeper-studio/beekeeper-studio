@@ -42,7 +42,6 @@ import Connection from './common/appdb/Connection'
 import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
-import log from 'electron-log'
 import VueClipboard from 'vue-clipboard2'
 import platformInfo from './common/platform_info'
 import { AppEventMixin } from './common/AppEvent'
@@ -52,9 +51,26 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
+import rawLog from 'electron-log'
+import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 
 (async () => {
+
+  const transports = [rawLog.transports.console, rawLog.transports.file]
+  if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
+    transports.forEach(t => t.level = 'silly')
+  } else {
+    transports.forEach(t => t.level = 'warn')
+  }
+  const log = rawLog.scope("main.ts")
+  log.info("starting logging")
+
   try {
+
+    log.debug("APP BOOTING")
+    log.debug("####################################")
+    log.debug("Platform Information (App)")
+    log.debug(JSON.stringify(platformInfo, null, 2))
 
     _.mixin({
       'deepMapKeys': function (obj, fn) {
@@ -74,19 +90,20 @@ import SettingsPlugin from './plugins/SettingsPlugin'
         return x;
       }
     });
-    const transports = [log.transports.console, log.transports.file]
-    if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
-      transports.forEach(t => t.level = 'silly')
-    } else {
-      transports.forEach(t => t.level = 'warn')
-    }
 
-    log.info("starting logging")
+
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
     Tabulator.defaultOptions.layout = "fitDataFill";
     // @ts-expect-error default options not fully typed
     Tabulator.defaultOptions.menuContainer = ".beekeeper-studio-wrapper";
+    // @ts-expect-error default options not fully typed
+    Tabulator.defaultOptions.headerSortClickElement = 'icon';
+    // @ts-expect-error default options not fully typed
+    Tabulator.defaultOptions.resizeColumnsMode = 'guide';
+    // @ts-expect-error default options not fully typed
+    Tabulator.defaultOptions.resizeColumnsHandles = 'header-only';
+    Tabulator.registerModule([HeaderSortTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])

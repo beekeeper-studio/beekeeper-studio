@@ -181,3 +181,12 @@
     margin-bottom: $gutter-h;
   }
 }
+
+.password {
+  display: inline-block;
+}
+.password-icon {
+  position: absolute; 
+  right: 12px;
+  bottom: 5px;
+}

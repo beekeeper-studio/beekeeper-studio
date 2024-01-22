@@ -591,6 +591,12 @@ input[type=file] {
   &.query {
     color: $brand-pink;
   }
+  &.database {
+    color: $brand-purple;
+  }
+  &.connection {
+    color: $brand-secondary;
+  }
   &.settings {
     color: $text-lighter;
   }

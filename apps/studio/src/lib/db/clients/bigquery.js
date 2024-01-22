@@ -9,7 +9,7 @@ import { createCancelablePromise } from '@/common/utils';
 import { BigQueryOptions } from '@/common/appdb/models/saved_connection';
 import { table, time } from 'console';
 import { data } from 'jquery';
-import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql, buildSelectQueriesFromUpdates } from './utils';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { BigQueryClient } from '@shared/lib/knex-bigquery';
 import { Connection } from 'typeorm';
@@ -61,7 +61,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(client, db, table),
     getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
-    query: (queryText) => query(client, queryText),
+    query: (queryText, options) => query(client, queryText, options),
     getInsertQuery: (tableInsert) => buildInsertQuery(knex, { ...tableInsert, schema: database.database }),
     applyChanges: (changes) => applyChanges(client, changes),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
@@ -179,7 +179,37 @@ async function getPrimaryKeys(conn, database, table) {
   }
 }
 
-function query(client, queryText) {
+function parseDryRunMetadata(metadata) {
+  const queryStatistics = metadata.statistics.query;
+  // bytes -> TiB * bq price per TiB processed
+  const onDemandPricingEstimateUSD = queryStatistics.totalBytesBilled / (1024 ^ 4) * 6.25;
+  const fields = [
+    { name: 'statementType', id: 'statementType' },
+    { name: 'totalBytesBilled', id: 'totalBytesBilled' },
+    { name: 'totalBytesProcessed', id: 'totalBytesProcessed' },
+    { name: 'totalBytesProcessedAccuracy', id: 'totalBytesProcessedAccuracy' },
+    { name: 'onDemandPricingEstimateUSD', id: 'onDemandPricingEstimateUSD' }
+  ];
+  const rows = [
+    {
+      statementType: queryStatistics.statementType,
+      totalBytesBilled: queryStatistics.totalBytesBilled,
+      totalBytesProcessed: queryStatistics.totalBytesProcessed,
+      totalBytesProcessedAccuracy: queryStatistics.totalBytesProcessedAccuracy,
+      onDemandPricingEstimateUSD
+    }
+  ];
+
+  return {
+    command: 'SELECT',
+    rows,
+    fields,
+    rowCount: 1,
+    affectedRows: 0
+  };
+}
+
+function query(client, queryText, options = {}) {
   logger().debug('bigQuery query: ' + queryText)
   let job = null
   let canceling = false
@@ -191,8 +221,15 @@ function query(client, queryText) {
   return {
     async execute() {
       // Get a query job first
-      [job] = await client.createQueryJob({ query: queryText })
+      const jobOptions = { query: queryText, ...options };
+      [job] = await client.createQueryJob(jobOptions)
       logger().debug("created job: ", job.id)
+      console.log('JOB METADATA: ', job.metadata)
+
+      if (options.dryRun) {
+        const metadata = job.metadata;
+        return [parseDryRunMetadata(metadata)];
+      }
 
       try {
         logger().debug("wait for executeQuery job.id: ", job.id)
@@ -226,8 +263,65 @@ function query(client, queryText) {
   }
 }
 
+// TODO (@day): if I remember correctly we can't do transactions, so this might be sketchy
 async function applyChanges(conn, changes) {
-  throw new Error('Function not implemented.');
+  let results = [];
+
+  await runWithConnection(conn, async (connection) => {
+    // START TRANSACTION HERE?
+
+    try {
+      if (changes.inserts && changes.inserts.length > 0) {
+        await insertRows(connection, changes.inserts);
+      }
+
+      if (changes.updates && changes.updates.length > 0) {
+        results = await updateValues(connection, changes.updates);
+      }
+
+      if (changes.deletes && changes.deletes.length > 0) {
+        await deleteRows(connection, changes.deletes);
+      }
+
+      // COMMIT?
+    } catch (ex) {
+      logger().error("query exception: ", ex);
+      // ROLLBACK?
+
+      throw ex;
+    }
+  });
+
+  return results;
+}
+
+async function insertRows(cli, inserts) {
+  for (const insert of inserts) {
+    const columns = await listTableColumns(cli, insert.dataset, insert.table);
+    const command = buildInsertQuery(knex, insert, columns);
+    await driverExecuteQuery(cli, { query: command });
+  }
+
+  return true;
+}
+
+// TODO (@day): in postgres we do some stuff for arrays here. See if we need to do the same for bq
+async function updateValues(cli, updates) {
+  log.info("applying updates", updates);
+  let results = [];
+  await driverExecuteQuery(cli, { query: buildUpdateQueries(knex, updates).join(";") });
+  const data = await driverExecuteSingle(cli, { query: buildSelectQueriesFromUpdates(knex, updates).join(";"), multiple: true })
+  results = [data.rows[0]];
+
+  return results;
+}
+
+async function deleteRows(cli, deletes) {
+  for (const command of buildDeleteQueries(knex, deletes)) {
+    await driverExecuteQuery(cli, { query: command});
+  }
+
+  return true;
 }
 
 
