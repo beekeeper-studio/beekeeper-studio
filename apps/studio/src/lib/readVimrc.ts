@@ -1,23 +1,35 @@
 import { readVimrc } from "@/common/utils";
 
-type IMapping = {
+export type IMapping = {
   mappingMode: string;
   lhs: string;
   rhs: string;
   mode: string;
 };
 
-export default function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
-  const keyMappingModes = ["nmap", "imap", "vmap"];
+export function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
   const potentialCommands = readVimrc();
 
   if (potentialCommands.length === 0) {
     return;
   }
 
+  const mappings = createVimCommands(potentialCommands);
+
+  for (let j = 0; j < mappings.length; j++) {
+    codeMirrorVimInstance.map(
+      mappings[j].lhs,
+      mappings[j].rhs,
+      mappings[j].mode
+    );
+  }
+}
+
+export function createVimCommands(vimrcContents: string[]): IMapping[] {
+  const keyMappingModes = ["nmap", "imap", "vmap"];
   const mappings: IMapping[] = [];
 
-  potentialCommands.forEach((line: string) => {
+  vimrcContents.forEach((line: string) => {
     if (!line) {
       return;
     }
@@ -65,11 +77,5 @@ export default function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
     mappings.push(newCommand);
   });
 
-  for (let j = 0; j < mappings.length; j++) {
-    codeMirrorVimInstance.map(
-      mappings[j].lhs,
-      mappings[j].rhs,
-      mappings[j].mode
-    );
-  }
+  return mappings;
 }

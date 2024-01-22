@@ -315,7 +315,7 @@
   import 'codemirror/addon/search/searchcursor'
   import { registerAutoquote } from '@/lib/codemirror'
 
-  import setKeybindingsFromVimrc from "../lib/readVimrc"
+  import { setKeybindingsFromVimrc } from "../lib/readVimrc"
 
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
