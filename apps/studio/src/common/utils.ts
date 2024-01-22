@@ -9,6 +9,7 @@ import _ from 'lodash';
 import platformInfo from './platform_info';
 import { format } from 'sql-formatter';
 import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
+import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -85,6 +86,26 @@ export function readJSONFileSync(filename: string): any {
   const filePath = resolveHomePathToAbsolute(filename);
   const data = fs.readFileSync(path.resolve(filePath), 'utf-8');
   return JSON.parse(data);
+}
+
+export function readWebFile(file: File) {
+  const reader = new FileReader()
+  const result = new Promise<string>((resolve, reject) => {
+    reader.onload = () => {
+      resolve(reader.result as string)
+    }
+    reader.onerror = () => {
+      reject(reader.error)
+    }
+    reader.onabort = () => {
+      reject(new Error('File reading aborted'))
+    }
+  })
+  reader.readAsText(file)
+  return {
+    result,
+    abort: reader.abort,
+  }
 }
 
 export function createParentDirectory(filename: string): Promise<string> {
@@ -177,4 +198,32 @@ export function normalizeFilters(filters: TableFilter[]) {
 export function entityId(schema: string, entity?: TableOrView | Routine) {
   if (entity) return `${entity.entityType}.${schema}.${entity.name}`;
   return `schema.${schema}`;
+}
+
+export function isFile(e: DragEvent) {
+    const dt = e.dataTransfer;
+    for (let i = 0; i < dt.types.length; i++) {
+        if (dt.types[i] === "Files") {
+            return true;
+        }
+    }
+    return false;
+}
+
+export async function getLastExportPath(filename?: string) {
+  const lastExportPath = await SettingsPlugin.get('lastExportPath')
+
+  if (lastExportPath) {
+    return path.join(lastExportPath, filename)
+  }
+
+  if (platformInfo.isMac || platformInfo.isWindows) {
+    return path.join(homedir(), 'Documents', filename)
+  }
+
+  return path.join(homedir(), filename)
+}
+
+export async function setLastExportPath(exportPath: string) {
+  await SettingsPlugin.set('lastExportPath', exportPath)
 }

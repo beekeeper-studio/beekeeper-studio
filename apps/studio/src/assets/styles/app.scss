@@ -10,6 +10,7 @@ body.theme-system {
     @import './components/content-placeholders.scss';
     @import './components/context-menu.scss';
     @import './components/quicksearch.scss';
+    @import './components/dropzone.scss';
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/dark/theme.scss';
@@ -20,6 +21,7 @@ body.theme-system {
     @import './components/content-placeholders.scss';
     @import './components/context-menu.scss';
     @import './components/quicksearch.scss';
+    @import './components/dropzone.scss';
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/light/theme.scss';
@@ -30,6 +32,7 @@ body.theme-dark {
   @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
+  @import './components/dropzone.scss';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/dark/theme.scss';
@@ -40,6 +43,7 @@ body.theme-light {
   @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
+  @import './components/dropzone.scss';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';

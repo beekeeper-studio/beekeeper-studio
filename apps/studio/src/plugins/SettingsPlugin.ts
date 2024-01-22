@@ -2,9 +2,9 @@ import { UserSetting } from "@/common/appdb/models/user_setting"
 
 
 
-const SettingsPlugin = {
+export const SettingsPlugin = {
 
-  async get(key: string, defaultValue: any) {
+  async get(key: string, defaultValue?: any) {
     const result = await UserSetting.findOne({key})
     if (result) {
       return result.value

@@ -21,10 +21,10 @@ const VueNoty = {
     return new Noty(params)
   },
 
-  show(text, type = 'alert', opts = {}) {
+  show(text, type = 'alert', opts: { escapeHtml?: boolean } = {}) {
     const params = Object.assign({}, this.options, opts, {
       type,
-      text: escapeHtml(text)
+      text: opts.escapeHtml === false ? text : escapeHtml(text)
     })
 
     const noty = this.create(params)
