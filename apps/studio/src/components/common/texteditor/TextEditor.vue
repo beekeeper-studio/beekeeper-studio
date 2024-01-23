@@ -10,7 +10,26 @@
 </template>
 
 <script lang="ts">
+import 'codemirror/addon/comment/comment'
+import 'codemirror/addon/dialog/dialog'
+import 'codemirror/addon/search/search'
+import 'codemirror/addon/search/jump-to-line'
+import 'codemirror/addon/scroll/annotatescrollbar'
+import 'codemirror/addon/search/matchesonscrollbar'
+import 'codemirror/addon/search/matchesonscrollbar.css'
+import 'codemirror/addon/search/searchcursor'
+import 'codemirror/mode/sql/sql'
+import 'codemirror/mode/javascript/javascript' // for json
+import 'codemirror/mode/htmlmixed/htmlmixed'
+import 'codemirror/mode/css/css'
+import 'codemirror/mode/xml/xml'
+import 'codemirror/mode/diff/diff'
+import '@/vendor/sql-hint'
+import '@/vendor/show-hint'
+import '@/lib/codemirror-definition'
+import 'codemirror/addon/merge/merge'
 import CodeMirror from "codemirror";
+
 import { resolveLanguage } from "@/lib/editor/languageData";
 import { setKeybindingsFromVimrc, applyConfig } from "@/lib/editor/vim";
 
