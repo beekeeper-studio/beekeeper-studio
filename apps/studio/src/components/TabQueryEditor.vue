@@ -71,6 +71,11 @@
           class="actions btn-group"
           ref="actions"
         >
+          <x-button v-if="showDryRun" class="btn btn-flat btn-small" :disabled="$config.isCommunity" @click="dryRun = !dryRun">
+            <x-label>Dry Run</x-label>
+            <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
+            <input v-else type="checkbox" v-model="dryRun">
+          </x-button>
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -378,6 +383,7 @@
         originalText: "",
         initialized: false,
         blankQuery: new FavoriteQuery(),
+        dryRun: false
       }
     },
     computed: {
@@ -412,6 +418,9 @@
       },
       queryTitle() {
         return this.query?.title
+      },
+      showDryRun() {
+        return this.dialect == 'bigquery'
       },
       unsavedText: {
         get () {
@@ -877,10 +886,19 @@
           const query = this.deparameterizedQuery
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
-          this.runningQuery = this.connection.query(query)
+          // Dry run is for bigquery, allows query cost estimations
+          this.runningQuery = this.connection.query(query, { dryRun: this.dryRun })
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute()
           const queryEndTime = new Date()
+
+          // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
+          if (!document.hasFocus() && window.Notification && Notification.permission === "granted") {
+            new window.Notification("Query Complete", {
+              body: `${this.tab.title} has been executed successfully.`,
+            });
+          }
+
           // eslint-disable-next-line
           // @ts-ignore
           this.executeTime = queryEndTime - queryStartTime

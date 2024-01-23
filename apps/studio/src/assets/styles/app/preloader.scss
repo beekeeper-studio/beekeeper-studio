@@ -19,12 +19,12 @@
       transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg);
       &:nth-of-type(1) {
         background: rgba($theme-primary, 0.65);
-        margin-top: $preloader-dimension/1.8;
-        animation: movedown $preloader-duration cubic-bezier(0.39, 0.575, 0.565, 1) $preloader-duration/2 infinite normal;
+        margin-top: calc($preloader-dimension / 1.8);
+        animation: movedown $preloader-duration cubic-bezier(0.39, 0.575, 0.565, 1) calc($preloader-duration / 2) infinite normal;
       }
       &:nth-of-type(2) {
         background: rgba($theme-primary, 0.65);
-        margin-top: $preloader-dimension/3.6;
+        margin-top: calc($preloader-dimension / 3.6);
       }
       &:nth-of-type(3) {
         background: rgba($theme-primary, 0.65);

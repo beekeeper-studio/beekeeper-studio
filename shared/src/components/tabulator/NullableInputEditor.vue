@@ -92,12 +92,25 @@ export default Vue.extend({
           updateAnyway && this.$emit('value', this.value)
         }
       } else {
-        this.$emit('value', this.value)
+        this.$emit('value', this.parseValue())
       }
 
     },
     clear() {
       this.$emit('value', null)
+    },
+    parseValue() {
+      const typeHint = this.params.typeHint;
+      const floatTypes = [
+        'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
+      ]
+      if (typeHint.includes('int') && !typeHint.includes('point')) {
+        return parseInt(this.value);
+      } else if (floatTypes.includes(typeHint)) {
+        return parseFloat(this.value);
+      } else {
+        return this.value;
+      }
     }
   },
   watch: {

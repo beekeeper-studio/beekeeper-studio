@@ -234,6 +234,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import pluralize from 'pluralize'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -257,7 +258,6 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import pluralize from 'pluralize'
 
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
@@ -496,10 +496,10 @@ export default Vue.extend({
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
+        const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
-        const hasKeyDatas = keyDatas && keyDatas.length > 0
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (hasKeyDatas) {
@@ -562,6 +562,7 @@ export default Vue.extend({
               log.error('Failed to preserve object for', value)
               return true
             },
+            typeHint: column.dataType.toLowerCase()
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
@@ -777,8 +778,6 @@ export default Vue.extend({
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
-        resizeColumnsMode: 'guide',
-        resizeColumnsHandles: 'header-only',
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
@@ -918,6 +917,7 @@ export default Vue.extend({
         return {
           table: this.table.name,
           schema: this.table.schema,
+          dataset: this.database,
           data: [result]
         }
       })
@@ -1041,6 +1041,7 @@ export default Vue.extend({
           key: key,
           table: this.table.name,
           schema: this.table.schema,
+          dataset: this.database,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
           primaryKeys,
@@ -1131,6 +1132,7 @@ export default Vue.extend({
           table: this.table.name,
           row,
           schema: this.table.schema,
+          dataset: this.database,
           primaryKeys,
         }
 

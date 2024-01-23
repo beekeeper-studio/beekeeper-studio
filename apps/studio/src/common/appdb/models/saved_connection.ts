@@ -24,6 +24,7 @@ export const ConnectionTypes = [
   { name: 'Oracle', value: 'other' },
   { name: 'Cassandra', value: 'other' },
   { name: 'BigQuery', value: 'bigquery' },
+  { name: 'Firebird', value: 'firebird'},
 ]
 
 export const keymapTypes = [
@@ -108,6 +109,8 @@ export class DbConnectionBase extends ApplicationEntity {
       return 26257
     } else if (this._connectionType === 'bigquery') {
       return 443
+    } else if (this.connectionType === 'firebird') {
+      return 3050
     }
     return null
   }
