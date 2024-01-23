@@ -67,7 +67,7 @@ export function createVimCommands(vimrcContents: string[]): IMapping[] {
 
     if (keyMappingModes.includes(newCommand.mappingMode) === false) {
       console.error(
-        `Sorry, type needs to be one of the following: ${keyMappingModes.join(
+        `Sorry, ${newCommand.mappingMode} type is invalid and needs to be one of the following: ${keyMappingModes.join(
           ", "
         )}`
       );
