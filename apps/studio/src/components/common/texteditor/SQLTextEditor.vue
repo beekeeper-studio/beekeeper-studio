@@ -1,18 +1,16 @@
 <template>
   <text-editor
+    v-bind="$attrs"
     :value="value"
     @input="$emit('input', $event)"
     :lang="dialect || 'sql'"
-    :extraKeybindings="keybindings"
-    :vim-config="vimConfig"
+    :extra-keybindings="keybindings"
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
-    :height="height"
-    :contextMenuOptions="handleContextMenuOptions"
+    :context-menu-options="handleContextMenuOptions"
     @initialized="handleInitialized"
     @paste="handlePaste"
     @keyup="handleKeyup"
-    @cursorActivity="$emit('cursorActivity', ...arguments)"
     @interface="handleInterface"
   />
 </template>
@@ -29,14 +27,7 @@ import { FormatterDialect } from "@shared/lib/dialects/models";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: [
-    "value",
-    "dialect",
-    "extraKeybindings",
-    "vimConfig",
-    "height",
-    "contextMenuOptions",
-  ],
+  props: ["value", "dialect", "extraKeybindings", "contextMenuOptions"],
   data() {
     return {
       cursorIndex: null,

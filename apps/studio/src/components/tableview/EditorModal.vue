@@ -42,9 +42,11 @@
 
         <div class="editor-container">
           <text-editor
-            ref="textEditor"
+            v-model="content"
             :lang="languageName"
-            :initialize-on-mount="false"
+            :line-wrapping="wrapText"
+            :height="editorHeight"
+            @interface="editorInterface = $event"
           />
         </div>
       </div>
@@ -116,9 +118,9 @@ export default Vue.extend({
   name: "CellEditorModal",
   data() {
     return {
-      editor: null,
+      editorInterface: {},
+      editorHeight: 100,
       error: "",
-      language: TextLanguage,
       languageName: "text",
       content: "",
       eventParams: null,
@@ -139,16 +141,17 @@ export default Vue.extend({
     languages() {
       return Languages
     },
+    language() {
+      return getLanguageByName(this.languageName) || TextLanguage
+    },
   },
 
   watch: {
     languageName() {
-      const language = getLanguageByName(this.languageName)
-      if (language && this.editor) {
-        this.editor.setOption("mode", language.editorMode)
-        this.language = language
-        this.debouncedCheckForErrors();
-      }
+      this.debouncedCheckForErrors();
+    },
+    content() {
+      this.debouncedCheckForErrors();
     },
   },
 
@@ -161,7 +164,6 @@ export default Vue.extend({
         content = JSON.stringify(content)
       }
       language = language ? language : getLanguageByContent(content)
-      this.language = language
       this.languageName = language.name
       try {
         this.content = language.beautify(content)
@@ -189,21 +191,11 @@ export default Vue.extend({
 
     async onOpen() {
       await this.$nextTick();
-
-      this.editor = this.$refs.textEditor.initialize()
-      this.editor.setOption("lineWrapping", this.wrapText)
-      this.editor.setValue(this.content)
-      this.editor.on("change", (cm) => {
-        this.content = cm.getValue()
-        this.debouncedCheckForErrors();
-      })
-
-      this.$refs.textEditor.focus()
-
+      this.editorInterface.focus()
       this.$nextTick(this.resizeHeightToFitContent)
     },
     resizeHeightToFitContent() {
-      const wrapperEl = this.editor.getWrapperElement()
+      const wrapperEl = this.editorInterface.getWrapperElement()
       const wrapperStyle = window.getComputedStyle(wrapperEl)
 
       const minHeight = parseInt(wrapperStyle.minHeight)
@@ -211,26 +203,21 @@ export default Vue.extend({
 
       const sizerEl = wrapperEl.querySelector(".CodeMirror-sizer")
 
-      const targetHeight = _.clamp(sizerEl.offsetHeight, minHeight, maxHeight)
-
-      this.editor.setSize(null, targetHeight)
+      this.editorHeight = _.clamp(sizerEl.offsetHeight, minHeight, maxHeight)
     },
     debouncedCheckForErrors: _.debounce(function() {
       const isValid = this.language.isValid(this.content)
-      this.error = isValid ? "" : `Invalid ${this.language?.label} content`
+      this.error = isValid ? "" : `Invalid ${this.language.label} content`
     }, 50),
     toggleWrapText() {
       this.wrapText = !this.wrapText
-      this.editor?.setOption("lineWrapping", this.wrapText)
     },
     format() {
       this.content = this.language.beautify(this.content)
-      this.editor.setValue(this.content)
-      this.$nextTick(this.resizeHeightToFitContent())
+      this.$nextTick(this.resizeHeightToFitContent)
     },
     minify() {
       this.content = this.language.minify(this.content)
-      this.editor.setValue(this.content)
     },
     handleKeyUp(e: KeyboardEvent) {
       if (e.key === "Escape") {

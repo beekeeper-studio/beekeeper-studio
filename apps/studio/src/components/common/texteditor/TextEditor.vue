@@ -20,6 +20,7 @@ export default {
     "lang",
     "keybindings",
     "vimConfig",
+    "lineWrapping",
     "hintOptions",
     "columnsGetter",
     "height",
@@ -67,6 +68,9 @@ export default {
     },
     readOnly() {
       this.editor.setOption("readOnly", this.readOnly);
+    },
+    lineWrapping() {
+      this.editor.setOption("lineWrapping", this.lineWrapping);
     },
   },
   methods: {
@@ -117,7 +121,6 @@ export default {
       }
 
       cm.on("change", (cm) => {
-        console.log('change')
         this.$emit("input", cm.getValue());
       });
 
@@ -303,6 +306,7 @@ export default {
       setValue: (value: string) => {
         this.editor.setValue(value);
       },
+      getWrapperElement: () => this.editor.getWrapperElement(),
     });
   },
   beforeDestroy() {

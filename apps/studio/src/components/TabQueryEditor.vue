@@ -33,10 +33,10 @@
       <sql-text-editor
         v-model="unsavedText"
         :dialect="dialect"
-        :extraKeybindings="keybindings"
+        :extra-keybindings="keybindings"
         :vim-config="vimConfig"
         :height="editorHeight"
-        :readOnly="editorReadOnly"
+        :read-only="editorReadOnly"
         @initialized="handleEditorInitialized"
         @cursorActivity="handleCursorActivity"
         @interface="editorInterface = $event"
@@ -949,6 +949,6 @@
         this.split.destroy()
       }
     },
-  })
+  }
 </script>
 
