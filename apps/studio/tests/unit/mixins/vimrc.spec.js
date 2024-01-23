@@ -29,7 +29,7 @@ describe("Vimrc Parsing", () => {
 })
 
 describe("Vimrc Parsing", () => {
-  it("register two of the same command and same mapping mode, take the most recent one created and ignore the other", () => {
+  it("register two of the same command and same mapping mode, take the last one created and ignore the other", () => {
     const vimrcSampleContent = [
       "nmap gl ^",
       "nmap gl $",
