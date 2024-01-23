@@ -1,4 +1,5 @@
 import type { ConnectionType } from "@/common/interfaces/IConnection";
+import CodeMirror from 'codemirror'
 
 export interface LanguageData {
   isValid: (raw: string) => boolean;
@@ -125,7 +126,7 @@ export function getLanguageByName(name: string): LanguageData | undefined {
   return Languages.find((lang) => lang.name === name);
 }
 
-type Language = ConnectionType | "text" | "html" | "json";
+type Language = ConnectionType | "sql" | "text" | "html" | "json";
 
 interface CodeMirrorLanguage {
   mode: string | Record<string, unknown>;
@@ -173,6 +174,7 @@ export function resolveLanguage(lang: Language): CodeMirrorLanguage {
         hint: CodeMirror.hint.sql,
       };
     case "bigquery":
+    case "sql":
       return {
         mode: "text/x-sql",
         // @ts-expect-error TODO not fully typed

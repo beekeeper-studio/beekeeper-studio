@@ -7,7 +7,11 @@ type IMapping = {
   mode: string;
 };
 
-export default function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
+interface Config {
+  exCommands?: { name: string, prefix: string, handler: () => void }[];
+}
+
+export function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
   const keyMappingModes = ["nmap", "imap", "vmap"];
   const potentialCommands = readVimrc();
 
@@ -61,5 +65,14 @@ export default function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
       mappings[j].rhs,
       mappings[j].mode
     );
+  }
+}
+
+export function applyConfig(codeMirrorVimInstance: any, config: Config) {
+  const { exCommands } = config;
+  if (exCommands) {
+    exCommands.forEach(({ name, prefix, handler }) => {
+      codeMirrorVimInstance.defineEx(prefix, name, handler);
+    });
   }
 }

@@ -44,7 +44,7 @@
           <text-editor
             ref="textEditor"
             :lang="languageName"
-            :initializeOnMount="false"
+            :initialize-on-mount="false"
           />
         </div>
       </div>
@@ -108,7 +108,7 @@ import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
 import rawlog from 'electron-log'
-import TextEditor from '@/components/common/TextEditor.vue'
+import TextEditor from '@/components/common/texteditor/TextEditor.vue'
 
 const log = rawlog.scope('EditorModal')
 
