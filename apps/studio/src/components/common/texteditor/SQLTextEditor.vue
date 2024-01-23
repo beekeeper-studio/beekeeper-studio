@@ -3,7 +3,7 @@
     v-bind="$attrs"
     :value="value"
     @input="$emit('input', $event)"
-    :lang="dialect || 'sql'"
+    :lang="lang || 'sql'"
     :extra-keybindings="keybindings"
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
@@ -23,11 +23,11 @@ import { mapState } from "vuex";
 import { registerAutoquote } from "@/lib/codemirror";
 import { removeQueryQuotes } from "@/lib/db/sql_tools";
 import { format } from "sql-formatter";
-import { FormatterDialect } from "@shared/lib/dialects/models";
+import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "dialect", "extraKeybindings", "contextMenuOptions"],
+  props: ["value", "lang", "extraKeybindings", "contextMenuOptions"],
   data() {
     return {
       cursorIndex: null,
@@ -78,7 +78,7 @@ export default Vue.extend({
   methods: {
     formatSql() {
       const formatted = format(this.value, {
-        language: FormatterDialect(this.dialect),
+        language: FormatterDialect(dialectFor(this.lang)),
       });
       this.editorInterface.setValue(formatted);
       this.editorInterface.focus();

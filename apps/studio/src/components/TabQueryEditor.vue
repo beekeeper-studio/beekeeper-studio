@@ -32,7 +32,7 @@
       </div>
       <sql-text-editor
         v-model="unsavedText"
-        :dialect="dialect"
+        :lang="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
         :height="editorHeight"
