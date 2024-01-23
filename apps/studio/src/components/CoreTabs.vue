@@ -702,8 +702,8 @@ export default Vue.extend({
         counter.textContent = `${i + 1}`
 
         try {
-          // TODO (azmi): this process can take longer than expected, we should
-          // make it cancellable
+          // TODO (azmi): this process can take longer by accident. Consider 
+          // an ability to cancel reading file.
           const text = readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
           if (text) {
             const query = new FavoriteQuery()
