@@ -721,6 +721,11 @@
               })
             }
           })
+
+          setTimeout(() => {
+            this.tableHeight = this.$refs.bottomPanel.clientHeight
+            this.updateEditorHeight()
+          }, 1)
         })
       },
       handleEditorInitialized(_: CodeMirror.Editor) {
