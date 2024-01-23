@@ -876,18 +876,25 @@ export default Vue.extend({
       ]
     },
     setAsNullMenuItem(range: Tabulator.RangeComponent) {
+      const areAllCellsPrimarykey = range
+        .getColumns()
+        .every((col) => this.isPrimaryKey(col.getField()));
       return {
         label: createMenuItem("Set as NULL"),
-        action: () => range.getCells().map((cell) => {
+        action: () => range.getCells().forEach((cell) => {
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
-        disabled: !this.editable,
+        disabled: areAllCellsPrimarykey || !this.editable,
       }
     },
     openEditorMenu(cell: Tabulator.CellComponent) {
+      const disabled = (cell: Tabulator.CellComponent) => {
+        if (this.isPrimaryKey(cell.getField())) return true
+        return !this.editable && !this.insertionCellCheck(cell)
+      }
       return {
         label: createMenuItem("Edit in modal"),
-        disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
+        disabled,
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
           this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
