@@ -74,7 +74,13 @@ export function createVimCommands(vimrcContents: string[]): IMapping[] {
       return;
     }
 
-    mappings.push(newCommand);
+    const currEntry = mappings.find((mapping) => mapping.lhs === newCommand.lhs && mapping.mappingMode === newCommand.mappingMode)
+    if (currEntry) {
+      const index = mappings.indexOf(currEntry)
+      mappings[index] = newCommand
+    } else {
+      mappings.push(newCommand);
+    }
   });
 
   return mappings;
