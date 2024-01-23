@@ -181,6 +181,21 @@
         </div>
       </modal>
     </portal>
+
+    <confirmation-modal name="core-tabs-close-confirmation" ref="closeConfirmation">
+      <template v-slot:title>
+        <div class="dialog-c-title">
+          Really close
+            <span class="tab-like" v-if="closingTab">
+              <tab-icon :tab="closingTab" /> {{ closingTab.title }}
+            </span>
+          ?
+        </div>
+      </template>
+      <template v-slot:message>
+        You will lose unsaved changes
+      </template>
+    </confirmation-modal>
   </div>
 </template>
 
@@ -210,8 +225,10 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { readWebFile, getLastExportPath } from '@/common/utils'
 import { readFileSync, writeFileSync } from 'fs'
 import Noty from 'noty'
+import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
+import pluralize from 'pluralize'
 
 export default Vue.extend({
   props: ['connection'],
@@ -226,7 +243,8 @@ export default Vue.extend({
     TableBuilder,
     TabWithTable,
     TabIcon,
-    PendingChangesButton
+    PendingChangesButton,
+    ConfirmationModal,
   },
   data() {
     return {
@@ -245,6 +263,7 @@ export default Vue.extend({
       // below are connected to the modal for duplicate
       dbDuplicateTableParams: null,
       duplicateTableName: null,
+      closingTab: null,
     }
   },
   watch: {
@@ -258,7 +277,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState('tabs', { 'activeTab': 'active' }),
+    ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect' }),
     tabIcon() {
       return {
@@ -305,15 +324,6 @@ export default Vue.extend({
         { event: AppEvent.dropzoneDrop, handler: this.handleDropzoneDrop },
         { event: AppEvent.promptQueryImportFromComputer, handler: this.handlePromptQueryImportFromComputer },
         { event: AppEvent.promptQueryExport, handler: this.handlePromptQueryExport },
-      ]
-    },
-    contextOptions() {
-      return [
-        { name: "Close", slug: 'close', handler: ({ item }) => this.close(item) },
-        { name: "Close Others", slug: 'close-others', handler: ({ item }) => this.closeOther(item) },
-        { name: 'Close All', slug: 'close-all', handler: this.closeAll },
-        { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({ item }) => this.closeToRight(item) },
-        { name: "Duplicate", slug: 'duplicate', handler: ({ item }) => this.duplicate(item) }
       ]
     },
     lastTab() {
@@ -478,20 +488,6 @@ export default Vue.extend({
     },
     openContextMenu(event, item) {
       this.contextEvent = { event, item }
-    },
-    contextClick({ option, item }) {
-      switch (option.slug) {
-        case 'close':
-          return this.close(item)
-        case 'close-others':
-          return this.closeOther(item)
-        case 'close-all':
-          return this.closeAll();
-        case 'close-to-right':
-          return this.closeToRight(item);
-        case 'duplicate':
-          return this.duplicate(item);
-      }
     },
     async setActiveTab(tab) {
       await this.$store.dispatch('tabs/setActive', tab)
@@ -817,7 +813,14 @@ export default Vue.extend({
         }
       }
     },
-    async close(tab) {
+    async close(tab: OpenTab) {
+      if (tab.unsavedChanges) {
+        this.closingTab = tab
+        const confirmed = await this.$refs.closeConfirmation.confirm();
+        this.closingTab = null
+        if (!confirmed) return
+      }
+
       if (this.activeTab === tab) {
         if (tab === this.lastTab) {
           this.previousTab()
@@ -830,22 +833,47 @@ export default Vue.extend({
         await this.$store.dispatch('data/queries/reload', tab.queryId)
       }
     },
-    closeAll() {
+    async closeAll() {
+      const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)
+      if (unsavedTabs.length > 0) {
+        const confirmed = await this.$confirm(
+          'Close all tabs?',
+          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)}. Are you sure?`
+        )
+        if (!confirmed) return
+      }
       this.$store.dispatch('tabs/unload')
     },
-    closeOther(tab) {
+    async closeOther(tab: OpenTab) {
       const others = _.without(this.tabItems, tab)
+      const unsavedTabs = others.filter((t) => t.unsavedChanges)
+      if (unsavedTabs.length > 0) {
+        const confirmed = await this.$confirm(
+          'Close other tabs?',
+          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)}. Are you sure?`
+        )
+        if (!confirmed) return
+      }
+
       this.$store.dispatch('tabs/remove', others)
       this.setActiveTab(tab)
       if (tab.queryId) {
         this.$store.dispatch('data/queries/reload', tab.queryId)
       }
     },
-    closeToRight(tab) {
+    async closeToRight(tab: OpenTab) {
       const tabIndex = _.indexOf(this.tabItems, tab)
       const activeTabIndex = _.indexOf(this.tabItems, this.activeTab)
 
       const tabsToRight = this.tabItems.slice(tabIndex + 1)
+      const unsavedTabs = tabsToRight.filter((t) => t.unsavedChanges)
+      if (unsavedTabs.length > 0) {
+        const confirmed = await this.$confirm(
+          'Close tabs to the right?',
+          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`
+        )
+        if (!confirmed) return
+      }
 
       if (this.activeTab && activeTabIndex > tabIndex) {
         this.setActiveTab(tab)

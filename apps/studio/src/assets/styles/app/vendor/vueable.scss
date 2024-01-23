@@ -21,7 +21,7 @@
     min-width: 200px;
     border-radius: 6px;
     font-size: 0.95rem;
-    @extend .dropdown-shadow;
+    @include dropdown-shadow;
   }
   .dropdown-item {
     display: flex;

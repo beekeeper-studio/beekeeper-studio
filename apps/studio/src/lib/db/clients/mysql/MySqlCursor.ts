@@ -5,7 +5,7 @@ import { BeeCursor } from "../../models";
 import { waitFor } from "../base/wait";
 import rawLog from 'electron-log'
 
-const log = rawLog.scope('msqlcursor');
+const log = rawLog.scope('mysqlcursor');
 
 interface Conn {
   pool: Pool

@@ -43,6 +43,7 @@ export interface State {
   server: Nullable<IDbConnectionPublicServer>,
   connection: Nullable<DBConnection>,
   database: Nullable<string>,
+  databaseList: string[],
   tables: TableOrView[],
   routines: Routine[],
   entityFilter: EntityFilter,
@@ -78,6 +79,7 @@ const store = new Vuex.Store<State>({
     server: null,
     connection: null,
     database: null,
+    databaseList: [],
     tables: [],
     routines: [],
     entityFilter: {
@@ -158,7 +160,7 @@ const store = new Vuex.Store<State>({
             obj[key] = [];
         }
       }
-      
+
       return _(obj).keys().map(k => {
         return {
           schema: k,
@@ -235,6 +237,7 @@ const store = new Vuex.Store<State>({
       state.connection = null
       state.server = null
       state.database = null
+      state.databaseList = []
       state.tables = []
       state.routines = []
       state.entityFilter = {
@@ -248,6 +251,9 @@ const store = new Vuex.Store<State>({
     updateConnection(state, {connection, database}) {
       state.connection = connection
       state.database = database
+    },
+    databaseList(state, dbs: string[]) {
+      state.databaseList = dbs
     },
     unloadTables(state) {
       state.tables = []
@@ -406,6 +412,7 @@ const store = new Vuex.Store<State>({
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
+        await context.dispatch('updateDatabaseList')
         await context.dispatch('updateRoutines')
       }
     },
@@ -431,7 +438,12 @@ const store = new Vuex.Store<State>({
         context.commit("columnsLoading", null)
       }
     },
-
+    async updateDatabaseList(context) {
+      if (context.state.connection) {
+        const databaseList = await context.state.connection.listDatabases()
+        context.commit('databaseList', databaseList)
+      }
+    },
     async updateTables(context) {
       // FIXME: We should only load tables for the active/default schema
       //        then we should load new tables when a schema is expanded in the sidebar

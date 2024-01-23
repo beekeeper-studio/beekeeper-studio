@@ -116,6 +116,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <firebird-form
+                  v-if="config.connectionType === 'firebird'"
+                  :config="config"
+                  :testing="testing"
+                />
                 <other-database-notice v-if="config.connectionType === 'other'" />
 
                 <!-- TEST AND CONNECT -->
@@ -195,6 +200,7 @@ import SqliteForm from './connection/SqliteForm.vue'
 import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
+import FirebirdForm from './connection/FirebirdForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import _ from 'lodash'
@@ -212,7 +218,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, BigQueryForm, },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, BigQueryForm, FirebirdForm },
 
   data() {
     return {
