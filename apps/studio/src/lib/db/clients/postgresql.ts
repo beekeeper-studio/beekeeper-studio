@@ -153,7 +153,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     } else {
       sql += `
           'r' AS tabletype,
-          'r' AS parenttype,
+          'r' AS parenttype
         FROM information_schema.tables AS t
         WHERE t.table_type NOT LIKE '%VIEW%'
       `;
