@@ -169,7 +169,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows;
   }
 
-  async listTablePartitions(table: string, schema: string): Promise<TablePartition[]> {
+  async listTablePartitions(table: string, schema: string = this._defaultSchema): Promise<TablePartition[]> {
     if (!this.version.hasPartitions) return null;
 
     const sql = this.knex.raw(`

@@ -1,7 +1,7 @@
 import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
-import { IDbConnectionDatabase, IDbConnectionServerConfig } from "../client";
+import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../client";
 import { PrimaryKeyColumn, TableProperties } from "../models";
 import { PostgresClient } from "./postgresql";
 import { escapeString } from "./utils";
@@ -101,7 +101,7 @@ export class RedshiftClient extends PostgresClient {
   }
 
   protected async getTypes(): Promise<any> {
-    let sql = `
+    const sql = `
       SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
       FROM        pg_type t
       LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
@@ -119,4 +119,11 @@ export class RedshiftClient extends PostgresClient {
     result[1009] = 'array';
     return result;
   }
+}
+
+
+export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+  const client = new RedshiftClient(server, database);
+  await client.connect();
+  return client;
 }

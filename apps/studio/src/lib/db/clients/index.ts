@@ -2,6 +2,8 @@
 
 import mysql from './mysql';
 import postgresql from './postgresql';
+import cockroachdb from './cockroach';
+import redshift from './redshift';
 import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
@@ -159,9 +161,9 @@ export default {
   sqlserver,
   sqlite,
   cassandra,
-  redshift: postgresql,
+  redshift,
   mariadb: mysql,
-  cockroachdb: postgresql,
+  cockroachdb,
   bigquery,
   firebird,
 };

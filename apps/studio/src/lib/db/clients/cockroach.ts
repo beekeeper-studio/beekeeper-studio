@@ -1,6 +1,6 @@
 import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
-import { IDbConnectionDatabase, IDbConnectionServerConfig } from "../client";
+import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../client";
 import { SupportedFeatures, TableIndex, TablePartition, TableProperties, TableTrigger } from "../models";
 import { PostgresClient } from "./postgresql";
 
@@ -115,7 +115,7 @@ export class CockroachClient extends PostgresClient {
   }
 
   protected async getTypes(): Promise<any> {
-    let sql = `
+    const sql = `
       SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
       FROM        pg_type t
       LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
@@ -133,4 +133,10 @@ export class CockroachClient extends PostgresClient {
     result[1009] = 'array'
     return result
   }
+}
+
+export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+  const client = new CockroachClient(server, database);
+  await client.connect();
+  return client;
 }
