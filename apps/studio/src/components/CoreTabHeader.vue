@@ -115,11 +115,7 @@ import TabIcon from './tab/TabIcon.vue'
       async maybeClose(event) {
         event.stopPropagation()
         event.preventDefault()
-        if (this.tab.unsavedChanges) {
-          this.$modal.show(this.modalName)
-        } else {
-          this.$emit('close', this.tab)
-        }
+        this.$emit('close', this.tab)
       },
       doNothing() {
         // Empty on purpose

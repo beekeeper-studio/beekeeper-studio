@@ -279,6 +279,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch!important;
   padding-left: $gutter-w - 0.4rem;
+  padding-bottom: 0.6rem;
   &.list-body-empty {
     flex: 0;
   }
@@ -368,7 +369,7 @@
       // padding-bottom: $gutter-h * 0.5;
     }
     .title {
-      @extend .truncate;
+      @include truncate;
     }
     .badge {
       display: inline-flex;
@@ -378,7 +379,7 @@
       font-size: 0.8rem;
       margin: 0;
       span {
-        @extend .truncate;
+        @include truncate;
       }
     }
     .actions {

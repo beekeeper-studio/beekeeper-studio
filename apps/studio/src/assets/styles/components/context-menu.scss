@@ -19,7 +19,7 @@
   font-weight: 400;
   min-width: 150px;
   border: 0;
-  @extend .card-shadow-hover;
+  @include card-shadow-hover;
 }
 .vue-simple-context-menu--active {
   display: block;

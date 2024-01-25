@@ -48,7 +48,7 @@
     border-radius: 6px;
     background: lighten($theme-bg, 5%);
     width: 100%;
-    @extend .card-shadow-hover;
+    @include card-shadow-hover;
   }
   .clear {
     position: absolute;

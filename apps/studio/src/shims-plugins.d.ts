@@ -21,8 +21,8 @@ declare module 'vue/types/vue' {
       warning(text: string, opts?: any): Noty
       info(text: string, opts?: any): Noty
     }
-    $confirm: Promise<boolean>
-    $confirmModalId: string
+    $confirm(title?: string, message?: string): Promise<boolean>
+    $confirmModalName: string
 
     // TODO: figure out how to add these automatically from AppEvent.ts
     registerHandlers(bindings: RootBinding[]): void

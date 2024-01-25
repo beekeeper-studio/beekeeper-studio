@@ -117,7 +117,7 @@ export default Vue.extend({
 
     a {
       font-weight: 600;
-      margin-top: $gutter-h / 2;
+      margin-top: calc($gutter-h / 2);
       padding-left: $gutter-w;
     }
     &:hover{
