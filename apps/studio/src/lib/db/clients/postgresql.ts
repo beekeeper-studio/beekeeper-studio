@@ -1156,7 +1156,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       log.info('RUNNING', query, options.params);
       connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
         if (err) return reject(err);
-        resolve(data);
+        let qr: QueryResult | QueryResult[];
+        if (args.multiResult) {
+          qr = Array.isArray(data) ? data : [data];
+        } else {
+          qr = Array.isArray(data) ? data[0] : data;
+        }
+        resolve(qr);
       });
     });
   }
