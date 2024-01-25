@@ -92,7 +92,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return this.version.version.split(" on ")[0];
   }
 
-  getBuilder(table: string, schema?: string): ChangeBuilderBase {
+  getBuilder(table: string, schema: string = this._defaultSchema): ChangeBuilderBase {
     return new PostgresqlChangeBuilder(table, schema);
   }
 
@@ -266,7 +266,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       };
     });
   }
-  async listMaterializedViewColumns(_db: string, table: string, schema?: string): Promise<TableColumn[]> {
+  async listMaterializedViewColumns(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
     const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : '';
     if (table && !schema) {
       throw new Error("Cannot get columns for '${table}, no schema provided'")
@@ -293,7 +293,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async listTableColumns(_db: string, table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(_db: string, table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     // if you provide table, you have to provide schema
     const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
     const params = table ? [schema, table] : []
@@ -338,7 +338,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
+  async listTableTriggers(table: string, schema: string = this._defaultSchema): Promise<TableTrigger[]> {
     // action_timing has taken over from condition_timing
     // condition_timing was last used in PostgreSQL version 9.0
     // which is not supported anymore since 08 Oct 2015.
@@ -374,7 +374,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async listTableIndexes(_db: string, table: string, schema?: string): Promise<TableIndex[]> {
+  async listTableIndexes(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
     const sql = `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
@@ -449,7 +449,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.schema_name);
   }
 
-  async getTableReferences(table: string, schema?: string): Promise<string[]> {
+  async getTableReferences(table: string, schema: string = this._defaultSchema): Promise<string[]> {
     const sql = `
       SELECT ctu.table_name AS referenced_table_name
       FROM information_schema.table_constraints AS tc
@@ -469,7 +469,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.referenced_table_name);
   }
 
-  async getTableKeys(_db: string, table: string, schema?: string): Promise<TableKey[]> {
+  async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
       SELECT
         kcu.constraint_schema AS from_schema,
@@ -653,11 +653,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return results
   }
 
-  getQuerySelectTop(table: string, limit: number, schema?: string): string {
+  getQuerySelectTop(table: string, limit: number, schema: string = this._defaultSchema): string {
     return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
-  async getTableProperties(table: string, schema?: string): Promise<TableProperties> {
+  async getTableProperties(table: string, schema: string = this._defaultSchema): Promise<TableProperties> {
     const identifier = this.wrapTable(table, schema)
 
     const statements = [
@@ -706,7 +706,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }  
 
-  async getTableCreateScript(table: string, schema?: string): Promise<string> {
+  async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     // Reference http://stackoverflow.com/a/32885178
     const includesAttIdentify = (this.version.isPostgres && this.version.number >= 100000)
 
@@ -721,7 +721,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.createtable)[0];
   }
 
-  async getViewCreateScript(view: string, schema?: string): Promise<string[]> {
+  async getViewCreateScript(view: string, schema: string = this._defaultSchema): Promise<string[]> {
     const createViewSql = `CREATE OR REPLACE VIEW ${wrapIdentifier(schema)}.${wrapIdentifier(view)} AS`;
 
     const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
@@ -733,7 +733,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async getRoutineCreateScript(routine: string, _type: string, schema?: string): Promise<string[]> {
+  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema): Promise<string[]> {
     const sql = `
       SELECT pg_get_functiondef(p.oid)
       FROM pg_proc p
@@ -752,7 +752,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.pg_get_functiondef);
   }
 
-  async truncateAllTables(_db: string, schema?: string): Promise<void> {
+  async truncateAllTables(_db: string, schema: string = this._defaultSchema): Promise<void> {
     const sql = `
       SELECT quote_ident(table_name) as table_name
       FROM information_schema.tables
@@ -799,12 +799,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async getPrimaryKey(db: string, table: string, schema?: string): Promise<string> {
+  async getPrimaryKey(db: string, table: string, schema: string = this._defaultSchema): Promise<string> {
     const keys = await this.getPrimaryKeys(db, table, schema)
     return keys.length === 1 ? keys[0].columnName : null
   }
 
-  async getPrimaryKeys(_db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
+  async getPrimaryKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<PrimaryKeyColumn[]> {
     const tablename = PD.escapeString(this.tableName(table, schema), true)
     const query = `
       SELECT
@@ -829,7 +829,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async getTableLength(table: string, schema?: string): Promise<number> {
+  async getTableLength(table: string, schema: string = this._defaultSchema): Promise<number> {
     const tableType = await this.getEntityType(table, schema)
     const forceSlow = !tableType || tableType !== 'BASE_TABLE'
     const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version: this.version, forceSlow})
@@ -839,7 +839,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return totalRecords
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<TableResult> {
     const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params })
     return {
@@ -848,13 +848,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {
+  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<string> {
     const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects, true)
     return qs.query
   }
 
-  async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
-    schema = schema ?? this._defaultSchema;
+  async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema): Promise<StreamResults> {
     const qs = buildSelectTopQueries({
       table, orderBy, filters, version: this.version, schema
     })
@@ -900,7 +899,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return `"${value.replaceAll(/"/g, '""')}"`;
   }
 
-  async setTableDescription(table: string, description: string, schema?: string): Promise<string> {
+  async setTableDescription(table: string, description: string, schema: string = this._defaultSchema): Promise<string> {
     const identifier = this.wrapTable(table, schema)
     const comment  = escapeString(description)
     const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`
@@ -909,25 +908,25 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result?.description
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
     const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
 
-  async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+  async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
     const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
 
-  async duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
+  async duplicateTable(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<void> {
     const sql = this.duplicateTableSql(tableName, duplicateTableName, schema);
 
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string {
+  duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): string {
     const sql = `
       CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
       SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
@@ -1034,11 +1033,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   // PROTECTED HELPER FUNCTIONS
   // ************************************************************************************
 
-  protected tableName(table: string, schema?: string): string{
+  protected tableName(table: string, schema: string = this._defaultSchema): string{
     return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
   }
   
-  protected wrapTable(table: string, schema?: string) {
+  protected wrapTable(table: string, schema: string = this._defaultSchema) {
     if (!schema) return wrapIdentifier(table);
     return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`;
   }
