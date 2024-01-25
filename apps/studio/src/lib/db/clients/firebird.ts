@@ -940,6 +940,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       indexes: await indexes,
       relations: await relations,
       triggers: await triggers,
+      partitions: [],
       owner: await info["RDB$OWNER_NAME"],
       createdAt: undefined, // TODO
     };
