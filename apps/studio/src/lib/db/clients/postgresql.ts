@@ -854,6 +854,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
+    schema = schema ?? this._defaultSchema;
     const qs = buildSelectTopQueries({
       table, orderBy, filters, version: this.version, schema
     })
