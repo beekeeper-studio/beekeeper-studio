@@ -163,34 +163,6 @@ function configDatabase(
   return config;
 }
 
-function resolveDefault(
-  version: MysqlClient["versionInfo"],
-  defaultValue: string
-) {
-  // adapted from https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/pull/998/files
-  if (version.isMySql) return defaultValue;
-
-  if (!defaultValue) return null;
-
-  if (defaultValue.toString().toLowerCase() === "'null'") {
-    return null;
-  }
-
-  if (
-    defaultValue.startsWith("'") &&
-    defaultValue.endsWith("'") &&
-    defaultValue.length >= 2
-  ) {
-    // MariaDb escapes all single quotes with two single quotes in default value strings, even if they are
-    // escaped with backslashes in the original `CREATE TABLE` statement.
-    return defaultValue
-      .substring(1, defaultValue.length - 1)
-      .replaceAll("''", "'");
-  }
-
-  return defaultValue;
-}
-
 function identifyCommands(queryText: string) {
   try {
     return identify(queryText);
@@ -274,8 +246,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   versionInfo: {
     versionString: string;
     version: number;
-    isMySql: boolean;
-    isMariaDb: boolean;
   };
   conn: {
     pool: mysql.Pool;
@@ -313,8 +283,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     if (!version) {
       return {
         versionString: "",
-        isMariaDb: false,
-        isMySql: true,
         version: 5.7,
       };
     }
@@ -323,8 +291,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
     return {
       versionString: version,
-      isMariaDb: version.toLowerCase().includes("mariadb"),
-      isMySql: !version.toLowerCase().includes("mariadb"),
       version: Number(stuff[0] || 0),
     };
   }
@@ -411,7 +377,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     `;
 
     const params = table ? [table] : [];
-    const version = await this.getVersion();
 
     const { data } = await this.driverExecuteSingle(sql, {
       params,
@@ -424,7 +389,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       dataType: row.data_type,
       ordinalPosition: Number(row.ordinal_position),
       nullable: row.is_nullable === "YES",
-      defaultValue: resolveDefault(version, row.column_default),
+      defaultValue: this.resolveDefault(row.column_default),
       extra: _.isEmpty(row.extra) ? null : row.extra,
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
     }));
@@ -1323,6 +1288,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const sql = "SELECT database() AS 'schema'";
     const { data } = await this.driverExecuteSingle(sql, { connection });
     return data[0].schema;
+  }
+
+  resolveDefault(defaultValue: string) {
+    return defaultValue;
   }
 }
 
