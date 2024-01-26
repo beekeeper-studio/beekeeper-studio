@@ -9,6 +9,7 @@ import type { default as sqlite } from './clients/sqlite'
 import type { default as cassandra } from './clients/cassandra'
 import type { default as mariadb } from './clients/mariadb'
 import type { default as bigquery } from './clients/bigquery'
+import type { default as firebird } from "./clients/firebird";
 
 export interface DBClientFactories {
   mysql: typeof mysql
@@ -20,6 +21,7 @@ export interface DBClientFactories {
   mariadb: typeof mariadb
   cockroachdb: typeof postgresql
   bigquery: typeof bigquery
+  firebird: typeof firebird
 }
 
 export enum DatabaseElement {
