@@ -211,13 +211,10 @@ export function isFile(e: DragEvent) {
 }
 
 export async function getLastExportPath(filename?: string) {
-  const lastExportPath = await SettingsPlugin.get('lastExportPath')
-
-  if (lastExportPath) {
-    return path.join(lastExportPath, filename)
-  }
-
-  return path.join(homedir(), filename)
+  return await SettingsPlugin.get(
+    "lastExportPath",
+    path.join(homedir(), filename)
+  );
 }
 
 export async function setLastExportPath(exportPath: string) {
