@@ -3,6 +3,7 @@ import { TableOrView } from "@/lib/db/models";
 import FlexSearch from "flexsearch";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
+import { SavedConnection } from "@/common/appdb/models/saved_connection";
 
 interface FlexWorker {
   addAsync(id: any, item: string): Promise<void>
@@ -12,8 +13,8 @@ interface FlexWorker {
 
 interface IndexItem {
   title: string
-  item: FavoriteQuery | TableOrView
-  type: 'query' | 'table'
+  item: FavoriteQuery | TableOrView | SavedConnection | string
+  type: 'query' | 'table' | 'connection' | 'database'
 }
 
 interface State {
@@ -31,13 +32,22 @@ export const SearchModule: Module<State, RootState> = {
         const title = t.schema ? `${t.schema}.${t.name}` : t.name
         return { item: t, type: 'table', title, id: title }
       })
-      const folders = root['data/queryFolders']['items']
+      const queryFolders = root['data/queryFolders']['items']
       const favorites: IndexItem[] = root['data/queries']['items'].map((f) => {
-        const folder = folders.find((folder) => folder.id === f.queryFolderId)
+        const folder = queryFolders.find((folder) => folder.id === f.queryFolderId)
         const title = folder ? `${folder.name} > ${f.title}` : f.title
-        return { item: f, type: 'query', title: title, id: f.id }
+        return { item: f, type: 'query', title: title, id: `query-${f.id}` }
       })
-      return [...tables, ...favorites]
+      const connectionFolders = root['data/connectionFolders']['items']
+      const connections: IndexItem[] = root['data/connections']['items'].map((f) => {
+        const folder = connectionFolders.find((folder) => folder.id === f.queryFolderId)
+        const title = folder ? `${folder.name} > ${f.name}` : f.name
+        return { item: f, type: 'connection', title: `connection: ${title}`, id: `connection-${f.id}`}
+      })
+      const databases: IndexItem[] = root.databaseList.filter(f => f !== root.database).map((f) => {
+        return { item: f, type: 'database', title: `database: ${f}`, id: `database-${f}`}
+      })
+      return [...tables, ...favorites, ...connections, ...databases]
     },
   },
   mutations: {

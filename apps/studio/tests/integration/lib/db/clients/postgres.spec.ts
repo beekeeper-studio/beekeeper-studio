@@ -8,6 +8,7 @@ import fs from 'fs'
 import path from 'path'
 import { buildSelectTopQueries, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
+import _ from 'lodash';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false},
@@ -183,7 +184,7 @@ function testWith(dockerTag, socket = false) {
         table:'witharrays',
         schema: 'public',
         data: [
-          {names: '[]', id: 2, normal: 'xyz'}
+          {names: [], id: 2, normal: 'xyz'}
         ]
       }
 
@@ -196,7 +197,7 @@ function testWith(dockerTag, socket = false) {
     it("Should allow me to update rows with array types", async () => {
 
       const updates = [{
-        value: '["x", "y", "z"]',
+        value: ["x", "y", "z"],
         column: "names",
         primaryKeys: [
           { column: 'id', value: 1}
@@ -210,6 +211,32 @@ function testWith(dockerTag, socket = false) {
         column: 'normal',
         primaryKeys: [
           { column: 'id', value: 1}
+        ],
+        columnType: 'text',
+      }
+      ]
+      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+      expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+    })
+
+
+    it("Should allow me to update rows with array types when passed as string", async () => {
+
+      const updates = [{
+        value: '["x", "y", "z"]',
+        column: "names",
+        primaryKeys: [
+          { column: 'id', value: 1 }
+        ],
+        columnType: "_text",
+        table: "witharrays",
+      },
+      {
+        value: 'Bananas',
+        table: 'witharrays',
+        column: 'normal',
+        primaryKeys: [
+          { column: 'id', value: 1 }
         ],
         columnType: 'text',
       }
@@ -362,6 +389,25 @@ function testWith(dockerTag, socket = false) {
         { updates: [], inserts: [newRow], deletes: []}
       )
       expect(result).not.toBeNull()
+    })
+
+    it("should be able to list table columns with correct types", async () => {
+      await util.knex.schema.createTable('various_types', (table) => {
+        table.integer("id").primary()
+        table.specificType('amount', 'double precision')
+      })
+
+      const columns = await util.connection.listTableColumns('various_types', 'public');
+      expect(columns.map((row) => _.pick(row, ['columnName', 'dataType']))).toEqual([
+        {
+          columnName: 'id',
+          dataType: 'int4(32,0)'
+        },
+        {
+          columnName: 'amount',
+          dataType: 'float8(53)'
+        }
+      ])
     })
 
     describe("Common Tests", () => {

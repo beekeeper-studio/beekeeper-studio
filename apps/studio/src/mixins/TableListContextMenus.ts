@@ -1,10 +1,15 @@
 import { AppEvent } from "@/common/AppEvent";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { DialectData } from "@shared/lib/dialects/models";
+
+function disabled(...args: boolean[]) {
+  return args.some((v) => v) ? 'disabled' : '';
+}
 
 export default {
   data() {
     // HACK (@day): this stuff will be removed once we get write mode working for BQ
-    const isBQClass = this.connection?.connectionType == 'bigquery' ? 'disabled' : '';
+    const isBQClass = this.$store.getters.dialect === 'bigquery' ? 'disabled' : '';
     return {
       routineMenuOptions: [
         {
@@ -37,7 +42,11 @@ export default {
   computed: {
     tableMenuOptions() {
       // HACK (@day): this stuff will be removed once we get write mode working for BQ
-      const isBQClass = this.connection?.connectionType == 'bigquery' ? 'disabled' : '';
+      const isBQ = this.$store.getters.dialect === 'bigquery';
+      const isBQClass = isBQ ? 'disabled' : '';
+
+      const dialect: DialectData = this.$store.getters.dialectData;
+
       return [
         {
           name: "View Data",
@@ -56,6 +65,7 @@ export default {
         {
           name: "Export To File",
           slug: 'export',
+          class: disabled(dialect.disabledFeatures?.exportTable),
           handler: ({ item }) => {
             this.trigger(AppEvent.beginExport, { table: item })
           }
@@ -102,14 +112,13 @@ export default {
           slug: 'sql-drop',
           class: isBQClass,
           handler: ({ item }) => {
-            console.log("Drop?")
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'drop' })
           }
         },
         {
           name: "Truncate",
           slug: 'sql-truncate',
-          class: isBQClass,
+          class: disabled(dialect.disabledFeatures?.truncateElement, isBQ),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
@@ -117,7 +126,7 @@ export default {
         {
           name: "Duplicate",
           slug: 'sql-duplicate',
-          class: isBQClass,
+          class: disabled(dialect.disabledFeatures?.duplicateTable, isBQ),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }
@@ -125,6 +134,8 @@ export default {
       ] as ContextOption[]
     },
     schemaMenuOptions() {
+      const dialect: DialectData = this.$store.getters.dialectData;
+
       return [
         {
           name: "Hide",
@@ -143,6 +154,7 @@ export default {
         {
           name: "Truncate",
           slug: 'sql-truncate',
+          class: disabled(dialect.disabledFeatures?.truncateElement),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
           }

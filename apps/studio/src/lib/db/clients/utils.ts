@@ -199,7 +199,8 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
     })
 
   })
-  const builder = knex(insert.table)
+  const table = insert.dataset ? `${insert.dataset}.${insert.table}` : insert.table;
+  const builder = knex(table);
   if (insert.schema) {
     builder.withSchema(insert.schema)
   }
@@ -228,7 +229,8 @@ export function buildUpdateQueries(knex, updates: TableUpdate[]) {
 
     updateblob[update.column] = update.value
 
-    const query = knex(update.table)
+    const table = update.dataset ? `${update.dataset}.${update.table}` : update.table;
+    const query = knex(table)
       .withSchema(update.schema)
       .where(where)
       .update(updateblob)
@@ -244,7 +246,9 @@ export function buildSelectQueriesFromUpdates(knex, updates: TableUpdate[]) {
       where[column] = value
     })
 
-    const query = knex(update.table)
+    const table = update.dataset ? `${update.dataset}.${update.table}` : update.table;
+
+    const query = knex(table)
       .withSchema(update.schema)
       .where(where)
       .select('*')
@@ -272,7 +276,9 @@ export function buildDeleteQueries(knex, deletes: TableDelete[]) {
       where[column] = value
     })
 
-    return knex(deleteRow.table)
+    const table = deleteRow.dataset ? `${deleteRow.dataset}.${deleteRow.table}` : deleteRow.table;
+
+    return knex(table)
       .withSchema(deleteRow.schema)
       .where(where)
       .delete()

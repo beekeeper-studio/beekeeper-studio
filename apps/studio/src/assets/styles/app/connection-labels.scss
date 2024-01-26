@@ -9,7 +9,7 @@ $color-defaults: (
 );
 
 @each $key, $val in $color-defaults {
-  .connection-label-color-#{$key} {
+  .connection-label-color-#{'#{$key}'} {
     --connection-label-color: #{nth($val, 1)};
   }
 }
@@ -25,7 +25,7 @@ $color-defaults: (
   background-color: rgba($theme-base, 0.08);
 
   @each $key, $val in $color-defaults {
-    &.connection-label-color-#{$key} {
+    &.connection-label-color-#{'#{$key}'} {
       background-color: nth($val, 1);
       &:checked {
         background-color: nth($val, 1);
@@ -35,20 +35,20 @@ $color-defaults: (
 }
 .statusbar {
   @each $key, $val in $color-defaults {
-    &.#{$key} {
+    &.#{'#{$key}'} {
       background-color: rgba(nth($val, 1), 1);
     }
   }
   &.query-meta {
     @each $key, $val in $color-defaults {
-      &.#{$key} {
+      &.#{'#{$key}'} {
         background-color: rgba(nth($val, 1), 0.85);
       }
     }
   }
   &.editing, &.failure {
     @each $key, $val in $color-defaults {
-      &.#{$key} {
+      &.#{'#{$key}'} {
         background-color: rgba(nth($val, 1), 0.8);
       }
     }
@@ -57,7 +57,7 @@ $color-defaults: (
 .core-tabs {
   .statusbar {
     @each $key, $val in $color-defaults {
-      &.#{$key} {
+      &.#{'#{$key}'} {
         background-color: rgba(nth($val, 1), 0.85);
       }
     }

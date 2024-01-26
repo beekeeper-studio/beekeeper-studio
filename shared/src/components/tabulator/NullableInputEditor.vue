@@ -77,6 +77,7 @@ export default Vue.extend({
     },
     onBlur() {
       log.debug('blur, not submitting')
+      this.$emit('cancel')
     },
     submit() {
       log.debug('nullable submitted')
@@ -91,18 +92,32 @@ export default Vue.extend({
           updateAnyway && this.$emit('value', this.value)
         }
       } else {
-        this.$emit('value', this.value)
+        this.$emit('value', this.parseValue())
       }
 
     },
     clear() {
       this.$emit('value', null)
+    },
+    parseValue() {
+      const typeHint = this.params.typeHint;
+      const floatTypes = [
+        'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
+      ]
+      if (typeHint.includes('int') && !typeHint.includes('point')) {
+        return parseInt(this.value);
+      } else if (floatTypes.includes(typeHint)) {
+        return parseFloat(this.value);
+      } else {
+        return this.value;
+      }
     }
   },
   watch: {
     rendered() {
       if (this.rendered) {
-        this.value = helpers.niceString(this.cell.getValue())
+        const cellValue = this.cell.getValue()
+        this.value = _.isNil(cellValue) ? '' : helpers.niceString(cellValue)
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {

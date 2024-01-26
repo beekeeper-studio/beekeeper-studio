@@ -91,13 +91,27 @@ export function createMenuItem(label: string, shortcut = "") {
 
 export async function copyRange(options: {
   range: Tabulator.RangeComponent;
-  type: "tsv" | "json" | "markdown" | "sql";
+  type: "plain" | "tsv" | "json" | "markdown" | "sql";
   connection?: DatabaseClient;
   table?: string;
   schema?: string;
 }) {
   let text = "";
   switch (options.type) {
+    case "plain":  {
+      const cells = options.range.getCells();
+      if (cells.length === 1) {
+        text = cells[0].getValue();
+      } else {
+        text = Papa.unparse(options.range.getData(), {
+          header: false,
+          delimiter: "\t",
+          quotes: false,
+          escapeFormulae: false,
+        });
+      }
+      break;
+    }
     case "tsv":
       text = Papa.unparse(options.range.getData(), {
         header: false,
@@ -181,7 +195,11 @@ export function copyActionsMenu(options: {
   const { range, connection, table, schema } = options;
   return [
     {
-      label: createMenuItem("Copy as TSV for Excel", "Control+C"),
+      label: createMenuItem("Copy", "Control+C"),
+      action: () => copyRange({ range, type: "plain" }),
+    },
+    {
+      label: createMenuItem("Copy as TSV for Excel"),
       action: () => copyRange({ range, type: "tsv" }),
     },
     {

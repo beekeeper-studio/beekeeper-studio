@@ -113,7 +113,6 @@ export class OpenTab extends ApplicationEntity {
   // we want a loose match here, this is used to determine if we open a new tab or not
   matches(other: OpenTab): boolean {
     // new tabs don't have a workspace set
-    console.log("comparison matches", this.tableName, this.schemaName, this.filters, this.entityType)
     if (other.workspaceId && this.workspaceId && this.workspaceId !== other.workspaceId) {
       return false;
     }
@@ -123,12 +122,9 @@ export class OpenTab extends ApplicationEntity {
         (this.schemaName || null) === (other.schemaName || null) &&
         (this.entityType || null) === (other.entityType || null)
       case 'table':
-        return false
-        // we just want false for now as filters aren't properly saved.
-        // return this.tableName === other.tableName &&
-        //   (this.schemaName || null) === (other.schemaName || null) &&
-        //   (this.entityType || null) === (other.entityType || null) &&
-        //   _.isEqual(this.filters, other.filters)
+        return this.tableName === other.tableName &&
+          (this.schemaName || null) === (other.schemaName || null) &&
+          (this.entityType || null) === (other.entityType || null)
       case 'query':
         return this.queryId === other.queryId
       default:

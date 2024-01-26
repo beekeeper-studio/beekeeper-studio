@@ -16,7 +16,6 @@ export const BigQueryData: DialectData = {
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier: (s) => s,
   disabledFeatures: {
-    tableTable: true,
     indexes: true,
     constraints: {
       onUpdate: true,
@@ -32,6 +31,5 @@ export const BigQueryData: DialectData = {
   notices: {
     infoIndexes: 'BigQuery: table indexes are not supported.',
     infoTriggers: 'BigQuery: table triggers are not supported.',
-    tableTable: 'Editing records is currently disabled for BigQuery, we\'re working on it!'
   }
 }

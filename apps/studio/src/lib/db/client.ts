@@ -40,7 +40,7 @@ export interface DatabaseClient {
   listTablePartitions: (table: string, schema?: string) => Promise<TablePartition[]>
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
-  query: (queryText: string) => CancelableQuery,
+  query: (queryText: string, options?: any) => CancelableQuery,
   executeQuery: (queryText: string) => void,
 
   // create database
@@ -450,9 +450,9 @@ function getTableProperties(server: IDbConnectionServer, database: IDbConnection
   return database.connection?.getTableProperties(table, schema)
 }
 
-function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
+function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string, options?: any) {
   checkIsConnected(server , database);
-  return database.connection?.query(queryText);
+  return database.connection?.query(queryText, options);
 }
 
 function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
