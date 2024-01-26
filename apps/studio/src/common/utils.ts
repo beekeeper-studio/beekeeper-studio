@@ -217,10 +217,6 @@ export async function getLastExportPath(filename?: string) {
     return path.join(lastExportPath, filename)
   }
 
-  if (platformInfo.isMac || platformInfo.isWindows) {
-    return path.join(homedir(), 'Documents', filename)
-  }
-
   return path.join(homedir(), filename)
 }
 

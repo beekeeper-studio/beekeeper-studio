@@ -605,7 +605,7 @@ export default Vue.extend({
 
       const noty = this.$noty.info(notyText,  {
         queue: notyQueue,
-        escapeHtml: false,
+        allowRawHtml: true,
         buttons: [
           Noty.button('Abort', 'btn btn-danger', abort)
         ],
@@ -684,7 +684,7 @@ export default Vue.extend({
 
       const noty = this.$noty.info(notyText,  {
         queue: notyQueue,
-        escapeHtml: false,
+        allowRawHtml: true,
         buttons: [
           Noty.button('Abort', 'btn btn-danger', abort)
         ],
