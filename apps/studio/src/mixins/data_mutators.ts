@@ -33,7 +33,11 @@ function emptyResult(value: any) {
   return null
 }
 
-function buildFormatterWithTooltip(cellValue: string, tooltip: string, icon: string) {
+function buildFormatterWithTooltip(cellValue: string, tooltip: string, icon?: string) {
+  if (!icon) {
+    return `<div class="cell-link-wrapper" title="${tooltip}">${cellValue}</div>`
+  }
+
   return `<div class="cell-link-wrapper">${cellValue}<i class="material-icons fk-link" title="${tooltip}">${icon}</i></div>`
 }
 
@@ -76,10 +80,10 @@ export default {
           params?.isPK != null &&
           !params.isPK &&
           _.isInteger(Number(cellValue)) &&
-          _.inRange(Number(cellValue), 946598400000, 8640000000000000) // epoch time from 1999-12-31 (party like it's 1999), more info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#description
+          Number(cellValue) <= 8640000000000000 // the date object doesn't go higher than said number https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#description
         ) {
-        tooltip = new Date(Number(cellValue)).toISOString()
-        result = buildFormatterWithTooltip(cellValue, tooltip, 'timelapse')
+        tooltip = `${new Date(Number(cellValue)).toISOString()} in unixtime`
+        result = buildFormatterWithTooltip(cellValue, tooltip)
     }
 
       return result;
