@@ -13,13 +13,14 @@
   --md-primary-bg-color--light: hsla(var(--md-hue), 15%, 100%, 0.7); */
 
     --md-hue: 225deg;
+    --md-accent-bg-color: black;
     --md-accent-fg-color: #fad83b;
     --md-accent-fg-color--transparent: #fad73b 58;
     --md-primary-fg-color: #2c2c2c;
-    --md-primary-fg-color--light: lightblue;
-    --md-primary-fg-color--dark: darkblue;
+    --md-primary-fg-color--light: #2c2c2c94;
+    --md-primary-fg-color--dark: black;
     --md-primary-bg-color: white;
-    --md-primary-bg-color--light: #fad83b;
+    --md-primary-bg-color--light: #pink;
 
 
 }

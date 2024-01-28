@@ -6,7 +6,7 @@
       ref="input"
       type="text"
       v-model="value"
-      @blur.prevent="submit"
+      @blur.prevent="onBlur"
       @change.prevent="submit"
       @keydown="keydown"
     >
@@ -21,6 +21,10 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('NullableInputEditor')
+
 export default Vue.extend({
   props: ['cell', 'params'],
   data() {
@@ -55,9 +59,14 @@ export default Vue.extend({
           this.value = ''
         }
       } else if (e.key === 'Enter') {
+        // WHY: Without this we re-enter the editor right away
+        e.stopImmediatePropagation()
         this.submit()
       } else if (e.key === 'Tab') {
-        // this.$emit('value', this.value)
+        // FIXME: Tab and enter should both submit AND then move
+        // the selected cell, currently only tab does this.
+
+        this.$emit('value', this.value)
       } else if (e.key.startsWith("Arrow")) {
         // this.$emit('value', this.value)
       } else if (e.key === 'Escape') {
@@ -66,7 +75,12 @@ export default Vue.extend({
         this.everEdited = true
       }
     },
+    onBlur() {
+      log.debug('blur, not submitting')
+      this.$emit('cancel')
+    },
     submit() {
+      log.debug('nullable submitted')
       // some cases we always want null, never empty string
       if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
         this.$emit('value', null)
@@ -78,18 +92,32 @@ export default Vue.extend({
           updateAnyway && this.$emit('value', this.value)
         }
       } else {
-        this.$emit('value', this.value)
+        this.$emit('value', this.parseValue())
       }
 
     },
     clear() {
       this.$emit('value', null)
+    },
+    parseValue() {
+      const typeHint = this.params.typeHint;
+      const floatTypes = [
+        'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
+      ]
+      if (typeHint.includes('int') && !typeHint.includes('point')) {
+        return parseInt(this.value);
+      } else if (floatTypes.includes(typeHint)) {
+        return parseFloat(this.value);
+      } else {
+        return this.value;
+      }
     }
   },
   watch: {
     rendered() {
       if (this.rendered) {
-        this.value = helpers.niceString(this.cell.getValue())
+        const cellValue = this.cell.getValue()
+        this.value = _.isNil(cellValue) ? '' : helpers.niceString(cellValue)
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {
@@ -131,5 +159,6 @@ export default Vue.extend({
     width: 16px;
     text-align: center;
     margin-top: -1px;
+    cursor: pointer;
   }
 </style>

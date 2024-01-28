@@ -18,7 +18,6 @@ const windows: BeekeeperWindow[] = []
 
 export interface OpenOptions {
   url?: string
-  runningWayland: boolean
 }
 
 function getIcon() {
@@ -35,7 +34,7 @@ class BeekeeperWindow {
     let showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
     let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
 
-    if (openOptions.runningWayland) {
+    if (platformInfo.isWayland) {
       showFrame = false
       titleBarStyle = 'hidden'
     }
@@ -59,7 +58,13 @@ class BeekeeperWindow {
 
     const runningInWebpack = !!process.env.WEBPACK_DEV_SERVER_URL
     let appUrl = process.env.WEBPACK_DEV_SERVER_URL || 'app://./index.html'
-    const query = openOptions ? querystring.stringify(openOptions) : null
+    const queryObj: any = openOptions ? { ...openOptions } : {}
+
+    if (platformInfo.isWayland) {
+      queryObj.runningWayland = true
+    }
+
+    const query = querystring.stringify(queryObj)
 
     appUrl = query ? `${appUrl}?${query}` : appUrl
     remoteMain.enable(this.win.webContents)
@@ -134,6 +139,6 @@ export function getActiveWindows(): BeekeeperWindow[] {
   return _.filter(windows, 'active')
 }
 
-export function buildWindow(settings: IGroupedUserSettings, options: OpenOptions): void {
-  windows.push(new BeekeeperWindow(settings, options))
+export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): void {
+  windows.push(new BeekeeperWindow(settings, options || {}))
 }

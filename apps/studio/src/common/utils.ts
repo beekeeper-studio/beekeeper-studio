@@ -70,8 +70,8 @@ export function readJSONFile(filename: string): Promise<any> {
   return readFile(filename).then((data) => JSON.parse(data));
 }
 
-export function readVimrc(): string[] {
-  const vimrcPath = path.join(platformInfo.userDirectory, ".beekeeper.vimrc");
+export function readVimrc(pathToVimrc?: string): string[] {
+  const vimrcPath = path.join(pathToVimrc ?? platformInfo.userDirectory, ".beekeeper.vimrc");
   if (fileExistsSync(vimrcPath)) {
     const data = fs.readFileSync(vimrcPath, { encoding: 'utf-8', flag: 'r'});
     const dataSplit = data.split("\n");

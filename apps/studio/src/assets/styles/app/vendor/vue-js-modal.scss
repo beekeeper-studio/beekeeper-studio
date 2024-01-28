@@ -1,4 +1,3 @@
-@import '../extends';
 
 .vue-modal-resizer {
   display: block;
@@ -86,7 +85,7 @@
   height: auto!important;
   min-height: 120px;
   max-height: 80vh;
-  @extend .card-shadow;
+  @include card-shadow;
 }
 .v--modal.v--modal-fullscreen {
   width: 100vw;

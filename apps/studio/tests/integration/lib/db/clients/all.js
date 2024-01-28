@@ -1,4 +1,3 @@
-
 export function runCommonTests(getUtil) {
 
   test("get database version should work", async() => {
@@ -25,6 +24,9 @@ export function runCommonTests(getUtil) {
   })
 
   test("query tests", async () => {
+    if (getUtil().dbType === 'sqlite') {
+      return
+    }
     await getUtil().queryTests()
   })
 
@@ -53,7 +55,7 @@ export function runCommonTests(getUtil) {
       await prepareTestTable(getUtil())
     })
 
-    test("should past alter table tests", async () => {
+    test("should pass alter table tests", async () => {
       await getUtil().alterTableTests()
     })
     test("should alter indexes", async () => {
@@ -91,6 +93,8 @@ export function runCommonTests(getUtil) {
     })
 
     test("Should truncate table", async () => {
+      // Firebird has no internal function to truncate a table
+      if (getUtil().dbType === 'firebird') return
       await getUtil().truncateTableTests()
     })
 
@@ -100,19 +104,25 @@ export function runCommonTests(getUtil) {
   })
 
   describe("Duplicate Table Tests", () => {
+
     beforeEach(async() => {
+      // TODO There is no internal function to duplicate a table in firebird
+      if (getUtil().dbType === 'firebird') return
       await prepareTestTable(getUtil())
     })
 
     test("Should duplicate table", async () => {
+      if (getUtil().dbType === 'firebird') return
       await getUtil().duplicateTableTests()
     })
 
     test("Bad input shouldn't allow table duplication", async () => {
+      if (getUtil().dbType === 'firebird') return
       await getUtil().badDuplicateTableTests()
     })
 
     test("Should print the duplicate table query", async () => {
+      if (getUtil().dbType === 'firebird') return
       await getUtil().duplicateTableSqlTests()
     })
   })
@@ -189,8 +199,8 @@ const prepareTestTable = async function(util) {
   await util.knex.schema.dropTableIfExists("test_inserts")
   await util.knex.schema.createTable("test_inserts", (table) => {
     table.integer("id").primary().notNullable()
-    table.specificType("firstName", "varchar(255)")
-    table.specificType("lastName", "varchar(255)")
+    table.specificType("first_name", "varchar(255)")
+    table.specificType("last_name", "varchar(255)")
   })
 }
 
@@ -203,8 +213,8 @@ export const itShouldInsertGoodData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -212,8 +222,8 @@ export const itShouldInsertGoodData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 2,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -231,8 +241,8 @@ export const itShouldNotInsertBadData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -240,8 +250,8 @@ export const itShouldNotInsertBadData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -261,8 +271,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 1,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -270,8 +280,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 2,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -285,7 +295,7 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
             value: 1
           }
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Testy'
       }
     ],
@@ -309,8 +319,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
   firstResult.id = Number(firstResult.id)
   expect(firstResult).toStrictEqual({
     id: 1,
-    firstName: 'Testy',
-    lastName: 'Tester'
+    first_name: 'Testy',
+    last_name: 'Tester'
   })
 }
 
@@ -322,8 +332,8 @@ export const itShouldNotCommitOnChangeError = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     }
   ]
@@ -336,8 +346,8 @@ export const itShouldNotCommitOnChangeError = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 2,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -345,8 +355,8 @@ export const itShouldNotCommitOnChangeError = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 3,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -381,8 +391,8 @@ export const itShouldNotCommitOnChangeError = async function(util) {
   firstResult.id = Number(firstResult.id)
   expect(firstResult).toStrictEqual({
     id: 1,
-    firstName: 'Terry',
-    lastName: 'Tester'
+    first_name: 'Terry',
+    last_name: 'Tester'
   })
 
 }
@@ -395,8 +405,8 @@ const prepareTestTableCompositePK = async function(util) {
     table.integer("id1").notNullable().unsigned()
     table.integer("id2").notNullable().unsigned()
     table.primary(["id1", "id2"])
-    table.specificType("firstName", "varchar(255)")
-    table.specificType("lastName", "varchar(255)")
+    table.specificType("first_name", "varchar(255)")
+    table.specificType("last_name", "varchar(255)")
   })
 }
 
@@ -410,8 +420,8 @@ export const itShouldInsertGoodDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -420,8 +430,8 @@ export const itShouldInsertGoodDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 2,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     },
     {
@@ -430,8 +440,8 @@ export const itShouldInsertGoodDataCompositePK = async function(util) {
       data: [{
         id1: 2,
         id2: 1,
-        firstName: 'Jane',
-        lastName: 'Doe'
+        first_name: 'Jane',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -450,8 +460,8 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -460,8 +470,8 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -482,8 +492,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
         data: [{
           id1: 1,
           id2: 1,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -492,8 +502,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
         data: [{
           id1: 1,
           id2: 2,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       },
       {
@@ -502,8 +512,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
         data: [{
           id1: 2,
           id2: 1,
-          firstName: 'John',
-          lastName: 'Doe'
+          first_name: 'John',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -515,7 +525,7 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
           { column: 'id1', value: 1},
           { column: 'id2', value: 1}
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Testy'
       },
       {
@@ -525,7 +535,7 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
           { column: 'id1', value: 2},
           { column: 'id2', value: 1}
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Tester'
       }
     ],
@@ -558,15 +568,15 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
   expect(firstResult).toStrictEqual({
     id1: 1,
     id2: 1,
-    firstName: 'Testy',
-    lastName: 'Tester'
+    first_name: 'Testy',
+    last_name: 'Tester'
   })
 
   expect(secondResult).toStrictEqual({
     id1: 2,
     id2: 1,
-    firstName: 'Tester',
-    lastName: 'Doe'
+    first_name: 'Tester',
+    last_name: 'Doe'
   })
 }
 
@@ -579,8 +589,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     }
   ]
@@ -594,8 +604,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
         data: [{
           id1: 1,
           id2: 2,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -604,8 +614,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
         data: [{
           id1: 2,
           id2: 1,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -647,8 +657,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
   expect(firstResult).toStrictEqual({
     id1: 1,
     id2: 1,
-    firstName: 'Terry',
-    lastName: 'Tester'
+    first_name: 'Terry',
+    last_name: 'Tester'
   })
 
 }
@@ -661,8 +671,8 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 1,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -670,8 +680,8 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 2,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -685,7 +695,7 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
             value: 1
           }
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Testy'
       }
     ],

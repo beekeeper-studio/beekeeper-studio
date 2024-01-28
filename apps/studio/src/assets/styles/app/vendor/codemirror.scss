@@ -1,4 +1,3 @@
-@import '../extends';
 
 .CodeMirror {
   font-family: $font-family-mono, monospace;
@@ -52,7 +51,7 @@
   padding: $gutter-h 0;
   border: 0;
   border-radius: 6px;
-  @extend .card-shadow;
+  @include card-shadow;
   li {
     &:hover {
       background: rgba($theme-base, 0.05);
