@@ -156,7 +156,7 @@ export interface IDbConnectionDatabase {
   connecting: boolean,
 }
 
-export class DBConnection {
+export class DBConnection implements DatabaseClient {
   connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
@@ -235,6 +235,8 @@ export class DBConnection {
   // duplicateTAble
   duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
   duplicateTableSql = bind.bind(null, 'duplicateTableSql', this.server, this.database)
+
+  wrapIdentifier = wrap.bind(null, this.database)
 
   async currentDatabase() {
     return this.database.database
