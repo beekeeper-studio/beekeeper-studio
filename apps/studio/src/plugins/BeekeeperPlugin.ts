@@ -108,15 +108,19 @@ export default {
     Vue.prototype.$app = BeekeeperPlugin
     Vue.prototype.$bks = BeekeeperPlugin
 
-    Vue.prototype.$confirmModalId = uuidv4()
-    Vue.prototype.$confirm = function(title: string, message?: string): Promise<boolean> {
-      return new Promise<boolean>((resolve) => {
-        this.$modal.show(Vue.prototype.$confirmModalId, {
-          title,
-          message,
-          onCancel: () => resolve(false),
-          onConfirm: () => resolve(true),
-        })
+    Vue.prototype.$confirmModalName = uuidv4()
+    Vue.prototype.$confirm = function(title?: string, message?: string): Promise<boolean> {
+      return new Promise<boolean>((resolve, reject) => {
+        try {
+          this.$modal.show(Vue.prototype.$confirmModalName, {
+            title,
+            message,
+            onCancel: () => resolve(false),
+            onConfirm: () => resolve(true),
+          })
+        } catch (e) {
+          reject(e)
+        }
       })
     }
 

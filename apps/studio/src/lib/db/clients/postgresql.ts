@@ -679,8 +679,10 @@ export async function listTableColumns(
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
-        WHEN numeric_precision is not null
+        WHEN numeric_precision is not null and numeric_scale is not null
         	THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
+        WHEN numeric_precision is not null and numeric_scale is null
+        	THEN udt_name || '(' || numeric_precision::varchar(255) || ')'
         WHEN datetime_precision is not null AND udt_name != 'date' THEN
           udt_name || '(' || datetime_precision::varchar(255) || ')'
         ELSE udt_name
@@ -1101,7 +1103,7 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     await driverExecuteQuery(cli, { query: 'BEGIN' })
-
+    log.debug("Applying changes", changes)
     try {
       if (changes.inserts) {
         await insertRows(cli, changes.inserts)
@@ -1211,6 +1213,19 @@ export async function setTableDescription(conn: HasPool, table: string, descript
   return result?.description
 }
 
+// If a type starts with an underscore - it's an array
+// so we need to turn the string representation back to an array
+// if a type is BYTEA, decodes BASE64 URL encoded to hex
+function normalizeValue(value: string, columnType: string) {
+  if (columnType?.startsWith('_') && _.isString(value)) {
+    return JSON.parse(value)
+  } else if (columnType === 'bytea' && value) {
+    return '\\x' + base64.decode(value, 'hex')
+  }
+  return value
+}
+
+
 async function insertRows(cli: any, rawInserts: TableInsert[]) {
   const columnsList = await Promise.all(rawInserts.map((insert) => {
     return listTableColumns(cli, null, insert.table, insert.schema)
@@ -1223,11 +1238,9 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
     result.data = result.data.map((obj) => {
       return _.mapValues(obj, (value, key) => {
         const column = columns.find((c) => c.columnName === key)
-        if (column && column.dataType.startsWith('_')) {
-          return JSON.parse(value)
-        } else {
-          return value
-        }
+        // fix: we used to sealize arrays before this, now we pass them as
+        // json arrays properly
+        return normalizeValue(value, column.dataType)
       })
     })
     return result
@@ -1240,16 +1253,10 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
 
 async function updateValues(cli: any, rawUpdates: TableUpdate[]): Promise<TableUpdateResult[]> {
 
-  // If a type starts with an underscore - it's an array
-  // so we need to turn the string representation back to an array
-  // if a type is BYTEA, decodes BASE64 URL encoded to hex
+
   const updates = rawUpdates.map((update) => {
     const result = { ...update}
-    if (update.columnType?.startsWith('_') && _.isString(update.value)) {
-      result.value = JSON.parse(update.value)
-    } else if (update.columnType === 'bytea' && update.value) {
-        result.value = '\\x' + base64.decode(update.value, 'hex')
-    }
+    result.value = normalizeValue(update.value, update.columnType)
     return result
   })
   log.info("applying updates", updates)

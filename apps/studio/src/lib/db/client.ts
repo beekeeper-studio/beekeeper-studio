@@ -40,7 +40,7 @@ export interface DatabaseClient {
   listTablePartitions: (table: string, schema?: string) => Promise<TablePartition[]>
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
-  query: (queryText: string) => CancelableQuery,
+  query: (queryText: string, options?: any) => CancelableQuery,
   executeQuery: (queryText: string) => void,
 
   // create database
@@ -156,7 +156,7 @@ export interface IDbConnectionDatabase {
   connecting: boolean,
 }
 
-export class DBConnection {
+export class DBConnection implements DatabaseClient {
   connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
@@ -235,6 +235,8 @@ export class DBConnection {
   // duplicateTAble
   duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
   duplicateTableSql = bind.bind(null, 'duplicateTableSql', this.server, this.database)
+
+  wrapIdentifier = wrap.bind(null, this.database)
 
   async currentDatabase() {
     return this.database.database
@@ -448,9 +450,9 @@ function getTableProperties(server: IDbConnectionServer, database: IDbConnection
   return database.connection?.getTableProperties(table, schema)
 }
 
-function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
+function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string, options?: any) {
   checkIsConnected(server , database);
-  return database.connection?.query(queryText);
+  return database.connection?.query(queryText, options);
 }
 
 function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {

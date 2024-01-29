@@ -4,6 +4,7 @@ import { ipcMain, BrowserWindow } from 'electron'
 import {AppEvent} from '../common/AppEvent'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
+import platformInfo from '@/common/platform_info'
 
 const log = rawLog.scope('NativeMenuBuilder')
 
@@ -14,7 +15,11 @@ export default class NativeMenuBuilder {
 
   constructor(private electron: any, settings: IGroupedUserSettings){
     this.handler = new NativeMenuActionHandlers(settings)
-    if (!settings.menuStyle || settings.menuStyle.value === 'native') {
+    if (
+      (!settings.menuStyle ||
+      settings.menuStyle.value === 'native') &&
+      !platformInfo.isWayland
+    ) {
       this.builder = new MenuBuilder(settings, this.handler)
     }
   }
@@ -22,7 +27,6 @@ export default class NativeMenuBuilder {
   initialize(): void {
     if (this.builder) {
       const template = this.builder.buildTemplate()
-      log.info("MENUTEMPLATE", template)
       this.menu = this.electron.Menu.buildFromTemplate(template)
       this.electron.Menu.setApplicationMenu(this.menu)
     } else {
@@ -34,6 +38,7 @@ export default class NativeMenuBuilder {
   listenForClicks(): void {
     ipcMain.on(AppEvent.menuClick, (event, actionName: keyof NativeMenuActionHandlers, arg) => {
       try {
+        log.debug("Received Menu Click, event", actionName, arg)
         const window = BrowserWindow.fromWebContents(event.sender)
         if (window) {
           const func = this.handler[actionName].bind(this.handler)
