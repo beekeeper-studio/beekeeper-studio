@@ -140,7 +140,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (this.version.hasPartitions) {
       sql += `
           pc.relkind as tabletype,
-          parent_pc.relkind
+          parent_pc.relkind as parenttype
         FROM information_schema.tables AS t
         JOIN pg_class AS pc
           ON t.table_name = pc.relname AND quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text
