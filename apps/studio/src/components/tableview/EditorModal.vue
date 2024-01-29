@@ -101,7 +101,7 @@ import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
 import { Languages, LanguageData, TextLanguage, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
-import setKeybindingsFromVimrc from '@/lib/readVimrc'
+import { setKeybindingsFromVimrc } from '@/lib/readVimrc'
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
