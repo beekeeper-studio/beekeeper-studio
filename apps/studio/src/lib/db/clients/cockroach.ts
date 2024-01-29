@@ -3,6 +3,7 @@ import pg, { PoolConfig } from "pg";
 import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../types";
 import { SupportedFeatures, TableIndex, TablePartition, TableProperties, TableTrigger } from "../models";
 import { PostgresClient } from "./postgresql";
+import _ from 'lodash';
 
 
 export class CockroachClient extends PostgresClient {
