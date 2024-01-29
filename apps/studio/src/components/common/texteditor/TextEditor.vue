@@ -10,26 +10,27 @@
 </template>
 
 <script lang="ts">
-import 'codemirror/addon/comment/comment'
-import 'codemirror/addon/dialog/dialog'
-import 'codemirror/addon/search/search'
-import 'codemirror/addon/search/jump-to-line'
-import 'codemirror/addon/scroll/annotatescrollbar'
-import 'codemirror/addon/search/matchesonscrollbar'
-import 'codemirror/addon/search/matchesonscrollbar.css'
-import 'codemirror/addon/search/searchcursor'
-import 'codemirror/mode/sql/sql'
-import 'codemirror/mode/javascript/javascript' // for json
-import 'codemirror/mode/htmlmixed/htmlmixed'
-import 'codemirror/mode/css/css'
-import 'codemirror/mode/xml/xml'
-import 'codemirror/mode/diff/diff'
-import '@/vendor/sql-hint'
-import '@/vendor/show-hint'
-import '@/lib/codemirror-definition'
-import 'codemirror/addon/merge/merge'
+import "codemirror/addon/comment/comment";
+import "codemirror/addon/dialog/dialog";
+import "codemirror/addon/search/search";
+import "codemirror/addon/search/jump-to-line";
+import "codemirror/addon/scroll/annotatescrollbar";
+import "codemirror/addon/search/matchesonscrollbar";
+import "codemirror/addon/search/matchesonscrollbar.css";
+import "codemirror/addon/search/searchcursor";
+import "codemirror/mode/sql/sql";
+import "codemirror/mode/javascript/javascript"; // for json
+import "codemirror/mode/htmlmixed/htmlmixed";
+import "codemirror/mode/css/css";
+import "codemirror/mode/xml/xml";
+import "codemirror/mode/diff/diff";
+import "@/vendor/sql-hint";
+import "@/vendor/show-hint";
+import "@/lib/codemirror-definition";
+import "codemirror/addon/merge/merge";
 import CodeMirror from "codemirror";
 
+import { EditorMarker } from "@/lib/editor/utils";
 import { resolveLanguage } from "@/lib/editor/languageData";
 import { setKeybindingsFromVimrc, applyConfig } from "@/lib/editor/vim";
 
@@ -44,8 +45,14 @@ export default {
     "columnsGetter",
     "height",
     "readOnly",
+    "focus",
     "contextMenuOptions",
     "extraKeybindings",
+    "markers",
+    "selection",
+    "cursor",
+    "initialized",
+    "forcedValue",
   ],
   data() {
     return {
@@ -68,6 +75,9 @@ export default {
     },
   },
   watch: {
+    forcedValue() {
+      this.editor.setValue(this.forcedValue);
+    },
     lang() {
       const { mode, hint } = resolveLanguage(this.lang);
       this.editor.setOption("mode", mode);
@@ -84,12 +94,36 @@ export default {
     },
     height() {
       this.editor.setSize(null, this.height);
+      this.editor.refresh();
     },
     readOnly() {
       this.editor.setOption("readOnly", this.readOnly);
     },
     lineWrapping() {
       this.editor.setOption("lineWrapping", this.lineWrapping);
+    },
+    async focus() {
+      if (this.focus) {
+        this.editor.focus();
+        await this.$nextTick();
+        // this fixes the editor not showing because it doesn't think it's dom element is in view.
+        // its a hit and miss error
+        this.editor.refresh();
+      }
+    },
+    markers() {
+      this.editor.getAllMarks().forEach((mark: CodeMirror.TextMarker) => {
+        mark.clear();
+      });
+      this.markers.forEach((marker: EditorMarker) => {
+        if (marker.type === "error") {
+          this.editor.markText(marker.from, marker.to, { className: "error" });
+        } else if (marker.type === "highlight") {
+          this.editor.markText(marker.from, marker.to, {
+            className: "highlight",
+          });
+        }
+      });
     },
   },
   methods: {
@@ -153,8 +187,20 @@ export default {
         }
       });
 
+      cm.on("focus", () => {
+        this.$emit("update:focus", true);
+      });
+
+      cm.on("blur", () => {
+        this.$emit("update:focus", false);
+      });
+
       cm.on("cursorActivity", (cm) => {
-        this.$emit("cursorActivity", cm);
+        this.$emit("update:selection", cm.getSelection());
+        this.$emit(
+          "update:cursorIndex",
+          cm.getDoc().indexFromPos(cm.getCursor())
+        );
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
@@ -176,15 +222,7 @@ export default {
 
       this.editor = cm;
 
-      this.$emit("initialized", cm);
-    },
-    focus() {
-      this.editor.focus();
-      setTimeout(() => {
-        // this fixes the editor not showing because it doesn't think it's dom element is in view.
-        // its a hit and miss error
-        this.editor.refresh();
-      }, 1);
+      this.$emit("update:initialized", true);
     },
     destroyEditor() {
       if (this.editor) {
@@ -312,21 +350,6 @@ export default {
   },
   mounted() {
     this.initialize();
-    this.$emit("interface", {
-      refresh: () => this.editor.refresh(),
-      focus: () => this.focus(),
-      markText: (
-        from: CodeMirror.Position,
-        to: CodeMirror.Position,
-        className: string
-      ) => {
-        return this.editor.getDoc().markText(from, to, { className });
-      },
-      setValue: (value: string) => {
-        this.editor.setValue(value);
-      },
-      getWrapperElement: () => this.editor.getWrapperElement(),
-    });
   },
   beforeDestroy() {
     this.destroyEditor();

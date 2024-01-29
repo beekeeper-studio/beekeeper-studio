@@ -32,14 +32,12 @@
       </div>
       <sql-text-editor
         v-model="unsavedText"
+        v-bind.sync="editor"
+        :markers="editorMarkers"
         :lang="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
-        :height="editorHeight"
-        :read-only="editorReadOnly"
         @initialized="handleEditorInitialized"
-        @cursorActivity="handleCursorActivity"
-        @interface="editorInterface = $event"
       />
       <span class="expand" />
       <div class="toolbar text-right">
@@ -328,12 +326,11 @@
 
   import platformInfo from '@/common/platform_info'
   import { splitQueries } from '../lib/db/sql_tools'
+  import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
-
-  import { format } from 'sql-formatter';
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
@@ -361,11 +358,14 @@
         runningCount: 1,
         runningType: 'all queries',
         selectedResult: 0,
-        editorHeight: 100,
-        editorSelection: null,
-        editorReadOnly: false,
-        editorInterface: {},
-        editorInitialized: false,
+        editor: {
+          height: 100,
+          selection: null,
+          readOnly: false,
+          focus: true,
+          cursorIndex: 0,
+          initialized: false,
+        },
         runningQuery: null,
         error: null,
         errorMarker: null,
@@ -375,7 +375,6 @@
         tableHeight: 0,
         savePrompt: false,
         lastWord: null,
-        cursorIndex: null,
         marker: null,
         queryParameterValues: {},
         queryForExecution: null,
@@ -468,7 +467,7 @@
         return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
-        return this.editorInitialized ? !!this.editorSelection : false
+        return this.editor.initialized ? !!this.editor.selection : false
       },
       result() {
         return this.results[this.selectedResult]
@@ -480,7 +479,7 @@
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
         for (let i = 0; i < queries.length; i++) {
-          if (this.cursorIndex <= queries[i].end + 1) return i
+          if (this.editor.cursorIndex <= queries[i].end + 1) return i
         }
         return null
       },
@@ -489,7 +488,7 @@
         return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
-        if(!this.editorInitialized || !this.currentlySelectedQuery || !this.individualQueries) {
+        if(!this.editor.initialized || !this.currentlySelectedQuery || !this.individualQueries) {
           return null
         }
         const qi = this.currentlySelectedQueryIndex
@@ -600,15 +599,19 @@
 
         return { exCommands }
       },
+      editorMarkers() {
+        const markers = []
+        if (this.marker) markers.push(this.marker)
+        if (this.errorMarker) markers.push(this.errorMarker)
+        return markers
+      },
     },
     watch: {
       error() {
-        if (this.errorMarker) {
-          this.errorMarker.clear()
-        }
+        this.errorMarker = null
         if (this.dialect === 'postgresql' && this.error && this.error.position) {
           const [a, b] = this.locationFromPosition(this.queryForExecution, parseInt(this.error.position) - 1, parseInt(this.error.position))
-          this.errorMarker = this.editorInterface.markText(a, b, 'error')
+          this.errorMarker = { from: a, to: b, type: 'error' } as EditorMarker
           this.error.marker = {line: b.line + 1, ch: b.ch}
         }
       },
@@ -623,30 +626,28 @@
       },
       remoteDeleted() {
         if (this.remoteDeleted) {
-          this.editorReadOnly = 'nocursor'
+          this.editor.readOnly = 'nocursor'
           this.tab.unsavedChanges = false
           this.tab.alert = true
         } else {
-          this.editorReadOnly = false
+          this.editor.readOnly = false
         }
       },
       unsavedChanges() {
         this.tab.unsavedChanges = this.unsavedChanges
       },
-      active() {
-        if(this.active && this.editorInitialized) {
-          this.$nextTick(() => {
-            this.editorInterface.refresh()
-            this.editorInterface.focus()
-          })
+      async active() {
+        if(this.active && this.editor.initialized) {
+          // FIXME this doesn't work. Something triggers the blur event from
+          // codemirror right after doing this.
+          await this.$nextTick()
+          this.editor.focus = this.active
         } else {
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
       currentQueryPosition() {
-        if (this.marker){
-          this.marker.clear()
-        }
+        this.marker = null
 
         if(!this.individualQueries || this.individualQueries.length < 2) {
           return;
@@ -661,7 +662,7 @@
         // const lines = editorText.split(/\n/)
 
         const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
-        this.marker = this.editorInterface.markText(markStart, markEnd, 'highlight')
+        this.marker = { from: markStart, to: markEnd, type: 'highlight' } as EditorMarker
       },
     },
     methods: {
@@ -722,26 +723,19 @@
             }
           })
 
-          setTimeout(() => {
+          this.$nextTick(() => {
             this.tableHeight = this.$refs.bottomPanel.clientHeight
             this.updateEditorHeight()
-          }, 1)
+          })
         })
       },
-      handleEditorInitialized(_: CodeMirror.Editor) {
+      handleEditorInitialized() {
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights
-        setTimeout(() => {
+        this.$nextTick(() => {
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
-          this.editorInterface.refresh()
-        }, 1)
-
-        this.editorInitialized = true
-      },
-      handleCursorActivity(editor) {
-        this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true))
-        this.editorSelection = editor.getSelection()
+        })
       },
       saveTab: _.debounce(function() {
         this.$store.dispatch('tabs/save', this.tab)
@@ -774,7 +768,7 @@
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
-        this.editorInterface.focus()
+        this.editor.focus = true
       },
       selectTitleInput() {
         this.$refs.titleInput.select()
@@ -786,7 +780,7 @@
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
         height -= this.$refs.actions.clientHeight
-        this.editorHeight = height
+        this.editor.height = height
       },
       triggerSave() {
         if (this.query?.id) {
@@ -832,7 +826,7 @@
           return;
         }
         // run the currently hilighted text (if any) to a file, else all sql
-        const query_sql = this.hasSelectedText ? this.editorSelection : this.unsavedText
+        const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -860,7 +854,7 @@
         }
       },
       async submitTabQuery() {
-        const text = this.hasSelectedText ? this.editorSelection : this.unsavedText
+        const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
           this.submitQuery(text)

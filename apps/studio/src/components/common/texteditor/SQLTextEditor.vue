@@ -8,10 +8,14 @@
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
+    :forcedValue="forcedValue"
     @initialized="handleInitialized"
     @paste="handlePaste"
     @keyup="handleKeyup"
-    @interface="handleInterface"
+    @update:focus="$emit('update:focus', $event)"
+    @update:selection="$emit('update:selection', $event)"
+    @update:cursorIndex="$emit('update:cursorIndex', $event)"
+    @update:initialized="$emit('update:initialized', $event)"
   />
 </template>
 
@@ -30,8 +34,7 @@ export default Vue.extend({
   props: ["value", "lang", "extraKeybindings", "contextMenuOptions"],
   data() {
     return {
-      cursorIndex: null,
-      editorInterface: {},
+      forcedValue: this.value,
     };
   },
   computed: {
@@ -76,12 +79,11 @@ export default Vue.extend({
     },
   },
   methods: {
-    formatSql() {
+    async formatSql() {
       const formatted = format(this.value, {
         language: FormatterDialect(dialectFor(this.lang)),
       });
-      this.editorInterface.setValue(formatted);
-      this.editorInterface.focus();
+      await this.setEditorValue(formatted);
     },
     async columnsGetter(tableName: string) {
       const tableToFind = this.tables.find(
@@ -94,10 +96,6 @@ export default Vue.extend({
       }
 
       return tableToFind?.columns.map((c) => c.columnName);
-    },
-    handleInterface(editorInterface: any) {
-      this.editorInterface = editorInterface;
-      this.$emit("interface", editorInterface);
     },
     handleInitialized(cm: CodeMirror.Editor) {
       registerAutoquote(cm);
@@ -173,6 +171,11 @@ export default Vue.extend({
       }
 
       return newOptions;
+    },
+    async setEditorValue(value: string) {
+      this.forcedValue = this.value;
+      await this.$nextTick();
+      this.forcedValue = value;
     },
   },
 });
