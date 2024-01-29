@@ -1,6 +1,6 @@
 import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
-import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../client";
+import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../types";
 import { SupportedFeatures, TableIndex, TablePartition, TableProperties, TableTrigger } from "../models";
 import { PostgresClient } from "./postgresql";
 

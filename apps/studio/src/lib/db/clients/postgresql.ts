@@ -9,7 +9,7 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { IDbConnectionServerConfig, DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../client'
+import { IDbConnectionServerConfig, DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
