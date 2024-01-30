@@ -26,7 +26,7 @@ import "codemirror/mode/xml/xml";
 import "codemirror/mode/diff/diff";
 import "@/vendor/sql-hint";
 import "@/vendor/show-hint";
-import "@/lib/codemirror-definition";
+import "@/lib/editor/CodeMirrorDefinitions";
 import "codemirror/addon/merge/merge";
 import CodeMirror from "codemirror";
 
@@ -53,6 +53,7 @@ export default {
     "cursor",
     "initialized",
     "forcedValue",
+    "plugins",
   ],
   data() {
     return {
@@ -177,10 +178,6 @@ export default {
         this.$emit("input", cm.getValue());
       });
 
-      cm.on("keyup", (cm, e) => {
-        this.$emit("keyup", cm, e);
-      });
-
       cm.on("keydown", (_cm, e) => {
         if (this.$store.state.menuActive) {
           e.preventDefault();
@@ -218,6 +215,12 @@ export default {
           }
           setKeybindingsFromVimrc(codeMirrorVimInstance);
         }
+      }
+
+      if (this.plugins) {
+        this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
+          plugin(cm);
+        });
       }
 
       this.editor = cm;

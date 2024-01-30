@@ -34,7 +34,7 @@
         v-model="unsavedText"
         v-bind.sync="editor"
         :markers="editorMarkers"
-        :lang="connectionType"
+        :connection-type="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
         @initialized="handleEditorInitialized"

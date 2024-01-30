@@ -3,15 +3,13 @@
     v-bind="$attrs"
     :value="value"
     @input="$emit('input', $event)"
-    :lang="lang || 'sql'"
+    :lang="connectionType || 'sql'"
     :extra-keybindings="keybindings"
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
     :forcedValue="forcedValue"
-    @initialized="handleInitialized"
-    @paste="handlePaste"
-    @keyup="handleKeyup"
+    :plugins="plugins"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
     @update:cursorIndex="$emit('update:cursorIndex', $event)"
@@ -22,16 +20,14 @@
 <script lang="ts">
 import Vue from "vue";
 import TextEditor from "./TextEditor.vue";
-import CodeMirror from "codemirror";
 import { mapState } from "vuex";
-import { registerAutoquote } from "@/lib/codemirror";
-import { removeQueryQuotes } from "@/lib/db/sql_tools";
+import { plugins } from "@/lib/editor/utils";
 import { format } from "sql-formatter";
 import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "lang", "extraKeybindings", "contextMenuOptions"],
+  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions"],
   data() {
     return {
       forcedValue: this.value,
@@ -77,6 +73,13 @@ export default Vue.extend({
         ...this.extraKeybindings,
       };
     },
+    plugins() {
+      return [
+        plugins.autoquote,
+        plugins.autoComplete,
+        plugins.autoRemoveQueryQuotes(this.connectionType),
+      ];
+    },
   },
   methods: {
     async formatSql() {
@@ -96,59 +99,6 @@ export default Vue.extend({
       }
 
       return tableToFind?.columns.map((c) => c.columnName);
-    },
-    handleInitialized(cm: CodeMirror.Editor) {
-      registerAutoquote(cm);
-      this.$emit("initialized", ...arguments);
-    },
-    handlePaste(cm: CodeMirror.Editor, e) {
-      e.preventDefault();
-      let clipboard = (e.clipboardData.getData("text") as string).trim();
-      clipboard = removeQueryQuotes(clipboard, this.identifyDialect);
-      if (this.hasSelectedText) {
-        cm.replaceSelection(clipboard, "around");
-      } else {
-        const cursor = cm.getCursor();
-        cm.replaceRange(clipboard, cursor);
-      }
-    },
-    handleKeyup(editor: CodeMirror.Editor, e) {
-      // TODO: make this not suck
-      // BUGS:
-      // 1. only on periods if not in a quote
-      // 2. post-space trigger after a few SQL keywords
-      //    - from, join
-      const triggerWords = ["from", "join"];
-      const triggers = {
-        "190": "period",
-      };
-      const space = 32;
-      if (editor.state.completionActive) return;
-      if (triggers[e.keyCode]) {
-        // eslint-disable-next-line
-        // @ts-ignore
-        CodeMirror.commands.autocomplete(editor, null, {
-          completeSingle: false,
-        });
-      }
-      if (e.keyCode === space) {
-        try {
-          const pos = _.clone(editor.getCursor());
-          if (pos.ch > 0) {
-            pos.ch = pos.ch - 2;
-          }
-          const word = editor.findWordAt(pos);
-          const lastWord = editor.getRange(word.anchor, word.head);
-          if (!triggerWords.includes(lastWord.toLowerCase())) return;
-          // eslint-disable-next-line
-          // @ts-ignore
-          CodeMirror.commands.autocomplete(editor, null, {
-            completeSingle: false,
-          });
-        } catch (ex) {
-          // do nothing
-        }
-      }
     },
     handleContextMenuOptions(e: unknown, options: any[]) {
       const pivot = options.findIndex((o) => o.slug === "find");
