@@ -72,8 +72,8 @@ export class CockroachClient extends PostgresClient {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(table, schema),
-      this.getTableKeys("", table, schema),
+      this.listTableIndexes(null, table, schema),
+      this.getTableKeys(null, table, schema),
       triggersPromise,
       partitionsPromise,
       this.getTableOwner(table, schema)

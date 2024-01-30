@@ -327,6 +327,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const data = await this.driverExecuteSingle(sql, { params });
 
+    // console.log(`DATA FOR ${schema}.${table}: `, data);
+    console.log(`QUERY FOR ${schema}.${table}: `, params)
+
     return data.rows.map((row: any) => ({
       schemaName: row.table_schema,
       tableName: row.table_name,
@@ -686,8 +689,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(table, schema),
-      this.getTableKeys("", table, schema),
+      this.listTableIndexes(null, table, schema),
+      this.getTableKeys(null, table, schema),
       triggersPromise,
       partitionsPromise,
       this.getTableOwner(table, schema)
@@ -1171,6 +1174,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const columnsList = await Promise.all(rawInserts.map((insert) => {
       return this.listTableColumns(null, insert.table, insert.schema);
     }));
+
+    // console.log('RAW INSERTS: ', rawInserts)
+    // console.log('COLUMNS LIST: ', columnsList)
 
     const fixedInserts = rawInserts.map((insert, idx) => {
       const result = { ...insert};
