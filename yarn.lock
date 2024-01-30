@@ -8519,7 +8519,7 @@ hosted-git-info@^2.1.4:
   resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-2.8.9.tgz#dffc0bf9a21c02209090f2aa69429e1414daf3f9"
   integrity sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==
 
-hosted-git-info@^4.0.1, hosted-git-info@^4.0.2:
+hosted-git-info@^4.0.2:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-4.1.0.tgz#827b82867e9ff1c8d0c4d9d53880397d2c86d224"
   integrity sha512-kyCuEOWjJqZuDbRHzL8V93NzQhwIB71oFWSyzVo+KPZI+pnQPPxucdkrOZvkLRnrf5URsQM+IJ09Dw29cRALIA==
@@ -9073,7 +9073,7 @@ is-color-stop@^1.0.0:
     rgb-regex "^1.0.1"
     rgba-regex "^1.0.0"
 
-is-core-module@^2.5.0, is-core-module@^2.9.0:
+is-core-module@^2.9.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/is-core-module/-/is-core-module-2.10.0.tgz#9012ede0a91c69587e647514e1d5277019e728ed"
   integrity sha512-Erxj2n/LDAZ7H8WNJXd9tw38GYM3dv8rk8Zcs+jJuxYTW7sozH+SS8NtrSjVL1/vpLvWi1hxy96IzjJ3EHTJJg==
@@ -11374,16 +11374,6 @@ normalize-package-data@^2.3.2, normalize-package-data@^2.5.0:
     hosted-git-info "^2.1.4"
     resolve "^1.10.0"
     semver "2 || 3 || 4 || 5"
-    validate-npm-package-license "^3.0.1"
-
-normalize-package-data@^3.0.0:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/normalize-package-data/-/normalize-package-data-3.0.3.tgz#dbcc3e2da59509a0983422884cd172eefdfa525e"
-  integrity sha512-p2W1sgqij3zMMyRC067Dg16bfzVH+w7hyegmpIvZ4JNjqtGOVAIvLmjBx3yP7YTe9vKJgkoNOPjwQGogDoMXFA==
-  dependencies:
-    hosted-git-info "^4.0.1"
-    is-core-module "^2.5.0"
-    semver "^7.3.4"
     validate-npm-package-license "^3.0.1"
 
 normalize-path@^1.0.0:
@@ -14074,10 +14064,9 @@ sql-formatter@~10.7.2:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
-sql-query-identifier@^2.6.0:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.6.0.tgz#ee56c0dacb946157f53f0ea0fbacb237250be8bd"
-  integrity sha512-gxlT1LX+BZi1NR8qWDtiU8umJf53OYuSKZN4xIufl6apD3OAVoBc/06FYBWPc+cHKrdqwvvs6wkiGfhvtqZwRw==
+sql-query-identifier@beekeeper-studio/sql-query-identifier#393e94d55dfb4ca038842d6e2fb7ffc2a6ee651a:
+  version "2.5.0-bks2"
+  resolved "https://codeload.github.com/beekeeper-studio/sql-query-identifier/tar.gz/393e94d55dfb4ca038842d6e2fb7ffc2a6ee651a"
 
 sqlstring@^2.3.2:
   version "2.3.3"

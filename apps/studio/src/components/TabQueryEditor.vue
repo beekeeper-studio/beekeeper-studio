@@ -1123,7 +1123,7 @@
               result.totalRowCount = result.rowCount
             }
 
-            if (identification[idx]?.tables.length > 0) {
+            if (identification[idx]?.tables.length === 1) {
               result.tableName = identification[idx].tables[0]
             } else {
               result.tableName = "mytable"
