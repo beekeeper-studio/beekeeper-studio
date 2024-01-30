@@ -327,9 +327,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const data = await this.driverExecuteSingle(sql, { params });
 
-    // console.log(`DATA FOR ${schema}.${table}: `, data);
-    console.log(`QUERY FOR ${schema}.${table}: `, params)
-
     return data.rows.map((row: any) => ({
       schemaName: row.table_schema,
       tableName: row.table_name,
@@ -1171,12 +1168,17 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   private async insertRows(rawInserts: TableInsert[]) {
-    const columnsList = await Promise.all(rawInserts.map((insert) => {
-      return this.listTableColumns(null, insert.table, insert.schema);
-    }));
+    // const columnsList = await Promise.all(rawInserts.map((insert) => {
+    //   return this.listTableColumns(null, insert.table, insert.schema);
+    // }));
 
-    // console.log('RAW INSERTS: ', rawInserts)
-    // console.log('COLUMNS LIST: ', columnsList)
+    // HACK (@day): just to get the tests working
+    const columnsList = [];
+    for (let i = 0; i < rawInserts.length; i++) {
+      const insert = rawInserts[i];
+      const columns = await this.listTableColumns(null, insert.table, insert.schema);
+      columnsList.push(columns);
+    }
 
     const fixedInserts = rawInserts.map((insert, idx) => {
       const result = { ...insert};
