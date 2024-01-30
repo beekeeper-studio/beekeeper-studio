@@ -12,7 +12,7 @@ import logRaw from 'electron-log'
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, applyChangesSql } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -1353,7 +1353,7 @@ export async function executeQuery(conn: Conn, queryText: string, arrayMode = fa
 
 
 export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) {
-  const databaseFilter = buildDatabseFilter(filter, 'datname');
+  const databaseFilter = buildDatabaseFilter(filter, 'datname');
   const sql = `
     SELECT datname
     FROM pg_database

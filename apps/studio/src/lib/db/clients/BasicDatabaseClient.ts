@@ -89,7 +89,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   abstract selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
   abstract queryStream(db: string, query: string, chunkSize: number): Promise<StreamResults>;
   abstract wrapIdentifier(value: string): string;
-  abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
+  abstract setTableDescription(table: string, description: string, schema?: string): Promise<string|void>;
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
   abstract truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;

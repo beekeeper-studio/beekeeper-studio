@@ -46,7 +46,7 @@ export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   return where.join(' AND ');
 }
 
-export function buildDatabseFilter(filter, databaseField) {
+export function buildDatabaseFilter(filter, databaseField) {
   if (!filter) {
     return null
   }
