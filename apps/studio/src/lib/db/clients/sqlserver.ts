@@ -37,14 +37,12 @@ const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
 
-// :shrug:
 type SQLServerVersion = {
   supportOffsetFetch: boolean
   releaseYear: number
   versionString: any
 }
 
-// :shrug:
 type SQLServerResult = { 
   data: any,
   statement: Statement,
@@ -52,7 +50,6 @@ type SQLServerResult = {
   changes: number 
 }
 
-// :also shrug:
 const SQLServerContext = {
   getExecutionContext(): ExecutionContext {
     return null;
@@ -80,7 +77,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     super( knexlib({ client: 'mssql'}), SQLServerContext )
     this.server = server
     this.database = database
-    this.defaultSchema = ():string => server.config.user.toUpperCase() || 'dbo'
+    this.defaultSchema = ():string => 'dbo'
     this.logger = () => log
   }
 
@@ -883,10 +880,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   private async executeWithTransaction(queryArgs) {
     try {
       const query = joinQueries(['SET XACT_ABORT ON', 'BEGIN TRANSACTION', queryArgs.query, 'COMMIT'])
-      console.log(query)
       await this.driverExecuteQuery({ ...queryArgs, query })
     } catch (ex) {
-      console.log(ex)
       this.logger().error(ex)
       throw ex
     }
