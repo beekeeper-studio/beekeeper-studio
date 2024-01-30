@@ -1112,7 +1112,7 @@
           // @ts-ignore
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
-          results.forEach(result => {
+          results.forEach((result, idx) => {
             result.rowCount = result.rowCount || 0
 
             // TODO (matthew): remove truncation logic somewhere sensible
@@ -1121,6 +1121,12 @@
               result.rows = _.take(result.rows, this.$config.maxResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
+            }
+
+            if (identification[idx]?.tables.length > 0) {
+              result.tableName = identification[idx].tables[0]
+            } else {
+              result.tableName = "mytable"
             }
           })
           this.results = Object.freeze(results);
