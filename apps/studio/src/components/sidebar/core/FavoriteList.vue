@@ -8,11 +8,20 @@
               Saved Queries
             </div>
             <div class="actions">
-              <a
-                v-if="isCloud"
-                title="Import queries from local workspace"
-                @click.prevent="importFromLocal"
-              ><i class="material-icons">save_alt</i></a>
+              <x-button
+                title="Import queries"
+              >
+                <i class="material-icons">save_alt</i>
+                <x-menu>
+                  <x-menuitem @click.prevent="importFromComputer">
+                    <x-label>Import from local computer</x-label>
+                  </x-menuitem>
+                  <x-menuitem @click.prevent="importFromLocal" :disabled="!isCloud">
+                    <x-label>Import from workspace</x-label>
+                    <i class="material-icons menu-icon">stars</i>
+                  </x-menuitem>
+                </x-menu>
+              </x-button>
               <a
                 class=""
                 @click.prevent="refresh"
@@ -53,6 +62,7 @@
               @select="select"
               @open="open"
               @rename="rename"
+              @export="exportTo"
             />
           </sidebar-folder>
           <favorite-list-item
@@ -65,6 +75,7 @@
             @select="select"
             @open="open"
             @rename="rename"
+            @export="exportTo"
           />
         </nav>
         <div
@@ -172,8 +183,14 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         this.$modal.show('rename-modal')
         this.renameMe = query
       },
+      exportTo(query) {
+        this.$root.$emit(AppEvent.promptQueryExport, query)
+      },
       importFromLocal() {
         this.$root.$emit(AppEvent.promptQueryImport)
+      },
+      importFromComputer() {
+        this.$root.$emit(AppEvent.promptQueryImportFromComputer)
       },
       maybeUnselect(e) {
         if (!this.selected) return
