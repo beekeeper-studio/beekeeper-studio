@@ -172,6 +172,7 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
       store,
     })
     await app.$store.dispatch('settings/initializeSettings')
+    await app.$store.dispatch('configs/initialize')
     const handler = new AppEventHandler(ipcRenderer, app)
     handler.registerCallbacks()
     app.$mount('#app')

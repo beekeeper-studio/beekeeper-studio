@@ -62,7 +62,7 @@ export default Vue.extend({
 
       return this.$store.state.connection
     },
-    ...mapState(['storeInitialized']),
+    ...mapGetters(['storeInitialized']),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'

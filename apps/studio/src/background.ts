@@ -13,6 +13,7 @@ log.catchErrors({ showDialog: false})
 log.info("initializing background")
 
 import { manageUpdates } from './background/update_manager'
+import { manageConfigs } from './background/config_manager'
 
 import MenuHandler from './background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_setting'
@@ -73,6 +74,7 @@ async function initBasics() {
   log.debug("Building the window")
   log.debug("managing updates")
   manageUpdates()
+  manageConfigs()
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     const url = args[0]
     if (!url) return

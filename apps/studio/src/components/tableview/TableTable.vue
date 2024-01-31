@@ -283,7 +283,6 @@ export default Vue.extend({
       columnWidths: null,
       //
       response: null,
-      limit: 100,
       rawTableKeys: [],
       primaryKeys: null,
       pendingChanges: {
@@ -308,7 +307,10 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
-    ...mapGetters(['dialectData', 'dialect']),
+    ...mapGetters(['dialectData', 'dialect', 'config']),
+    limit() {
+      return Number(this.config.ui.tableTable.pageSize)
+    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -690,7 +692,10 @@ export default Vue.extend({
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
-    }
+    },
+    limit() {
+      this.tabulator.setPageSize(this.limit)
+    },
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)

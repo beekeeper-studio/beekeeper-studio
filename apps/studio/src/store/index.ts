@@ -9,6 +9,7 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
+import ConfigsStoreModule from './modules/ConfigsStoreModule'
 import { DBConnection } from '../lib/db/client'
 import { Routine, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
@@ -56,8 +57,8 @@ export interface State {
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
   workspaceId: number,
-  storeInitialized: boolean,
   windowTitle: string,
+  dataManagerInitialized: boolean
 }
 
 Vue.use(Vuex)
@@ -67,6 +68,7 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
+    configs: ConfigsStoreModule,
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
@@ -98,11 +100,17 @@ const store = new Vuex.Store<State>({
     activeTab: null,
     selectedSidebarItem: null,
     workspaceId: LocalWorkspace.id,
-    storeInitialized: false,
     windowTitle: 'Beekeeper Studio',
+    dataManagerInitialized: false,
   },
 
   getters: {
+    storeInitialized(state) {
+      return state.dataManagerInitialized && state['configs'].initialized
+    },
+    config(_, getters) {
+      return getters['configs/config']
+    },
     defaultSchema(state: State) {
       return state.connection.defaultSchema ?
         state.connection.defaultSchema() :
@@ -190,8 +198,8 @@ const store = new Vuex.Store<State>({
     }
   },
   mutations: {
-    storeInitialized(state, b: boolean) {
-      state.storeInitialized = b
+    dataManagerInitialized(state) {
+      state.dataManagerInitialized = true
     },
     workspaceId(state, id: number) {
       state.workspaceId = id

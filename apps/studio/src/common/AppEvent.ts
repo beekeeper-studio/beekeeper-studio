@@ -34,6 +34,9 @@ export enum AppEvent {
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
   dropzoneDrop = 'dropzoneDrop',
+  configChanged = 'configChanged',
+  configStateManagerReady = 'configStateManagerReady',
+  saveUserConfig = 'updateUserConfig',
 }
 
 export interface RootBinding {

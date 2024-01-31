@@ -385,8 +385,8 @@
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
-      ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'storeInitialized']),
+      ...mapState(['usedConfig', 'connection', 'database', 'tables']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),

@@ -15,7 +15,7 @@ export default Vue.extend({
   }),
   mounted() {
     this.mountAndRefresh()
-    this.$store.commit('storeInitialized', true)
+    this.$store.commit('dataManagerInitialized')
     this.interval = setInterval(this.poll, globals.dataCheckInterval)
   },
   beforeDestroy() {
