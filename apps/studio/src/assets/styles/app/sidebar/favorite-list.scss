@@ -3,13 +3,6 @@
   // height: 100%;
   // display: flex;
   // flex-direction: column;
-  &:hover {
-    .list-heading {
-      .actions {
-        display: flex;
-      }
-    }
-  }
   .sidebar-list {
     position: relative;
     flex: 1 1 auto;
@@ -46,7 +39,12 @@
   }
   .list-heading {
     .actions {
-      display: none;
+      display: flex;
+      x-button {
+        height: auto;
+        padding: 0;
+        box-shadow: none;
+      }
     }
   }
   .list-title {
@@ -56,9 +54,9 @@
     .subtitle {
       font-size: 80%;
       color: $text-lighter;
-      @extend .truncate;
+      @include truncate;
       span {
-        @extend .truncate;
+        @include truncate;
       }
     }
   }

@@ -1,0 +1,2 @@
+mkdocs-material
+mkdocs-material[imaging]

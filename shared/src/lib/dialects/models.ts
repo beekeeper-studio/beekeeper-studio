@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery']
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'firebird']
 const ultimateDialects = []
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -39,7 +39,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
 
 }
 
-export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb']
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb', 'firebird']
 export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
@@ -102,6 +102,7 @@ export interface DialectData {
       addConstraint?: boolean
       dropConstraint?: boolean
       everything?: boolean
+      indexes?: boolean
     },
     constraints?: {
       onUpdate?: boolean,
@@ -113,6 +114,12 @@ export interface DialectData {
     createIndex?: boolean
     comments?: boolean
     filterWithOR?: boolean
+    backup?: boolean
+    truncateElement?: boolean
+    duplicateTable?: boolean
+    exportTable?: boolean
+    createTable?: boolean
+    collations?: boolean
   },
   notices?: {
     infoSchema?: string
@@ -220,6 +227,8 @@ export interface CreateIndexSpec {
   name?: string
   columns: IndexColumn[]
   unique: boolean
+  // Set order for entire index. Used in firebird.
+  order?: 'ASC' | 'DESC'
 }
 
 export interface DropIndexSpec {

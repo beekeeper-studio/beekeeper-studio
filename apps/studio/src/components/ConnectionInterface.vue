@@ -2,8 +2,6 @@
   <div class="interface connection-interface">
     <div
       class="interface-wrap row"
-      @dragover.prevent=""
-      @drop.prevent="maybeLoadSqlite"
     >
       <sidebar
         class="connection-sidebar"
@@ -118,6 +116,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <firebird-form
+                  v-if="config.connectionType === 'firebird'"
+                  :config="config"
+                  :testing="testing"
+                />
                 <other-database-notice v-if="config.connectionType === 'other'" />
 
                 <!-- TEST AND CONNECT -->
@@ -197,6 +200,7 @@ import SqliteForm from './connection/SqliteForm.vue'
 import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
+import FirebirdForm from './connection/FirebirdForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import _ from 'lodash'
@@ -208,12 +212,13 @@ import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 import Vue from 'vue'
+import { AppEvent } from '@/common/AppEvent'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, BigQueryForm, },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, BigQueryForm, FirebirdForm },
 
   data() {
     return {
@@ -247,7 +252,12 @@ export default Vue.extend({
     },
     determineLabelColor() {
       return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
-    }
+    },
+    rootBindings() {
+      return [
+        { event: AppEvent.dropzoneDrop, handler: this.maybeLoadSqlite },
+      ]
+    },
   },
   watch: {
     workspaceId() {
@@ -300,16 +310,17 @@ export default Vue.extend({
         expandToMin: true,
       } as Split.Options)
     })
+    this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
     if (this.split) {
       this.split.destroy()
     }
+    this.unregisterHandlers(this.rootBindings)
   },
   methods: {
-    maybeLoadSqlite(e) {
+    maybeLoadSqlite({ files }) {
       // cast to an array
-      const files = [...e.dataTransfer.files || []]
       if (!files || !files.length) return
       if (!this.config) return;
       // we only load the first

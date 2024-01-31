@@ -38,7 +38,7 @@
     .subtitle {
       font-size: 80%;
       color: $text-lighter;
-      @extend .truncate;
+      @include truncate;
     }
   }
   .list-item-btn {

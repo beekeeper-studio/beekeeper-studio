@@ -181,6 +181,21 @@
         </div>
       </modal>
     </portal>
+
+    <confirmation-modal name="core-tabs-close-confirmation" ref="closeConfirmation">
+      <template v-slot:title>
+        <div class="dialog-c-title">
+          Really close
+            <span class="tab-like" v-if="closingTab">
+              <tab-icon :tab="closingTab" /> {{ closingTab.title }}
+            </span>
+          ?
+        </div>
+      </template>
+      <template v-slot:message>
+        You will lose unsaved changes
+      </template>
+    </confirmation-modal>
   </div>
 </template>
 
@@ -205,8 +220,15 @@ import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
+import { DropzoneDropEvent } from '@/common/dropzone'
+import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+import { readWebFile, getLastExportPath } from '@/common/utils'
+import { readFileSync, writeFileSync } from 'fs'
+import Noty from 'noty'
+import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
+import pluralize from 'pluralize'
 
 export default Vue.extend({
   props: ['connection'],
@@ -221,7 +243,8 @@ export default Vue.extend({
     TableBuilder,
     TabWithTable,
     TabIcon,
-    PendingChangesButton
+    PendingChangesButton,
+    ConfirmationModal,
   },
   data() {
     return {
@@ -240,6 +263,7 @@ export default Vue.extend({
       // below are connected to the modal for duplicate
       dbDuplicateTableParams: null,
       duplicateTableName: null,
+      closingTab: null,
     }
   },
   watch: {
@@ -253,7 +277,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState('tabs', { 'activeTab': 'active' }),
+    ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect' }),
     tabIcon() {
       return {
@@ -297,15 +321,9 @@ export default Vue.extend({
         { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
         { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
         { event: AppEvent.duplicateDatabaseTable, handler: this.duplicateDatabaseTable },
-      ]
-    },
-    contextOptions() {
-      return [
-        { name: "Close", slug: 'close', handler: ({ item }) => this.close(item) },
-        { name: "Close Others", slug: 'close-others', handler: ({ item }) => this.closeOther(item) },
-        { name: 'Close All', slug: 'close-all', handler: this.closeAll },
-        { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({ item }) => this.closeToRight(item) },
-        { name: "Duplicate", slug: 'duplicate', handler: ({ item }) => this.duplicate(item) }
+        { event: AppEvent.dropzoneDrop, handler: this.handleDropzoneDrop },
+        { event: AppEvent.promptQueryImportFromComputer, handler: this.handlePromptQueryImportFromComputer },
+        { event: AppEvent.promptQueryExport, handler: this.handlePromptQueryExport },
       ]
     },
     lastTab() {
@@ -471,20 +489,6 @@ export default Vue.extend({
     openContextMenu(event, item) {
       this.contextEvent = { event, item }
     },
-    contextClick({ option, item }) {
-      switch (option.slug) {
-        case 'close':
-          return this.close(item)
-        case 'close-others':
-          return this.closeOther(item)
-        case 'close-all':
-          return this.closeAll();
-        case 'close-to-right':
-          return this.closeToRight(item);
-        case 'duplicate':
-          return this.duplicate(item);
-      }
-    },
     async setActiveTab(tab) {
       await this.$store.dispatch('tabs/setActive', tab)
     },
@@ -516,6 +520,7 @@ export default Vue.extend({
     },
     createQuery(optionalText, queryTitle?) {
       // const text = optionalText ? optionalText : ""
+      console.log("Creating tab")
       let qNum = 0
       let tabName = "New Query"
       do {
@@ -573,6 +578,179 @@ export default Vue.extend({
       }
 
       this.$modal.show(this.duplicateTableModal)
+    },
+    async handleDropzoneDrop(event: DropzoneDropEvent) {
+      const files = event.files.map((file) => ({
+        file,
+        error: false,
+      }))
+
+      if (!files.every(({ file }) => file.name.endsWith('.sql'))) {
+        this.$noty.error('Only .sql files are supported')
+        return
+      }
+
+      let readerAbort: () => void;
+      let aborted  = false;
+
+      function abort() {
+        if (typeof readerAbort === 'function') {
+          readerAbort()
+        }
+        aborted = true
+      }
+
+      const notyQueue = 'load-queries'
+      const notyText = `Loading <span class="counter">1</span> of ${files.length} files`
+
+      const noty = this.$noty.info(notyText,  {
+        queue: notyQueue,
+        allowRawHtml: true,
+        buttons: [
+          Noty.button('Abort', 'btn btn-danger', abort)
+        ],
+      })
+
+      const counter = noty.barDom.querySelector('.counter')
+
+      for (let i = 0; i < files.length; i++) {
+        if (aborted) {
+          break
+        }
+
+        counter.textContent = `${i + 1}`
+
+        const file = files[i].file
+
+        const reader = readWebFile(file)
+        readerAbort = reader.abort
+
+        try {
+          const text = await reader.result
+          if (text) {
+            this.$root.$emit(AppEvent.newTab, text);
+          } else {
+            files[i].error = true
+          }
+        } catch (e) {
+          if (e.message.includes(/abort/)) {
+            break
+          } else {
+            files[i].error = true
+          }
+        }
+      }
+
+      if (aborted) {
+        this.$noty.info('Loading aborted', { killer: notyQueue })
+      } else if (files.some(({ error }) => error)) {
+        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
+      } else {
+        this.$noty.success('All files loaded', { killer: notyQueue })
+      }
+
+      noty.close()
+    },
+    async handlePromptQueryImportFromComputer() {
+      const paths: string[] | undefined = this.$native.dialog.showOpenDialogSync({
+        title: "Import Queries",
+        properties: ['openFile', 'multiSelections'],
+        filters: [
+          { name: 'SQL', extensions: ['sql'] }
+        ]
+      })
+
+      // do nothing if canceled
+      if (!paths) return;
+
+      const files = paths.map((path) => ({
+        path,
+        name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
+        error: false,
+      }))
+
+      let readerAbort: () => void;
+      let aborted  = false;
+
+      function abort() {
+        if (typeof readerAbort === 'function') {
+          readerAbort()
+        }
+        aborted = true
+      }
+
+      const notyQueue = 'load-queries'
+      const notyText = `Loading <span class="counter">1</span> of ${files.length} files`
+
+      const noty = this.$noty.info(notyText,  {
+        queue: notyQueue,
+        allowRawHtml: true,
+        buttons: [
+          Noty.button('Abort', 'btn btn-danger', abort)
+        ],
+      })
+
+      const counter = noty.barDom.querySelector('.counter')
+
+      for (let i = 0; i < files.length; i++) {
+        if (aborted) {
+          break
+        }
+
+        const file = files[i]
+
+        counter.textContent = `${i + 1}`
+
+        try {
+          // TODO (azmi): this process can take longer by accident. Consider 
+          // an ability to cancel reading file.
+          const text = readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
+          if (text) {
+            const query = new FavoriteQuery()
+            query.title = file.name
+            query.text = text
+            await this.$store.dispatch('data/queries/save', query)
+          } else {
+            files[i].error = true
+          }
+        } catch (e) {
+            files[i].error = true
+        }
+      }
+
+      if (aborted) {
+        this.$noty.info('Loading aborted', { killer: notyQueue })
+      } else if (files.some(({ error }) => error)) {
+        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
+      } else {
+        this.$noty.success('All files loaded', { killer: notyQueue })
+      }
+    },
+    async handlePromptQueryExport(query) {
+      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_')
+
+      const filePath = this.$native.dialog.showSaveDialogSync({
+        title: "Export Query",
+        defaultPath: await getLastExportPath(`${safeFilename}.sql`),
+        filters: [
+          { name: 'SQL (*.sql)', extensions: ['sql'] },
+          { name: 'All Files (*.*)', extensions: ['*'] },
+        ],
+      })
+
+      // do nothing if canceled
+      if (!filePath) return
+
+      const notyQueue = 'export-query'
+      this.$noty.info('Exporting query',  { queue: notyQueue })
+
+      try {
+        writeFileSync(filePath, query.text, { encoding: 'utf8' })
+        this.$noty.success('Query exported!', { killer: notyQueue })
+      } catch (e) {
+        console.error(e)
+        this.$noty.error('Query could not be exported. See console for details.', { killer: notyQueue })
+      }
     },
     async loadRoutineCreate(routine) {
       const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
@@ -635,7 +813,14 @@ export default Vue.extend({
         }
       }
     },
-    async close(tab) {
+    async close(tab: OpenTab) {
+      if (tab.unsavedChanges) {
+        this.closingTab = tab
+        const confirmed = await this.$refs.closeConfirmation.confirm();
+        this.closingTab = null
+        if (!confirmed) return
+      }
+
       if (this.activeTab === tab) {
         if (tab === this.lastTab) {
           this.previousTab()
@@ -648,22 +833,47 @@ export default Vue.extend({
         await this.$store.dispatch('data/queries/reload', tab.queryId)
       }
     },
-    closeAll() {
+    async closeAll() {
+      const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)
+      if (unsavedTabs.length > 0) {
+        const confirmed = await this.$confirm(
+          'Close all tabs?',
+          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)}. Are you sure?`
+        )
+        if (!confirmed) return
+      }
       this.$store.dispatch('tabs/unload')
     },
-    closeOther(tab) {
+    async closeOther(tab: OpenTab) {
       const others = _.without(this.tabItems, tab)
+      const unsavedTabs = others.filter((t) => t.unsavedChanges)
+      if (unsavedTabs.length > 0) {
+        const confirmed = await this.$confirm(
+          'Close other tabs?',
+          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)}. Are you sure?`
+        )
+        if (!confirmed) return
+      }
+
       this.$store.dispatch('tabs/remove', others)
       this.setActiveTab(tab)
       if (tab.queryId) {
         this.$store.dispatch('data/queries/reload', tab.queryId)
       }
     },
-    closeToRight(tab) {
+    async closeToRight(tab: OpenTab) {
       const tabIndex = _.indexOf(this.tabItems, tab)
       const activeTabIndex = _.indexOf(this.tabItems, this.activeTab)
 
       const tabsToRight = this.tabItems.slice(tabIndex + 1)
+      const unsavedTabs = tabsToRight.filter((t) => t.unsavedChanges)
+      if (unsavedTabs.length > 0) {
+        const confirmed = await this.$confirm(
+          'Close tabs to the right?',
+          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`
+        )
+        if (!confirmed) return
+      }
 
       if (this.activeTab && activeTabIndex > tabIndex) {
         this.setActiveTab(tab)

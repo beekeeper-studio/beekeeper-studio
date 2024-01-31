@@ -8,7 +8,7 @@
     <span v-if="fetchingTotalRecords">loading...</span>
     <span v-else-if="error">error</span>
     <span v-else-if="totalRecords === null">Unknown</span>
-    <span v-else>~{{ totalRecords.toLocaleString() }}</span>
+    <span v-else>~{{ Number(totalRecords).toLocaleString() }}</span>
   </a>
 </template>
 <script lang="ts">
@@ -27,7 +27,7 @@ export default Vue.extend({
       if (this.totalRecords === null)
         return 'Click to fetch total record count'
 
-      return `Approximately ${this.totalRecords} Records`
+      return `Approximately ${Number(this.totalRecords).toLocaleString()} Records`
     }
   },
   methods: {

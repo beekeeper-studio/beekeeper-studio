@@ -1,10 +1,11 @@
 <template>
   <portal to="modals">
     <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @opened="onOpen">
-      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop @keypress.stop>
+      <!-- Trap the key events so it doesn't conflict with the parent elements -->
+      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop="handleKeyUp" @keypress.stop>
         <div class="top">
           <div class="dialog-c-title">
-            Editing Cell Content as
+            Editing as
           </div>
 
           <select class="form-control language-select" v-model="languageName">
@@ -22,8 +23,11 @@
           >
             <i class="material-icons">settings</i>
             <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem @click.prevent="format" v-show="language.name !== 'text'">
+            <x-menu style="--align: end">
+              <x-menuitem
+                @click.prevent="format"
+                v-show="!language.noBeautify"
+              >
                 <x-label>Format {{ language?.label }}</x-label>
               </x-menuitem>
               <x-menuitem @click.prevent="minify">
@@ -51,9 +55,32 @@
           <button class="btn btn-sm btn-flat" @click.prevent="copy">
             Copy
           </button>
-          <button class="btn btn-sm btn-primary" @click.prevent="save">
-            Done
-          </button>
+          <x-button
+            v-if="language.noMinify"
+            class="btn btn-primary btn-sm"
+            @click.prevent="save"
+          >
+            <x-label>Apply</x-label>
+          </x-button>
+          <x-buttons v-else>
+            <x-button
+              class="btn btn-primary btn-small"
+              @click.prevent="saveAndMinify"
+            >
+              <x-label>Minify & Apply</x-label>
+            </x-button>
+            <x-button
+              class="btn btn-primary btn-small"
+              menu
+            >
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu style="--align: end">
+                <x-menuitem @click.prevent="save">
+                  <x-label>Apply (no minify)</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
     </modal>
@@ -74,7 +101,7 @@ import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
 import { Languages, LanguageData, TextLanguage, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
-import setKeybindingsFromVimrc from '@/lib/readVimrc'
+import { setKeybindingsFromVimrc } from '@/lib/readVimrc'
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
@@ -133,7 +160,11 @@ export default Vue.extend({
       language = language ? language : getLanguageByContent(content)
       this.language = language
       this.languageName = language.name
-      this.content = content
+      try {
+        this.content = language.beautify(content)
+      } catch {
+        this.content = content
+      }
       this.eventParams = eventParams
       this.wrapText = language.wrapTextByDefault ?? false
       this.$modal.show(this.modalName)
@@ -144,6 +175,10 @@ export default Vue.extend({
       this.$noty.success("Copied the data to your clipboard!")
     },
 
+    saveAndMinify() {
+      this.minify()
+      this.save()
+    },
     save() {
       this.$emit('save', this.content, this.language, this.eventParams)
       this.$modal.hide(this.modalName)
@@ -234,6 +269,11 @@ export default Vue.extend({
     minify() {
       this.content = this.language.minify(this.content)
       this.editor.setValue(this.content)
+    },
+    handleKeyUp(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        this.$modal.hide(this.modalName)
+      }
     }
   },
 });
@@ -248,6 +288,12 @@ div.vue-dialog div.dialog-content {
   padding: 0;
   .top {
     padding: 1rem 1.2rem 1rem;
+  }
+}
+
+.vue-dialog .vue-dialog-buttons x-buttons {
+  x-button.btn {
+    margin: 0;
   }
 }
 

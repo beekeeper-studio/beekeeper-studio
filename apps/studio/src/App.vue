@@ -23,8 +23,9 @@
       name="modals"
       multiple
     />
+    <dropzone />
     <data-manager />
-    <confirmation-modal />
+    <confirmation-modal :name="$confirmModalName"/>
   </div>
 </template>
 
@@ -42,12 +43,13 @@ import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
+import Dropzone from '@/components/Dropzone.vue'
 
 export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal, Dropzone,
   },
   data() {
     return {

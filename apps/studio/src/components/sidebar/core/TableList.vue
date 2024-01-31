@@ -122,6 +122,7 @@
             title="New Table"
             class="create-table"
             :disabled="tablesLoading"
+            v-if="canCreateTable"
           >
             <i class="material-icons">add</i>
           </button>
@@ -230,6 +231,9 @@
       supportsRoutines() {
         return this.connection.supportedFeatures().customRoutines
       },
+      canCreateTable() {
+        return !this.dialectData.disabledFeatures?.createTable
+      },
       loadedWithPins() {
         return !this.tablesLoading && this.pinnedEntities.length > 0
       },
@@ -239,7 +243,7 @@
         ]
       },
       ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
-      ...mapGetters(['filteredTables', 'filteredRoutines']),
+      ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',
           orderedPins: 'pins/orderedPins',

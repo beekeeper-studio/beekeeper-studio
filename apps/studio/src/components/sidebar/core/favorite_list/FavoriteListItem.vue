@@ -94,6 +94,13 @@ export default Vue.extend({
           {
             type: 'divider'
           },
+          {
+            name: "Export",
+            handler: ({ item }) => this.$emit('export', item)
+          },
+          {
+            type: 'divider'
+          },
           ...this.moveToOptions
         ]
       })
