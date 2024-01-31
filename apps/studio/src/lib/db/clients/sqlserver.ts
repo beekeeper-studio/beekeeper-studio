@@ -61,7 +61,7 @@ const SQLServerContext = {
 
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
-
+// SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   server: IDbConnectionServer
