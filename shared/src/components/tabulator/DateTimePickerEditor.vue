@@ -105,6 +105,7 @@ export default Vue.extend({
 
         if (this.isTimeType(dataType) && dataValue !== null) {
           dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue  
+          // because it's a time type, we generally don't care what the date is, we just need to get a date object going to get the time working
           this.datePickerValue = new Date(`2023-03-31T${dataValue}`)
         } else if (dataValue !== null && dataValue !== '') {
           this.datePickerValue = new Date(dataValue)
