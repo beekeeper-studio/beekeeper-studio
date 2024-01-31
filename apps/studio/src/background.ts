@@ -74,7 +74,6 @@ async function initBasics() {
   log.debug("Building the window")
   log.debug("managing updates")
   manageUpdates()
-  manageConfigs()
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     const url = args[0]
     if (!url) return

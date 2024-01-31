@@ -307,9 +307,9 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
-    ...mapGetters(['dialectData', 'dialect', 'config']),
+    ...mapGetters(['dialectData', 'dialect']),
     limit() {
-      return Number(this.config.ui.tableTable.pageSize)
+      return Number(this.$bkConfig.ui.tableTable.pageSize)
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -692,10 +692,7 @@ export default Vue.extend({
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
-    },
-    limit() {
-      this.tabulator.setPageSize(this.limit)
-    },
+    }
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
