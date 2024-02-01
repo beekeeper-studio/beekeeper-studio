@@ -3,6 +3,7 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { RootBinding, AppEvent } from './common/AppEvent'
 import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
+import { BkConfig } from './config'
 
 // 2. Specify a file with the types you want to augment
 //    Vue has the constructor type in types/vue.d.ts
@@ -12,6 +13,7 @@ declare module 'vue/types/vue' {
     // ...AppEventMixin.methods,
     $app: BeekeeperPlugin
     $bks: BeekeeperPlugin
+    $bkConfig: typeof BkConfig
     $native: NativePlugin
     $noty: {
       show(text: string, type: string, opts?: any): void

@@ -17,7 +17,6 @@
   import Converter from '../../mixins/data_converter'
   import Mutators, { escapeHtml } from '../../mixins/data_mutators'
   import { dialectFor } from '@shared/lib/dialects/models'
-  import globals from '@/common/globals'
   import Papa from 'papaparse'
   import { mapState } from 'vuex'
   import { markdownTable } from 'markdown-table'
@@ -69,7 +68,7 @@
           return this.result.truncated
       },
       tableColumns() {
-        const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
+        const columnWidth = this.result.fields.length > 30 ? this.$bkConfig.ui.tableTable.defaultColumnWidth : undefined
 
         const cellMenu = (_, cell) => {
           return copyActionsMenu({
@@ -106,7 +105,7 @@
             width: columnWidth,
             mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
             formatter: this.cellFormatter,
-            maxInitialWidth: globals.maxColumnWidth,
+            maxInitialWidth: this.$bkConfig.ui.tableTable.maxColumnWidth,
             tooltip: this.cellTooltip,
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,

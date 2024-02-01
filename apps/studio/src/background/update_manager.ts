@@ -1,12 +1,12 @@
 import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import globals from '../common/globals'
 import { getActiveWindows } from './WindowBuilder'
 import rawlog from 'electron-log'
 
 const log = rawlog.scope('update-manager')
 
 import platformInfo from '../common/platform_info'
+import { BkConfig } from '@/config'
 
 autoUpdater.autoDownload = false
 autoUpdater.logger = log
@@ -73,5 +73,5 @@ export function manageUpdates(debug?: boolean): void {
 
   setInterval(() => {
     checkForUpdates()
-  }, globals.updateCheckInterval)
+  }, BkConfig.process.updateCheckInterval)
 }

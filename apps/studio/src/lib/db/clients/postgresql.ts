@@ -15,13 +15,13 @@ import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Ro
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
-import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
+import { BkConfig } from '@/config';
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -1717,8 +1717,8 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     password: passwordResolver || server.config.password || undefined,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
-    connectionTimeoutMillis: globals.psqlTimeout,
-    idleTimeoutMillis: globals.psqlIdleTimeout,
+    connectionTimeoutMillis: BkConfig.db.postgres.timeout,
+    idleTimeoutMillis: BkConfig.db.postgres.idleTimeout,
     // not in the typings, but works.
     // @ts-expect-error Fix Typings
     options: optionsString

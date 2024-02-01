@@ -246,7 +246,6 @@ import EditorModal from './EditorModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
-import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
@@ -309,7 +308,7 @@ export default Vue.extend({
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
     limit() {
-      return Number(this.$bkConfig.ui.tableTable.pageSize)
+      return this.$bkConfig.ui.tableTable.pageSize
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -500,7 +499,7 @@ export default Vue.extend({
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
-          this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
+          this.defaultColumnWidth(slimDataType, this.$bkConfig.ui.tableTable.defaultColumnWidth) :
           undefined;
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
@@ -536,10 +535,10 @@ export default Vue.extend({
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
-          minWidth: globals.minColumnWidth,
+          minWidth: this.$bkConfig.ui.tableTable.minColumnWidth,
           width: columnWidth,
-          maxWidth: globals.maxColumnWidth,
-          maxInitialWidth: globals.maxInitialWidth,
+          maxWidth: this.$bkConfig.ui.tableTable.maxColumnWidth,
+          maxInitialWidth: this.$bkConfig.ui.tableTable.maxInitialWidth,
           cssClass,
           editable: this.cellEditCheck,
           headerSort: true,
@@ -586,8 +585,8 @@ export default Vue.extend({
       const result = {
         title: this.internalIndexColumn,
         field: this.internalIndexColumn,
-        maxWidth: globals.maxColumnWidth,
-        maxInitialWidth: globals.maxInitialWidth,
+        maxWidth: this.$bkConfig.ui.tableTable.maxColumnWidth,
+        maxInitialWidth: this.$bkConfig.ui.tableTable.maxInitialWidth,
         editable: false,
         cellEditCancelled: cell => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
@@ -943,7 +942,7 @@ export default Vue.extend({
     },
     defaultColumnWidth(slimType, defaultValue) {
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
-      if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
+      if (chunkyTypes.includes(slimType)) return this.$bkConfig.ui.tableTable.largeFieldWidth
       return defaultValue
     },
     // TODO: this is not attached to anything. but it might be needed?

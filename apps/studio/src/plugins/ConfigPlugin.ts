@@ -48,50 +48,59 @@ function resolveConfigType(type: ConfigType) {
   }
 }
 
-export async function readConfigFile(type: "default"): Promise<IBkConfig>;
-export async function readConfigFile(type: "user"): Promise<Partial<IBkConfig>>;
-export async function readConfigFile(type: ConfigType) {
-  return new Promise((resolve, reject) => {
-    const filepath = resolveConfigType(type);
-
-    log.debug("Reading user config", filepath);
-
-    if (!existsSync(filepath)) {
-      // Default config must exist
-      if (type === "default") {
-        reject(new Error(`Config file ${filepath} does not exist.`));
-      } else {
-        resolve({});
-      }
-      return;
-    }
-
-    try {
-      const parsed = ini.parse(readFileSync(filepath, "utf-8"));
-      log.debug(`Successfully read config ${filepath}`, parsed);
-      resolve(parsed);
-    } catch (error) {
-      log.debug(`Failed to read config ${filepath}`, error);
-      reject(error);
+/** Deep clone an object and cast the values to string or number */
+function deepClone(obj: Record<string, any>) {
+  const clone = Object.assign({}, obj);
+  Object.keys(clone).forEach((key) => {
+    if (typeof obj[key] === "object") {
+      clone[key] = deepClone(obj[key]);
+    } else if (Number.isNaN(Number(obj[key]))) {
+      clone[key] = obj[key];
+    } else {
+      clone[key] = Number(obj[key]);
     }
   });
+  return clone;
 }
 
-async function writeUserConfigFile() {
-  return new Promise<void>((resolve, reject) => {
-    try {
-      log.debug("Writing user config", BkConfigStore.userConfig);
-      writeFileSync(
-        resolveConfigType("user"),
-        ini.stringify(BkConfigStore.userConfig)
-      );
-      log.info("Successfully wrote user config");
-      resolve();
-    } catch (error) {
-      log.debug(`Failed to write user config`, error);
-      reject(error);
+export function readConfigFile(type: "default"): IBkConfig;
+export function readConfigFile(type: "user"): Partial<IBkConfig>;
+export function readConfigFile(type: ConfigType) {
+  const filepath = resolveConfigType(type);
+
+  log.debug("Reading user config", filepath);
+
+  if (!existsSync(filepath)) {
+    // Default config must exist
+    if (type === "default") {
+      throw new Error(`Config file ${filepath} does not exist.`);
+    } else {
+      return {};
     }
-  });
+  }
+
+  try {
+    const parsed = deepClone(ini.parse(readFileSync(filepath, "utf-8")));
+    log.debug(`Successfully read config ${filepath}`, parsed);
+    return parsed;
+  } catch (error) {
+    log.debug(`Failed to read config ${filepath}`, error);
+    throw error;
+  }
+}
+
+function writeUserConfigFile() {
+  try {
+    log.debug("Writing user config", BkConfigStore.userConfig);
+    writeFileSync(
+      resolveConfigType("user"),
+      ini.stringify(BkConfigStore.userConfig)
+    );
+    log.info("Successfully wrote user config");
+  } catch (error) {
+    log.debug(`Failed to write user config`, error);
+    throw error;
+  }
 }
 
 function watchConfigFile(options: {
@@ -159,17 +168,18 @@ function checkUserConfigWarnings() {
   return warnings;
 }
 
+/* is path in user config? */
 function userConfigTester(path: string): boolean {
-  return !_.isNil(_.at(BkConfigStore.userConfig, path));
+  return !_.isNil(_.get(BkConfigStore.userConfig, path));
 }
 
 function configGetter(path: string): string | undefined {
-  return _.get(BkConfigStore.userConfig, path);
+  return _.get(BkConfigStore.mergedConfig, path);
 }
 
 function userConfigSetter(path: string, value: string | number) {
   _.set(BkConfigStore.userConfig, path, ini.safe(value.toString()));
-  writeUserConfigFile().catch(log.error);
+  writeUserConfigFile();
 }
 
 function configDebugger(path: string) {
@@ -194,7 +204,7 @@ function configDebuggerAll() {
   return result;
 }
 
-const BkConfigHandler = new Proxy(
+export const BkConfigHandler = new Proxy(
   {},
   {
     get: function (_target, prop) {
@@ -228,12 +238,10 @@ const BkConfigHandler = new Proxy(
   }
 ) as IBkConfigHandler;
 
-export { BkConfigHandler as BkConfig };
-
 export default {
-  async install(Vue: any) {
-    BkConfigStore.defaultConfig = await readConfigFile("default");
-    BkConfigStore.userConfig = await readConfigFile("user");
+  install(Vue: any) {
+    BkConfigStore.defaultConfig = readConfigFile("default");
+    BkConfigStore.userConfig = readConfigFile("user");
     BkConfigStore.userConfigWarnings = checkUserConfigWarnings();
     BkConfigStore.mergedConfig = _.merge(
       {},

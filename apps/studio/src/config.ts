@@ -33,3 +33,5 @@ export default {
   },
   maxResults: 50000
 }
+
+export { BkConfigHandler as BkConfig } from './plugins/ConfigPlugin'
