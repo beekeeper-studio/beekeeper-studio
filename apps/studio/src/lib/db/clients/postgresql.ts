@@ -1,9 +1,8 @@
 
-// Copyright (c) 2015 The SQLECTRON Team
-
+// Copyright (c) 2015 The SQLECTRON Team 
 import { readFileSync } from 'fs';
 
-import pg, { QueryResult, PoolConfig } from 'pg';
+import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _  from 'lodash'
 import knexlib from 'knex'
@@ -75,6 +74,7 @@ const postgresContext = {
 export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   version: VersionInfo;
   conn: HasPool;
+  runWithConnection: HasConnection;
   _defaultSchema: string;
   dataTypes: any;
   server: any;
@@ -628,6 +628,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
+    await this.cacheConnection();
+    
     await this.driverExecuteSingle('BEGIN')
     log.debug("Applying changes", changes)
     try {
@@ -650,6 +652,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       throw ex
     }
 
+    this.releaseCachedConnection();
     return results
   }
 
@@ -994,12 +997,21 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<QueryResult | QueryResult[]> {
-    const connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect(); 
+    let release = true;
+    let connection: PoolClient;
+    if (this.runWithConnection) {
+      release = false;
+      connection = this.runWithConnection.connection;
+    } else {
+      connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect(); 
+    }
 
     try {
       return await this.runQuery(connection, q, options)
     } finally {
-      connection.release();
+      if (release) {
+        connection.release();
+      }
     }
   }
 
@@ -1142,6 +1154,17 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   // NOTE (@day): some of this may need to be protected so redshift and cockroach have access to them
   // ************************************************************************************
 
+  private async cacheConnection() {
+    this.runWithConnection = {
+      connection: await this.conn.pool.connect()
+    };
+  }
+
+  private async releaseCachedConnection() {
+    this.runWithConnection.connection.release();
+    this.runWithConnection = null;
+  }
+
   private async runQuery(connection: pg.PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
     const args = {
       text: query,
@@ -1168,17 +1191,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   private async insertRows(rawInserts: TableInsert[]) {
-    // const columnsList = await Promise.all(rawInserts.map((insert) => {
-    //   return this.listTableColumns(null, insert.table, insert.schema);
-    // }));
-
-    // HACK (@day): just to get the tests working
-    const columnsList = [];
-    for (let i = 0; i < rawInserts.length; i++) {
-      const insert = rawInserts[i];
-      const columns = await this.listTableColumns(null, insert.table, insert.schema);
-      columnsList.push(columns);
-    }
+    const columnsList = await Promise.all(rawInserts.map((insert) => {
+      return this.listTableColumns(null, insert.table, insert.schema);
+    }));
 
     const fixedInserts = rawInserts.map((insert, idx) => {
       const result = { ...insert};
