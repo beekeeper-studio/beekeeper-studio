@@ -10,6 +10,11 @@ import { ipcRenderer } from "electron";
 
 export type ConfigType = "default" | "user";
 
+interface UserConfigWarning {
+  type: "section" | "key";
+  key: string;
+}
+
 const log = rawLog.scope("config_manager");
 
 const DEFAULT_CONFIG_FILENAME = "default.config.ini";
@@ -20,7 +25,10 @@ function resolveConfigType(type: ConfigType) {
   let configPath: string;
 
   if (platformInfo.isDevelopment) {
-    configPath = path.resolve(__dirname).split("/node_modules")[0];
+    configPath = path.join(
+      path.resolve(__dirname).split("/node_modules")[0],
+      "apps/studio"
+    );
   } else {
     configPath = platformInfo.userDirectory;
   }
@@ -34,7 +42,9 @@ function resolveConfigType(type: ConfigType) {
   }
 }
 
-async function readConfigFile(type: ConfigType) {
+export async function readConfigFile(type: "default"): Promise<IBkConfig>;
+export async function readConfigFile(type: "user"): Promise<Partial<IBkConfig>>;
+export async function readConfigFile(type: ConfigType) {
   return new Promise((resolve, reject) => {
     const filepath = resolveConfigType(type);
 
@@ -103,33 +113,21 @@ function watchConfigFile(options: {
   };
 }
 
-const BkConfigStore = {
-  defaultConfig: {},
+const BkConfigStore: {
+  defaultConfig: IBkConfig;
+  userConfig: Partial<IBkConfig>;
+  mergedConfig: IBkConfig;
+  userConfigWarnings: UserConfigWarning[];
+} = {
+  defaultConfig: {} as IBkConfig,
   userConfig: {},
+  mergedConfig: {} as IBkConfig,
   userConfigWarnings: [],
 };
 
-function configTester(path: string) {
-  return !_.isNil(_.at(BkConfigStore.userConfig, path));
-}
-
-function configGetter(path: string) {
-  return (
-    _.get(BkConfigStore.userConfig, path) ??
-    _.get(BkConfigStore.defaultConfig, path)
-  );
-}
-
-function configSetter(path: string, value: unknown) {
-  _.set(BkConfigStore.userConfig, path, value);
-  writeUserConfigFile().catch(log.error);
-}
-
 function checkUserConfigWarnings() {
-  const warnings: {
-    type: "section" | "key";
-    key: string;
-  }[] = [];
+  const warnings: UserConfigWarning[] = [];
+
   for (const section in BkConfigStore.userConfig) {
     const hasSection = Object.prototype.hasOwnProperty.call(
       BkConfigStore.defaultConfig,
@@ -155,18 +153,26 @@ function checkUserConfigWarnings() {
   return warnings;
 }
 
-const BkConfigHandler = new Proxy(BkConfigStore, {
-  get: function (_, prop) {
+const BkConfigHandler = new Proxy(BkConfigStore.defaultConfig, {
+  get: function (_target, prop) {
     if (prop === "has") {
-      return configTester;
+      return !_.isNil(_.at(BkConfigStore.userConfig, prop));
     }
+
     if (prop === "get") {
-      return configGetter;
+      return function (path: string) {
+        return _.get(BkConfigStore.mergedConfig, path);
+      };
     }
+
     if (prop === "set") {
-      return configSetter;
+      return (path: string, value: unknown) => {
+        _.set(BkConfigStore.userConfig, path, value);
+        writeUserConfigFile().catch(log.error);
+      };
     }
-    return configGetter(prop.toString());
+
+    return _.get(BkConfigStore.mergedConfig, prop.toString());
   },
   set: function () {
     throw new Error(
@@ -182,6 +188,11 @@ export default {
     BkConfigStore.defaultConfig = await readConfigFile("default");
     BkConfigStore.userConfig = await readConfigFile("user");
     BkConfigStore.userConfigWarnings = checkUserConfigWarnings();
+    BkConfigStore.mergedConfig = _.merge(
+      {},
+      BkConfigStore.defaultConfig,
+      BkConfigStore.userConfig
+    );
 
     if (platformInfo.isDevelopment) {
       watchConfigFile({
