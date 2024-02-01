@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-var-requires --
+ * This file is run by `node` so we won't need to use imports
+ **/
+
 const { readFileSync, writeFileSync } = require("fs");
 const { generateIdentifierDeclarationFile } = require("dts-gen");
 const path = require("path");

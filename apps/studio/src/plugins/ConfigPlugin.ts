@@ -15,6 +15,12 @@ interface UserConfigWarning {
   key: string;
 }
 
+interface IBkConfigHandler extends IBkConfig {
+  has: (path: string) => boolean;
+  get: (path: string) => string | undefined;
+  set: (path: string, value: unknown) => void;
+}
+
 const log = rawLog.scope("config_manager");
 
 const DEFAULT_CONFIG_FILENAME = "default.config.ini";
@@ -153,33 +159,74 @@ function checkUserConfigWarnings() {
   return warnings;
 }
 
-const BkConfigHandler = new Proxy(BkConfigStore.defaultConfig, {
-  get: function (_target, prop) {
-    if (prop === "has") {
-      return !_.isNil(_.at(BkConfigStore.userConfig, prop));
-    }
+function userConfigTester(path: string): boolean {
+  return !_.isNil(_.at(BkConfigStore.userConfig, path));
+}
 
-    if (prop === "get") {
-      return function (path: string) {
-        return _.get(BkConfigStore.mergedConfig, path);
-      };
-    }
+function configGetter(path: string): string | undefined {
+  return _.get(BkConfigStore.userConfig, path);
+}
 
-    if (prop === "set") {
-      return (path: string, value: unknown) => {
-        _.set(BkConfigStore.userConfig, path, value);
-        writeUserConfigFile().catch(log.error);
-      };
-    }
+function userConfigSetter(path: string, value: string | number) {
+  _.set(BkConfigStore.userConfig, path, ini.safe(value.toString()));
+  writeUserConfigFile().catch(log.error);
+}
 
-    return _.get(BkConfigStore.mergedConfig, prop.toString());
-  },
-  set: function () {
-    throw new Error(
-      "Cannot set properties on BkConfigHandler. Please use .set instead."
-    );
-  },
-});
+function configDebugger(path: string) {
+  return {
+    path,
+    value: configGetter(path),
+    source: userConfigTester(path) ? "user" : "default",
+    configs: {
+      user: BkConfigStore.userConfig,
+      default: BkConfigStore.defaultConfig,
+    },
+  };
+}
+
+function configDebuggerAll() {
+  const result = [];
+  for (const section in BkConfigStore.mergedConfig) {
+    for (const key in BkConfigStore.mergedConfig[section]) {
+      result.push(configDebugger(`${section}.${key}`));
+    }
+  }
+  return result;
+}
+
+const BkConfigHandler = new Proxy(
+  {},
+  {
+    get: function (_target, prop) {
+      if (prop === "has") {
+        return userConfigTester;
+      }
+
+      if (prop === "get") {
+        return configGetter;
+      }
+
+      if (prop === "set") {
+        return userConfigSetter;
+      }
+
+      if (prop === "debug") {
+        return configDebugger;
+      }
+
+      if (prop === "debugAll") {
+        return configDebuggerAll();
+      }
+
+      return configGetter(prop.toString());
+    },
+    set: function () {
+      throw new Error(
+        "Cannot set properties on BkConfigHandler. Please use .set instead."
+      );
+    },
+  }
+) as IBkConfigHandler;
 
 export { BkConfigHandler as BkConfig };
 
@@ -197,16 +244,12 @@ export default {
     if (platformInfo.isDevelopment) {
       watchConfigFile({
         type: "default",
-        callback: async () => {
-          ipcRenderer.send(AppEvent.menuClick, "reload");
-        },
+        callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
       });
 
       watchConfigFile({
         type: "user",
-        callback: async () => {
-          ipcRenderer.send(AppEvent.menuClick, "reload");
-        },
+        callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
       });
     }
 
