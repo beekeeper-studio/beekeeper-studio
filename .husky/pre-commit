@@ -1,0 +1,7 @@
+# check if default.config.ini was changed and staged
+if git status --porcelain | grep -q '^M  .*default\.config\.ini$'; then
+  yarn bks:config:build;
+  if git status --porcelain | grep -q bkconfig.d.ts; then
+    git add */**/bkconfig.d.ts
+  fi
+fi
