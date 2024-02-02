@@ -42,7 +42,7 @@
     "flexsearch": "beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d",
     "humanize-duration": "^3.23.1",
     "indent-string": "^4.0.0",
-    "ini": "^4.1.1",
+    "ini": "azmy60/ini#c3beb8e01dda51e2aeda7effb95475895d229bac",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
     "knex": "^2.4.1",
