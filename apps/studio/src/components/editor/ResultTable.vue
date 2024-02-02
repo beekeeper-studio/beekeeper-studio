@@ -57,9 +57,9 @@
     computed: {
       ...mapState(['connection']),
       keymap() {
-        const result = {}
-        result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-        return result
+        return this.$createKeymap({
+          'queryEditor.copyResultSelection': this.copySelection.bind(this),
+        });
       },
       tableData() {
           return this.dataToTableData(this.result, this.tableColumns)

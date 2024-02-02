@@ -71,7 +71,7 @@
         <div class="flex-center flex-middle flex">
           <a
             @click="page = page - 1"
-            v-tooltip="ctrlOrCmd('left')"
+            v-tooltip="$bkConfig.keybindings.tableTable.previousPage"
           ><i class="material-icons">navigate_before</i></a>
           <input
             type="number"
@@ -79,7 +79,7 @@
           >
           <a
             @click="page = page + 1"
-            v-tooltip="ctrlOrCmd('right')"
+            v-tooltip="$bkConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
@@ -149,7 +149,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`${ctrlOrCmd('r')} or F5`"
+          v-tooltip="$bkConfig.keybindings.tableTable.refresh"
           class="btn btn-flat"
           title="Refresh table"
           @click="refreshTable"
@@ -158,7 +158,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="ctrlOrCmd('n')"
+          v-tooltip="$bkConfig.keybindings.tableTable.addRow"
           title="Add row"
           @click.prevent="cellAddRow"
         >
@@ -348,26 +348,18 @@ export default Vue.extend({
     },
     keymap() {
       if (!this.active) return {}
-      const result = {}
-      result['f5'] = this.refreshTable.bind(this)
-      result[this.ctrlOrCmd('right')] = () => {
-        const focusingTable = this.tabulator.element.contains(document.activeElement)
-        if (!focusingTable) this.page++
-      }
-      result[this.ctrlOrCmd('left')] = () => {
-        const focusingTable = this.tabulator.element.contains(document.activeElement)
-        if (!focusingTable) this.page--
-      }
-      result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
-      result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
-      result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
-      result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-      result[this.ctrlOrCmd('v')] = this.pasteSelection.bind(this)
-      result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this, undefined)
-      result['delete'] = this.deleteTableSelection.bind(this)
-      result['tab'] = this.handleTab.bind(this)
-      return result
+
+      return this.$createKeymap({
+        'tableTable.refresh': this.refreshTable.bind(this),
+        'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
+        'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
+        'tableTable.addRow': this.cellAddRow.bind(this),
+        'tableTable.saveChanges': this.saveChanges.bind(this),
+        'tableTable.copyToSql': this.copyToSql.bind(this),
+        'tableTable.copySelection': this.copySelection.bind(this),
+        'tableTable.pasteSelection': this.pasteSelection.bind(this),
+        'tableTable.deleteSelection': this.deleteTableSelection.bind(this),
+      })
     },
 
     tableHolder() {
@@ -711,6 +703,13 @@ export default Vue.extend({
       // do nothing?
       log.debug('tab pressed')
 
+    },
+    navigatePage (dir: 'next' | 'prev') {
+      const focusingTable = this.tabulator.element.contains(document.activeElement)
+      if (!focusingTable) {
+        if (dir === 'next') this.page++
+        else this.page--
+      }
     },
     copySelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return

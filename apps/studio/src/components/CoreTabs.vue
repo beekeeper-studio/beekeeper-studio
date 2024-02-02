@@ -336,21 +336,19 @@ export default Vue.extend({
       return _.indexOf(this.tabItems, this.activeTab)
     },
     keymap() {
-      const result = {
-        'ctrl+tab': this.nextTab,
-        'ctrl+shift+tab': this.previousTab,
-        'alt+1': this.handleAltNumberKeyPress,
-        'alt+2': this.handleAltNumberKeyPress,
-        'alt+3': this.handleAltNumberKeyPress,
-        'alt+4': this.handleAltNumberKeyPress,
-        'alt+5': this.handleAltNumberKeyPress,
-        'alt+6': this.handleAltNumberKeyPress,
-        'alt+7': this.handleAltNumberKeyPress,
-        'alt+8': this.handleAltNumberKeyPress,
-        'alt+9': this.handleAltNumberKeyPress,
-      }
-
-      return result
+      return this.$createKeymap({
+        'coreTabs.nextTab': this.nextTab,
+        'coreTabs.previousTab': this.previousTab,
+        'coreTabs.switchTab1': this.handleSwitchTab.bind(this, 0),
+        'coreTabs.switchTab2': this.handleSwitchTab.bind(this, 1),
+        'coreTabs.switchTab3': this.handleSwitchTab.bind(this, 2),
+        'coreTabs.switchTab4': this.handleSwitchTab.bind(this, 3),
+        'coreTabs.switchTab5': this.handleSwitchTab.bind(this, 4),
+        'coreTabs.switchTab6': this.handleSwitchTab.bind(this, 5),
+        'coreTabs.switchTab7': this.handleSwitchTab.bind(this, 6),
+        'coreTabs.switchTab8': this.handleSwitchTab.bind(this, 7),
+        'coreTabs.switchTab9': this.handleSwitchTab.bind(this, 8),
+      })
     },
   },
   created() {
@@ -702,7 +700,7 @@ export default Vue.extend({
         counter.textContent = `${i + 1}`
 
         try {
-          // TODO (azmi): this process can take longer by accident. Consider 
+          // TODO (azmi): this process can take longer by accident. Consider
           // an ability to cancel reading file.
           const text = readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
           if (text) {
@@ -805,13 +803,9 @@ export default Vue.extend({
       await this.setActiveTab(tab)
 
     },
-      handleAltNumberKeyPress(event) {
-      if (event.altKey) {
-        const pressedNumber = Number(event.key); // Convert keyCode to the corresponding number
-        if(pressedNumber <= this.tabItems.length) {
-          this.setActiveTab(this.tabItems[pressedNumber - 1])
-        }
-      }
+    handleSwitchTab(n: number) {
+      const tab = this.tabItems[n]
+      if(tab) this.setActiveTab(tab)
     },
     async close(tab: OpenTab) {
       if (tab.unsavedChanges) {

@@ -78,9 +78,9 @@
     },
     computed: {
       keymap() {
-        const results = {}
-        results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
-        return results
+        return this.$createKeymap({
+          'core.quickSearch': () => this.showQuickSearch = true
+        })
       },
       splitElements() {
         return [

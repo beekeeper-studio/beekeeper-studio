@@ -7,27 +7,41 @@ import { existsSync, readFileSync, watch, writeFileSync } from "fs";
 import platformInfo from "../common/platform_info";
 import { AppEvent } from "@/common/AppEvent";
 import { ipcRenderer } from "electron";
+import { transform } from "../../config-transformer";
+import { VueConstructor } from "vue/types/umd";
 
-export type ConfigType = "default" | "user";
+export type ConfigSource = "default" | "user";
 
 interface UserConfigWarning {
   type: "section" | "key";
   key: string;
 }
 
+interface DebugInfo {
+  path: string;
+  value: string | undefined;
+  source: ConfigSource;
+  configs: {
+    user: Partial<IBkConfig>;
+    default: IBkConfig;
+  };
+}
+
 interface IBkConfigHandler extends IBkConfig {
   has: (path: string) => boolean;
   get: (path: string) => string | undefined;
   set: (path: string, value: unknown) => void;
+  debug: (path: string) => DebugInfo;
+  debugAll: DebugInfo[];
 }
 
-const log = rawLog.scope("config_manager");
+const log = rawLog.scope("ConfigPlugin");
 
 const DEFAULT_CONFIG_FILENAME = "default.config.ini";
 const DEV_CONFIG_FILENAME = "local.config.ini";
 const USER_CONFIG_FILENAME = "user.config.ini";
 
-function resolveConfigType(type: ConfigType) {
+function resolveConfigType(type: ConfigSource) {
   let configPath: string;
 
   if (platformInfo.isDevelopment) {
@@ -48,24 +62,9 @@ function resolveConfigType(type: ConfigType) {
   }
 }
 
-/** Deep clone an object and cast the values to string or number */
-function deepClone(obj: Record<string, any>) {
-  const clone = Object.assign({}, obj);
-  Object.keys(clone).forEach((key) => {
-    if (typeof obj[key] === "object") {
-      clone[key] = deepClone(obj[key]);
-    } else if (Number.isNaN(Number(obj[key]))) {
-      clone[key] = obj[key];
-    } else {
-      clone[key] = Number(obj[key]);
-    }
-  });
-  return clone;
-}
-
 export function readConfigFile(type: "default"): IBkConfig;
 export function readConfigFile(type: "user"): Partial<IBkConfig>;
-export function readConfigFile(type: ConfigType) {
+export function readConfigFile(type: ConfigSource) {
   const filepath = resolveConfigType(type);
 
   log.debug("Reading user config", filepath);
@@ -80,7 +79,7 @@ export function readConfigFile(type: ConfigType) {
   }
 
   try {
-    const parsed = deepClone(ini.parse(readFileSync(filepath, "utf-8")));
+    const parsed = transform(ini.parse(readFileSync(filepath, "utf-8")));
     log.debug(`Successfully read config ${filepath}`, parsed);
     return parsed;
   } catch (error) {
@@ -104,7 +103,7 @@ function writeUserConfigFile() {
 }
 
 function watchConfigFile(options: {
-  type: ConfigType;
+  type: ConfigSource;
   callback: () => void;
   errorCallback?: (error: Error) => void;
 }) {
@@ -168,21 +167,21 @@ function checkUserConfigWarnings() {
   return warnings;
 }
 
-/* is path in user config? */
-function userConfigTester(path: string): boolean {
+/** is `path` in user config? */
+const userConfigTester: IBkConfigHandler["has"] = (path) => {
   return !_.isNil(_.get(BkConfigStore.userConfig, path));
-}
+};
 
-function configGetter(path: string): string | undefined {
+const configGetter: IBkConfigHandler["get"] = (path) => {
   return _.get(BkConfigStore.mergedConfig, path);
-}
+};
 
-function userConfigSetter(path: string, value: string | number) {
+const userConfigSetter: IBkConfigHandler["set"] = (path, value) => {
   _.set(BkConfigStore.userConfig, path, ini.safe(value.toString()));
   writeUserConfigFile();
-}
+};
 
-function configDebugger(path: string) {
+const configDebugger: IBkConfigHandler["debug"] = (path) => {
   return {
     path,
     value: configGetter(path),
@@ -192,9 +191,9 @@ function configDebugger(path: string) {
       default: BkConfigStore.defaultConfig,
     },
   };
-}
+};
 
-function configDebuggerAll() {
+const configDebuggerAll = (): IBkConfigHandler["debugAll"] => {
   const result = [];
   for (const section in BkConfigStore.mergedConfig) {
     for (const key in BkConfigStore.mergedConfig[section]) {
@@ -202,7 +201,7 @@ function configDebuggerAll() {
     }
   }
   return result;
-}
+};
 
 export const BkConfigHandler = new Proxy(
   {},
@@ -238,8 +237,42 @@ export const BkConfigHandler = new Proxy(
   }
 ) as IBkConfigHandler;
 
+const ctrlOrCmd = platformInfo.isMac ? "meta" : "ctrl";
+
+// https://stackoverflow.com/a/66661477/10012118
+// with little modifications
+type DeepKeyOf<T> = (
+  [T] extends [never]
+    ? ""
+    : T extends Record<string, any>
+    ? {
+        [K in Exclude<keyof T, symbol>]: `${K}${DotPrefix<DeepKeyOf<T[K]>>}`;
+      }[Exclude<keyof T, symbol>]
+    : ""
+) extends infer D
+  ? Extract<D, string>
+  : never;
+
+type DotPrefix<T extends string> = T extends "" ? "" : `.${T}`;
+
+function createKeymap(
+  obj: Partial<Record<DeepKeyOf<IBkConfig["keybindings"]>, any>>
+): Record<string, any> {
+  const result = {};
+  for (const path in obj) {
+    configGetter(`keybindings.${path}`)
+      .split(" or ")
+      .forEach((keybinding) => {
+        result[keybinding.replace(/ctrlorcmd/i, ctrlOrCmd)] = obj[path];
+      });
+  }
+  return result;
+}
+
+export type createKeymapFunc = typeof createKeymap;
+
 export default {
-  install(Vue: any) {
+  install(Vue: VueConstructor) {
     BkConfigStore.defaultConfig = readConfigFile("default");
     BkConfigStore.userConfig = readConfigFile("user");
     BkConfigStore.userConfigWarnings = checkUserConfigWarnings();
@@ -263,5 +296,6 @@ export default {
 
     Vue.prototype.$bkConfig = BkConfigHandler;
     Vue.prototype.$config = config;
+    Vue.prototype.$createKeymap = createKeymap;
   },
 };

@@ -256,9 +256,9 @@ export default Vue.extend({
       return additional;
     },
     keymap() {
-      return {
-        [this.ctrlOrCmd('f')]: this.focusOnInput,
-      }
+      return this.$createKeymap({
+        'rowFilterBuilder.focusOnInput': this.focusOnInput,
+      });
     }
   },
   methods: {

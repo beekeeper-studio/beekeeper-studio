@@ -128,16 +128,12 @@ export default Vue.extend({
   computed: {
     hotkeys() {
       if (!this.active) return {};
-      const result = {};
-      result['f5'] = this.refreshPartitions.bind(this)
-      result[this.ctrlOrCmd('r')] = this.refreshPartitions.bind(this)
-      if (this.editable) {
-        result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-        result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-        result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      }
-
-      return result;
+      return this.$createKeymap({
+        'tablePartitions.refresh': this.refreshPartitions.bind(this),
+        'tablePartitions.addRow': this.addRow.bind(this),
+        'tablePartitions.submitApply': this.submitApply.bind(this),
+        'tablePartitions.submitSql': this.submitSql.bind(this),
+      })
     },
     hasEdits() {
       return this.editCount > 0;
