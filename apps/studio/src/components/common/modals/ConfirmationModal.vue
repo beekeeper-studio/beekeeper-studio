@@ -8,10 +8,13 @@
     >
       <div class="dialog-content">
         <slot name="title">
-          <div class="dialog-c-title" v-html="titleHtml"></div>
+          <div
+            class="dialog-c-title"
+            v-html="titleHtml"
+          />
         </slot>
         <slot name="message">
-          <div v-html="messageHtml"></div>
+          <div v-html="messageHtml" />
         </slot>
       </div>
       <div class="vue-dialog-buttons">

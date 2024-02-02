@@ -372,7 +372,7 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for #1734
     it("should be able to insert to a table with a ? in a column name", async () => {
-      let data = {
+      const data = {
         str_col: 'hello?',
         another_str_col: '???'
       };

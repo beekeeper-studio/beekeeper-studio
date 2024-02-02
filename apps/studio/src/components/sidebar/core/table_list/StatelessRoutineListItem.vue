@@ -14,9 +14,10 @@
         @click.prevent="$emit('expand', $event)"
         @contextmenu.stop.prevent=""
       >
-        <i v-if="displayParams.length > 0" class="dropdown-icon material-icons"
-          >keyboard_arrow_right</i
-        >
+        <i
+          v-if="displayParams.length > 0"
+          class="dropdown-icon material-icons"
+        >keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand">
         <div
@@ -28,16 +29,24 @@
             :title="title"
             :class="iconClass"
             class="item-icon entity-icon material-icons"
-            >functions</i
-          >
-          <i class="material-icons item-icon dh" v-if="draggable">menu</i>
+          >functions</i>
+          <i
+            class="material-icons item-icon dh"
+            v-if="draggable"
+          >menu</i>
         </div>
 
-        <span class="table-name truncate" :title="routine.name">{{
+        <span
+          class="table-name truncate"
+          :title="routine.name"
+        >{{
           routine.name
         }}</span>
       </span>
-      <span class="actions" :class="{ pinned: pinned }">
+      <span
+        class="actions"
+        :class="{ pinned: pinned }"
+      >
         <span
           class="btn-fab pin"
           :class="{ pinned: pinned }"
@@ -49,16 +58,27 @@
         </span>
       </span>
     </a>
-    <div v-if="expanded" class="sub-items">
+    <div
+      v-if="expanded"
+      class="sub-items"
+    >
       <!-- <span class="sub-item" v-if="displayParams.length === 0">
         <span class="title truncate">No Parameters</span>
       </span>       -->
-      <span :key="param.name" v-for="param in displayParams" class="sub-item">
-        <span class="title truncate" ref="title">{{ param.name }}</span>
-        <span class="badge" :class="param.type"
-          >{{ param.type
-          }}<span v-if="param.length">({{ param.length }})</span></span
-        >
+      <span
+        :key="param.name"
+        v-for="param in displayParams"
+        class="sub-item"
+      >
+        <span
+          class="title truncate"
+          ref="title"
+        >{{ param.name }}</span>
+        <span
+          class="badge"
+          :class="param.type"
+        >{{ param.type
+        }}<span v-if="param.length">({{ param.length }})</span></span>
       </span>
     </div>
   </div>
