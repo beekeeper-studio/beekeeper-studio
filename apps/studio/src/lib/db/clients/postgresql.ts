@@ -40,8 +40,6 @@ const pgErrors = {
 
 const dataTypes: any = {}
 
-
-// TODO (@day): Do we need these two structs?
 export interface STQOptions {
   table: string,
   orderBy?: OrderBy[],
@@ -1453,7 +1451,6 @@ export function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
-// TODO (@day): move this up or out into its own file
 const postgres10CreateScript = `
   SELECT
   'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
