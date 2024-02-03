@@ -513,11 +513,7 @@ export default Vue.extend({
       }
     },
     closeCurrentTab(_id:number, action?:string) {
-      // if table was just created, 
-      // no need to trigger the modal about unsaved changes
-      if(action && action === "tableCreated") return
-
-      if (this.activeTab) this.close(this.activeTab)
+      if (this.activeTab) this.close(this.activeTab, action)
     },
     handleCreateTab() {
       this.createQuery()
@@ -817,8 +813,10 @@ export default Vue.extend({
         }
       }
     },
-    async close(tab: OpenTab) {
-      if (tab.unsavedChanges) {
+    async close(tab: OpenTab, action?: string) {
+      // If table was just created
+      // no need to show confirmation popup
+      if (tab.unsavedChanges && action !== "tableCreated") {
         this.closingTab = tab
         const confirmed = await this.$refs.closeConfirmation.confirm();
         this.closingTab = null
