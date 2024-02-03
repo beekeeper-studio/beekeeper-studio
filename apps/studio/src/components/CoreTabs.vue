@@ -512,7 +512,11 @@ export default Vue.extend({
         this.setActiveTab(this.tabItems[this.activeIdx - 1])
       }
     },
-    closeCurrentTab() {
+    closeCurrentTab(_id:number, action?:string) {
+      // if table was just created, 
+      // no need to trigger the modal about unsaved changes
+      if(action && action === "tableCreated") return
+
       if (this.activeTab) this.close(this.activeTab)
     },
     handleCreateTab() {
