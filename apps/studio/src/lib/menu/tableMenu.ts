@@ -101,7 +101,13 @@ export async function copyRange(options: {
     case "plain":  {
       const cells = options.range.getCells();
       if (cells.length === 1) {
-        text = cells[0].getValue();
+        const cellValue = cells[0].getValue();
+        
+        if (typeof cellValue === "object"){
+          text = JSON.stringify(cellValue)
+        } else {
+          text = cellValue
+        }
       } else {
         text = Papa.unparse(options.range.getData(), {
           header: false,
