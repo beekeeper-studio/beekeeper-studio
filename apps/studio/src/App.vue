@@ -25,7 +25,7 @@
     />
     <dropzone />
     <data-manager />
-    <confirmation-modal :name="$confirmModalName"/>
+    <confirmation-modal :name="$confirmModalName" />
   </div>
 </template>
 

@@ -4,6 +4,8 @@ import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import type { RedshiftOptions, BigQueryOptions } from '@/common/appdb/models/saved_connection';
 import type { default as mysql } from './clients/mysql'
 import type { default as postgresql } from './clients/postgresql'
+import type { default as cockroach } from './clients/cockroach'
+import type { default as redshift } from './clients/redshift'
 import type { default as sqlserver } from './clients/sqlserver'
 import type { default as sqlite } from './clients/sqlite'
 import type { default as cassandra } from './clients/cassandra'
@@ -17,9 +19,9 @@ export interface DBClientFactories {
   sqlserver: typeof sqlserver
   sqlite: typeof sqlite
   cassandra: typeof cassandra
-  redshift: typeof postgresql
+  redshift: typeof redshift
   mariadb: typeof mariadb
-  cockroachdb: typeof postgresql
+  cockroachdb: typeof cockroach
   bigquery: typeof bigquery
   firebird: typeof firebird
 }

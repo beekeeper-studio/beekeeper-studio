@@ -1,18 +1,39 @@
 <template>
   <portal to="modals">
-    <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @opened="onOpen">
+    <modal
+      :name="modalName"
+      class="beekeeper-modal vue-dialog editor-dialog"
+      @opened="onOpen"
+    >
       <!-- Trap the key events so it doesn't conflict with the parent elements -->
-      <div class="dialog-content" tabindex="0" @keydown.stop @keyup.stop="handleKeyUp" @keypress.stop>
+      <div
+        class="dialog-content"
+        tabindex="0"
+        @keydown.stop
+        @keyup.stop="handleKeyUp"
+        @keypress.stop
+      >
         <div class="top">
           <div class="dialog-c-title">
             Editing as
           </div>
 
-          <select class="form-control language-select" v-model="languageName">
-            <option disabled value="" v-if="!languageName">
+          <select
+            class="form-control language-select"
+            v-model="languageName"
+          >
+            <option
+              disabled
+              value=""
+              v-if="!languageName"
+            >
               Select a language
             </option>
-            <option v-for="(lang, idx) in languages" :key="idx" :value="lang.name">
+            <option
+              v-for="(lang, idx) in languages"
+              :key="idx"
+              :value="lang.name"
+            >
               {{ lang.label }}
             </option>
           </select>
@@ -41,18 +62,30 @@
         </div>
 
         <div class="editor-container">
-          <textarea name="editor" ref="editorRef" />
+          <textarea
+            name="editor"
+            ref="editorRef"
+          />
         </div>
       </div>
       <div class="bottom">
-        <span class="error-message" v-show="error">{{ error }}</span>
+        <span
+          class="error-message"
+          v-show="error"
+        >{{ error }}</span>
 
         <div class="vue-dialog-buttons">
           <span class="expand" />
-          <button @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">
+          <button
+            @click.prevent="$modal.hide(modalName)"
+            class="btn btn-sm btn-flat"
+          >
             Cancel
           </button>
-          <button class="btn btn-sm btn-flat" @click.prevent="copy">
+          <button
+            class="btn btn-sm btn-flat"
+            @click.prevent="copy"
+          >
             Copy
           </button>
           <x-button

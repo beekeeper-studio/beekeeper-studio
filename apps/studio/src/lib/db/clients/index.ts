@@ -3,6 +3,8 @@
 import mysql from './mysql';
 import mariadb from './mariadb';
 import postgresql from './postgresql';
+import cockroachdb from './cockroach';
+import redshift from './redshift';
 import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
@@ -161,9 +163,9 @@ const factories: DBClientFactories = {
   sqlserver,
   sqlite,
   cassandra,
-  redshift: postgresql,
+  redshift,
   mariadb,
-  cockroachdb: postgresql,
+  cockroachdb,
   bigquery,
   firebird,
 };

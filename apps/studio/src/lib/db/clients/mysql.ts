@@ -694,6 +694,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       indexes,
       relations,
       triggers,
+      partitions: []
     };
   }
 
