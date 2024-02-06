@@ -1,17 +1,13 @@
 import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
-import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../types";
-import { SupportedFeatures, TableIndex, TablePartition, TableProperties, TableTrigger } from "../models";
-import { PostgresClient } from "./postgresql";
+import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger } from "../models";
+import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
+import { defaultCreateScript } from "./postgresql/scripts";
 
 
 export class CockroachClient extends PostgresClient {
-
-  constructor(server: any, database: IDbConnectionDatabase) {
-    super(server, database);
-  }
-
   supportedFeatures(): SupportedFeatures {
     return {
       customRoutines: true,
@@ -20,6 +16,10 @@ export class CockroachClient extends PostgresClient {
       partitions: false,
       editPartitions: false
     };
+  }
+
+  async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
+    return [];
   }
 
   async listTablePartitions(_table: string, _schema: string): Promise<TablePartition[]> {
@@ -92,9 +92,30 @@ export class CockroachClient extends PostgresClient {
     };
   }
 
-  protected async configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig }, database: { database: string }) {
+  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
+    const sql = `create database ${this.wrapIdentifier(databaseName)} encoding ${this.wrapIdentifier(charset)}`;
+
+    await this.driverExecuteSingle(sql);
+  }
+
+  async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
+    const params = [
+      table,
+      schema,
+    ];
+
+    const data = await this.driverExecuteSingle(defaultCreateScript, { params });
+
+    return data.rows.map((row) => row.createtable)[0];
+  }
+
+  protected countQuery(_options: STQOptions, baseSQL: string): string {
+    return `SELECT count(*) as total ${baseSQL}`;
+  }
+
+  protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
     let optionsString = undefined;
-    const cluster = server.config.options?.cluser || undefined;
+    const cluster = server.config.options?.cluster || undefined;
     if (cluster) {
       optionsString = `--cluster=${cluster}`;
     }

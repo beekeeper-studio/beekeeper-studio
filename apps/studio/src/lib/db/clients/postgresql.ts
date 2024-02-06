@@ -8,7 +8,7 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { IDbConnectionServerConfig, DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
+import { DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
@@ -21,6 +21,7 @@ import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
+import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -75,11 +76,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   runWithConnection: HasConnection;
   _defaultSchema: string;
   dataTypes: any;
-  server: any;
+  server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   
-  // hmmmmm
-  constructor(server: any, database: IDbConnectionDatabase) {
+  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext);
 
     this.server = server;
@@ -709,7 +709,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     // Reference http://stackoverflow.com/a/32885178
-    const includesAttIdentify = (this.version.isPostgres && this.version.number >= 100000)
+    const includesAttIdentify = this.version.number >= 100000;
 
     const sql = includesAttIdentify ? postgres10CreateScript : defaultCreateScript;
     const params = [
@@ -777,7 +777,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }  
 
   async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    if (!this.version.isPostgres || this.version.number < 90003) {
+    if (this.version.number < 90003) {
       return []
     }
 
@@ -833,7 +833,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async getTableLength(table: string, schema: string = this._defaultSchema): Promise<number> {
     const tableType = await this.getEntityType(table, schema)
     const forceSlow = !tableType || tableType !== 'BASE_TABLE'
-    const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version: this.version, forceSlow})
+    const { countQuery, params } = this.buildSelectTopQueries({ table, schema, filters: undefined, version: this.version, forceSlow})
     const countResults = await this.driverExecuteSingle(countQuery, { params: params })
     const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
     const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -855,7 +855,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema): Promise<StreamResults> {
-    const qs = buildSelectTopQueries({
+    const qs = this.buildSelectTopQueries({
       table, orderBy, filters, version: this.version, schema
     })
     // const cursor = new Cursor(qs.query, qs.params)
@@ -949,13 +949,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
-    const {isPostgres, number: versionAsInteger } = this.version;
+    const { number: versionAsInteger } = this.version;
 
     let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
 
     // postgres 9 seems to freak out if the charset isn't wrapped in single quotes and also requires the template https://www.postgresql.org/docs/9.3/sql-createdatabase.html
     // later version don't seem to care
-    if (isPostgres && versionAsInteger < 100000) {
+    if (versionAsInteger < 100000) {
       sql = `create database ${wrapIdentifier(databaseName)} encoding '${charset}' template template0`;
     }
 
@@ -1039,9 +1039,92 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     };
   }
 
+  buildSelectTopQueries(options: STQOptions): STQResults {
+    const filters = options.filters
+    const orderBy = options.orderBy
+    const selects = options.selects ?? ['*']
+    let orderByString = ""
+    let filterString = ""
+    let params: (string | string[])[] = []
+
+    if (orderBy && orderBy.length > 0) {
+      orderByString = "ORDER BY " + (orderBy.map((item) => {
+        if (_.isObject(item)) {
+          return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
+        } else {
+          return wrapIdentifier(item)
+        }
+      })).join(",")
+    }
+
+    if (_.isString(filters)) {
+      filterString = `WHERE ${filters}`
+    } else if (filters && filters.length > 0) {
+      let paramIdx = 1
+      const allFilters = filters.map((item) => {
+        if (item.type === 'in' && _.isArray(item.value)) {
+          const values = item.value.map((v, idx) => {
+            return options.inlineParams
+              ? knex.raw('?', [v]).toQuery()
+              : `$${paramIdx + idx}`
+          })
+          paramIdx += values.length
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
+        }
+        const value = options.inlineParams
+          ? knex.raw('?', [item.value]).toQuery()
+          : `$${paramIdx}`
+        paramIdx += 1
+        return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
+      })
+      filterString = "WHERE " + joinFilters(allFilters, filters)
+
+      params = filters.flatMap((item) => {
+        return _.isArray(item.value) ? item.value : [item.value]
+      })
+    }
+
+    const selectSQL = `SELECT ${selects.join(', ')}`
+    const baseSQL = `
+      FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
+      ${filterString}
+    `
+
+    // if we're not filtering data we want the optimized approximation of row count
+    // rather than a legit row count.
+    const countQuery = this.countQuery(options, baseSQL);
+
+    const query = `
+      ${selectSQL} ${baseSQL}
+      ${orderByString}
+      ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
+      ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
+      `
+    return {
+      query, countQuery, params
+    }
+  }
   // ************************************************************************************
   // PROTECTED HELPER FUNCTIONS
   // ************************************************************************************
+
+  protected countQuery(options: STQOptions, baseSQL: string): string {
+    // This comes from this PR, it provides approximate counts for PSQL
+    // https://github.com/beekeeper-studio/beekeeper-studio/issues/311#issuecomment-788325650
+    // however not using the complex query, just the simple one from the psql docs
+    // https://wiki.postgresql.org/wiki/Count_estimate
+    // however it doesn't work in redshift or cockroach.
+    const tuplesQuery = `
+      SELECT
+        reltuples as total
+      FROM
+        pg_class
+      where
+          oid = '${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}'::regclass
+    `;
+
+    return !options.filters && !options.forceSlow ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`;
+  }
 
   protected tableName(table: string, schema: string = this._defaultSchema): string{
     return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
@@ -1058,7 +1141,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result.rows[0]?.tableowner;
   }
 
-  protected async configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
+  protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
@@ -1072,7 +1155,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return this.configurePool(config, server, null);
   }
 
-  protected configurePool(config: PoolConfig, server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, tempUser: string) {
+  protected configurePool(config: PoolConfig, server: IDbConnectionServer, tempUser: string) {
     if (tempUser) {
       config.user = tempUser
     } else if (server.config.user) {
@@ -1252,9 +1335,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (!version) {
       return {
         version: '',
-        isPostgres: false,
-        isCockroach: false,
-        isRedshift: false,
         number: 0,
         hasPartitions: false
       }
@@ -1269,9 +1349,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       );
     return {
       version,
-      isPostgres,
-      isCockroach,
-      isRedshift,
       number,
       hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
     }
@@ -1301,7 +1378,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     selects = ["*"],
     inlineParams?: boolean,
   ): Promise<STQResults> {
-    return buildSelectTopQueries({
+    return this.buildSelectTopQueries({
       table,
       offset,
       limit,
@@ -1367,224 +1444,6 @@ pg.types.setTypeParser(pg.types.builtins.INTERVAL,    'text', (val) => val); // 
  * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
  */
 pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
-
-export function buildSelectTopQueries(options: STQOptions): STQResults {
-  const filters = options.filters
-  const orderBy = options.orderBy
-  const selects = options.selects ?? ['*']
-  let orderByString = ""
-  let filterString = ""
-  let params: (string | string[])[] = []
-
-  if (orderBy && orderBy.length > 0) {
-    orderByString = "ORDER BY " + (orderBy.map((item) => {
-      if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
-      } else {
-        return wrapIdentifier(item)
-      }
-    })).join(",")
-  }
-
-  if (_.isString(filters)) {
-    filterString = `WHERE ${filters}`
-  } else if (filters && filters.length > 0) {
-    let paramIdx = 1
-    const allFilters = filters.map((item) => {
-      if (item.type === 'in' && _.isArray(item.value)) {
-        const values = item.value.map((v, idx) => {
-          return options.inlineParams
-            ? knex.raw('?', [v]).toQuery()
-            : `$${paramIdx + idx}`
-        })
-        paramIdx += values.length
-        return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
-      }
-      const value = options.inlineParams
-        ? knex.raw('?', [item.value]).toQuery()
-        : `$${paramIdx}`
-      paramIdx += 1
-      return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
-    })
-    filterString = "WHERE " + joinFilters(allFilters, filters)
-
-    params = filters.flatMap((item) => {
-      return _.isArray(item.value) ? item.value : [item.value]
-    })
-  }
-
-  const selectSQL = `SELECT ${selects.join(', ')}`
-  const baseSQL = `
-    FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
-    ${filterString}
-  `
-  // This comes from this PR, it provides approximate counts for PSQL
-  // https://github.com/beekeeper-studio/beekeeper-studio/issues/311#issuecomment-788325650
-  // however not using the complex query, just the simple one from the psql docs
-  // https://wiki.postgresql.org/wiki/Count_estimate
-  // however it doesn't work in redshift or cockroach.
-  const tuplesQuery = `
-
-  SELECT
-    reltuples as total
-  FROM
-    pg_class
-  where
-      oid = '${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}'::regclass
-  `
-
-  // if we're not filtering data we want the optimized approximation of row count
-  // rather than a legit row count.
-  let countQuery = options.version.isPostgres && !filters && !options.forceSlow ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
-  if (options.version.isRedshift && !filters) {
-    countQuery = `SELECT COUNT(*) as total ${baseSQL}`
-  }
-
-  const query = `
-    ${selectSQL} ${baseSQL}
-    ${orderByString}
-    ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
-    ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
-    `
-  return {
-    query, countQuery, params
-  }
-}
-
-const postgres10CreateScript = `
-  SELECT
-  'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
-  array_to_string(
-    array_agg(
-      '  ' || quote_ident(tabdef.column_name) || ' ' ||
-      case when tabdef.def_val like 'nextval(%_seq%' then
-        case when tabdef.type = 'integer' then 'serial'
-            when tabdef.type = 'smallint' then 'smallserial'
-            when tabdef.type = 'bigint' then 'bigserial'
-            else tabdef.type end
-      else
-        tabdef.type
-      end || ' ' ||
-      tabdef.not_null ||
-      CASE WHEN tabdef.def_val IS NOT NULL
-                AND NOT (tabdef.def_val like 'nextval(%_seq%'
-                        AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
-          THEN ' DEFAULT ' || tabdef.def_val
-      ELSE '' END ||
-      CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
-      ORDER BY tabdef.column_idx ASC
-    )
-    , E',\n'
-  ) || E'\n);\n' ||
-  CASE WHEN tc.constraint_name IS NULL THEN ''
-      ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
-      ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
-      ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
-  END AS createtable
-  FROM
-  ( SELECT
-    c.relname AS table_name,
-    a.attname AS column_name,
-    a.attnum AS column_idx,
-    pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
-    CASE
-      WHEN a.attnotnull OR a.attidentity != '' THEN 'NOT NULL'
-    ELSE 'NULL'
-    END AS not_null,
-    CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
-    CASE WHEN a.attidentity = 'a' THEN 'GENERATED ALWAYS AS IDENTITY' when a.attidentity = 'd' THEN 'GENERATED BY DEFAULT AS IDENTITY' ELSE null END AS identity,
-    n.nspname as schema_name
-  FROM pg_class c
-  JOIN pg_namespace n ON (n.oid = c.relnamespace)
-  JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
-  JOIN pg_type t ON (a.atttypid = t.oid)
-  LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
-  WHERE c.relname = $1
-  AND n.nspname = $2
-  ORDER BY a.attnum DESC
-  ) AS tabdef
-  LEFT JOIN information_schema.table_constraints tc
-  ON  tc.table_name       = tabdef.table_name
-  AND tc.table_schema     = tabdef.schema_name
-  AND tc.constraint_Type  = 'PRIMARY KEY'
-  LEFT JOIN LATERAL (
-  SELECT column_name || ', ' AS column_name
-  FROM   information_schema.key_column_usage kcu
-  WHERE  kcu.constraint_name = tc.constraint_name
-  AND kcu.table_name = tabdef.table_name
-  AND kcu.table_schema = tabdef.schema_name
-  ORDER BY ordinal_position
-  ) AS constr ON true
-  GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
-
-`
-const defaultCreateScript = `
-  SELECT
-  'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
-  array_to_string(
-    array_agg(
-      '  ' || quote_ident(tabdef.column_name) || ' ' ||
-      case when tabdef.def_val like 'nextval(%_seq%' then
-        case when tabdef.type = 'integer' then 'serial'
-            when tabdef.type = 'smallint' then 'smallserial'
-            when tabdef.type = 'bigint' then 'bigserial'
-            else tabdef.type end
-      else
-        tabdef.type
-      end || ' ' ||
-      tabdef.not_null ||
-      CASE WHEN tabdef.def_val IS NOT NULL
-                AND NOT (tabdef.def_val like 'nextval(%_seq%'
-                        AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
-          THEN ' DEFAULT ' || tabdef.def_val
-      ELSE '' END ||
-      CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
-      ORDER BY tabdef.column_idx ASC
-    )
-    , E',\n'
-  ) || E'\n);\n' ||
-  CASE WHEN tc.constraint_name IS NULL THEN ''
-      ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
-      ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
-      ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
-  END AS createtable
-  FROM
-  ( SELECT
-    c.relname AS table_name,
-    a.attname AS column_name,
-    a.attnum AS column_idx,
-    pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
-    CASE
-      WHEN a.attnotnull THEN 'NOT NULL'
-    ELSE 'NULL'
-    END AS not_null,
-    CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
-    null::text as identity,
-    n.nspname as schema_name
-  FROM pg_class c
-  JOIN pg_namespace n ON (n.oid = c.relnamespace)
-  JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
-  JOIN pg_type t ON (a.atttypid = t.oid)
-  LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
-  WHERE c.relname = $1
-  AND n.nspname = $2
-  ORDER BY a.attnum DESC
-  ) AS tabdef
-  LEFT JOIN information_schema.table_constraints tc
-  ON  tc.table_name       = tabdef.table_name
-  AND tc.table_schema     = tabdef.schema_name
-  AND tc.constraint_Type  = 'PRIMARY KEY'
-  LEFT JOIN LATERAL (
-  SELECT column_name || ', ' AS column_name
-  FROM   information_schema.key_column_usage kcu
-  WHERE  kcu.constraint_name = tc.constraint_name
-  AND kcu.table_name = tabdef.table_name
-  AND kcu.table_schema = tabdef.schema_name
-  ORDER BY ordinal_position
-  ) AS constr ON true
-  GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
-
-`
 
 export function wrapIdentifier(value: string): string {
   if (value === '*') return value;

@@ -1,16 +1,16 @@
 import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
-import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../client";
-import { PrimaryKeyColumn, TableProperties } from "../models";
-import { PostgresClient } from "./postgresql";
+import { IDbConnectionDatabase, IDbConnectionServer } from "../client";
+import { FilterOptions, PrimaryKeyColumn, TableOrView, TableProperties } from "../models";
+import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
+import { defaultCreateScript } from "./postgresql/scripts";
 
 export class RedshiftClient extends PostgresClient {
-  
-  constructor(server: any, database: IDbConnectionDatabase) {
-    super(server, database);
+  async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
+    return [];
   }
 
   async getTableProperties(_table: string, _schema?: string): Promise<TableProperties> {
@@ -49,7 +49,28 @@ export class RedshiftClient extends PostgresClient {
     }
   }
 
-  protected async configDatabase(server: {sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string }) {
+  async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
+    const params = [
+      table,
+      schema,
+    ];
+
+    const data = await this.driverExecuteSingle(defaultCreateScript, { params });
+
+    return data.rows.map((row) => row.createtable)[0];
+  }
+
+  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
+    const sql = `create database ${this.wrapIdentifier(databaseName)} encoding ${this.wrapIdentifier(charset)}`;
+
+    await this.driverExecuteSingle(sql);
+  }
+
+  protected countQuery(_options: STQOptions, baseSQL: string): string {
+    return `SELECT COUNT(*) as total ${baseSQL}`;
+  }
+
+  protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
     // If a temporary user is used to connect to the database, we populate it below.
     let tempUser: string;
 
