@@ -1,8 +1,12 @@
-import { readFileSync, writeFileSync } from "fs";
-import { generateIdentifierDeclarationFile } from "dts-gen";
-import * as path from "path";
-import { parse } from "ini";
-import { transform } from "./config-transformer.js";
+import fs from "fs";
+import dtsgen from "dts-gen";
+import path from "path";
+import ini from "ini";
+import util from "./config-transformer.js";
+
+const { transform } = util;
+const { readFileSync, writeFileSync } = fs
+const { generateIdentifierDeclarationFile } = dtsgen
 
 const __dirname = path.resolve();
 
@@ -10,7 +14,7 @@ const rawConfig = readFileSync(
   path.join(__dirname, "default.config.ini"),
   "utf-8"
 );
-const config = transform(parse(rawConfig));
+const config = transform(ini.parse(rawConfig));
 
 const result = generateIdentifierDeclarationFile("IBkConfig", config);
 const postResult = result.replace(

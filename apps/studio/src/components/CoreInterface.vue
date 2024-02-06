@@ -78,8 +78,8 @@
     },
     computed: {
       keymap() {
-        return this.$createKeymap({
-          'core.quickSearch': () => this.showQuickSearch = true
+        return this.$vHotkeyKeymap({
+          'main.openQuickSearch': this.showQuickSearch
         })
       },
       splitElements() {

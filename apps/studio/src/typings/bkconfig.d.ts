@@ -9,10 +9,49 @@ declare interface IBkConfig {
         errorNoticeTimeout: number;
     };
     keybindings: {
-        core: {
-            quickSearch: string;
+        main: {
+            addRow: string;
+            cloneSelection: string;
+            copySelection: string;
+            deleteSelection: string;
+            openInSqlEditor: string;
+            openQuickSearch: string;
+            pasteSelection: string;
+            refresh: {
+                "0": string;
+                "1": string;
+            };
+            save: string;
         };
-        coreTabs: {
+        queryEditor: {
+            copyResultSelection: string;
+            selectEditor: string;
+            selectNextResult: string;
+            selectPreviousResult: string;
+            submitCurrentQueryToFile: string;
+            submitQueryToFile: string;
+        };
+        quickSearch: {
+            altOpen: string;
+            altOpenInBackground: string;
+            close: string;
+            focusSearch: {
+                "0": string;
+                "1": string;
+            };
+            open: string;
+            openInBackground: string;
+            selectDown: {
+                "0": string;
+                "1": string;
+            };
+            selectUp: {
+                "0": string;
+                "1": string;
+            };
+        };
+        tab: {
+            closeTab: string;
             nextTab: string;
             previousTab: string;
             switchTab1: string;
@@ -25,55 +64,10 @@ declare interface IBkConfig {
             switchTab8: string;
             switchTab9: string;
         };
-        queryEditor: {
-            copyResultSelection: string;
-            selectEditor: string;
-            selectNextResult: string;
-            selectPreviousResult: string;
-            submitCurrentQueryToFile: string;
-            submitQueryToFile: string;
-        };
-        quickSearch: {
-            altSubmit: string;
-            closeSearch: string;
-            openSearch: string;
-            persistAltSubmit: string;
-            persistSubmit: string;
-            selectDown: string;
-            selectUp: string;
-            submit: string;
-        };
-        rowFilterBuilder: {
-            focusOnInput: string;
-        };
-        tableBuilder: {
-            addRow: string;
-            copyToSql: string;
-            create: string;
-        };
-        tablePartitions: {
-            addRow: string;
-            refresh: string;
-            submitApply: string;
-            submitSql: string;
-        };
-        tableRelations: {
-            addRow: string;
-            refresh: string;
-            submitApply: string;
-            submitSql: string;
-        };
         tableTable: {
-            addRow: string;
-            cloneSelection: string;
-            copySelection: string;
-            copyToSql: string;
-            deleteSelection: string;
+            focusOnFilterInput: string;
             nextPage: string;
-            pasteSelection: string;
             previousPage: string;
-            refresh: string;
-            saveChanges: string;
         };
     };
     process: {

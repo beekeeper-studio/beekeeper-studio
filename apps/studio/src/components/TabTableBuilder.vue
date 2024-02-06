@@ -128,10 +128,10 @@ export default Vue.extend({
       if (!this.active) {
         return {}
       }
-      return this.$createKeymap({
-        'tableBuilder.create': this.create.bind(this),
-        'tableBuilder.copyToSql': this.copyToSql.bind(this),
-        'tableBuilder.addRow': () => this.$refs.sb.addRow(),
+      return this.$vHotkeyKeymap({
+        'main.save': this.create.bind(this),
+        'main.openInSqlEditor': this.sql.bind(this),
+        'main.addRow': () => this.$refs.sb.addRow(),
       })
     },
     defaultSchema() {

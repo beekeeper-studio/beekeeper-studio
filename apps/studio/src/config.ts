@@ -34,4 +34,5 @@ export default {
   maxResults: 50000
 }
 
-export { BkConfigHandler as BkConfig } from './plugins/ConfigPlugin'
+// TODO move BkConfig to this file
+export { BkConfig } from '@/lib/config/config-loader';

@@ -1,9 +1,9 @@
+// Putting these to its own file so we can call it from command line.
+
 /**
  * Transform an object and cast the values to the correct type.
  *
- * If the value is a number, cast it to a number.
- *
- * Otherwise, the value is a string.
+ * If the value is a number, cast it to a number. Otherwise, it's a string.
  **/
 function transform(obj) {
   const clone = Object.assign({}, obj);
@@ -31,7 +31,6 @@ function isNumber(value) {
   return !Number.isNaN(Number(value));
 }
 
-// TODO run linter
 module.exports = {
   transform,
 };

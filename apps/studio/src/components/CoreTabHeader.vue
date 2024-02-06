@@ -147,12 +147,9 @@ import TabIcon from './tab/TabIcon.vue'
         return null
       },
       keymap() {
-        const result = {}
-        if (this.selected) {
-          result[this.ctrlOrCmd('w')] = this.maybeClose
-        }
-
-        return result
+        return this.$vHotkeyKeymap({
+          'coreTabs.closeTab': () => this.maybeClose,
+        })
       },
       cleanText() {
         // no spaces

@@ -142,7 +142,7 @@ export default Vue.extend({
     },
     hotkeys() {
       if (!this.active) return {}
-      return this.$createKeymap({
+      return this.$vHotkeyKeymap({
         'refresh': () => this.$emit('refresh'),
         'addRow': this.addRow.bind(this),
         'submitApply': this.submitApply.bind(this),

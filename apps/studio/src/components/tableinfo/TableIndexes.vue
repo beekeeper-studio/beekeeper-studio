@@ -163,13 +163,12 @@ export default Vue.extend({
     },
     hotkeys() {
       if (!this.active) return {}
-      const result = {}
-      result['f5'] = () => this.$emit('refresh')
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-      result[this.ctrlOrCmd('r')] = () => this.$emit('refresh')
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'main.refresh': () => this.$emit('refresh'),
+        'main.addRow': this.addRow.bind(this),
+        'main.save': this.submitApply.bind(this),
+        'main.openInSqlEditor': this.submitSql.bind(this),
+      })
     },
     notice() {
       return this.dialectData.notices?.infoIndexes;

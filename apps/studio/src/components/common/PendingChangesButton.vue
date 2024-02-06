@@ -47,10 +47,10 @@ export default Vue.extend({
     },
     computed: {
         hotkeys() {
-            const result = {}
-            result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-            result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-            return result
+            return this.$vHotkeyKeymap({
+                'main.save': this.submitApply.bind(this),
+                'main.openInSqlEditor': this.submitSql.bind(this),
+            })
         }
     }
 })

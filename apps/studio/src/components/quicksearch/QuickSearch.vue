@@ -158,15 +158,15 @@ export default Vue.extend({
       }
     },
     keymap() {
-      return this.$createKeymap({
-        'quickSearch.openSearch': this.openSearch,
-        'quickSearch.closeSearch': this.closeSearch,
+      return this.$vHotkeyKeymap({
+        'quickSearch.focusSearch': this.openSearch,
+        'quickSearch.close': this.closeSearch,
         'quickSearch.selectUp': this.selectUp,
         'quickSearch.selectDown': this.selectDown,
-        'quickSearch.submit': this.enter,
-        'quickSearch.altSumbit': this.metaEnter,
-        'quicksearch.persistSubmit': this.persistentSearchEnter,
-        'quicksearch.persistAltSubmit': this.persistentSearchMetaEnter,
+        'quickSearch.open': this.enter,
+        'quickSearch.altOpen': this.metaEnter,
+        'quickSearch.openInBackground': this.persistentSearchEnter,
+        'quickSearch.altOpenInBackground': this.persistentSearchMetaEnter,
       })
     }
   },

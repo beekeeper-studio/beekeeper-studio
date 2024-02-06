@@ -128,11 +128,11 @@ export default Vue.extend({
   computed: {
     hotkeys() {
       if (!this.active) return {};
-      return this.$createKeymap({
-        'tablePartitions.refresh': this.refreshPartitions.bind(this),
-        'tablePartitions.addRow': this.addRow.bind(this),
-        'tablePartitions.submitApply': this.submitApply.bind(this),
-        'tablePartitions.submitSql': this.submitSql.bind(this),
+      return this.$vHotkeyKeymap({
+        'main.refresh': this.refreshPartitions.bind(this),
+        'main.addRow': this.addRow.bind(this),
+        'main.save': this.submitApply.bind(this),
+        'main.openInSqlEditor': this.submitSql.bind(this),
       })
     },
     hasEdits() {

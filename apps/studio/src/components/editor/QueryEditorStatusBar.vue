@@ -224,7 +224,7 @@ export default {
       return `Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)`
     },
     keymap() {
-      return this.$createKeymap({
+      return this.$vHotkeyKeymap({
         'queryEditor.selectNextResult': this.changeSelectedResult.bind(this, 1),
         'queryEditor.selectPreviousResult': this.changeSelectedResult.bind(this, -1),
       })

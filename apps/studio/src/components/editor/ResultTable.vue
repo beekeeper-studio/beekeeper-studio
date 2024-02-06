@@ -57,7 +57,7 @@
     computed: {
       ...mapState(['connection']),
       keymap() {
-        return this.$createKeymap({
+        return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
         });
       },

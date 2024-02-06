@@ -173,14 +173,12 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState(['database']),
     hotkeys() {
-      if (!this.active) return {}
-      const result = {}
-      result['f5'] = this.refreshColumns.bind(this)
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-      result[this.ctrlOrCmd('r')] = this.refreshColumns.bind(this)
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'main.refresh': this.refreshColumns,
+        'main.addRow': this.addRow,
+        'main.save': this.submitApply,
+        'main.openInSqlEditor': this.submitSql,
+      })
     },
     editable() {
       // (sept 23) we don't need a primary key to make schemas editable

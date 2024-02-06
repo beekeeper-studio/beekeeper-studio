@@ -349,16 +349,17 @@ export default Vue.extend({
     keymap() {
       if (!this.active) return {}
 
-      return this.$createKeymap({
-        'tableTable.refresh': this.refreshTable.bind(this),
+      return this.$vHotkeyKeymap({
+        'main.refresh': this.refreshTable.bind(this),
+        'main.addRow': this.cellAddRow.bind(this),
+        'main.openInSqlEditor': this.copyToSql.bind(this),
+        'main.save': this.saveChanges.bind(this),
+        'main.copySelection': this.copySelection.bind(this),
+        'main.pasteSelection': this.pasteSelection.bind(this),
+        'main.cloneSelection': this.cloneSelection.bind(this),
+        'main.deleteSelection': this.deleteTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
-        'tableTable.addRow': this.cellAddRow.bind(this),
-        'tableTable.saveChanges': this.saveChanges.bind(this),
-        'tableTable.copyToSql': this.copyToSql.bind(this),
-        'tableTable.copySelection': this.copySelection.bind(this),
-        'tableTable.pasteSelection': this.pasteSelection.bind(this),
-        'tableTable.deleteSelection': this.deleteTableSelection.bind(this),
       })
     },
 

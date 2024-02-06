@@ -519,7 +519,7 @@
       },
       keymap() {
         if (!this.active) return {}
-        return this.$createKeymap({
+        return this.$vHotkeyKeymap({
           'queryEditor.selectEditor': this.selectEditor,
           'queryEditor.submitQueryToFile': this.submitQueryToFile,
           'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,

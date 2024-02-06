@@ -336,18 +336,18 @@ export default Vue.extend({
       return _.indexOf(this.tabItems, this.activeTab)
     },
     keymap() {
-      return this.$createKeymap({
-        'coreTabs.nextTab': this.nextTab,
-        'coreTabs.previousTab': this.previousTab,
-        'coreTabs.switchTab1': this.handleSwitchTab.bind(this, 0),
-        'coreTabs.switchTab2': this.handleSwitchTab.bind(this, 1),
-        'coreTabs.switchTab3': this.handleSwitchTab.bind(this, 2),
-        'coreTabs.switchTab4': this.handleSwitchTab.bind(this, 3),
-        'coreTabs.switchTab5': this.handleSwitchTab.bind(this, 4),
-        'coreTabs.switchTab6': this.handleSwitchTab.bind(this, 5),
-        'coreTabs.switchTab7': this.handleSwitchTab.bind(this, 6),
-        'coreTabs.switchTab8': this.handleSwitchTab.bind(this, 7),
-        'coreTabs.switchTab9': this.handleSwitchTab.bind(this, 8),
+      return this.$vHotkeyKeymap({
+        'tab.nextTab': this.nextTab,
+        'tab.previousTab': this.previousTab,
+        'tab.switchTab1': this.handleSwitchTab.bind(this, 0),
+        'tab.switchTab2': this.handleSwitchTab.bind(this, 1),
+        'tab.switchTab3': this.handleSwitchTab.bind(this, 2),
+        'tab.switchTab4': this.handleSwitchTab.bind(this, 3),
+        'tab.switchTab5': this.handleSwitchTab.bind(this, 4),
+        'tab.switchTab6': this.handleSwitchTab.bind(this, 5),
+        'tab.switchTab7': this.handleSwitchTab.bind(this, 6),
+        'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
+        'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
       })
     },
   },
