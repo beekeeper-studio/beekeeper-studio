@@ -3,6 +3,7 @@ import { markdownTable } from "markdown-table";
 import { DatabaseClient } from "@/lib/db/client";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
+import { stringifyRangeData } from "@/common/utils";
 
 export const commonColumnMenu = [
   {
@@ -97,29 +98,23 @@ export async function copyRange(options: {
   schema?: string;
 }) {
   let text = "";
+  const rangeData = options.range.getData();
+  const stringifiedRangeData = stringifyRangeData(rangeData);
+
   switch (options.type) {
-    case "plain":  {
-      const cells = options.range.getCells();
-      if (cells.length === 1) {
-        const cellValue = cells[0].getValue();
-        
-        if (typeof cellValue === "object"){
-          text = JSON.stringify(cellValue)
-        } else {
-          text = cellValue
-        }
-      } else {
-        text = Papa.unparse(options.range.getData(), {
-          header: false,
-          delimiter: "\t",
-          quotes: false,
-          escapeFormulae: false,
-        });
-      }
+    case "plain": {
+      text = Papa.unparse(stringifiedRangeData, {
+        header: false,
+        delimiter: "\t",
+        quotes: false,
+        escapeFormulae: false,
+        quoteChar: "\t",
+      });
+
       break;
     }
     case "tsv":
-      text = Papa.unparse(options.range.getData(), {
+      text = Papa.unparse(stringifiedRangeData, {
         header: false,
         delimiter: "\t",
         quotes: true,
@@ -127,14 +122,13 @@ export async function copyRange(options: {
       });
       break;
     case "json":
-      text = JSON.stringify(options.range.getData());
+      text = JSON.stringify(rangeData);
       break;
     case "markdown": {
-      const data = options.range.getData();
-      const headers = Object.keys(data[0]);
+      const headers = Object.keys(stringifiedRangeData[0]);
       text = markdownTable([
         headers,
-        ...data.map((item) => Object.values(item)),
+        ...stringifiedRangeData.map((item) => Object.values(item)),
       ]);
       break;
     }
@@ -142,7 +136,7 @@ export async function copyRange(options: {
       text = await options.connection.getInsertQuery({
         table: options.table,
         schema: options.schema,
-        data: options.range.getData(),
+        data: rangeData,
       });
       break;
   }

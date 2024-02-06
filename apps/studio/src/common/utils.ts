@@ -220,3 +220,22 @@ export async function getLastExportPath(filename?: string) {
 export async function setLastExportPath(exportPath: string) {
   await SettingsPlugin.set('lastExportPath', exportPath)
 }
+
+// Stringify all the arrays and objects in range data
+export function stringifyRangeData(rangeData: Record<string, any>[]) {
+  const transformedRangeData:Record<string, any>[]  = [];
+
+  for (let i = 0; i < rangeData.length; i++) {
+    const keys = Object.keys(rangeData[i]);
+
+    transformedRangeData[i] = {};
+
+    for (const key of keys) {
+      const value = rangeData[i][key];
+      transformedRangeData[i][key] =
+        value && typeof value === "object" ? JSON.stringify(value) : value;
+    }
+  }
+
+  return transformedRangeData;
+}
