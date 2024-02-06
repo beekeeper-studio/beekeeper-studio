@@ -6,9 +6,6 @@ export interface HasPool {
 }
 
 export interface VersionInfo {
-  isPostgres: boolean
-  isCockroach: boolean
-  isRedshift: boolean
   number: number
   version: string
   hasPartitions: boolean

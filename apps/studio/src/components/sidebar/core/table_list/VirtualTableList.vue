@@ -9,7 +9,7 @@
     :estimate-size="estimateItemHeight"
     :keeps="keeps"
     :extra-props="{ onExpand: handleExpand, onPin: handlePin }"
-  ></virtual-list>
+  />
 </template>
 
 <script lang="ts">

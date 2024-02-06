@@ -182,13 +182,19 @@
       </modal>
     </portal>
 
-    <confirmation-modal name="core-tabs-close-confirmation" ref="closeConfirmation">
+    <confirmation-modal
+      name="core-tabs-close-confirmation"
+      ref="closeConfirmation"
+    >
       <template v-slot:title>
         <div class="dialog-c-title">
           Really close
-            <span class="tab-like" v-if="closingTab">
-              <tab-icon :tab="closingTab" /> {{ closingTab.title }}
-            </span>
+          <span
+            class="tab-like"
+            v-if="closingTab"
+          >
+            <tab-icon :tab="closingTab" /> {{ closingTab.title }}
+          </span>
           ?
         </div>
       </template>
