@@ -103,14 +103,17 @@ export async function copyRange(options: {
 
   switch (options.type) {
     case "plain": {
-      text = Papa.unparse(stringifiedRangeData, {
-        header: false,
-        delimiter: "\t",
-        quotes: false,
-        escapeFormulae: false,
-        quoteChar: "\t",
-      });
-
+      if (options.range.getCells().length === 1) {
+        const key = Object.keys(stringifiedRangeData[0])[0];
+        text = stringifiedRangeData[0][key];
+      } else {
+        text = Papa.unparse(stringifiedRangeData, {
+          header: false,
+          delimiter: "\t",
+          quotes: false,
+          escapeFormulae: false,
+        });
+      }
       break;
     }
     case "tsv":
