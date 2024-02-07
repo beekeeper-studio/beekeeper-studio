@@ -350,14 +350,14 @@ export default Vue.extend({
       if (!this.active) return {}
 
       return this.$vHotkeyKeymap({
-        'main.refresh': this.refreshTable.bind(this),
-        'main.addRow': this.cellAddRow.bind(this),
-        'main.openInSqlEditor': this.copyToSql.bind(this),
-        'main.save': this.saveChanges.bind(this),
-        'main.copySelection': this.copySelection.bind(this),
-        'main.pasteSelection': this.pasteSelection.bind(this),
-        'main.cloneSelection': this.cloneSelection.bind(this),
-        'main.deleteSelection': this.deleteTableSelection.bind(this),
+        'general.refresh': this.refreshTable.bind(this),
+        'general.addRow': this.cellAddRow.bind(this),
+        'general.save': this.saveChanges.bind(this),
+        'general.openInSqlEditor': this.copyToSql.bind(this),
+        'general.copySelection': this.copySelection.bind(this),
+        'general.pasteSelection': this.pasteSelection.bind(this),
+        'general.cloneSelection': this.cloneSelection.bind(this),
+        'general.deleteSelection': this.deleteTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
       })

@@ -129,9 +129,9 @@ export default Vue.extend({
         return {}
       }
       return this.$vHotkeyKeymap({
-        'main.save': this.create.bind(this),
-        'main.openInSqlEditor': this.sql.bind(this),
-        'main.addRow': () => this.$refs.sb.addRow(),
+        'general.save': this.create.bind(this),
+        'general.openInSqlEditor': this.sql.bind(this),
+        'general.addRow': () => this.$refs.sb.addRow(),
       })
     },
     defaultSchema() {

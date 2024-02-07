@@ -79,7 +79,7 @@
     computed: {
       keymap() {
         return this.$vHotkeyKeymap({
-          'main.openQuickSearch': this.showQuickSearch
+          'general.openQuickSearch': this.showQuickSearch
         })
       },
       splitElements() {

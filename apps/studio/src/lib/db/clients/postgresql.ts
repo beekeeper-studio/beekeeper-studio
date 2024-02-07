@@ -1,5 +1,5 @@
 
-// Copyright (c) 2015 The SQLECTRON Team 
+// Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 
 import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
@@ -21,7 +21,7 @@ import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
-import { BkConfig } from '@/config';
+import { BkConfig } from '@/lib/config/config-loader';
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -78,7 +78,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   dataTypes: any;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
-  
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext);
 
@@ -627,7 +627,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     let results: TableUpdateResult[] = []
 
     await this.cacheConnection();
-    
+
     await this.driverExecuteSingle('BEGIN')
     log.debug("Applying changes", changes)
     try {
@@ -705,7 +705,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       partitions,
       owner
     }
-  }  
+  }
 
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     // Reference http://stackoverflow.com/a/32885178
@@ -774,7 +774,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     `).join('');
 
     await this.driverExecuteMultiple(truncateAll);
-  }  
+  }
 
   async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
     if (this.version.number < 90003) {
@@ -966,7 +966,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     throw new Error('Method not implemented.');
   }
 
-  
+
   alterPartitionSql(payload: AlterPartitionsSpec): string {
     const { table } = payload;
     const builder = new PostgresqlChangeBuilder(table);
@@ -1001,7 +1001,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       release = false;
       connection = this.runWithConnection.connection;
     } else {
-      connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect(); 
+      connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect();
     }
 
     try {
@@ -1129,7 +1129,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   protected tableName(table: string, schema: string = this._defaultSchema): string{
     return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
   }
-  
+
   protected wrapTable(table: string, schema: string = this._defaultSchema) {
     if (!schema) return wrapIdentifier(table);
     return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`;
@@ -1148,7 +1148,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       password: server.config.password || undefined,
       database: database.database,
       max: 5, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: BkConfig.db.postgres.timeout,
+      connectionTimeoutMillis: BkConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BkConfig.db.postgres.idleTimeout,
     };
 
@@ -1353,8 +1353,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
     }
   }
-  
-  
+
+
 
   private async getEntityType(
     table: string,
@@ -1390,10 +1390,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       inlineParams
     })
   }
-  
-  
 
-  
+
+
+
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
@@ -1406,7 +1406,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
     return value
   }
-  
+
   private async getSchema() {
     const sql = 'SELECT CURRENT_SCHEMA() AS schema';
 

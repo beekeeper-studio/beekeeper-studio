@@ -1,3 +1,12 @@
+import { transform } from "../../../config-transformer";
+import ini from "ini";
+import _ from "lodash";
+
+export interface UserConfigWarning {
+  type: "section" | "key";
+  key: string;
+}
+
 const electronModifierMap = {
   ctrl: "Control",
   cmd: "Command",
@@ -34,7 +43,10 @@ const vHotkeyModifierMap = {
   windows: "windows",
 };
 
-/** Exported for tests. Avoid using this directly. Please use `getKeybindingFor` instead. */
+/**
+ * Exported for tests. Avoid using this directly. Please use
+ * `bkConfig.getKeybindings` instead.
+ **/
 export function convertKeybinding(
   target: "electron" | "v-hotkey",
   keybinding: string,
@@ -84,4 +96,48 @@ export function isIniArray(value: any): value is IniArray {
     _.isObject(value) &&
     Object.keys(value).every((key) => !Number.isNaN(Number.parseInt(key)))
   );
+}
+
+/**
+ * Check any config keys from `userConfig` that we don't recognize based on
+ * `defaultConfig`.
+ **/
+export function checkConfigWarnings(
+  defaultConfig: IBkConfig,
+  userConfig: Partial<IBkConfig>
+): UserConfigWarning[] {
+  const results = [];
+
+  function traverse(obj: Record<string, any>, parentPath = "") {
+    for (const key of Object.keys(obj)) {
+      const path = parentPath ? `${parentPath}.${key}` : key;
+      const recognized = _.has(defaultConfig, path);
+
+      if (!recognized) {
+        if (typeof obj[key] === "object") {
+          results.push({ type: "section", section: path });
+        } else {
+          results.push({
+            type: "key",
+            section: parentPath,
+            key,
+            value: obj[key]
+          });
+        }
+        continue;
+      }
+
+      if (typeof obj[key] === "object") {
+        traverse(obj[key], path);
+      }
+    }
+  }
+
+  traverse(userConfig);
+
+  return results;
+}
+
+export function parseIni(text: string) {
+  return transform(ini.parse(text));
 }

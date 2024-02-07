@@ -1129,8 +1129,8 @@
 
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
+            if (result.rowCount > this.$bkConfig.general.maxQueryEditorResults) {
+              result.rows = _.take(result.rows, this.$bkConfig.general.maxQueryEditorResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
             }

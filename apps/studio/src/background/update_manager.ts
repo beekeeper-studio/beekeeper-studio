@@ -6,7 +6,7 @@ import rawlog from 'electron-log'
 const log = rawlog.scope('update-manager')
 
 import platformInfo from '../common/platform_info'
-import { BkConfig } from '@/config'
+import { BkConfig } from '@/lib/config/config-loader'
 
 autoUpdater.autoDownload = false
 autoUpdater.logger = log
@@ -73,5 +73,5 @@ export function manageUpdates(debug?: boolean): void {
 
   setInterval(() => {
     checkForUpdates()
-  }, BkConfig.process.updateCheckInterval)
+  }, BkConfig.general.checkForUpdatesInterval)
 }

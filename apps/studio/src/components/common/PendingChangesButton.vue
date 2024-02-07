@@ -48,8 +48,8 @@ export default Vue.extend({
     computed: {
         hotkeys() {
             return this.$vHotkeyKeymap({
-                'main.save': this.submitApply.bind(this),
-                'main.openInSqlEditor': this.submitSql.bind(this),
+                'general.save': this.submitApply.bind(this),
+                'general.openInSqlEditor': this.submitSql.bind(this),
             })
         }
     }

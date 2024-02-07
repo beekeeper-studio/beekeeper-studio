@@ -174,10 +174,10 @@ export default Vue.extend({
     ...mapState(['database']),
     hotkeys() {
       return this.$vHotkeyKeymap({
-        'main.refresh': this.refreshColumns,
-        'main.addRow': this.addRow,
-        'main.save': this.submitApply,
-        'main.openInSqlEditor': this.submitSql,
+        'general.refresh': this.refreshColumns,
+        'general.addRow': this.addRow,
+        'general.save': this.submitApply,
+        'general.openInSqlEditor': this.submitSql,
       })
     },
     editable() {

@@ -4,8 +4,7 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, watch, writeFileSync } from "fs";
-import { transform } from "../../../config-transformer";
-import { convertKeybinding, IniArray, isIniArray } from "./config-helper";
+import { checkConfigWarnings, convertKeybinding, IniArray, isIniArray, parseIni, UserConfigWarning } from "./config-helper";
 
 if (platformInfo.isDevelopment) {
   // run types builder
@@ -19,11 +18,6 @@ const USER_CONFIG_FILENAME = "user.config.ini";
 const log = rawLog.scope("config-loader");
 
 type ConfigSource = "default" | "user";
-
-interface UserConfigWarning {
-  type: "section" | "key";
-  key: string;
-}
 
 export type KeybindingPath = DeepKeyOf<IBkConfig["keybindings"]>;
 
@@ -43,6 +37,7 @@ export interface IBkConfigHandler extends IBkConfig {
   set: (path: string, value: unknown) => void;
   debug: (path: string) => IBkConfigDebugInfo;
   debugAll: IBkConfigDebugInfo[];
+  warnings: UserConfigWarning[];
   getKeybindings: (
     target: "electron" | "v-hotkey",
     path: KeybindingPath
@@ -51,7 +46,7 @@ export interface IBkConfigHandler extends IBkConfig {
 
 const defaultConfig = readConfigFile("default");
 const userConfig = readConfigFile("user");
-const mergedConfig = _.merge(defaultConfig, userConfig);
+const mergedConfig = _.merge({}, defaultConfig, userConfig);
 const configWarnings = checkConfigWarnings(defaultConfig, userConfig);
 
 export const BkConfigHandler: IBkConfigHandler = {
@@ -100,7 +95,6 @@ export const BkConfigHandler: IBkConfigHandler = {
     };
     return getDebugAll(mergedConfig);
   },
-  /** TODO send this to front end */
   get warnings() {
     return configWarnings;
   },
@@ -142,44 +136,13 @@ function readConfigFile(type: ConfigSource) {
   }
 
   try {
-    const parsed = transform(ini.parse(readFileSync(filepath, "utf-8")));
+    const parsed = parseIni(readFileSync(filepath, "utf-8"));
     log.debug(`Successfully read config ${filepath}`, parsed);
     return parsed;
   } catch (error) {
     log.debug(`Failed to read config ${filepath}`, error);
     throw error;
   }
-}
-
-function checkConfigWarnings(
-  defaultConfig: IBkConfig,
-  userConfig: Partial<IBkConfig>
-) {
-  const warnings: UserConfigWarning[] = [];
-
-  for (const section in userConfig) {
-    const hasSection = Object.prototype.hasOwnProperty.call(
-      defaultConfig,
-      section
-    );
-
-    if (!hasSection) {
-      warnings.push({ type: "section", key: section });
-      continue;
-    }
-
-    for (const key in userConfig[section]) {
-      const hasKey = Object.prototype.hasOwnProperty.call(
-        defaultConfig[section],
-        key
-      );
-
-      if (!hasKey) {
-        warnings.push({ type: "key", key: `${section}.${key}` });
-      }
-    }
-  }
-  return warnings;
 }
 
 function writeUserConfigFile() {

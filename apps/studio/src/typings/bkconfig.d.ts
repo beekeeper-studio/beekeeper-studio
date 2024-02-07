@@ -1,15 +1,35 @@
 declare interface IBkConfig {
     db: {
-        postgres: {
+        cockroachdb: {
+            connectionTimeout: number;
             idleTimeout: number;
-            timeout: number;
+            maxClient: number;
+        };
+        mariadb: {
+            connectTimeout: number;
+        };
+        mysql: {
+            connectTimeout: number;
+        };
+        postgres: {
+            connectionTimeout: number;
+            idleTimeout: number;
+            maxClient: number;
+        };
+        redshift: {
+            connectionTimeout: number;
+            idleTimeout: number;
+            maxClient: number;
         };
     };
-    export: {
-        errorNoticeTimeout: number;
+    general: {
+        checkForUpdatesInterval: number;
+        dataSyncInterval: number;
+        maxQueryEditorResults: number;
+        workspaceSyncInterval: number;
     };
     keybindings: {
-        main: {
+        general: {
             addRow: string;
             cloneSelection: string;
             copySelection: string;
@@ -70,12 +90,10 @@ declare interface IBkConfig {
             previousPage: string;
         };
     };
-    process: {
-        dataCheckInterval: number;
-        updateCheckInterval: number;
-        workspaceCheckInterval: number;
-    };
     ui: {
+        export: {
+            errorNoticeTimeout: number;
+        };
         tableList: {
             itemHeight: number;
         };

@@ -4,7 +4,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models"; 
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models";
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
@@ -47,11 +47,11 @@ const sqliteContext = {
   }
 }
 
-type SqliteResult = { 
+type SqliteResult = {
   data: any,
   statement: Statement,
   // Number of changes made by the query
-  changes: number 
+  changes: number
 };
 const SD = SqliteData;
 
@@ -75,12 +75,12 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   supportedFeatures(): SupportedFeatures {
-    return { 
-      customRoutines: false, 
-      comments: false, 
-      properties: true, 
-      partitions: false, 
-      editPartitions: false 
+    return {
+      customRoutines: false,
+      comments: false,
+      properties: true,
+      partitions: false,
+      editPartitions: false
     };
   }
 
@@ -328,12 +328,12 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       this.getTableKeys(null, table)
     ])
     return {
-      size: length, 
-      indexes, 
-      relations, 
+      size: length,
+      indexes,
+      relations,
       triggers,
       partitions: []
-    }  
+    }
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
@@ -435,7 +435,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async queryStream(_db: string, query: string, chunkSize: number): Promise<StreamResults> {
     return {
       totalRows: undefined,
-      columns: undefined, 
+      columns: undefined,
       cursor: new SqliteCursor(this.database, query, [], chunkSize)
     };
   }
@@ -526,7 +526,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         results.push({
           data: result || [],
           statement: query,
-          changes: statement.reader ? 0 : (result as Database.RunResult).changes 
+          changes: statement.reader ? 0 : (result as Database.RunResult).changes
         });
       } catch (error) {
         log.error(error);
@@ -537,7 +537,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return options.multiple ? results : results[0];
   }
 
-  
+
   private dataToColumns(data, tableName) {
     return data.map((row) => ({
       tableName,

@@ -110,7 +110,7 @@ export default Vue.extend({
               error_notice.close()
             })
           ]
-        }).setTimeout(this.$bkConfig.export.errorNoticeTimeout)
+        }).setTimeout(this.$bkConfig.ui.export.errorNoticeTimeout)
         return
       }
       if (exporter.status !== ExportStatus.Completed) return;

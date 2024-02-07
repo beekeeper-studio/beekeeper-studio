@@ -31,8 +31,4 @@ export default {
     connectionTypes: ConnectionTypes,
     keymapTypes: keymapTypes
   },
-  maxResults: 50000
 }
-
-// TODO move BkConfig to this file
-export { BkConfig } from '@/lib/config/config-loader';

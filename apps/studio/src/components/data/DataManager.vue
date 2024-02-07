@@ -15,7 +15,7 @@ export default Vue.extend({
   mounted() {
     this.mountAndRefresh()
     this.$store.commit('storeInitialized', true)
-    this.interval = setInterval(this.poll, this.$bkConfig.process.dataCheckInterval)
+    this.interval = setInterval(this.poll, this.$bkConfig.general.dataSyncInterval)
   },
   beforeDestroy() {
     if (this.interval) clearInterval(this.interval);
