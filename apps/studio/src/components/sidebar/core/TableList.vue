@@ -57,7 +57,10 @@
       </div>
     </div>
 
-    <x-progressbar v-show="tablesLoading" style="margin-top: -5px;" />
+    <x-progressbar
+      v-show="tablesLoading"
+      style="margin-top: -5px;"
+    />
 
     <!-- Pinned Tables -->
     <div
@@ -75,7 +78,10 @@
     <!-- Tables -->
     <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
 
-    <nav class="list-group flex-col" ref="tables">
+    <nav
+      class="list-group flex-col"
+      ref="tables"
+    >
       <div class="list-heading">
         <span class="sub">Entities</span>
         <span

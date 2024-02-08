@@ -4,8 +4,9 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { ClientError, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../client";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models"; 
+import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
 import knexlib from 'knex';
 import { makeEscape } from 'knex/lib/util/string';
@@ -330,7 +331,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       size: length, 
       indexes, 
       relations, 
-      triggers
+      triggers,
+      partitions: []
     }  
   }
 

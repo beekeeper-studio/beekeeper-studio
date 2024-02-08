@@ -69,10 +69,22 @@
           class="actions btn-group"
           ref="actions"
         >
-          <x-button v-if="showDryRun" class="btn btn-flat btn-small" :disabled="$config.isCommunity" @click="dryRun = !dryRun">
+          <x-button
+            v-if="showDryRun"
+            class="btn btn-flat btn-small"
+            :disabled="$config.isCommunity"
+            @click="dryRun = !dryRun"
+          >
             <x-label>Dry Run</x-label>
-            <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
-            <input v-else type="checkbox" v-model="dryRun">
+            <i
+              v-if="$config.isCommunity"
+              class="material-icons menu-icon"
+            >stars</i>
+            <input
+              v-else
+              type="checkbox"
+              v-model="dryRun"
+            >
           </x-button>
           <x-button
             @click.prevent="triggerSave"
@@ -320,7 +332,7 @@
   import 'codemirror/addon/search/searchcursor'
   import { registerAutoquote } from '@/lib/codemirror'
 
-  import setKeybindingsFromVimrc from "../lib/readVimrc"
+  import { setKeybindingsFromVimrc } from "../lib/readVimrc"
 
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
