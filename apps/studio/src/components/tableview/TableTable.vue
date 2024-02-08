@@ -501,13 +501,13 @@ export default Vue.extend({
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
 
-        let headerTooltip = `${column.columnName} ${column.dataType}`
+        let headerTooltip = escapeHtml(`${column.columnName} ${column.dataType}`)
         if (hasKeyDatas) {
           const keyData = keyDatas[0][1];
           if (keyData.length === 1)
-            headerTooltip += ` -> ${keyData[0].toTable}(${keyData[0].toColumn})`
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
           else
-            headerTooltip += ` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
+            headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
         }
