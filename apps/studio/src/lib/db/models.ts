@@ -70,7 +70,7 @@ export interface TableProperties {
   indexes: TableIndex[]
   relations: TableKey[]
   triggers: TableTrigger[]
-  partitions: TablePartition[]
+  partitions?: TablePartition[]
   owner?: string,
   createdAt?: string
 }
