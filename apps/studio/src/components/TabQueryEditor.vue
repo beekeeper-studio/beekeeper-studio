@@ -815,7 +815,13 @@
           if (this.userKeymap === "vim") {
             const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
             codeMirrorVimInstance.defineEx("write", "w", this.triggerSave)
-            codeMirrorVimInstance.defineEx("quit", "q", this.close)
+            codeMirrorVimInstance.defineEx("quit", "q", () => {
+              if (this.tab.unsavedChanges) {
+                this.$modal.show(`sure-${this.tab.id}`)
+              } else {
+                this.close();
+              }
+            })
             codeMirrorVimInstance.defineEx("qa", "qa", () => {this.$root.$emit(AppEvent.closeAllTabs)})
             codeMirrorVimInstance.defineEx("x", "x", this.writeQuit)
             codeMirrorVimInstance.defineEx("wq", "wq", this.writeQuit)
