@@ -501,7 +501,7 @@ export default Vue.extend({
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
 
-        let headerTooltip = `${column.columnName} ${column.dataType}`
+        let headerTooltip = escapeHtml(`${column.columnName} ${column.dataType}`)
         if (hasKeyDatas) {
           const keyData = keyDatas[0][1];
           if (keyData.length === 1)
