@@ -86,7 +86,7 @@ export interface DatabaseClient {
   queryStream(db: string, query: string, chunkSize: number ): Promise<StreamResults>,
 
   wrapIdentifier: (value: string) => string
-  setTableDescription: (table: string, description: string, schema?: string) => Promise<string|void>
+  setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 
   // delete stuff
   dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>

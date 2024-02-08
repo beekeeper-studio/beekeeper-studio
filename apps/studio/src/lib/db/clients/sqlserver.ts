@@ -798,6 +798,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       @level1type = N'TABLE',  @level1name = ${D.wrapIdentifier(table)};
     `
     await this.executeQuery(sql)
+    return ''
   }
 
   async alterRelation(payload) {
