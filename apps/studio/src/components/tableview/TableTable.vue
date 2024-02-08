@@ -248,8 +248,10 @@ import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
+import helpers from '@shared/lib/tabulator'
 import { vueEditor } from '@shared/lib/tabulator/helpers';
-import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+import DateTimePickerEditorVue from '@shared/components/tabulator/DateTimePickerEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
@@ -555,6 +557,7 @@ export default Vue.extend({
           },
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+            dataType: column.dataType,
             search: true,
             allowEmpty: true,
             preserveObject: column.dataType?.startsWith('_'),
@@ -563,9 +566,6 @@ export default Vue.extend({
               return true
             },
             typeHint: column.dataType.toLowerCase()
-            // elementAttributes: {
-            //   maxLength: column.columnLength // TODO
-            // }
           },
         }
 
@@ -957,6 +957,11 @@ export default Vue.extend({
     },
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
+
+      if (helpers.isDateTime(dt)) {
+        return vueEditor(DateTimePickerEditorVue)
+      }
+
       switch (dt?.toLowerCase() ?? '') {
         case 'text':
         case 'json':
