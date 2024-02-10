@@ -1,4 +1,4 @@
-import mutators from "../../../src/mixins/data_mutators"
+import mutators, { buildFormatterWithTooltip } from "../../../src/mixins/data_mutators"
 
 
 describe("cellFormatter", () => {
@@ -18,6 +18,10 @@ describe("cellFormatter", () => {
     const input = {
       getValue: () => '8640000000000000',
     }
+    
+    const badInput = {
+      getValue: () => '8640000000000005',
+    }
 
     const params = {
       isPK: false
@@ -26,6 +30,15 @@ describe("cellFormatter", () => {
     const formatted = mutators.methods.cellFormatter(input, params)
     expect(formatted).toBe('<div class="cell-link-wrapper" title="+275760-09-13T00:00:00.000Z in unixtime">8640000000000000</div>')
     expect(mutators.methods.cellFormatter(input, { isPK: true })).toBe('<pre>8640000000000000</pre>')
+    expect(mutators.methods.cellFormatter(badInput, params)).toBe('<pre>8640000000000005</pre>')
+  })
+
+  it('render tooltip with escaped html', () => {
+    const formatted = buildFormatterWithTooltip('<a>ne-er do-well</a>', '<a>ne-er do-well</a>', 'launch')
+
+    const shouldBe = '<div class="cell-link-wrapper">&lt;a&gt;ne-er do-well&lt;/a&gt;<i class="material-icons fk-link" title="&lt;a&gt;ne-er do-well&lt;/a&gt;">launch</i></div>'
+
+    expect(formatted).toBe(shouldBe)
   })
 
 })

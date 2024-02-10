@@ -33,12 +33,12 @@ function emptyResult(value: any) {
   return null
 }
 
-function buildFormatterWithTooltip(cellValue: string, tooltip: string, icon?: string) {
+export function buildFormatterWithTooltip(cellValue: string, tooltip: string, icon?: string) {
   if (!icon) {
-    return `<div class="cell-link-wrapper" title="${tooltip}">${cellValue}</div>`
+    return `<div class="cell-link-wrapper" title="${escapeHtml(tooltip)}">${escapeHtml(cellValue)}</div>`
   }
 
-  return `<div class="cell-link-wrapper">${cellValue}<i class="material-icons fk-link" title="${tooltip}">${icon}</i></div>`
+  return `<div class="cell-link-wrapper">${escapeHtml(cellValue)}<i class="material-icons fk-link" title="${escapeHtml(tooltip)}">${escapeHtml(icon)}</i></div>`
 }
 
 export default {
@@ -60,10 +60,9 @@ export default {
       }
       let cellValue = this.niceString(cell.getValue(), true)
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
-      cellValue = escapeHtml(cellValue);
       
       // removing the <pre> will break selection / copy paste, see ResultTable
-      let result = `<pre>${cellValue}</pre>`
+      let result = `<pre>${escapeHtml(cellValue)}</pre>`
       let tooltip = ''
 
       if (params?.fk) {
@@ -79,11 +78,14 @@ export default {
       } else if (
           params?.isPK != null &&
           !params.isPK &&
-          _.isInteger(Number(cellValue)) &&
-          Number(cellValue) <= 8640000000000000 // the date object doesn't go higher than said number https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#description
+          _.isInteger(Number(cellValue))
         ) {
-        tooltip = `${new Date(Number(cellValue)).toISOString()} in unixtime`
-        result = buildFormatterWithTooltip(cellValue, tooltip)
+        try {
+          tooltip = `${new Date(Number(cellValue)).toISOString()} in unixtime`
+          result = buildFormatterWithTooltip(cellValue, tooltip)
+        } catch (e) {
+          console.error(`${cellValue} cannot be converted to a date`)
+        }
     }
 
       return result;
