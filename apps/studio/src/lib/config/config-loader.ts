@@ -158,9 +158,12 @@ function writeUserConfigFile() {
 }
 
 function resolveRootPath() {
-  const dirname = path.resolve(__dirname);
-  if (dirname.includes("node_modules")) {
-    return dirname.split("node_modules")[0];
+  const dirpath = path.resolve(__dirname);
+  if (dirpath.includes("node_modules")) {
+    return dirpath.split("node_modules")[0];
+  }
+  if (process.env.CLI_MODE || process.env.TEST_MODE) {
+    return path.resolve(dirpath, "../../../../..");
   }
   return path.resolve(__dirname, "../../..");
 }

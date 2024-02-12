@@ -15,7 +15,7 @@ function resolveRootPath() {
   if (dirpath.includes("node_modules")) {
     return dirpath.split("node_modules")[0];
   }
-  if (process.env.CLI_MODE) {
+  if (process.env.CLI_MODE || process.env.TEST_MODE) {
     return path.resolve(dirpath, "../..");
   }
   return path.resolve(dirpath, "../../..");
