@@ -25,7 +25,7 @@ class Editor {
       autoquoteHandler(cm, co);
     }
 
-    registerAutoquote(this.cm, mockedBeforeChange);
+    const unregisterAutoquote = registerAutoquote(this.cm, mockedBeforeChange);
 
     const hint = await this.hint();
 

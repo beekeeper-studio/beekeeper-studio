@@ -8,7 +8,7 @@
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
-    :forcedValue="forcedValue"
+    :forced-value="forcedValue"
     :plugins="plugins"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"

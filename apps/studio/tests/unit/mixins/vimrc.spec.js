@@ -1,4 +1,4 @@
-import { createVimCommands } from "../../../../studio/src/lib/readVimrc"
+import { createVimCommands } from "../../../../studio/src/lib/editor/vim"
 
 describe("Vimrc Parsing", () => {
   it("Should parse all the commands here, and supply all the IMapping commands to be sent into the setKeybindingsFromVimrc.", () => {
