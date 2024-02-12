@@ -1,11 +1,10 @@
 import CodeMirror from "codemirror";
 import "@/vendor/sql-hint/index";
-import "@/lib/codemirror-definition"
+import "../../../src/lib/editor/CodeMirrorDefinitions";
 import {
   registerAutoquote,
-  unregisterAutoquote,
   autoquoteHandler,
-} from "@/lib/codemirror";
+} from "../../../src/lib/editor/CodeMirrorPlugins";
 
 class Editor {
   constructor(opts = {}) {
@@ -26,7 +25,7 @@ class Editor {
       autoquoteHandler(cm, co);
     }
 
-    registerAutoquote(this.cm, mockedBeforeChange);
+    const unregisterAutoquote = registerAutoquote(this.cm, mockedBeforeChange);
 
     const hint = await this.hint();
 

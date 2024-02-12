@@ -635,7 +635,7 @@ export default Vue.extend({
       return this.tablesInitialLoaded && this.active && !this.initialized
     },
     columnFilterModalName() {
-      return `column-filter-modal-${this.tab.id}`
+      return `column-filter-modal-${this.tableId}`
     },
   },
 

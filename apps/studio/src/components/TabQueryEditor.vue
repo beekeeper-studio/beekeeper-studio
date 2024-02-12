@@ -6,7 +6,6 @@
     <div
       class="top-panel"
       ref="topPanel"
-      @contextmenu.prevent.stop="showContextMenu"
     >
       <merge-manager
         v-if="query && query.id"
@@ -31,13 +30,14 @@
           >Close Tab</a>
         </div>
       </div>
-      <textarea
-        name="editor"
-        class="editor"
-        ref="editor"
-        id=""
-        cols="30"
-        rows="10"
+      <sql-text-editor
+        v-model="unsavedText"
+        v-bind.sync="editor"
+        :markers="editorMarkers"
+        :connection-type="connectionType"
+        :extra-keybindings="keybindings"
+        :vim-config="vimConfig"
+        @initialized="handleEditorInitialized"
       />
       <span class="expand" />
       <div class="toolbar text-right">
@@ -330,9 +330,6 @@
   import 'codemirror/addon/search/matchesonscrollbar'
   import 'codemirror/addon/search/matchesonscrollbar.css'
   import 'codemirror/addon/search/searchcursor'
-  import { registerAutoquote } from '@/lib/codemirror'
-
-  import { setKeybindingsFromVimrc } from "../lib/readVimrc"
 
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
@@ -341,21 +338,19 @@
 
   import platformInfo from '@/common/platform_info'
   import { splitQueries } from '../lib/db/sql_tools'
+  import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
-
-  import { format } from 'sql-formatter';
+  import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
   import ErrorAlert from './common/ErrorAlert.vue'
-  import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   import { OpenTab } from '@/common/appdb/models/OpenTab'
-  import { removeQueryQuotes } from '@/lib/db/sql_tools';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -363,7 +358,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
     props: {
       tab: OpenTab,
       active: Boolean
@@ -375,7 +370,14 @@
         runningCount: 1,
         runningType: 'all queries',
         selectedResult: 0,
-        editor: null,
+        editor: {
+          height: 100,
+          selection: null,
+          readOnly: false,
+          focus: true,
+          cursorIndex: 0,
+          initialized: false,
+        },
         runningQuery: null,
         error: null,
         errorMarker: null,
@@ -385,7 +387,6 @@
         tableHeight: 0,
         savePrompt: false,
         lastWord: null,
-        cursorIndex: null,
         marker: null,
         queryParameterValues: {},
         queryForExecution: null,
@@ -434,7 +435,7 @@
       },
       unsavedText: {
         get () {
-          return this.tab.unsavedQueryText || ""
+          return this.tab.unsavedQueryText || editorDefault
         },
         set(value) {
           this.tab.unsavedQueryText = value
@@ -478,7 +479,7 @@
         return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
-        return this.editor ? !!this.editor.getSelection() : false
+        return this.editor.initialized ? !!this.editor.selection : false
       },
       result() {
         return this.results[this.selectedResult]
@@ -490,7 +491,7 @@
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
         for (let i = 0; i < queries.length; i++) {
-          if (this.cursorIndex <= queries[i].end + 1) return i
+          if (this.editor.cursorIndex <= queries[i].end + 1) return i
         }
         return null
       },
@@ -499,7 +500,7 @@
         return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
-        if(!this.editor || !this.currentlySelectedQuery || !this.individualQueries) {
+        if(!this.editor.initialized || !this.currentlySelectedQuery || !this.individualQueries) {
           return null
         }
         const qi = this.currentlySelectedQueryIndex
@@ -540,34 +541,6 @@
       connectionType() {
         return this.connection.connectionType;
       },
-      hintOptions() {
-        const firstTables = {}
-        const secondTables = {}
-        const thirdTables = {}
-
-        this.tables.forEach((table) => {
-          // don't add table names that can get in conflict with database schema
-          if (/\./.test(table.name)) return
-
-          // Previously we had to provide a table: column[] mapping.
-          // we don't need to provide the columns anymore because we fetch them dynamically.
-          if (!table.schema) {
-            firstTables[table.name] = []
-            return
-          }
-
-          if (table.schema === this.defaultSchema) {
-            firstTables[table.name] = []
-            secondTables[`${table.schema}.${table.name}`] = []
-          } else {
-            thirdTables[`${table.schema}.${table.name}`] = []
-          }
-        })
-
-        const sorted = Object.assign(firstTables, Object.assign(secondTables, thirdTables))
-
-        return { tables: sorted }
-      },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
 
@@ -595,15 +568,62 @@
         return !this.query?.id ||
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
+      keybindings() {
+        const keybindings: any = {
+          "Shift-Ctrl-Enter": this.submitCurrentQuery,
+          "Shift-Cmd-Enter": this.submitCurrentQuery,
+          "Ctrl-Enter": this.submitTabQuery,
+          "Cmd-Enter": this.submitTabQuery,
+          "Ctrl-S": this.triggerSave,
+          "Cmd-S": this.triggerSave,
+          "F5": this.submitTabQuery,
+          "Shift-F5": this.submitCurrentQuery,
+          "Ctrl+I": this.submitQueryToFile,
+          "Cmd+I": this.submitQueryToFile,
+          "Shift+Ctrl+I": this.submitCurrentQueryToFile,
+          "Shift+Cmd+I": this.submitCurrentQueryToFile
+        }
+
+        if(this.userKeymap === "vim") {
+          keybindings["Ctrl-Esc"] = this.cancelQuery
+        } else {
+          keybindings["Esc"] = this.cancelQuery
+        }
+
+        return keybindings
+      },
+      vimConfig() {
+        const exCommands = [
+          { name: "write", prefix: "w", handler: this.triggerSave },
+          { name: "quit", prefix: "q", handler: this.close },
+          { name: "qa", prefix: "qa", handler: () => this.$root.$emit(AppEvent.closeAllTabs) },
+          { name: "x", prefix: "x", handler: this.writeQuit },
+          { name: "wq", prefix: "wq", handler: this.writeQuit },
+          { name: "tabnew", prefix: "tabnew", handler: (_cn, params) => {
+            if(params.args && params.args.length > 0){
+              let queryName = params.args[0]
+              this.$root.$emit(AppEvent.newTab,"", queryName)
+              return
+            }
+            this.$root.$emit(AppEvent.newTab)
+          }},
+        ]
+
+        return { exCommands }
+      },
+      editorMarkers() {
+        const markers = []
+        if (this.marker) markers.push(this.marker)
+        if (this.errorMarker) markers.push(this.errorMarker)
+        return markers
+      },
     },
     watch: {
       error() {
-        if (this.errorMarker) {
-          this.errorMarker.clear()
-        }
+        this.errorMarker = null
         if (this.dialect === 'postgresql' && this.error && this.error.position) {
           const [a, b] = this.locationFromPosition(this.queryForExecution, parseInt(this.error.position) - 1, parseInt(this.error.position))
-          this.errorMarker = this.editor.getDoc().markText(a, b, { className: 'error'})
+          this.errorMarker = { from: a, to: b, type: 'error' } as EditorMarker
           this.error.marker = {line: b.line + 1, ch: b.ch}
         }
       },
@@ -618,30 +638,28 @@
       },
       remoteDeleted() {
         if (this.remoteDeleted) {
-          this.editor?.setOption('readOnly', 'nocursor')
+          this.editor.readOnly = 'nocursor'
           this.tab.unsavedChanges = false
           this.tab.alert = true
         } else {
-          this.editor?.setOption('readOnly', false)
+          this.editor.readOnly = false
         }
       },
       unsavedChanges() {
         this.tab.unsavedChanges = this.unsavedChanges
       },
-      active() {
-        if(this.active && this.editor) {
-          this.$nextTick(() => {
-            this.editor.refresh()
-            this.editor.focus()
-          })
+      async active() {
+        if(this.active && this.editor.initialized) {
+          // FIXME this doesn't work. Something triggers the blur event from
+          // codemirror right after doing this.
+          await this.$nextTick()
+          this.editor.focus = this.active
         } else {
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
       currentQueryPosition() {
-        if (this.marker){
-          this.marker.clear()
-        }
+        this.marker = null
 
         if(!this.individualQueries || this.individualQueries.length < 2) {
           return;
@@ -652,35 +670,20 @@
         }
         const { from, to } = this.currentQueryPosition
 
-        const editorText = this.editor.getValue()
+        const editorText = this.unsavedText
         // const lines = editorText.split(/\n/)
 
         const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
-        this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
+        this.marker = { from: markStart, to: markEnd, type: 'highlight' } as EditorMarker
       },
-      tables() {
-        this.editor?.setOption('hintOptions',this.hintOptions)
-      }
     },
     methods: {
 
-      find() {
-        // trigger's codemirror's search functionality
-        this.editor.execCommand('find')
-      },
-      replace() {
-        // trigger's codemirror's search functionality
-        this.editor.execCommand('replace')
-      },
-      replaceAll() {
-        // trigger's codemirror's search functionality
-        this.editor.execCommand('replaceAll')
-      },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
         // 2.
 
-        const editorText = this.editor.getValue()
+        const editorText = this.unsavedText
 
         const startCharacter = editorText.indexOf(queryText)
         const lines = editorText.split(/\n/)
@@ -707,16 +710,9 @@
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
-        const startingValue = this.unsavedText || this.query?.text || editorDefault
         this.query.title = this.activeTab.title
 
-        console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
-
-        if (this.editor) {
-          this.editor.toTextArea();
-          this.editor = null;
-        }
 
         if (this.split) {
           this.split.destroy();
@@ -739,146 +735,18 @@
             }
           })
 
-          const runQueryKeyMap: any = {
-            "Shift-Ctrl-Enter": this.submitCurrentQuery,
-            "Shift-Cmd-Enter": this.submitCurrentQuery,
-            "Ctrl-Enter": this.submitTabQuery,
-            "Cmd-Enter": this.submitTabQuery,
-            "Ctrl-S": this.triggerSave,
-            "Cmd-S": this.triggerSave,
-            "Shift-Ctrl-F": this.formatSql,
-            "Shift-Cmd-F": this.formatSql,
-            "Ctrl-/": this.toggleComment,
-            "Cmd-/": this.toggleComment,
-            "F5": this.submitTabQuery,
-            "Shift-F5": this.submitCurrentQuery,
-            "Ctrl+I": this.submitQueryToFile,
-            "Cmd+I": this.submitQueryToFile,
-            "Shift+Ctrl+I": this.submitCurrentQueryToFile,
-            "Shift+Cmd+I": this.submitCurrentQueryToFile
-          }
-
-          if(this.userKeymap === "vim") {
-            runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
-          } else {
-            runQueryKeyMap["Esc"] = this.cancelQuery
-          }
-
-          const modes = {
-            'mysql': 'text/x-mysql',
-            'postgresql': 'text/x-pgsql',
-            'sqlserver': 'text/x-mssql',
-            'mariadb': 'text/x-mariadb',
-            'sqlite': 'text/x-sqlite',
-            'cassandra': 'text/x-cassandra',
-            'redshift': 'text/x-pgsql',
-          };
-
-          const extraKeys = {}
-
-          extraKeys[this.cmCtrlOrCmd('F')] = 'findPersistent'
-          extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
-          extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
-
-
-          this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
-            lineNumbers: true,
-            mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
-            tabSize: 2,
-            theme: 'monokai',
-            extraKeys: {
-              "Ctrl-Space": "autocomplete",
-              "Shift-Tab": "indentLess",
-              ...extraKeys
-            },
-            options: {
-              closeOnBlur: false
-            },
-            // eslint-disable-next-line
-            // @ts-ignore
-            hint: CodeMirror.hint.sql,
-            hintOptions: this.hintOptions,
-            keyMap: this.userKeymap,
-            getColumns: this.getColumnsForAutocomplete
-          } as CodeMirror.EditorConfiguration)
-          this.editor.setValue(startingValue)
-          this.editor.addKeyMap(runQueryKeyMap)
-          this.editor.on("keydown", (_cm, e) => {
-            if (this.$store.state.menuActive) {
-              e.preventDefault()
-            }
-          })
-
-
-
-
-          if (this.userKeymap === "vim") {
-            const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-            codeMirrorVimInstance.defineEx("write", "w", this.triggerSave)
-            codeMirrorVimInstance.defineEx("quit", "q", () => {
-              if (this.tab.unsavedChanges) {
-                this.$modal.show(`sure-${this.tab.id}`)
-              } else {
-                this.close();
-              }
-            })
-            codeMirrorVimInstance.defineEx("qa", "qa", () => {this.$root.$emit(AppEvent.closeAllTabs)})
-            codeMirrorVimInstance.defineEx("x", "x", this.writeQuit)
-            codeMirrorVimInstance.defineEx("wq", "wq", this.writeQuit)
-            codeMirrorVimInstance.defineEx("tabnew", "tabnew", (_cn, params) => {
-              if(params.args && params.args.length > 0){
-                let queryName = params.args[0]
-                this.$root.$emit(AppEvent.newTab,"", queryName)
-                return
-              }
-              this.$root.$emit(AppEvent.newTab)
-            })
-
-
-            if(!codeMirrorVimInstance) {
-              console.error("Could not find code mirror vim instance");
-            } else {
-              setKeybindingsFromVimrc(codeMirrorVimInstance);
-            }
-          }
-
-          this.editor.on("paste", (_cm, e) => {
-            e.preventDefault();
-            let clipboard = (e.clipboardData.getData("text") as string).trim();
-            clipboard = removeQueryQuotes(clipboard, this.identifyDialect);
-            if (this.hasSelectedText) {
-              this.editor.replaceSelection(clipboard, 'around');
-            } else {
-              const cursor = this.editor.getCursor();
-              this.editor.replaceRange(clipboard, cursor);
-            }
-          });
-
-          this.editor.on("change", (cm) => {
-            // this also updates `this.queryText`
-            // this.tab.query.text = cm.getValue()
-            this.unsavedText = cm.getValue()
-          })
-
-          registerAutoquote(this.editor)
-
-          // TODO: make this not suck
-          this.editor.on('keyup', this.maybeAutoComplete)
-          this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
-          this.editor.focus()
-
-          setTimeout(() => {
-            // this fixes the editor not showing because it doesn't think it's dom element is in view.
-            // its a hit and miss error
-            this.editor.refresh()
-          }, 1)
-
-          // this gives the dom a chance to kick in and render these
-          // before we try to read their heights
-          setTimeout(() => {
+          this.$nextTick(() => {
             this.tableHeight = this.$refs.bottomPanel.clientHeight
             this.updateEditorHeight()
-          }, 1)
+          })
+        })
+      },
+      handleEditorInitialized() {
+        // this gives the dom a chance to kick in and render these
+        // before we try to read their heights
+        this.$nextTick(() => {
+          this.tableHeight = this.$refs.bottomPanel.clientHeight
+          this.updateEditorHeight()
         })
       },
       saveTab: _.debounce(function() {
@@ -886,89 +754,6 @@
       }, 1000),
       close() {
         this.$root.$emit(AppEvent.closeTab)
-      },
-      showContextMenu(event) {
-        const selectionDepClass = this.hasSelectedText ? '' : 'disabled';
-        this.$bks.openMenu({
-          item: this.tab,
-          options: [
-          {
-            name: 'Undo',
-            slug: '',
-            handler: this.editorUndo,
-            shortcut: this.ctrlOrCmd('z')
-          },
-          {
-            name: 'Redo',
-            slug: '',
-            handler: this.editorRedo,
-            shortcut: this.ctrlOrCmd('shift+z')
-          },
-          {
-            name: 'Cut',
-            slug: '',
-            handler: this.editorCut,
-            class: selectionDepClass,
-            shortcut: this.ctrlOrCmd('x')
-          },
-          {
-            name: 'Copy',
-            slug: '',
-            handler: this.editorCopy,
-            class: selectionDepClass,
-            shortcut: this.ctrlOrCmd('c')
-          },
-          {
-            name: 'Paste',
-            slug: '',
-            handler: this.editorPaste,
-            shortcut: this.ctrlOrCmd('v')
-          },
-          {
-            name: 'Delete',
-            slug: '',
-            handler: this.editorDelete,
-            class: selectionDepClass
-          },
-          {
-            name: 'Select All',
-            slug: '',
-            handler: this.editorSelectAll,
-            shortcut: this.ctrlOrCmd('a')
-          },
-          {
-            type: 'divider'
-          },
-          {
-            name: "Format Query",
-            slug: 'format',
-            handler: this.formatSql,
-            shortcut: this.ctrlOrCmd('shift+f')
-          },
-          {
-            type: 'divider'
-          },
-          {
-            name: "Find",
-            slug: 'find',
-            handler: this.find,
-            shortcut: this.ctrlOrCmd('f')
-          },
-          {
-            name: "Replace",
-            slug: "replace",
-            handler: this.replace,
-            shortcut: this.ctrlOrCmd('r')
-          },
-          {
-            name: "ReplaceAll",
-            slug: "replace_all",
-            handler: this.replaceAll,
-            shortcut: this.ctrlOrCmd('shift+r')
-          }
-        ],
-          event,
-        })
       },
       async cancelQuery() {
         if(this.running && this.runningQuery) {
@@ -995,7 +780,7 @@
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
-        this.editor.focus()
+        this.editor.focus = true
       },
       selectTitleInput() {
         this.$refs.titleInput.select()
@@ -1007,7 +792,7 @@
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
         height -= this.$refs.actions.clientHeight
-        this.editor.setSize(null, height)
+        this.editor.height = height
       },
       triggerSave() {
         if (this.query?.id) {
@@ -1043,7 +828,6 @@
       },
       onChange(text) {
         this.unsavedText = text
-        this.editor.setValue(text)
       },
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
@@ -1054,7 +838,7 @@
           return;
         }
         // run the currently hilighted text (if any) to a file, else all sql
-        const query_sql = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -1066,7 +850,7 @@
           return;
         }
         // run the currently selected query (if there are multiple) to a file, else all sql
-        const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.editor.getValue()
+        const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -1082,7 +866,7 @@
         }
       },
       async submitTabQuery() {
-        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
           this.submitQuery(text)
@@ -1166,50 +950,6 @@
           this.running = false
         }
       },
-      inQuote() {
-        return false
-      },
-      maybeAutoComplete(editor, e) {
-        // BUGS:
-        // 1. only on periods if not in a quote
-        // 2. post-space trigger after a few SQL keywords
-        //    - from, join
-        const triggerWords = ['from', 'join']
-        const triggers = {
-          '190': 'period'
-        }
-        const space = 32
-        if (editor.state.completionActive) return;
-        if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
-          // eslint-disable-next-line
-          // @ts-ignore
-          CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-        }
-        if (e.keyCode === space) {
-          try {
-            const pos = _.clone(editor.getCursor());
-            if (pos.ch > 0) {
-              pos.ch = pos.ch - 2
-            }
-            const word = editor.findWordAt(pos)
-            const lastWord = editor.getRange(word.anchor, word.head)
-            if (!triggerWords.includes(lastWord.toLowerCase())) return;
-            // eslint-disable-next-line
-            // @ts-ignore
-            CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-
-          } catch (ex) {
-            // do nothing
-          }
-        }
-      },
-      formatSql() {
-        this.editor.setValue(format(this.editor.getValue(), { language: FormatterDialect(this.dialect) }))
-        this.selectEditor()
-      },
-      toggleComment() {
-        this.editor.execCommand('toggleComment')
-      },
       initializeQueries() {
         if (!this.tab.unsavedChanges && this.query?.text) {
           this.unsavedText = null
@@ -1222,49 +962,7 @@
       fakeRemoteChange() {
         this.query.text = "select * from foo"
       },
-      async getColumnsForAutocomplete(tableName) {
-        const tableToFind = this.tables.find(
-          (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
-        )
-        if (!tableToFind) return null
-        // Only refresh columns if we don't have them cached.
-        if (!tableToFind.columns?.length) {
-          await this.$store.dispatch('updateTableColumns', tableToFind)
-        }
-
-        return tableToFind?.columns.map((c) => c.columnName)
-      },
       // Right click menu handlers
-      editorCut() {
-        const selection = this.editor.getSelection();
-        this.editor.replaceSelection('');
-        this.$native.clipboard.writeText(selection);
-      },
-      editorCopy() {
-        const selection = this.editor.getSelection();
-        this.$native.clipboard.writeText(selection);
-      },
-      editorPaste() {
-        const clipboard = this.$native.clipboard.readText();
-        if (this.hasSelectedText) {
-          this.editor.replaceSelection(clipboard, 'around');
-        } else {
-          const cursor = this.editor.getCursor();
-          this.editor.replaceRange(clipboard, cursor);
-        }
-      },
-      editorDelete() {
-        this.editor.replaceSelection('')
-      },
-      editorUndo() {
-        this.editor.execCommand('undo')
-      },
-      editorRedo() {
-        this.editor.execCommand('redo')
-      },
-      editorSelectAll() {
-        this.editor.execCommand('selectAll')
-      },
       writeQuit() {
         this.triggerSave()
         if(this.query.id) {
