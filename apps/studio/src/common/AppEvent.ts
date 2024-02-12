@@ -21,6 +21,8 @@ export enum AppEvent {
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
   promptQueryImport = 'cloud_q_import',
+  promptQueryImportFromComputer = "q_import_from_computer",
+  promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
   toggleHideEntity = 'toggleHideEntity',
   toggleHideSchema = 'toggleHideSchema',
@@ -30,6 +32,8 @@ export enum AppEvent {
   upgradeModal = 'showUpgradeModal',
   toggleExpandTableList = 'toggleExpandTableList',
   togglePinTableList = 'togglePinTableList',
+  dropzoneEnter = 'dropzoneEnter',
+  dropzoneDrop = 'dropzoneDrop',
 }
 
 export interface RootBinding {

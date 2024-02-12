@@ -6,6 +6,13 @@ import { joinFilters } from '@/common/utils'
 
 const log = logRaw.scope('db/util')
 
+export class ClientError extends Error {
+  helpLink = null
+  constructor(message: string, helpLink: string) {
+    super(message)
+    this.helpLink = helpLink
+  }
+}
 
 export function escapeString(value) {
   if (_.isNil(value)) return null
@@ -46,7 +53,7 @@ export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   return where.join(' AND ');
 }
 
-export function buildDatabseFilter(filter, databaseField) {
+export function buildDatabaseFilter(filter, databaseField) {
   if (!filter) {
     return null
   }

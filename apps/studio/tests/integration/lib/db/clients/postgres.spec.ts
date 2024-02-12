@@ -6,7 +6,7 @@ import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
-import { buildSelectTopQueries, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
+import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
 
@@ -330,6 +330,7 @@ function testWith(dockerTag, socket = false) {
     // END regression tests for Bug #1583
 
     it("should build select top query with inline parameters", async () => {
+      const client = new PostgresClient(null, null);
       const fmt = (sql: string) =>
         safeSqlFormat(sql, { language: 'postgresql' })
 
@@ -349,16 +350,13 @@ function testWith(dockerTag, socket = false) {
         schema: "public",
         version: {
           version: "",
-          isPostgres: true,
-          isCockroach: false,
-          isRedshift: false,
           number: 0,
           hasPartitions: false,
         },
       }
 
-      const { query: defaultQuery } = buildSelectTopQueries(options)
-      const { query: inlineParams } = buildSelectTopQueries({
+      const { query: defaultQuery } = client.buildSelectTopQueries(options)
+      const { query: inlineParams } = client.buildSelectTopQueries({
         ...options,
         inlineParams: true
       })
@@ -372,7 +370,7 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for #1734
     it("should be able to insert to a table with a ? in a column name", async () => {
-      let data = {
+      const data = {
         str_col: 'hello?',
         another_str_col: '???'
       };

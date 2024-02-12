@@ -1,6 +1,7 @@
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
+import { runCommonTests } from './all'
+import { IDbConnectionServerConfig } from '@/lib/db/client'
 
 describe("SQL Server Tests", () => {
 
@@ -14,7 +15,7 @@ describe("SQL Server Tests", () => {
     const timeoutDefault = 5000
     jest.setTimeout(dbtimeout)
 
-    container = await new GenericContainer("mcr.microsoft.com/mssql/server", "2017-latest-ubuntu")
+    container = await new GenericContainer("mcr.microsoft.com/mssql/server")
       .withName("mssql")
       .withEnv("MSSQL_PID", "Express")
       .withEnv("SA_PASSWORD", "Example*1")
@@ -40,7 +41,7 @@ describe("SQL Server Tests", () => {
       user: 'sa',
       password: 'Example*1',
       trustServerCertificate: true,
-    }
+    } as IDbConnectionServerConfig
     util = new DBTestUtil(config, "tempdb", { defaultSchema: 'dbo', dialect: 'sqlserver'})
     await util.setupdb()
 

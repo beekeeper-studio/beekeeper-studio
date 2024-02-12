@@ -3,6 +3,7 @@ import { markdownTable } from "markdown-table";
 import { DatabaseClient } from "@/lib/db/client";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
+import { stringifyRangeData } from "@/common/utils";
 
 export const commonColumnMenu = [
   {
@@ -97,13 +98,16 @@ export async function copyRange(options: {
   schema?: string;
 }) {
   let text = "";
+  const rangeData = options.range.getData();
+  const stringifiedRangeData = stringifyRangeData(rangeData);
+
   switch (options.type) {
-    case "plain":  {
-      const cells = options.range.getCells();
-      if (cells.length === 1) {
-        text = cells[0].getValue();
+    case "plain": {
+      if (options.range.getCells().length === 1) {
+        const key = Object.keys(stringifiedRangeData[0])[0];
+        text = stringifiedRangeData[0][key];
       } else {
-        text = Papa.unparse(options.range.getData(), {
+        text = Papa.unparse(stringifiedRangeData, {
           header: false,
           delimiter: "\t",
           quotes: false,
@@ -113,7 +117,7 @@ export async function copyRange(options: {
       break;
     }
     case "tsv":
-      text = Papa.unparse(options.range.getData(), {
+      text = Papa.unparse(stringifiedRangeData, {
         header: false,
         delimiter: "\t",
         quotes: true,
@@ -121,14 +125,13 @@ export async function copyRange(options: {
       });
       break;
     case "json":
-      text = JSON.stringify(options.range.getData());
+      text = JSON.stringify(rangeData);
       break;
     case "markdown": {
-      const data = options.range.getData();
-      const headers = Object.keys(data[0]);
+      const headers = Object.keys(stringifiedRangeData[0]);
       text = markdownTable([
         headers,
-        ...data.map((item) => Object.values(item)),
+        ...stringifiedRangeData.map((item) => Object.values(item)),
       ]);
       break;
     }
@@ -136,7 +139,7 @@ export async function copyRange(options: {
       text = await options.connection.getInsertQuery({
         table: options.table,
         schema: options.schema,
-        data: options.range.getData(),
+        data: rangeData,
       });
       break;
   }

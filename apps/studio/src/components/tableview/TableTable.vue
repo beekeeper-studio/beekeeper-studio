@@ -248,8 +248,10 @@ import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
+import helpers from '@shared/lib/tabulator'
 import { vueEditor } from '@shared/lib/tabulator/helpers';
-import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+import DateTimePickerEditorVue from '@shared/components/tabulator/DateTimePickerEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
@@ -501,13 +503,13 @@ export default Vue.extend({
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
 
-        let headerTooltip = `${column.columnName} ${column.dataType}`
+        let headerTooltip = escapeHtml(`${column.columnName} ${column.dataType}`)
         if (hasKeyDatas) {
           const keyData = keyDatas[0][1];
           if (keyData.length === 1)
-            headerTooltip += ` -> ${keyData[0].toTable}(${keyData[0].toColumn})`
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
           else
-            headerTooltip += ` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
+            headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
         }
@@ -555,6 +557,7 @@ export default Vue.extend({
           },
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+            dataType: column.dataType,
             search: true,
             allowEmpty: true,
             preserveObject: column.dataType?.startsWith('_'),
@@ -563,9 +566,6 @@ export default Vue.extend({
               return true
             },
             typeHint: column.dataType.toLowerCase()
-            // elementAttributes: {
-            //   maxLength: column.columnLength // TODO
-            // }
           },
         }
 
@@ -876,18 +876,25 @@ export default Vue.extend({
       ]
     },
     setAsNullMenuItem(range: Tabulator.RangeComponent) {
+      const areAllCellsPrimarykey = range
+        .getColumns()
+        .every((col) => this.isPrimaryKey(col.getField()));
       return {
         label: createMenuItem("Set as NULL"),
-        action: () => range.getCells().map((cell) => {
+        action: () => range.getCells().forEach((cell) => {
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
-        disabled: !this.editable,
+        disabled: areAllCellsPrimarykey || !this.editable,
       }
     },
     openEditorMenu(cell: Tabulator.CellComponent) {
+      const disabled = (cell: Tabulator.CellComponent) => {
+        if (this.isPrimaryKey(cell.getField())) return true
+        return !this.editable && !this.insertionCellCheck(cell)
+      }
       return {
         label: createMenuItem("Edit in modal"),
-        disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
+        disabled,
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
           this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
@@ -950,6 +957,11 @@ export default Vue.extend({
     },
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
+
+      if (helpers.isDateTime(dt)) {
+        return vueEditor(DateTimePickerEditorVue)
+      }
+
       switch (dt?.toLowerCase() ?? '') {
         case 'text':
         case 'json':

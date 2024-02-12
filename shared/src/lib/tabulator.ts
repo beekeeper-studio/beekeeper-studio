@@ -50,6 +50,9 @@ export default {
     const result = `<pre>${cellValue}</pre>`
     return result;
   },
+  isDateTime(dataType: string|null) {
+    return dataType?.search(/(date|time)/i) > -1 && dataType?.toLowerCase() !== 'daterange'
+  },
   yesNoFormatter(cell: any, params?: YesNoParams): string {
 
     if (cell.getValue() === true) {
