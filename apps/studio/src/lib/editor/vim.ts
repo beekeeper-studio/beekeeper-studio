@@ -15,7 +15,7 @@ export function applyConfig(codeMirrorVimInstance: any, config: Config) {
   const { exCommands } = config;
   if (exCommands) {
     exCommands.forEach(({ name, prefix, handler }) => {
-      codeMirrorVimInstance.defineEx(prefix, name, handler);
+      codeMirrorVimInstance.defineEx(name, prefix, handler);
     });
   }
 }
