@@ -4,11 +4,18 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, watch, writeFileSync } from "fs";
-import { checkConfigWarnings, convertKeybinding, IniArray, isIniArray, parseIni, UserConfigWarning } from "./config-helper";
+import {
+  checkConfigWarnings,
+  convertKeybinding,
+  IniArray,
+  isIniArray,
+  parseIni,
+  UserConfigWarning,
+} from "./config-helper";
 
 if (platformInfo.isDevelopment) {
   // run types builder
-  require("../../../config-types-builder.mjs");
+  require("../../../config-types-builder.js");
 }
 
 const DEFAULT_CONFIG_FILENAME = "default.config.ini";
@@ -59,7 +66,7 @@ export const BkConfigHandler: IBkConfigHandler = {
     if (result == null) {
       log.warn(`key not found: ${path}`);
     }
-    return result
+    return result;
   },
   set(path, value) {
     if (!this.has(path)) {
@@ -103,12 +110,6 @@ export const BkConfigHandler: IBkConfigHandler = {
       IBkConfigHandler["get"]
     >;
 
-    console.log('momo', {
-      target,
-      isIniArray: isIniArray(keybindings),
-      keybindings,
-      path,
-    })
     if (isIniArray(keybindings)) {
       return Object.keys(keybindings).map((idx) =>
         convertKeybinding(target, keybindings[idx], platformInfo.platform)
@@ -156,20 +157,18 @@ function writeUserConfigFile() {
   }
 }
 
-function resolveConfigType(type: ConfigSource) {
-  let configPath: string;
-
-  if (platformInfo.isDevelopment) {
-    configPath = path.resolve(__dirname, "../");
-    if (configPath.includes("node_modules")) {
-      configPath = path.join(
-        configPath.split("node_modules")[0],
-        "apps/studio"
-      );
-    }
-  } else {
-    configPath = platformInfo.userDirectory;
+function resolveRootPath() {
+  const dirname = path.resolve(__dirname);
+  if (dirname.includes("node_modules")) {
+    return dirname.split("node_modules")[0];
   }
+  return path.resolve(__dirname, "../../..");
+}
+
+function resolveConfigType(type: ConfigSource) {
+  const configPath = platformInfo.isDevelopment
+    ? resolveRootPath()
+    : platformInfo.userDirectory;
 
   if (type === "default") {
     return path.join(configPath, DEFAULT_CONFIG_FILENAME);
