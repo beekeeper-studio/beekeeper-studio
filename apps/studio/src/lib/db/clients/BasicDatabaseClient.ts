@@ -47,7 +47,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.contextProvider = contextProvider
     this.server = server;
     this.database = database;
-    this.connectionType = this.server.config.client;
+    this.connectionType = this.server?.config.client;
   }
 
   abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
