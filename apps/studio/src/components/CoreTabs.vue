@@ -222,6 +222,7 @@ import ShortcutHints from './editor/ShortcutHints.vue'
 import { FormatterDialect } from '@shared/lib/dialects/models';
 import Vue from 'vue';
 import { OpenTab } from '@/common/appdb/models/OpenTab';
+import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
 import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
@@ -518,8 +519,8 @@ export default Vue.extend({
         this.setActiveTab(this.tabItems[this.activeIdx - 1])
       }
     },
-    closeCurrentTab() {
-      if (this.activeTab) this.close(this.activeTab)
+    closeCurrentTab(_id?:number, options?:CloseTabOptions) {
+      if (this.activeTab) this.close(this.activeTab, options)
     },
     handleCreateTab() {
       this.createQuery()
@@ -819,8 +820,8 @@ export default Vue.extend({
         }
       }
     },
-    async close(tab: OpenTab) {
-      if (tab.unsavedChanges) {
+    async close(tab: OpenTab, options?: CloseTabOptions) {
+      if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
         const confirmed = await this.$refs.closeConfirmation.confirm();
         this.closingTab = null
