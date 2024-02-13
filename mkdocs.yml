@@ -94,6 +94,7 @@ nav:
     - user_guide/importing-data-csv-json-etc.md
     - user_guide/query-magics.md
   - Support:
+    - support/subscription-management.md
     - support/contact-support.md
     - support/open-source.md
     - support/troubleshooting.md
