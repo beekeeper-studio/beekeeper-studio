@@ -62,9 +62,12 @@
         </div>
 
         <div class="editor-container">
-          <textarea
-            name="editor"
-            ref="editorRef"
+          <text-editor
+            v-model="content"
+            :lang="languageName"
+            :line-wrapping="wrapText"
+            :height="editorHeight"
+            @interface="editorInterface = $event"
           />
         </div>
       </div>
@@ -123,7 +126,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import CodeMirror from 'codemirror'
 import 'codemirror/addon/comment/comment'
 import 'codemirror/keymap/vim.js'
 import 'codemirror/addon/dialog/dialog'
@@ -134,11 +136,11 @@ import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
 import { Languages, LanguageData, TextLanguage, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
-import { setKeybindingsFromVimrc } from '@/lib/readVimrc'
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
 import rawlog from 'electron-log'
+import TextEditor from '@/components/common/texteditor/TextEditor.vue'
 
 const log = rawlog.scope('EditorModal')
 
@@ -146,16 +148,16 @@ export default Vue.extend({
   name: "CellEditorModal",
   data() {
     return {
-      editor: null,
+      editorInterface: {},
+      editorHeight: 100,
       error: "",
-      language: TextLanguage,
       languageName: "text",
       content: "",
       eventParams: null,
       wrapText: TextLanguage.wrapTextByDefault,
     }
   },
-
+  components: { TextEditor },
   computed: {
     ...mapGetters({ 'settings': 'settings/settings' }),
     modalName() {
@@ -169,16 +171,17 @@ export default Vue.extend({
     languages() {
       return Languages
     },
+    language() {
+      return getLanguageByName(this.languageName) || TextLanguage
+    },
   },
 
   watch: {
     languageName() {
-      const language = getLanguageByName(this.languageName)
-      if (language && this.editor) {
-        this.editor.setOption("mode", language.editorMode)
-        this.language = language
-        this.debouncedCheckForErrors();
-      }
+      this.debouncedCheckForErrors();
+    },
+    content() {
+      this.debouncedCheckForErrors();
     },
   },
 
@@ -191,7 +194,6 @@ export default Vue.extend({
         content = JSON.stringify(content)
       }
       language = language ? language : getLanguageByContent(content)
-      this.language = language
       this.languageName = language.name
       try {
         this.content = language.beautify(content)
@@ -219,62 +221,11 @@ export default Vue.extend({
 
     async onOpen() {
       await this.$nextTick();
-
-      const language = this.language
-
-      this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
-        lineNumbers: true,
-        lineWrapping: this.wrapText,
-        mode: language !== null ? language.editorMode : undefined,
-        indentWithTabs: false,
-        tabSize: 2,
-        theme: 'monokai',
-        extraKeys: {
-          "Ctrl-Space": "autocomplete",
-          "Shift-Tab": "indentLess",
-          [this.cmCtrlOrCmd('F')]: 'findPersistent',
-          [this.cmCtrlOrCmd('R')]: 'replace',
-          [this.cmCtrlOrCmd('Shift-R')]: 'replaceAll'
-        },
-        options: {
-          closeOnBlur: false
-        },
-        keyMap: this.userKeymap
-      } as any)
-
-      this.editor.setValue(this.content)
-      this.editor.on("keydown", (_cm, e) => {
-        if (this.$store.state.menuActive) {
-          e.preventDefault()
-        }
-      })
-
-      if (this.userKeymap === "vim") {
-        const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-        if (!codeMirrorVimInstance) {
-          log.error("Could not find code mirror vim instance");
-        } else {
-          setKeybindingsFromVimrc(codeMirrorVimInstance);
-        }
-      }
-
-      this.editor.on("change", (cm) => {
-        this.content = cm.getValue()
-        this.debouncedCheckForErrors();
-      })
-
-      this.editor.focus()
-
-      setTimeout(() => {
-        // this fixes the editor not showing because it doesn't think it's dom element is in view.
-        // its a hit and miss error
-        this.editor.refresh()
-      }, 1)
-
+      this.editorInterface.focus()
       this.$nextTick(this.resizeHeightToFitContent)
     },
     resizeHeightToFitContent() {
-      const wrapperEl = this.editor.getWrapperElement()
+      const wrapperEl = this.editorInterface.getWrapperElement()
       const wrapperStyle = window.getComputedStyle(wrapperEl)
 
       const minHeight = parseInt(wrapperStyle.minHeight)
@@ -282,26 +233,21 @@ export default Vue.extend({
 
       const sizerEl = wrapperEl.querySelector(".CodeMirror-sizer")
 
-      const targetHeight = _.clamp(sizerEl.offsetHeight, minHeight, maxHeight)
-
-      this.editor.setSize(null, targetHeight)
+      this.editorHeight = _.clamp(sizerEl.offsetHeight, minHeight, maxHeight)
     },
     debouncedCheckForErrors: _.debounce(function() {
       const isValid = this.language.isValid(this.content)
-      this.error = isValid ? "" : `Invalid ${this.language?.label} content`
+      this.error = isValid ? "" : `Invalid ${this.language.label} content`
     }, 50),
     toggleWrapText() {
       this.wrapText = !this.wrapText
-      this.editor?.setOption("lineWrapping", this.wrapText)
     },
     format() {
       this.content = this.language.beautify(this.content)
-      this.editor.setValue(this.content)
-      this.$nextTick(this.resizeHeightToFitContent())
+      this.$nextTick(this.resizeHeightToFitContent)
     },
     minify() {
       this.content = this.language.minify(this.content)
-      this.editor.setValue(this.content)
     },
     handleKeyUp(e: KeyboardEvent) {
       if (e.key === "Escape") {

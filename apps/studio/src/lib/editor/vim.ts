@@ -7,6 +7,19 @@ export type IMapping = {
   mode: string;
 };
 
+interface Config {
+  exCommands?: { name: string, prefix: string, handler: () => void }[];
+}
+
+export function applyConfig(codeMirrorVimInstance: any, config: Config) {
+  const { exCommands } = config;
+  if (exCommands) {
+    exCommands.forEach(({ name, prefix, handler }) => {
+      codeMirrorVimInstance.defineEx(name, prefix, handler);
+    });
+  }
+}
+
 export function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
   const potentialCommands = readVimrc();
 
