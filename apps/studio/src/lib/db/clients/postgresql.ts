@@ -76,14 +76,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   runWithConnection: HasConnection;
   _defaultSchema: string;
   dataTypes: any;
-  server: IDbConnectionServer;
-  database: IDbConnectionDatabase;
   
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, postgresContext);
-
-    this.server = server;
-    this.database = database;
+    super(knex, postgresContext, server, database);
   }
 
   versionString(): string {
@@ -110,6 +105,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (!this.server && !this.database) {
       return;
     }
+    super.connect();
+ 
     const dbConfig = await this.configDatabase(this.server, this.database);
 
     this.conn = {
@@ -120,10 +117,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
+    this.database.connected = true;
   }
 
   async disconnect(): Promise<void> {
     this.conn.pool.end();
+
+    super.disconnect();
   }
 
   async listTables(_db: string, filter?: FilterOptions): Promise<TableOrView[]> {

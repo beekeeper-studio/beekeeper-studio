@@ -5,10 +5,10 @@ import { promises } from 'fs'
 import { dialectFor } from '@shared/lib/dialects/models'
 import rawlog from 'electron-log'
 import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
-import { DBConnection } from '../db/client'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 import _ from 'lodash'
 import { Mutators } from '../data/tools'
+import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient'
 
 const log = rawlog.scope('export/export')
 
@@ -36,7 +36,7 @@ export abstract class Export {
 
   constructor(
     public filePath: string,
-    public connection: DBConnection,
+    public connection: BasicDatabaseClient<any>,
     public table: TableOrView,
     public query: string,
     public queryName: string,
@@ -130,6 +130,8 @@ export abstract class Export {
     let results;
     if (this.table) {
       results = await this.connection.selectTopStream(
+        // TODO (@day): this may be an issue
+        null,
         this.table.name,
         [],
         this.filters,
@@ -150,6 +152,8 @@ export abstract class Export {
     else {
       // string sql query, not table
       results = await this.connection.queryStream(
+        // TODO (@day): this may be an issue
+        null,
         this.query,
         this.options.chunkSize,
       )

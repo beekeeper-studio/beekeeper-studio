@@ -1,6 +1,6 @@
 import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
-import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { IDbConnectionServer } from "../types";
 import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
@@ -155,10 +155,4 @@ export class CockroachClient extends PostgresClient {
     result[1009] = 'array'
     return result
   }
-}
-
-export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new CockroachClient(server, database);
-  await client.connect();
-  return client;
 }

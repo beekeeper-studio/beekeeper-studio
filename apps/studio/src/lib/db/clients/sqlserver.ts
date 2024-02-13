@@ -6,7 +6,7 @@ import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
 
-import { DatabaseClient, IDbConnectionDatabase, IDbConnectionServer } from "../client"
+import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../types"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -64,8 +64,6 @@ const SQLServerContext = {
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
-  server: IDbConnectionServer
-  database: IDbConnectionDatabase
   defaultSchema: () => string
   version: SQLServerVersion
   dbConfig: any
@@ -74,10 +72,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   connection: any
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super( knexlib({ client: 'mssql'}), SQLServerContext )
-    this.server = server
-    this.database = database
-    this.defaultSchema = ():string => 'dbo'
+    super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
+    this.defaultSchema = (): string => 'dbo'
     this.logger = () => log
   }
 
@@ -828,6 +824,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   /* helper functions and settings below! */
 
   async connect(): Promise<void> {
+    super.connect();
+
     this.dbConfig = this.configDatabase(this.server, this.database)
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
@@ -835,12 +833,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async disconnect(): Promise<void> {
-    const connection = await new ConnectionPool(this.connection);
+    const connection = new ConnectionPool(this.connection);
     connection.close();
   }
 
   async listCharsets() {
-    return await []
+    return []
   }
 
   getDefaultCharset() {
@@ -848,7 +846,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async listCollations() {
-    return await []
+    return []
   }
 
   supportedFeatures() {
@@ -949,8 +947,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private configDatabase(server, database): Promise<DatabaseClient> {
-    const config:any = {
+  private configDatabase(server, database): Promise<IDbConnectionServerConfig> {
+    const config: any = {
       user: server.config.user,
       password: server.config.password,
       server: server.config.host,
@@ -1165,11 +1163,4 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
     return data.recordset[0].MS_Description
   }
-}
-
-export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new SQLServerClient(server, database);
-  await client.connect();
-
-  return client;
 }

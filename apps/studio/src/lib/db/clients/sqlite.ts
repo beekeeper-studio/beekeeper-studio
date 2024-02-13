@@ -58,12 +58,12 @@ const SD = SqliteData;
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   version: SqliteResult;
-  database: string;
+  databasePath: string;
 
-  constructor(_server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, sqliteContext);
+  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+    super(knex, sqliteContext, server, database);
 
-    this.database = database?.database;
+    this.databasePath = database?.database;
   }
 
   versionString(): string {
@@ -85,6 +85,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async connect(): Promise<void> {
+    super.connect();
+
     // set sqlite version
     const version = await this.driverExecuteSingle('SELECT sqlite_version()');
 
@@ -229,7 +231,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       execute: (async (): Promise<QueryResult> => {
         try {
-          queryConnection = new Database(this.database);
+          queryConnection = new Database(this.databasePath);
 
           const result = await this.executeQuery(queryText, { connection: queryConnection })
           return result;
@@ -284,7 +286,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
 
-    const connection = new Database(this.database);
+    const connection = new Database(this.databasePath);
     const cli = { connection };
     await this.driverExecuteSingle('BEGIN', cli);
 
@@ -428,7 +430,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: rowCount,
       columns,
-      cursor: new SqliteCursor(this.database, query, params, chunkSize)
+      cursor: new SqliteCursor(this.databasePath, query, params, chunkSize)
     }
   }
 
@@ -436,7 +438,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: undefined,
       columns: undefined, 
-      cursor: new SqliteCursor(this.database, query, [], chunkSize)
+      cursor: new SqliteCursor(this.databasePath, query, [], chunkSize)
     };
   }
 
@@ -488,7 +490,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   createDatabase(databaseName: string, _charset: string, _collation: string): void {
     // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
     // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs.
-    const fileLocation = this.database.split('/');
+    const fileLocation = this.databasePath.split('/');
     fileLocation.pop();
 
     const dbPath = path.join(...fileLocation, `${databaseName}.db`);
@@ -507,7 +509,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     const results = [];
 
-    const connection = options.connection ? options.connection : new Database(this.database);
+    const connection = options.connection ? options.connection : new Database(this.databasePath);
     // Fix (part 1 of 2) Issue #1399 - int64s not displaying properly
     // Binds ALL better-sqlite3 integer columns as BigInts by default
     // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
@@ -623,10 +625,4 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     return true
   }
-}
-
-export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new SqliteClient(server, database);
-  await client.connect();
-  return client;
 }

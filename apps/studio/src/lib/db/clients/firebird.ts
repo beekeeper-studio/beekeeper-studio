@@ -7,7 +7,7 @@ import {
   DatabaseElement,
   IDbConnectionDatabase,
   IDbConnectionServer,
-} from "../client";
+} from "../types";
 import {
   CancelableQuery,
   NgQueryResult,
@@ -212,10 +212,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   firebirdOptions: Firebird.Options;
 
   constructor(
-    protected server: IDbConnectionServer,
-    protected database: IDbConnectionDatabase
+    server: IDbConnectionServer,
+    database: IDbConnectionDatabase
   ) {
-    super(null, context);
+    super(null, context, server, database);
   }
 
   versionString(): string {
@@ -223,6 +223,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async connect(): Promise<void> {
+    super.connect();
+
     const config = {
       host: this.server.config.host,
       port: this.server.config.port,
@@ -1203,13 +1205,4 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   createDatabaseSQL(): string {
     throw new Error("Method not implemented.");
   }
-}
-
-export default async function (
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-) {
-  const client = new FirebirdClient(server, database);
-  await client.connect();
-  return client;
 }

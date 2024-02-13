@@ -1,7 +1,7 @@
 import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
-import { IDbConnectionDatabase, IDbConnectionServer } from "../client";
+import { IDbConnectionServer } from "../types";
 import { FilterOptions, PrimaryKeyColumn, TableOrView, TableProperties } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
@@ -140,11 +140,4 @@ export class RedshiftClient extends PostgresClient {
     result[1009] = 'array';
     return result;
   }
-}
-
-
-export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new RedshiftClient(server, database);
-  await client.connect();
-  return client;
 }

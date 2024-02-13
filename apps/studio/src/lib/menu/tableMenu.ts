@@ -1,9 +1,9 @@
 import { Tabulator } from "tabulator-tables";
 import { markdownTable } from "markdown-table";
-import { DatabaseClient } from "@/lib/db/client";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData } from "@/common/utils";
+import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
 
 export const commonColumnMenu = [
   {
@@ -93,7 +93,7 @@ export function createMenuItem(label: string, shortcut = "") {
 export async function copyRange(options: {
   range: Tabulator.RangeComponent;
   type: "plain" | "tsv" | "json" | "markdown" | "sql";
-  connection?: DatabaseClient;
+  connection?: BasicDatabaseClient<any>;
   table?: string;
   schema?: string;
 }) {
@@ -191,7 +191,7 @@ export function setCellValue(cell: Tabulator.CellComponent, value: string) {
 
 export function copyActionsMenu(options: {
   range: Tabulator.RangeComponent;
-  connection: DatabaseClient;
+  connection: BasicDatabaseClient<any>;
   table: string;
   schema: string;
 }) {

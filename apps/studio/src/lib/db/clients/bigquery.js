@@ -91,8 +91,8 @@ function bigQueryEndpoint(config) {
 
 function configDatabase(server, database) {
 
-  const host = server.config.host
-  const port = server.config.port
+  // const host = server.config.host
+  // const port = server.config.port
 
 
   // For BigQuery Only -- IAM authentication and credential exchange

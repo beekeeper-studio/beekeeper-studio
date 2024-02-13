@@ -241,8 +241,6 @@ function filterDatabase(
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
-  server: IDbConnectionServer;
-  database: IDbConnectionDatabase;
   versionInfo: {
     versionString: string;
     version: number;
@@ -252,13 +250,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   };
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, context);
-
-    this.server = server;
-    this.database = database;
+    super(knex, context, server, database);
   }
 
   async connect() {
+    super.connect();
+
     const dbConfig = configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
@@ -1294,15 +1291,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   resolveDefault(defaultValue: string) {
     return defaultValue;
   }
-}
-
-export default async function (
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-) {
-  const client = new MysqlClient(server, database);
-  await client.connect();
-  return client;
 }
 
 export const testOnly = {

@@ -1,12 +1,14 @@
 // Copyright (c) 2015 The SQLECTRON Team
-import { createConnection, DBConnection, IDbConnectionServer, IDbConnectionServerConfig } from './client';
+import { createConnection } from './client';
+import { IDbConnectionServer, IDbConnectionServerConfig } from './types';
 import { findClient } from './clients';
+import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 
 export interface IDbConnectionPublicServer {
-  db: (dbName: string) => DBConnection
+  db: (dbName: string) => BasicDatabaseClient<any>
   disconnect: () => void
   end: () => void
-  createConnection: (dbName?: string, cryptoSecret?: string) => DBConnection
+  createConnection: (dbName?: string, cryptoSecret?: string) => BasicDatabaseClient<any>
   versionString: () => string
 }
 

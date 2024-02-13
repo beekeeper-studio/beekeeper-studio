@@ -7,7 +7,7 @@ import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
 import appConfig from '../../config'
 
 import { resolveHomePathToAbsolute } from '../../common/utils'
-import { IDbConnectionServerConfig, IDbSshTunnel } from './client';
+import { IDbConnectionServerConfig, IDbSshTunnel } from './types';
 
 const logger = createLogger('db:tunnel');
 export default function connectTunnel(config: IDbConnectionServerConfig): Promise<IDbSshTunnel> {
