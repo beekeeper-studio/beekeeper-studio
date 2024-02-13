@@ -3,10 +3,9 @@ import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterati
 import { buildInsertQuery } from './utils';
 import { Knex } from 'knex';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
+import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
 import createLogger from '@/lib/logger';
 import connectTunnel from '../tunnel';
-import { ConnectionType } from '@/common/interfaces/IConnection';
 
 const logger = createLogger('db');
 

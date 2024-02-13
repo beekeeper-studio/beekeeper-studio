@@ -98,8 +98,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     // Lists all views in the dataset
-    // TODO (@day): idk how we should use filter here
-    return await this.listTablesOrViews(undefined, 'VIEW');
+    return await this.listTablesOrViews(this.database.database, 'VIEW');
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {

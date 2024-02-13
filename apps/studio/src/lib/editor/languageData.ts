@@ -1,5 +1,5 @@
-import type { ConnectionType } from "@/common/interfaces/IConnection";
 import CodeMirror from 'codemirror'
+import { ConnectionType } from '../db/types';
 
 export interface LanguageData {
   isValid: (raw: string) => boolean;

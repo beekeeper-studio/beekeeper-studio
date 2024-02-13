@@ -52,14 +52,11 @@
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
-  import { DBConnection } from '@/lib/db/client'
   import Vue from 'vue'
 
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
-    props: {
-      connection: DBConnection
-    },
+    props: ['connection'],
     data() {
       /* eslint-disable */
       return {
