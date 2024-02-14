@@ -1,6 +1,6 @@
 import {Knex} from 'knex'
 import knex from 'knex'
-import { DBConnection, IDbConnectionServerConfig } from '../../src/lib/db/client'
+import { IDbConnectionServerConfig } from '../../src/lib/db/types'
 import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
@@ -13,6 +13,7 @@ export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -54,7 +55,7 @@ export interface Options {
 export class DBTestUtil {
   public knex: Knex
   public server: IDbConnectionPublicServer
-  public connection: DBConnection
+  public connection: BasicDatabaseClient<any>
   public extraTables = 0
   private options: Options
   private dbType: string

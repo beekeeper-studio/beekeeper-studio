@@ -1,7 +1,7 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/client'
+import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
