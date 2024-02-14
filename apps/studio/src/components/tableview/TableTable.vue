@@ -554,6 +554,7 @@ export default Vue.extend({
           formatterParams: {
             fk: hasKeyDatas && keyDatas[0][1],
             fkOnClick: hasKeyDatas && ((e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+            isPK: isPK
           },
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
