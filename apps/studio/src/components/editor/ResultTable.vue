@@ -148,7 +148,8 @@
           columns: this.tableColumns, //define table columns
           height: this.actualTableHeight,
           nestedFieldSeparator: false,
-          rowHeader: {
+          spreadsheetRowHeader: {
+            field: '--row-header--bks',
             contextMenu: (_, cell) => {
               return copyActionsMenu({
                 range: cell.getRange(),
