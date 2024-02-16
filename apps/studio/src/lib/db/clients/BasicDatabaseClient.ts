@@ -117,7 +117,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract getTableReferences(table: string, schema?: string): Promise<string[]>;
   abstract getTableKeys(db: string, table: string, schema?: string): Promise<TableKey[]>;
 
-  listTablePartitions(_table: string, _schema: string): Promise<TablePartition[]> {
+  listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])
   }
 

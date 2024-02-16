@@ -5,7 +5,7 @@ import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
-import { AlterTableSpec, Dialect, DialectData, FormatterDialect } from '../../../../shared/src/lib/dialects/models'
+import { AlterTableSpec, Dialect, DialectData, FormatterDialect, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex } from '../../src/lib/db/models'
@@ -278,12 +278,12 @@ export class DBTestUtil {
   async listTableTests() {
     const tables = await this.connection.listTables(this.database, { schema: this.defaultSchema })
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
-    const columns = await this.connection.listTableColumns("people", this.defaultSchema)
+    const columns = await this.connection.listTableColumns(this.database, "people", this.defaultSchema)
     expect(columns.length).toBe(7)
   }
 
   async tableColumnsTests() {
-    const columns = await this.connection.listTableColumns(null, this.defaultSchema)
+    const columns = await this.connection.listTableColumns(this.database, null, this.defaultSchema)
     const groupColumns = columns.filter((row) => row.tableName.toLowerCase() === 'group_table')
     expect(groupColumns.length).toBe(2)
   }
@@ -340,21 +340,21 @@ export class DBTestUtil {
       table.specificType("age", "varchar(255)").defaultTo('8').nullable()
     })
 
+    const alteration: SchemaItemChange = {
+      columnName: 'last_name',
+      changeType: 'columnName',
+      newValue: 'family_name'
+    }
 
     const simpleChange = {
       table: 'alter_test',
       alterations: [
-        {
-          'columnName': 'last_name',
-          changeType: 'columnName',
-          newValue: 'family_name'
-        }
+        alteration
       ]
     }
 
-    // HACK (@day): typescript was freaking out about the changeType in simpleChange
-    await this.connection.alterTable(simpleChange as any)
-    const simpleResult = await this.connection.listTableColumns('alter_test')
+    await this.connection.alterTable(simpleChange)
+    const simpleResult = await this.connection.listTableColumns(this.database, 'alter_test')
 
     expect(simpleResult.find((c) => c.columnName?.toLowerCase() === 'family_name')).toBeTruthy()
 
@@ -416,7 +416,7 @@ export class DBTestUtil {
     }
 
     await this.connection.alterTable(input)
-    const schema = await this.connection.listTableColumns('alter_test')
+    const schema = await this.connection.listTableColumns(this.database, 'alter_test')
     interface MiniColumn {
       columnName: string
       dataType: string,
