@@ -135,7 +135,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract listCharsets(): Promise<string[]>
   abstract getDefaultCharset(): Promise<string>
   abstract listCollations(charset: string): Promise<string[]>
-  abstract createDatabase(databaseName: string, charset: string, collation: string): void
+  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
   abstract createDatabaseSQL(): string
   abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
   abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
@@ -221,7 +221,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
-  abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string;
+  abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
