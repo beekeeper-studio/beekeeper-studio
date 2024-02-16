@@ -221,7 +221,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
-  abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
+  abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string;
   // ****************************************************************************
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {

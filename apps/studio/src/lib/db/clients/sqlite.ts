@@ -487,7 +487,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return [];
   }
 
-  createDatabase(databaseName: string, _charset: string, _collation: string): void {
+  async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<void> {
     // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
     // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs.
     const fileLocation = this.databasePath.split('/');
