@@ -135,7 +135,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async listTableColumns(db: string, table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     if (table) {
-      const sql = `PRAGMA table_info(${SD.escapeString(table, true)})`;
+      const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
 
       const { data } = await this.driverExecuteSingle(sql);
       return this.dataToColumns(data, table);
@@ -148,7 +148,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     const everything = tables.map((table) => {
       return {
         tableName: table.name,
-        sql: `PRAGMA table_info(${SD.escapeString(table.name, true)})`,
+        sql: `PRAGMA table_xinfo(${SD.escapeString(table.name, true)})`,
         results: null
       }
     })
@@ -387,7 +387,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async getPrimaryKeys(_db: string, table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
-    const sql = `pragma table_info('${SD.escapeString(table)}')`
+    const sql = `pragma table_xinfo('${SD.escapeString(table)}')`
     const { data } = await this.driverExecuteSingle(sql);
     const found = data.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
