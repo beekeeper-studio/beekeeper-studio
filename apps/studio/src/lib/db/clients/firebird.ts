@@ -366,6 +366,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           defaultValue,
           nullable,
           primaryKey,
+          hasDefault: Boolean(defaultValue),
         };
       })
     );

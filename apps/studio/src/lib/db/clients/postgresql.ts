@@ -333,6 +333,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default,
       ordinalPosition: Number(row.ordinal_position),
+      hasDefault: Boolean(row.column_default)
     }));
   }
 

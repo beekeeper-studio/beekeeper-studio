@@ -149,6 +149,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       columnName: row.column_name,
       dataType: row.data_type,
       ordinalPosition: Number(row.ordinal_position),
+      hasDefault: Boolean(row.column_default),
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default
     }))

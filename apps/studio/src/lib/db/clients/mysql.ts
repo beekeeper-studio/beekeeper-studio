@@ -391,6 +391,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       nullable: row.is_nullable === "YES",
       defaultValue: this.resolveDefault(row.column_default),
       extra: _.isEmpty(row.extra) ? null : row.extra,
+      hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
     }));
   }
@@ -1289,6 +1290,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const sql = "SELECT database() AS 'schema'";
     const { data } = await this.driverExecuteSingle(sql, { connection });
     return data[0].schema;
+  }
+
+  hasDefaultValue(defaultValue: string|null, extraValue: string|null): boolean {
+    console.log(defaultValue, extraValue)
+    return Boolean(defaultValue || extraValue && ['auto_increment', 'default_generated'].includes(extraValue.toLowerCase()))
   }
 
   resolveDefault(defaultValue: string) {
