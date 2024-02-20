@@ -20,7 +20,7 @@ Here's a quick walkthrough on how to use Query Magics.
 - Make urls clickable
 - Make email addresses clickable
 - Display a url as an image
-- Display an number as a star rating
+- Display a number as a star rating
 - Display a number as a progress bar
 - Display a number as localized money
 
@@ -28,7 +28,7 @@ Here's a quick walkthrough on how to use Query Magics.
 
 You can format the results of a SQL query by simply adding some text to the end of your column names.
 
-For example, to format the the `url` field as a link you'd do this:
+For example, to format the `url` field as a link you'd do this:
 
 ```sql
 select url as url__format__link from some_table
@@ -84,7 +84,7 @@ Make an `enums.json` file in that directory in the format below:
   ]
 ```
 
-When selecing columns in your query, use the following QueryMagic format
+When selecting columns in your query, use the following QueryMagic format
 
 ```
 select a as  columnname__format__enum__enumname
