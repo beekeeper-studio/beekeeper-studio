@@ -1293,7 +1293,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   hasDefaultValue(defaultValue: string|null, extraValue: string|null): boolean {
-    console.log(defaultValue, extraValue)
     return Boolean(defaultValue || extraValue && ['auto_increment', 'default_generated'].includes(extraValue.toLowerCase()))
   }
 
