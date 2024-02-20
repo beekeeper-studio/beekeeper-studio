@@ -402,8 +402,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async selectTopStream(db, table, orderBy, filters, chunkSize, schema, selects = ['*']) {
     const query = this.genSelectNew(table, null, null, orderBy, filters, schema, selects)
     const columns = await this.listTableColumns(db, table, schema)
-    const rowCount = await this.getTableLength(table, filters)
-  
+    const rowCount = await this.getTableLength(table, schema)
+
     return {
       totalRows: Number(rowCount),
       columns,

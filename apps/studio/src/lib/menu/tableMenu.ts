@@ -5,84 +5,94 @@ import Papa from "papaparse";
 import { stringifyRangeData } from "@/common/utils";
 import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
 
-export const commonColumnMenu = [
-  {
-    label: createMenuItem("Sort ascending"),
-    action: (_: Event, column: Tabulator.ColumnComponent) =>
-      column.getTable().setSort(column.getField(), "asc"),
-  },
-  {
-    label: createMenuItem("Sort descending"),
-    action: (_: Event, column: Tabulator.ColumnComponent) =>
-      column.getTable().setSort(column.getField(), "desc"),
-  },
-  {
-    label: createMenuItem("Hide column"),
-    action: (_: Event, column: Tabulator.ColumnComponent) => column.hide(),
-  },
-  { separator: true },
-  {
-    label: createMenuItem("Resize all columns to match"),
-    action: (_: Event, column: Tabulator.ColumnComponent) => {
-      try {
-        column.getTable().blockRedraw();
-        const columns = column.getTable().getColumns();
-        columns.forEach((col) => {
-          if (
-            col.getField() !==
-            column.getTable().modules.spreadsheet.rowHeaderField
-          )
-            col.setWidth(column.getWidth());
-        });
-      } catch (error) {
-        console.error(error);
-      } finally {
-        column.getTable().restoreRedraw();
-      }
-    },
-  },
-  {
-    label: createMenuItem("Resize all columns to fit content"),
-    action: (_: Event, column: Tabulator.ColumnComponent) => {
-      try {
-        column.getTable().blockRedraw();
-        const columns = column.getTable().getColumns();
-        columns.forEach((col) => {
-          if (
-            col.getField() !==
-            column.getTable().modules.spreadsheet.rowHeaderField
-          )
-            col.setWidth(true);
-        });
-      } catch (error) {
-        console.error(error);
-      } finally {
-        column.getTable().restoreRedraw();
-      }
-    },
-  },
-  {
-    label: createMenuItem("Resize all columns to fixed width"),
-    action: (_: Event, column: Tabulator.ColumnComponent) => {
-      try {
-        column.getTable().blockRedraw();
-        const columns = column.getTable().getColumns();
-        columns.forEach((col) => {
-          if (
-            col.getField() !==
-            column.getTable().modules.spreadsheet.rowHeaderField
-          )
-            col.setWidth(200);
-        });
-      } catch (error) {
-        console.error(error);
-      } finally {
-        column.getTable().restoreRedraw();
-      }
-    },
-  },
-];
+type ColumnMenuItem = Tabulator.MenuObject<Tabulator.ColumnComponent>;
 
+export const sortAscending: ColumnMenuItem = {
+  label: createMenuItem("Sort ascending"),
+  action: (_, column) => column.getTable().setSort(column.getField(), "asc"),
+};
+
+export const sortDescending: ColumnMenuItem = {
+  label: createMenuItem("Sort descending"),
+  action: (_, column) => column.getTable().setSort(column.getField(), "desc"),
+};
+
+export const hideColumn: ColumnMenuItem = {
+  label: createMenuItem("Hide column"),
+  action: (_, column) => column.hide(),
+};
+
+export const resizeAllColumnsToMatch: ColumnMenuItem = {
+  label: createMenuItem("Resize all columns to match"),
+  action: (_, column) => {
+    try {
+      column.getTable().blockRedraw();
+      const columns = column.getTable().getColumns();
+      columns.forEach((col) => {
+        if (
+          col.getField() !==
+          column.getTable().modules.spreadsheet.rowHeaderField
+        )
+          col.setWidth(column.getWidth());
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      column.getTable().restoreRedraw();
+    }
+  },
+};
+
+export const resizeAllColumnsToFitContent: ColumnMenuItem = {
+  label: createMenuItem("Resize all columns to fit content"),
+  action: (_, column) => {
+    try {
+      column.getTable().blockRedraw();
+      const columns = column.getTable().getColumns();
+      columns.forEach((col) => {
+        if (
+          col.getField() !==
+          column.getTable().modules.spreadsheet.rowHeaderField
+        )
+          col.setWidth(true);
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      column.getTable().restoreRedraw();
+    }
+  },
+};
+
+export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
+  label: createMenuItem("Resize all columns to fixed width"),
+  action: (_, column) => {
+    try {
+      column.getTable().blockRedraw();
+      const columns = column.getTable().getColumns();
+      columns.forEach((col) => {
+        if (
+          col.getField() !==
+          column.getTable().modules.spreadsheet.rowHeaderField
+        )
+          col.setWidth(200);
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      column.getTable().restoreRedraw();
+    }
+  },
+};
+
+export const commonColumnMenu = [
+  sortAscending,
+  sortDescending,
+  { separator: true },
+  resizeAllColumnsToMatch,
+  resizeAllColumnsToFitContent,
+  resizeAllColumnsToFixedWidth,
+];
 
 export function createMenuItem(label: string, shortcut = "") {
   label = `<x-label>${label}</x-label>`;
@@ -153,16 +163,18 @@ export function pasteRange(range: Tabulator.RangeComponent) {
 
   const parsedText = Papa.parse(text, {
     header: false,
-    delimiter: '\t',
+    delimiter: "\t",
   });
 
   if (parsedText.errors.length > 0) {
-    const cell = range.getCells()[0]
+    const cell = range.getCells()[0];
     setCellValue(cell, text);
   } else {
-    const table = range.getCells()[0].getTable()
-    const rows = table.modules.spreadsheet.getRows().slice(range.getTop())
-    const columns = table.modules.spreadsheet.getColumns().slice(range.getLeft() + 1)
+    const table = range.getCells()[0].getTable();
+    const rows = table.modules.spreadsheet.getRows().slice(range.getTop());
+    const columns = table.modules.spreadsheet
+      .getColumns()
+      .slice(range.getLeft() + 1);
     const cells: Tabulator.CellComponent[][] = rows.map((row) => {
       const arr = [];
       row.getCells().forEach((cell) => {
@@ -175,17 +187,18 @@ export function pasteRange(range: Tabulator.RangeComponent) {
 
     parsedText.data.forEach((row: string[], rowIdx) => {
       row.forEach((text, colIdx) => {
-        const cell = cells[rowIdx]?.[colIdx]
+        const cell = cells[rowIdx]?.[colIdx];
         if (!cell) return;
         setCellValue(cell, text);
-      })
-    })
+      });
+    });
   }
 }
 
 export function setCellValue(cell: Tabulator.CellComponent, value: string) {
-  const editableFunc = cell.getColumn().getDefinition().editable
-  const editable = typeof editableFunc === 'function' ? editableFunc(cell) : editableFunc
+  const editableFunc = cell.getColumn().getDefinition().editable;
+  const editable =
+    typeof editableFunc === "function" ? editableFunc(cell) : editableFunc;
   if (editable) cell.setValue(value);
 }
 

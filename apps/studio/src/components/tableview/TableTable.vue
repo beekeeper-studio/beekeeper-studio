@@ -261,7 +261,7 @@ import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 
-import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
+import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -478,10 +478,7 @@ export default Vue.extend({
           }),
           { separator: true },
           ...commonColumnMenu,
-          {
-            label: createMenuItem("Open Column Filter"),
-            action: this.showColumnFilterModal
-          },
+          this.openColumnFilterMenuItem,
         ]
       }
 
@@ -554,6 +551,7 @@ export default Vue.extend({
           formatterParams: {
             fk: hasKeyDatas && keyDatas[0][1],
             fkOnClick: hasKeyDatas && ((e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+            isPK: isPK
           },
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
@@ -637,6 +635,12 @@ export default Vue.extend({
     columnFilterModalName() {
       return `column-filter-modal-${this.tableId}`
     },
+    openColumnFilterMenuItem() {
+      return {
+        label: createMenuItem("Open Column Filter"),
+        action: this.showColumnFilterModal,
+      }
+    }
   },
 
   watch: {
@@ -806,6 +810,7 @@ export default Vue.extend({
           scrollPageDown: false
         },
         spreadsheetRowHeader: {
+          field: '--row-header--bks',
           contextMenu: (_, cell: Tabulator.CellComponent) => {
             const range = cell.getRange()
             return [
@@ -821,8 +826,8 @@ export default Vue.extend({
               ...this.rowActionsMenu(range),
             ]
           },
-          headerContextMenu: (_, column: Tabulator.ColumnComponent) => {
-            const range = column.getRange()
+          headerContextMenu: () => {
+            const range = this.tabulator.getActiveRange()
             return [
               this.setAsNullMenuItem(range),
               { separator: true },
@@ -833,11 +838,9 @@ export default Vue.extend({
                 schema: this.table.schema,
               }),
               { separator: true },
-              ...commonColumnMenu,
-              {
-                label: createMenuItem("Open Column Filter"),
-                action: this.showColumnFilterModal,
-              },
+              resizeAllColumnsToFitContent,
+              resizeAllColumnsToFixedWidth,
+              this.openColumnFilterMenuItem,
             ]
           }
         },

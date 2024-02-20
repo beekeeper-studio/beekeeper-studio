@@ -5,45 +5,70 @@ old_url: "https://docs.beekeeperstudio.io/docs/creating-tables"
 ---
 
 
-Double click a table in the left sidebar to open an Excel-like interface for viewing and editing the data.
+Double click a table in the left sidebar to open an Excel-like interface for viewing and editing the data. We call this the **Table View**
 
 ![Image Alt Tag](../assets/images/creating-tables-14.png)
 
-## Navigating the table
+
+This view allows you to:
+- Interact with your table like it is a spreadsheet
+- Filter the view to see specific records
+- Easily edit data
+- Copy/Paste data from elsewhere
+- Export the whole or partial table to a range of formats
 
 
-## Selecting multiple cells
+## Interaction
 
-You can select either a single cell, a single row, or a range of rows. You cannot (yet) select an arbitrary set of cells or columns.
+The table view provides a spreadsheet-like experience for selecting, copying, and pasting data. Beekeeper supports many spreadsheet-like interaction primitives.
 
-To multi-select rows:
+1. Select arbitrary ranges of cells using click & drag, ctrl-click, and shift-click.
+2. Hide columns by right clicking the header and choosing `hide column`
+3. Resize columns, either one at a time, or together
+4. Copy and paste ranges of cells from Excel or Google Sheets with native keyboard shortcuts
 
-1. Select a row
-2. `cmd/ctrl + click` to select a second row
-3. `shift + click` to select a continuous range of rows
-4. Esc, or click away to cancel the selection
-![Image Alt Tag](../assets/images/creating-tables-98.gif)
 
-## Copying Data
+## Filtering The Table View
 
-The table view allows you to copy
+At the top of the table are data filters. You can use these to search your table for the specific data you want.
 
-- An individual cell
-- An entire row
-- An arbitrary set of selected rows.
+There are two types of filter you can use - the filter GUI, and the raw SQL filter
 
-If you press the `copy` keyboard shortcut (`ctrl+c` or `cmd+c`), you will copy the data in a spreadsheet-friendly format (it will paste beautifully into Google Sheets or Excel)
+### Filter GUI
 
-Alternatively, right-click any cell to copy that row (or all selected rows) in a range of formats like CSV, JSON, and Markdown.
+![Database table filter GUI](../assets/images/table-view-filters.png)
 
-![Image Alt Tag](../assets/images/creating-tables-95.png)
+The filter GUI lets you check any column on the table for a variety of conditions:
+- Equality
+- Greater than / less than
+- Like
+- IN
+
+!!! warning
+    When using `LIKE` in your filters, don't forget to use `%`. For example to find all titles that contain `foo` you would write: `%foo%`, not `foo`
+
+### Raw SQL filters
+
+Click the little `<>` icon to the left of the filters to enter a sql filter. You can type anything in here that would appear in the `WHERE` clause of a sql statement.
+
+![Table view SQL filter](../assets/images/table-view-sql-filters.png)
 
 
 ## Editing Data
 
+In the table view you can easily edit any cell you like. Simply double click the cell to edit.
+
 !!! note
     Beekeeper only supports editing tables with primary keys.
 
+### Editing JSON & Other Large Values
+
+Editing a JSON document in a tiny table cell isn't a great experience. Instead you can right click the cell and select `Edit in Modal`. This will provide a pop-out modal with syntax highlighting and checking.
+
+![Editing JSON values in SQL Database using Beekeeper Studio](../assets/images/table-view-modal-edit.png)
+
+
+### Applying Changes
 
 Beekeeper has a unique design that 'stages' changes before applying them, so you can make multiple changes to be applied inside of a single transaction.
 
@@ -53,15 +78,35 @@ Staged change types are indicated by color:
 - Red - data to be deleted
 - Orange - data to be updated
 
-To commit a change, click the `Apply` in the bottom right of the screen. To discard the change, click `Reset`.
+To commit a change, click the `Apply` in the bottom right of the screen. To discard the change, click `Reset`. You can also click `Copy To Sql` if you'd like to make manual changes to the operations.
 
 !!! warning
     Sorting or filtering the table during editing will discard your staged changes.
 
-## Editing Options
+### Editing entire rows
 
-1. Click a cell to edit the contents
-2. Right click a row and select `clone` to duplicate the row
-3. Right click a row and select `delete` to delete the row
-4. Click `+` in the bottom right to add a new row
+You can clone, delete, and create new rows of data pretty easily.
+
+Right click a row (or multiple rows) to delete or clone.
+Click the `+` button at the bottom right to add a new row. New rows will be added to the end of the table, even though they appear at the top of the UI for convenience.
+
+## Copying Data
+
+The table view allows you to copy
+
+- An individual cell
+- An entire row
+- An arbitrary set of selected cells.
+
+If you press the `copy` keyboard shortcut (`ctrl+c` or `cmd+c`), you will copy the data in a spreadsheet-friendly format (it will paste beautifully into Google Sheets or Excel)
+
+Alternatively, right-click any cell to copy that row (or all selected cells) in a range of formats like CSV, JSON, and Markdown.
+
+![Image Alt Tag](../assets/images/creating-tables-95.png)
+
+### Exporting the whole table
+
+Click the ⚙ icon in the bottom right and select `export` to export a whole table, or the filtered table view.
+
+From here you can get a full snapshot of the table, ready to share with others.
 
