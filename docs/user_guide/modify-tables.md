@@ -8,7 +8,7 @@ Beekeeper Studio lets you **CREATE** and **ALTER** database tables with a user-f
 
 ## Creating new SQL Tables
 
-At the top of the entitly list in the left sidebar, click the `+` button to open the table creation interface.
+At the top of the entities list in the left sidebar, click the `+` button to open the table creation interface.
 
 ![Image Alt Tag](../assets/images/editing-data-19.png)
 
