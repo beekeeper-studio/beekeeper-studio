@@ -257,6 +257,7 @@ export default Vue.extend({
     return {
       showExportModal: false,
       tableExportOptions: null,
+      lastClosedTab: null,
       dragOptions: {
         handle: '.nav-item'
       },
@@ -344,6 +345,7 @@ export default Vue.extend({
     },
     keymap() {
       const result = {
+        'ctrl+shift+T': this.reopenLastClosedTab,
         'ctrl+tab': this.nextTab,
         'ctrl+shift+tab': this.previousTab,
         'alt+1': this.handleAltNumberKeyPress,
@@ -503,6 +505,13 @@ export default Vue.extend({
 
       await this.$store.dispatch('tabs/add', item)
       await this.setActiveTab(item)
+    },
+    async reopenLastClosedTab() {
+      if (this.lastClosedTab) {
+        await this.$store.dispatch('tabs/add', this.lastClosedTab)
+        await this.setActiveTab(this.lastClosedTab)
+        this.lastClosedTab = null
+      }
     },
     nextTab() {
       if (this.activeTab == this.lastTab) {
@@ -835,6 +844,7 @@ export default Vue.extend({
           this.nextTab()
         }
       }
+      this.lastClosedTab = tab
       await this.$store.dispatch("tabs/remove", tab)
       if (tab.queryId) {
         await this.$store.dispatch('data/queries/reload', tab.queryId)
