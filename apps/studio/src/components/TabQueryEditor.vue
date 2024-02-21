@@ -1081,7 +1081,7 @@
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect })
+          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }

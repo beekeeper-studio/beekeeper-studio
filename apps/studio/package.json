@@ -70,7 +70,7 @@
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "~10.7.2",
-    "sql-query-identifier": "beekeeper-studio/sql-query-identifier#393e94d55dfb4ca038842d6e2fb7ffc2a6ee651a",
+    "sql-query-identifier": "^2.7.0",
     "ssh2": "^1.14.0",
     "tabulator-tables": "beekeeper-studio/tabulator#93b922ff4cc9bec5485fa546527eda702ad17f1b",
     "tinyduration": "^3.2.4",
