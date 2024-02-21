@@ -10,6 +10,8 @@ body.theme-system {
     @import './components/content-placeholders.scss';
     @import './components/context-menu.scss';
     @import './components/quicksearch.scss';
+    @import './components/stepper.scss';
+    @import './components/grouped-tables.scss';
     @import './components/dropzone.scss';
     @import './vendor.scss';
     @import './app/_all.scss';
@@ -21,6 +23,8 @@ body.theme-system {
     @import './components/content-placeholders.scss';
     @import './components/context-menu.scss';
     @import './components/quicksearch.scss';
+    @import './components/stepper.scss';
+    @import './components/grouped-tables.scss';
     @import './components/dropzone.scss';
     @import './vendor.scss';
     @import './app/_all.scss';
@@ -32,6 +36,8 @@ body.theme-dark {
   @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
+  @import './components/stepper.scss';
+  @import './components/grouped-tables.scss';
   @import './components/dropzone.scss';
   @import './vendor.scss';
   @import './app/_all.scss';
@@ -43,6 +49,8 @@ body.theme-light {
   @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
+  @import './components/stepper.scss';
+  @import './components/grouped-tables.scss';
   @import './components/dropzone.scss';
   @import './vendor.scss';
   @import './app/_all.scss';

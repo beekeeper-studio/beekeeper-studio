@@ -1,0 +1,111 @@
+// Original Copyright https://github.com/PygmySlowLoris/vue-stepper
+
+.stepper-box {
+  position: relative;
+  height: 100%;
+  min-width: 100%;
+  overflow-y: scroll;
+  padding-bottom: 1rem;
+  .top {
+    z-index:1000;
+    top: 0;
+    position: sticky;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $query-editor-bg;
+    .nav-pills {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: center;
+      div:hover:not(.deactivated) .progress:not(.passed) {
+        background-color: rgba($theme-base, 0.2);
+      }
+      .progress {
+        transition: background-color 0.2s ease-in-out;
+        height: 4px;
+        margin-right: 0.5rem;
+        margin-left: 0.5rem;
+        border-radius: 20px;
+        &.passed {
+          background-color: $theme-primary;
+        }
+        &:not(.passed) {
+          background-color: $border-color;
+        }
+      }
+      .nav-pill {
+        font-weight: 500;
+        padding: $gutter-w ($gutter-w * 1.25);
+        color: $text-light;
+        transition: color 0.2s ease-in-out,
+                    box-shadow 0.2s ease-in-out;
+        &:hover:not(.deactivated):not(.active) {
+          color: $text-dark;
+        }
+        &.active {
+          color: $text-dark;
+        }
+        &.deactivated {
+          cursor: not-allowed;
+        }
+        > .pill-icon {
+          font-size: 12px;
+          margin: 0;
+          padding: 0;
+        }
+      }
+      .pill-next {
+        position: relative;
+        bottom: -10%;
+      }
+    }
+  }
+  .bottom {
+    height: 10%;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    &.only-next {
+      justify-content: flex-end;
+    }
+  }
+}
+
+.stepper-button {
+  padding: .5rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: $theme-primary;
+  color: $theme-bg;
+  border: none;
+  &.next {
+    &.deactivated {
+      background-color: darken($theme-primary, 20%) !important;
+      cursor: not-allowed !important;
+    }
+  }
+}
+
+.portal {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.statusbar {
+  .vue-portal-target {
+    width: 100%;
+    display: flex;
+  }
+  .portal {
+    width: 100%;
+    display: flex;
+  }
+}
+
