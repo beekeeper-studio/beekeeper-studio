@@ -34,7 +34,7 @@
         <div
           class="statusbar-item row-counts"
           v-if="rowCount > 0"
-          :title="`${rowCount} Records${result?.truncated ? ' (Truncated)' : ''}`"
+          v-tooltip="`${rowCount} Records${result?.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
         >
           <i class="material-icons">list_alt</i>
           <span class="num-rows">{{ rowCount }}</span>

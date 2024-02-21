@@ -13,6 +13,8 @@ export default {
   maxColumnWidthTableInfo: 300,
   workspaceCheckInterval: 5000, // 5 seconds
   dataCheckInterval: 1000 * 30, // 30 secs
+  trialNotificationInterval: 1000 * 60 * 60 * 12, // 12 hours
+  licenseCheckInterval: 1000 * 60 * 60, // once per hour
   errorNoticeTimeout: 60 * 1000, // 1 minute
   tableListItemHeight: 22.8, // in pixels
 }

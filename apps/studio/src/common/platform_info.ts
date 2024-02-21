@@ -30,12 +30,16 @@ const testMode = p.env.TEST_MODE ? true : false
 const isDevEnv = !(e.app && e.app.isPackaged);
 const isWindows = platform === 'win32'
 const isMac = platform === 'darwin'
+const isArm = p.arch.startsWith('arm')
 const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
+const locale = e.app?.getLocale();
 let windowPrefersDarkMode = false
 if (isRenderer()) {
   windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
+
+const oracleSupported = isMac && isArm ? false : true
 
 let userDirectory =  testMode ? './tmp' : e.app.getPath("userData")
 const downloadsDirectory = testMode ? './tmp' : e.app.getPath('downloads')
@@ -56,8 +60,8 @@ function isWaylandMode() {
 }
 
 const platformInfo = {
+  isWindows, isMac, isArm, oracleSupported,
   parsedArgs,
-  isWindows, isMac,
   isLinux: !isWindows && !isMac,
   sessionType,
   isWayland: isWaylandMode(),
