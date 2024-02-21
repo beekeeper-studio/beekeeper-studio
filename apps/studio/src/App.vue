@@ -25,6 +25,7 @@
     />
     <dropzone />
     <data-manager />
+    <configuration-warning-modal />
     <confirmation-modal :name="$confirmModalName" />
   </div>
 </template>
@@ -43,6 +44,7 @@ import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
+import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vue'
 import Dropzone from '@/components/Dropzone.vue'
 
 export default Vue.extend({
@@ -50,6 +52,7 @@ export default Vue.extend({
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal, Dropzone,
+    ConfigurationWarningModal,
   },
   data() {
     return {

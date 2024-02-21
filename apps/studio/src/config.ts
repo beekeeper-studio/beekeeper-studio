@@ -31,5 +31,4 @@ export default {
     connectionTypes: ConnectionTypes,
     keymapTypes: keymapTypes
   },
-  maxResults: 50000
 }

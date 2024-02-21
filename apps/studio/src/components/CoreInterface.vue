@@ -78,9 +78,9 @@
     },
     computed: {
       keymap() {
-        const results = {}
-        results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
-        return results
+        return this.$vHotkeyKeymap({
+          'general.openQuickSearch': this.showQuickSearch
+        })
       },
       splitElements() {
         return [

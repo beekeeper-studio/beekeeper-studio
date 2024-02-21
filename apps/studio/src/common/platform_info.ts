@@ -30,7 +30,7 @@ const testMode = p.env.TEST_MODE ? true : false
 const isDevEnv = !(e.app && e.app.isPackaged);
 const isWindows = platform === 'win32'
 const isMac = platform === 'darwin'
-const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
+const easyPlatform: 'windows' | 'mac' | 'linux' = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
 let windowPrefersDarkMode = false
 if (isRenderer()) {
   windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches

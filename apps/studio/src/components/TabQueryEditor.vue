@@ -532,11 +532,11 @@
       },
       keymap() {
         if (!this.active) return {}
-        const result = {}
-        result[this.ctrlOrCmd('l')] = this.selectEditor
-        result[this.ctrlOrCmd('i')] = this.submitQueryToFile
-        result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
-        return result
+        return this.$vHotkeyKeymap({
+          'queryEditor.selectEditor': this.selectEditor,
+          'queryEditor.submitQueryToFile': this.submitQueryToFile,
+          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+        })
       },
       connectionType() {
         return this.connection.connectionType;
@@ -919,8 +919,8 @@
 
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
+            if (result.rowCount > this.$bkConfig.general.maxQueryEditorResults) {
+              result.rows = _.take(result.rows, this.$bkConfig.general.maxQueryEditorResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
             }
