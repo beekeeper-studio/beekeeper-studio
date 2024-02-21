@@ -76,7 +76,9 @@ $gutter: 1rem;
 // Alignment
 // -------------------------
 .layout-center {
-  @include layout-center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 // Horizontal Row Alignment
