@@ -1,34 +1,28 @@
 <template>
   <div
     class="input-group"
+    @click.prevent.stop="openFilePickerDialog"
   >
     <input
       type="text"
       class="form-control clickable"
       placeholder="No file selected"
       :title="value"
-      v-model="value"
+      :value="value"
       :disabled="disabled"
       readonly
-      @click.prevent.stop="openFilePickerDialog"
     >
-    <div
-      class="input-group-append"
-      :class="{ 'not-last': hasOtherActions }"
-      @click.prevent.stop="openFilePickerDialog"
-    >
+    <div class="input-group-append">
       <a
-        type="button"
+        type="buttom"
         class="btn btn-flat"
         :class="{disabled}"
       >{{ buttonText }}</a>
     </div>
-    <slot name="actions" />
   </div>
 </template>
 
 <script>
-/* options and all for the native file picker can be found here https://www.electronjs.org/docs/latest/api/dialog */
 export default {
   props: {
     value: {
@@ -61,11 +55,6 @@ export default {
     buttonText: {
       type: String,
       default: "Choose File"
-    }
-  },
-  computed: {
-    hasOtherActions() {
-      return !!this.$slots.actions;
     }
   },
   methods: {

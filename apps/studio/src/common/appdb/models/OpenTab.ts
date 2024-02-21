@@ -5,7 +5,8 @@ import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
 
 
-type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table'
+type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder'
+
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
@@ -69,7 +70,6 @@ export class OpenTab extends ApplicationEntity {
 
   @Column({type: 'text', name: 'filters', nullable: true})
   filters?: string
-  isRunning = false;
 
   public setFilters(filters: Nullable<TableFilter[]>) {
     if (filters && _.isArray(filters)) {
@@ -90,13 +90,6 @@ export class OpenTab extends ApplicationEntity {
       console.warn("error inflating filter", this.filters)
       return null
     }
-  }
-
-
-  isBeta(): boolean {
-    const betaTypes = ['backup', 'import-export-database', 'restore', 'import-table'];
-
-    return betaTypes.includes(this.tabType);
   }
 
   duplicate(): OpenTab {
@@ -123,35 +116,20 @@ export class OpenTab extends ApplicationEntity {
     if (other.workspaceId && this.workspaceId && this.workspaceId !== other.workspaceId) {
       return false;
     }
-
     switch (other.tabType) {
       case 'table-properties':
         return this.tableName === other.tableName &&
         (this.schemaName || null) === (other.schemaName || null) &&
-        (this.entityType || null) === (other.entityType || null) &&
-        (this.tabType || null) === (other.tabType || null)
+        (this.entityType || null) === (other.entityType || null)
       case 'table':
         return this.tableName === other.tableName &&
           (this.schemaName || null) === (other.schemaName || null) &&
           (this.entityType || null) === (other.entityType || null)
-      case 'import-export-database':
-        // we store export state in the store, so don't want multiple open
-        // at a time.
-        return this.tabType === 'import-export-database'
       case 'query':
         return this.queryId === other.queryId
-      case 'backup':
-        return this.tabType === 'backup';
-      case 'restore':
-        return this.tabType === 'restore';
-      case 'import-table':
-        return this.tabType === 'import-table' &&
-        this.tableName === other.tableName &&
-        (this.schemaName || null) === (other.schemaName || null);
       default:
         return false
     }
   }
 
 }
-

@@ -65,10 +65,6 @@ export class UserSetting extends ApplicationEntity {
     return _(settings).groupBy('key').mapValues(vs => vs[0]).value() as IGroupedUserSettings
   }
 
-  static async get(key: string) {
-    return await UserSetting.findOne({key})
-  }
-
   static async set(key: string, value: string): Promise<void> {
     let existing = await UserSetting.findOne({ key });
     if (!existing) {
@@ -102,10 +98,6 @@ export class UserSetting extends ApplicationEntity {
 
   set value(updated: UserSettingValue) {
     this.userValue = updated
-  }
-
-  get stringValue() {
-    return this.value.toString()
   }
 
   get platformDefault(): string {
