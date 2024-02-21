@@ -255,6 +255,9 @@ $cell-success:           $row-add;
         .tabulator-col {
           padding: 0 $cell-padding;
           font-size: ($cell-font-size * 0.9);
+          &.tabulator-frozen {
+            border-right: 0;
+          }
         }
       }
     }

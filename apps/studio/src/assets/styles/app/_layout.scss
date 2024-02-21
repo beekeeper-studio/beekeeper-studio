@@ -114,6 +114,9 @@ hr {
     }
   }
 }
+x-buttons > x-button[menu].btn {
+  border-left: 1px solid rgba(black, 0.35);
+}
 .btn-primary {
   background: $theme-base;
   color: rgba($theme-bg, 0.87);
@@ -170,15 +173,15 @@ hr {
   max-width: 250px;
 }
 .btn-small {
-  font-size: 0.85rem;
-  padding: 0 .65rem;
-  min-width: 0;
-  height: 24px;
-  line-height: 24px;
-  border-radius: $btn-border-radius-small;
-  x-label {
-    line-height: 24px;
-  }
+  @include btn-small;
+}
+x-buttons > x-button.btn-small:first-of-type {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+x-buttons > x-button.btn-small:last-of-type {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 .btn-block {
   display: flex;

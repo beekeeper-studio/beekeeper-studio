@@ -1,12 +1,21 @@
+@import "codemirror/lib/codemirror";
+@import "codemirror/addon/hint/show-hint";
+@import "noty/lib/noty";
+@import "tabulator-tables/dist/css/tabulator_midnight";
+@import "codemirror/theme/monokai";
+@import "codemirror/addon/merge/merge";
+@import "codemirror/addon/search/matchesonscrollbar";
+@import "vue-select/dist/vue-select";
+
 @import './app/normalize';
 @import './app/variables';
-@import './app/mixins';
 @import './app/flex-grid';
 @import './app/base';
 
 
 body.theme-system {
   @media (prefers-color-scheme: dark) {
+    @import './app/mixins';
     @import './components/content-placeholders.scss';
     @import './components/context-menu.scss';
     @import './components/quicksearch.scss';
@@ -18,6 +27,7 @@ body.theme-system {
 
   @media (prefers-color-scheme: light) {
     @import './themes/light/variables.scss';
+    @import './app/mixins';
     @import './components/content-placeholders.scss';
     @import './components/context-menu.scss';
     @import './components/quicksearch.scss';
@@ -29,6 +39,7 @@ body.theme-system {
 }
 
 body.theme-dark {
+  @import './app/mixins';
   @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
@@ -40,6 +51,7 @@ body.theme-dark {
 
 body.theme-light {
   @import './themes/light/variables.scss';
+  @import './app/mixins';
   @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
