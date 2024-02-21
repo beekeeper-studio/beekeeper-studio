@@ -52,7 +52,8 @@
 
           .tabulator-row.tabulator-selectable.tabulator-selected {
             .select-row-col {
-              background: $row-handle-selected;
+              background: $row-handle-selected !important;
+              font-weight: bolder;
             }
           }
 
