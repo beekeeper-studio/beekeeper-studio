@@ -8,7 +8,7 @@ import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import globals from '@/common/globals'
 
-
+  
 export default Vue.extend({
   data: () => ({
     interval: null,
@@ -41,12 +41,13 @@ export default Vue.extend({
         this.activeTab.title,
       ]
     }
-
+    
   },
   watch: {
     workspaceId() {
       this.mountAndRefresh()
       this.$store.dispatch('loadUsedConfigs')
+      this.$store.dispatch('pinnedConnections/loadPins')
     },
     importantTabStuff: {
       deep: true,

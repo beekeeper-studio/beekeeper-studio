@@ -43,6 +43,10 @@
   background: rgba(darken($theme-bg, 3%), 0.9);
   z-index: 9999;
   opacity: 1;
+  &.relative {
+    position: absolute;
+    padding-bottom: 10rem;
+  }
   &.scrollable {
     height: 100%;
     min-height: 100vh;
@@ -62,6 +66,7 @@
     justify-content: center;
     padding: $gutter-w;
   }
+
   .v--modal-box {
     position: relative;
     overflow: hidden;
@@ -170,6 +175,10 @@
   padding-bottom: $gutter-w;
   padding-right: $gutter-w * 2;
   margin: 0;
+  i.material-icons {
+    vertical-align: middle;
+    font-size: 1.1rem;
+  }
 }
 
 .vue-dialog .dialog-c-subtitle {

@@ -64,6 +64,7 @@
             </x-menu>
           </x-button>
         </div>
+        <div class="editor-help expand" />
         <div class="expand" />
         <div
           class="actions btn-group"
@@ -115,6 +116,7 @@
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
+                <hr>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
@@ -876,6 +878,7 @@
       },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+        this.tab.isRunning = true
         this.running = true
         this.error = null
         this.queryForExecution = rawQuery
@@ -948,6 +951,7 @@
           }
         } finally {
           this.running = false
+          this.tab.isRunning = false
         }
       },
       initializeQueries() {

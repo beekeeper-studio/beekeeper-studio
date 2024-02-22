@@ -121,6 +121,7 @@ export const TabulatorStateWatchers = {
       if (!this.tabulator) return
       const t: Tabulator = this.tabulator
       t.setColumns(this.tableColumns)
+      t.redraw()
     }
   },
   tableData: {

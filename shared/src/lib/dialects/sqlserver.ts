@@ -29,6 +29,7 @@ export interface DefaultConstraint {
 const UNWRAPPER = /^"(.*)"$/
 
 export const SqlServerData: DialectData = {
+  defaultSchema: 'dbo',
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],
   wrapIdentifier: (value) =>   _.isString(value) ?
@@ -40,6 +41,7 @@ export const SqlServerData: DialectData = {
     return matched ? matched[1] : value;
   },
   escapeString: defaultEscapeString,
+  usesOffsetPagination: true,
   disabledFeatures: {
     alter: {
       multiStatement: true

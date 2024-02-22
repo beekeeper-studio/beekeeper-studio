@@ -12,6 +12,19 @@ export abstract class BeeCursor {
   }
 }
 
+export class NoOpCursor extends BeeCursor {
+  async start(): Promise<void> {
+    // yes
+  }
+  async read(): Promise<any[][]> {
+    return []
+  }
+  async cancel(): Promise<void> {
+    // yes
+  }
+
+}
+
 export interface StreamResults {
   columns: TableColumn[],
   totalRows: number,

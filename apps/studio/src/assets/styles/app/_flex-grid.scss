@@ -8,14 +8,30 @@ $gutter: 1rem;
 
 // Wrappers
 // -------------------------
-.form-wrap, .small-wrap, .center-wrap, .big-wrap {
+.form-wrap, .small-wrap, .center-wrap, .big-wrap, .mini-wrap {
   width: 100%;
   margin-left: auto;
   margin-right: auto;
+
+  &.vertical-center {
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+  }
 }
 .form-wrap {
   max-width: 400px;
 }
+
+.mini-wrap {
+  max-width: 550px;
+}
+
 .small-wrap {
   max-width: 780px;
 }
@@ -76,7 +92,9 @@ $gutter: 1rem;
 // Alignment
 // -------------------------
 .layout-center {
-  @include layout-center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 // Horizontal Row Alignment

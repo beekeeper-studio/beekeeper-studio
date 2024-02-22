@@ -97,21 +97,40 @@ export class DbConnectionBase extends ApplicationEntity {
   }
 
 
-  public get defaultPort(): Nullable<number> {
-    if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
-      return 3306
-    } else if (this.connectionType === 'postgresql') {
-      return 5432
-    } else if (this.connectionType === 'sqlserver') {
-      return 1433
-    } else if (this.connectionType === 'cockroachdb') {
-      return 26257
-    } else if (this._connectionType === 'bigquery') {
-      return 443
-    } else if (this.connectionType === 'firebird') {
-      return 3050
+
+  public get defaultPort() : Nullable<number> {
+    let port
+    switch (this.connectionType as string) {
+      case 'mysql':
+      case 'mariadb':
+        port = 3306
+        break
+      case 'postgresql':
+        port = 5432
+        break
+      case 'sqlserver':
+        port = 1433
+        break
+      case 'cockroachdb':
+        port = 26257
+        break
+      case 'oracle':
+        port = 1521
+        break
+      case 'cassandra':
+        port = 9042
+        break
+      case 'bigquery':
+        port = 443
+        break
+      case 'firebird':
+        port = 3050
+        break
+      default:
+        port = null
     }
-    return null
+
+    return port
   }
 
   _socketPath: Nullable<string> = null
