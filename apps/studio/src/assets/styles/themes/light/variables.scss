@@ -44,3 +44,6 @@ $tabs-bg:                   transparent;
 $statusbar-bg:              rgba($theme-base, 0.1);
 // $statusbar-bg:             rgba($theme-primary, 0.4);
 $statusbar-text:            $theme-base;
+
+$grouped-tables-base: darken($theme-bg, 2%);
+$grouped-tables-light: darken($grouped-tables-base, 2%);

@@ -167,6 +167,18 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
         background-color: rgba($theme-base, 0.10);
       }
     }
+    i.fk-link {
+      display:none;
+    }
+
+    &.import-table-column {
+      .attributes {
+        color: $text-lighter;
+        font-size: 0.85rem;
+        margin-left: 0.2em;
+      }
+    }
+
     pre {
       margin: 0;
       text-overflow: ellipsis;
@@ -757,6 +769,8 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     }
   }
 }
+
+@import './tabulator/magics.scss';
 
 .tabulator-range-overlay {
   .tabulator-range, .tabulator-range-cell-active {

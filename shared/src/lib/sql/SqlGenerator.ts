@@ -28,7 +28,7 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['bigquery', 'firebird'].includes(v)
+    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird'].includes(v)
     this.createKnexLib()
   }
 
@@ -37,7 +37,7 @@ export class SqlGenerator {
   }
 
   public set connection(config: any) {
-    this._connection = config;
+    this._connection = config
     this.createKnexLib()
   }
 
@@ -57,9 +57,12 @@ export class SqlGenerator {
         table.primary(primaries.map((c) => c.columnName))
       }
       schema.columns.forEach((column: SchemaItem) => {
+        // TODO: autoincrement makes cassandra just roll over and die Need to remove it from the default values.
+        // Other than that, was creating tables pretty ok I think
         const col = column.dataType === 'autoincrement' ?
           table.increments(column.columnName) :
           table.specificType(column.columnName, column.dataType)
+
         if (column.defaultValue) col.defaultTo(this.knex.raw(column.defaultValue))
         if (column.unsigned) col.unsigned()
         if (column.comment) col.comment(column.comment)
@@ -91,10 +94,10 @@ export class SqlGenerator {
   private async createKnexLib () {
     const { dbConfig, dbName } = this.connection
     if (!this.dialect || !this.connection) return
+
     if (this.isNativeKnex) {
         this.knex = knexlib({ client: this.knexDialect })
-    } else {
-      if (this.dialect === 'firebird') {
+    } else if (this.dialect === 'firebird') {
         this.knex = knexlib({
           client: knexFirebirdDialect,
           connection: {
@@ -108,19 +111,18 @@ export class SqlGenerator {
             blobAsText: true,
           },
         })
-      } else if (this.dialect === 'bigquery') {
-        const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
-        this.knex = knexlib({
-          // ewwwwwwwww
-          client: BigQueryClient as any,
-          connection: {
-            projectId: dbConfig.bigQueryOptions?.projectId,
-            keyFilename: dbConfig.bigQueryOptions?.keyFilename,
-            // for testing
-            apiEndpoint
-          } as any
-        })
-      }
+    } else if (this.dialect === 'bigquery') {
+      const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
+      this.knex = knexlib({
+        // ewwwwwwwww
+        client: BigQueryClient as any,
+        connection: {
+          projectId: dbConfig.bigQueryOptions?.projectId,
+          keyFilename: dbConfig.bigQueryOptions?.keyFilename,
+          // for testing
+          apiEndpoint
+        } as any
+      })
     }
   }
 
