@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest, ubuntu-arm64, macos-13-xlarge]
+        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13-xlarge]
 
     steps:
       - name: Import GPG key
@@ -46,6 +46,12 @@ jobs:
 
       - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '16.11.14'
+        if: "startsWith(matrix.os, 'windows')"
 
       - run: "gem install -N ./deb-s3-0.11.2.gem"
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
@@ -110,7 +116,7 @@ jobs:
 
 
       - name: Clean cache
-        run: yarn cache clean
+        run: yarn cache clean --all
 
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.

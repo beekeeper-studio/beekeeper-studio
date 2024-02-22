@@ -101,7 +101,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
   public get defaultPort() : Nullable<number> {
     let port
-    switch (this.connectionType) {
+    switch (this.connectionType as string) {
       case 'mysql':
       case 'mariadb':
         port = 3306

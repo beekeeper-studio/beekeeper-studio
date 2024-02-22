@@ -90,6 +90,8 @@ code {
 
 // Buttons
 // ---------------------------------------
+
+
 .btn {
   @include btn;
 }
@@ -119,8 +121,11 @@ code {
   }
 }
 .btn-icon {
-  .material-icons {
+  .material-icons:first-child {
     margin-right: $gutter-h * 0.65;
+  }
+  .material-icons:last-child {
+    margin-left: $gutter-h * 0.65;
   }
 }
 .btn-info {
@@ -689,6 +694,7 @@ input[type=file] {
   p {
     margin: 0;
   }
+
 }
 .alert-danger {
   color: lighten($brand-danger, 5%);

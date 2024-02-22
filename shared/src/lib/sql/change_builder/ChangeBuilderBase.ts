@@ -72,8 +72,8 @@ export abstract class ChangeBuilderBase {
       'ADD COLUMN',
       this.wrapIdentifier(item.columnName),
       this.wrapLiteral(item.dataType),
-      item.nullable ? 'NULL' : 'NOT NULL',
       item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null,
+      item.nullable ? 'NULL' : 'NOT NULL',
       item.extra,
       item.comment ? `COMMENT ${this.escapeString(item.comment, true)}` : null
     ].filter((i) => !!i).join(" ")
@@ -101,7 +101,7 @@ export abstract class ChangeBuilderBase {
 
   get disabledRename() {
     return !!this.dialectData.disabledFeatures?.alter?.renameColumn
-  } 
+  }
 
   nameFilter = () => this.disabledRename ? (i: SchemaItemChange) => i.changeType !== 'columnName' : () => true
   alterFilter = () => this.disabledAlter ? (i: SchemaItemChange) => i.changeType === 'columnName' : () => true
@@ -135,7 +135,7 @@ export abstract class ChangeBuilderBase {
   }
 
   abstract wrapIdentifier(str: string): string
-  abstract wrapLiteral(str: string): string 
+  abstract wrapLiteral(str: string): string
   abstract escapeString(str: string, quote?: boolean): string
 
 
