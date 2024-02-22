@@ -48,7 +48,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.contextProvider = contextProvider
     this.server = server;
     this.database = database;
-    this.db = database.database
+    this.db = database?.database
     this.connectionType = this.server?.config.client;
   }
 
