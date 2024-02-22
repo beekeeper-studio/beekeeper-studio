@@ -94,7 +94,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
     }
 
     const result = await client.alterTableSql(input);
-    const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "bar" varchar(255) NULL DEFAULT \'Hello Fella\';'
+    const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "bar" varchar(255) DEFAULT \'Hello Fella\' NULL;'
     expect(result).toBe(expected)
   })
 
