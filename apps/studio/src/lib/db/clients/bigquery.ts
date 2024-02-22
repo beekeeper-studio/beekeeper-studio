@@ -385,9 +385,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
-    const db = this.database.database;
-    const columns = await this.listTableColumns(db, table);
-    const bqTable = db + "." + table;
+    const columns = await this.listTableColumns(table);
+    const bqTable = this.db + "." + table;
     const { query, countQuery, params } = buildSelectTopQuery(bqTable, offset, limit, orderBy, filters, 'total', columns, selects);
     const queriesResult = await this.driverExecuteMultiple(query, { countQuery, params });
     const data = queriesResult[0];
@@ -403,9 +402,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<string> {
-    const db = this.database.database;
-    const columns = await this.listTableColumns(db, table);
-    const bqTable = db + "." + table;
+    const columns = await this.listTableColumns(table);
+    const bqTable = this.db + "." + table;
     const queries = buildSelectTopQuery(bqTable, offset, limit, orderBy, filters, 'total', columns, selects);
     return queries.query;
   }
@@ -413,8 +411,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
     const bqTable = this.db + "." + table;
     const qs = buildSelectTopQuery(bqTable, null, null, orderBy, filters);
-    const columns = await this.listTableColumns(this.db, table);
-    const rowCount = await this.getTableLength(this.db, table);
+    const columns = await this.listTableColumns(table);
+    const rowCount = await this.getTableLength(table);
     const { query, params } = qs;
 
     return {
@@ -579,7 +577,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   private async insertRows(inserts: TableInsert[]) {
     for (const insert of inserts) {
-      const columns = await this.listTableColumns(insert.dataset, insert.table);
+      const columns = await this.listTableColumns(insert.table);
       const command = buildInsertQuery(this.knex, insert, columns);
       await this.driverExecuteSingle(command);
     }

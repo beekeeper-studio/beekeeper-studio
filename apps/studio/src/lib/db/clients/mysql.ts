@@ -517,7 +517,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string,
     selects?: string[]
   ): Promise<TableResult> {
-    const columns = await this.listTableColumns(null, table);
+    const columns = await this.listTableColumns(table);
     const queries = buildSelectTopQuery(
       table,
       offset,
@@ -547,7 +547,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string,
     selects?: string[]
   ): Promise<string> {
-    const columns = await this.listTableColumns(null, table);
+    const columns = await this.listTableColumns(table);
     const { query, params } = buildSelectTopQuery(
       table,
       offset,
@@ -569,7 +569,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<StreamResults> {
     const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
-    const columns = await this.listTableColumns(this.db, table);
+    const columns = await this.listTableColumns(table);
     const rowCount = await this.getTableLength(table);
     // TODO: DEBUG HERE
     const { query, params } = qs;
@@ -1072,7 +1072,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async alterTableSql(change: AlterTableSpec): Promise<string> {
-    const columns = await this.listTableColumns(null, change.table);
+    const columns = await this.listTableColumns(change.table);
     const builder = new MySqlChangeBuilder(change.table, columns);
     return builder.alterTable(change);
   }

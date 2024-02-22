@@ -1071,7 +1071,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const columns = await this.listTableColumns("", table);
+    const columns = await this.listTableColumns(table);
     const columnsQuery = columns
       .map((column) => {
         const defaultValue = column.defaultValue

@@ -424,7 +424,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
     const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
-    const columns = await this.listTableColumns(this.db, table)
+    const columns = await this.listTableColumns(table)
     const rowCount = await this.getTableLength(table)
     const { query, params } = qs
     return {
