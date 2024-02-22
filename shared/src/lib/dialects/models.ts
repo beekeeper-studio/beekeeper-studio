@@ -130,7 +130,6 @@ export interface DialectData {
     collations?: boolean
     importFromFile?: boolean,
     headerSort?: boolean,
-    duplicateTable?: boolean,
     export?: {
       sql?: boolean
     }
