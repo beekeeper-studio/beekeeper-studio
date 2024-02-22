@@ -40,6 +40,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   contextProvider: AppContextProvider
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
+  db: string;
   connectionType: ConnectionType;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -47,6 +48,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.contextProvider = contextProvider
     this.server = server;
     this.database = database;
+    this.db = database.database
     this.connectionType = this.server?.config.client;
   }
 
@@ -106,16 +108,16 @@ export abstract class BasicDatabaseClient<RawResultType> {
   // ****************************************************************************
 
   // List schema information ****************************************************
-  abstract listTables(db: string, filter?: FilterOptions): Promise<TableOrView[]>;
+  abstract listTables(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract listViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract listRoutines(filter?: FilterOptions): Promise<Routine[]>;
-  abstract listMaterializedViewColumns(db: string, table: string, schema?: string): Promise<TableColumn[]>;
-  abstract listTableColumns(db: string, table?: string, schema?: string): Promise<ExtendedTableColumn[]>;
+  abstract listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>;
+  abstract listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]>;
   abstract listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>;
-  abstract listTableIndexes(db: string, table: string, schema?: string): Promise<TableIndex[]>;
-  abstract listSchemas(db: string, filter?: SchemaFilterOptions): Promise<string[]>;
+  abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
+  abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
   abstract getTableReferences(table: string, schema?: string): Promise<string[]>;
-  abstract getTableKeys(db: string, table: string, schema?: string): Promise<TableKey[]>;
+  abstract getTableKeys(table: string, schema?: string): Promise<TableKey[]>;
 
   listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])
@@ -127,8 +129,8 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
   abstract getQuerySelectTop(table: string, limit: number, schema?: string): string;
   abstract listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>;
-  abstract getPrimaryKey(db: string, table: string, schema?: string): Promise<string | null>;
-  abstract getPrimaryKeys(db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
+  abstract getPrimaryKey(table: string, schema?: string): Promise<string | null>;
+  abstract getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
   // ****************************************************************************
 
   // Create Structure ***********************************************************
@@ -202,7 +204,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   abstract truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 
-  abstract truncateAllTables(db: string, schema?: string): void;
+  abstract truncateAllTables(schema?: string): void;
   // ****************************************************************************
 
   // ****************************************************************************
@@ -212,11 +214,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract getTableLength(table: string, schema?: string): Promise<number>;
   abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
   abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;
-  abstract selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
+  abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
   // ****************************************************************************
 
   // For Export *****************************************************************
-  abstract queryStream(db: string, query: string, chunkSize: number): Promise<StreamResults>;
+  abstract queryStream(query: string, chunkSize: number): Promise<StreamResults>;
   // ****************************************************************************
 
   // Duplicate Table ************************************************************
@@ -225,7 +227,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   // ****************************************************************************
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
-    const columns = await this.listTableColumns(null, tableInsert.table, tableInsert.schema);
+    const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
     return buildInsertQuery(this.knex, tableInsert, columns);
   }
 
@@ -265,8 +267,4 @@ export abstract class BasicDatabaseClient<RawResultType> {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
   }
-
-  
-
-
 }

@@ -126,7 +126,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     super.disconnect();
   }
 
-  async listTables(_db: string, filter?: FilterOptions): Promise<TableOrView[]> {
+  async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     const schemaFilter = buildSchemaFilter(filter, 'table_schema');
 
     let sql = `
@@ -264,7 +264,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       };
     });
   }
-  async listMaterializedViewColumns(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
+  async listMaterializedViewColumns(table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
     const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : '';
     if (table && !schema) {
       throw new Error("Cannot get columns for '${table}, no schema provided'")
@@ -291,7 +291,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async listTableColumns(_db: string, table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     // if you provide table, you have to provide schema
     const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
     const params = table ? [schema, table] : []
@@ -372,7 +372,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async listTableIndexes(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
+  async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
     const sql = `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
@@ -433,7 +433,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result
   }
 
-  async listSchemas(_db: string, filter?: SchemaFilterOptions): Promise<string[]> {
+  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
     const schemaFilter = buildSchemaFilter(filter);
     const sql = `
       SELECT schema_name
@@ -467,7 +467,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.referenced_table_name);
   }
 
-  async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
       SELECT
         kcu.constraint_schema AS from_schema,
@@ -687,8 +687,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(null, table, schema),
-      this.getTableKeys(null, table, schema),
+      this.listTableIndexes(table, schema),
+      this.getTableKeys(table, schema),
       triggersPromise,
       partitionsPromise,
       this.getTableOwner(table, schema)
@@ -753,7 +753,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.pg_get_functiondef);
   }
 
-  async truncateAllTables(_db: string, schema: string = this._defaultSchema): Promise<void> {
+  async truncateAllTables(schema: string = this._defaultSchema): Promise<void> {
     const sql = `
       SELECT quote_ident(table_name) as table_name
       FROM information_schema.tables
@@ -800,12 +800,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async getPrimaryKey(db: string, table: string, schema: string = this._defaultSchema): Promise<string> {
-    const keys = await this.getPrimaryKeys(db, table, schema)
+  async getPrimaryKey(table: string, schema: string = this._defaultSchema): Promise<string> {
+    const keys = await this.getPrimaryKeys(table, schema)
     return keys.length === 1 ? keys[0].columnName : null
   }
 
-  async getPrimaryKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<PrimaryKeyColumn[]> {
+  async getPrimaryKeys(table: string, schema: string = this._defaultSchema): Promise<PrimaryKeyColumn[]> {
     const tablename = PD.escapeString(this.tableName(table, schema), true)
     const query = `
       SELECT
@@ -854,7 +854,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return qs.query
   }
 
-  async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema): Promise<StreamResults> {
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema): Promise<StreamResults> {
     const qs = this.buildSelectTopQueries({
       table, orderBy, filters, version: this.version, schema
     })
@@ -862,7 +862,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const countResults = await this.driverExecuteSingle(qs.countQuery, {params: qs.params})
     const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
     const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
-    const columns = await this.listTableColumns(db, table, schema)
+    const columns = await this.listTableColumns(table, schema)
 
     const cursorOpts = {
       query: qs.query,
@@ -878,7 +878,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async queryStream(_db: string, query: string, chunkSize: number): Promise<StreamResults> {
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     const cursorOpts = {
       query: query,
       params: [],
@@ -1273,7 +1273,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   private async insertRows(rawInserts: TableInsert[]) {
     const columnsList = await Promise.all(rawInserts.map((insert) => {
-      return this.listTableColumns(null, insert.table, insert.schema);
+      return this.listTableColumns(insert.table, insert.schema);
     }));
 
     const fixedInserts = rawInserts.map((insert, idx) => {

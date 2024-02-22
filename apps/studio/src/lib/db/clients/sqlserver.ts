@@ -29,7 +29,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { TableIndex, TableProperties } from '../models';
+import { FilterOptions, OrderBy, TableFilter, TableIndex, TableProperties, TableResult } from '../models';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -90,7 +90,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async listTables(filter) {
+  async listTables(filter: FilterOptions) {
     const schemaFilter = buildSchemaFilter(filter, 'table_schema');
     const sql = `
       SELECT
@@ -110,7 +110,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }))
   }
 
-  async listTableColumns(_, table, schema) {
+  async listTableColumns(table: string, schema: string) {
     const clauses = []
     if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
@@ -154,7 +154,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return this.version.versionString.split(" \n\t")[0]
   }
 
-  async executeQuery( queryText, arrayRowMode = false) {
+  async executeQuery(queryText: string, arrayRowMode = false) {
     const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, arrayRowMode)
   
     const commands = this.identifyCommands(queryText).map((item) => item.type)
@@ -166,7 +166,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, arrayRowMode))
   }
 
-  query(queryText) {
+  query(queryText: string) {
     const queryRequest = null
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this
@@ -195,7 +195,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async selectTop(table, offset, limit, orderBy, filters, schema, selects = ['*']) {
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects = ['*']): Promise<TableResult> {
     this.logger().debug("filters", filters)
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     this.logger().debug(query)
@@ -209,13 +209,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async selectTopSql(
-    table,
-    offset,
-    limit,
-    orderBy,
-    filters,
-    schema,
-    selects
+    table: string,
+    offset: number,
+    limit: number,
+    orderBy: OrderBy[],
+    filters: string | TableFilter[],
+    schema?: string,
+    selects?: string[]
   ) {
     const version = await this.getVersion();
     return version.supportOffsetFetch
@@ -223,7 +223,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       : this.genSelectOld(table, offset, limit, orderBy, filters, schema, selects);
   }
 
-  async listTableTriggers(table, schema) {
+  async listTableTriggers(table: string, schema: string) {
     // SQL Server does not have information_schema for triggers, so other way around
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
@@ -249,8 +249,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     })
   }
 
-  async getPrimaryKeys(database, table, schema) {
-    this.logger().debug('finding foreign key for', database, table)
+  async getPrimaryKeys(table: string, schema?: string) {
+    this.logger().debug('finding foreign key for', table)
     const sql = `
     SELECT COLUMN_NAME, ORDINAL_POSITION
     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
@@ -266,12 +266,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }))
   }
   
-  async getPrimaryKey(database, table, schema) {
-    const res = await this.getPrimaryKeys(database, table, schema)
+  async getPrimaryKey(table: string, schema?: string) {
+    const res = await this.getPrimaryKeys(table, schema)
     return res.length === 1 ? res[0].columnName : null
   }
 
-  async listTableIndexes(_db, table, schema = this.defaultSchema()): Promise<TableIndex[]> {
+  async listTableIndexes(table: string, schema: string = this.defaultSchema()): Promise<TableIndex[]> {
     const sql = `
       SELECT
   
@@ -327,14 +327,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return _.sortBy(result, 'id') as TableIndex[]
   }
 
-  async getTableProperties(table, schema = this.defaultSchema()): Promise<TableProperties> {
+  async getTableProperties(table: string, schema: string = this.defaultSchema()): Promise<TableProperties> {
     const triggers = await this.listTableTriggers(table, schema)
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
     const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
     const { data }  = await this.driverExecuteQuery({ query: sizeQuery })
     const row = data.recordset ? data.recordset[0] || {} : {}
-    const relations = await this.getTableKeys(null, table, schema)
+    const relations = await this.getTableKeys(table, schema)
     return {
       size: bytesParse(row.data),
       indexSize: bytesParse(row.index_size),
@@ -345,7 +345,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async getTableKeys(_, table, schema) {
+  async getTableKeys(table: string, schema?: string) {
     const sql = `
       SELECT
           name = FK.CONSTRAINT_NAME,
@@ -399,9 +399,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return result
   }
 
-  async selectTopStream(db, table, orderBy, filters, chunkSize, schema, selects = ['*']) {
+  async selectTopStream(table, orderBy, filters, chunkSize, schema, selects = ['*']) {
     const query = this.genSelectNew(table, null, null, orderBy, filters, schema, selects)
-    const columns = await this.listTableColumns(db, table, schema)
+    const columns = await this.listTableColumns(table, schema)
     const rowCount = await this.getTableLength(table, schema)
 
     return {
@@ -494,7 +494,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async alterTableSql(changes) {
     const { table, schema } = changes
-    const columns = await this.listTableColumns(null, table, schema)
+    const columns = await this.listTableColumns(table, schema)
     const defaultConstraints = await this.listDefaultConstraints(table, schema)
     const builder = new SqlServerChangeBuilder(table, schema, columns, defaultConstraints)
     return builder.alterTable(changes)
@@ -556,7 +556,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async listMaterializedViewColumns() {
-    return await []
+    return []
   }
 
   async listViews(filter) {
@@ -671,7 +671,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset.map((row) => row.referenced_table_name)
   }
 
-  async queryStream(_, query, chunkSize) {
+  async queryStream(query, chunkSize) {
     return {
       totalRows: undefined,
       columns: undefined,
@@ -768,7 +768,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async getMaterializedViewCreateScripts() {
-    return await []
+    return []
   }
 
   async getRoutineCreateScript(routine) {

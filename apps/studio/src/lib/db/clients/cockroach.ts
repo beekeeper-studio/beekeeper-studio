@@ -31,7 +31,7 @@ export class CockroachClient extends PostgresClient {
     return [];
   }
 
-  async listTableIndexes(_db: string, table: string, schema?: string): Promise<TableIndex[]> {
+  async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
     const sql = `
      show indexes from ${this.tableName(table, schema)};
     `
@@ -72,8 +72,8 @@ export class CockroachClient extends PostgresClient {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(null, table, schema),
-      this.getTableKeys(null, table, schema),
+      this.listTableIndexes(table, schema),
+      this.getTableKeys(table, schema),
       triggersPromise,
       partitionsPromise,
       this.getTableOwner(table, schema)

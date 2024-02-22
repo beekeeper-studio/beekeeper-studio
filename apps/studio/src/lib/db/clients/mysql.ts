@@ -303,7 +303,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listTables(
-    _db: string,
     _filter?: FilterOptions
   ): Promise<TableOrView[]> {
     const sql = `
@@ -318,7 +317,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listTableIndexes(
-    _database: string,
     table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
@@ -351,7 +349,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listTableColumns(
-    _database: string,
     table?: string,
     _schema?: string,
     connection?: Connection
@@ -487,11 +484,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getPrimaryKeys(
-    database: string,
     table: string,
     _schema?: string
   ): Promise<PrimaryKeyColumn[]> {
-    logger().debug("finding primary keys for", database, table);
+    logger().debug("finding primary keys for", this.db, table);
     const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`;
     const params = [table];
     const { data } = await this.driverExecuteSingle(sql, { params });
@@ -505,11 +501,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getPrimaryKey(
-    database: string,
     table: string,
     _schema?: string
   ): Promise<string | null> {
-    const res = await this.getPrimaryKeys(database, table);
+    const res = await this.getPrimaryKeys(table);
     return res.length === 1 ? res[0].columnName : null;
   }
 
@@ -567,7 +562,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async selectTopStream(
-    db: string,
     table: string,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
@@ -575,7 +569,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<StreamResults> {
     const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
-    const columns = await this.listTableColumns(db, table);
+    const columns = await this.listTableColumns(this.db, table);
     const rowCount = await this.getTableLength(table);
     // TODO: DEBUG HERE
     const { query, params } = qs;
@@ -613,7 +607,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getTableKeys(
-    _database: string,
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
@@ -679,9 +672,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       data.length > 0 ? data[0] : {};
 
     // const length = await this.getTableLength(table, []);
-    const relations = await this.getTableKeys(null, table);
+    const relations = await this.getTableKeys(table);
     const triggers = await this.listTableTriggers(table);
-    const indexes = await this.listTableIndexes(null, table);
+    const indexes = await this.listTableIndexes(table);
 
     return {
       description: description || undefined,
@@ -746,7 +739,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   async insertRows(inserts: TableInsert[], connection: mysql.PoolConnection) {
     for (const insert of inserts) {
       const columns = await this.listTableColumns(
-        null,
         insert.table,
         undefined,
         connection
@@ -1120,7 +1112,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listMaterializedViewColumns(
-    _db: string,
     _table: string,
     _schema?: string
   ): Promise<TableColumn[]> {
@@ -1128,7 +1119,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listSchemas(
-    _db: string,
     _filter?: SchemaFilterOptions
   ): Promise<string[]> {
     return [];
@@ -1222,7 +1212,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async queryStream(
-    _db: string,
     query: string,
     chunkSize: number
   ): Promise<StreamResults> {

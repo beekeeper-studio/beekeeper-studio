@@ -91,27 +91,27 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return Promise.resolve();
   }
 
-  async listTables(db: string, _filter?: FilterOptions): Promise<TableOrView[]> {
+  async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
     // Lists all tables in the dataset
-    return await this.listTablesOrViews(db, 'TABLE');
+    return await this.listTablesOrViews(this.db, 'TABLE');
   }
 
   async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     // Lists all views in the dataset
-    return await this.listTablesOrViews(this.database.database, 'VIEW');
+    return await this.listTablesOrViews(this.db, 'VIEW');
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
     return [];
   }
 
-  async listMaterializedViewColumns(_db: string, _table: string, _schema?: string): Promise<TableColumn[]> {
+  async listMaterializedViewColumns(_table: string, _schema?: string): Promise<TableColumn[]> {
     return [];
   }
 
-  async listTableColumns(db: string, table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     // Lists all columns in a table
-    const [metadata] = await this.client.dataset(db).table(table).getMetadata()
+    const [metadata] = await this.client.dataset(this.db).table(table).getMetadata()
     const data = metadata.schema.fields.map((field) => ({ columnName: field.name, dataType: field.type }))
     return data
   }
@@ -120,11 +120,11 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return [];
   }
 
-  async listTableIndexes(_db: string, _table: string, _schema?: string): Promise<TableIndex[]> {
+  async listTableIndexes(_table: string, _schema?: string): Promise<TableIndex[]> {
     return [];
   }
 
-  async listSchemas(_db: string, _filter?: SchemaFilterOptions): Promise<string[]> {
+  async listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
     return [];
   }
 
@@ -132,7 +132,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return [];
   }
 
-  async getTableKeys(db: string, table: string, _schema?: string): Promise<TableKey[]> {
+  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `
       SELECT
         NULL as from_schema,
@@ -145,14 +145,14 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         NULL as update_rule,
         NULL as delete_rule
       FROM
-        ${this.wrapIdentifier(db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
-      JOIN ${this.wrapIdentifier(db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
+        ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
+      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
       ON f.constraint_name = t.constraint_name
-      JOIN ${this.wrapIdentifier(db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
+      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
       ON f.constraint_catalog = con.constraint_catalog
       AND f.constraint_schema = con.constraint_schema
       AND f.constraint_name = con.constraint_name
-      WHERE f.table_schema = '${escapeString(db)}'
+      WHERE f.table_schema = '${escapeString(this.db)}'
       AND f.table_name = '${escapeString(table)}'
       AND con.constraint_type = 'FOREIGN KEY'
     `;
@@ -289,8 +289,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       this.getTableLength(table),
       null,
       null,
-      // NOTE (@day): this may be an issue
-      this.getTableKeys(null, table)
+      this.getTableKeys(table)
     ])
     return {
       length, indexes, relations, triggers
@@ -339,7 +338,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     throw new Error("Method not implemented.");
   }
 
-  truncateAllTables(_db: string, _schema?: string): void {
+  truncateAllTables(_schema?: string): void {
     throw new Error("Method not implemented.");
   }
 
@@ -347,23 +346,23 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return [];
   }
 
-  async getPrimaryKey(db: string, table: string, _schema?: string): Promise<string> {
-    const keys = await this.getPrimaryKeys(db, table);
+  async getPrimaryKey(table: string, _schema?: string): Promise<string> {
+    const keys = await this.getPrimaryKeys(table);
     return keys.length === 1 ? keys[0].columnName : null;
   }
 
-  async getPrimaryKeys(db: string, table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
+  async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     const query = `
       SELECT
         use.column_name as column_name,
         use.ordinal_position as position
       FROM
-        ${this.wrapIdentifier(db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as use
-      JOIN ${this.wrapIdentifier(db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con
+        ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as use
+      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con
       ON use.constraint_catalog = con.constraint_catalog
       AND use.constraint_schema = con.constraint_schema
       AND use.constraint_name = con.constraint_name
-      WHERE use.table_schema = '${escapeString(db)}'
+      WHERE use.table_schema = '${escapeString(this.db)}'
       AND use.table_name = '${escapeString(table)}'
       AND con.constraint_type = 'PRIMARY KEY'`;
 
@@ -411,11 +410,11 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return queries.query;
   }
 
-  async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
-    const bqTable = db + "." + table;
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
+    const bqTable = this.db + "." + table;
     const qs = buildSelectTopQuery(bqTable, null, null, orderBy, filters);
-    const columns = await this.listTableColumns(db, table);
-    const rowCount = await this.getTableLength(db, table);
+    const columns = await this.listTableColumns(this.db, table);
+    const rowCount = await this.getTableLength(this.db, table);
     const { query, params } = qs;
 
     return {
@@ -425,7 +424,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     };
   }
 
-  async queryStream(_db: string, query: string, chunkSize: number): Promise<StreamResults> {
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     const theCursor = new BigQueryCursor(this.client, query, [], chunkSize);
     log.debug('results', theCursor);
 

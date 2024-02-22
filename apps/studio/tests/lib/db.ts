@@ -1,7 +1,7 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index'
+import { createServer } from '../../src/lib/db/index' 
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
@@ -65,7 +65,6 @@ export class DBTestUtil {
 
   public preInitCmd: string | undefined
   public defaultSchema: string = undefined
-  private database: string;
 
   private personId: number
   private jobId: number
@@ -80,7 +79,6 @@ export class DBTestUtil {
       log.transports.console.level = 'silly'
     }
 
-    this.database = database;
     this.dialect = options.dialect
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
@@ -141,14 +139,14 @@ export class DBTestUtil {
   }
 
   async dropTableTests() {
-    const tables = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
     await this.connection.dropElement('test_inserts', DatabaseElement.TABLE, this.defaultSchema)
-    const newTablesCount = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
     expect(newTablesCount.length).toBeLessThan(tables.length)
   }
 
   async badDropTableTests() {
-    const tables = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
     const expectedQueries = {
       postgresql: 'test_inserts"drop table test_inserts"',
       mysql: "test_inserts'drop table test_inserts'",
@@ -159,10 +157,10 @@ export class DBTestUtil {
     }
     try {
       await this.connection.dropElement(expectedQueries[this.dbType], DatabaseElement.TABLE, this.defaultSchema)
-      const newTablesCount = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
       expect(newTablesCount.length).toEqual(tables.length)
     } catch (err) {
-      const newTablesCount = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
       expect(newTablesCount.length).toEqual(tables.length)
     }
   }
@@ -248,11 +246,11 @@ export class DBTestUtil {
 
 
   async duplicateTableTests() {
-    const tables = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
 
     await this.connection.duplicateTable('group_table', 'group_copy', this.defaultSchema)
 
-    const newTablesCount = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
 
     const originalTableRowCount = await this.knex.select().from('group_table')
     const duplicateTableRowCount = await this.knex.select().from('group_copy')
@@ -263,27 +261,27 @@ export class DBTestUtil {
   }
 
   async badDuplicateTableTests() {
-    const tables = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
 
     try {
       await this.connection.duplicateTable('tableDoesntExists', 'tableDoesntExists_copy', this.defaultSchema)
-      const newTablesCount = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
       expect(newTablesCount.length).toEqual(tables.length)
     } catch (error) {
-      const newTablesCount = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
       expect(newTablesCount.length).toEqual(tables.length)
     }
   }
 
   async listTableTests() {
-    const tables = await this.connection.listTables(this.database, { schema: this.defaultSchema })
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
-    const columns = await this.connection.listTableColumns(this.database, "people", this.defaultSchema)
+    const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
   }
 
   async tableColumnsTests() {
-    const columns = await this.connection.listTableColumns(this.database, null, this.defaultSchema)
+    const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const groupColumns = columns.filter((row) => row.tableName.toLowerCase() === 'group_table')
     expect(groupColumns.length).toBe(2)
   }
@@ -354,7 +352,7 @@ export class DBTestUtil {
     }
 
     await this.connection.alterTable(simpleChange)
-    const simpleResult = await this.connection.listTableColumns(this.database, 'alter_test')
+    const simpleResult = await this.connection.listTableColumns('alter_test')
 
     expect(simpleResult.find((c) => c.columnName?.toLowerCase() === 'family_name')).toBeTruthy()
 
@@ -416,7 +414,7 @@ export class DBTestUtil {
     }
 
     await this.connection.alterTable(input)
-    const schema = await this.connection.listTableColumns(this.database, 'alter_test')
+    const schema = await this.connection.listTableColumns('alter_test')
     interface MiniColumn {
       columnName: string
       dataType: string,
@@ -768,7 +766,6 @@ export class DBTestUtil {
       await this.knex('streamtest').insert(names)
     }
     const result = await this.connection.selectTopStream(
-      this.database,
       'streamtest',
       [{ field: 'id', dir: 'ASC' }],
       [],

@@ -17,7 +17,7 @@ export class RedshiftClient extends PostgresClient {
     return null;
   }
 
-  async getPrimaryKeys(_db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
+  async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
     const query = `
       select tco.constraint_schema,
             tco.constraint_name,

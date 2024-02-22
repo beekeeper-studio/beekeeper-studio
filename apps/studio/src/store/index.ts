@@ -452,9 +452,8 @@ const store = new Vuex.Store<State>({
       if (context.state.connection) {
         try {
           const schema = null
-          const database = context.state.database;
           context.commit("tablesLoading", "Finding tables")
-          const onlyTables = await context.state.connection.listTables(database, { schema })
+          const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'
           })

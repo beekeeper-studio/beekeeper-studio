@@ -130,8 +130,6 @@ export abstract class Export {
     let results;
     if (this.table) {
       results = await this.connection.selectTopStream(
-        // TODO (@day): this may be an issue
-        null,
         this.table.name,
         [],
         this.filters,
@@ -152,8 +150,6 @@ export abstract class Export {
     else {
       // string sql query, not table
       results = await this.connection.queryStream(
-        // TODO (@day): this may be an issue
-        null,
         this.query,
         this.options.chunkSize,
       )
