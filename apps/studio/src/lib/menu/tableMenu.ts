@@ -113,7 +113,7 @@ export async function copyRange(options: {
 
   switch (options.type) {
     case "plain": {
-      if (options.range.getCells().length === 1) {
+      if (options.range.getCells().flat().length === 1) {
         const key = Object.keys(stringifiedRangeData[0])[0];
         text = stringifiedRangeData[0][key];
       } else {
@@ -167,14 +167,14 @@ export function pasteRange(range: Tabulator.RangeComponent) {
   });
 
   if (parsedText.errors.length > 0) {
-    const cell = range.getCells()[0];
+    const cell = range.getCells()[0][0];
     setCellValue(cell, text);
   } else {
-    const table = range.getCells()[0].getTable();
-    const rows = table.modules.spreadsheet.getRows().slice(range.getTop());
-    const columns = table.modules.spreadsheet
-      .getColumns()
-      .slice(range.getLeft() + 1);
+    const table = range.getRows()[0].getTable();
+    const rows = table.modules.selectRange.getTableRows().slice(range.getTopEdge());
+    const columns = table.modules.selectRange
+      .getTableColumns()
+      .slice(range.getLeftEdge());
     const cells: Tabulator.CellComponent[][] = rows.map((row) => {
       const arr = [];
       row.getCells().forEach((cell) => {

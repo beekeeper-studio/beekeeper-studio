@@ -454,8 +454,8 @@ export default Vue.extend({
       if (!this.table) return []
 
       const cellMenu = (keyDatas?: any[]) => {
-        return (_, cell: Tabulator.CellComponent) => {
-          const range = cell.getRange()
+        return (_e, cell: Tabulator.CellComponent) => {
+          const range = _.last(cell.getRanges())
           const menu = [
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
@@ -486,8 +486,8 @@ export default Vue.extend({
         }
       }
 
-      const columnMenu = (_, column: Tabulator.ColumnComponent) => {
-        const range = column.getRange()
+      const columnMenu = (_e, column: Tabulator.ColumnComponent) => {
+        const range = _.last(column.getRanges())
         return [
           this.setAsNullMenuItem(range),
           { separator: true },
@@ -558,6 +558,7 @@ export default Vue.extend({
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
           maxInitialWidth: globals.maxInitialWidth,
+          resizable: 'header',
           cssClass,
           editable: this.cellEditCheck,
           headerSort: !this.dialectData.disabledFeatures.headerSort,
@@ -614,6 +615,51 @@ export default Vue.extend({
         download: false
       }
       results.push(result)
+
+      const rowHeader = {
+        field: '--row-header--bks',
+        resizable: false,
+        frozen: true,
+        headerSort: false,
+        editor: false,
+        width: 40,
+        hozAlign: 'center',
+        formatter: 'rownum',
+        formatterParams: { relativeToPage: true },
+        contextMenu: (_e, cell: Tabulator.CellComponent) => {
+          const range = _.last(cell.getRanges())
+          return [
+            this.setAsNullMenuItem(range),
+            { separator: true },
+            ...copyActionsMenu({
+              range,
+              connection: this.connection,
+              table: this.table.name,
+              schema: this.table.schema,
+            }),
+            { separator: true },
+            ...this.rowActionsMenu(range),
+          ]
+        },
+        headerContextMenu: () => {
+          const range: Tabulator.RangeComponent = _.last(this.tabulator.getRanges())
+          return [
+            this.setAsNullMenuItem(range),
+            { separator: true },
+            ...copyActionsMenu({
+              range,
+              connection: this.connection,
+              table: this.table.name,
+              schema: this.table.schema,
+            }),
+            { separator: true },
+            resizeAllColumnsToFitContent,
+            resizeAllColumnsToFixedWidth,
+            this.openColumnFilterMenuItem,
+          ]
+        },
+      }
+      results.unshift(rowHeader)
 
       return results
     },
@@ -737,16 +783,16 @@ export default Vue.extend({
 
     },
     copySelection() {
-      if (!document.activeElement.classList.contains('tabulator-tableholder')) return
-      copyRange({ range: this.tabulator.getActiveRange(), type: 'plain' })
+      if (!this.focusingTable()) return
+      copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
     },
     pasteSelection() {
-      if (!document.activeElement.classList.contains('tabulator-tableholder')) return
-      pasteRange(this.tabulator.getActiveRange())
+      if (!this.focusingTable()) return
+      pasteRange(_.last(this.tabulator.getRanges()))
     },
-    deleteTableSelection(_: Event, range?: Tabulator.RangeComponent) {
-      if (!document.activeElement.classList.contains('tabulator-tableholder')) return
-      if (!range) range = this.tabulator.getActiveRange()
+    deleteTableSelection(_e: Event, range?: Tabulator.RangeComponent) {
+      if (!this.focusingTable()) return
+      if (!range) range = _.last(this.tabulator.getRanges())
       this.addRowsToPendingDeletes(range.getRows());
     },
     getCleanSelectedRowData(cell) {
@@ -802,7 +848,11 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.initialFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
-        spreadsheet: true,
+        selectableRange: true,
+        selectableRangeColumns: true,
+        selectableRangeRows: true,
+        resizableColumnGuide: true,
+        editTriggerEvent:"dblclick",
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
@@ -830,41 +880,6 @@ export default Vue.extend({
           scrollPageUp: false,
           scrollPageDown: false
         },
-        spreadsheetRowHeader: {
-          field: '--row-header--bks',
-          contextMenu: (_, cell: Tabulator.CellComponent) => {
-            const range = cell.getRange()
-            return [
-              this.setAsNullMenuItem(range),
-              { separator: true },
-              ...copyActionsMenu({
-                range,
-                connection: this.connection,
-                table: this.table.name,
-                schema: this.table.schema,
-              }),
-              { separator: true },
-              ...this.rowActionsMenu(range),
-            ]
-          },
-          headerContextMenu: () => {
-            const range = this.tabulator.getActiveRange()
-            return [
-              this.setAsNullMenuItem(range),
-              { separator: true },
-              ...copyActionsMenu({
-                range,
-                connection: this.connection,
-                table: this.table.name,
-                schema: this.table.schema,
-              }),
-              { separator: true },
-              resizeAllColumnsToFitContent,
-              resizeAllColumnsToFixedWidth,
-              this.openColumnFilterMenuItem,
-            ]
-          }
-        },
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
@@ -876,11 +891,11 @@ export default Vue.extend({
       })
     },
     rowActionsMenu(range: Tabulator.RangeComponent) {
-      const rowRangeLabel = `${range.getTop() + 1} - ${range.getBottom() + 1}`
+      const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
       return [
         {
           label:
-            range.getTop() === range.getBottom()
+            range.getTopEdge() === range.getBottomEdge()
               ? createMenuItem("Clone row", "Control+D")
               : createMenuItem(`Clone rows ${rowRangeLabel}`, "Control+D"),
           action: this.cellCloneRow.bind(this),
@@ -888,7 +903,7 @@ export default Vue.extend({
         },
         {
           label:
-            range.getTop() === range.getBottom()
+            range.getTopEdge() === range.getBottomEdge()
               ? createMenuItem("Delete row", "Delete")
               : createMenuItem(`Delete rows ${rowRangeLabel}`, "Delete"),
           action: () => {
@@ -905,7 +920,9 @@ export default Vue.extend({
         .every((col) => this.isPrimaryKey(col.getField()));
       return {
         label: createMenuItem("Set as NULL"),
-        action: () => range.getCells().forEach((cell) => {
+        action: () => range.getCells().flat().forEach((cell) => {
+          // FIXME getCells must return components, fix from tabulator
+          cell = cell.getComponent()
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
         disabled: areAllCellsPrimarykey || !this.editable,
@@ -1094,7 +1111,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: Tabulator.RangeComponent) {
-      if (!range) range = this.tabulator.getActiveRange()
+      if (!range) range = _.last(this.tabulator.getRanges())
 
       range.getRows().forEach((row) => {
         const data = { ...row.getData() }
@@ -1113,7 +1130,7 @@ export default Vue.extend({
       })
     },
     cellCloneRow(_, cell: Tabulator.CellComponent) {
-      this.cloneSelection(cell.getRange())
+      this.cloneSelection(_.last(cell.getRanges()))
     },
     cellAddRow() {
       if (this.dialectData.disabledFeatures?.tableTable) {
@@ -1530,6 +1547,10 @@ export default Vue.extend({
       this.discardChanges();
       this.triggerFilter(draftFilters);
       this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
+    },
+    focusingTable() {
+      const classes = [...document.activeElement.classList.values()]
+      return classes.some(c => c.startsWith('tabulator'))
     },
     handleRowFilterBuilderInput(filters: TableFilter[]) {
       this.tab.setFilters(filters)

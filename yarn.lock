@@ -14511,9 +14511,9 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@beekeeper-studio/tabulator#93b922ff4cc9bec5485fa546527eda702ad17f1b:
-  version "5.5.2-bks2"
-  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/93b922ff4cc9bec5485fa546527eda702ad17f1b"
+tabulator-tables@beekeeper-studio/tabulator#a00978c782ead8470fa0b099f0a082911039906c:
+  version "5.6.1-bks-1"
+  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/a00978c782ead8470fa0b099f0a082911039906c"
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"
@@ -15692,17 +15692,17 @@ vue-template-es2015-compiler@^1.6.0, vue-template-es2015-compiler@^1.9.0:
   resolved "https://registry.yarnpkg.com/vue-template-es2015-compiler/-/vue-template-es2015-compiler-1.9.1.tgz#1ee3bc9a16ecbf5118be334bb15f9c46f82f5825"
   integrity sha512-4gDntzrifFnCEvyoO8PqyJDmguXgVPxKiIxrBKjIowvL9l+N66196+72XVYR8BBf1Uv1Fgt3bGevJ+sEmxfZzw==
 
+vue-virtual-scroll-list@^2.3.5:
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/vue-virtual-scroll-list/-/vue-virtual-scroll-list-2.3.5.tgz#b589ac6245faf857c35090f854e59d653e90626c"
+  integrity sha512-YFK6u5yltqtAOfTBcij/KGAS2SoZvzbNIAf9qTULauPObEp53xj22tDuohrrM2vNkgoD5kejXICIUBt2Q4ZDqQ==
+
 vue2-datepicker@^3.11.1:
   version "3.11.1"
   resolved "https://registry.yarnpkg.com/vue2-datepicker/-/vue2-datepicker-3.11.1.tgz#b2124e15f694d0fd43a92558f6929ec29338d241"
   integrity sha512-6PU/+pnp2mgZAfnSXmbdwj9516XsEvTiw61Q5SNrvvdy8W/FCxk1GAe9UZn/m9YfS5A47yK6XkcjMHbp7aFApA==
   dependencies:
     date-format-parse "^0.2.7"
-
-vue-virtual-scroll-list@^2.3.5:
-  version "2.3.5"
-  resolved "https://registry.yarnpkg.com/vue-virtual-scroll-list/-/vue-virtual-scroll-list-2.3.5.tgz#b589ac6245faf857c35090f854e59d653e90626c"
-  integrity sha512-YFK6u5yltqtAOfTBcij/KGAS2SoZvzbNIAf9qTULauPObEp53xj22tDuohrrM2vNkgoD5kejXICIUBt2Q4ZDqQ==
 
 vue@^2.6.10, vue@^2.6.11, vue@^2.6.14:
   version "2.7.10"
