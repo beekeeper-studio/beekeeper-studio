@@ -132,7 +132,7 @@
     "testcontainers": "~8.9.0",
     "typescript": "~4.1.5",
     "vue-cli-plugin-electron-builder": "~2.1.1",
-    "vue-template-compiler": "^2.6.11",
+    "vue-template-compiler": "^2.6.11"
   },
   "eslintConfig": {
     "ignorePatterns": [
