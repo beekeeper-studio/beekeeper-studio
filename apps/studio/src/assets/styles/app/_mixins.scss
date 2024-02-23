@@ -117,3 +117,11 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+@mixin small-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 550px;
+  // max-height: -webkit-fill-available;
+}

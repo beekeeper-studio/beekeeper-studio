@@ -1,7 +1,7 @@
 <template>
   <div
     v-hotkey="keymap"
-    class="tabletable flex-col"
+    class="tabletable tabcontent flex-col"
     :class="{'view-only': !editable}"
   >
     <EditorModal
@@ -70,6 +70,7 @@
       <div class="tabulator-paginator">
         <div class="flex-center flex-middle flex">
           <a
+            v-if="(this.page > 1)"
             @click="page = page - 1"
             v-tooltip="ctrlOrCmd('left')"
           ><i class="material-icons">navigate_before</i></a>
@@ -171,6 +172,15 @@
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
+            <x-menuitem
+              v-if="isCassandra"
+              @click="cassandraAllowFilter = !this.isCassandra"
+            >
+              <x-label>
+                <i class="material-icons">{{ this.isCassandra ? 'check' : 'horizontal_rule' }}</i>
+                Allow Filtering
+              </x-label>
+            </x-menuitem>
             <x-menuitem @click="exportTable">
               <x-label>Export whole table</x-label>
             </x-menuitem>
@@ -180,6 +190,12 @@
             </x-menuitem>
             <x-menuitem @click="showColumnFilterModal">
               <x-label>Show or hide columns</x-label>
+            </x-menuitem>
+            <x-menuitem @click="importTab">
+              <x-label>
+                Import from file
+                <span class="badge badge-info">Beta</span>
+              </x-label>
             </x-menuitem>
             <x-menuitem @click="openQueryTab">
               <x-label>Copy view to SQL</x-label>
@@ -237,7 +253,7 @@ import Vue from 'vue'
 import pluralize from 'pluralize'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
-import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
+import DataMutators from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
@@ -260,6 +276,7 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
+import { escapeHtml } from '@shared/lib/tabulator';
 
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
@@ -293,6 +310,7 @@ export default Vue.extend({
         updates: [],
         deletes: []
       },
+      paginationStates: [null], // used for pagination that is not based on offsets. Null is always the starter one because that means "just bring back em back from the beginning"
       queryError: null,
       saveError: null,
       timeAgo: new TimeAgo('en-US'),
@@ -311,6 +329,9 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
+    isCassandra() {
+      return this.connection?.connectionType === 'cassandra'
+    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -539,7 +560,7 @@ export default Vue.extend({
           maxInitialWidth: globals.maxInitialWidth,
           cssClass,
           editable: this.cellEditCheck,
-          headerSort: true,
+          headerSort: !this.dialectData.disabledFeatures.headerSort,
           editor: editorType,
           tooltip: this.cellTooltip,
           contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
@@ -943,15 +964,17 @@ export default Vue.extend({
       });
     },
     defaultColumnWidth(slimType, defaultValue) {
-      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
+      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
     },
     // TODO: this is not attached to anything. but it might be needed?
     allowHeaderSort(column) {
+      const badStarts = [
+        'json', 'clob'
+      ]
       if(!column.dataType) return true
-      if(column.dataType.startsWith('json')) return false
-      return true
+      return !badStarts.find((bad) => column.dataType.toLowerCase().startsWith(bad))
     },
     slimDataType(dt) {
       if (!dt) return null
@@ -1297,6 +1320,9 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edited')
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
+    importTab() {
+      this.trigger(AppEvent.upgradeModal)
+    },
     openQueryTab() {
       const page = this.tabulator.getPage();
       const orderBy = [
@@ -1344,6 +1370,7 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
+      const { usesOffsetPagination } = this.dialectData
       log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
@@ -1358,13 +1385,15 @@ export default Vue.extend({
         limit = params.size
       }
 
+      // if (usesOffsetPagination) then use pages otherwise hit the pageState array
       if (params.page) {
-        offset = (params.page - 1) * limit;
+        offset = usesOffsetPagination ? (params.page - 1) * limit : this.paginationStates[params.page - 1];
       }
 
       // like if you change a filter
       if (params.page && params.page !== this.page) {
         this.page = params.page
+        this.paginationStates = [null]
       }
 
       log.info("filters", filters)
@@ -1378,11 +1407,13 @@ export default Vue.extend({
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
-              limit,
+              this.limit,
               orderBy,
               filters,
               this.table.schema,
               selects,
+              // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
+              { allowFilter: this.isCassandra }
             );
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
@@ -1392,6 +1423,11 @@ export default Vue.extend({
 
             const r = response.result;
             this.response = response
+
+            if (!usesOffsetPagination && response.pageState && !this.paginationStates.includes(response.pageState)) {
+              this.paginationStates = [...this.paginationStates, response.pageState]
+            }
+
             this.resetPendingChanges()
             this.clearQueryError()
 
@@ -1413,7 +1449,7 @@ export default Vue.extend({
               data
             });
           } catch (error) {
-            reject(error.message);
+            console.error("data fetch error", error)
             this.queryError = {
               title: error.message,
               message: error.message
@@ -1421,6 +1457,7 @@ export default Vue.extend({
             this.$nextTick(() => {
               this.tabulator.clearData()
             })
+            reject(error.message);
           } finally {
             if (!this.active) {
               this.forceRedraw = true

@@ -291,7 +291,6 @@ export default Vue.extend({
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
-    await this.$store.dispatch('loadUsedConfigs')
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
     this.config.sshUsername = os.userInfo().username
@@ -310,6 +309,7 @@ export default Vue.extend({
         expandToMin: true,
       } as Split.Options)
     })
+      await this.$store.dispatch('loadUsedConfigs')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
@@ -338,7 +338,7 @@ export default Vue.extend({
       this.config = new SavedConnection()
     },
     edit(config) {
-      this.config = config
+      this.config = _.clone(config)
       this.errors = null
       this.connectionError = null
     },

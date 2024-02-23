@@ -18,7 +18,7 @@ old_url: "https://docs.beekeeperstudio.io/docs/importing-data-csv-json-etc"
 ![Import File Settings](../assets/images/importing-data-csv-json-etc-844e-149.png)
 
 - Select if each cell should have existing wrapping white space removed from it or if the string should be trimmed..
-- Beekeeper will autodetect specific file type seperators and set defaults. You have the ability to override these.
+- Beekeeper will autodetect specific file type separators and set defaults. You have the ability to override these.
 - Certain entries in the file can and should be turned to `NULL` in the table. Select any permutation of these. Any not selected will be stored in the table exactly as presented.
 - While selecting separators and Null Values, make use of the option to preview what the file translates to (as if it were a table). The first 10 rows of the imported file will be shown sporting the options selected above (totally optional to do).
 - When finished, select `Map To Table` in either spot and go on to step 2.

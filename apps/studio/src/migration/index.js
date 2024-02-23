@@ -35,6 +35,7 @@ import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
 import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
+import ultimate from './ultimate/index'
 
 const logger = createLogger('migrations')()
 
@@ -62,7 +63,7 @@ const devMigrations = [
   dev1, dev2, dev3
 ]
 
-const migrations = [...realMigrations, ...fixtures, ...devMigrations]
+const migrations = [...realMigrations, ...ultimate, ...fixtures, ...devMigrations]
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",
