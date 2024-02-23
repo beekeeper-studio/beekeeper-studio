@@ -104,6 +104,28 @@ function testWith(dockerTag, socket = false) {
         `);
       }
 
+              const sqlA = `
+
+        CREATE FUNCTION _group_concat(text, text) RETURNS text
+            AS $_$
+        SELECT CASE
+          WHEN $2 IS NULL THEN $1
+          WHEN $1 IS NULL THEN $2
+          ELSE $1 || ', ' || $2
+        END
+        $_$
+            LANGUAGE sql IMMUTABLE;
+
+`
+        const sqlB = `
+CREATE AGGREGATE group_concat(text) (
+    SFUNC = _group_concat,
+    STYPE = text
+);
+        `
+      await util.knex.raw(sqlA)
+      await util.knex.raw(sqlB)
+
       await util.knex.raw(`
           CREATE SCHEMA schema1;
           CREATE TABLE schema1.duptable (
@@ -410,6 +432,12 @@ function testWith(dockerTag, socket = false) {
 
     describe("Common Tests", () => {
       runCommonTests(() => util)
+    })
+
+    describe("Routines:", () => {
+      it.only("Should get the SQL to create a routine", async () => {
+      await util.connection.getRoutineCreateScript('group_concat', "something", "public")
+      })
     })
 
 
