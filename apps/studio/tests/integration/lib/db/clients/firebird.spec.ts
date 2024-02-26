@@ -53,6 +53,7 @@ describe("Firebird Tests", () => {
       domain: null,
       socketPath: null,
       socketPathEnabled: false,
+      readOnlyMode: false
     };
     const options: Options = {
       dialect: "firebird",

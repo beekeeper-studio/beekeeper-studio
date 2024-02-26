@@ -1,24 +1,28 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { runCommonTests } from './all'
+import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
+import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
 
 const TEST_VERSIONS = [
-  { version: '9.3', socket: false},
-  { version: '9.4', socket: false},
-  { version: 'latest', socket: false },
-  { version: 'latest', socket: true },
+  { version: '9.3', socket: false, readonly: false},
+  { version: '9.3', socket: false, readonly: true},
+  { version: '9.4', socket: false, readonly: false},
+  { version: '9.4', socket: false, readonly: true},
+  { version: 'latest', socket: false, readonly: false },
+  { version: 'latest', socket: false, readonly: true },
+  { version: 'latest', socket: true, readonly: false },
 ]
 
-function testWith(dockerTag, socket = false) {
-  describe(`Postgres [${dockerTag} - socket? ${socket}]`, () => {
+function testWith(dockerTag, socket = false, readonly = false) {
+  describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
@@ -53,6 +57,7 @@ function testWith(dockerTag, socket = false) {
         domain: null,
         socketPath: null,
         socketPathEnabled: false,
+        readOnlyMode: readonly
       }
 
       if (socket) {
@@ -123,16 +128,6 @@ function testWith(dockerTag, socket = false) {
           );
         `);
 
-      // NOTE (@day): this query doesn't run properly unless we use this
-      const query = util.connection.query(`
-          CREATE TABLE public.withquestionmark (
-            "approved?" boolean NULL DEFAULT false,
-            str_col character varying(255) NOT NULL,
-            another_str_col character varying(255) NOT NULL PRIMARY KEY
-          );
-        `);
-
-      await query.execute();
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
@@ -167,10 +162,14 @@ function testWith(dockerTag, socket = false) {
         }
       ]
 
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
-      expect(result).toMatchObject([
-        { id: 1, names: [], normal: 'foo' }
-      ])
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: []})).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
+        expect(result).toMatchObject([
+          { id: 1, names: [], normal: 'foo' }
+        ])
+      }
     })
 
     it("Should be able to get a table create script without erroring", async() => {
@@ -188,10 +187,16 @@ function testWith(dockerTag, socket = false) {
         ]
       }
 
-      const result = await util.connection.applyChanges(
-        { updates: [], inserts: [newRow], deletes: []}
-      )
-      expect(result).not.toBeNull()
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges(
+          { updates: [], inserts: [newRow], deletes: []}
+        )).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges(
+          { updates: [], inserts: [newRow], deletes: []}
+        )
+        expect(result).not.toBeNull()
+      }
     })
 
     it("Should allow me to update rows with array types", async () => {
@@ -215,8 +220,13 @@ function testWith(dockerTag, socket = false) {
         columnType: 'text',
       }
       ]
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
-      expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      }
+
     })
 
 
@@ -241,8 +251,13 @@ function testWith(dockerTag, socket = false) {
         columnType: 'text',
       }
       ]
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
-      expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      }
     })
 
     // regression test for Bug #1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -370,6 +385,9 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for #1734
     it("should be able to insert to a table with a ? in a column name", async () => {
+      // We have enough coverage of read only mode.
+      if (util.connection.readOnlyMode) return;
+
       const data = {
         str_col: 'hello?',
         another_str_col: '???'
@@ -382,11 +400,20 @@ function testWith(dockerTag, socket = false) {
           data
         ]
       }
+      const query = util.connection.query(`
+          CREATE TABLE public.withquestionmark (
+            "approved?" boolean NULL DEFAULT false,
+            str_col character varying(255) NOT NULL,
+            another_str_col character varying(255) NOT NULL PRIMARY KEY
+          );
+        `);
 
-      const result = await util.connection.applyChanges(
-        { updates: [], inserts: [newRow], deletes: []}
-      )
+      await query.execute();
+
+      const payload = { updates: [], inserts: [newRow], deletes: []}
+      const result = await util.connection.applyChanges(payload)
       expect(result).not.toBeNull()
+
     })
 
     it("should be able to list table columns with correct types", async () => {
@@ -409,11 +436,15 @@ function testWith(dockerTag, socket = false) {
     })
 
     describe("Common Tests", () => {
-      runCommonTests(() => util)
+      if (readonly) {
+        runReadOnlyTests(() => util)
+      } else {
+        runCommonTests(() => util, { dbReadOnlyMode: readonly })
+      }
     })
 
 
   })
 }
 
-TEST_VERSIONS.forEach(({ version, socket }) => testWith(version, socket))
+TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))

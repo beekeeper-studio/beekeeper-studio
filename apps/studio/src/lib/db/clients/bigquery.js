@@ -45,7 +45,7 @@ export default async function (server, database) {
   logger().debug("bigquery client connected")
 
   return {
-    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true, partitions: false, editPartitions: false }),
+    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true, partitions: false, editPartitions: false, backups: false, backDirFormat: false, restore: false }),
     defaultSchema: () => null,
     disconnect: () => disconnect(client),
     listTables: (db) => listTables(client, db),

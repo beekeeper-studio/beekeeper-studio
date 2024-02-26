@@ -14,6 +14,16 @@ export default {
       password: '',
       defaultDatabase: 'defaultdb'
     },
+    {
+      name: "[DEV] Docker Oracle",
+      connectionType: 'oracle',
+      port: 1521,
+      host: 'localhost',
+      serviceName: 'SAKILA',
+      defaultDatabase: 'sakila',
+      password: 'example',
+      username: 'beekeeper'
+    }
   ],
 
   async run() {

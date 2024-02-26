@@ -2,13 +2,26 @@ import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { IDbConnectionDatabase, IDbConnectionServer } from "../client";
-import { FilterOptions, PrimaryKeyColumn, TableOrView, TableProperties } from "../models";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
 
 export class RedshiftClient extends PostgresClient {
+  supportedFeatures(): SupportedFeatures {
+    return {
+      customRoutines: true,
+      comments: true,
+      properties: true,
+      partitions: false,
+      editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false
+    };
+  }
+
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     return [];
   }
@@ -107,7 +120,7 @@ export class RedshiftClient extends PostgresClient {
       }
     }
 
-    
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,

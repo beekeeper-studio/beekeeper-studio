@@ -10,7 +10,7 @@ export class SqlServerCursor extends BeeCursor {
   private connection: ConnectionPool | undefined
   private request: Request | undefined;
   private end = false;
-  private bufferRedy = false;
+  private bufferReady = false;
   private error: Error | undefined;
   private rowBuffer: any[] = [];
 
@@ -46,7 +46,7 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   private handleEnd() {
-    this.bufferRedy = true
+    this.bufferReady = true
     this.end = true
     this.connection?.close()
   }
@@ -60,7 +60,7 @@ export class SqlServerCursor extends BeeCursor {
     this.rowBuffer.push(row)
     if (this.rowBuffer.length >= this.chunkSize) {
       this.request?.pause()
-      this.bufferRedy = true
+      this.bufferReady = true
     }
   }
 
@@ -72,14 +72,14 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   private resume() {
-    this.bufferRedy = false
+    this.bufferReady = false
     this.request?.resume()
   }
 
   async read(): Promise<any[][]> {
     if (this.error) throw this.error
     if (this.end) return this.pop()
-    await waitFor(() => this.bufferRedy)
+    await waitFor(() => this.bufferReady)
     const results = this.pop()
     this.resume()
     return results

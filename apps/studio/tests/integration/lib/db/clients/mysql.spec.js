@@ -4,16 +4,19 @@ import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import data_mutators from '../../../../../src/mixins/data_mutators';
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
+import { errorMessages } from '../../../../../src/lib/db/clients/utils'
+import { runCommonTests, runReadOnlyTests } from './all'
 
 const TEST_VERSIONS = [
   {version: '5.7'},
+  {version: '5.7', readonly: true},
+  { version: '8', socket: false, readonly: true},
   { version: '8', socket: false},
   { version: '8', socket: true }
 ]
 
 
-function testWith(tag, socket = false) {
+function testWith(tag, socket = false, readonly = false) {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
 
     let container;
@@ -39,7 +42,8 @@ function testWith(tag, socket = false) {
         host: container.getHost(),
         port: container.getMappedPort(3306),
         user: 'root',
-        password: 'test'
+        password: 'test',
+        readOnlyMode: readonly
       }
       if (socket) {
         config.host = 'somefakehost'
@@ -92,7 +96,11 @@ function testWith(tag, socket = false) {
     })
 
     describe("Common Tests", () => {
-      runCommonTests(() => util)
+      if (readonly) {
+        runReadOnlyTests(() => util)
+      } else {
+        runCommonTests(() => util, { dbReadOnlyMode: readonly })
+      }
     })
 
     it("Should fetch routines correctly", async () => {
@@ -133,13 +141,17 @@ function testWith(tag, socket = false) {
           ]
         }
       ]
-      await util.connection.applyChanges({ inserts })
-      const data = await util.connection.selectTop('insertbits', 0, 10, [])
 
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ inserts })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await util.connection.applyChanges({ inserts })
+        const data = await util.connection.selectTop('insertbits', 0, 10, [])
 
-      expect(data.result.length).toBe(1)
-      const single = data_mutators.methods.bit1Mutator(data.result[0].onebit)
-      expect(single).toBe(1)
+        expect(data.result.length).toBe(1)
+        const single = data_mutators.methods.bit1Mutator(data.result[0].onebit)
+        expect(single).toBe(1)
+      }
     })
 
     it("Should update bit values properly", async () => {
@@ -172,16 +184,31 @@ function testWith(tag, socket = false) {
           ...basics
         }
       ]
-      const results = await util.connection.applyChanges({ updates: values })
-      expect(results.length).toBe(2)
-      const fixed = data_mutators.methods.bitMutator('mysql', results[1].thirtytwo)
-      expect(fixed).toBe("b'00000000000000000000010000000000'")
+
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates: values })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const results = await util.connection.applyChanges({ updates: values })
+        expect(results.length).toBe(2)
+        const fixed = data_mutators.methods.bitMutator('mysql', results[1].thirtytwo)
+        expect(fixed).toBe("b'00000000000000000000010000000000'")
+      }
+
     })
 
+
     it("should be able to create / alter unsigned columns", async () => {
+      if (util.connection.readOnlyMode) {
+        // skip this in read only mode
+        // TODO: make this appropriately fail if the connection is read only
+        return;
+      }
       await util.knex.schema.createTable("unsigned_integers", (table) => {
         table.integer("number").primary()
       })
+
+      const changeFunc =
+
       await util.connection.alterTable({
         table: "unsigned_integers",
         adds: [{ columnName: "tiny_number", dataType: "tinyint unsigned" }],
@@ -203,5 +230,5 @@ function testWith(tag, socket = false) {
 
 }
 
-TEST_VERSIONS.forEach(({ version, socket }) => testWith(version, socket))
+TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
 
