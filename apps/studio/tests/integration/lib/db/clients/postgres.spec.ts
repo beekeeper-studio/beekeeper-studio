@@ -1,7 +1,7 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/client'
+import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
@@ -283,7 +283,7 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
-      const tables = await util.connection.listTables({});
+      const tables = await util.connection.listTables({ schema: null});
       const schema1 = tables.filter((t) => t.schema == "schema1");
       const schema2 = tables.filter((t) => t.schema == "schema2");
 
@@ -294,7 +294,7 @@ function testWith(dockerTag, socket = false) {
     // regression test for Bug #1572 "Only schemas that show are now information_schema and pg_catalog"
     it("Numeric names should still be pulled back in queries", async () => {
       const tables = await util.connection.listTables({ schema: '1234' });
-      const columns = await util.connection.listTableColumns('banana', '5678', '1234');
+      const columns = await util.connection.listTableColumns('5678', '1234');
 
       expect(tables.length).toBe(1);
       expect(tables[0].name).toBe('5678');

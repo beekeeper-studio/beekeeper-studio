@@ -1,18 +1,4 @@
 // Copyright (c) 2015 The SQLECTRON Team
-
-import mysql from './mysql';
-import mariadb from './mariadb';
-import postgresql from './postgresql';
-import cockroachdb from './cockroach';
-import redshift from './redshift';
-import sqlserver from './sqlserver';
-import sqlite from './sqlite';
-import cassandra from './cassandra';
-import bigquery from './bigquery.js';
-import firebird from './firebird';
-import { DBClientFactories } from '../types';
-
-
 export function findClient(key: string): Client | undefined {
   const client = CLIENTS.find((cli) => cli.key === key);
   if(!client) return undefined;
@@ -155,19 +141,3 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
 ];
-
-
-const factories: DBClientFactories = {
-  mysql,
-  postgresql,
-  sqlserver,
-  sqlite,
-  cassandra,
-  redshift,
-  mariadb,
-  cockroachdb,
-  bigquery,
-  firebird,
-};
-
-export default factories;

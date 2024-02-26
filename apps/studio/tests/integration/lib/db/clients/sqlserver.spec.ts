@@ -1,7 +1,7 @@
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/client'
+import { IDbConnectionServerConfig } from '@/lib/db/types'
 
 describe("SQL Server Tests", () => {
 

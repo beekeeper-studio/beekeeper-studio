@@ -58,12 +58,12 @@ const SD = SqliteData;
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   version: SqliteResult;
-  database: string;
+  databasePath: string;
 
-  constructor(_server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, sqliteContext);
+  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+    super(knex, sqliteContext, server, database);
 
-    this.database = database?.database;
+    this.databasePath = database?.database;
   }
 
   versionString(): string {
@@ -85,6 +85,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async connect(): Promise<void> {
+    super.connect();
+
     // set sqlite version
     const version = await this.driverExecuteSingle('SELECT sqlite_version()');
 
@@ -100,7 +102,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve();
   }
 
-  async listTables(_db?: string, _filter?: FilterOptions): Promise<TableOrView[]> {
+  async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
     const sql = `
       SELECT name
       FROM sqlite_master
@@ -129,11 +131,11 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]); // DOES NOT SUPPORT IT
   }
 
-  listMaterializedViewColumns(_db: string, _table: string, _schema?: string): Promise<TableColumn[]> {
+  listMaterializedViewColumns(_table: string, _schema?: string): Promise<TableColumn[]> {
     return Promise.resolve([]); // DOES NOT SUPPORT IT
   }
 
-  async listTableColumns(db: string, table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     if (table) {
       const sql = `PRAGMA table_info(${SD.escapeString(table, true)})`;
 
@@ -141,7 +143,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       return this.dataToColumns(data, table);
     }
 
-    const allTables = (await this.listTables(db)) || []
+    const allTables = (await this.listTables()) || []
     const allViews = (await this.listViews()) || []
     const tables = allTables.concat(allViews)
 
@@ -178,7 +180,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return data
   }
 
-  async listTableIndexes(_db: string, table: string, _schema?: string): Promise<TableIndex[]> {
+  async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
     const sql = `PRAGMA INDEX_LIST('${SD.escapeString(table)}')`;
 
     const { data } = await this.driverExecuteSingle(sql);
@@ -200,7 +202,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     }))
   }
 
-  listSchemas(_db: string, _filter?: SchemaFilterOptions): Promise<string[]> {
+  listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
     return Promise.resolve([]); // DOES NOT SUPPORT IT
   }
 
@@ -208,7 +210,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]); // TODO: not implemented yet
   }
 
-  async getTableKeys(_db: string, table: string, _schema?: string): Promise<TableKey[]> {
+  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`
     const { data } = await this.driverExecuteSingle(sql);
     return data.map(row => ({
@@ -229,7 +231,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       execute: (async (): Promise<QueryResult> => {
         try {
-          queryConnection = new Database(this.database);
+          queryConnection = new Database(this.databasePath);
 
           const result = await this.executeQuery(queryText, { connection: queryConnection })
           return result;
@@ -284,7 +286,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
 
-    const connection = new Database(this.database);
+    const connection = new Database(this.databasePath);
     const cli = { connection };
     await this.driverExecuteSingle('BEGIN', cli);
 
@@ -323,9 +325,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       relations
     ] = await Promise.all([
       this.getTableLength(table),
-      this.listTableIndexes(null, table),
+      this.listTableIndexes(table),
       this.listTableTriggers(table),
-      this.getTableKeys(null, table)
+      this.getTableKeys(table)
     ])
     return {
       size: length, 
@@ -381,12 +383,12 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]);
   }
 
-  async getPrimaryKey(db: string, table: string, schema?: string): Promise<string> {
-    const keys = await this.getPrimaryKeys(db, table, schema);
+  async getPrimaryKey(table: string, schema?: string): Promise<string> {
+    const keys = await this.getPrimaryKeys(table, schema);
     return keys.length === 1 ? keys[0].columnName : null
   }
 
-  async getPrimaryKeys(_db: string, table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
+  async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     const sql = `pragma table_info('${SD.escapeString(table)}')`
     const { data } = await this.driverExecuteSingle(sql);
     const found = data.filter(r => r.pk > 0)
@@ -420,23 +422,23 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return this.knex.raw(query, params).toQuery();
   }
 
-  async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
     const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
-    const columns = await this.listTableColumns( db, table)
+    const columns = await this.listTableColumns(table)
     const rowCount = await this.getTableLength(table)
     const { query, params } = qs
     return {
       totalRows: rowCount,
       columns,
-      cursor: new SqliteCursor(this.database, query, params, chunkSize)
+      cursor: new SqliteCursor(this.databasePath, query, params, chunkSize)
     }
   }
 
-  async queryStream(_db: string, query: string, chunkSize: number): Promise<StreamResults> {
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
       totalRows: undefined,
       columns: undefined, 
-      cursor: new SqliteCursor(this.database, query, [], chunkSize)
+      cursor: new SqliteCursor(this.databasePath, query, [], chunkSize)
     };
   }
 
@@ -485,10 +487,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return [];
   }
 
-  createDatabase(databaseName: string, _charset: string, _collation: string): void {
+  async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<void> {
     // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
     // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs.
-    const fileLocation = this.database.split('/');
+    const fileLocation = this.databasePath.split('/');
     fileLocation.pop();
 
     const dbPath = path.join(...fileLocation, `${databaseName}.db`);
@@ -507,7 +509,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     const results = [];
 
-    const connection = options.connection ? options.connection : new Database(this.database);
+    const connection = options.connection ? options.connection : new Database(this.databasePath);
     // Fix (part 1 of 2) Issue #1399 - int64s not displaying properly
     // Binds ALL better-sqlite3 integer columns as BigInts by default
     // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
@@ -623,10 +625,4 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     return true
   }
-}
-
-export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new SqliteClient(server, database);
-  await client.connect();
-  return client;
 }

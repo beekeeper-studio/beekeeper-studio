@@ -1,11 +1,11 @@
 import {Knex} from 'knex'
 import knex from 'knex'
-import { DBConnection, IDbConnectionServerConfig } from '../../src/lib/db/client'
-import { createServer } from '../../src/lib/db/index'
+import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
+import { createServer } from '../../src/lib/db/index' 
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
-import { AlterTableSpec, Dialect, DialectData, FormatterDialect } from '../../../../shared/src/lib/dialects/models'
+import { AlterTableSpec, Dialect, DialectData, FormatterDialect, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex } from '../../src/lib/db/models'
@@ -13,6 +13,7 @@ export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -54,7 +55,7 @@ export interface Options {
 export class DBTestUtil {
   public knex: Knex
   public server: IDbConnectionPublicServer
-  public connection: DBConnection
+  public connection: BasicDatabaseClient<any>
   public extraTables = 0
   private options: Options
   private dbType: string
@@ -139,7 +140,7 @@ export class DBTestUtil {
 
   async dropTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
-    await this.connection.dropElement('test_inserts', 'TABLE', this.defaultSchema)
+    await this.connection.dropElement('test_inserts', DatabaseElement.TABLE, this.defaultSchema)
     const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
     expect(newTablesCount.length).toBeLessThan(tables.length)
   }
@@ -155,7 +156,7 @@ export class DBTestUtil {
       cockroachdb: 'test_inserts"drop table test_inserts"'
     }
     try {
-      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      await this.connection.dropElement(expectedQueries[this.dbType], DatabaseElement.TABLE, this.defaultSchema)
       const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
       expect(newTablesCount.length).toEqual(tables.length)
     } catch (err) {
@@ -204,7 +205,7 @@ export class DBTestUtil {
     await this.knex('group_table').insert({select_col: 'something'})
     const initialRowCount = await this.knex.select().from('group_table')
 
-    await this.connection.truncateElement('group_table', 'TABLE', this.defaultSchema)
+    await this.connection.truncateElement('group_table', DatabaseElement.TABLE, this.defaultSchema)
     const newRowCount = await this.knex.select().from('group_table')
 
     expect(newRowCount.length).toBe(0)
@@ -225,7 +226,7 @@ export class DBTestUtil {
     }
     try {
       // TODO: this should not the right method to call here
-      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      await this.connection.dropElement(expectedQueries[this.dbType], DatabaseElement.TABLE, this.defaultSchema)
       const newRowCount = await this.knex.select().from('group_table')
       expect(newRowCount.length).toEqual(initialRowCount.length)
     } catch (err) {
@@ -337,15 +338,16 @@ export class DBTestUtil {
       table.specificType("age", "varchar(255)").defaultTo('8').nullable()
     })
 
+    const alteration: SchemaItemChange = {
+      columnName: 'last_name',
+      changeType: 'columnName',
+      newValue: 'family_name'
+    }
 
     const simpleChange = {
       table: 'alter_test',
       alterations: [
-        {
-          'columnName': 'last_name',
-          changeType: 'columnName',
-          newValue: 'family_name'
-        }
+        alteration
       ]
     }
 
@@ -420,7 +422,7 @@ export class DBTestUtil {
       defaultValue: string,
     }
     const rawResult: MiniColumn[] = schema.map((c) =>
-      _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType')
+      _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType') as any
     )
 
 
@@ -559,7 +561,7 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    const q = await this.connection.query(
+    const q = this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as total, trim('b') as total from rdb$database" :
         "select 'a' as total, 'b' as total"
@@ -571,7 +573,7 @@ export class DBTestUtil {
     const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
     expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
 
-    const q2 = await this.connection.query(
+    const q2 = this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as a from rdb$database; select trim('b') as b from rdb$database" :
         "select 'a' as a; select 'b' as b"
@@ -615,7 +617,7 @@ export class DBTestUtil {
       'jobs',
       0,
       100,
-      [{ field: 'hourly_rate', dir: 'asc' }],
+      [{ field: 'hourly_rate', dir: 'ASC' }],
       [{ field: 'job_name', type: 'in', value: ['Programmer', "Surgeon's Assistant"] }],
       'public',
       ['*']
@@ -635,7 +637,7 @@ export class DBTestUtil {
       'jobs',
       0,
       100,
-      [{ field: 'hourly_rate', dir: 'asc' }],
+      [{ field: 'hourly_rate', dir: 'ASC' }],
       [
         { field: 'job_name', type: 'in', value: ['Programmer', "Surgeon's Assistant"] },
         { op: "AND", field: 'hourly_rate', type: '>=', value: '41' },
@@ -716,14 +718,15 @@ export class DBTestUtil {
       drops: [],
       additions: [{
         name: 'it_idx',
-        columns: [{ name: 'index_me', order: 'ASC' }]
+        columns: [{ name: 'index_me', order: 'ASC' }],
+        unique: undefined
       }]
     })
     const indexes = await this.connection.listTableIndexes('index_test', this.defaultSchema)
     expect(indexes.map((i) => i.name.toLowerCase())).toContain('it_idx')
     await this.connection.alterIndex({
       drops: [{ name: 'it_idx' }],
-      additions: [{ name: 'it_idx2', columns: [{ name: 'me_too', order: 'ASC'}] }],
+      additions: [{ name: 'it_idx2', columns: [{ name: 'me_too', order: 'ASC'}], unique: undefined }],
       table: 'index_test',
       schema: this.defaultSchema
     })

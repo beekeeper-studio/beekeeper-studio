@@ -9,7 +9,6 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection } from '../lib/db/client'
 import { Routine, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
@@ -27,6 +26,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 
 const log = RawLog.scope('store/index')
 
@@ -41,7 +41,7 @@ export interface State {
   usedConfig: Nullable<IConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
-  connection: Nullable<DBConnection>,
+  connection: Nullable<BasicDatabaseClient<any>>,
   database: Nullable<string>,
   databaseList: string[],
   tables: TableOrView[],
