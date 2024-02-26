@@ -265,7 +265,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       let rows: any[];
       let fields: any[];
 
-      if (arrayMode) {
+      if (isSelect && arrayMode) {
         rows = data.map((row: any[]) =>
           row.reduce((obj, val, idx) => {
             obj[`c${idx}`] = val;
