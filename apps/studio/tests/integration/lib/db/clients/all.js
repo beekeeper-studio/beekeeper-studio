@@ -24,9 +24,6 @@ export function runCommonTests(getUtil) {
   })
 
   test("query tests", async () => {
-    if (getUtil().dbType === 'sqlite') {
-      return
-    }
     await getUtil().queryTests()
   })
 
