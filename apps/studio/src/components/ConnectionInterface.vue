@@ -78,13 +78,14 @@
               </div>
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
+                <other-database-notice v-if="shouldUpsell" />
                 <postgres-form
-                  v-if="config.connectionType === 'cockroachdb'"
+                  v-else-if="config.connectionType === 'cockroachdb'"
                   :config="config"
                   :testing="testing"
                 />
                 <mysql-form
-                  v-if="['mysql', 'mariadb'].includes(config.connectionType)"
+                  v-else-if="['mysql', 'mariadb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                   @save="save"
@@ -92,36 +93,36 @@
                   @connect="submit"
                 />
                 <postgres-form
-                  v-if="config.connectionType === 'postgresql'"
+                  v-else-if="config.connectionType === 'postgresql'"
                   :config="config"
                   :testing="testing"
                 />
                 <redshift-form
-                  v-if="config.connectionType === 'redshift'"
+                  v-else-if="config.connectionType === 'redshift'"
                   :config="config"
                   :testing="testing"
                 />
                 <sqlite-form
-                  v-if="config.connectionType === 'sqlite'"
+                  v-else-if="config.connectionType === 'sqlite'"
                   :config="config"
                   :testing="testing"
                 />
                 <sql-server-form
-                  v-if="config.connectionType === 'sqlserver'"
+                  v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
                 />
                 <big-query-form
-                  v-if="config.connectionType === 'bigquery'"
+                  v-else-if="config.connectionType === 'bigquery'"
                   :config="config"
                   :testing="testing"
                 />
                 <firebird-form
-                  v-if="config.connectionType === 'firebird'"
+                  v-else-if="config.connectionType === 'firebird'"
                   :config="config"
                   :testing="testing"
                 />
-                <other-database-notice v-if="shouldUpsell" />
+
 
                 <!-- TEST AND CONNECT -->
                 <div
