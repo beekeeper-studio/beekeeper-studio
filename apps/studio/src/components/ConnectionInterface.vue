@@ -121,11 +121,11 @@
                   :config="config"
                   :testing="testing"
                 />
-                <other-database-notice v-if="config.connectionType === 'other'" />
+                <other-database-notice v-if="shouldUpsell" />
 
                 <!-- TEST AND CONNECT -->
                 <div
-                  v-if="config.connectionType !== 'other'"
+                  v-if="!shouldUpsell"
                   class="test-connect row flex-middle"
                 >
                   <span class="expand" />
@@ -162,7 +162,7 @@
                   </div>
                 </div>
                 <SaveConnectionForm
-                  v-if="config.connectionType !== 'other'"
+                  v-if="!shouldUpsell"
                   :config="config"
                   @save="save"
                 />
@@ -171,7 +171,7 @@
           </div>
           <div
             class="pitch"
-            v-if="!config.connectionType"
+            v-if="!config.connectionType && shouldUpsell"
           >
             🌟 <strong>Upgrade to premium</strong> for data import, multi-table export, backup & restore, Oracle support, and more.
             <a
@@ -208,7 +208,7 @@ import platformInfo from '@/common/platform_info'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
 import { mapState } from 'vuex'
-import { dialectFor, isUltimateDialect } from '@shared/lib/dialects/models'
+import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 import Vue from 'vue'
