@@ -208,11 +208,12 @@ import platformInfo from '@/common/platform_info'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
 import { mapState } from 'vuex'
-import { dialectFor } from '@shared/lib/dialects/models'
+import { dialectFor, isUltimateDialect } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
+import { isUltimateType } from '@/common/interfaces/IConnection'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -239,6 +240,10 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
+    },
+    shouldUpsell() {
+      if (platformInfo.isUltimate) return false
+      return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
       if (_.isNull(this.config) || _.isUndefined(this.config.id)) {

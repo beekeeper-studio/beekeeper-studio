@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'firebird'] as const
-const ultimateDialects = ['oracle', 'cassandra'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -9,6 +9,9 @@ export const Dialects = [...communityDialects, ...ultimateDialects] as const
 export const SpecialTypes = ['autoincrement']
 export type Dialect = typeof Dialects[number]
 
+export function isUltimateDialect(d: any) {
+  return ultimateDialects.includes(d)
+}
 export function dialectFor(s: string): Dialect | null {
   switch (s) {
     case 'cockroachdb':

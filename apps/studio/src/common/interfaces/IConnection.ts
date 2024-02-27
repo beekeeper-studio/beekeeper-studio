@@ -2,8 +2,18 @@ import { RedshiftOptions } from "../appdb/models/saved_connection"
 import { BigQueryOptions } from "../appdb/models/saved_connection"
 import { CassandraOptions } from "../appdb/models/saved_connection"
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'oracle' | 'bigquery' | 'firebird'
+const ConnectionTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird'] as const
+export type ConnectionType = typeof ConnectionTypes[number]
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
+
+export function isUltimateType(s: ConnectionType) {
+  return [
+    'oracle',
+    'firebird',
+    'cassandra'
+  ].includes(s)
+}
+
 
 export interface ISimpleConnection {
   id: number | null
