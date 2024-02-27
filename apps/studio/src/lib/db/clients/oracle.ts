@@ -677,7 +677,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     }
   }
 
-  async queryStream(db: string, query: string, chunkSize: number): Promise<StreamResults> {
+  async queryStream(_db: string, query: string, chunkSize: number): Promise<StreamResults> {
 
 
     return {
@@ -742,7 +742,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {
-      const realQueries = _.isArray(query) ? query : [query]
+      const realQueries: string[] = _.isArray(query) ? query : [query]
       const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
       // TODO - use `executeMany` if no SELECT queries are present
       // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
@@ -750,7 +750,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       return await withClosable(c, async (c: oracle.Connection) => {
         const results: DriverResult[] = []
         for (let qi = 0; qi < infos.length; qi++) {
-          const q = infos[qi];
+          const q: IdentifyResult = infos[qi];
           // remove the semicolon, because Oracle, but not for blocks....also because oracle.
           const queryText = this.maybeStripSemicolon(q.text, q)
           log.debug("Execute Query", queryText, options)
@@ -763,7 +763,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       })
   }
 
-  private identify(query: string) {
+  private identify(query: string): IdentifyResult[] {
     return rawIdentify(query, {strict: false, dialect: 'oracle'})
   }
 }
