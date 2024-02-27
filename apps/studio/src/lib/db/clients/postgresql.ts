@@ -62,15 +62,6 @@ interface STQResults {
 
 }
 
-const postgresContext = {
-  getExecutionContext(): ExecutionContext {
-    return null;
-  },
-  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
-    return null;
-  }
-};
-
 export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   version: VersionInfo;
   conn: HasPool;
@@ -81,7 +72,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   database: IDbConnectionDatabase;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, postgresContext);
+    super(knex);
 
     this.dialect = 'psql';
     this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
@@ -547,7 +538,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       execute: (async (): Promise<NgQueryResult[]> => {
         const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
         const rows = dataPid.rows
-
         pid = rows[0].pid;
 
         try {

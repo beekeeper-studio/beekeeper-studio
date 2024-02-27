@@ -30,6 +30,15 @@ export interface AppContextProvider {
     logQuery(query: string, options: QueryLogOptions, context: ExecutionContext ): Promise<number | string>
 }
 
+export const NoOpContextProvider: AppContextProvider = {
+  getExecutionContext(): ExecutionContext {
+    return null;
+  },
+  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
+    return null;
+  }
+};
+
 // raw result type is specific to each database implementation
 export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClient {
 
@@ -39,7 +48,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   // TODO (@day): this can be cleaned up when we fix configuration
   dbReadOnlyMode = false;
 
-  constructor(knex: Knex | null, contextProvider: AppContextProvider) {
+  constructor(knex: Knex | null, contextProvider: AppContextProvider = NoOpContextProvider) {
     this.knex = knex;
     this.contextProvider = contextProvider
   }

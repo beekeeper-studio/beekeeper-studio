@@ -2,10 +2,9 @@ import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
 import oracle from 'bks-oracledb'
 import _ from 'lodash'
-import { identify } from 'sql-query-identifier';
 
 import { IDbConnectionDatabase, IDbConnectionServer, DatabaseElement } from "../client";
-import { BasicDatabaseClient } from "../BasicDatabaseClient";
+import { BasicDatabaseClient } from "./BasicDatabaseClient";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
@@ -32,8 +31,6 @@ import {
   buildUpdateQueries,
   withClosable,
   buildDeleteQueries,
-  isAllowedReadOnlyQuery,
-  errorMessages,
   applyChangesSql,
   joinQueries
 } from './utils';
@@ -51,8 +48,7 @@ const log = rawLog.scope('oracle')
 
 
 
-export class OracleClient extends BasicDatabaseClient {
-
+export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   pool: oracle.Pool;
   server: IDbConnectionServer
@@ -93,11 +89,11 @@ export class OracleClient extends BasicDatabaseClient {
 
   async createDatabase(databaseName, charset) {
     const sql = `CREATE DATABASE ${this.wrapIdentifier(databaseName)} CHARACTER SET ${this.wrapIdentifier(charset)};`
-    await this.driverExecuteSingle({ query: sql })
+    await this.driverExecuteSingle(sql)
   }
 
   async importData(insertSQL) {
-    await this.driverExecuteMultiple({ query: insertSQL.split(';') })
+    await this.driverExecuteMultiple(insertSQL.split(';'))
   }
 
   getImportSQL (importedData, isTruncate) {
@@ -161,7 +157,7 @@ export class OracleClient extends BasicDatabaseClient {
       const selectQueries = buildSelectQueriesFromUpdates(this.knex, changes.updates)
       queries.push(...selectQueries)
     }
-    const results = await this.driverExecuteMultiple({ query: queries })
+    const results = await this.driverExecuteMultiple(queries.join(";"))
     const selectResults = changes.updates ? results.slice(results.length - changes.updates?.length, -1) : []
     return selectResults
   }
@@ -178,7 +174,7 @@ export class OracleClient extends BasicDatabaseClient {
     const indexQuery = `
       SELECT DBMS_METADATA.GET_DEPENDENT_DDL('INDEX','${D.escapeString(table)}','${D.escapeString(schema)}') TXT FROM DUAL
     `
-    const results = await this.driverExecuteMultiple({ query: [tableQuery, indexQuery] })
+    const results = await this.driverExecuteMultiple([tableQuery, indexQuery].join(";"))
     return results.map((r) => r.result.rows[0]).join("\n;\n")
   }
   async getViewCreateScript(view: string, schema?: string): Promise<string[]> {
@@ -308,7 +304,8 @@ export class OracleClient extends BasicDatabaseClient {
   listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<TableColumn[]>;
 
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>;
-  getTableReferences: (table: string, schema?: string) => void;
+  getTableReferences: (table: string, schema?: string) => Promise<string[]>;
+
   async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
     const sql = this.knex('ALL_TRIGGERS')
       .select()
@@ -571,19 +568,19 @@ export class OracleClient extends BasicDatabaseClient {
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
-    await this.driverExecuteSingle({query: sql})
+    await this.driverExecuteSingle(sql)
   }
 
   async truncateElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
     const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
-    await this.driverExecuteSingle({query: sql})
+    await this.driverExecuteSingle(sql)
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema: string): Promise<void> {
     const sql = this.duplicateTableSql(tableName, duplicateTableName, schema);
 
-    await this.driverExecuteSingle({query: sql});
+    await this.driverExecuteSingle(sql);
   }
 
   duplicateTableSql(tableName: string, duplicateTableName: string, schema: string): string {
@@ -655,7 +652,7 @@ export class OracleClient extends BasicDatabaseClient {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            await this.driverExecuteMultiple({ query: text}, connection)
+            await this.driverExecuteMultiple(text)
           ])
           if (!data) return []
           return this.parseResults(data)
@@ -680,8 +677,18 @@ export class OracleClient extends BasicDatabaseClient {
     }
   }
 
+  async queryStream(db: string, query: string, chunkSize: number): Promise<StreamResults> {
+
+
+    return {
+      totalRows: undefined,
+      columns: undefined,
+      cursor: new OracleCursor(this.pool, query, [], chunkSize)
+    }
+  }
+
   async executeQuery(query: string): Promise<NgQueryResult[]> {
-    const results = await this.driverExecuteMultiple({ query: query })
+    const results = await this.driverExecuteMultiple(query)
     return this.parseResults(results)
   }
 
@@ -721,7 +728,7 @@ export class OracleClient extends BasicDatabaseClient {
   }
 
   private async driverExecuteSimple(query) {
-    const {result} = await this.driverExecuteSingle({ query })
+    const {result} = await this.driverExecuteSingle(query)
     const allRows = []
     result.rows.forEach((r: any[]) => {
       const nuRow = {}
@@ -734,47 +741,26 @@ export class OracleClient extends BasicDatabaseClient {
     return allRows
   }
 
-  private async driverExecuteSingle({ query, options}: ExecutionOptions, connection?: oracle.Connection): Promise<DriverResult> {
-    if (_.isArray(query)) throw new Error("can't pass multiple queries to driverExecuteSingle")
-    const info = this.identify(query)[0]
-    const identification = identify(query, { strict: false, dialect: 'oracle' })
-    if( !isAllowedReadOnlyQuery(identification, this.readOnlyMode) ){
-      throw new Error(errorMessages.readOnly)
-    }
-    const c = connection || (await this.pool.getConnection())
-    return await withClosable(c, async (connection: oracle.Connection) => {
-      // TODO: params, fields,
-      const queryText = this.maybeStripSemicolon(query, info)
-      log.debug('Execute query', queryText, options)
-      const result = await connection.execute(queryText, {}, options || {})
-      return {result, info, }
-    })
-  }
+  protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {
+      const realQueries = _.isArray(query) ? query : [query]
+      const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
+      // TODO - use `executeMany` if no SELECT queries are present
+      // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
+      const c = await this.pool.getConnection()
+      return await withClosable(c, async (c: oracle.Connection) => {
+        const results: DriverResult[] = []
+        for (let qi = 0; qi < infos.length; qi++) {
+          const q = infos[qi];
+          // remove the semicolon, because Oracle, but not for blocks....also because oracle.
+          const queryText = this.maybeStripSemicolon(q.text, q)
+          log.debug("Execute Query", queryText, options)
+          const data = await c.execute(queryText, options || {})
 
-  private async driverExecuteMultiple({ query, options}: ExecutionOptions, connection?: oracle.Connection): Promise<DriverResult[]> {
-    const realQueries = _.isArray(query) ? query : [query]
-
-    const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
-    // TODO - use `executeMany` if no SELECT queries are present
-    // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
-    const c = connection || (await this.pool.getConnection())
-    return await withClosable(c, async (c: oracle.Connection) => {
-      const results: DriverResult[] = []
-      for (let qi = 0; qi < infos.length; qi++) {
-        const q = infos[qi];
-        // remove the semicolon, because Oracle, but not for blocks....also because oracle.
-        const queryText = this.maybeStripSemicolon(q.text, q)
-        if( !isAllowedReadOnlyQuery(infos, this.readOnlyMode) ){
-          throw new Error(errorMessages.readOnly)
+          results.push({ result: data, info: q})
         }
-        log.debug("Execute Query", queryText, options)
-        const data = await c.execute(queryText, options || {})
-
-        results.push({ result: data, info: q})
-      }
-      await c.commit()
-      return results
-    })
+        await c.commit()
+        return results
+      })
   }
 
   private identify(query: string) {
@@ -784,14 +770,6 @@ export class OracleClient extends BasicDatabaseClient {
 
 
 // interface MultiResult
-
-interface ExecutionOptions {
-  query: string | string[]
-  params?: string[],
-  multiple?: boolean,
-  arrayMode?: boolean,
-  options?: any
-}
 
 interface DriverResult {
   result: oracle.Result<unknown>,
