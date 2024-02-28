@@ -11,7 +11,6 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "test:unit": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
-    "test:integration": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve --host localhost --ozone-platform-hint=auto",

@@ -13,6 +13,8 @@ describe("Oracle Tests", () => {
 
   beforeAll(async () => {
     // this is the testcontainers default startup wait time.
+    console.log("ENV/ORACLE CLI: ", process.env['ORACLE_CLI_PATH'])
+    console.log("ENV/LD_LIBRARY_PATH: ", process.env['LD_LIBRARY_PATH'])
     const timeoutDefault = 120000
     jest.setTimeout(timeoutDefault)
     const localDir = path.resolve('./tests/docker/oracle_init')
@@ -39,6 +41,7 @@ describe("Oracle Tests", () => {
       client: 'oracle',
       host: container.getHost(),
       port: container.getMappedPort(1521),
+      instantClientLocation: process.env['ORACLE_CLI_PATH'],
       user: 'beekeeper',
       password: 'password',
       serviceName: 'BEEKEEPER',
@@ -46,6 +49,7 @@ describe("Oracle Tests", () => {
         connectionMethod: 'manual'
       }
     }
+    console.log("connecting with config", config)
     util = new DBTestUtil(config, "BEEKEEPER", { defaultSchema: 'BEEKEEPER', dialect: 'oracle' })
     await util.setupdb()
 

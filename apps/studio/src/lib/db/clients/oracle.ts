@@ -491,15 +491,18 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async connect() {
 
     const cliLocation = this.platformPath(this.server.config.instantClientLocation)
-
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration
     const configLocation = this.platformPath(this.server.config.oracleConfigLocation)
+
+    console.log("Connecting to oracle")
+    console.log("CLI LOCATION", cliLocation)
 
     try {
       const payload = {}
       if (cliLocation) payload['libDir'] = cliLocation
       if (configLocation) payload['configDir'] = configLocation
-      oracle.initOracleClient(payload)
+      // oracle.initOracleClient(payload)
+      oracle.initOracleClient()
       oracle.fetchAsString = [oracle.CLOB]
       oracle.fetchAsBuffer = [oracle.BLOB]
     } catch {
@@ -529,9 +532,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         poolMax: 4,
       }
     }
-
+    console.log("MAKING POOL")
     this.pool = await oracle.createPool(poolConfig)
-
+    console.log("POOL MADE")
     const vSQL = `
     SELECT BANNER as BANNER FROM v$version
     WHERE BANNER LIKE 'Oracle%';
