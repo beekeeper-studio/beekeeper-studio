@@ -137,7 +137,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   versionString(): string {
-    console.log("Version string called!", this.version)
     return this.version
   }
 
@@ -494,8 +493,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration
     const configLocation = this.platformPath(this.server.config.oracleConfigLocation)
 
-    console.log("Connecting to oracle")
-    console.log("CLI LOCATION", cliLocation)
 
     try {
       const payload = {}
@@ -532,9 +529,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         poolMax: 4,
       }
     }
-    console.log("MAKING POOL")
     this.pool = await oracle.createPool(poolConfig)
-    console.log("POOL MADE")
     const vSQL = `
     SELECT BANNER as BANNER FROM v$version
     WHERE BANNER LIKE 'Oracle%';
@@ -757,7 +752,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           // remove the semicolon, because Oracle, but not for blocks....also because oracle.
           const queryText = this.maybeStripSemicolon(q.text, q)
           log.debug("Execute Query", queryText, options)
-          const data = await c.execute(queryText, options || {})
+          const data = await c.execute(queryText, {})
 
           results.push({ result: data, info: q})
         }

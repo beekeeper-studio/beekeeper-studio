@@ -13,12 +13,9 @@ describe("Oracle Tests", () => {
 
   beforeAll(async () => {
     // this is the testcontainers default startup wait time.
-    console.log("ENV/ORACLE CLI: ", process.env['ORACLE_CLI_PATH'])
-    console.log("ENV/LD_LIBRARY_PATH: ", process.env['LD_LIBRARY_PATH'])
     const timeoutDefault = 120000
     jest.setTimeout(timeoutDefault)
     const localDir = path.resolve('./tests/docker/oracle_init')
-    console.log("INIT DIR: ", localDir)
     container = await new GenericContainer('gvenzl/oracle-xe:18')
       .withName('oracle')
       .withEnv("ORACLE_PASSWORD", 'password')
@@ -49,7 +46,6 @@ describe("Oracle Tests", () => {
         connectionMethod: 'manual'
       }
     }
-    console.log("connecting with config", config)
     util = new DBTestUtil(config, "BEEKEEPER", { defaultSchema: 'BEEKEEPER', dialect: 'oracle' })
     await util.setupdb()
 
@@ -65,7 +61,7 @@ describe("Oracle Tests", () => {
   })
 
   describe("When running block queries", () => {
-    it.only("Should execute block queries without error", async () => {
+    it("Should execute block queries without error", async () => {
       await util.connection.executeQuery(`
         DECLARE RESULT VARCHAR(256);
         BEGIN SELECT "street" INTO RESULT FROM "addresses";

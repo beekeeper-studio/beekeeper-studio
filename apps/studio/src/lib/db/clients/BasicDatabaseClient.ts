@@ -2,6 +2,7 @@ import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, Sc
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQuery, errorMessages, isAllowedReadOnlyQuery } from './utils';
 import { Knex } from 'knex';
+import _ from 'lodash'
 import { DatabaseClient, DatabaseElement } from '../client';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
@@ -138,8 +139,8 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
     try {
-        const result = await this.rawExecuteQuery(q, options) as RawResultType
-        return result
+        const result = await this.rawExecuteQuery(q, options)
+        return _.isArray(result) ? result[0] : result
     } catch (ex) {
         logOptions.status = 'failed'
         logOptions.error = ex.message
