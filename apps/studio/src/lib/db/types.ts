@@ -1,5 +1,5 @@
 import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import type { RedshiftOptions, BigQueryOptions } from '@/common/appdb/models/saved_connection';
+import type { RedshiftOptions, BigQueryOptions, CassandraOptions } from '@/common/appdb/models/saved_connection';
 import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 
 export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird'
@@ -49,6 +49,7 @@ export interface IDbConnectionServerConfig {
   localPort?: number,
   trustServerCertificate?: boolean
   options?: any
+  cassandraOptions?: CassandraOptions
   redshiftOptions?: RedshiftOptions
   bigQueryOptions?: BigQueryOptions
 }

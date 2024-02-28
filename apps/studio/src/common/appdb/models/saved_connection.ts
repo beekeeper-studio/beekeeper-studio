@@ -41,6 +41,10 @@ export interface RedshiftOptions {
   tokenDurationSeconds?: number;
 }
 
+export interface CassandraOptions {
+  localDataCenter?: string
+}
+
 export interface BigQueryOptions {
   keyFilename?: string;
   projectId?: string;
