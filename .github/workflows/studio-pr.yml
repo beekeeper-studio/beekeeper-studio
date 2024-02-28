@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-11, ubuntu-20.04, windows-latest]
+        os: [ubuntu-20.04, windows-latest]
 
     steps:
       - name: Check out Git repository
@@ -28,15 +28,6 @@ jobs:
           python-version: 3.8
         if: "!startsWith(matrix.os, 'macos')"
 
-      - name: Install python 3.8 (mac)
-        if: "startsWith(matrix.os, 'macos')"
-        run: |
-          # Install Python 3.8
-          brew install python@3.8
-          # Add Python 3.8 to PATH
-          echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
-          export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
-          export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
 
       - name: Verify Python Version
         if: "startsWith(matrix.os, 'windows')"
