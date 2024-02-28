@@ -501,8 +501,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       const payload = {}
       if (cliLocation) payload['libDir'] = cliLocation
       if (configLocation) payload['configDir'] = configLocation
-      // oracle.initOracleClient(payload)
-      oracle.initOracleClient()
+      oracle.initOracleClient(payload)
+      // oracle.initOracleClient()
       oracle.fetchAsString = [oracle.CLOB]
       oracle.fetchAsBuffer = [oracle.BLOB]
     } catch {
