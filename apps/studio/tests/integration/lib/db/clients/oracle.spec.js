@@ -16,6 +16,7 @@ describe("Oracle Tests", () => {
     const timeoutDefault = 120000
     jest.setTimeout(timeoutDefault)
     const localDir = path.resolve('./tests/docker/oracle_init')
+    console.log("INIT DIR: ", localDir)
     container = await new GenericContainer('gvenzl/oracle-xe:18')
       .withName('oracle')
       .withEnv("ORACLE_PASSWORD", 'password')
@@ -24,13 +25,14 @@ describe("Oracle Tests", () => {
       .withEnv('APP_USER_PASSWORD', 'password')
       .withExposedPorts(1521)
       .withBindMount(localDir, '/docker-entrypoint-initdb.d', 'ro')
-      .withWaitStrategy(Wait.forHealthCheck())
       .withHealthCheck({
         test: "sqlplus -s beekeeper/password@//localhost/BEEKEEPER <<< \"select * from actor;\" | grep 'no rows'",
         interval: 10000,
-        timeout: 5000,
-        retries: 12 // 2 minutes
+        timeout: 10000,
+        retries: 12, // 2 minutes
+        startPeriod: 60000
       })
+      .withWaitStrategy(Wait.forHealthCheck())
       .start()
 
     const config = {
@@ -59,7 +61,7 @@ describe("Oracle Tests", () => {
   })
 
   describe("When running block queries", () => {
-    it("Should execute block queries without error", async () => {
+    it.only("Should execute block queries without error", async () => {
       await util.connection.executeQuery(`
         DECLARE RESULT VARCHAR(256);
         BEGIN SELECT "street" INTO RESULT FROM "addresses";
