@@ -1,5 +1,5 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
-import { DBTestUtil, dbtimeout } from '../../../../lib/db'
+import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 import { TableInsert } from '../../../../../src/lib/db/models'
@@ -66,7 +66,17 @@ function testWith(dockerTag, socket = false, readonly = false) {
         config.socketPath = path.join(temp, "postgresql")
       }
 
-      util = new DBTestUtil(config, "banana", { dialect: 'postgresql', defaultSchema: 'public' })
+      const utilOptions: Options = {
+        dialect: 'postgresql',
+        defaultSchema: 'public',
+      }
+
+      if (dockerTag !== 'latest') {
+        // Generated columns was introduced in postgres 12
+        utilOptions.skipGeneratedColumns = true
+      }
+
+      util = new DBTestUtil(config, "banana", utilOptions)
       await util.setupdb()
 
       await util.knex.schema.createTable('witharrays', (table) => {

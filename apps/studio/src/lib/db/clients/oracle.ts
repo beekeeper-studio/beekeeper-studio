@@ -608,7 +608,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   async listTableColumns(_db: string, table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
     log.debug("listTableColumns", _db, table, schema)
-    let query = this.knex('ALL_TAB_COLUMNS').select()
+    let query = this.knex('ALL_TAB_COLS').select()
 
     if (table) query = query.where('TABLE_NAME', table)
     if (schema) query = query.where('OWNER', schema.toUpperCase())
@@ -624,6 +624,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         dataType: this.parseDataType(row.DATA_TYPE, row.CHAR_LENGTH),
         nullable: row.NULLABLE === 'Y',
         defaultValue: this.parseDefault(row.DATA_DEFAULT),
+        generated: row.VIRTUAL_COLUMN === 'YES',
       }
     })
     return _.sortBy(result, 'ordinalPosition')

@@ -58,6 +58,7 @@ describe("Firebird Tests", () => {
     const options: Options = {
       dialect: "firebird",
       skipPkQuote: true,
+      skipGeneratedColumns: true,
       knexConnectionOptions: {
         lowercase_keys: true,
       },

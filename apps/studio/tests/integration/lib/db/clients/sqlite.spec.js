@@ -27,16 +27,6 @@ describe("Sqlite Tests", () => {
       { id: 2, flag: 0 },
       { id: 3, flag: 0 },
     ])
-
-    await util.knex.schema.createTable('withgeneratedcolumns', (table) => {
-      table.integer('id').primary()
-      table.string('first_name')
-      table.string('last_name')
-      table.specificType('full_name', "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED")
-    })
-    await util.knex('withgeneratedcolumns').insert([
-      { id: 1, first_name: 'Tom', last_name: 'Tester' },
-    ])
   })
 
   afterAll(async () => {
@@ -105,14 +95,6 @@ describe("Sqlite Tests", () => {
       ...inserts.map(({ id, toBe }) => ({ id, flag: toBe })),
     ])
   });
-
-  it("should list generated columns", async () => {
-    const columns = await util.connection.listTableColumns('withgeneratedcolumns', util.defaultSchema)
-    expect(columns.map((c) => c.columnName)).toEqual(['id', 'first_name', 'last_name', 'full_name'])
-
-    const rows = await util.connection.selectTop('withgeneratedcolumns')
-    expect(rows.result.map((r) => r.full_name)).toEqual(['Tom Tester'])
-  })
 
   describe("Issue-1399 Regresstion Tests", () => {
     let row

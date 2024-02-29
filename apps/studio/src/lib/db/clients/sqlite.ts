@@ -560,14 +560,15 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
 
-  private dataToColumns(data, tableName) {
+  private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {
     return data.map((row) => ({
       tableName,
       columnName: row.name,
       dataType: row.type,
       nullable: Number(row.notnull || 0) === 0,
       defaultValue: row.dflt_value === 'NULL' ? null : row.dflt_value,
-      ordinalPosition: Number(row.cid)
+      ordinalPosition: Number(row.cid),
+      generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
     }))
   }
 
