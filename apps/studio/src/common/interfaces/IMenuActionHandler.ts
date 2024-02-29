@@ -29,6 +29,10 @@ export interface IMenuActionHandler {
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  enterLicense: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  backupDatabase: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  restoreDatabase: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  exportTables: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   upgradeModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }

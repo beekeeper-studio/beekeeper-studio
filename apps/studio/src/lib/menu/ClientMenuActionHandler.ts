@@ -17,6 +17,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   constructor() {
     // TODO: implement
   }
+  upgradeModal = () => send('upgradeModal')
 
   quit = () => send('quit')
   undo = () => send('undo')
@@ -39,7 +40,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   quickSearch  = () => send('quickSearch')
   switchTheme = (menuItem: Electron.MenuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
-    send('switchTheme', label.toLowerCase())
+    send('switchTheme', label.toLowerCase().replaceAll(" ", "-"))
   }
   switchMenuStyle = (menuItem: Electron.MenuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
@@ -49,6 +50,9 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
   toggleSidebar = () => send('toggleSidebar')
-  upgradeModal = () => send('upgradeModal')
+  enterLicense = () => send('enterLicense')
+  backupDatabase = () => send('backupDatabase')
+  restoreDatabase = () => send('restoreDatabase')
+  exportTables = () => send('exportTables')
   checkForUpdates = () => send('checkForUpdates')
 }

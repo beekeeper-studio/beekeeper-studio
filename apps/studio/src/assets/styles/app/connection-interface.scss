@@ -35,11 +35,7 @@
   }
 
   .small-wrap {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    max-width: 550px;
-    // max-height: -webkit-fill-available;
+    @include small-wrap;
   }
   .card-flat {
     background: $theme-bg;
@@ -73,6 +69,10 @@
       font-size: 1.1em;
       color: $text-lighter;
     }
+  }
+
+  textarea {
+    height: auto;
   }
 
   .save-connection {

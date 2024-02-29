@@ -12,6 +12,19 @@ export abstract class BeeCursor {
   }
 }
 
+export class NoOpCursor extends BeeCursor {
+  async start(): Promise<void> {
+    // yes
+  }
+  async read(): Promise<any[][]> {
+    return []
+  }
+  async cancel(): Promise<void> {
+    // yes
+  }
+
+}
+
 export interface StreamResults {
   columns: TableColumn[],
   totalRows: number,
@@ -212,6 +225,10 @@ export interface SupportedFeatures {
   properties: boolean;
   partitions: boolean;
   editPartitions: boolean;
+  backups: boolean;
+  // Some databases support a directory backup format.
+  backDirFormat: boolean;
+  restore: boolean;
 }
 
 export interface FieldDescriptor {

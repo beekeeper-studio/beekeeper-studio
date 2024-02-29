@@ -18,6 +18,8 @@ import {
   buildSelectTopQuery,
   escapeString,
   ClientError,
+  joinQueries,
+  buildInsertQueries,
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -254,6 +256,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context);
 
+    this.dialect = 'mysql';
+    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
     this.server = server;
     this.database = database;
   }
@@ -1106,6 +1110,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       properties: true,
       partitions: false,
       editPartitions: false,
+      backups: true,
+      backDirFormat: false,
+      restore: true
     };
   }
 
@@ -1293,6 +1300,30 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   resolveDefault(defaultValue: string) {
     return defaultValue;
+  }
+
+  async importData(sql: string): Promise<any> {
+    const fullQuery = joinQueries([
+      'START TRANSACTION', sql, 'COMMIT'
+    ]);
+    try {
+      return await this.driverExecuteSingle(fullQuery)
+    } catch (ex) {
+      log.error("importData", fullQuery, ex)
+      await this.driverExecuteSingle('ROLLBACK');
+      throw ex;
+    }
+  }
+
+  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
+    const { table } = importedData[0]
+    const queries = []
+    if (isTruncate) {
+      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(table)}`)
+    }
+
+    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
+    return joinQueries(queries)
   }
 }
 

@@ -1,9 +1,11 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQuery } from './utils';
+import { buildInsertQuery, errorMessages, isAllowedReadOnlyQuery } from './utils';
 import { Knex } from 'knex';
+import _ from 'lodash'
 import { DatabaseClient, DatabaseElement } from '../client';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
+import { identify } from 'sql-query-identifier';
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -29,14 +31,25 @@ export interface AppContextProvider {
     logQuery(query: string, options: QueryLogOptions, context: ExecutionContext ): Promise<number | string>
 }
 
+export const NoOpContextProvider: AppContextProvider = {
+  getExecutionContext(): ExecutionContext {
+    return null;
+  },
+  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
+    return null;
+  }
+};
+
 // raw result type is specific to each database implementation
 export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClient {
 
   knex: Knex | null;
-  contextProvider: AppContextProvider
+  contextProvider: AppContextProvider;
+  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
+  // TODO (@day): this can be cleaned up when we fix configuration
+  dbReadOnlyMode = false;
 
-
-  constructor(knex: Knex | null, contextProvider: AppContextProvider) {
+  constructor(knex: Knex | null, contextProvider: AppContextProvider = NoOpContextProvider) {
     this.knex = knex;
     this.contextProvider = contextProvider
   }
@@ -54,7 +67,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   async getMaterializedViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
     return [];
   }
-  
+
   abstract versionString(): string;
 
   defaultSchema(): string | null {
@@ -108,16 +121,26 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   abstract createDatabase(databaseName: string, charset: string, collation: string): void
   abstract createDatabaseSQL(): string
 
+  // import to table from file
+  abstract importData(sql: string): Promise<any>;
+  abstract getImportSQL(importedData: TableInsert[], isTruncate: boolean): string;
+
+
   // structure to allow logging of all queries to a query log
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
+    const identification = identify(q, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
+
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
     try {
-        const result = await this.rawExecuteQuery(q, options) as RawResultType
-        return result
+        const result = await this.rawExecuteQuery(q, options)
+        return _.isArray(result) ? result[0] : result
     } catch (ex) {
         logOptions.status = 'failed'
         logOptions.error = ex.message
@@ -128,6 +151,11 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
+    const identification = identify(q, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
+
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;

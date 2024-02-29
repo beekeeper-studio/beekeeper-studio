@@ -74,8 +74,8 @@ export default {
           name: "Import From CSV",
           class: isBQClass,
           slug: 'import',
-          handler: () => {
-            this.$root.$emit(AppEvent.upgradeModal)
+          handler: ({ item }) => {
+            this.trigger(AppEvent.beginImport, { table: item })
           }
         },
         {

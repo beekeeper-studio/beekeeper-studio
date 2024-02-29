@@ -53,6 +53,8 @@ export class Template {
       columns: this.schema.map((item) => {
         const c = item.config
         const dc = item.dialectConfigs?.[dialect]
+        // TODO: there might be a better place for this, but generally what we want to do
+        if (dialect === 'cassandra' && c.dataType === 'autoincrement') c.dataType = 'uuid'
         // this should overwrite config defaults
         // with values from the dialect config
         const config = { ...c, ...dc }
@@ -110,11 +112,14 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
       dataType: 'timestamp',
       defaultValue: 'GETDATE()'
     },
+    cassandra: {
+      dataType: 'timestamp',
+      defaultValue: 'toUnixTimestamp(now())' // doesn't really matter, cassandra doesn't use these
+    },
     bigquery: {
       dataType: 'timestamp',
       defaultValue: 'CURRENT_TIMESTAMP'
     }
-
   }
 })
 

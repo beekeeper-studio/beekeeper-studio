@@ -110,6 +110,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.newTab)
   }
 
+  enterLicense = (_menuItem: Electron.MenuItem, win: Electron.BrowserWindow) => {
+    if (win) win.webContents.send(AppEvent.enterLicense)
+  }
+
   newTab = this.newQuery
   closeTab = (_1: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.closeTab)
@@ -121,7 +125,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.theme.userValue = label.toLowerCase()
+    this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
     await this.settings.theme.save()
     getActiveWindows().forEach( window => {
       window.send(AppEvent.settingsChanged)
@@ -158,8 +162,20 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.disconnect)
   }
 
-  upgradeModal = (menuItem: Electron.MenuItem, win: Electron.BrowserWindow) => {
-    if (win) win.webContents.send(AppEvent.upgradeModal)
+  backupDatabase = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.backupDatabase)
   }
 
+  restoreDatabase = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.restoreDatabase)
+  }
+
+  exportTables = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.exportTables)
+  }
+
+  upgradeModal = (_menuItem: Electron.MenuItem, _win: ElectronWindow) => {
+    // Nothing to upgrade to lol
+    return;
+  }
 }

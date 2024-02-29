@@ -34,7 +34,7 @@ $input-highlight:           rgba($theme-base, 0.27)!default;
 $db-select-text:            white!default;
 $query-editor-bg:           darken($theme-bg, 6%)!default;
 
-$row-handle-selected:       lighten($query-editor-bg, 10%);
+$row-handle-selected:       lighten($query-editor-bg, 5%);
 $row-handle-hover:          lighten($query-editor-bg, 5%);
 
 $titlebar-bg:               transparent!default;
@@ -84,3 +84,6 @@ $statusbar-height:          2.6rem;
 
 // text
 $font-family: 'Roboto, sans-serif';
+
+$grouped-tables-base: lighten($theme-bg, 2%);
+$grouped-tables-light: lighten($grouped-tables-base, 2%);

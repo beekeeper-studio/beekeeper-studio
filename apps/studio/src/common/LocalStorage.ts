@@ -4,6 +4,13 @@ export const SmartLocalStorage = {
   removeItem(key: string): void {
     localStorage.removeItem(key)
   },
+  setBool(key: string, value: boolean): void {
+    localStorage.setItem(key, JSON.stringify(value))
+  },
+  getBool(key: string): boolean {
+    const result = localStorage.getItem(key)
+    return result && result === "true"
+  },
   getDate(key: string): Date | null {
     const item = localStorage.getItem(key)
     if (!item) return null

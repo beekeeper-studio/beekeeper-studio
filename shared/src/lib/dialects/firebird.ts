@@ -26,6 +26,8 @@ export const FirebirdData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
   wrapIdentifier,
+  // NOTE I HAVE NO IDEA IF THIS IS RIGHT
+  usesOffsetPagination: false,
   editorFriendlyIdentifier: friendlyNormalizedIdentifier,
   escapeString: (s) => Firebird.escape(s),
   wrapLiteral: Firebird.escape,
@@ -36,6 +38,9 @@ export const FirebirdData: DialectData = {
     duplicateTable: true,
     createTable: true, // Blocked by knex builder creating unnecessary query
     collations: true,
+    alter: {
+      multiStatement: true,
+    }
   },
   notices: {},
 };

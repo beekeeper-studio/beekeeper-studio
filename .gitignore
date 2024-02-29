@@ -18,3 +18,5 @@ yarn-error.log
 .package-lock.json
 .secrets
 .env
+.instant/
+cli.zip

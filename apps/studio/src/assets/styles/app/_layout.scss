@@ -82,6 +82,12 @@ hr {
 
 // Buttons
 // ---------------------------------------
+
+.a-icon {
+  display: flex;
+  text-decoration: none !important;
+  align-items: center;
+}
 .btn {
   display: inline-flex;
   font-size: 12px;
@@ -114,6 +120,9 @@ hr {
     }
   }
 }
+x-buttons > x-button[menu].btn {
+  border-left: 1px solid rgba(black, 0.35);
+}
 .btn-primary {
   background: $theme-base;
   color: rgba($theme-bg, 0.87);
@@ -145,8 +154,12 @@ hr {
   }
 }
 .btn-icon {
-  .material-icons {
+  .material-icons:first-child {
     margin-right: $gutter-h * 0.65;
+  }
+
+  .material-icons:last-child {
+    margin-left: $gutter-h * 0.65;
   }
 }
 .btn-info {
@@ -170,15 +183,15 @@ hr {
   max-width: 250px;
 }
 .btn-small {
-  font-size: 0.85rem;
-  padding: 0 .65rem;
-  min-width: 0;
-  height: 24px;
-  line-height: 24px;
-  border-radius: $btn-border-radius-small;
-  x-label {
-    line-height: 24px;
-  }
+  @include btn-small;
+}
+x-buttons > x-button.btn-small:first-of-type {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+x-buttons > x-button.btn-small:last-of-type {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 .btn-block {
   display: flex;
@@ -352,6 +365,11 @@ input, select, textarea, .bk-form-input {
     > .btn {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
+    }
+
+    &.not-last > .btn {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
     }
   }
 }
@@ -535,6 +553,10 @@ input[type=file] {
   }
 }
 
+.text-center {
+  text-align: center;
+}
+
 // Nav
 // ----------------------------------
 .nav {
@@ -669,8 +691,8 @@ input[type=file] {
   @include card-shadow;
 }
 .card-flat {
-  background: rgba($theme-base, 0.04);
-  box-shadow: none;
+    background: $theme-bg;
+    box-shadow: none;
 }
 .card-title {
   color: $text-dark;
@@ -725,6 +747,26 @@ input[type=file] {
 
 // Alerts
 // --------------------------
+
+.inline-alert {
+  a {
+    color: inherit;
+    text-decoration: underline;
+    &:hover {
+      color: $link-color;
+    }
+
+    i.close {
+      font-size: inherit;
+      vertical-align: middle;
+      color: $text;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+}
+
 .alert {
   display: flex;
   border-radius: 6px;

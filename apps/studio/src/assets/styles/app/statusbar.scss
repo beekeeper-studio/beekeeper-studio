@@ -146,6 +146,16 @@ $button-height:     $statusbar-height * 0.72;
       background: rgba($statusbar-text, 0.35);
       box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
       color: $statusbar-text-default;
+      &.deactivated {
+        background-color: darken(rgba($statusbar-text, 0.35), 10%);
+        cursor: not-allowed;
+      }
+    }
+
+    &.btn-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-btween;
     }
   }
 

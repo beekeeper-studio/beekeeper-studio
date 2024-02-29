@@ -3,9 +3,32 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import type { RedshiftOptions, BigQueryOptions } from '@/common/appdb/models/saved_connection';
+import {
+  SupportedFeatures,
+  FilterOptions,
+  TableOrView,
+  Routine,
+  TableColumn,
+  SchemaFilterOptions,
+  DatabaseFilterOptions,
+  TableChanges,
+  TableUpdateResult,
+  OrderBy,
+  TableFilter,
+  TableResult,
+  StreamResults,
+  CancelableQuery,
+  ExtendedTableColumn,
+  PrimaryKeyColumn,
+  // QueryResult,
+  TableProperties,
+  TableIndex,
+  TableTrigger,
+  TableInsert,
+  TablePartition
+} from './models';
+import { RedshiftOptions, CassandraOptions, BigQueryOptions } from '@/common/appdb/models/saved_connection';
+import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 const logger = createLogger('db');
 
@@ -13,7 +36,8 @@ export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
   "MATERIALIZED-VIEW" = 'MATERIALIZED VIEW',
-  DATABASE = 'DATABASE'
+  DATABASE = 'DATABASE',
+  SCHEMA = 'SCHEMA'
 }
 
 export class ClientError extends Error {
@@ -37,9 +61,10 @@ export interface DatabaseClient {
   listTableTriggers: (table: string, schema?: string) => Promise<TableTrigger[]>,
   listTableIndexes: (db: string, table: string, schema?: string) => Promise<TableIndex[]>,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
+
   listTablePartitions: (table: string, schema?: string) => Promise<TablePartition[]>
   getTableReferences: (table: string, schema?: string) => void,
-  getTableKeys: (db: string, table: string, schema?: string) => void,
+  getTableKeys: (db: string, table: string, schema?: string) => Promise<TableKey[]>,
   query: (queryText: string, options?: any) => CancelableQuery,
   executeQuery: (queryText: string) => void,
 
@@ -48,9 +73,11 @@ export interface DatabaseClient {
   getDefaultCharset: () => Promise<string>,
   listCollations: (charset?: string) => Promise<string[]>,
   createDatabase: (databaseName: string, charset: string, collation: string) => void,
+  // FIXME [easy]: Add support for createDatbaseSQL to all the database drivers by abstracting createDatabase
+  createDatabaseSQL?: () => string,
 
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
-  applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
+
   // alter table
   alterTableSql: (change: AlterTableSpec) => Promise<string>,
   alterTable: (change: AlterTableSpec) => Promise<void>,
@@ -65,6 +92,8 @@ export interface DatabaseClient {
   alterPartition: (changes: AlterPartitionsSpec) => Promise<void>,
 
   applyChangesSql: (changes: TableChanges) => string,
+  applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
+
   getInsertQuery: (tableInsert: TableInsert) => Promise<string>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
@@ -78,7 +107,7 @@ export interface DatabaseClient {
   getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
   // for tabletable
   getTableLength(table: string, schema?: string): Promise<number>
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[], options?: any): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
   selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<string>,
 
@@ -95,6 +124,11 @@ export interface DatabaseClient {
   // duplicate table
   duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => Promise<void>
   duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => string
+
+  // import to table from file
+  importData: (sql: string) => Promise<any>
+  getImportSQL: (importedData: TableInsert[], isTruncate: boolean ) => string
+
 }
 
 export type IDbClients = keyof typeof clients
@@ -116,6 +150,7 @@ export interface IDbConnectionServerConfig {
   host?: string,
   port: Nullable<number>,
   domain: Nullable<string>,
+  serviceName?: string, // Oracle
   socketPath: Nullable<string>,
   socketPathEnabled: boolean,
   user: Nullable<string>,
@@ -127,12 +162,17 @@ export interface IDbConnectionServerConfig {
   sslKeyFile: Nullable<string>,
   sslRejectUnauthorized: boolean,
   ssl: boolean
+  readOnlyMode: boolean,
   localHost?: string,
   localPort?: number,
   trustServerCertificate?: boolean
+  instantClientLocation?: string
+  oracleConfigLocation?: string
   options?: any
   redshiftOptions?: RedshiftOptions
+  cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
+  runtimeExtensions?: string[]
 }
 
 export interface IDbSshTunnel {
@@ -157,6 +197,7 @@ export interface IDbConnectionDatabase {
 }
 
 export class DBConnection implements DatabaseClient {
+  readOnlyMode = this.server.config.readOnlyMode // Added for test reasons more than anything since it's buried in the private server config
   connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
@@ -189,6 +230,7 @@ export class DBConnection implements DatabaseClient {
   getDefaultCharset = bindAsync.bind(null, 'getDefaultCharset', this.server, this.database)
   listCollations = bindAsync.bind(null, 'listCollations', this.server, this.database)
   createDatabase = bindAsync.bind(null, 'createDatabase', this.server, this.database)
+  createDatabaseSQL = bind.bind(null, 'createDatabaseSQL', this.server, this.database)
 
   // tabletable
   getTableLength = bindAsync.bind(null, 'getTableLength', this.server, this.database)
@@ -232,13 +274,23 @@ export class DBConnection implements DatabaseClient {
   dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
   truncateElement = bindAsync.bind(null, 'truncateElement', this.server, this.database)
 
-  // duplicateTAble
+  // duplicateTable
   duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
   duplicateTableSql = bind.bind(null, 'duplicateTableSql', this.server, this.database)
 
   wrapIdentifier = wrap.bind(null, this.database)
 
+
+  // import
+  importData = bind.bind(null, 'importData', this.server, this.database)
+  getImportSQL = bind.bind(null, 'getImportSQL', this.server, this.database)
+
   async currentDatabase() {
+    // @ts-expect-error does not exist
+    if (this.database.connection.getCurrentDatabase) {
+      // @ts-expect-error does not exist
+      return await this.database.connection.getCurrentDatabase()
+    }
     return this.database.database
   }
   versionString = versionString.bind(null, this.server, this.database)
@@ -322,10 +374,11 @@ function selectTop(
   filters: TableFilter[] | string,
   schema: string,
   selects: string[],
+  options: any
 ): Promise<TableResult> {
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available, please reconnect"
-  return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema, selects);
+  return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema, selects, options);
 }
 
 function selectTopStream(
@@ -541,7 +594,7 @@ function getTableDeleteScript(_server: IDbConnectionServer, database: IDbConnect
   ].join(' ');
 }
 
-function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
+function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string/*, schema: string */) {
   checkIsConnected(server , database);
   return database.connection?.getViewCreateScript(view);
 }
@@ -569,7 +622,7 @@ function setTableDescription(_server: IDbConnectionServer, database: IDbConnecti
   return database.connection?.setTableDescription(table, description, schema)
 }
 
-async function getTableColumnNames(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
+async function getTableColumnNames(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string): Promise<string[]> {
   checkIsConnected(server , database);
   if (database.connection) {
     const columns = await database.connection?.listTableColumns(database.database, table, schema);
