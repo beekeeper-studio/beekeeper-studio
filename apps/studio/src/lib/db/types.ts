@@ -12,6 +12,7 @@ import type { default as cassandra } from './clients/cassandra'
 import type { default as mariadb } from './clients/mariadb'
 import type { default as bigquery } from './clients/bigquery'
 import type { default as firebird } from "./clients/firebird";
+import type { default as oracle } from "./clients/oracle"
 
 export interface DBClientFactories {
   mysql: typeof mysql
@@ -24,6 +25,7 @@ export interface DBClientFactories {
   cockroachdb: typeof cockroach
   bigquery: typeof bigquery
   firebird: typeof firebird
+  oracle: typeof oracle
 }
 
 export enum DatabaseElement {
@@ -71,6 +73,7 @@ export interface IDbConnectionServerConfig {
   localPort?: number,
   trustServerCertificate?: boolean
   options?: any
+  readOnlyMode?: boolean
   redshiftOptions?: RedshiftOptions
   bigQueryOptions?: BigQueryOptions
 }

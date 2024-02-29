@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'firebird']
-const ultimateDialects = ['oracle', 'cassandra']
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'firebird'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -9,6 +9,9 @@ export const Dialects = [...communityDialects, ...ultimateDialects] as const
 export const SpecialTypes = ['autoincrement']
 export type Dialect = typeof Dialects[number]
 
+export function isUltimateDialect(d: any) {
+  return ultimateDialects.includes(d)
+}
 export function dialectFor(s: string): Dialect | null {
   switch (s) {
     case 'cockroachdb':
@@ -23,10 +26,6 @@ export function dialectFor(s: string): Dialect | null {
 }
 
 
-const UltimateDialectTitles: {[K in Dialect]: string} = {
-  oracle: 'Oracle Database'
-}
-
 export const DialectTitles: {[K in Dialect]: string} = {
   postgresql: "Postgres",
   mysql: "MySQL",
@@ -35,8 +34,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   sqlite: "SQLite",
   cassandra: "Apache Cassandra",
   bigquery: "BigQuery",
-  ...UltimateDialectTitles
-
+  firebird: "Firebird",
+  oracle: "Oracle Database",
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -124,12 +123,12 @@ export interface DialectData {
     filterWithOR?: boolean
     backup?: boolean
     truncateElement?: boolean
-    duplicateTable?: boolean
     exportTable?: boolean
     createTable?: boolean
     collations?: boolean
     importFromFile?: boolean,
     headerSort?: boolean,
+    duplicateTable?: boolean,
     export?: {
       sql?: boolean
     }
@@ -270,7 +269,7 @@ export interface CreateRelationSpec {
 
 
 export type DialectConfig = {
-  [K in Dialect]: SchemaConfig
+  [K in Dialect]?: SchemaConfig
 }
 
 

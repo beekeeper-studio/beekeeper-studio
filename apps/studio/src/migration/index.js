@@ -30,6 +30,8 @@ import keepaliveInterval from './20220709_add_keepalive_interval'
 import createHiddenEntities from './20220907_create_hidden_entities'
 import createHiddenSchemas from './20220908_create_hidden_schemas'
 import redshiftOptions from './20220817_add_redshift_options'
+import cassandraOptions from './20221120_add_cassandra_options'
+import readOnlyMode from './20221103_add_read_only'
 import connectionPins from './20230308_create_connection_pins'
 import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
@@ -49,9 +51,11 @@ const realMigrations = [
   a, b, c, d, domains, createSettings, addZoom,
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
+
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
-  createHiddenEntities, createHiddenSchemas, connectionPins, fixKeymapType, bigQueryOptions,
+  createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   firebirdConnection, exportPath,
+
 ]
 
 // fixtures require the models

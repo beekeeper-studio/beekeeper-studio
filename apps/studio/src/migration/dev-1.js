@@ -48,6 +48,15 @@ export default {
       name: "Beekeeper's Database",
       connectionType: "sqlite",
       defaultDatabase: platformInfo.appDbPath
+    },
+    {
+      name: '[DEV] Cassandra',
+      connectionType: 'cassandra',
+      port: 9042,
+      host: 'localhost',
+      username: 'foo',
+      password: 'bar',
+      defaultDatabase: 'store'
     }
   ],
 

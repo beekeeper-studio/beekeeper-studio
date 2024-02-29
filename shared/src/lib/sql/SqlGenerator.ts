@@ -1,6 +1,9 @@
 import { Dialect, KnexDialect, Schema, SchemaItem } from '../dialects/models'
 import {Knex} from 'knex'
 import knexlib from 'knex'
+// Cassandra needs this to run since it is the only one we use NOT supported out of the box by Knex
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
 import knexFirebirdDialect from "knex-firebird-dialect"
 import { identify } from 'sql-query-identifier'
@@ -40,7 +43,6 @@ export class SqlGenerator {
     this._connection = config
     this.createKnexLib()
   }
-
 
   public buildSql(schema: Schema): string {
     let k
@@ -97,6 +99,19 @@ export class SqlGenerator {
 
     if (this.isNativeKnex) {
         this.knex = knexlib({ client: this.knexDialect })
+    } else if (this.dialect === 'cassandra') {
+      this.knex  = knexlib({
+        client: CassandraKnex,
+        connection: {
+          // @ts-ignore
+          contactPoints: [dbConfig.host],
+          localDataCenter: dbConfig?.cassandraOptions?.localDataCenter ? [dbConfig?.cassandraOptions?.localDataCenter] : [],
+          protocolOptions: {
+            port: dbConfig.port
+          },
+          keyspace: dbName
+        }
+      })
     } else if (this.dialect === 'firebird') {
         this.knex = knexlib({
           client: knexFirebirdDialect,
@@ -129,6 +144,4 @@ export class SqlGenerator {
   private get knexDialect() {
     return KnexDialect(this.dialect)
   }
-
-
 }

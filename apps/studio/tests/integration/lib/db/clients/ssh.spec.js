@@ -1,7 +1,6 @@
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
 import ConnectionProvider from '../../../../../src/lib/connection-provider';
-import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { runCommonTests } from './all';
+import { dbtimeout } from '../../../../lib/db'
 
 
 

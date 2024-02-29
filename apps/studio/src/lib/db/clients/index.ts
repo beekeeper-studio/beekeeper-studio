@@ -8,6 +8,7 @@ import redshift from './redshift';
 import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
+import oracle from './oracle'
 import bigquery from './bigquery.js';
 import firebird from './firebird';
 import { DBClientFactories } from '../types';
@@ -131,6 +132,14 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'oracle',
+    name: 'Oracle',
+    defaultPort: 1521,
+    disabledFeatures: [
+      'server:socketPath'
+    ]
+  },
+  {
     key: 'bigquery',
     name: 'BigQuery',
     defaultPort: 443,
@@ -166,6 +175,7 @@ const factories: DBClientFactories = {
   redshift,
   mariadb,
   cockroachdb,
+  oracle,
   bigquery,
   firebird,
 };
