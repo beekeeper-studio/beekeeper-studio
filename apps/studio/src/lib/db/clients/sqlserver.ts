@@ -43,11 +43,11 @@ type SQLServerVersion = {
   versionString: any
 }
 
-type SQLServerResult = { 
+type SQLServerResult = {
   data: any,
   statement: Statement,
   // Number of changes made by the query
-  changes: number 
+  changes: number
 }
 
 const SQLServerContext = {
@@ -63,7 +63,6 @@ const SQLServerContext = {
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
-
   defaultSchema: () => string
   version: SQLServerVersion
   dbConfig: any
@@ -74,6 +73,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
     this.defaultSchema = (): string => 'dbo'
+    this.dialect = 'mssql';
+    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
     this.logger = () => log
   }
 
@@ -101,7 +102,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ${schemaFilter ? `AND ${schemaFilter}` : ''}
       ORDER BY table_schema, table_name
     `;
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
 
     return data.recordset.map((item) => ({
@@ -136,9 +137,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordset.map((row) => ({
       schemaName: row.table_schema,
       tableName: row.table_name,
@@ -156,9 +157,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async executeQuery(queryText: string, arrayRowMode = false) {
     const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, arrayRowMode)
-  
+
     const commands = this.identifyCommands(queryText).map((item) => item.type)
-  
+
     // Executing only non select queries will not return results.
     // So we "fake" there is at least one result.
     const results = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets
@@ -179,17 +180,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
             if (err.code === mmsqlErrors.CANCELED) {
               err.sqlectronError = 'CANCELED_BY_USER';
             }
-  
+
             throw err
           }
         });
       },
-  
+
       async cancel() {
         if (!queryRequest) {
           throw new Error('Query not ready to be canceled')
         }
-  
+
         queryRequest.cancel()
       },
     }
@@ -199,7 +200,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     this.logger().debug("filters", filters)
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     this.logger().debug(query)
-  
+
     const result = await this.driverExecuteQuery({ query })
     this.logger().debug(result)
     return {
@@ -227,17 +228,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     // SQL Server does not have information_schema for triggers, so other way around
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql });
-  
+
     return data.recordset.map((row) => {
       const update = row.isupdate === 1 ? 'UPDATE' : null
       const del = row.isdelete === 1 ? 'DELETE': null
       const insert = row.isinsert === 1 ? 'INSERT' : null
       const instead = row.isinsteadof === 1 ? 'INSEAD_OF' : null
-  
+
       const manips = [update, del, insert, instead].filter((f) => f).join(", ")
-  
+
       return {
         name: row.trigger_name,
         timing: row.isafter === 1 ? 'AFTER' : 'BEFORE',
@@ -259,13 +260,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     `
     const { data } = await this.driverExecuteQuery({ query: sql})
     if (!data.recordset || data.recordset.length === 0) return []
-  
+
     return data.recordset.map((r) => ({
       columnName: r.COLUMN_NAME,
       position: r.ORDINAL_POSITION
     }))
   }
-  
+
   async getPrimaryKey(table: string, schema?: string) {
     const res = await this.getPrimaryKeys(table, schema)
     return res.length === 1 ? res[0].columnName : null
@@ -274,7 +275,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async listTableIndexes(table: string, schema: string = this.defaultSchema()): Promise<TableIndex[]> {
     const sql = `
       SELECT
-  
+
       t.name as table_name,
       s.name as schema_name,
       ind.name as index_name,
@@ -284,7 +285,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ic.is_descending_key as is_descending,
       ind.is_unique as is_unique,
       ind.is_primary_key as is_primary
-  
+
       FROM
           sys.indexes ind
       INNER JOIN
@@ -303,9 +304,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ORDER BY
           t.name, ind.name, ind.index_id, ic.is_included_column, ic.key_ordinal;
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     const grouped = _.groupBy(data.recordset, 'index_name')
 
     const result = Object.keys(grouped).map((indexName) => {
@@ -378,12 +379,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
                       i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
                 ) PT
           ON PT.TABLE_NAME = PK.TABLE_NAME
-  
+
       WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA =${this.wrapValue(schema)}
     `;
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql });
-  
+
     const result = data.recordset.map((row) => ({
       constraintName: row.name,
       toTable: row.to_table,
@@ -432,9 +433,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ${databaseFilter ? `AND ${databaseFilter}` : ''}
       ORDER BY name
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordset.map((row) => row.name)
   }
 
@@ -484,10 +485,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async duplicateTable(tableName, duplicateTableName, schema = 'dbo') {
     const sql = this.duplicateTableSql(tableName, duplicateTableName, schema)
-  
+
     await this.driverExecuteQuery({ query: sql })
   }
-  
+
   duplicateTableSql(tableName, duplicateTableName, schema) {
     return `SELECT * INTO ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(duplicateTableName)} FROM ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(tableName)}`
   }
@@ -499,7 +500,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const builder = new SqlServerChangeBuilder(table, schema, columns, defaultConstraints)
     return builder.alterTable(changes)
   }
-  
+
   async alterTable(changes) {
     const query = await this.alterTableSql(changes)
     await this.executeWithTransaction({ query })
@@ -512,7 +513,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   //   const droppers = changeBuilder.dropIndexes(drops)
   //   return [newIndexes, droppers].filter((f) => !!f).join(";")
   // }
-  
+
   async alterIndex(payload) {
     const sql = this.alterIndexSql(payload)
     await this.executeWithTransaction({ query: sql })
@@ -521,24 +522,24 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async applyChanges(changes) {
     const results = []
     let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
-  
+
     try {
       if (changes.inserts) {
         sql = sql.concat(buildInsertQueries(this.knex, changes.inserts))
       }
-  
+
       if (changes.updates) {
         sql = sql.concat(buildUpdateQueries(this.knex, changes.updates))
       }
-  
+
       if (changes.deletes) {
         sql = sql.concat(buildDeleteQueries(this.knex, changes.deletes))
       }
-  
+
       sql.push('COMMIT')
-  
+
       await this.driverExecuteQuery({ query: sql.join(';')})
-  
+
       if (changes.updates) {
         const selectQueries = buildSelectQueriesFromUpdates(this.knex, changes.updates)
         for (let index = 0; index < selectQueries.length; index++) {
@@ -551,7 +552,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       log.error("query exception: ", ex)
       throw ex
     }
-  
+
     return results
   }
 
@@ -569,9 +570,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
       ORDER BY table_schema, table_name
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordset.map((item) => ({
       schema: item.table_schema,
       name: item.table_name,
@@ -599,7 +600,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ${schemaFilter ? `AND ${schemaFilter}` : ''}
       ORDER BY routine_schema, routine_name
     `;
-  
+
     const paramsSQL = `
       select
           r.routine_schema as routine_schema,
@@ -614,18 +615,18 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     where r.routine_schema not in ('sys', 'information_schema',
                                   'mysql', 'performance_schema', 'INFORMATION_SCHEMA')
       ${schemaFilter ? `AND ${schemaFilter}` : ''}
-  
+
         AND p.parameter_mode = 'IN'
     order by r.routine_schema,
             r.specific_name,
             p.ordinal_position;
-  
+
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql });
     const paramsResult = await this.driverExecuteQuery({ query: paramsSQL })
     const grouped = _.groupBy(paramsResult.data.recordset, 'specific_name')
-  
+
     return data.recordset.map((row) => {
       const params = grouped[row.id] || []
       return {
@@ -653,9 +654,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
       ORDER BY schema_name
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordset.map((row) => row.schema_name)
   }
 
@@ -665,9 +666,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       FROM sys.foreign_keys
       WHERE parent_object_id = OBJECT_ID('${table}')
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordset.map((row) => row.referenced_table_name)
   }
 
@@ -753,17 +754,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       AND name    NOT IN ('dtproperties')
       AND so.name = '${table}'
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordset.map((row) => row.createtable)
   }
 
   async getViewCreateScript(view) {
     const sql = `SELECT OBJECT_DEFINITION (OBJECT_ID('${view}')) AS ViewDefinition;`;
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql });
-  
+
     return data.recordset.map((row) => row.ViewDefinition);
   }
 
@@ -777,9 +778,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       FROM INFORMATION_SCHEMA.ROUTINES
       WHERE routine_name = '${routine}'
     `
-  
+
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordset.map((row) => row.routine_definition)
   }
 
@@ -815,7 +816,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     if (isTruncate) {
       queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`)
     }
-  
+
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     queries.push(`SET IDENTITY_INSERT ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)} OFF`)
     return joinQueries(queries)
@@ -860,7 +861,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       backDirFormat: false,
       restore: false
     }
-  } 
+  }
 
   applyChangesSql(changes): string {
     return applyChangesSql(changes, this.knex)
@@ -963,43 +964,43 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     if (server.config.domain) {
       config.domain = server.config.domain
     }
-  
+
     if (server.sshTunnel) {
       config.server = server.config.localHost;
       config.port = server.config.localPort;
     }
-  
+
     config.options = { trustServerCertificate: server.config.trustServerCertificate }
-  
+
     if (server.config.ssl) {
       const options: any = {
         encrypt: server.config.ssl,
         cryptoCredentialsDetails: {}
       }
-  
+
       if (server.config.sslCaFile) {
         options.cryptoCredentialsDetails.ca = readFileSync(server.config.sslCaFile);
       }
-  
+
       if (server.config.sslCertFile) {
         options.cryptoCredentialsDetails.cert = readFileSync(server.config.sslCertFile);
       }
-  
+
       if (server.config.sslKeyFile) {
         options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
       }
-  
-  
+
+
       if (server.config.sslCaFile && server.config.sslCertFile && server.config.sslKeyFile) {
         // trust = !reject
         // mssql driver reverses this setting for no obvious reason
         // other drivers simply pass through to the SSL library.
         options.trustServerCertificate = !server.config.sslRejectUnauthorized
       }
-  
+
       config.options = options;
     }
-  
+
     return config;
   }
 
@@ -1009,7 +1010,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const filterString = _.isString(filters) ? `WHERE ${filters}` : this.buildFilterString(filters)
     const lastRow = offset + limit
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-  
+
     const query = `
       WITH CTE AS
       (
@@ -1031,20 +1032,20 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   private genSelectNew(table, offset, limit, orderBy, filters, schema, selects) {
     const filterString = _.isString(filters) ? `WHERE ${filters}` : this.buildFilterString(filters)
-  
+
     const orderByString = this.genOrderByString(orderBy)
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-  
+
     const selectSQL = `SELECT ${selects.map((s) => this.wrapIdentifier(s)).join(", ")}`
     const baseSQL = `
       FROM ${schemaString}${this.wrapIdentifier(table)}
       ${filterString}
     `
-  
+
     const offsetString = (_.isNumber(offset) && _.isNumber(limit)) ?
       `OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY` : ''
-  
-  
+
+
     const query = `
       ${selectSQL} ${baseSQL}
       ${orderByString}
@@ -1060,17 +1061,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         const wrappedValue = _.isArray(item.value) ?
           `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
           D.escapeString(item.value, true)
-  
+
         return `${this.wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
     }
     return filterString
   }
-  
+
   private genOrderByString(orderBy) {
     if (!orderBy) return ""
-  
+
     let orderByString = "ORDER BY (SELECT NULL)"
     if (orderBy && orderBy.length > 0) {
       orderByString = "ORDER BY " + (orderBy.map((item: {field: any, dir: any}) => {
@@ -1090,9 +1091,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   private genCountQuery(table, filters, schema) {
     const filterString = _.isString(filters) ? `WHERE ${filters}` : this.buildFilterString(filters)
-  
+
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-  
+
     const baseSQL = `
      FROM ${schemaString}${this.wrapIdentifier(table)}
      ${filterString}
@@ -1106,10 +1107,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   private async getSchema() {
     const sql = 'SELECT schema_name() AS \'schema\''
     const { data } = await this.driverExecuteQuery({ query: sql })
-  
+
     return data.recordsets[0].schema
   }
-  
+
   private async listDefaultConstraints(table, schema) {
     const sql = `
       -- returns name of a column's default value constraint
@@ -1123,11 +1124,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           INNER JOIN
         sys.tables
           ON all_columns.object_id = tables.object_id
-  
+
           INNER JOIN
         sys.schemas
           ON tables.schema_id = schemas.schema_id
-  
+
           INNER JOIN
         sys.default_constraints
           ON all_columns.default_object_id = default_constraints.object_id

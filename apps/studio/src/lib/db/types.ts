@@ -62,7 +62,6 @@ export interface IDbSshTunnel {
 
 export interface IDbConnectionServer {
   db: {
-    // TODO (@day): this is a circular dependency issue most likely
     [x: string]: BasicDatabaseClient<any>
   },
   sshTunnel?: Nullable<IDbSshTunnel>,

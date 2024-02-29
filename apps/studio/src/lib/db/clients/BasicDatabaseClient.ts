@@ -1,8 +1,10 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQuery } from './utils';
+import { buildInsertQuery, errorMessages, isAllowedReadOnlyQuery } from './utils';
 import { Knex } from 'knex';
+import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
+import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
@@ -34,11 +36,23 @@ export interface AppContextProvider {
     logQuery(query: string, options: QueryLogOptions, context: ExecutionContext ): Promise<number | string>
 }
 
+export const NoOpContextProvider: AppContextProvider = {
+  getExecutionContext(): ExecutionContext {
+    return null;
+  },
+  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
+    return null;
+  }
+};
+
 // raw result type is specific to each database implementation
 export abstract class BasicDatabaseClient<RawResultType> {
 
   knex: Knex | null;
-  contextProvider: AppContextProvider
+  contextProvider: AppContextProvider;
+  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
+  // TODO (@day): this can be cleaned up when we fix configuration
+  dbReadOnlyMode = false;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
@@ -58,6 +72,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   // DB Metadata ****************************************************************
   abstract supportedFeatures(): SupportedFeatures;
   abstract versionString(): string;
+
   defaultSchema(): string | null {
     return null
   }
@@ -238,12 +253,17 @@ export abstract class BasicDatabaseClient<RawResultType> {
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
+    const identification = identify(q, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
+
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
     try {
         const result = await this.rawExecuteQuery(q, options) as RawResultType
-        return result
+        return _.isArray(result) ? result[0] : result
     } catch (ex) {
         logOptions.status = 'failed'
         logOptions.error = ex.message
@@ -254,6 +274,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
+    const identification = identify(q, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
+
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
@@ -268,4 +293,45 @@ export abstract class BasicDatabaseClient<RawResultType> {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
   }
+
+  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
+    const columns = await this.listTableColumns(null, tableInsert.table, tableInsert.schema);
+    return buildInsertQuery(this.knex, tableInsert, columns);
+  }
+
+  // all of these can be handled by the change builder, which we can get for any connection
+  async alterTableSql(change: AlterTableSpec): Promise<string> {
+    const { table, schema } = change
+    const builder = this.getBuilder(table, schema)
+    return builder.alterTable(change)
+  }
+  async alterTable(change: AlterTableSpec): Promise<void> {
+    const sql = await this.alterTableSql(change)
+    await this.executeQuery(sql)
+  }
+  alterIndexSql(changes: IndexAlterations): string {
+    const { table, schema, additions, drops } = changes
+    const changeBuilder = this.getBuilder(table, schema)
+    const newIndexes = changeBuilder.createIndexes(additions)
+    const droppers = changeBuilder.dropIndexes(drops)
+    return [newIndexes, droppers].filter((f) => !!f).join(";")
+  }
+
+  async alterIndex(changes: IndexAlterations): Promise<void> {
+    const sql = this.alterIndexSql(changes);
+    await this.executeQuery(sql)
+  }
+
+  alterRelationSql(changes: RelationAlterations): string {
+    const { table, schema } = changes
+    const builder = this.getBuilder(table, schema)
+    const creates = builder.createRelations(changes.additions)
+    const drops = builder.dropRelations(changes.drops)
+    return [creates, drops].filter((f) => !!f).join(";")
+  }
+  async alterRelation(changes: RelationAlterations): Promise<void> {
+    const query = this.alterRelationSql(changes)
+    await this.executeQuery(query)
+  }
+
 }

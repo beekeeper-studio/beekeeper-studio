@@ -11,7 +11,16 @@ There are a number of ways you can connect to an Oracle database using Beekeeper
 2. TSA alias
 3. Host and port
 
-## First set Oracle Instant Client location
+## Prerequisites
+
+### Linux: Install libaio
+
+```bash
+sudo apt-get install libaio1 libaio-dev #debian/ubuntu
+sudo yum install libaio #redhat/fedora
+```
+
+### Download Oracle Instant Client
 
 Before you can connect to Oracle at all you need to tell Beekeeper where on your computer the Oracle Instant Client libraries are stored. This is a downloadable set of files provided by Oracle.
 

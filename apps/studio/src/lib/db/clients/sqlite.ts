@@ -6,7 +6,7 @@ import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChange
 import Database from "better-sqlite3";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models"; 
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
-import { ClientError } from "./utils";
+import { ClientError, joinQueries } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
 import knexlib from 'knex';
 import { makeEscape } from 'knex/lib/util/string';
@@ -47,11 +47,11 @@ const sqliteContext = {
   }
 }
 
-type SqliteResult = { 
+type SqliteResult = {
   data: any,
   statement: Statement,
   // Number of changes made by the query
-  changes: number 
+  changes: number
 };
 const SD = SqliteData;
 
@@ -63,6 +63,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, sqliteContext, server, database);
 
+    this.dialect = 'sqlite';
+    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
     this.databasePath = database?.database;
   }
 
@@ -75,12 +77,15 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   supportedFeatures(): SupportedFeatures {
-    return { 
-      customRoutines: false, 
-      comments: false, 
-      properties: true, 
-      partitions: false, 
-      editPartitions: false 
+    return {
+      customRoutines: false,
+      comments: false,
+      properties: true,
+      partitions: false,
+      editPartitions: false,
+      backups: true,
+      backDirFormat: false,
+      restore: true
     };
   }
 
@@ -330,12 +335,12 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       this.getTableKeys(table)
     ])
     return {
-      size: length, 
-      indexes, 
-      relations, 
+      size: length,
+      indexes,
+      relations,
       triggers,
       partitions: []
-    }  
+    }
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
@@ -437,7 +442,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
       totalRows: undefined,
-      columns: undefined, 
+      columns: undefined,
       cursor: new SqliteCursor(this.databasePath, query, [], chunkSize)
     };
   }
@@ -501,6 +506,21 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   createDatabaseSQL(): string {
     throw new Error("Method not implemented.");
+  }
+
+  async importData(sql: string): Promise<any> {
+    return await this.driverExecuteSingle(sql);
+  }
+
+  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
+    const { table } = importedData[0];
+    const queries = [];
+    if (isTruncate) {
+      queries.push(`Delete from ${SD.wrapIdentifier(table)}`);
+    }
+
+    queries.push(buildInsertQueries(knex, importedData).join(';'));
+    return joinQueries(queries);
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult | SqliteResult[]> {

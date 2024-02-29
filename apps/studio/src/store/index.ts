@@ -324,7 +324,8 @@ const store = new Vuex.Store<State>({
     async test(context, config: SavedConnection) {
       // TODO (matthew): fix this mess.
       if (context.state.username) {
-        const server = ConnectionProvider.for(config, context.state.username)
+        const settings = await UserSetting.all()
+        const server = ConnectionProvider.for(config, context.state.username, settings)
         await server?.createConnection(config.defaultDatabase || undefined).connect()
         server.disconnect()
       } else {
@@ -363,7 +364,8 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
-        const server = ConnectionProvider.for(config, context.state.username)
+        const settings = await UserSetting.all()
+        const server = ConnectionProvider.for(config, context.state.username, settings)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
         await connection.connect()

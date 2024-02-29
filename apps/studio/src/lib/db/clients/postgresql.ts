@@ -1,5 +1,5 @@
+// (Original) Copyright (c) 2015 The SQLECTRON Team
 
-// Copyright (c) 2015 The SQLECTRON Team 
 import { readFileSync } from 'fs';
 
 import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
@@ -10,7 +10,7 @@ import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -79,6 +79,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
+    this.dialect = 'psql';
+    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   versionString(): string {
@@ -96,7 +98,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       comments: true,
       properties: true,
       partitions: hasPartitions,
-      editPartitions: hasPartitions
+      editPartitions: hasPartitions,
+      backups: true,
+      backDirFormat: true,
+      restore: true
     };
   }
 
@@ -705,7 +710,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       partitions,
       owner
     }
-  }  
+  }
 
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     // Reference http://stackoverflow.com/a/32885178
@@ -774,7 +779,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     `).join('');
 
     await this.driverExecuteMultiple(truncateAll);
-  }  
+  }
 
   async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
     if (this.version.number < 90003) {
@@ -994,6 +999,30 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
+  async importData(sql: string): Promise<any> {
+    const fullQuery = joinQueries([
+      'BEGIN', sql, 'COMMIT'
+    ]);
+    try {
+      return await this.driverExecuteSingle(fullQuery);
+    } catch (ex) {
+      log.error("importData", fullQuery, ex);
+      await this.driverExecuteSingle('ROLLBACK');
+      throw ex;
+    }
+  }
+
+  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
+    const { schema, table } = importedData[0];
+    const queries = [];
+    if (isTruncate) {
+      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`);
+    }
+
+    queries.push(buildInsertQueries(this.knex, importedData).join(';'));
+    return joinQueries(queries);
+  }
+
   protected async rawExecuteQuery(q: string, options: any): Promise<QueryResult | QueryResult[]> {
     let release = true;
     let connection: PoolClient;
@@ -1001,7 +1030,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       release = false;
       connection = this.runWithConnection.connection;
     } else {
-      connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect(); 
+      connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect();
     }
 
     try {
@@ -1129,7 +1158,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   protected tableName(table: string, schema: string = this._defaultSchema): string{
     return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
   }
-  
+
   protected wrapTable(table: string, schema: string = this._defaultSchema) {
     if (!schema) return wrapIdentifier(table);
     return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`;
@@ -1147,7 +1176,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       port: server.config.port || undefined,
       password: server.config.password || undefined,
       database: database.database,
-      max: 5, // max idle connections per time (30 secs)
+      max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
     };
@@ -1353,8 +1382,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
     }
   }
-  
-  
+
+
 
   private async getEntityType(
     table: string,
@@ -1390,10 +1419,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       inlineParams
     })
   }
-  
-  
 
-  
+
+
+
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
@@ -1406,7 +1435,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
     return value
   }
-  
+
   private async getSchema() {
     const sql = 'SELECT CURRENT_SCHEMA() AS schema';
 
@@ -1450,10 +1479,4 @@ export function wrapIdentifier(value: string): string {
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;
-}
-
-export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new PostgresClient(server, database);
-  await client.connect();
-  return client;
 }

@@ -9,6 +9,19 @@ import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
 
 export class RedshiftClient extends PostgresClient {
+  supportedFeatures(): SupportedFeatures {
+    return {
+      customRoutines: true,
+      comments: true,
+      properties: true,
+      partitions: false,
+      editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false
+    };
+  }
+
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     return [];
   }
@@ -107,7 +120,7 @@ export class RedshiftClient extends PostgresClient {
       }
     }
 
-    
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,

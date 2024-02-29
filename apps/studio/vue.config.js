@@ -11,8 +11,10 @@ if (  process.env.PI_BUILD ) {
   fpmOptions.push("--architecture")
   fpmOptions.push("armhf")
 }
-
-const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2', '@electron/remote']
+const externals = ['better-sqlite3',
+  'sequelize', 'typeorm', 'reflect-metadata',
+  'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'oracledb', '@electron/remote'
+]
 module.exports = {
   transpileDependencies: ['@aws-sdk/*'],
   pluginOptions: {
@@ -126,7 +128,8 @@ module.exports = {
           entitlementsInherit: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
           category: "public.app-category.developer-tools",
-          "hardenedRuntime": true
+          "hardenedRuntime": true,
+          publish: ['github']
         },
         linux: {
           icon: './public/icons/png/',
@@ -164,11 +167,12 @@ module.exports = {
         win: {
           icon: './public/icons/png/512x512.png',
           target: ['nsis', 'portable'],
-          sign: "./build/win/sign.js"
+          publish: ['github'],
+          sign: "./build/win/sign.js",
         },
         portable: {
           "artifactName": "${productName}-${version}-portable.exe",
-        },
+        }
       }
     }
   },
@@ -185,18 +189,18 @@ module.exports = {
       }),
     ],
 
-    // externals: {
+    externals: {
     //   // Possible drivers for knex - we'll ignore them
     //   // 'sqlite3': 'sqlite3',
     //   'mariasql': 'mariasql',
     //   // 'mssql': 'mssql',
-    //   'mysql': 'mysql',
-    //   'oracle': 'oracle',
-    //   'strong-oracle': 'strong-oracle',
-    //   'oracledb': 'oracledb',
+      'mysql': 'mysql',
+      'oracle': 'oracle',
+      'strong-oracle': 'strong-oracle',
+      // 'oracledb': 'oracledb',
     //   // 'pg': 'pg',
-    //   // 'pg-query-stream': 'pg-query-stzream'
-    // },
+    //   // 'pg-query-stream': 'pg-query-stream'
+    },
     node: {
       dns: 'mock'
     },

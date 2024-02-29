@@ -104,8 +104,8 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
-import { escapeHtml } from '@/mixins/data_mutators'
 import TableIcon from '@/components/common/TableIcon.vue'
+import { escapeHtml } from '@shared/lib/tabulator'
 export default Vue.extend({
   components: { TableIcon },
   mounted() {
@@ -196,10 +196,12 @@ export default Vue.extend({
     closeSearch() {
       this.$emit('close')
     },
-    selectUp() {
+    selectUp(e: Event) {
+      e.stopPropagation()
       this.selectedItem = this.selectedItem - 1
     },
-    selectDown() {
+    selectDown(e) {
+      e.stopPropagation()
       this.selectedItem = this.selectedItem + 1
     },
     async submit(result, persistSearch = false) {
