@@ -719,11 +719,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async getViewCreateScript(view: string, schema: string = this._defaultSchema): Promise<string[]> {
-    const createViewSql = `CREATE OR REPLACE VIEW ${wrapIdentifier(schema)}.${wrapIdentifier(view)} AS`;
+    const qualifiedName = `${wrapIdentifier(schema)}.${wrapIdentifier(view)}`
+
+    const createViewSql = `CREATE OR REPLACE VIEW ${qualifiedName} AS`;
 
     const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
 
-    const params = [wrapIdentifier(view)];
+    const params = [qualifiedName];
 
     const data = await this.driverExecuteSingle(sql, { params });
 

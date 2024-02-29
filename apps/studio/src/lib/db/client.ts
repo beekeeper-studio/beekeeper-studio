@@ -98,7 +98,7 @@ export interface DatabaseClient {
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
-  getViewCreateScript: (view: string) => void,
+  getViewCreateScript: (view: string, schema?: string) => void,
   getMaterializedViewCreateScript?: (view: string) => Promise<string[]>,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,
@@ -594,9 +594,9 @@ function getTableDeleteScript(_server: IDbConnectionServer, database: IDbConnect
   ].join(' ');
 }
 
-function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string/*, schema: string */) {
+function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string, schema: string) {
   checkIsConnected(server , database);
-  return database.connection?.getViewCreateScript(view);
+  return database.connection?.getViewCreateScript(view, schema);
 }
 
 function getMaterializedViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
