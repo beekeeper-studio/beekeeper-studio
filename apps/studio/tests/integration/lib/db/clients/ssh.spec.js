@@ -22,8 +22,6 @@ describe("SSH Tunnel Tests", () => {
 
     const db = environment.getContainer('test_ssh_postgres')
 
-
-
     jest.setTimeout(timeoutDefault)
 
     const quickConfig = {
@@ -49,7 +47,7 @@ describe("SSH Tunnel Tests", () => {
     const qc = ConnectionProvider.for(quickConfig)
     const qdb = qc.createConnection('integration_test')
     await qdb.connect()
-    await qdb.query('select 1')
+    await qdb.query('select 1').execute()
 
     connection = ConnectionProvider.for(config)
     database = connection.createConnection('integration_test')
@@ -58,7 +56,7 @@ describe("SSH Tunnel Tests", () => {
 
   describe("Can SSH and run a query", () => {
     it("should work", async () => {
-      await database.query('select 1')
+      await database.query('select 1').execute()
     } )
   })
 

@@ -543,7 +543,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
-      execute: (async (): Promise<NgQueryResult[]> => {
+      execute: async (): Promise<NgQueryResult[]> => {
         const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
         const rows = dataPid.rows
 
@@ -572,9 +572,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         } finally {
           cancelable.discard();
         }
-      }).bind(this),
+      },
 
-      cancel: (async (): Promise<void> => {
+      cancel: async (): Promise<void> => {
         if (!pid) {
           throw new Error('Query not ready to be canceled');
         }
@@ -594,7 +594,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           canceling = false;
           throw err;
         }
-      }).bind(this),
+      },
     };
   }
 
