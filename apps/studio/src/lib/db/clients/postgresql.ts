@@ -1181,8 +1181,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       idleTimeoutMillis: globals.psqlIdleTimeout,
     };
 
-    console.log('SERVER: ', server);
-
     return this.configurePool(config, server, null);
   }
 

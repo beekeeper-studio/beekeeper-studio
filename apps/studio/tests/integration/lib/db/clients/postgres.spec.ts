@@ -128,17 +128,6 @@ function testWith(dockerTag, socket = false, readonly = false) {
           );
         `);
 
-      // NOTE (@day): this query doesn't run properly unless we use this
-      const query = util.connection.query(`
-          CREATE TABLE public.withquestionmark (
-            "approved?" boolean NULL DEFAULT false,
-            str_col character varying(255) NOT NULL,
-            another_str_col character varying(255) NOT NULL PRIMARY KEY
-          );
-        `);
-
-      await query.execute();
-
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -410,13 +399,14 @@ function testWith(dockerTag, socket = false, readonly = false) {
           data
         ]
       }
+
       const query = util.connection.query(`
-          CREATE TABLE public.withquestionmark (
-            "approved?" boolean NULL DEFAULT false,
-            str_col character varying(255) NOT NULL,
-            another_str_col character varying(255) NOT NULL PRIMARY KEY
-          );
-        `);
+        CREATE TABLE IF NOT EXISTS public.withquestionmark (
+          "approved?" boolean NULL DEFAULT false,
+          str_col character varying(255) NOT NULL,
+          another_str_col character varying(255) NOT NULL PRIMARY KEY
+        );
+      `);
 
       await query.execute();
 
