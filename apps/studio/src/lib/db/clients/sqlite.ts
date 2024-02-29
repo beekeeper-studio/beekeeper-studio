@@ -90,7 +90,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async connect(): Promise<void> {
-    super.connect();
+    await super.connect();
 
     // set sqlite version
     const version = await this.driverExecuteSingle('SELECT sqlite_version()');

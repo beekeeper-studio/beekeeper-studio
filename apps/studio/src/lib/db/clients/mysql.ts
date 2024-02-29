@@ -259,7 +259,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async connect() {
-    super.connect();
+    await super.connect();
 
     const dbConfig = configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);

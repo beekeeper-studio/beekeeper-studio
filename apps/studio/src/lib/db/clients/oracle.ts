@@ -488,7 +488,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   async connect() {
-    super.connect();
+    await super.connect();
 
     const cliLocation = this.platformPath(this.server.config.instantClientLocation)
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration

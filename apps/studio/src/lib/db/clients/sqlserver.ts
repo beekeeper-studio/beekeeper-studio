@@ -825,7 +825,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   /* helper functions and settings below! */
 
   async connect(): Promise<void> {
-    super.connect();
+    await super.connect();
 
     this.dbConfig = this.configDatabase(this.server, this.database)
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);

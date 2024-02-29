@@ -110,7 +110,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (!this.server && !this.database) {
       return;
     }
-    super.connect();
+    await super.connect();
  
     const dbConfig = await this.configDatabase(this.server, this.database);
 
@@ -1180,6 +1180,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
     };
+
+    console.log('SERVER: ', server);
 
     return this.configurePool(config, server, null);
   }

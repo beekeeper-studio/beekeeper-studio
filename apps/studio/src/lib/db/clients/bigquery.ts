@@ -70,7 +70,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async connect(): Promise<void> {
-    super.connect();
+    await super.connect();
 
     const config: any = {}
     config.host = this.server.config.host

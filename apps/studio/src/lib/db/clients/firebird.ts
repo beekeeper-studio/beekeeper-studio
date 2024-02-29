@@ -225,7 +225,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async connect(): Promise<void> {
-    super.connect();
+    await super.connect();
 
     const config = {
       host: this.server.config.host,
