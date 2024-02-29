@@ -64,7 +64,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     super(knex, sqliteContext, server, database);
 
     this.dialect = 'sqlite';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.databasePath = database?.database;
   }
 

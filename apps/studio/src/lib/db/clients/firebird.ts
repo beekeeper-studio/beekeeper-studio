@@ -217,7 +217,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   ) {
     super(null, context, server, database);
     this.dialect = 'generic';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   versionString(): string {

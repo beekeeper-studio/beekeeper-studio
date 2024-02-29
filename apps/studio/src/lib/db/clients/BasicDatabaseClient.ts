@@ -52,7 +52,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
   // TODO (@day): this can be cleaned up when we fix configuration
-  dbReadOnlyMode = false;
+  readOnlyMode = false;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
@@ -254,7 +254,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -275,7 +275,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
       throw new Error(errorMessages.readOnly);
     }
 

@@ -74,7 +74,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
     this.defaultSchema = (): string => 'dbo'
     this.dialect = 'mssql';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.logger = () => log
   }
 

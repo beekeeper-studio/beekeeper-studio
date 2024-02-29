@@ -255,7 +255,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     super(knex, context, server, database);
 
     this.dialect = 'mysql';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   async connect() {

@@ -80,7 +80,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
     this.dialect = 'psql';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   versionString(): string {
