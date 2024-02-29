@@ -1,8 +1,8 @@
 import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import type { RedshiftOptions, BigQueryOptions } from '@/common/appdb/models/saved_connection';
+import type { RedshiftOptions, BigQueryOptions, CassandraOptions } from '@/common/appdb/models/saved_connection';
 import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird'
+export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle';
 
 export enum DatabaseElement {
   TABLE = 'TABLE',
@@ -34,6 +34,7 @@ export interface IDbConnectionServerConfig {
   host?: string,
   port: Nullable<number>,
   domain: Nullable<string>,
+  serviceName?: string, // Oracle
   socketPath: Nullable<string>,
   socketPathEnabled: boolean,
   user: Nullable<string>,
@@ -45,12 +46,17 @@ export interface IDbConnectionServerConfig {
   sslKeyFile: Nullable<string>,
   sslRejectUnauthorized: boolean,
   ssl: boolean
+  readOnlyMode: boolean,
   localHost?: string,
   localPort?: number,
   trustServerCertificate?: boolean
+  instantClientLocation?: string
+  oracleConfigLocation?: string
   options?: any
   redshiftOptions?: RedshiftOptions
+  cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
+  runtimeExtensions?: string[]
 }
 
 export interface IDbSshTunnel {

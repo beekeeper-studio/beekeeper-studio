@@ -9,6 +9,7 @@ import { RedshiftClient } from './clients/redshift';
 import { CockroachClient } from './clients/cockroach';
 import { BigQueryClient } from './clients/bigquery';
 import { FirebirdClient } from './clients/firebird';
+import { OracleClient } from "./clients/oracle";
 
 const clients = new Map<string, any>([
   ['mysql', MysqlClient],
@@ -19,7 +20,8 @@ const clients = new Map<string, any>([
   ['mariadb', MariaDBClient],
   ['cockroachdb', CockroachClient],
   ['bigquery', BigQueryClient],
-  ['firebird', FirebirdClient]
+  ['firebird', FirebirdClient],
+  ['oracle', OracleClient]
 ]);
 
 export class ClientError extends Error {

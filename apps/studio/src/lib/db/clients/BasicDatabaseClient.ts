@@ -294,44 +294,4 @@ export abstract class BasicDatabaseClient<RawResultType> {
     }
   }
 
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
-    const columns = await this.listTableColumns(null, tableInsert.table, tableInsert.schema);
-    return buildInsertQuery(this.knex, tableInsert, columns);
-  }
-
-  // all of these can be handled by the change builder, which we can get for any connection
-  async alterTableSql(change: AlterTableSpec): Promise<string> {
-    const { table, schema } = change
-    const builder = this.getBuilder(table, schema)
-    return builder.alterTable(change)
-  }
-  async alterTable(change: AlterTableSpec): Promise<void> {
-    const sql = await this.alterTableSql(change)
-    await this.executeQuery(sql)
-  }
-  alterIndexSql(changes: IndexAlterations): string {
-    const { table, schema, additions, drops } = changes
-    const changeBuilder = this.getBuilder(table, schema)
-    const newIndexes = changeBuilder.createIndexes(additions)
-    const droppers = changeBuilder.dropIndexes(drops)
-    return [newIndexes, droppers].filter((f) => !!f).join(";")
-  }
-
-  async alterIndex(changes: IndexAlterations): Promise<void> {
-    const sql = this.alterIndexSql(changes);
-    await this.executeQuery(sql)
-  }
-
-  alterRelationSql(changes: RelationAlterations): string {
-    const { table, schema } = changes
-    const builder = this.getBuilder(table, schema)
-    const creates = builder.createRelations(changes.additions)
-    const drops = builder.dropRelations(changes.drops)
-    return [creates, drops].filter((f) => !!f).join(";")
-  }
-  async alterRelation(changes: RelationAlterations): Promise<void> {
-    const query = this.alterRelationSql(changes)
-    await this.executeQuery(query)
-  }
-
 }

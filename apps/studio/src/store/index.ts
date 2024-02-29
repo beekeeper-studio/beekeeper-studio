@@ -27,6 +27,7 @@ import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import { UserSetting } from '@/common/appdb/models/user_setting'
 
 const log = RawLog.scope('store/index')
 

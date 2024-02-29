@@ -62,7 +62,10 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       comments: false, 
       properties: true, 
       partitions: false, 
-      editPartitions: false 
+      editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false 
     };
   }
 
