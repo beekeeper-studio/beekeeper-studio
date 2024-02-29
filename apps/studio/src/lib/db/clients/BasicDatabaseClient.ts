@@ -4,10 +4,11 @@ import { buildInsertQuery } from './utils';
 import { Knex } from 'knex';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
-import createLogger from '@/lib/logger';
+import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 
-const logger = createLogger('db');
+const log = rawLog.scope('db');
+const logger = () => log;
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
