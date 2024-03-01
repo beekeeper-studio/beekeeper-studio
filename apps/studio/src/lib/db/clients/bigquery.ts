@@ -19,11 +19,6 @@ const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
 const logger = () => log
 
-const knex = knexlib({
-      client: BigQueryKnexClient as Client,
-      // connection: { ...dbConfig }
-    });
-
 interface BigQueryResult {
   data: any,
   rows: any[],
@@ -45,7 +40,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   client: bq.BigQuery;
   
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, bigqueryContext, server, database);
+    super(null, bigqueryContext, server, database);
   }
 
   versionString(): string {
@@ -87,11 +82,18 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     logger().debug("configDatabase config: ", config)
 
+    
+    this.knex = knexlib({
+          client: BigQueryKnexClient as Client,
+          connection: { ...config }
+        });
+
+
     this.client = new bq.BigQuery(config);
   }
 
   async disconnect(): Promise<void> {
-    return Promise.resolve();
+    await super.disconnect();
   }
 
   async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {

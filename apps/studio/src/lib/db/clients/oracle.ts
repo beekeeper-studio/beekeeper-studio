@@ -544,7 +544,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   async disconnect() {
     await this.pool.close(1);
-    await this.knex.destroy()
 
     await super.disconnect();
   }

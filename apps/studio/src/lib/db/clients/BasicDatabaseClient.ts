@@ -111,6 +111,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     }
   }
   async disconnect(): Promise<void> {
+    await this.knex.destroy();
     this.database.connecting = false;
 
     if (this.server.sshTunnel) {
