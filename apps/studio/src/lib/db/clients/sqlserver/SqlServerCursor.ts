@@ -2,6 +2,10 @@ import { BeeCursor } from "../../models";
 import { ConnectionPool, Request } from 'mssql';
 import { waitFor } from "../base/wait";
 
+interface Conn {
+  dbConfig: any
+}
+
 export class SqlServerCursor extends BeeCursor {
   private connection: ConnectionPool | undefined
   private request: Request | undefined;
@@ -12,7 +16,7 @@ export class SqlServerCursor extends BeeCursor {
 
 
   constructor(
-    private dbConfig: any,
+    private conn: Conn,
     private query: string,
     chunkSize: number
   ) {
@@ -21,7 +25,7 @@ export class SqlServerCursor extends BeeCursor {
 
   async start(): Promise<void> {
 
-    this.connection = await new ConnectionPool(this.dbConfig).connect()
+    this.connection = await new ConnectionPool(this.conn.dbConfig).connect()
     
     const request = this.connection.request()
     this.request = request
