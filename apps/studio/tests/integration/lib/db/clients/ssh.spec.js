@@ -48,6 +48,7 @@ describe("SSH Tunnel Tests", () => {
     const qdb = qc.createConnection('integration_test')
     await qdb.connect()
     await qdb.query('select 1').execute()
+    await qdb.disconnect();
 
     connection = ConnectionProvider.for(config)
     database = connection.createConnection('integration_test')

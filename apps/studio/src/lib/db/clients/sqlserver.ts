@@ -835,7 +835,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async disconnect(): Promise<void> {
     const connection = new ConnectionPool(this.connection);
-    connection.close();
+    await connection.close();
   }
 
   async listCharsets() {
