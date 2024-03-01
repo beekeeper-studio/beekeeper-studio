@@ -1020,6 +1020,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async disconnect(): Promise<void> {
     this.pool.destroy();
+
+    await super.disconnect();
   }
 
   protected async rawExecuteQuery(

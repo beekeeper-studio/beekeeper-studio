@@ -126,9 +126,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
-    this.conn.pool.end();
+    await this.conn.pool.end();
 
-    super.disconnect();
+    await super.disconnect();
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {

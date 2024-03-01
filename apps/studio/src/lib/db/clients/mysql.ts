@@ -273,6 +273,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async disconnect() {
     this.conn?.pool.end();
+
+    await super.disconnect();
   }
 
   versionString() {

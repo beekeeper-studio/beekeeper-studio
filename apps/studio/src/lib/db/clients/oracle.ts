@@ -544,6 +544,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   async disconnect() {
     await this.knex.destroy()
+
+    await super.disconnect();
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
