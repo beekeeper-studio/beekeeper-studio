@@ -6,7 +6,7 @@ import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
 
-import { IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../types"
+import { DatabaseClient, IDbConnectionDatabase, IDbConnectionServer } from "../client"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -29,7 +29,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, TableIndex, TableProperties, TableResult } from '../models';
+import { TableIndex, TableProperties } from '../models';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -63,18 +63,22 @@ const SQLServerContext = {
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
+  server: IDbConnectionServer
+  database: IDbConnectionDatabase
   defaultSchema: () => string
   version: SQLServerVersion
   dbConfig: any
   readOnlyMode: boolean
   logger: any
-  connection: ConnectionPool;
+  connection: any
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
-    this.defaultSchema = (): string => 'dbo'
+    super( knexlib({ client: 'mssql'}), SQLServerContext )
     this.dialect = 'mssql';
-    this.readOnlyMode = server?.config?.readOnlyMode || false;
+    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
+    this.server = server
+    this.database = database
+    this.defaultSchema = ():string => 'dbo'
     this.logger = () => log
   }
 
@@ -91,7 +95,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async listTables(filter: FilterOptions) {
+  async listTables(filter) {
     const schemaFilter = buildSchemaFilter(filter, 'table_schema');
     const sql = `
       SELECT
@@ -111,7 +115,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }))
   }
 
-  async listTableColumns(table: string, schema: string) {
+  async listTableColumns(_, table, schema) {
     const clauses = []
     if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
@@ -155,7 +159,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return this.version.versionString.split(" \n\t")[0]
   }
 
-  async executeQuery(queryText: string, arrayRowMode = false) {
+  async executeQuery( queryText, arrayRowMode = false) {
     const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, arrayRowMode)
 
     const commands = this.identifyCommands(queryText).map((item) => item.type)
@@ -167,7 +171,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, arrayRowMode))
   }
 
-  query(queryText: string) {
+  query(queryText) {
     const queryRequest = null
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this
@@ -196,7 +200,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects = ['*']): Promise<TableResult> {
+  async selectTop(table, offset, limit, orderBy, filters, schema, selects = ['*']) {
     this.logger().debug("filters", filters)
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     this.logger().debug(query)
@@ -210,13 +214,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async selectTopSql(
-    table: string,
-    offset: number,
-    limit: number,
-    orderBy: OrderBy[],
-    filters: string | TableFilter[],
-    schema?: string,
-    selects?: string[]
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    schema,
+    selects
   ) {
     const version = await this.getVersion();
     return version.supportOffsetFetch
@@ -224,7 +228,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       : this.genSelectOld(table, offset, limit, orderBy, filters, schema, selects);
   }
 
-  async listTableTriggers(table: string, schema: string) {
+  async listTableTriggers(table, schema) {
     // SQL Server does not have information_schema for triggers, so other way around
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
@@ -250,8 +254,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     })
   }
 
-  async getPrimaryKeys(table: string, schema?: string) {
-    this.logger().debug('finding foreign key for', table)
+  async getPrimaryKeys(database, table, schema) {
+    this.logger().debug('finding foreign key for', database, table)
     const sql = `
     SELECT COLUMN_NAME, ORDINAL_POSITION
     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
@@ -267,12 +271,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }))
   }
 
-  async getPrimaryKey(table: string, schema?: string) {
-    const res = await this.getPrimaryKeys(table, schema)
+  async getPrimaryKey(database, table, schema) {
+    const res = await this.getPrimaryKeys(database, table, schema)
     return res.length === 1 ? res[0].columnName : null
   }
 
-  async listTableIndexes(table: string, schema: string = this.defaultSchema()): Promise<TableIndex[]> {
+  async listTableIndexes(_db, table, schema = this.defaultSchema()): Promise<TableIndex[]> {
     const sql = `
       SELECT
 
@@ -328,14 +332,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return _.sortBy(result, 'id') as TableIndex[]
   }
 
-  async getTableProperties(table: string, schema: string = this.defaultSchema()): Promise<TableProperties> {
+  async getTableProperties(table, schema = this.defaultSchema()): Promise<TableProperties> {
     const triggers = await this.listTableTriggers(table, schema)
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
     const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
     const { data }  = await this.driverExecuteQuery({ query: sizeQuery })
     const row = data.recordset ? data.recordset[0] || {} : {}
-    const relations = await this.getTableKeys(table, schema)
+    const relations = await this.getTableKeys(null, table, schema)
     return {
       size: bytesParse(row.data),
       indexSize: bytesParse(row.index_size),
@@ -346,7 +350,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async getTableKeys(table: string, schema?: string) {
+  async getTableKeys(_, table, schema) {
     const sql = `
       SELECT
           name = FK.CONSTRAINT_NAME,
@@ -400,15 +404,15 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return result
   }
 
-  async selectTopStream(table, orderBy, filters, chunkSize, schema, selects = ['*']) {
+  async selectTopStream(db, table, orderBy, filters, chunkSize, schema, selects = ['*']) {
     const query = this.genSelectNew(table, null, null, orderBy, filters, schema, selects)
-    const columns = await this.listTableColumns(table, schema)
+    const columns = await this.listTableColumns(db, table, schema)
     const rowCount = await this.getTableLength(table, schema)
 
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(this.dbConfig, query, chunkSize)
+      cursor: new SqlServerCursor(this.connection, query, chunkSize)
     }
   }
 
@@ -495,7 +499,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async alterTableSql(changes) {
     const { table, schema } = changes
-    const columns = await this.listTableColumns(table, schema)
+    const columns = await this.listTableColumns(null, table, schema)
     const defaultConstraints = await this.listDefaultConstraints(table, schema)
     const builder = new SqlServerChangeBuilder(table, schema, columns, defaultConstraints)
     return builder.alterTable(changes)
@@ -557,7 +561,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async listMaterializedViewColumns() {
-    return []
+    return await []
   }
 
   async listViews(filter) {
@@ -672,11 +676,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset.map((row) => row.referenced_table_name)
   }
 
-  async queryStream(query, chunkSize) {
+  async queryStream(_, query, chunkSize) {
     return {
       totalRows: undefined,
       columns: undefined,
-      cursor: new SqlServerCursor(this.dbConfig, query, chunkSize),
+      cursor: new SqlServerCursor(this.connection, query, chunkSize),
     }
   }
 
@@ -769,7 +773,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async getMaterializedViewCreateScripts() {
-    return []
+    return await []
   }
 
   async getRoutineCreateScript(routine) {
@@ -825,22 +829,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   /* helper functions and settings below! */
 
   async connect(): Promise<void> {
-    await super.connect();
-
     this.dbConfig = this.configDatabase(this.server, this.database)
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
-    this.connection = await new ConnectionPool(this.dbConfig).connect();
     return
   }
 
   async disconnect(): Promise<void> {
-    await this.connection.close();
-    this.connection
+    const connection = await new ConnectionPool(this.connection);
+    connection.close();
   }
 
   async listCharsets() {
-    return []
+    return await []
   }
 
   getDefaultCharset() {
@@ -848,7 +849,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async listCollations() {
-    return []
+    return await []
   }
 
   supportedFeatures() {
@@ -907,6 +908,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async runWithConnection(run) {
+    const connection = await new ConnectionPool(this.dbConfig).connect()
+    this.connection = connection
+    this.connection.dbConfig = this.dbConfig
     return run(this.connection)
   }
 
@@ -946,8 +950,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private configDatabase(server, database): Promise<IDbConnectionServerConfig> {
-    const config: any = {
+  private configDatabase(server, database): Promise<DatabaseClient> {
+    const config:any = {
       user: server.config.user,
       password: server.config.password,
       server: server.config.host,
@@ -1162,4 +1166,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
     return data.recordset[0].MS_Description
   }
+}
+
+export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {
+  const client = new SQLServerClient(server, database);
+  await client.connect();
+
+  return client;
 }
