@@ -68,7 +68,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   dbConfig: any
   readOnlyMode: boolean
   logger: any
-  connection: any
+  connection: ConnectionPool;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
@@ -408,7 +408,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(this.connection, query, chunkSize)
+      cursor: new SqlServerCursor(this.dbConfig, query, chunkSize)
     }
   }
 
@@ -676,7 +676,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return {
       totalRows: undefined,
       columns: undefined,
-      cursor: new SqlServerCursor(this.connection, query, chunkSize),
+      cursor: new SqlServerCursor(this.dbConfig, query, chunkSize),
     }
   }
 
@@ -830,12 +830,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     this.dbConfig = this.configDatabase(this.server, this.database)
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
+    this.connection = await new ConnectionPool(this.dbConfig).connect();
     return
   }
 
   async disconnect(): Promise<void> {
-    const connection = new ConnectionPool(this.connection);
-    await connection.close();
+    await this.connection.close();
+    this.connection
   }
 
   async listCharsets() {
@@ -906,9 +907,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async runWithConnection(run) {
-    const connection = await new ConnectionPool(this.dbConfig).connect()
-    this.connection = connection
-    this.connection.dbConfig = this.dbConfig
     return run(this.connection)
   }
 
