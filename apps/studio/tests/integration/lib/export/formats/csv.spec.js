@@ -28,12 +28,6 @@ describe("CSV Exporter", () => {
 
   })
 
-  afterAll(async () => {
-    if (util?.connection) {
-      util.connection.disconnect()
-    }
-  })
-
   it("should create a simple csv export", async () => {
     const filename = tmp.tmpNameSync()
     const exporter = new CsvExporter(

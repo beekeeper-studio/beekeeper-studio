@@ -62,9 +62,6 @@ describe("SSH Tunnel Tests", () => {
   })
 
   afterAll(async () => {
-    if (connection) {
-      await connection.disconnect()
-    }
     if (database) {
       await database.disconnect()
     }
