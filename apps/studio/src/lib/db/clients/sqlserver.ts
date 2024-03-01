@@ -836,7 +836,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async disconnect(): Promise<void> {
-    const connection = await new ConnectionPool(this.connection).connect();
+    const connection = await new ConnectionPool(this.dbConfig).connect();
     await connection.close();
 
     await super.disconnect();
