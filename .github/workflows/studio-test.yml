@@ -40,6 +40,6 @@ jobs:
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
       - name: Integration Tests
-        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent
+        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --detectOpenHandles
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
