@@ -36,6 +36,7 @@ export const SqlServerData: DialectData = {
     (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
   editorFriendlyIdentifier: (s) => s,
   wrapLiteral: defaultWrapLiteral,
+  requireDataset: false,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
