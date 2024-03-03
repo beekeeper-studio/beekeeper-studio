@@ -526,6 +526,16 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       &.foreign-key-button {
         display: none;
       }
+      &.generated-column:before {
+        $font-size: 13px;
+        content: 'edit_off';
+        font-family: 'Material Icons';
+        font-size: $font-size;
+        color: rgba($theme-base, 0.35);
+        padding-left: $foreign-key-width - $font-size;
+        display: inline-flex;
+        align-items: center;
+      }
       .tabulator-col-content {
         padding: 0 4px 0 8px;
         line-height: 32px;
