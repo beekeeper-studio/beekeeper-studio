@@ -38,6 +38,7 @@ import bigQueryOptions from './20230426_add_bigquery_options'
 import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
 import ultimate from './ultimate/index'
+import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
 const logger = createLogger('migrations')()
 
@@ -54,7 +55,7 @@ const realMigrations = [
 
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
-  firebirdConnection, exportPath,
+  firebirdConnection, exportPath, UserSettingsWindowPosition,
 
 ]
 
