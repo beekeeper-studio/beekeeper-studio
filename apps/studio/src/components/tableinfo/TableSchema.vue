@@ -136,7 +136,7 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import { escapeHtml } from '@/mixins/data_mutators';
+import { escapeHtml } from '@shared/lib/tabulator'
 
 
 const FakeCell = {
