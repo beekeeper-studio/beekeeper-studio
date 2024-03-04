@@ -112,6 +112,7 @@
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,
             headerMenu: columnMenu,
+            cssClass: 'hide-header-menu-icon',
           }
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
