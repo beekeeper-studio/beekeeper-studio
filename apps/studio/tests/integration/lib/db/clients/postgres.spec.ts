@@ -142,6 +142,7 @@ function testWith(dockerTag, socket = false, readonly = false) {
       if (util.connection) {
         await util.connection.disconnect()
       }
+
       if (container) {
         await container.stop()
       }

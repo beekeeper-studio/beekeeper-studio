@@ -126,7 +126,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
-    await this.conn.pool.end();
+    this.conn.pool.end();
 
     await super.disconnect();
   }
@@ -1034,13 +1034,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect();
     }
 
-    try {
-      return await this.runQuery(connection, q, options)
-    } finally {
-      if (release) {
-        connection.release();
-      }
+    const value =  await this.runQuery(connection, q, options)
+    if (release) {
+      connection.release();
     }
+    return value;
   }
 
   // ************************************************************************************
@@ -1276,7 +1274,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this.runWithConnection = null;
   }
 
-  private async runQuery(connection: pg.PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
+  private async runQuery(connection: PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
     const args = {
       text: query,
       values: options.params,
