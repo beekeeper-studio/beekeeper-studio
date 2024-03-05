@@ -652,6 +652,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     } catch (ex) {
       log.error("query exception: ", ex)
       await this.driverExecuteSingle('ROLLBACK');
+      this.releaseCachedConnection();
       throw ex
     }
 
@@ -1270,7 +1271,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     };
   }
 
-  private async releaseCachedConnection() {
+  private releaseCachedConnection() {
     this.runWithConnection.connection.release();
     this.runWithConnection = null;
   }
