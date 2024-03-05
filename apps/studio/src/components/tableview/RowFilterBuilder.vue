@@ -222,7 +222,7 @@ const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
-  props: ["columns", "initialFilters"],
+  props: ["columns", "reactiveFilters"],
   data() {
     return {
       filterTypes: {
@@ -235,14 +235,7 @@ export default Vue.extend({
         "greater than or equal": ">=",
         in: "in",
       },
-      filters: this.initialFilters ?? [
-        {
-          op: "AND",
-          field: this.columns[0]?.columnName,
-          type: "=",
-          value: "",
-        },
-      ],
+      filters: this.reactiveFilters,
       filterRaw: "",
       filterMode: BUILDER,
       RAW,
@@ -259,7 +252,10 @@ export default Vue.extend({
       return {
         [this.ctrlOrCmd('f')]: this.focusOnInput,
       }
-    }
+    },
+    externalFilters() {
+      return this.reactiveFilters;
+    },
   },
   methods: {
     focusOnInput() {
@@ -334,6 +330,13 @@ export default Vue.extend({
     },
     filterRaw() {
       if (this.filterRaw === "") this.submit();
+    },
+    externalFilters() {
+      if (platformInfo.isCommunity) {
+        this.filters = this.externalFilters.slice(0, 2);
+      } else {
+        this.filters = this.externalFilters;
+      }
     },
   },
 });
