@@ -15,7 +15,7 @@
       <row-filter-builder
         v-if="table.columns?.length"
         :columns="table.columns"
-        :reactiveFilters="tableFilters"
+        :reactive-filters="tableFilters"
         @input="handleRowFilterBuilderInput"
         @submit="triggerFilter"
       />
