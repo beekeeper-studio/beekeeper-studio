@@ -115,11 +115,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.database.connecting = false;
 
     if (this.server.sshTunnel) {
-      this.server.sshTunnel.connection.shutdown();
+      await this.server.sshTunnel.connection.shutdown();
     }
 
     if (this.server.db[this.database.database]) {
-      delete this.server.db[this.database.database]
+      // delete this.server.db[this.database.database]
     }
   }
   // ****************************************************************************
