@@ -301,37 +301,38 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     } as TableProperties
   }
 
-  // TODO (@day): this is from chatgpt, check that it works and then actually run the query properly
-  async getTableCreateScript(_table: string, _schema?: string): Promise<string> {
-    throw new Error("Method not implemented")
-    // const sql = `
-    //   SELECT CONCAT('CREATE TABLE ', ${table}, ' (',
-    //                STRING_AGG(column_definition, ', '),
-    //                IF(pk.constraint_name IS NOT NULL, CONCAT(', PRIMARY KEY (', pk.column_list, ')'), ''),
-    //                ')') AS createtable
-    //   FROM (
-    //     SELECT
-    //       table_name,
-    //       CONCAT(column_name, ' ', data_type,
-    //              IF(IS_NULLABLE = 'NO', ' NOT NULL', '')) AS column_definition
-    //     FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.COLUMNS\`
-    //     WHERE table_name = ${table}
-    //   ) AS column_definitions
-    //   LEFT JOIN (
-    //     SELECT
-    //       c.table_name,
-    //       c.constraint_name,
-    //       STRING_AGG(cu.column_name, ', ') AS column_list
-    //     FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS\` c
-    //     JOIN \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE\` cu
-    //     ON c.constraint_name = cu.constraint_name
-    //     WHERE c.constraint_type = 'PRIMARY KEY'
-    //     GROUP BY c.table_name, c.constraint_name
-    //   ) AS pk
-    //   ON column_definitions.table_name = pk.table_name
-    //   GROUP BY table_name, pk.constraint_name, pk.column_list
-    // `
-    // return sql;
+  async getTableCreateScript(table: string, _schema?: string): Promise<string> {
+    const sql = `
+      SELECT CONCAT('CREATE TABLE ', '${this.db}.${table}', ' (',
+                   STRING_AGG(column_definition, ', '),
+                   IF(pk.constraint_name IS NOT NULL, CONCAT(', PRIMARY KEY (', STRING_AGG(pk.column_list), ')'), ''),
+                   ')') AS createtable
+      FROM (
+        SELECT
+          table_name,
+          CONCAT(column_name, ' ', data_type,
+                 IF(IS_NULLABLE = 'NO', ' NOT NULL', '')) AS column_definition
+        FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.COLUMNS\`
+        WHERE table_name = ${table}
+      ) AS column_definitions
+      LEFT JOIN (
+        SELECT
+          c.table_name,
+          c.constraint_name,
+          STRING_AGG(cu.column_name, ', ') AS column_list
+        FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS\` c
+        JOIN \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE\` cu
+        ON c.constraint_name = cu.constraint_name
+        WHERE c.constraint_type = 'PRIMARY KEY'
+        GROUP BY c.table_name, c.constraint_name
+      ) AS pk
+      ON column_definitions.table_name = pk.table_name
+      GROUP BY table_name, pk.constraint_name
+    `;
+
+    const data = await this.driverExecuteSingle(sql);
+
+    return data.rows.map((row) => row.createtable)[0];
   }
 
   getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
