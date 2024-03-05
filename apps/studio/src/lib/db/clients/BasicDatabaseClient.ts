@@ -90,7 +90,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
       // terminate any previous lost connection for this DB
       if (this.database.connected) {
-        this.disconnect();
+        await this.disconnect();
       }
 
       // reuse existing tunnel
