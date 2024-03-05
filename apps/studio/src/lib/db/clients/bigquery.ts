@@ -38,6 +38,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   client: bq.BigQuery;
+  config: any = {};
   
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, bigqueryContext, server, database);
@@ -67,29 +68,28 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    const config: any = {}
-    config.host = this.server.config.host
-    config.port = this.server.config.port
+    this.config.host = this.server.config.host
+    this.config.port = this.server.config.port
 
     // For BigQuery Only -- IAM authentication and credential exchange
     const bigQueryOptions = this.server.config.bigQueryOptions
 
     // TODO (@day): this seems like it was a mistake
-    config.projectId = bigQueryOptions.projectId /* || this.server.config.projectId */
-    config.keyFilename = bigQueryOptions.keyFilename
+    this.config.projectId = bigQueryOptions.projectId /* || this.server.config.projectId */
+    this.config.keyFilename = bigQueryOptions.keyFilename
     // For testing purposes
-    config.apiEndpoint = this.bigQueryEndpoint(this.server.config)
+    this.config.apiEndpoint = this.bigQueryEndpoint(this.server.config)
 
-    logger().debug("configDatabase config: ", config)
+    logger().debug("configDatabase config: ", this.config)
 
     
     this.knex = knexlib({
           client: BigQueryKnexClient as Client,
-          connection: { ...config }
+          connection: { ...this.config }
         });
 
 
-    this.client = new bq.BigQuery(config);
+    this.client = new bq.BigQuery(this.config);
   }
 
   async disconnect(): Promise<void> {
@@ -188,7 +188,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     })
 
     return {
-      async execute() {
+      execute: async () => {
         // Get a query job first
         const jobOptions = { query: queryText, ...options };
         [job] = await this.client.createQueryJob(jobOptions)
@@ -206,13 +206,13 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
             cancelable.wait(),
             this.driverExecuteSingle(queryText, job),
           ])
-          return data
+          return _.isArray(data) ? data : [data];
         } catch (err) {
           log.error('executeQuery error: ', err)
           throw err
         }
       },
-      async cancel() {
+      cancel: async () => {
         if (!job) {
           throw new Error('Query not ready to be canceled')
         }
@@ -240,7 +240,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     // Wait for the query to finish
     const results = await job.getQueryResults()
-    return results.map(this.parseRowQueryResult)
+    return results.map((data) => this.parseRowQueryResult(data))
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
@@ -302,37 +302,36 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   // TODO (@day): this is from chatgpt, check that it works and then actually run the query properly
-  async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const sql = `
-      SELECT CONCAT('CREATE TABLE ', table_name, ' (',
-                   STRING_AGG(column_definition, ', '),
-                   IF(pk.constraint_name IS NOT NULL, CONCAT(', PRIMARY KEY (', pk.column_list, ')'), ''),
-                   ')') AS createtable
-      FROM (
-        SELECT
-          table_name,
-          CONCAT(column_name, ' ', data_type,
-                 IF(data_type IN ('STRING', 'BYTES'), CONCAT('(', IF(character_maximum_length = -1, 'MAX', CAST(character_maximum_length AS STRING)), ')'), ''),
-                 IF(data_type = 'NUMERIC', CONCAT('(', CAST(numeric_precision AS STRING), ',', CAST(numeric_scale AS STRING), ')'), ''),
-                 IF(IS_NULLABLE = 'NO', ' NOT NULL', '')) AS column_definition
-        FROM \`your_project_name.your_dataset_name.INFORMATION_SCHEMA.COLUMNS\`
-        WHERE table_name = ${table}
-      ) AS column_definitions
-      LEFT JOIN (
-        SELECT
-          c.table_name,
-          c.constraint_name,
-          STRING_AGG(cu.column_name, ', ') AS column_list
-        FROM \`your_project_name.your_dataset_name.INFORMATION_SCHEMA.TABLE_CONSTRAINTS\` c
-        JOIN \`your_project_name.your_dataset_name.INFORMATION_SCHEMA.KEY_COLUMN_USAGE\` cu
-        ON c.constraint_name = cu.constraint_name
-        WHERE c.constraint_type = 'PRIMARY KEY'
-        GROUP BY c.table_name, c.constraint_name
-      ) AS pk
-      ON column_definitions.table_name = pk.table_name
-      GROUP BY table_name, pk.constraint_name
-    `
-    return sql;
+  async getTableCreateScript(_table: string, _schema?: string): Promise<string> {
+    throw new Error("Method not implemented")
+    // const sql = `
+    //   SELECT CONCAT('CREATE TABLE ', ${table}, ' (',
+    //                STRING_AGG(column_definition, ', '),
+    //                IF(pk.constraint_name IS NOT NULL, CONCAT(', PRIMARY KEY (', pk.column_list, ')'), ''),
+    //                ')') AS createtable
+    //   FROM (
+    //     SELECT
+    //       table_name,
+    //       CONCAT(column_name, ' ', data_type,
+    //              IF(IS_NULLABLE = 'NO', ' NOT NULL', '')) AS column_definition
+    //     FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.COLUMNS\`
+    //     WHERE table_name = ${table}
+    //   ) AS column_definitions
+    //   LEFT JOIN (
+    //     SELECT
+    //       c.table_name,
+    //       c.constraint_name,
+    //       STRING_AGG(cu.column_name, ', ') AS column_list
+    //     FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS\` c
+    //     JOIN \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE\` cu
+    //     ON c.constraint_name = cu.constraint_name
+    //     WHERE c.constraint_type = 'PRIMARY KEY'
+    //     GROUP BY c.table_name, c.constraint_name
+    //   ) AS pk
+    //   ON column_definitions.table_name = pk.table_name
+    //   GROUP BY table_name, pk.constraint_name, pk.column_list
+    // `
+    // return sql;
   }
 
   getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
@@ -495,7 +494,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     // Wait for the query to finish
     const results = await job.getQueryResults();
-    return results.map(this.parseRowQueryResult);
+    return results.map((data) => this.parseRowQueryResult(data))
   }
 
   private bigQueryEndpoint(config: any) {
