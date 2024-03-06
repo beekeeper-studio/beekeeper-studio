@@ -151,6 +151,8 @@
           nestedFieldSeparator: false,
           spreadsheetRowHeader: {
             field: '--row-header--bks',
+            minWidth: 38,
+            width: 38,
             contextMenu: (_, cell) => {
               return copyActionsMenu({
                 range: cell.getRange(),

@@ -112,6 +112,15 @@
 
   }
 
+  .CodeMirror {
+    margin-left: 6px;
+    padding-bottom: 0.25rem;
+  }
+
+  .CodeMirror-linenumbers {
+    width: 18px;
+  }
+
   // Modal
   // ------------------------------
 }
