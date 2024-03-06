@@ -1,6 +1,6 @@
 import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
-import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { IDbConnectionServer } from "../types";
 import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
@@ -34,7 +34,7 @@ export class CockroachClient extends PostgresClient {
     return [];
   }
 
-  async listTableIndexes(_db: string, table: string, schema?: string): Promise<TableIndex[]> {
+  async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
     const sql = `
      show indexes from ${this.tableName(table, schema)};
     `
@@ -75,8 +75,8 @@ export class CockroachClient extends PostgresClient {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(null, table, schema),
-      this.getTableKeys(null, table, schema),
+      this.listTableIndexes(table, schema),
+      this.getTableKeys(table, schema),
       triggersPromise,
       partitionsPromise,
       this.getTableOwner(table, schema)
@@ -158,10 +158,4 @@ export class CockroachClient extends PostgresClient {
     result[1009] = 'array'
     return result
   }
-}
-
-export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new CockroachClient(server, database);
-  await client.connect();
-  return client;
 }

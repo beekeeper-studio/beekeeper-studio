@@ -1,6 +1,6 @@
 import { IGroupedUserSettings } from '@/common/appdb/models/user_setting'
 import { IConnection } from '@/common/interfaces/IConnection'
-import { IDbConnectionServerConfig } from './db/client'
+import { IDbConnectionServerConfig } from './db/types'
 import { createServer } from './db/index'
 import { IDbConnectionPublicServer } from './db/server'
 

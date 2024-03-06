@@ -6,10 +6,9 @@ import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
-import { IDbClients } from '@/lib/db/client'
 import { EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-
+import { ConnectionType } from "@/lib/db/types"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 
@@ -57,10 +56,10 @@ export interface ConnectionOptions {
   connectionString?: string
 }
 
-function parseConnectionType(t: Nullable<IDbClients>) {
+function parseConnectionType(t: Nullable<ConnectionType>) {
   if (!t) return null
 
-  const mapping: { [x: string]: IDbClients } = {
+  const mapping: { [x: string]: ConnectionType } = {
     psql: 'postgresql',
     postgres: 'postgresql',
     mssql: 'sqlserver',
@@ -73,10 +72,10 @@ function parseConnectionType(t: Nullable<IDbClients>) {
 
 export class DbConnectionBase extends ApplicationEntity {
 
-  _connectionType: Nullable<IDbClients> = null
+  _connectionType: Nullable<ConnectionType> = null
 
   @Column({ type: 'varchar', name: 'connectionType' })
-  public set connectionType(value: Nullable<IDbClients>) {
+  public set connectionType(value: Nullable<ConnectionType>) {
     if (this._connectionType !== value) {
       const changePort = this._port === this.defaultPort || !this._port
       this._connectionType = parseConnectionType(value)
@@ -316,7 +315,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       }
 
       const parsed = new ConnectionString(url.replaceAll(/\s/g, "%20"))
-      this.connectionType = parsed.protocol as IDbClients || this.connectionType || 'postgresql'
+      this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }

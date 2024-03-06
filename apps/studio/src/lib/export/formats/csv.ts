@@ -1,5 +1,5 @@
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import Papa from 'papaparse'
-import { DBConnection } from "../../db/client"
 import { TableColumn, TableFilter, TableOrView } from "../../db/models"
 import { Export } from "../export"
 import { ExportOptions } from "../models"
@@ -24,7 +24,7 @@ export class CsvExporter extends Export {
 
   constructor(
     filePath: string,
-    connection: DBConnection,
+    connection: BasicDatabaseClient<any>,
     table: TableOrView,
     query: string,
     queryName: string,
