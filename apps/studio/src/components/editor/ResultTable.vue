@@ -76,7 +76,7 @@
           return copyActionsMenu({
             range: cell.getRange(),
             connection: this.connection,
-            table: 'mytable',
+            table: this.result.tableName,
             schema: this.connection.defaultSchema(),
           })
         }
@@ -160,7 +160,7 @@
               return copyActionsMenu({
                 range: cell.getRange(),
                 connection: this.connection,
-                table: 'mytable',
+                table: this.result.tableName,
                 schema: this.connection.defaultSchema(),
               })
             }

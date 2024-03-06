@@ -13341,10 +13341,10 @@ sql-formatter@~10.7.2:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
-sql-query-identifier@^2.6.0:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.6.0.tgz#ee56c0dacb946157f53f0ea0fbacb237250be8bd"
-  integrity sha512-gxlT1LX+BZi1NR8qWDtiU8umJf53OYuSKZN4xIufl6apD3OAVoBc/06FYBWPc+cHKrdqwvvs6wkiGfhvtqZwRw==
+sql-query-identifier@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.7.0.tgz#e05de066df91d93388f5f088245f16c13290022d"
+  integrity sha512-MTDRfn0kUv+9ELnt9wt/FATi03Wq1j3YvhE5Up8ToE5Afk5zzBgVHPuIu1bVhqNqfF0aeIPl3vEzZ60H1yv0ag==
 
 sqlstring@^2.3.2:
   version "2.3.3"

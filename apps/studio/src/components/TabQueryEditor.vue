@@ -892,7 +892,7 @@
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect })
+          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -923,7 +923,7 @@
           // @ts-ignore
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
-          results.forEach(result => {
+          results.forEach((result, idx) => {
             result.rowCount = result.rowCount || 0
 
             // TODO (matthew): remove truncation logic somewhere sensible
@@ -932,6 +932,12 @@
               result.rows = _.take(result.rows, this.$config.maxResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
+            }
+
+            if (identification[idx]?.tables.length === 1) {
+              result.tableName = identification[idx].tables[0]
+            } else {
+              result.tableName = "mytable"
             }
           })
           this.results = Object.freeze(results);
