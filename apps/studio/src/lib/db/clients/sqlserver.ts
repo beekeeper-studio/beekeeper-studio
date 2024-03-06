@@ -115,7 +115,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }))
   }
 
-  async listTableColumns(_, table, schema) {
+  async listTableColumns(_db, table, schema) {
     const clauses = []
     if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
@@ -150,6 +150,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       columnName: row.column_name,
       dataType: row.data_type,
       ordinalPosition: Number(row.ordinal_position),
+      hasDefault: !_.isNil(row.column_default),
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default
     }))
