@@ -14,6 +14,7 @@ export const BigQueryData: DialectData = {
   editorFriendlyIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
+  requireDataset: true,
   unwrapIdentifier: (s) => s,
   disabledFeatures: {
     indexes: true,

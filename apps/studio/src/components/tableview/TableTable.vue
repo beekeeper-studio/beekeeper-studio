@@ -948,7 +948,7 @@ export default Vue.extend({
         return {
           table: this.table.name,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           data: [result]
         }
       })
@@ -1079,7 +1079,7 @@ export default Vue.extend({
           key: key,
           table: this.table.name,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
           primaryKeys,
@@ -1170,7 +1170,7 @@ export default Vue.extend({
           table: this.table.name,
           row,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           primaryKeys,
         }
 

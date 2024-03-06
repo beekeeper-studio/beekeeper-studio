@@ -59,6 +59,7 @@ export const CassandraData: DialectData = {
     return matched ? matched[1] : value;
   },
   usesOffsetPagination: false,
+  requireDataset: false,
   disabledFeatures: {
     defaultValue: true,
     alter: {
