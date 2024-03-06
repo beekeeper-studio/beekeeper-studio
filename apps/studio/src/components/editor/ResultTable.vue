@@ -152,6 +152,10 @@
           nestedFieldSeparator: false,
           spreadsheetRowHeader: {
             field: '--row-header--bks',
+            htmlOutput: false,
+            print: false,
+            clipboard: false,
+            download: false,
             contextMenu: (_, cell) => {
               return copyActionsMenu({
                 range: cell.getRange(),
