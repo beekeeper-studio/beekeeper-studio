@@ -15,7 +15,7 @@
       <row-filter-builder
         v-if="table.columns?.length"
         :columns="table.columns"
-        :initial-filters="initialFilters"
+        :reactive-filters="tableFilters"
         @input="handleRowFilterBuilderInput"
         @submit="triggerFilter"
       />
@@ -283,13 +283,18 @@ const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
+function createTableFilter(field: string) {
+  return { op: "AND", field, type: "=", value: "" }
+}
+
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "initialFilters", "active", 'tab', 'table'],
+  props: ["connection", "active", 'tab', 'table'],
   data() {
     return {
       filters: [],
+      tableFilters: [createTableFilter(this.table.columns?.[0]?.columnName)],
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -688,6 +693,13 @@ export default Vue.extend({
         } else {
           this.$nextTick(() => this.tabulator.redraw())
         }
+
+        // If the filters in this.tab have changed, reapply them. We probably
+        // clicked a foreign key cell from other tab.
+        if (!_.isEqual(this.tab.getFilters(), this.tableFilters)) {
+          this.tableFilters = this.tab.getFilters()
+          this.triggerFilter(this.tableFilters)
+        }
       } else {
         this.tabulator.blockRedraw()
       }
@@ -799,7 +811,8 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.filters = normalizeFilters(this.initialFilters || [])
+      this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
