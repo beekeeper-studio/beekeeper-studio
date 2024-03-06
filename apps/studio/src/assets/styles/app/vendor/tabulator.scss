@@ -463,6 +463,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
           }
         }
       }
+      &.hide-header-menu-icon .tabulator-header-popup-button {
+        display: none;
+      }
       .tabulator-col-title {
         color: $text-dark;
       }

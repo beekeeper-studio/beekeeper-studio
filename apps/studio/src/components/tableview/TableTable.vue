@@ -532,11 +532,11 @@ export default Vue.extend({
           headerTooltip += ' [Primary Key]'
         }
 
-        let cssClass: string;
+        let cssClass = 'hide-header-menu-icon';
         if (isPK) {
-          cssClass = 'primary-key';
+          cssClass += ' primary-key';
         } else if (hasKeyDatas) {
-          cssClass = 'foreign-key';
+          cssClass += ' foreign-key';
         }
 
         // if column has a comment, add it to the tooltip
