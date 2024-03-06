@@ -832,6 +832,10 @@ export default Vue.extend({
         },
         spreadsheetRowHeader: {
           field: '--row-header--bks',
+          htmlOutput: false,
+          print: false,
+          clipboard: false,
+          download: false,
           contextMenu: (_, cell: Tabulator.CellComponent) => {
             const range = cell.getRange()
             return [
