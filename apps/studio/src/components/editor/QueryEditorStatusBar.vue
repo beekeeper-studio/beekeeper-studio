@@ -65,7 +65,7 @@
       <span class="expand" />
       <span class="empty">No Data</span>
     </template>
-    <div class="flex flex-right">
+    <div class="flex flex-right statusbar-right-actions">
       <x-button
         class="btn btn-flat btn-icon end"
         :disabled="results.length === 0"

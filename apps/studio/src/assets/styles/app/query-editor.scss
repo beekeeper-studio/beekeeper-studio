@@ -112,6 +112,9 @@
   }
 
   .statusbar {
+    .statusbar-right-actions {
+      flex-basis: auto;
+    }
     .btn.btn-flat .material-icons {
       font-size: 16px;
     }
