@@ -50,16 +50,6 @@
       display: flex;
       align-items: center;
       padding: 0;
-
-      .keymap-label {
-        font-size: 95%;
-        padding-left: $gutter-w * 2.6;
-        cursor: pointer;
-        .material-icons {
-          position: absolute;
-          left: $gutter-h;
-        }
-      }
     }
     .btn-fab {
       i {
@@ -113,12 +103,18 @@
   }
 
   .CodeMirror {
-    margin-left: 6px;
     padding-bottom: 0.25rem;
   }
 
   .CodeMirror-linenumbers {
-    width: 18px;
+    width: 22px;
+    margin-right: 8px;
+  }
+
+  .statusbar {
+    .btn.btn-flat .material-icons {
+      font-size: 16px;
+    }
   }
 
   // Modal
