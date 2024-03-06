@@ -376,7 +376,7 @@
           height: 100,
           selection: null,
           readOnly: false,
-          focus: true,
+          focus: false,
           cursorIndex: 0,
           initialized: false,
         },
@@ -651,12 +651,18 @@
         this.tab.unsavedChanges = this.unsavedChanges
       },
       async active() {
-        if(this.active && this.editor.initialized) {
-          // FIXME this doesn't work. Something triggers the blur event from
-          // codemirror right after doing this.
-          await this.$nextTick()
-          this.editor.focus = this.active
-        } else {
+        if (!this.editor.initialized) {
+          this.editor.focus = false
+          return
+        }
+
+        // HACK: we couldn't focus the editor immediately each time the tab is
+        // clicked because something steals the focus. So we defer focusing
+        // the editor at the end of the call stack with timeout, and
+        // this.$nextTick doesn't work in this case.
+        setTimeout(() => this.editor.focus = this.active, 0);
+
+        if (!this.active) {
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
