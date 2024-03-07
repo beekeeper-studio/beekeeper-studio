@@ -4,6 +4,7 @@ import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData } from "@/common/utils";
 import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
+import { rowHeaderField } from "@/lib/table-grid/utils";
 
 type ColumnMenuItem = Tabulator.MenuObject<Tabulator.ColumnComponent>;
 
@@ -29,11 +30,9 @@ export const resizeAllColumnsToMatch: ColumnMenuItem = {
       column.getTable().blockRedraw();
       const columns = column.getTable().getColumns();
       columns.forEach((col) => {
-        if (
-          col.getField() !==
-          column.getTable().modules.spreadsheet.rowHeaderField
-        )
+        if (col.getField() !== rowHeaderField) {
           col.setWidth(column.getWidth());
+        }
       });
     } catch (error) {
       console.error(error);
@@ -50,11 +49,9 @@ export const resizeAllColumnsToFitContent: ColumnMenuItem = {
       column.getTable().blockRedraw();
       const columns = column.getTable().getColumns();
       columns.forEach((col) => {
-        if (
-          col.getField() !==
-          column.getTable().modules.spreadsheet.rowHeaderField
-        )
+        if (col.getField() !== rowHeaderField) {
           col.setWidth(true);
+        }
       });
     } catch (error) {
       console.error(error);
@@ -71,11 +68,9 @@ export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
       column.getTable().blockRedraw();
       const columns = column.getTable().getColumns();
       columns.forEach((col) => {
-        if (
-          col.getField() !==
-          column.getTable().modules.spreadsheet.rowHeaderField
-        )
+        if (col.getField() !== rowHeaderField) {
           col.setWidth(200);
+        }
       });
     } catch (error) {
       console.error(error);

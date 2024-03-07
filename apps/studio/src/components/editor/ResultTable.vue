@@ -25,6 +25,7 @@
   import * as intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyRange, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
+  import { rowHeaderField } from '@/lib/table-grid/utils'
 
   export default {
     mixins: [Converter, Mutators],
@@ -84,7 +85,7 @@
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              range: _.last(range.getRanges()),
+              range: _.last(column.getRanges()),
               connection: this.connection,
               table: 'mytable',
               schema: this.connection.defaultSchema(),
@@ -123,7 +124,7 @@
         })
 
         const rowHeader = {
-          field: '--row-header--bks',
+          field: rowHeaderField,
           resizable: false,
           frozen: true,
           headerSort: false,
@@ -146,9 +147,10 @@
             })
           },
           headerContextMenu: () => {
+            const range = _.last(this.tabulator.getRanges())
             return [
               ...copyActionsMenu({
-                range: _.last(range.getRanges()),
+                range,
                 connection: this.connection,
                 table: 'mytable',
                 schema: this.connection.defaultSchema(),

@@ -277,8 +277,9 @@ import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent } from '@/lib/menu/tableMenu';
+import { rowHeaderField } from '@/lib/table-grid/utils';
+
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -626,7 +627,7 @@ export default Vue.extend({
       results.push(result)
 
       const rowHeader = {
-        field: '--row-header--bks',
+        field: rowHeaderField,
         resizable: false,
         frozen: true,
         headerSort: false,
