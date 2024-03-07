@@ -152,6 +152,8 @@
           nestedFieldSeparator: false,
           spreadsheetRowHeader: {
             field: '--row-header--bks',
+            minWidth: 38,
+            width: 38,
             htmlOutput: false,
             print: false,
             clipboard: false,
