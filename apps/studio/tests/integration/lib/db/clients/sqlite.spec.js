@@ -1,6 +1,6 @@
 import { DBTestUtil } from '../../../../lib/db'
 import tmp from 'tmp'
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests, runReadOnlyTests } from './all'
 
 describe("Sqlite Tests", () => {
   let dbfile;
@@ -8,6 +8,7 @@ describe("Sqlite Tests", () => {
   let util
 
   beforeAll(async () => {
+    console.log("beforeAll")
     dbfile = tmp.fileSync()
 
     const config = {
@@ -31,6 +32,9 @@ describe("Sqlite Tests", () => {
   afterAll(async () => {
     if (util.connection) {
       await util.connection.disconnect()
+    }
+    if (dbfile) {
+      dbfile.removeCallback();
     }
   })
 

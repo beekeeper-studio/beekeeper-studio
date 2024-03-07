@@ -73,7 +73,6 @@
               :tab="tab"
               :active="activeTab === tab"
               :connection="connection"
-              :initial-filters="tab.getFilters()"
               :table="slotProps.table"
             />
           </template>
@@ -546,15 +545,15 @@ export default Vue.extend({
     },
     async loadTableCreate(table) {
       let method = null
-      if (table.entityType === 'table') method = this.connection.getTableCreateScript
-      else if (table.entityType === 'view') method = this.connection.getViewCreateScript
-      else if (table.entityType === 'materialized-view') method = this.connection.getMaterializedViewCreateScript
+      if (table.entityType === 'table') method = 'getTableCreateScript'
+      else if (table.entityType === 'view') method = 'getViewCreateScript'
+      else if (table.entityType === 'materialized-view') method = 'getMaterializedViewCreateScript'
       if (!method) {
         this.$noty.error(`Can't find script for ${table.name} (${table.entityType})`)
         return
       }
       try {
-        const result = await method(table.name, table.schema)
+        const result = await this.connection[method](table.name, table.schema)
         const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       } catch (ex) {
@@ -788,8 +787,12 @@ export default Vue.extend({
       tab.setFilters(filters)
       tab.titleScope = "all"
       const existing = this.tabItems.find((t) => t.matches(tab))
-      if (existing) return this.$store.dispatch('tabs/setActive', existing)
-      this.addTab(tab)
+      if (existing) {
+        existing.setFilters(filters)
+        this.$store.dispatch('tabs/setActive', existing)
+      } else {
+        this.addTab(tab)
+      }
     },
     openExportModal(options) {
       this.tableExportOptions = options

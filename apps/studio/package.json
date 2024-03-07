@@ -11,14 +11,12 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "test:unit": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
-    "test:integration": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "lint": "vue-cli-service lint",
-    "docs:build": "vuepress build docs",
-    "docs:serve": "vuepress dev docs",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve --host localhost --ozone-platform-hint=auto",
     "postinstall": "electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "internal:integration": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
+    "test:integration": "../../bin/integration-tests.sh"
   },
   "main": "background.js",
   "dependencies": {
@@ -27,9 +25,12 @@
     "axios": "^1.6.0",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
+    "bks-oracledb": "5.3.3",
+    "builder-util-runtime": "^9.1.1",
     "better-sqlite3": "~8.2.0",
     "bytes": "^3.1.0",
-    "cassandra-driver": "^4.4.0",
+    "cassandra-driver": "^4.6.4",
+    "cassandra-knex": "beekeeper-studio/cassandra-knex#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a",
     "codemirror": "^5.63.1",
     "connection-string": "^3.4.2",
     "core-js": "3",
@@ -47,7 +48,7 @@
     "lodash": "^4.17.21",
     "markdown-table": "^3.0.2",
     "marked": "^4.0.10",
-    "material-icons": "^0.7.6",
+    "material-icons": "^1.13.3",
     "mkdirp": "^1.0.4",
     "mssql": "^8.0.2",
     "mysql2": "^2.3.3",
@@ -70,7 +71,7 @@
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "~10.7.2",
-    "sql-query-identifier": "^2.6.0",
+    "sql-query-identifier": "^2.7.0",
     "ssh2": "^1.14.0",
     "tabulator-tables": "beekeeper-studio/tabulator#a00978c782ead8470fa0b099f0a082911039906c",
     "tinyduration": "^3.2.4",
@@ -110,6 +111,7 @@
     "@types/mkdirp": "^1.0.1",
     "@types/mssql": "^7.1.5",
     "@types/node": "^12.12.54",
+    "@types/oracledb": "^5.2.2",
     "@types/papaparse": "^5.2.5",
     "@types/pg": "^7.14.7",
     "@types/pluralize": "^0.0.30",
@@ -131,11 +133,12 @@
     "electron-updater": "^4.6.5",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
+    "node-abi": "^3.34.0",
+    "oracledb": "npm:bks-oracledb",
     "testcontainers": "~8.9.0",
     "typescript": "~4.1.5",
     "vue-cli-plugin-electron-builder": "~2.1.1",
-    "vue-template-compiler": "^2.6.11",
-    "vuepress": "^1.5.0"
+    "vue-template-compiler": "^2.6.11"
   },
   "eslintConfig": {
     "ignorePatterns": [

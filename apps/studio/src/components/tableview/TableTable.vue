@@ -15,7 +15,7 @@
       <row-filter-builder
         v-if="table.columns?.length"
         :columns="table.columns"
-        :initial-filters="initialFilters"
+        :reactive-filters="tableFilters"
         @input="handleRowFilterBuilderInput"
         @submit="triggerFilter"
       />
@@ -270,7 +270,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import DateTimePickerEditorVue from '@shared/components/tabulator/DateTimePickerEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
-import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
+import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
@@ -283,13 +283,18 @@ const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
+function createTableFilter(field: string) {
+  return { op: "AND", field, type: "=", value: "" }
+}
+
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "initialFilters", "active", 'tab', 'table'],
+  props: ["connection", "active", 'tab', 'table'],
   data() {
     return {
       filters: [],
+      tableFilters: [createTableFilter(this.table.columns?.[0]?.columnName)],
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -532,11 +537,14 @@ export default Vue.extend({
           headerTooltip += ' [Primary Key]'
         }
 
-        let cssClass: string;
+        let cssClass = 'hide-header-menu-icon';
         if (isPK) {
-          cssClass = 'primary-key';
+          cssClass += ' primary-key';
         } else if (hasKeyDatas) {
-          cssClass = 'foreign-key';
+          cssClass += ' foreign-key';
+        }
+        if (column.generated) {
+          cssClass += ' generated-column';
         }
 
         // if column has a comment, add it to the tooltip
@@ -550,7 +558,8 @@ export default Vue.extend({
           titleFormatter: this.headerFormatter,
           titleFormatterParams: {
             columnName: column.columnName,
-            dataType: column.dataType
+            dataType: column.dataType,
+            generated: column.generated,
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
@@ -738,6 +747,13 @@ export default Vue.extend({
         } else {
           this.$nextTick(() => this.tabulator.redraw())
         }
+
+        // If the filters in this.tab have changed, reapply them. We probably
+        // clicked a foreign key cell from other tab.
+        if (!_.isEqual(this.tab.getFilters(), this.tableFilters)) {
+          this.tableFilters = this.tab.getFilters()
+          this.triggerFilter(this.tableFilters)
+        }
       } else {
         this.tabulator.blockRedraw()
       }
@@ -842,6 +858,10 @@ export default Vue.extend({
     isPrimaryKey(column) {
       return this.primaryKeys.includes(column);
     },
+    isGeneratedColumn(columnName: string) {
+      const column: ExtendedTableColumn = this.table.columns.find((col: ExtendedTableColumn) => col.columnName === columnName);
+      return column && column.generated;
+    },
     async initialize() {
       this.initialized = true
       this.resetPendingChanges()
@@ -849,7 +869,8 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.filters = normalizeFilters(this.initialFilters || [])
+      this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         selectableRange: true,
@@ -955,7 +976,7 @@ export default Vue.extend({
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
-        const columnNames = this.table.columns.map((c) => c.columnName)
+        const columnNames = this.table.columns.filter((c) => !c.generated).map((c) => c.columnName)
         const rowData = item.row.getData()
         const result = {}
         columnNames.forEach((c) => {
@@ -969,7 +990,7 @@ export default Vue.extend({
         return {
           table: this.table.name,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           data: [result]
         }
       })
@@ -1023,6 +1044,8 @@ export default Vue.extend({
       }
     },
     cellEditCheck(cell: Tabulator.CellComponent) {
+      if (this.isGeneratedColumn(cell.getField())) return false;
+
       if (this.insertionCellCheck(cell)) return true;
 
       // check this first because it is easy
@@ -1100,7 +1123,7 @@ export default Vue.extend({
           key: key,
           table: this.table.name,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
           primaryKeys,
@@ -1191,7 +1214,7 @@ export default Vue.extend({
           table: this.table.name,
           row,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           primaryKeys,
         }
 

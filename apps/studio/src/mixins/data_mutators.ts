@@ -4,20 +4,20 @@ import helpers, { escapeHtml } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {Tabulator} from 'tabulator-tables'
 
+export function buildNullValue(text: string) {
+  return `<span class="null-value">(${escapeHtml(text)})</span>`
+}
 
-export { escapeHtml }
 
-function emptyResult(value: any) {
-  const nullValue = '<span class="null-value">(NULL)</span>'
+export function emptyResult(value: any) {
   if (_.isNil(value)) {
-    return nullValue
+    return buildNullValue('NULL')
   }
   if (_.isString(value) && _.isEmpty(value)) {
-    return '<span class="null-value">(EMPTY)</span>'
+    return buildNullValue('EMPTY')
   }
-
   if (_.isArray(value) && value.length === 0) {
-    return nullValue
+    return buildNullValue('NULL')
   }
 
   return null
@@ -35,6 +35,15 @@ export default {
 
   methods: {
     niceString: helpers.niceString,
+    pillFormatter(cell: Tabulator.CellComponent) {
+      const nullValue = emptyResult(cell.getValue())
+      if (nullValue) {
+        return ''
+      }
+
+      const cellValue = cell.getValue()
+      return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
+    },
     cellTooltip(_event, cell: Tabulator.CellComponent) {
       const nullValue = emptyResult(cell.getValue())
       return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue(), true))
