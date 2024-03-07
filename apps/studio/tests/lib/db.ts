@@ -958,7 +958,7 @@ export class DBTestUtil {
       { columnName: "full_name", generated: true },
     ]);
 
-    const rows = await this.connection.selectTop('with_generated_cols')
+    const rows = await this.connection.selectTop('with_generated_cols', 0, 10, [], [], this.defaultSchema)
     expect(rows.result.map((r) => r.full_name)).toEqual(['Tom Tester'])
   }
 
