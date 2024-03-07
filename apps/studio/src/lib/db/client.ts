@@ -10,9 +10,8 @@ import { CockroachClient } from './clients/cockroach';
 import { BigQueryClient } from './clients/bigquery';
 import { FirebirdClient } from './clients/firebird';
 import { OracleClient } from "./clients/oracle";
-import { BasicDatabaseClient } from "./clients/BasicDatabaseClient";
 
-const clients = new Map<string, BasicDatabaseClient>([
+const clients = new Map<string, any>([
   ['mysql', MysqlClient],
   ['postgresql', PostgresClient],
   ['sqlserver', SQLServerClient],
