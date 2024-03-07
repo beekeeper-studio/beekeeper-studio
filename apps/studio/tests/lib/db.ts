@@ -48,6 +48,7 @@ const KnexTypes: any = {
   postgresql: 'pg',
   'mysql': 'mysql2',
   "mariadb": "mysql2",
+  "tidb": "mysql2",
   "sqlite": "sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",

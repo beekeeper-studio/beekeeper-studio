@@ -14,6 +14,7 @@ const encrypt = new EncryptTransformer(loadEncryptionKey())
 
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
+  { name: 'TiDB', value: 'tidb' },
   { name: 'MariaDB', value: 'mariadb' },
   { name: 'Postgres', value: 'postgresql' },
   { name: 'SQLite', value: 'sqlite' },
@@ -107,6 +108,9 @@ export class DbConnectionBase extends ApplicationEntity {
     let port
     switch (this.connectionType as string) {
       case 'mysql':
+      case 'tidb':
+        port = 4000
+        break
       case 'mariadb':
         port = 3306
         break
@@ -154,6 +158,8 @@ export class DbConnectionBase extends ApplicationEntity {
       return '/var/run/mysqld/mysqld.sock'
     } else if (this.connectionType === 'postgresql') {
       return '/var/run/postgresql'
+    } else if (this.connectionType === 'tidb') {
+      return '/tmp/tidb.sock'
     }
     return null
   }

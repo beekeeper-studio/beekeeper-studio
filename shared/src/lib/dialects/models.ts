@@ -18,6 +18,8 @@ export function dialectFor(s: string): Dialect | null {
       return 'postgresql'
     case 'mariadb':
       return 'mysql'
+    case 'tidb':
+      return 'mysql'
     case 'mssql':
       return 'sqlserver'
     default:
@@ -49,7 +51,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite'
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'tidb'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
