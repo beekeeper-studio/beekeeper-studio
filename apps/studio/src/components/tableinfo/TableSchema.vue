@@ -475,9 +475,6 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
-
-      // @ts-ignore
-      window.tabulator = this.tabulator
     },
     columnNameCellClick(_e: any, cell: CellComponent) {
       if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {
