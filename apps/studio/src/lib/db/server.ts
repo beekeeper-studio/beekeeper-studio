@@ -10,6 +10,7 @@ export interface IDbConnectionPublicServer {
   end: () => void
   createConnection: (dbName?: string, cryptoSecret?: string) => BasicDatabaseClient<any>
   versionString: () => string
+  getServerConfig: () => IDbConnectionServerConfig
 }
 
 export function createServer(config: IDbConnectionServerConfig): IDbConnectionPublicServer {
@@ -82,6 +83,9 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
     versionString() {
       // get version string from the first db, since all db's on the server have the same version
       return server.db[Object.keys(server.db)[0]].versionString();
+    },
+    getServerConfig() {
+      return server.config;
     }
   } as IDbConnectionPublicServer;
 }

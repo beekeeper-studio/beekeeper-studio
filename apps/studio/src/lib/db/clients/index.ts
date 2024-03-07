@@ -117,6 +117,14 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'oracle',
+    name: 'Oracle',
+    defaultPort: 1521,
+    disabledFeatures: [
+      'server:socketPath'
+    ]
+  },
+  {
     key: 'bigquery',
     name: 'BigQuery',
     defaultPort: 443,

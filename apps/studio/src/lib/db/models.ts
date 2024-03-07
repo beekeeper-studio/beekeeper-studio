@@ -99,6 +99,7 @@ export interface ExtendedTableColumn extends SchemaItem {
   ordinalPosition: number
   schemaName?: string
   tableName: string
+  generated?: boolean
 }
 
 export interface PrimaryKeyColumn {
@@ -225,6 +226,10 @@ export interface SupportedFeatures {
   properties: boolean;
   partitions: boolean;
   editPartitions: boolean;
+  backups: boolean;
+  // Some databases support a directory backup format.
+  backDirFormat: boolean;
+  restore: boolean;
 }
 
 export interface FieldDescriptor {

@@ -15,7 +15,8 @@
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
-  import Mutators, { escapeHtml } from '../../mixins/data_mutators'
+  import Mutators from '../../mixins/data_mutators'
+  import { escapeHtml } from '@shared/lib/tabulator'
   import { dialectFor } from '@shared/lib/dialects/models'
   import globals from '@/common/globals'
   import Papa from 'papaparse'
@@ -75,7 +76,7 @@
           return copyActionsMenu({
             range: cell.getRange(),
             connection: this.connection,
-            table: 'mytable',
+            table: this.result.tableName,
             schema: this.connection.defaultSchema(),
           })
         }
@@ -111,6 +112,7 @@
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,
             headerMenu: columnMenu,
+            cssClass: 'hide-header-menu-icon',
           }
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
@@ -150,11 +152,17 @@
           nestedFieldSeparator: false,
           spreadsheetRowHeader: {
             field: '--row-header--bks',
+            minWidth: 38,
+            width: 38,
+            htmlOutput: false,
+            print: false,
+            clipboard: false,
+            download: false,
             contextMenu: (_, cell) => {
               return copyActionsMenu({
                 range: cell.getRange(),
                 connection: this.connection,
-                table: 'mytable',
+                table: this.result.tableName,
                 schema: this.connection.defaultSchema(),
               })
             }

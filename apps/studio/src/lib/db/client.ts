@@ -9,6 +9,7 @@ import { RedshiftClient } from './clients/redshift';
 import { CockroachClient } from './clients/cockroach';
 import { BigQueryClient } from './clients/bigquery';
 import { FirebirdClient } from './clients/firebird';
+import { OracleClient } from "./clients/oracle";
 
 const clients = new Map<string, any>([
   ['mysql', MysqlClient],
@@ -19,8 +20,16 @@ const clients = new Map<string, any>([
   ['mariadb', MariaDBClient],
   ['cockroachdb', CockroachClient],
   ['bigquery', BigQueryClient],
-  ['firebird', FirebirdClient]
-]);
+  ['firebird', FirebirdClient],
+  ['oracle', OracleClient]
+], );
+
+
+class FriendlyErrorClient {
+  constructor() {
+    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src/lib/db/client.ts")
+  }
+}
 
 export class ClientError extends Error {
   helpLink = null
@@ -34,6 +43,6 @@ export function createConnection(server: IDbConnectionServer, database: IDbConne
   /**
    * Database public API
    */
-  const client = clients.get(server.config.client);
+  const client = clients.get(server.config.client) || FriendlyErrorClient;
   return new client(server, database);
 }

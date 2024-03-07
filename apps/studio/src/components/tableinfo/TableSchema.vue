@@ -136,15 +136,8 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import { escapeHtml } from '@/mixins/data_mutators';
-
-
-const FakeCell = {
-  getRow: () => ({}),
-  getField: () => 'fake',
-  getValue: () => 'fake'
-
-}
+import { escapeHtml } from '@shared/lib/tabulator';
+import type { ExtendedTableColumn } from "@/lib/db/models";
 
 export default Vue.extend({
   components: {
@@ -218,9 +211,10 @@ export default Vue.extend({
           field: 'columnName',
           editor: vueEditor(NullableInputEditorVue),
           cellEdited: this.cellEdited,
-          tooltip: this.columnNameCellTooltip.bind(this),
+          tooltip: this.columnNameCellTooltip,
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'renameColumn'),
+          cssClass: this.customColumnCssClass('renameColumn'),
           cellClick: this.columnNameCellClick.bind(this),
           frozen: true,
           minWidth: 100,
@@ -232,6 +226,7 @@ export default Vue.extend({
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
+          cssClass: this.customColumnCssClass('alterColumn'),
           minWidth: 90,
         },
         {
@@ -246,7 +241,7 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
           width: 70,
-          cssClass: "no-padding no-edit-highlight",
+          cssClass: this.customColumnCssClass('alterColumn') + ' no-padding no-edit-highlight',
         },
         {
           title: 'Default Value',
@@ -256,6 +251,7 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
+          cssClass: this.customColumnCssClass('alterColumn'),
           minWidth: 90,
         },
         (this.disabledFeatures?.informationSchema?.extra ? null : {
@@ -264,6 +260,7 @@ export default Vue.extend({
           tooltip: true,
           headerTooltip: 'eg AUTO_INCREMENT',
           editable: this.isCellEditable.bind(this, 'alterColumn'),
+          cssClass: this.customColumnCssClass('alterColumn'),
           formatter: this.cellFormatter,
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
@@ -275,6 +272,7 @@ export default Vue.extend({
           tooltip: true,
           headerTooltip: "Leave a friendly comment for other database users about this column",
           editable: this.isCellEditable.bind(this, 'alterColumn'),
+          cssClass: this.customColumnCssClass('alterColumn'),
           formatter: this.cellFormatter,
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
@@ -290,17 +288,12 @@ export default Vue.extend({
             editable: false
           },
           width: 70,
-          cssClass: "read-only never-editable",
+          cssClass: 'read-only never-editable',
         },
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
-      return result.map((col) => {
-        const editable = _.isFunction(col.editable) ? col.editable(FakeCell) : col.editable
-        const cssBase = col.cssClass || null
-        const extraCss = editable ? 'editable' : 'read-only'
-        const cssClass = cssBase ? `${cssBase} ${extraCss}` : extraCss
-        return { ...col, cssClass }
-      })
+
+      return result
     },
     tableData() {
       const keys = _.keyBy(this.primaryKeys, 'columnName')
@@ -314,16 +307,27 @@ export default Vue.extend({
     },
   },
   methods: {
+    customColumnCssClass(feature: string) {
+      return this.isEditable(feature) ? 'editable' : 'read-only'
+    },
+    isEditable(feature: string): boolean {
+      return this.editable && !this.disabledFeatures?.alter?.[feature]
+    },
     isCellEditable(feature: string, cell: CellComponent): boolean {
       // views and materialized views are not editable
 
-      if (!this.editable) return false
       if (this.removedRows.includes(cell.getRow())) return false
 
-      const isDisabled = this.disabledFeatures?.alter?.[feature]
+      const columnName = cell.getRow().getData()['columnName']
+      const column: ExtendedTableColumn | undefined = this.table.columns.find((c) => c.columnName === columnName)
+
+      if (feature === 'alterColumn' && column?.generated)  {
+        return false
+      }
+
       const isNewRow = this.newRows.includes(cell.getRow())
-      const result = (isNewRow || !isDisabled)
-      return result
+
+      return isNewRow || this.isEditable(feature)
     },
     async refreshColumns() {
       if(this.hasEdits) {

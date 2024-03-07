@@ -2,13 +2,27 @@ import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { IDbConnectionServer } from "../types";
-import { FilterOptions, PrimaryKeyColumn, TableOrView, TableProperties } from "../models";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
+import { TableKey } from "@shared/lib/dialects/models";
 
 export class RedshiftClient extends PostgresClient {
+  supportedFeatures(): SupportedFeatures {
+    return {
+      customRoutines: true,
+      comments: true,
+      properties: true,
+      partitions: false,
+      editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false
+    };
+  }
+
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     return [];
   }
@@ -49,6 +63,65 @@ export class RedshiftClient extends PostgresClient {
     }
   }
 
+  async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    const sql = `
+      SELECT
+
+          kcu.constraint_schema AS from_schema,
+
+          kcu.table_name AS from_table,
+
+          kcu.column_name AS from_column,
+          rc.unique_constraint_schema AS to_schema,
+          tc.constraint_name,
+          rc.update_rule,
+          rc.delete_rule,
+
+          (SELECT kcu2.table_name
+           FROM information_schema.key_column_usage AS kcu2
+           WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
+          (SELECT kcu2.column_name
+           FROM information_schema.key_column_usage AS kcu2
+           WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+      FROM
+          information_schema.key_column_usage AS kcu
+
+      JOIN
+          information_schema.table_constraints AS tc
+
+      ON
+          tc.constraint_name = kcu.constraint_name
+
+      JOIN
+          information_schema.referential_constraints AS rc
+      ON
+          rc.constraint_name = kcu.constraint_name
+      WHERE
+          tc.constraint_type = 'FOREIGN KEY' AND
+          kcu.table_schema NOT LIKE 'pg_%' AND
+          kcu.table_schema = $2 AND
+          kcu.table_name = $1;
+    `;
+
+    const params = [
+      table,
+      schema,
+    ];
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    return data.rows.map((row) => ({
+      toTable: row.to_table,
+      toSchema: row.to_schema,
+      toColumn: row.to_column,
+      fromTable: row.from_table,
+      fromSchema: row.from_schema,
+      fromColumn: row.from_column,
+      constraintName: row.constraint_name,
+      onUpdate: row.update_rule,
+      onDelete: row.delete_rule
+    }));
+  }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     const params = [
       table,
@@ -107,7 +180,7 @@ export class RedshiftClient extends PostgresClient {
       }
     }
 
-    
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,

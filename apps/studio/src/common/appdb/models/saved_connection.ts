@@ -53,6 +53,8 @@ export interface BigQueryOptions {
 
 export interface ConnectionOptions {
   cluster?: string
+  connectionMethod?: string
+  connectionString?: string
 }
 
 function parseConnectionType(t: Nullable<ConnectionType>) {
@@ -212,6 +214,8 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false })
   sslRejectUnauthorized = true
 
+  @Column({type: 'boolean', nullable: false, default: false})
+  readOnlyMode = true
 
   @Column({ type: 'simple-json', nullable: false })
   options: ConnectionOptions = {}
@@ -219,12 +223,18 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false })
   redshiftOptions: RedshiftOptions = {}
 
+  @Column({type: 'simple-json', nullable: false})
+  cassandraOptions: CassandraOptions = {}
   @Column({ type: 'simple-json', nullable: false })
   bigQueryOptions: BigQueryOptions = {}
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })
   trustServerCertificate = false
+
+  // oracle only.
+  @Column({type: 'varchar', nullable: true})
+  serviceName: Nullable<string> = null
 }
 
 @Entity({ name: 'saved_connection' })
@@ -246,7 +256,10 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'boolean', default: true })
   rememberPassword = true
 
-  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
+  @Column({type: 'boolean', default: false})
+  readOnlyMode = false
+
+  @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })

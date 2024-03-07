@@ -42,7 +42,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildUpdateQueries } from "./utils";
+import { buildDeleteQueries, buildUpdateQueries, joinQueries } from "./utils";
 import {
   Pool,
   Connection,
@@ -216,6 +216,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     database: IDbConnectionDatabase
   ) {
     super(null, context, server, database);
+    this.dialect = 'generic';
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   versionString(): string {
@@ -223,7 +225,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async connect(): Promise<void> {
-    super.connect();
+    await super.connect();
 
     const config = {
       host: this.server.config.host,
@@ -1010,11 +1012,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       properties: false,
       partitions: false,
       editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false
     };
   }
 
   async disconnect(): Promise<void> {
     this.pool.destroy();
+
+    await super.disconnect();
   }
 
   protected async rawExecuteQuery(
@@ -1194,4 +1201,30 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   createDatabaseSQL(): string {
     throw new Error("Method not implemented.");
   }
+  async importData(sql: string): Promise<any> {
+    const connection = await this.pool.getConnection();
+    const transaction = await connection.transaction();
+    try {
+      await transaction.query(sql);
+
+      await transaction.commit();
+    } catch (ex) {
+      log.error("importData", sql, ex);
+      await transaction.rollback();
+      await connection.release();
+      throw ex;
+    }
+  }
+
+  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
+    const queries = [];
+    if (isTruncate) {
+      return null;
+      // TODO: there is no internal method to truncate re: @azmy
+    }
+
+    queries.push(buildInsertQueries(this.knex, importedData).join(';'));
+    return joinQueries(queries);
+  }
+
 }

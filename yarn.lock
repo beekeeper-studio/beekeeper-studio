@@ -2637,6 +2637,13 @@
   resolved "https://registry.yarnpkg.com/@types/normalize-package-data/-/normalize-package-data-2.4.1.tgz#d3357479a0fdfdd5907fe67e17e0a85c906e1301"
   integrity sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==
 
+"@types/oracledb@^5.2.2":
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/@types/oracledb/-/oracledb-5.3.1.tgz#667a7ea97eb3f558c14a796a924ae08aa9a74a41"
+  integrity sha512-FXxNytI8CQ16pwAlUwRXwQeuLS/PSDuUcQQddUSbWeuFnpzMEgjMz5+7m531Q/y1RIUzZ+HU7mIvidB4oZ0bEA==
+  dependencies:
+    "@types/node" "*"
+
 "@types/papaparse@^5.2.5":
   version "5.3.5"
   resolved "https://registry.yarnpkg.com/@types/papaparse/-/papaparse-5.3.5.tgz#e5ad94b1fe98e2a8ea0b03284b83d2cb252bbf39"
@@ -4311,6 +4318,11 @@ bindings@^1.5.0:
   dependencies:
     file-uri-to-path "1.0.0"
 
+bks-oracledb@5.3.3, "oracledb@npm:bks-oracledb":
+  version "5.3.3"
+  resolved "https://registry.yarnpkg.com/bks-oracledb/-/bks-oracledb-5.3.3.tgz#2d68ac5ccf12140a40daf3fa6723d535223a1826"
+  integrity sha512-3og0hbhu+WBocyQIZyJX+/dxlgR7F1QfbI6wVwYVK1fKv06lPOky7tPoAyqWJpG2krYnYXSD7crmWj1O2liL8Q==
+
 bl@^4.0.3:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/bl/-/bl-4.1.0.tgz#451535264182bec2fbbc83a62ab98cf11d9f7b3a"
@@ -4647,6 +4659,14 @@ builder-util-runtime@9.0.0:
   integrity sha512-SkpEtSmTkREDHRJnxKEv43aAYp8sYWY8fxYBhGLBLOBIRXeaIp6Kv3lBgSD7uR8jQtC7CA659sqJrpSV6zNvSA==
   dependencies:
     debug "^4.3.2"
+    sax "^1.2.4"
+
+builder-util-runtime@^9.1.1:
+  version "9.2.4"
+  resolved "https://registry.yarnpkg.com/builder-util-runtime/-/builder-util-runtime-9.2.4.tgz#13cd1763da621e53458739a1e63f7fcba673c42a"
+  integrity sha512-upp+biKpN/XZMLim7aguUyW8s0FUpDvOtK6sbanMFDAMBzpHDqdhgVYm6zc9HJ6nWo7u2Lxk60i2M6Jd3aiNrA==
+  dependencies:
+    debug "^4.3.4"
     sax "^1.2.4"
 
 builder-util@23.0.2:
@@ -8461,9 +8481,9 @@ ip-regex@^2.1.0:
   integrity sha512-58yWmlHpp7VYfcdTwMTvwMmqx/Elfxjd9RXTDyMsbL7lLWmhMylLEqiYVLKuLzOZqVgiWXD9MfR62Vv89VRxkw==
 
 ip@^1.1.0, ip@^1.1.5:
-  version "1.1.8"
-  resolved "https://registry.yarnpkg.com/ip/-/ip-1.1.8.tgz#ae05948f6b075435ed3307acce04629da8cdbf48"
-  integrity sha512-PuExPYUiu6qMBQb4l06ecm6T6ujzhmh+MeJcW9wa89PoAz5pvd4zPgN5WJV104mb6S2T1AwNIAaB70JNrLQWhg==
+  version "1.1.9"
+  resolved "https://registry.yarnpkg.com/ip/-/ip-1.1.9.tgz#8dfbcc99a754d07f425310b86a99546b1151e396"
+  integrity sha512-cyRxvOEpNHNtchU3Ln9KC/auJgup87llfQpQ+t5ghoC/UhL16SWzbueiCsdTnWmqAWl7LadfuwhlqmtOaqMHdQ==
 
 ipaddr.js@1.9.1, ipaddr.js@^1.9.0:
   version "1.9.1"
@@ -10139,10 +10159,10 @@ matcher@^3.0.0:
   dependencies:
     escape-string-regexp "^4.0.0"
 
-material-icons@^0.7.6:
-  version "0.7.7"
-  resolved "https://registry.yarnpkg.com/material-icons/-/material-icons-0.7.7.tgz#10e67bc0a105d355469b12aa3cab1cf91a2b03e7"
-  integrity sha512-WzHzL+/QlcCRbF2aCElgv6r0ViRateatEQP/UOA502PitZNFF2BJIcGpzvJmMPShktkhhrLAFx+elDN7DcjXVQ==
+material-icons@^1.13.3:
+  version "1.13.12"
+  resolved "https://registry.yarnpkg.com/material-icons/-/material-icons-1.13.12.tgz#eed4082bf0426642edeb027e75397e3064adc536"
+  integrity sha512-/2YoaB79IjUK2B2JB+vIXXYGtBfHb/XG66LvoKVM5ykHW7yfrV5SP6d7KLX6iijY6/G9GqwgtPQ/sbhFnOURVA==
 
 md5.js@^1.3.4:
   version "1.3.5"
@@ -13321,10 +13341,10 @@ sql-formatter@~10.7.2:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
-sql-query-identifier@^2.6.0:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.6.0.tgz#ee56c0dacb946157f53f0ea0fbacb237250be8bd"
-  integrity sha512-gxlT1LX+BZi1NR8qWDtiU8umJf53OYuSKZN4xIufl6apD3OAVoBc/06FYBWPc+cHKrdqwvvs6wkiGfhvtqZwRw==
+sql-query-identifier@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.7.0.tgz#e05de066df91d93388f5f088245f16c13290022d"
+  integrity sha512-MTDRfn0kUv+9ELnt9wt/FATi03Wq1j3YvhE5Up8ToE5Afk5zzBgVHPuIu1bVhqNqfF0aeIPl3vEzZ60H1yv0ag==
 
 sqlstring@^2.3.2:
   version "2.3.3"

@@ -78,13 +78,14 @@
               </div>
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
+                <other-database-notice v-if="shouldUpsell" />
                 <postgres-form
-                  v-if="config.connectionType === 'cockroachdb'"
+                  v-else-if="config.connectionType === 'cockroachdb'"
                   :config="config"
                   :testing="testing"
                 />
                 <mysql-form
-                  v-if="['mysql', 'mariadb'].includes(config.connectionType)"
+                  v-else-if="['mysql', 'mariadb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                   @save="save"
@@ -92,40 +93,40 @@
                   @connect="submit"
                 />
                 <postgres-form
-                  v-if="config.connectionType === 'postgresql'"
+                  v-else-if="config.connectionType === 'postgresql'"
                   :config="config"
                   :testing="testing"
                 />
                 <redshift-form
-                  v-if="config.connectionType === 'redshift'"
+                  v-else-if="config.connectionType === 'redshift'"
                   :config="config"
                   :testing="testing"
                 />
                 <sqlite-form
-                  v-if="config.connectionType === 'sqlite'"
+                  v-else-if="config.connectionType === 'sqlite'"
                   :config="config"
                   :testing="testing"
                 />
                 <sql-server-form
-                  v-if="config.connectionType === 'sqlserver'"
+                  v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
                 />
                 <big-query-form
-                  v-if="config.connectionType === 'bigquery'"
+                  v-else-if="config.connectionType === 'bigquery'"
                   :config="config"
                   :testing="testing"
                 />
                 <firebird-form
-                  v-if="config.connectionType === 'firebird'"
+                  v-else-if="config.connectionType === 'firebird'"
                   :config="config"
                   :testing="testing"
                 />
-                <other-database-notice v-if="config.connectionType === 'other'" />
+
 
                 <!-- TEST AND CONNECT -->
                 <div
-                  v-if="config.connectionType !== 'other'"
+                  v-if="!shouldUpsell"
                   class="test-connect row flex-middle"
                 >
                   <span class="expand" />
@@ -162,7 +163,7 @@
                   </div>
                 </div>
                 <SaveConnectionForm
-                  v-if="config.connectionType !== 'other'"
+                  v-if="!shouldUpsell"
                   :config="config"
                   @save="save"
                 />
@@ -171,7 +172,7 @@
           </div>
           <div
             class="pitch"
-            v-if="!config.connectionType"
+            v-if="!config.connectionType && shouldUpsell"
           >
             🌟 <strong>Upgrade to premium</strong> for data import, multi-table export, backup & restore, Oracle support, and more.
             <a
@@ -213,6 +214,7 @@ import { findClient } from '@/lib/db/clients'
 import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
+import { isUltimateType } from '@/common/interfaces/IConnection'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -239,6 +241,10 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
+    },
+    shouldUpsell() {
+      if (platformInfo.isUltimate) return false
+      return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
       if (_.isNull(this.config) || _.isUndefined(this.config.id)) {
@@ -365,6 +371,10 @@ export default Vue.extend({
 
     },
     async submit() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
+
       this.connectionError = null
       try {
         await this.$store.dispatch('connect', this.config)
@@ -379,6 +389,9 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
 
       try {
         this.testing = true

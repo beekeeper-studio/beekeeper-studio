@@ -32,12 +32,16 @@ export const FirebirdData: DialectData = {
   escapeString: (s) => Firebird.escape(s),
   wrapLiteral: Firebird.escape,
   unwrapIdentifier: defaultWrapLiteral,
+  requireDataset: false,
   disabledFeatures: {
     backup: true,
     truncateElement: true,
     duplicateTable: true,
     createTable: true, // Blocked by knex builder creating unnecessary query
     collations: true,
+    alter: {
+      multiStatement: true,
+    }
   },
   notices: {},
 };

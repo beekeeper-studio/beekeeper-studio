@@ -212,6 +212,13 @@ $cell-success:           $row-add;
       .yesno-icon {
         float:right;
       }
+
+      .tabulator-cell:not(.tabulator-editable) {
+        color: $text-lighter;
+        &:hover {
+          background-color: transparent;
+        }
+      }
     }
   }
 }

@@ -1,13 +1,16 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQuery } from './utils';
+import { buildInsertQuery, errorMessages, isAllowedReadOnlyQuery } from './utils';
 import { Knex } from 'knex';
+import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
+import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
-import createLogger from '@/lib/logger';
+import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 
-const logger = createLogger('db');
+const log = rawLog.scope('db');
+const logger = () => log;
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -33,11 +36,23 @@ export interface AppContextProvider {
     logQuery(query: string, options: QueryLogOptions, context: ExecutionContext ): Promise<number | string>
 }
 
+export const NoOpContextProvider: AppContextProvider = {
+  getExecutionContext(): ExecutionContext {
+    return null;
+  },
+  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
+    return null;
+  }
+};
+
 // raw result type is specific to each database implementation
 export abstract class BasicDatabaseClient<RawResultType> {
 
   knex: Knex | null;
-  contextProvider: AppContextProvider
+  contextProvider: AppContextProvider;
+  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
+  // TODO (@day): this can be cleaned up when we fix configuration
+  readOnlyMode = false;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
@@ -57,6 +72,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   // DB Metadata ****************************************************************
   abstract supportedFeatures(): SupportedFeatures;
   abstract versionString(): string;
+
   defaultSchema(): string | null {
     return null
   }
@@ -74,7 +90,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
       // terminate any previous lost connection for this DB
       if (this.database.connected) {
-        this.disconnect();
+        await this.disconnect();
       }
 
       // reuse existing tunnel
@@ -98,12 +114,13 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.database.connecting = false;
 
     if (this.server.sshTunnel) {
-      this.server.sshTunnel.connection.shutdown();
+      await this.server.sshTunnel.connection.shutdown();
     }
 
     if (this.server.db[this.database.database]) {
-      delete this.server.db[this.database.database]
+      // delete this.server.db[this.database.database]
     }
+    await this.knex.destroy();
   }
   // ****************************************************************************
 
@@ -237,12 +254,17 @@ export abstract class BasicDatabaseClient<RawResultType> {
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
+    const identification = identify(q, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
+
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
     try {
         const result = await this.rawExecuteQuery(q, options) as RawResultType
-        return result
+        return _.isArray(result) ? result[0] : result
     } catch (ex) {
         logOptions.status = 'failed'
         logOptions.error = ex.message
@@ -253,6 +275,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
+    const identification = identify(q, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
+
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
@@ -267,4 +294,5 @@ export abstract class BasicDatabaseClient<RawResultType> {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
   }
+
 }
