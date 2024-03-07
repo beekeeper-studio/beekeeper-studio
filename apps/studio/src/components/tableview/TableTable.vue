@@ -270,7 +270,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import DateTimePickerEditorVue from '@shared/components/tabulator/DateTimePickerEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
-import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
+import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
@@ -543,6 +543,9 @@ export default Vue.extend({
         } else if (hasKeyDatas) {
           cssClass += ' foreign-key';
         }
+        if (column.generated) {
+          cssClass += ' generated-column';
+        }
 
         // if column has a comment, add it to the tooltip
         if (column.comment) {
@@ -555,7 +558,8 @@ export default Vue.extend({
           titleFormatter: this.headerFormatter,
           titleFormatterParams: {
             columnName: column.columnName,
-            dataType: column.dataType
+            dataType: column.dataType,
+            generated: column.generated,
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
@@ -804,6 +808,10 @@ export default Vue.extend({
     isPrimaryKey(column) {
       return this.primaryKeys.includes(column);
     },
+    isGeneratedColumn(columnName: string) {
+      const column: ExtendedTableColumn = this.table.columns.find((col: ExtendedTableColumn) => col.columnName === columnName);
+      return column && column.generated;
+    },
     async initialize() {
       this.initialized = true
       this.resetPendingChanges()
@@ -951,7 +959,7 @@ export default Vue.extend({
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
-        const columnNames = this.table.columns.map((c) => c.columnName)
+        const columnNames = this.table.columns.filter((c) => !c.generated).map((c) => c.columnName)
         const rowData = item.row.getData()
         const result = {}
         columnNames.forEach((c) => {
@@ -1019,6 +1027,8 @@ export default Vue.extend({
       }
     },
     cellEditCheck(cell: Tabulator.CellComponent) {
+      if (this.isGeneratedColumn(cell.getField())) return false;
+
       if (this.insertionCellCheck(cell)) return true;
 
       // check this first because it is easy

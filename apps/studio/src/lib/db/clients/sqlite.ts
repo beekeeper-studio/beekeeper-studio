@@ -4,7 +4,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models"; 
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models";
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { ClientError, joinQueries } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
@@ -142,7 +142,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     if (table) {
-      const sql = `PRAGMA table_info(${SD.escapeString(table, true)})`;
+      const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
 
       const { data } = await this.driverExecuteSingle(sql);
       return this.dataToColumns(data, table);
@@ -155,7 +155,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     const everything = tables.map((table) => {
       return {
         tableName: table.name,
-        sql: `PRAGMA table_info(${SD.escapeString(table.name, true)})`,
+        sql: `PRAGMA table_xinfo(${SD.escapeString(table.name, true)})`,
         results: null
       }
     })
@@ -394,7 +394,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
-    const sql = `pragma table_info('${SD.escapeString(table)}')`
+    const sql = `pragma table_xinfo('${SD.escapeString(table)}')`
     const { data } = await this.driverExecuteSingle(sql);
     const found = data.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
@@ -548,7 +548,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         results.push({
           data: result || [],
           statement: query,
-          changes: statement.reader ? 0 : (result as Database.RunResult).changes 
+          changes: statement.reader ? 0 : (result as Database.RunResult).changes
         });
       } catch (error) {
         log.error(error);
@@ -559,15 +559,15 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return options.multiple ? results : results[0];
   }
 
-  
-  private dataToColumns(data, tableName) {
+  private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {
     return data.map((row) => ({
       tableName,
       columnName: row.name,
       dataType: row.type,
       nullable: Number(row.notnull || 0) === 0,
       defaultValue: row.dflt_value === 'NULL' ? null : row.dflt_value,
-      ordinalPosition: Number(row.cid)
+      ordinalPosition: Number(row.cid),
+      generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
     }))
   }
 
