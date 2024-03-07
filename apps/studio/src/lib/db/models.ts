@@ -225,6 +225,10 @@ export interface SupportedFeatures {
   properties: boolean;
   partitions: boolean;
   editPartitions: boolean;
+  backups: boolean;
+  // Some databases support a directory backup format.
+  backDirFormat: boolean;
+  restore: boolean;
 }
 
 export interface FieldDescriptor {

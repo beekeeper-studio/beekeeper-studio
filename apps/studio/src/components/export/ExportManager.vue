@@ -22,13 +22,13 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { mapMutations, mapGetters } from 'vuex'
 import { AppEvent, RootBinding } from '../../common/AppEvent'
-import { DBConnection } from '../../lib/db/client'
 import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
 import { ExportProgress, ExportStatus } from '../../lib/export/models'
 import globals from '@/common/globals'
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
@@ -63,9 +63,7 @@ interface StartExportOptions {
 
 export default Vue.extend({
   components: { ExportModal, ExportNotification },
-  props: {
-    connection: DBConnection
-  },
+  props: ['connection'],
   data() {
     return {
       // these are like 'pending Export'

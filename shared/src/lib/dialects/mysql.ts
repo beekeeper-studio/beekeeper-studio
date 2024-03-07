@@ -31,6 +31,7 @@ export const MysqlData: DialectData = {
   usesOffsetPagination: true,
   editorFriendlyIdentifier: (s) => s,
   escapeString: defaultEscapeString,
+  requireDataset: false,
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   },
