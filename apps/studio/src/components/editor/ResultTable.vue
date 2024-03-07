@@ -76,7 +76,7 @@
           return copyActionsMenu({
             range: cell.getRange(),
             connection: this.connection,
-            table: 'mytable',
+            table: this.result.tableName,
             schema: this.connection.defaultSchema(),
           })
         }
@@ -112,6 +112,7 @@
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,
             headerMenu: columnMenu,
+            cssClass: 'hide-header-menu-icon',
           }
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
@@ -153,11 +154,15 @@
             field: '--row-header--bks',
             minWidth: 38,
             width: 38,
+            htmlOutput: false,
+            print: false,
+            clipboard: false,
+            download: false,
             contextMenu: (_, cell) => {
               return copyActionsMenu({
                 range: cell.getRange(),
                 connection: this.connection,
-                table: 'mytable',
+                table: this.result.tableName,
                 schema: this.connection.defaultSchema(),
               })
             }

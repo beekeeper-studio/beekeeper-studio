@@ -16,7 +16,10 @@
                   <x-menuitem @click.prevent="importFromComputer">
                     <x-label>Import from local computer</x-label>
                   </x-menuitem>
-                  <x-menuitem @click.prevent="importFromLocal" :disabled="!isCloud">
+                  <x-menuitem
+                    @click.prevent="importFromLocal"
+                    :disabled="!isCloud"
+                  >
                     <x-label>Import from workspace</x-label>
                     <i class="material-icons menu-icon">stars</i>
                   </x-menuitem>

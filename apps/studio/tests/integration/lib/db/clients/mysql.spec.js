@@ -207,8 +207,6 @@ function testWith(tag, socket = false, readonly = false) {
         table.integer("number").primary()
       })
 
-      const changeFunc =
-
       await util.connection.alterTable({
         table: "unsigned_integers",
         adds: [{ columnName: "tiny_number", dataType: "tinyint unsigned" }],
@@ -218,7 +216,7 @@ function testWith(tag, socket = false, readonly = false) {
           newValue: "int unsigned",
         }],
       })
-      expect(util.connection.applyChanges({
+      await expect(util.connection.applyChanges({
         inserts: [{
           table: 'unsigned_integers',
           data: [{ number: -1, tiny_number: -1 }],
