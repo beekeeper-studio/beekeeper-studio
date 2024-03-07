@@ -1,6 +1,5 @@
 // (Original) Copyright (c) 2015 The SQLECTRON Team
 
-// FIXME: Reimplement ReadOnly & Backup and Restore stuff
 import { readFileSync } from 'fs';
 
 import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
@@ -20,7 +19,7 @@ import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
 import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
-import { BasicDatabaseClient } from './BasicDatabaseClient';
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 
@@ -62,22 +61,26 @@ interface STQResults {
 
 }
 
+const postgresContext = {
+  getExecutionContext(): ExecutionContext {
+    return null;
+  },
+  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
+    return null;
+  }
+};
+
 export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   version: VersionInfo;
   conn: HasPool;
   runWithConnection: HasConnection;
   _defaultSchema: string;
   dataTypes: any;
-  server: IDbConnectionServer;
-  database: IDbConnectionDatabase;
-
+  
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex);
-
+    super(knex, postgresContext, server, database);
     this.dialect = 'psql';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
-    this.server = server;
-    this.database = database;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   versionString(): string {
@@ -107,6 +110,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (!this.server && !this.database) {
       return;
     }
+    await super.connect();
+ 
     const dbConfig = await this.configDatabase(this.server, this.database);
 
     this.conn = {
@@ -117,13 +122,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
+    this.database.connected = true;
   }
 
   async disconnect(): Promise<void> {
     this.conn.pool.end();
+
+    await super.disconnect();
   }
 
-  async listTables(_db: string, filter?: FilterOptions): Promise<TableOrView[]> {
+  async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     const schemaFilter = buildSchemaFilter(filter, 'table_schema');
 
     let sql = `
@@ -261,7 +269,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       };
     });
   }
-  async listMaterializedViewColumns(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
+  async listMaterializedViewColumns(table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
     const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : '';
     if (table && !schema) {
       throw new Error("Cannot get columns for '${table}, no schema provided'")
@@ -288,7 +296,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async listTableColumns(_db: string, table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     // if you provide table, you have to provide schema
     const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
     const params = table ? [schema, table] : []
@@ -371,7 +379,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async listTableIndexes(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
+  async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
     const sql = `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
@@ -432,7 +440,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result
   }
 
-  async listSchemas(_db: string, filter?: SchemaFilterOptions): Promise<string[]> {
+  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
     const schemaFilter = buildSchemaFilter(filter);
     const sql = `
       SELECT schema_name
@@ -466,7 +474,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.referenced_table_name);
   }
 
-  async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
       SELECT
         kcu.constraint_schema AS from_schema,
@@ -537,9 +545,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
-      execute: (async (): Promise<NgQueryResult[]> => {
+      execute: async (): Promise<NgQueryResult[]> => {
         const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
         const rows = dataPid.rows
+
         pid = rows[0].pid;
 
         try {
@@ -565,9 +574,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         } finally {
           cancelable.discard();
         }
-      }).bind(this),
+      },
 
-      cancel: (async (): Promise<void> => {
+      cancel: async (): Promise<void> => {
         if (!pid) {
           throw new Error('Query not ready to be canceled');
         }
@@ -587,7 +596,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           canceling = false;
           throw err;
         }
-      }).bind(this),
+      },
     };
   }
 
@@ -625,7 +634,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     let results: TableUpdateResult[] = []
 
     await this.cacheConnection();
-
+    
     await this.driverExecuteSingle('BEGIN')
     log.debug("Applying changes", changes)
     try {
@@ -645,6 +654,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     } catch (ex) {
       log.error("query exception: ", ex)
       await this.driverExecuteSingle('ROLLBACK');
+      this.releaseCachedConnection();
       throw ex
     }
 
@@ -685,8 +695,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(null, table, schema),
-      this.getTableKeys(null, table, schema),
+      this.listTableIndexes(table, schema),
+      this.getTableKeys(table, schema),
       triggersPromise,
       partitionsPromise,
       this.getTableOwner(table, schema)
@@ -721,11 +731,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async getViewCreateScript(view: string, schema: string = this._defaultSchema): Promise<string[]> {
-    const createViewSql = `CREATE OR REPLACE VIEW ${wrapIdentifier(schema)}.${wrapIdentifier(view)} AS`;
+    const qualifiedName = `${wrapIdentifier(schema)}.${wrapIdentifier(view)}`
+
+    const createViewSql = `CREATE OR REPLACE VIEW ${qualifiedName} AS`;
 
     const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
 
-    const params = [wrapIdentifier(view)];
+    const params = [qualifiedName];
 
     const data = await this.driverExecuteSingle(sql, { params });
 
@@ -751,7 +763,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.pg_get_functiondef);
   }
 
-  async truncateAllTables(_db: string, schema: string = this._defaultSchema): Promise<void> {
+  async truncateAllTables(schema: string = this._defaultSchema): Promise<void> {
     const sql = `
       SELECT quote_ident(table_name) as table_name
       FROM information_schema.tables
@@ -798,12 +810,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async getPrimaryKey(db: string, table: string, schema: string = this._defaultSchema): Promise<string> {
-    const keys = await this.getPrimaryKeys(db, table, schema)
+  async getPrimaryKey(table: string, schema: string = this._defaultSchema): Promise<string> {
+    const keys = await this.getPrimaryKeys(table, schema)
     return keys.length === 1 ? keys[0].columnName : null
   }
 
-  async getPrimaryKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<PrimaryKeyColumn[]> {
+  async getPrimaryKeys(table: string, schema: string = this._defaultSchema): Promise<PrimaryKeyColumn[]> {
     const tablename = PD.escapeString(this.tableName(table, schema), true)
     const query = `
       SELECT
@@ -852,7 +864,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return qs.query
   }
 
-  async selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema): Promise<StreamResults> {
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema): Promise<StreamResults> {
     const qs = this.buildSelectTopQueries({
       table, orderBy, filters, version: this.version, schema
     })
@@ -860,7 +872,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const countResults = await this.driverExecuteSingle(qs.countQuery, {params: qs.params})
     const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
     const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
-    const columns = await this.listTableColumns(db, table, schema)
+    const columns = await this.listTableColumns(table, schema)
 
     const cursorOpts = {
       query: qs.query,
@@ -876,7 +888,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async queryStream(_db: string, query: string, chunkSize: number): Promise<StreamResults> {
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     const cursorOpts = {
       query: query,
       params: [],
@@ -964,7 +976,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     throw new Error('Method not implemented.');
   }
 
-
+  
   alterPartitionSql(payload: AlterPartitionsSpec): string {
     const { table } = payload;
     const builder = new PostgresqlChangeBuilder(table);
@@ -1026,13 +1038,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect();
     }
 
-    try {
-      return await this.runQuery(connection, q, options)
-    } finally {
-      if (release) {
-        connection.release();
-      }
+    const value =  await this.runQuery(connection, q, options)
+    if (release) {
+      connection.release();
     }
+    return value;
   }
 
   // ************************************************************************************
@@ -1263,12 +1273,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     };
   }
 
-  private async releaseCachedConnection() {
+  private releaseCachedConnection() {
     this.runWithConnection.connection.release();
     this.runWithConnection = null;
   }
 
-  private async runQuery(connection: pg.PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
+  private async runQuery(connection: PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
     const args = {
       text: query,
       values: options.params,
@@ -1295,7 +1305,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   private async insertRows(rawInserts: TableInsert[]) {
     const columnsList = await Promise.all(rawInserts.map((insert) => {
-      return this.listTableColumns(null, insert.table, insert.schema);
+      return this.listTableColumns(insert.table, insert.schema);
     }));
 
     const fixedInserts = rawInserts.map((insert, idx) => {
@@ -1472,10 +1482,4 @@ export function wrapIdentifier(value: string): string {
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;
-}
-
-export default async function(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-  const client = new PostgresClient(server, database);
-  await client.connect();
-  return client;
 }

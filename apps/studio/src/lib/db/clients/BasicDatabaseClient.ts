@@ -1,11 +1,16 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQuery, errorMessages, isAllowedReadOnlyQuery } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
-import { DatabaseClient, DatabaseElement } from '../client';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
+import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
+import rawLog from "electron-log";
+import connectTunnel from '../tunnel';
+
+const log = rawLog.scope('db');
+const logger = () => log;
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -41,22 +46,164 @@ export const NoOpContextProvider: AppContextProvider = {
 };
 
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType> {
 
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
   // TODO (@day): this can be cleaned up when we fix configuration
-  dbReadOnlyMode = false;
+  readOnlyMode = false;
+  server: IDbConnectionServer;
+  database: IDbConnectionDatabase;
+  db: string;
+  connectionType: ConnectionType;
 
-  constructor(knex: Knex | null, contextProvider: AppContextProvider = NoOpContextProvider) {
+  constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
     this.contextProvider = contextProvider
+    this.server = server;
+    this.database = database;
+    this.db = database?.database
+    this.connectionType = this.server?.config.client;
   }
-  listTablePartitions(_table: string, _schema: string): Promise<TablePartition[]> {
+
+  abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
+
+  // DB Metadata ****************************************************************
+  abstract supportedFeatures(): SupportedFeatures;
+  abstract versionString(): string;
+
+  defaultSchema(): string | null {
+    return null
+  }
+  // ****************************************************************************
+
+  // Connection *****************************************************************
+  async connect(): Promise<void> {
+    /* eslint no-param-reassign: 0 */
+    if (this.database.connecting) {
+      throw new Error('There is already a connection in progress for this database. Aborting this new request.');
+    }
+
+    try {
+      this.database.connecting = true;
+
+      // terminate any previous lost connection for this DB
+      if (this.database.connected) {
+        await this.disconnect();
+      }
+
+      // reuse existing tunnel
+      if (this.server.config.ssh && !this.server.sshTunnel) {
+        logger().debug('creating ssh tunnel');
+        this.server.sshTunnel = await connectTunnel(this.server.config);
+
+        this.server.config.localHost = this.server.sshTunnel.localHost
+        this.server.config.localPort = this.server.sshTunnel.localPort
+      }
+
+    } catch (err) {
+      logger().error('Connection error %j', err);
+      // this.disconnect(this.server, this.database);
+      throw new Error('Database Connection Error: ' + err.message);
+    } finally {
+      this.database.connecting = false;
+    }
+  }
+  async disconnect(): Promise<void> {
+    this.database.connecting = false;
+
+    if (this.server.sshTunnel) {
+      await this.server.sshTunnel.connection.shutdown();
+    }
+
+    if (this.server.db[this.database.database]) {
+      // delete this.server.db[this.database.database]
+    }
+    await this.knex.destroy();
+  }
+  // ****************************************************************************
+
+  // List schema information ****************************************************
+  abstract listTables(filter?: FilterOptions): Promise<TableOrView[]>;
+  abstract listViews(filter?: FilterOptions): Promise<TableOrView[]>;
+  abstract listRoutines(filter?: FilterOptions): Promise<Routine[]>;
+  abstract listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>;
+  abstract listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]>;
+  abstract listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>;
+  abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
+  abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
+  abstract getTableReferences(table: string, schema?: string): Promise<string[]>;
+  abstract getTableKeys(table: string, schema?: string): Promise<TableKey[]>;
+
+  listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])
   }
-  alterPartitionSql(_changes: AlterPartitionsSpec): string {
+
+  abstract query(queryText: string, options?: any): CancelableQuery;
+  abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
+  abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
+  abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
+  abstract getQuerySelectTop(table: string, limit: number, schema?: string): string;
+  abstract listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>;
+  abstract getPrimaryKey(table: string, schema?: string): Promise<string | null>;
+  abstract getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
+  // ****************************************************************************
+
+  // Create Structure ***********************************************************
+  abstract listCharsets(): Promise<string[]>
+  abstract getDefaultCharset(): Promise<string>
+  abstract listCollations(charset: string): Promise<string[]>
+  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
+  abstract createDatabaseSQL(): string
+  abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
+  abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
+  async getMaterializedViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+    return [];
+  }
+  abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
+  // ****************************************************************************
+
+  // Make Changes ***************************************************************
+  // all of these can be handled by the change builder, which we can get for any connection
+  async alterTableSql(change: AlterTableSpec): Promise<string> {
+    const { table, schema } = change
+    const builder = this.getBuilder(table, schema)
+    return builder.alterTable(change)
+  }
+
+  async alterTable(change: AlterTableSpec): Promise<void> {
+    const sql = await this.alterTableSql(change)
+    await this.executeQuery(sql)
+  }
+
+  alterIndexSql(changes: IndexAlterations): string | null {
+    const { table, schema, additions, drops } = changes
+    const changeBuilder = this.getBuilder(table, schema)
+    const newIndexes = changeBuilder.createIndexes(additions)
+    const droppers = changeBuilder.dropIndexes(drops)
+    return [newIndexes, droppers].filter((f) => !!f).join(";")
+  }
+
+  async alterIndex(changes: IndexAlterations): Promise<void> {
+    const sql = this.alterIndexSql(changes);
+    await this.executeQuery(sql)
+  }
+
+  alterRelationSql(changes: RelationAlterations): string | null {
+    const { table, schema } = changes
+    const builder = this.getBuilder(table, schema)
+    const creates = builder.createRelations(changes.additions)
+    const drops = builder.dropRelations(changes.drops)
+    return [creates, drops].filter((f) => !!f).join(";")
+  }
+
+  async alterRelation(changes: RelationAlterations): Promise<void> {
+    const query = this.alterRelationSql(changes)
+    await this.executeQuery(query)
+  }
+
+  alterPartitionSql(_changes: AlterPartitionsSpec): string | null {
     return ''
   }
 
@@ -64,74 +211,51 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
     return;
   }
 
-  async getMaterializedViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
-    return [];
-  }
-
-  abstract versionString(): string;
-
-  defaultSchema(): string | null {
-    return null
-  }
-
-  abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
-
-  abstract supportedFeatures(): SupportedFeatures;
-  abstract connect(): Promise<void>
-  abstract disconnect(): Promise<void>;
-  abstract listTables(db: string, filter?: FilterOptions): Promise<TableOrView[]>;
-  abstract listViews(filter?: FilterOptions): Promise<TableOrView[]>;
-  abstract listRoutines(filter?: FilterOptions): Promise<Routine[]>;
-  abstract listMaterializedViewColumns(db: string, table: string, schema?: string): Promise<TableColumn[]>;
-  abstract listTableColumns(db: string, table?: string, schema?: string): Promise<ExtendedTableColumn[]>;
-  abstract listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>;
-  abstract listTableIndexes(db: string, table: string, schema?: string): Promise<TableIndex[]>;
-  abstract listSchemas(db: string, filter?: SchemaFilterOptions): Promise<string[]>;
-  abstract getTableReferences(table: string, schema?: string): Promise<string[]>;
-  abstract getTableKeys(db: string, table: string, schema?: string): Promise<TableKey[]>;
-  abstract query(queryText: string): CancelableQuery;
-  abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
-  abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract applyChangesSql(changes: TableChanges): string;
-  abstract applyChanges(changes: TableChanges): Promise<any[]>;
-  abstract getQuerySelectTop(table: string, limit: number, schema?: string): string;
-  abstract getTableProperties(table: string, schema?: string): Promise<TableProperties>;
-  abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
-  abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
-  abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
-  abstract truncateAllTables(db: string, schema?: string): void;
-  abstract listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>;
-  abstract getPrimaryKey(db: string, table: string, schema?: string): Promise<string | null>;
-  abstract getPrimaryKeys(db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
+
+  abstract applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>;
+
+  abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
+
+  abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+
+  abstract truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+
+  abstract truncateAllTables(schema?: string): void;
+  // ****************************************************************************
+
+  // ****************************************************************************
+  // ****************************************************************************
+
+  // For TableTable *************************************************************
   abstract getTableLength(table: string, schema?: string): Promise<number>;
   abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
   abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;
-  abstract selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
-  abstract queryStream(db: string, query: string, chunkSize: number): Promise<StreamResults>;
-  abstract wrapIdentifier(value: string): string;
-  abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
-  abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
-  abstract truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+  abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
+  // ****************************************************************************
+
+  // For Export *****************************************************************
+  abstract queryStream(query: string, chunkSize: number): Promise<StreamResults>;
+  // ****************************************************************************
+
+  // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string;
-  // db creation
-  abstract listCharsets(): Promise<string[]>
-  abstract getDefaultCharset(): Promise<string>
-  abstract listCollations(charset: string): Promise<string[]>
-  abstract createDatabase(databaseName: string, charset: string, collation: string): void
-  abstract createDatabaseSQL(): string
+  // ****************************************************************************
 
-  // import to table from file
-  abstract importData(sql: string): Promise<any>;
-  abstract getImportSQL(importedData: TableInsert[], isTruncate: boolean): string;
+  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
+    const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
+    return buildInsertQuery(this.knex, tableInsert, columns);
+  }
 
+  abstract wrapIdentifier(value: string): string;
 
   // structure to allow logging of all queries to a query log
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -139,7 +263,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
     try {
-        const result = await this.rawExecuteQuery(q, options)
+        const result = await this.rawExecuteQuery(q, options) as RawResultType
         return _.isArray(result) ? result[0] : result
     } catch (ex) {
         logOptions.status = 'failed'
@@ -152,7 +276,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.dbReadOnlyMode)) {
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -169,46 +293,6 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
     } finally {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
-  }
-
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
-    const columns = await this.listTableColumns(null, tableInsert.table, tableInsert.schema);
-    return buildInsertQuery(this.knex, tableInsert, columns);
-  }
-
-  // all of these can be handled by the change builder, which we can get for any connection
-  async alterTableSql(change: AlterTableSpec): Promise<string> {
-    const { table, schema } = change
-    const builder = this.getBuilder(table, schema)
-    return builder.alterTable(change)
-  }
-  async alterTable(change: AlterTableSpec): Promise<void> {
-    const sql = await this.alterTableSql(change)
-    await this.executeQuery(sql)
-  }
-  alterIndexSql(changes: IndexAlterations): string {
-    const { table, schema, additions, drops } = changes
-    const changeBuilder = this.getBuilder(table, schema)
-    const newIndexes = changeBuilder.createIndexes(additions)
-    const droppers = changeBuilder.dropIndexes(drops)
-    return [newIndexes, droppers].filter((f) => !!f).join(";")
-  }
-
-  async alterIndex(changes: IndexAlterations): Promise<void> {
-    const sql = this.alterIndexSql(changes);
-    await this.executeQuery(sql)
-  }
-
-  alterRelationSql(changes: RelationAlterations): string {
-    const { table, schema } = changes
-    const builder = this.getBuilder(table, schema)
-    const creates = builder.createRelations(changes.additions)
-    const drops = builder.dropRelations(changes.drops)
-    return [creates, drops].filter((f) => !!f).join(";")
-  }
-  async alterRelation(changes: RelationAlterations): Promise<void> {
-    const query = this.alterRelationSql(changes)
-    await this.executeQuery(query)
   }
 
 }

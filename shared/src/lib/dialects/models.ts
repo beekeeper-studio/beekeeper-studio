@@ -90,6 +90,7 @@ export interface DialectData {
   unwrapIdentifier: (s: string) => string
   defaultSchema?: string
   usesOffsetPagination: boolean
+  requireDataset?: boolean,
   disabledFeatures?: {
     informationSchema?: {
       extra?: boolean

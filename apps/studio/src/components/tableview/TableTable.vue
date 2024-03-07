@@ -15,7 +15,7 @@
       <row-filter-builder
         v-if="table.columns?.length"
         :columns="table.columns"
-        :initial-filters="initialFilters"
+        :reactive-filters="tableFilters"
         @input="handleRowFilterBuilderInput"
         @submit="triggerFilter"
       />
@@ -283,13 +283,18 @@ const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
+function createTableFilter(field: string) {
+  return { op: "AND", field, type: "=", value: "" }
+}
+
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "initialFilters", "active", 'tab', 'table'],
+  props: ["connection", "active", 'tab', 'table'],
   data() {
     return {
       filters: [],
+      tableFilters: [createTableFilter(this.table.columns?.[0]?.columnName)],
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -532,15 +537,14 @@ export default Vue.extend({
           headerTooltip += ' [Primary Key]'
         }
 
-        const cssClasses = [];
+        let cssClass = 'hide-header-menu-icon';
         if (isPK) {
-          cssClasses.push('primary-key');
+          cssClass += ' primary-key';
         } else if (hasKeyDatas) {
-          cssClasses.push('foreign-key');
+          cssClass += ' foreign-key';
         }
-
         if (column.generated) {
-          cssClasses.push('generated-column');
+          cssClass += ' generated-column';
         }
 
         // if column has a comment, add it to the tooltip
@@ -563,7 +567,7 @@ export default Vue.extend({
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
           maxInitialWidth: globals.maxInitialWidth,
-          cssClass: cssClasses.join(' '),
+          cssClass,
           editable: this.cellEditCheck,
           headerSort: !this.dialectData.disabledFeatures.headerSort,
           editor: editorType,
@@ -693,6 +697,13 @@ export default Vue.extend({
         } else {
           this.$nextTick(() => this.tabulator.redraw())
         }
+
+        // If the filters in this.tab have changed, reapply them. We probably
+        // clicked a foreign key cell from other tab.
+        if (!_.isEqual(this.tab.getFilters(), this.tableFilters)) {
+          this.tableFilters = this.tab.getFilters()
+          this.triggerFilter(this.tableFilters)
+        }
       } else {
         this.tabulator.blockRedraw()
       }
@@ -808,7 +819,8 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.filters = normalizeFilters(this.initialFilters || [])
+      this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         spreadsheet: true,
@@ -841,6 +853,10 @@ export default Vue.extend({
         },
         spreadsheetRowHeader: {
           field: '--row-header--bks',
+          htmlOutput: false,
+          print: false,
+          clipboard: false,
+          download: false,
           contextMenu: (_, cell: Tabulator.CellComponent) => {
             const range = cell.getRange()
             return [
@@ -957,7 +973,7 @@ export default Vue.extend({
         return {
           table: this.table.name,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           data: [result]
         }
       })
@@ -1090,7 +1106,7 @@ export default Vue.extend({
           key: key,
           table: this.table.name,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
           primaryKeys,
@@ -1181,7 +1197,7 @@ export default Vue.extend({
           table: this.table.name,
           row,
           schema: this.table.schema,
-          dataset: this.database,
+          dataset: this.dialectData.requireDataset ? this.database: null,
           primaryKeys,
         }
 

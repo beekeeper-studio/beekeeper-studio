@@ -3,8 +3,8 @@ import knexLib from 'knex';
 import oracle from 'bks-oracledb'
 import _ from 'lodash'
 
-import { IDbConnectionDatabase, IDbConnectionServer, DatabaseElement } from "../client";
-import { BasicDatabaseClient } from "./BasicDatabaseClient";
+import { IDbConnectionDatabase, IDbConnectionServer, DatabaseElement } from "../types";
+import { BasicDatabaseClient, NoOpContextProvider } from "./BasicDatabaseClient";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
@@ -59,9 +59,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   readOnlyMode: boolean
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knexLib({ client: 'oracledb'}))
-    this.server = server
-    this.database = database
+    super(knexLib({ client: 'oracledb'}), NoOpContextProvider, server, database);
     this.defaultSchema = ():string => server.config.user.toUpperCase()
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
@@ -186,7 +184,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
     throw new Error('Method not implemented.');
   }
-  truncateAllTables(_db: string, _schema?: string): void {
+  truncateAllTables(_schema?: string): void {
     throw new Error('Method not implemented.');
   }
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -265,13 +263,13 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     const fields = Object.keys(result[0] || {})
     return { result, fields }
   }
-  async selectTopStream(db, table, orderBy, filters, chunkSize, schema): Promise<StreamResults> {
+  async selectTopStream(table, orderBy, filters, chunkSize, schema): Promise<StreamResults> {
     const q = this.genSelect(table, null, null, orderBy, filters, schema)
     const countQ = this.genSelect(table, null, null, orderBy, filters, schema, true)
     log.debug("stream queries", q, countQ)
     const countRes = await this.driverExecuteSimple(countQ)
     const rowCount = countRes[0]['TOTAL']
-    const columns = await this.listTableColumns(db, table, schema)
+    const columns = await this.listTableColumns(table, schema)
     return {
       columns: columns,
       totalRows: rowCount,
@@ -300,9 +298,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   // this can just return [] always
-  listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<TableColumn[]>;
+  listMaterializedViewColumns: (table: string, schema?: string) => Promise<TableColumn[]>;
 
-  listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>;
+  listSchemas: (filter?: SchemaFilterOptions) => Promise<string[]>;
   getTableReferences: (table: string, schema?: string) => Promise<string[]>;
 
   async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
@@ -324,7 +322,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     }))
   }
 
-  async listTableIndexes(_db: string, table: string, schema?: string): Promise<TableIndex[]> {
+  async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
     const sql  = `
       select
         INDEX_NAME,
@@ -366,7 +364,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       }))
     }))
   }
-  async getTableKeys(_db: string, table: string, schema?: string) {
+  async getTableKeys(table: string, schema?: string) {
     // https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
     const sql = `
     SELECT
@@ -420,8 +418,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       triggers,
       owner
     ] = await Promise.all([
-      this.getTableKeys("", table, schema),
-      this.listTableIndexes("", table, schema),
+      this.getTableKeys(table, schema),
+      this.listTableIndexes(table, schema),
       this.listTableTriggers(table, schema),
       Promise.resolve("")
     ])
@@ -430,12 +428,14 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       relations, indexes, triggers, owner
     }
   }
-  async getPrimaryKey(db: string, table: string, schema?: string) {
-    const all = await this.getPrimaryKeys(db, table, schema)
+
+  async getPrimaryKey(table: string, schema?: string) {
+    const all = await this.getPrimaryKeys(table, schema)
     // we only want single-key tables.
     return all.length === 1 ? all[0].columnName : null
   }
-  async getPrimaryKeys(_db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
+
+  async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
 
     // don't upper case table names, that's user dependant
     // always upper case owner, because oracle.
@@ -488,6 +488,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   async connect() {
+    await super.connect();
 
     const cliLocation = this.platformPath(this.server.config.instantClientLocation)
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration
@@ -531,9 +532,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     }
     this.pool = await oracle.createPool(poolConfig)
     const vSQL = `
-    SELECT BANNER as BANNER FROM v$version
-    WHERE BANNER LIKE 'Oracle%';
-`
+      SELECT BANNER as BANNER FROM v$version
+      WHERE BANNER LIKE 'Oracle%';
+    `
 
     this.version = (await this.driverExecuteSimple(vSQL))[0].BANNER
   }
@@ -542,11 +543,13 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   async disconnect() {
-    await this.knex.destroy()
+    await this.pool.close(1);
+
+    await super.disconnect();
   }
 
-  async listTables(_db: string, filter?: FilterOptions): Promise<TableOrView[]> {
-    log.debug("listTables", _db, filter)
+  async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
+    log.debug("listTables", this.db, filter)
     const builder = this.knex('ALL_TABLES')
     if (filter?.schema) builder.where('OWNER', filter.schema.toUpperCase())
     if (filter?.only) builder.whereIn('TABLE_NAME', filter.only)
@@ -606,8 +609,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     })
   }
 
-  async listTableColumns(_db: string, table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
-    log.debug("listTableColumns", _db, table, schema)
+  async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
+    log.debug("listTableColumns", this.db, table, schema)
     let query = this.knex('ALL_TAB_COLS').select()
 
     if (table) query = query.where('TABLE_NAME', table)
@@ -676,9 +679,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     }
   }
 
-  async queryStream(_db: string, query: string, chunkSize: number): Promise<StreamResults> {
-
-
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
       totalRows: undefined,
       columns: undefined,
@@ -773,11 +774,4 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 interface DriverResult {
   result: oracle.Result<unknown>,
   info: IdentifyResult
-}
-
-export default async function (server, database) {
-  const client = new OracleClient(server, database)
-  await client.connect()
-  await client.checkConnection()
-  return client
 }
