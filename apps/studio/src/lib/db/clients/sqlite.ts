@@ -49,6 +49,7 @@ const sqliteContext = {
 
 type SqliteResult = {
   data: any,
+  columns: Database.ColumnDefinition[],
   statement: Statement,
   // Number of changes made by the query
   changes: number
@@ -238,7 +239,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         try {
           queryConnection = new Database(this.databasePath);
 
-          const result = await this.executeQuery(queryText, { connection: queryConnection })
+          const result = await this.executeQuery(queryText, { connection: queryConnection, arrayMode: true });
           return result;
         } catch (err) {
           if (err.code === sqliteErrors.CANCELED) {
@@ -262,16 +263,35 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
+    const arrayMode: boolean = options.arrayMode;
     const result = await this.driverExecuteMultiple(queryText, options);
 
-    return (result || []).map(({ data, statement, changes }) => {
+    return (result || []).map(({ data, columns, statement, changes }) => {
       // Fallback in case the identifier could not reconize the command
       const isSelect = Array.isArray(data);
-      const rows = data || [];
+      let rows: any[];
+      let fields: any[];
+
+      if (isSelect && arrayMode) {
+        rows = data.map((row: any[]) =>
+          row.reduce((obj, val, idx) => {
+            obj[`c${idx}`] = val;
+            return obj
+          }, {})
+        );
+        fields = columns.map((column, idx) => ({
+          id: `c${idx}`,
+          name: column.name
+        }))
+      } else {
+        rows = data || [];
+        fields = Object.keys(rows[0] || {}).map((name) => ({name, id: name }));
+      }
+
       return {
         command: statement.type || (isSelect && 'SELECT'),
         rows,
-        fields: Object.keys(rows[0] || {}).map((name) => ({name, id: name })),
+        fields,
         rowCount: data && data.length,
         affectedRows: changes || 0,
       };
@@ -526,6 +546,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult | SqliteResult[]> {
     const queries = this.identifyCommands(q);
     const params = options.params || [];
+    const arrayMode = options.arrayMode;
 
     const results = [];
 
@@ -543,12 +564,25 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       const statement: Database.Statement = connection.prepare(query.text);
 
       try {
-        const result = statement.reader ? statement.all(params) : statement.run(params);
+        let runResult: Database.RunResult | undefined;
+        let rows: any[] = [];
+        let columns: Database.ColumnDefinition[] = [];
+
+        if (statement.reader) {
+          if (arrayMode) {
+            statement.raw();
+          }
+          rows = statement.all(params)
+          columns = statement.columns();
+        } else {
+          runResult = statement.run(params);
+        }
 
         results.push({
-          data: result || [],
+          data: statement.reader ? rows : runResult,
+          columns,
           statement: query,
-          changes: statement.reader ? 0 : (result as Database.RunResult).changes
+          changes: statement.reader ? 0 : runResult.changes
         });
       } catch (error) {
         log.error(error);

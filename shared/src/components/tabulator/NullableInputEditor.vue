@@ -107,6 +107,9 @@ export default Vue.extend({
     },
     parseValue() {
       const typeHint = this.params.typeHint;
+      if (typeof typeHint !== 'string') {
+        return this.value
+      }
       const floatTypes = [
         'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
       ]
