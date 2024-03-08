@@ -393,6 +393,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       defaultValue: this.resolveDefault(row.column_default),
       extra: _.isEmpty(row.extra) ? null : row.extra,
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
+      generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
     }));
   }
 

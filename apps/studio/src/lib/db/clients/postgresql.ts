@@ -310,6 +310,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         table_name,
         column_name,
         is_nullable,
+        ${this.version.number > 120_000 ? 'is_generated,' : ''}
         ordinal_position,
         column_default,
         CASE
@@ -338,6 +339,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default,
       ordinalPosition: Number(row.ordinal_position),
+      generated: row.is_generated === 'ALWAYS' || row.is_generated === 'YES',
     }));
   }
 

@@ -29,7 +29,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, TableIndex, TableProperties, TableResult } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult } from '../models';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -113,7 +113,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }))
   }
 
-  async listTableColumns(table: string, schema: string) {
+  async listTableColumns(table: string, schema: string): Promise<ExtendedTableColumn[]> {
     const clauses = []
     if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
@@ -125,7 +125,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         column_name as "column_name",
         ordinal_position as "ordinal_position",
         column_default as "column_default",
-        is_nullable as "is_nullable",
+        ic.is_nullable as "is_nullable",
+        CASE
+          WHEN sc.definition is not null THEN 'YES'
+          ELSE 'NO'
+        END as "is_generated",
         CASE
           WHEN character_maximum_length is not null AND data_type != 'text'
               THEN data_type + '(' + CAST(character_maximum_length AS VARCHAR(16)) + ')'
@@ -135,7 +139,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
               THEN data_type + '(' + CAST(datetime_precision AS VARCHAR(16)) + ')'
           ELSE data_type
         END as "data_type"
-      FROM INFORMATION_SCHEMA.COLUMNS
+      FROM INFORMATION_SCHEMA.COLUMNS ic
+      LEFT JOIN sys.computed_columns sc ON
+        OBJECT_ID(QUOTENAME(ic.TABLE_SCHEMA) + '.' + QUOTENAME(ic.TABLE_NAME)) = sc.object_id AND
+        ic.COLUMN_NAME = sc.name
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position
     `
@@ -149,7 +156,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       dataType: row.data_type,
       ordinalPosition: Number(row.ordinal_position),
       nullable: row.is_nullable === 'YES',
-      defaultValue: row.column_default
+      defaultValue: row.column_default,
+      generated: row.is_generated === 'YES',
     }))
   }
 

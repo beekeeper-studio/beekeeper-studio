@@ -60,6 +60,8 @@ export interface Options {
   defaultSchema?: string
   version?: string,
   skipPkQuote?: boolean
+  /** Skip creation of table with generated columns and the tests */
+  skipGeneratedColumns?: boolean
   knexConnectionOptions?: Record<string, any>
 }
 
@@ -159,6 +161,12 @@ export class DBTestUtil {
     this.jobId = isOracle ? Number(jobs[0].id) : jobs[0].id
     this.personId = isOracle ? Number(people[0].id) : people[0].id
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
+
+    if (!this.options.skipGeneratedColumns) {
+      await this.knex('with_generated_cols').insert([
+        { id: 1, first_name: 'Tom', last_name: 'Tester' },
+      ])
+    }
   }
 
   async dropTableTests() {
@@ -939,6 +947,21 @@ export class DBTestUtil {
     await cursor.close()
   }
 
+  async generatedColumnsTests() {
+    if (this.options.skipGeneratedColumns) return
+
+    const columns = await this.connection.listTableColumns('with_generated_cols', this.defaultSchema)
+    expect(columns.map((c) => _.pick(c, ["columnName", "generated"]))).toEqual([
+      { columnName: "id", generated: false },
+      { columnName: "first_name", generated: false },
+      { columnName: "last_name", generated: false },
+      { columnName: "full_name", generated: true },
+    ]);
+
+    const rows = await this.connection.selectTop('with_generated_cols', 0, 10, [], [], this.defaultSchema)
+    expect(rows.result.map((r) => r.full_name)).toEqual(['Tom Tester'])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
@@ -1018,6 +1041,24 @@ export class DBTestUtil {
       primary(table)
       table.string("name")
     })
+
+    if (!this.options.skipGeneratedColumns) {
+      const generatedDefs = {
+        sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
+        mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
+        mariadb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
+        sqlserver: "AS (first_name + ' ' + last_name) PERSISTED",
+        oracle: `VARCHAR2(511) GENERATED ALWAYS AS ("first_name" || ' ' || "last_name")`,
+        postgresql: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
+        cockroachdb: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
+      }
+      await this.knex.schema.createTable('with_generated_cols', (table) => {
+        table.integer('id').primary()
+        table.string('first_name')
+        table.string('last_name')
+        table.specificType('full_name', generatedDefs[this.dbType])
+      })
+    }
   }
 
   async databaseVersionTest() {
