@@ -138,7 +138,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     let sql: string;
-    let params = [table];
+    const params = [table];
     // allow filtering explained a bit: https://www.datastax.com/blog/allow-filtering-explained
     if (this.db) {
       sql = `
@@ -204,7 +204,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   query(queryText: string, _options?: any): CancelableQuery {
-    let pid = null;
+    const pid = null;
     const cancelable = createCancelablePromise({
       ...errors.CANCELED_BY_USER,
       sqlectronError: 'CANCELED_BY_USER',
@@ -224,12 +224,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
           throw new Error('Query not ready to be canceled');
         }
 
-        try {
-          await this.driverExecuteSingle(`kill ${pid};`);
-          cancelable.cancel();
-        } catch (err) {
-          throw err;
-        }
+        await this.driverExecuteSingle(`kill ${pid};`);
+        cancelable.cancel();
       },
     };
   }
