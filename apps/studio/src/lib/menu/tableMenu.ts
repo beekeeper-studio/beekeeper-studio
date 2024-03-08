@@ -4,6 +4,7 @@ import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData } from "@/common/utils";
 import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
+import { rowHeaderField } from "@/lib/table-grid/utils";
 
 type ColumnMenuItem = Tabulator.MenuObject<Tabulator.ColumnComponent>;
 
@@ -29,11 +30,9 @@ export const resizeAllColumnsToMatch: ColumnMenuItem = {
       column.getTable().blockRedraw();
       const columns = column.getTable().getColumns();
       columns.forEach((col) => {
-        if (
-          col.getField() !==
-          column.getTable().modules.spreadsheet.rowHeaderField
-        )
+        if (col.getField() !== rowHeaderField) {
           col.setWidth(column.getWidth());
+        }
       });
     } catch (error) {
       console.error(error);
@@ -50,11 +49,9 @@ export const resizeAllColumnsToFitContent: ColumnMenuItem = {
       column.getTable().blockRedraw();
       const columns = column.getTable().getColumns();
       columns.forEach((col) => {
-        if (
-          col.getField() !==
-          column.getTable().modules.spreadsheet.rowHeaderField
-        )
+        if (col.getField() !== rowHeaderField) {
           col.setWidth(true);
+        }
       });
     } catch (error) {
       console.error(error);
@@ -71,11 +68,9 @@ export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
       column.getTable().blockRedraw();
       const columns = column.getTable().getColumns();
       columns.forEach((col) => {
-        if (
-          col.getField() !==
-          column.getTable().modules.spreadsheet.rowHeaderField
-        )
+        if (col.getField() !== rowHeaderField) {
           col.setWidth(200);
+        }
       });
     } catch (error) {
       console.error(error);
@@ -113,7 +108,7 @@ export async function copyRange(options: {
 
   switch (options.type) {
     case "plain": {
-      if (options.range.getCells().length === 1) {
+      if (options.range.getCells().flat().length === 1) {
         const key = Object.keys(stringifiedRangeData[0])[0];
         text = stringifiedRangeData[0][key];
       } else {
@@ -167,14 +162,14 @@ export function pasteRange(range: Tabulator.RangeComponent) {
   });
 
   if (parsedText.errors.length > 0) {
-    const cell = range.getCells()[0];
+    const cell = range.getCells()[0][0];
     setCellValue(cell, text);
   } else {
-    const table = range.getCells()[0].getTable();
-    const rows = table.modules.spreadsheet.getRows().slice(range.getTop());
-    const columns = table.modules.spreadsheet
-      .getColumns()
-      .slice(range.getLeft() + 1);
+    const table = range.getRows()[0].getTable();
+    const rows = table.modules.selectRange.getTableRows().slice(range.getTopEdge());
+    const columns = table.modules.selectRange
+      .getTableColumns()
+      .slice(range.getLeftEdge());
     const cells: Tabulator.CellComponent[][] = rows.map((row) => {
       const arr = [];
       row.getCells().forEach((cell) => {

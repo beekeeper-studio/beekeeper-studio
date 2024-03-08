@@ -911,8 +911,9 @@
               result.totalRowCount = result.rowCount
             }
 
-            if (identification[idx]?.tables.length === 1) {
-              result.tableName = identification[idx].tables[0]
+            const identifiedTables = identification[idx]?.tables || []
+            if (identifiedTables.length > 0) {
+              result.tableName = identifiedTables[0]
             } else {
               result.tableName = "mytable"
             }
