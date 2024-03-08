@@ -70,9 +70,6 @@ export function runCommonTests(getUtil, opts = {}) {
   })
 
     test("query tests", async () => {
-    if (getUtil().dbType === 'sqlite') {
-      return
-    }
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
       } else {
