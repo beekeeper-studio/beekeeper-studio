@@ -9,7 +9,7 @@
   >code</i>
   <i
     v-else-if="tab.type === 'table-properties'"
-    class="material-icons-outlined item-icon table-properties"
+    class="material-icons-outlined item-icon icon-table-properties"
     :class="iconClass"
   >construction</i>
   <i
