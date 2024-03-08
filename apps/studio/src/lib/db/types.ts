@@ -53,7 +53,6 @@ export interface IDbConnectionServerConfig {
   instantClientLocation?: string
   oracleConfigLocation?: string
   options?: any
-  cassandraOptions?: CassandraOptions
   redshiftOptions?: RedshiftOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
