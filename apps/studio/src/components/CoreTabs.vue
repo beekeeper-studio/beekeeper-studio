@@ -257,7 +257,7 @@ export default Vue.extend({
     return {
       showExportModal: false,
       tableExportOptions: null,
-      lastClosedTab: null,
+      lastClosedTabs: [],
       dragOptions: {
         handle: '.nav-item'
       },
@@ -507,10 +507,10 @@ export default Vue.extend({
       await this.setActiveTab(item)
     },
     async reopenLastClosedTab() {
-      if (this.lastClosedTab) {
-        await this.$store.dispatch('tabs/add', this.lastClosedTab)
-        await this.setActiveTab(this.lastClosedTab)
-        this.lastClosedTab = null
+      const lastClosedTab = this.lastClosedTabs.pop()
+      if (lastClosedTab) {
+        await this.$store.dispatch('tabs/add', lastClosedTab)
+        await this.setActiveTab(lastClosedTab)
       }
     },
     nextTab() {
@@ -844,7 +844,7 @@ export default Vue.extend({
           this.nextTab()
         }
       }
-      this.lastClosedTab = tab
+      this.lastClosedTabs.push(tab)
       await this.$store.dispatch("tabs/remove", tab)
       if (tab.queryId) {
         await this.$store.dispatch('data/queries/reload', tab.queryId)
