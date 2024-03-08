@@ -52,12 +52,10 @@ export const TabModule: Module<State, RootState> = {
     },
     remove(state, tab: OpenTab) {
       state.tabs = _.without(state.tabs, tab)
+      state.lastClosedTabs.push(tab)
     },
     setActive(state, tab?: OpenTab) {
       state.active = tab
-    },
-    addLastClosedTab(state, tabs: OpenTab[]){
-      state.lastClosedTabs.push(...tabs)
     },
     async reopenLastClosedTab(state){
       const lastClosedTab = state.lastClosedTabs.pop()
@@ -111,7 +109,6 @@ export const TabModule: Module<State, RootState> = {
     },
     async remove(context, rawItems: OpenTab | OpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
-      context.commit("addLastClosedTab", items)
       items.forEach((i) => context.commit('remove', i))
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
