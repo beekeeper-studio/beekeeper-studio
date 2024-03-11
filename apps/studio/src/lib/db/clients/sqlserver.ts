@@ -17,6 +17,8 @@ import {
   escapeString,
   joinQueries,
   applyChangesSql,
+  isAllowedReadOnlyQuery,
+  errorMessages,
 } from './utils';
 import logRaw from 'electron-log'
 import { Statement } from "sql-query-identifier/lib/defines";
@@ -178,6 +180,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   query(queryText: string) {
+    const identification = identify(queryText, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
     const queryRequest = null
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this
@@ -900,6 +906,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async driverExecuteQuery(queryArgs: any, arrayRowMode = false) {
+    const identification = identify(queryArgs.query, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
     this.logger().info('RUNNING', queryArgs)
     const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
     identify(query || '', { strict: false, dialect: 'mssql' })
