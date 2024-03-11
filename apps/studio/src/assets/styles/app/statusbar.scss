@@ -11,7 +11,7 @@ $button-height:     $statusbar-height * 0.72;
   line-height: $statusbar-height;
   font-size: 0.8rem;
   padding: 0 $gutter-h;
-  overflow: hidden;
+  // overflow: hidden;
 
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {
