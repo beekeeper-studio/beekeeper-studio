@@ -182,6 +182,7 @@ export class DBTestUtil {
     const expectedQueries = {
       postgresql: 'test_inserts"drop table test_inserts"',
       mysql: "test_inserts'drop table test_inserts'",
+      tidb: "test_inserts'drop table test_inserts'",
       mariadb: "test_inserts'drop table test_inserts'",
       sqlite: 'test_inserts"drop table test_inserts"',
       sqlserver: 'test_inserts[drop table test_inserts]',
@@ -252,6 +253,7 @@ export class DBTestUtil {
     const expectedQueries = {
       postgresql: 'group"drop table test_inserts"',
       mysql: "group'drop table test_inserts'",
+      tidb: "group'drop table test_inserts'",
       mariadb: "group'drop table test_inserts'",
       sqlite: 'group"Delete from test_inserts; vacuum;"',
       sqlserver: 'group[drop table test_inserts]',
@@ -733,6 +735,7 @@ export class DBTestUtil {
     const expectedQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
