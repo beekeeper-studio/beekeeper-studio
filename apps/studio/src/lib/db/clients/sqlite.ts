@@ -4,7 +4,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models"; 
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models";
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { ClientError, joinQueries } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
@@ -49,6 +49,7 @@ const sqliteContext = {
 
 type SqliteResult = {
   data: any,
+  columns: Database.ColumnDefinition[],
   statement: Statement,
   // Number of changes made by the query
   changes: number
@@ -142,7 +143,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     if (table) {
-      const sql = `PRAGMA table_info(${SD.escapeString(table, true)})`;
+      const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
 
       const { data } = await this.driverExecuteSingle(sql);
       return this.dataToColumns(data, table);
@@ -155,7 +156,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     const everything = tables.map((table) => {
       return {
         tableName: table.name,
-        sql: `PRAGMA table_info(${SD.escapeString(table.name, true)})`,
+        sql: `PRAGMA table_xinfo(${SD.escapeString(table.name, true)})`,
         results: null
       }
     })
@@ -238,7 +239,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         try {
           queryConnection = new Database(this.databasePath);
 
-          const result = await this.executeQuery(queryText, { connection: queryConnection })
+          const result = await this.executeQuery(queryText, { connection: queryConnection, arrayMode: true });
           return result;
         } catch (err) {
           if (err.code === sqliteErrors.CANCELED) {
@@ -262,16 +263,35 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
+    const arrayMode: boolean = options.arrayMode;
     const result = await this.driverExecuteMultiple(queryText, options);
 
-    return (result || []).map(({ data, statement, changes }) => {
+    return (result || []).map(({ data, columns, statement, changes }) => {
       // Fallback in case the identifier could not reconize the command
       const isSelect = Array.isArray(data);
-      const rows = data || [];
+      let rows: any[];
+      let fields: any[];
+
+      if (isSelect && arrayMode) {
+        rows = data.map((row: any[]) =>
+          row.reduce((obj, val, idx) => {
+            obj[`c${idx}`] = val;
+            return obj
+          }, {})
+        );
+        fields = columns.map((column, idx) => ({
+          id: `c${idx}`,
+          name: column.name
+        }))
+      } else {
+        rows = data || [];
+        fields = Object.keys(rows[0] || {}).map((name) => ({name, id: name }));
+      }
+
       return {
         command: statement.type || (isSelect && 'SELECT'),
         rows,
-        fields: Object.keys(rows[0] || {}).map((name) => ({name, id: name })),
+        fields,
         rowCount: data && data.length,
         affectedRows: changes || 0,
       };
@@ -394,7 +414,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
-    const sql = `pragma table_info('${SD.escapeString(table)}')`
+    const sql = `pragma table_xinfo('${SD.escapeString(table)}')`
     const { data } = await this.driverExecuteSingle(sql);
     const found = data.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
@@ -526,6 +546,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult | SqliteResult[]> {
     const queries = this.identifyCommands(q);
     const params = options.params || [];
+    const arrayMode = options.arrayMode;
 
     const results = [];
 
@@ -543,12 +564,25 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       const statement: Database.Statement = connection.prepare(query.text);
 
       try {
-        const result = statement.reader ? statement.all(params) : statement.run(params);
+        let runResult: Database.RunResult | undefined;
+        let rows: any[] = [];
+        let columns: Database.ColumnDefinition[] = [];
+
+        if (statement.reader) {
+          if (arrayMode) {
+            statement.raw();
+          }
+          rows = statement.all(params)
+          columns = statement.columns();
+        } else {
+          runResult = statement.run(params);
+        }
 
         results.push({
-          data: result || [],
+          data: statement.reader ? rows : runResult,
+          columns,
           statement: query,
-          changes: statement.reader ? 0 : (result as Database.RunResult).changes 
+          changes: statement.reader ? 0 : runResult.changes
         });
       } catch (error) {
         log.error(error);
@@ -559,15 +593,15 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return options.multiple ? results : results[0];
   }
 
-  
-  private dataToColumns(data, tableName) {
+  private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {
     return data.map((row) => ({
       tableName,
       columnName: row.name,
       dataType: row.type,
       nullable: Number(row.notnull || 0) === 0,
       defaultValue: row.dflt_value === 'NULL' ? null : row.dflt_value,
-      ordinalPosition: Number(row.cid)
+      ordinalPosition: Number(row.cid),
+      generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
     }))
   }
 

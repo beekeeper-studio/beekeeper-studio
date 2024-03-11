@@ -1,4 +1,9 @@
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
+
+/**
+ * @typedef {import('../../../../lib/db').DBTestUtil} DBTestUtil
+ * @param {() => DBTestUtil} getUtil
+ **/
 export function runReadOnlyTests(getUtil) {
   describe("Read Only Queries", () => {
     beforeEach(async() => {
@@ -33,6 +38,7 @@ export function runReadOnlyTests(getUtil) {
   })
 }
 
+/** @param {() => DBTestUtil} getUtil */
 export function runCommonTests(getUtil, opts = {}) {
   const {
     readOnly = false,
@@ -64,9 +70,6 @@ export function runCommonTests(getUtil, opts = {}) {
   })
 
     test("query tests", async () => {
-    if (getUtil().dbType === 'sqlite') {
-      return
-    }
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
       } else {
@@ -94,6 +97,10 @@ export function runCommonTests(getUtil, opts = {}) {
     describe("Table Structure", () => {
       test("should fetch table properties", async () => {
         await getUtil().tablePropertiesTests()
+      })
+
+      test("should list generated columns", async () => {
+        await getUtil().generatedColumnsTests()
       })
     })
 

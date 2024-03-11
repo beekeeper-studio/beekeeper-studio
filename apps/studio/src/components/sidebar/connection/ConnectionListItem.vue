@@ -70,6 +70,9 @@ import path from 'path'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
+import platformInfo from '@/common/platform_info'
+import { isUltimateType } from '@/common/interfaces/IConnection'
+
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
@@ -144,13 +147,17 @@ export default {
   },
   methods: {
     showContextMenu(event) {
+      const ultimateCheck = platformInfo.isUltimate
+        ? true
+        : !isUltimateType(this.config.connectionType)
+
       const options = [
         {
           name: "View",
           slug: 'view',
           handler: (blob) => this.click(blob.item)
         },
-        {
+        ultimateCheck && {
           name: 'Connect',
           slug: 'connect',
           handler: (blob) => this.doubleClick(blob.item)
@@ -168,7 +175,7 @@ export default {
           name: "Remove",
           handler: this.remove
         },
-      ]
+      ].filter(v => v)
 
       if (this.isCloud) {
         options.push(...[
@@ -178,7 +185,6 @@ export default {
           ...this.moveToOptions
         ])
       }
-      console.log('options', options)
 
       this.$bks.openMenu({
         event,

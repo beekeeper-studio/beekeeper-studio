@@ -371,6 +371,10 @@ export default Vue.extend({
 
     },
     async submit() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
+
       this.connectionError = null
       try {
         await this.$store.dispatch('connect', this.config)
@@ -385,6 +389,9 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
 
       try {
         this.testing = true
