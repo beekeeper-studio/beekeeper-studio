@@ -906,13 +906,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async driverExecuteQuery(queryArgs: any, arrayRowMode = false) {
-    const identification = identify(queryArgs.query, { strict: false, dialect: this.dialect });
+    const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
+    const identification = identify(query, { strict: false, dialect: this.dialect });
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
       throw new Error(errorMessages.readOnly);
     }
     this.logger().info('RUNNING', queryArgs)
-    const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
-    identify(query || '', { strict: false, dialect: 'mssql' })
 
     const runQuery = async (connection) => {
       const request = connection.request()
