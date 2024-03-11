@@ -245,7 +245,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
 
-    const { data } = await this.driverExecuteQuery({ query: sql });
+    const { data } = await this.driverExecuteQuery({ query: sql, overrideReadonly: true });
 
     return data.recordset.map((row) => {
       const update = row.isupdate === 1 ? 'UPDATE' : null
@@ -349,7 +349,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
     const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
-    const { data }  = await this.driverExecuteQuery({ query: sizeQuery })
+    const { data }  = await this.driverExecuteQuery({ query: sizeQuery, overrideReadonly: true })
     const row = data.recordset ? data.recordset[0] || {} : {}
     const relations = await this.getTableKeys(table, schema)
     return {
@@ -908,7 +908,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   private async driverExecuteQuery(queryArgs: any, arrayRowMode = false) {
     const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
     const identification = identify(query, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !queryArgs.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
     this.logger().info('RUNNING', queryArgs)
