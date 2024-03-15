@@ -108,11 +108,11 @@ export class DbConnectionBase extends ApplicationEntity {
     let port
     switch (this.connectionType as string) {
       case 'mysql':
-      case 'tidb':
-        port = 4000
-        break
       case 'mariadb':
         port = 3306
+        break
+      case 'tidb':
+        port = 4000
         break
       case 'postgresql':
         port = 5432
