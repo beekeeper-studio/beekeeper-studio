@@ -748,7 +748,6 @@ export class DBTestUtil {
   }
 
   async buildSelectTopQueryTests() {
-    const dbType = this.dbType === 'mariadb' ? 'mysql' : this.dbType
     const dbType = ['mariadb','tidb'].includes(this.dbType) ? 'mysql' : this.dbType
     const fmt = (sql: string) => safeSqlFormat(sql, {
       language: FormatterDialect(dbType === 'cockroachdb'
