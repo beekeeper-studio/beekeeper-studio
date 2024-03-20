@@ -97,13 +97,13 @@
         >{{ shownEntities }} / {{ totalEntities }}</span>
         <span
           v-show="totalHiddenEntities > 0 && !filterQuery"
-          class="hidden-indicator"
+          class="hidden-indicator bks-tooltip-wrapper"
         >
           <span class="badge">
             <i class="material-icons">visibility_off</i>
             <span>{{ totalHiddenEntities > 99 ? '99+' : totalHiddenEntities }}</span>
           </span>
-          <div class="hi-tooltip">
+          <div class="hi-tooltip bks-tooltip bks-tooltip-bottom-center">
             <span>Right click an entity to hide it. </span>
             <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
           </div>

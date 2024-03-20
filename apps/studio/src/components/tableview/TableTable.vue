@@ -138,6 +138,20 @@
             </x-button>
           </x-buttons>
         </template>
+        <span
+          v-else
+          class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
+        >
+          <a tabindex="0">
+            <i class="material-icons">visibility_off</i>
+            {{ hiddenColumnCount > 0 ? `&nbsp;${hiddenColumnCount}` : '' }}
+          </a>
+          <div class="bks-tooltip bks-tooltip-top-center">
+            <span>Right click a column header to hide it. </span>
+            <a @click="showColumnFilterModal">View hidden</a><span>.</span>
+          </div>
+        </span>
+
         <template v-if="!editable">
           <span
             class="statusbar-item item-notice"
@@ -150,24 +164,22 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`${ctrlOrCmd('r')} or F5`"
+          v-tooltip="`Refresh Table (${ctrlOrCmd('r')} or F5)`"
           class="btn btn-flat"
-          title="Refresh table"
           @click="refreshTable"
         >
           <i class="material-icons">refresh</i>
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="ctrlOrCmd('n')"
-          title="Add row"
+          v-tooltip="`Add row (${ctrlOrCmd('n')})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
         </x-button>
         <x-button
           class="actions-btn btn btn-flat"
-          title="actions"
+          v-title="`actions`"
         >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
@@ -189,7 +201,7 @@
               <x-label>Export filtered view</x-label>
             </x-menuitem>
             <x-menuitem @click="showColumnFilterModal">
-              <x-label>Show or hide columns</x-label>
+              <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
             <x-menuitem @click="importTab">
               <x-label>
@@ -494,6 +506,12 @@ export default Vue.extend({
 
       const columnMenu = (_e, column: Tabulator.ColumnComponent) => {
         const range = _.last(column.getRanges())
+        let hideColumnLabel = `Hide ${column.getDefinition().title}`
+
+        if (hideColumnLabel.length > 33) {
+          hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
+        }
+
         return [
           this.setAsNullMenuItem(range),
           { separator: true },
@@ -505,6 +523,11 @@ export default Vue.extend({
           }),
           { separator: true },
           ...commonColumnMenu,
+          { separator: true },
+          {
+            label: createMenuItem(hideColumnLabel),
+            action: () => this.hideColumnByField(column.getField()),
+          },
           this.openColumnFilterMenuItem,
         ]
       }
@@ -1569,6 +1592,12 @@ export default Vue.extend({
 
       this.tabulator.restoreRedraw();
 
+      this.tabulator.redraw(true)
+    },
+    hideColumnByField(field: string) {
+      this.tabulator.blockRedraw();
+      this.tabulator.hideColumn(field);
+      this.tabulator.restoreRedraw();
       this.tabulator.redraw(true)
     },
     forceFilter() {

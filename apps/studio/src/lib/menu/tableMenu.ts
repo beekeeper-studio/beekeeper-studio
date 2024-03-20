@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import { stringifyRangeData } from "@/common/utils";
 import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
 import { rowHeaderField } from "@/lib/table-grid/utils";
+import { escapeHtml } from "@shared/lib/tabulator";
 
 type ColumnMenuItem = Tabulator.MenuObject<Tabulator.ColumnComponent>;
 
@@ -90,7 +91,7 @@ export const commonColumnMenu = [
 ];
 
 export function createMenuItem(label: string, shortcut = "") {
-  label = `<x-label>${label}</x-label>`;
+  label = `<x-label>${escapeHtml(label)}</x-label>`;
   if (shortcut) shortcut = `<x-shortcut value="${shortcut}" />`;
   return `<x-menuitem>${label}${shortcut}</x-menuitem>`;
 }
