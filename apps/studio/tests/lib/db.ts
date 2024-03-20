@@ -1,7 +1,7 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index' 
+import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
@@ -14,6 +14,7 @@ import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import { DuckDBClient } from '../../../../shared/src/lib/knex-duckdb'
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -48,11 +49,12 @@ const KnexTypes: any = {
   postgresql: 'pg',
   'mysql': 'mysql2',
   "mariadb": "mysql2",
-  "sqlite": "sqlite3",
+  "sqlite": "better-sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",
   "firebird": knexFirebirdDialect,
   "oracle": "oracledb",
+  "duckdb": DuckDBClient,
 }
 
 export interface Options {
@@ -63,6 +65,15 @@ export interface Options {
   /** Skip creation of table with generated columns and the tests */
   skipGeneratedColumns?: boolean
   knexConnectionOptions?: Record<string, any>
+  autoIncrementingPKType?: string | ((tableName: string) => string)
+  beforeCreatingTables?: () => void | Promise<void>
+  /**
+   * If this is true, then tests will use knex instance from the client class.
+   *
+   * For databases like DuckDB, there should be only one process that can both
+   * read and write to the database.
+   **/
+  singleClient?: boolean
 }
 
 export class DBTestUtil {
@@ -96,9 +107,20 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
-    if (config.client === 'sqlite') {
+
+    if (!options.singleClient) {
+      this.initiateKnex(config, database, options)
+    }
+
+    this.defaultSchema = options?.defaultSchema || this.defaultSchema
+    this.server = createServer(config)
+    this.connection = this.server.createConnection(database)
+  }
+
+  initiateKnex(config: IDbConnectionServerConfig, database: string, options: Options) {
+    if (config.client === 'sqlite' || config.client === 'duckdb') {
       this.knex = knex({
-        client: "better-sqlite3",
+        client: KnexTypes[config.client],
         connection: {
           filename: database
         }
@@ -129,10 +151,6 @@ export class DBTestUtil {
         pool: { min: 0, max: 50 }
       })
     }
-
-    this.defaultSchema = options?.defaultSchema || this.defaultSchema
-    this.server = createServer(config)
-    this.connection = this.server.createConnection(database)
   }
 
   maybeArrayToObject(items, key) {
@@ -150,6 +168,11 @@ export class DBTestUtil {
 
   async setupdb() {
     await this.connection.connect()
+    if (this.options.singleClient) {
+      this.knex = this.connection.knex
+    }
+
+    await this.options.beforeCreatingTables?.()
     await this.createTables()
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
     const isOracle = this.connection.connectionType === 'oracle'
@@ -206,7 +229,7 @@ export class DBTestUtil {
     }
     await this.connection.createDatabase('new-db_2', charset, collation)
 
-    if (this.dbType.match(/sqlite|firebird/)) {
+    if (this.dbType.match(/sqlite|firebird|duckdb/)) {
       // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
       return expect.anything()
     }
@@ -680,17 +703,12 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    console.log('query tests')
-
     await this.connection.executeQuery('create table one_record(one integer)')
     await this.connection.executeQuery('insert into one_record values(1)')
 
     const tables = await this.connection.listTables({ schema: this.defaultSchema})
 
-    console.log("tables during query tests", tables)
     expect(tables.map((t) => t.name.toLowerCase())).toContain('one_record')
-
-    console.log("testing the query")
 
     const q = this.connection.query(
       this.dbType === 'firebird' ?
@@ -700,9 +718,14 @@ export class DBTestUtil {
     if(!q) throw new Error("no query result")
     try {
       const result = await q.execute()
-      console.log("done first query")
 
-      expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
+      if (this.dbType === 'duckdb') {
+        // node-duckdb cannot get results with the same field names
+        expect(result[0].rows).toMatchObject([{ c1: "b" }])
+      } else {
+        expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
+      }
+
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
       expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
@@ -711,7 +734,7 @@ export class DBTestUtil {
       throw ex
     }
 
-    const q2 = await this.connection.query(
+    const q2 = this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as a from rdb$database; select trim('b') as b from rdb$database" :
         "select 'a' as a from one_record; select 'b' as b from one_record"
@@ -964,16 +987,19 @@ export class DBTestUtil {
 
   private async createTables() {
 
-    const primary = (table: Knex.CreateTableBuilder) => {
-      if (this.dbType === 'firebird') {
-        table.specificType('id', 'integer generated by default as identity primary key')
+    // TODO we dont need this if we update firebird knex's .increments
+    const autoIncrementingPK = async (table: Knex.CreateTableBuilder, tableName: string) => {
+      if (typeof this.options.autoIncrementingPKType === 'function') {
+        table.specificType('id', this.options.autoIncrementingPKType(tableName))
+      } else if (typeof this.options.autoIncrementingPKType === 'string') {
+        table.specificType('id', this.options.autoIncrementingPKType)
       } else {
         table.increments().primary()
       }
     }
 
     await this.knex.schema.createTable('addresses', (table) => {
-      primary(table)
+      autoIncrementingPK(table, 'addresses')
       table.timestamps(true)
       table.string("street")
       table.string("city")
@@ -982,17 +1008,17 @@ export class DBTestUtil {
     })
 
     await this.knex.schema.createTable('MixedCase', (table) => {
-      primary(table)
+      autoIncrementingPK(table, 'MixedCase')
       table.string("bananas")
     })
 
     await this.knex.schema.createTable('group_table', (table) => {
-      primary(table)
+      autoIncrementingPK(table, 'group_table')
       table.string("select_col")
     })
 
     await this.knex.schema.createTable("people", (table) => {
-      primary(table)
+      autoIncrementingPK(table, 'people')
       table.timestamps(true)
       table.string("firstname")
       table.string("lastname")
@@ -1002,7 +1028,7 @@ export class DBTestUtil {
     })
 
     await this.knex.schema.createTable("jobs", (table) => {
-      primary(table)
+      autoIncrementingPK(table, 'jobs')
       table.timestamps(true)
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
@@ -1038,7 +1064,7 @@ export class DBTestUtil {
     }
 
     await this.knex.schema.createTable('streamtest', (table) => {
-      primary(table)
+      autoIncrementingPK(table, 'streamtest')
       table.string("name")
     })
 
@@ -1051,6 +1077,7 @@ export class DBTestUtil {
         oracle: `VARCHAR2(511) GENERATED ALWAYS AS ("first_name" || ' ' || "last_name")`,
         postgresql: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         cockroachdb: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
+        duckdb: "AS (first_name || ' ' || last_name)"
       }
       await this.knex.schema.createTable('with_generated_cols', (table) => {
         table.integer('id').primary()

@@ -148,4 +148,10 @@ export const CLIENTS: ClientConfig[] = [
       'server:socketPath',
     ],
   },
+  {
+    key: 'duckdb',
+    name: 'DuckDB',
+    defaultDatabase: ':memory:',
+    disabledFeatures: [],
+  }
 ];
