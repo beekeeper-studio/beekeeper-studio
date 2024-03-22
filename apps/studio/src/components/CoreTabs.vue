@@ -23,6 +23,7 @@
           @closeAll="closeAll"
           @closeOther="closeOther"
           @closeToRight="closeToRight"
+          @forceClose="forceClose"
           @duplicate="duplicate"
         />
       </Draggable>
@@ -53,7 +54,7 @@
         class="tab-pane"
         :id="'tab-' + idx"
         :key="tab.id"
-        :class="{ active: (activeTab === tab) }"
+        :class="{active: (activeTab === tab)}"
         v-show="activeTab === tab"
       >
         <QueryEditor
@@ -145,7 +146,18 @@
         @closed="sureClosed"
         @before-open="beforeOpened"
       >
-        <div class="dialog-content">
+        <div
+          class="dialog-content"
+          v-if="this.dialectData.disabledFeatures.duplicateTable"
+        >
+          <div class="dialog-c-title text-center">
+            Table Duplication not supported for {{ this.dialectTitle }} yet. Stay tuned!
+          </div>
+        </div>
+        <div
+          class="dialog-content"
+          v-else
+        >
           <div class="dialog-c-title">
             {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon :tab="tabIcon" />
               {{ this.dbElement }}</span>?
@@ -164,7 +176,10 @@
           <small>This will create a new table and copy all existing data into it. Keep in mind that any indexes,
             relations, or triggers associated with the original table will not be duplicated in the new table</small>
         </div>
-        <div class="vue-dialog-buttons">
+        <div
+          v-if="!this.dialectData.disabledFeatures.duplicateTable"
+          class="vue-dialog-buttons"
+        >
           <span class="expand" />
           <button
             ref="no"
@@ -251,28 +266,28 @@ export default Vue.extend({
     TabIcon,
     PendingChangesButton,
     ConfirmationModal,
-  },
-  data() {
-    return {
-      showExportModal: false,
-      tableExportOptions: null,
-      dragOptions: {
-        handle: '.nav-item'
-      },
-      // below are connected to the modal for delete/truncate
-      sureOpen: false,
-      lastFocused: null,
-      dbAction: null,
-      dbElement: null,
-      dbEntityType: null,
-      dbDeleteElementParams: null,
-      // below are connected to the modal for duplicate
-      dbDuplicateTableParams: null,
-      duplicateTableName: null,
-      closingTab: null,
-    }
-  },
-  watch: {
+    },
+    data() {
+      return {
+        showExportModal: false,
+        tableExportOptions: null,
+        dragOptions: {
+          handle: '.nav-item'
+        },
+        // below are connected to the modal for delete/truncate
+        sureOpen: false,
+        lastFocused: null,
+        dbAction: null,
+        dbElement: null,
+        dbEntityType: null,
+        dbDeleteElementParams: null,
+        // below are connected to the modal for duplicate
+        dbDuplicateTableParams: null,
+        duplicateTableName: null,
+        closingTab: null,
+      }
+    },
+    watch: {
 
   },
   filters: {
@@ -284,7 +299,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
-    ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect' }),
+    ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -379,11 +394,11 @@ export default Vue.extend({
             await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
             // timeout is more about aesthetics so it doesn't refresh the table right away.
 
-            setTimeout(() => {
-              this.$store.dispatch('updateTables')
-              this.$store.dispatch('updateRoutines')
-            }, 500)
-          }
+              setTimeout(() => {
+                this.$store.dispatch('updateTables')
+                this.$store.dispatch('updateRoutines')
+              }, 500)
+            }
 
           if (this.dbAction.toLowerCase() === 'truncate') {
             await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema)
@@ -537,11 +552,11 @@ export default Vue.extend({
         tabName = queryTitle
       }
 
-      const result = new OpenTab('query')
-      result.title = tabName,
+        const result = new OpenTab('query')
+        result.title = tabName,
         result.unsavedChanges = false
-      result.unsavedQueryText = optionalText
-      this.addTab(result)
+        result.unsavedQueryText = optionalText
+        this.addTab(result)
     },
     async loadTableCreate(table) {
       let method = null
@@ -563,9 +578,9 @@ export default Vue.extend({
 
     },
     dropDatabaseElement({ item: dbActionParams, action: dbAction }) {
-      this.dbElement = dbActionParams.name
+      this.dbElement = dbActionParams.name || dbActionParams.schema
       this.dbAction = dbAction
-      this.dbEntityType = dbActionParams.entityType
+      this.dbEntityType = dbActionParams.entityType || 'schema'
       this.dbDeleteElementParams = dbActionParams
 
       this.$modal.show(this.modalName)
@@ -708,7 +723,7 @@ export default Vue.extend({
         counter.textContent = `${i + 1}`
 
         try {
-          // TODO (azmi): this process can take longer by accident. Consider 
+          // TODO (azmi): this process can take longer by accident. Consider
           // an ability to cancel reading file.
           const text = readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
           if (text) {
@@ -842,6 +857,18 @@ export default Vue.extend({
       if (tab.queryId) {
         await this.$store.dispatch('data/queries/reload', tab.queryId)
       }
+    },
+    async forceClose(tab: OpenTab) {
+      // ensure the tab is active
+      this.$store.dispatch('tabs/setActive', tab);
+      switch (tab.tabType) {
+        case 'backup':
+        case 'restore':
+          break;
+        default:
+          console.log('No force close behaviour defined for tab type')
+      }
+      await this.close(tab);
     },
     async closeAll() {
       const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)

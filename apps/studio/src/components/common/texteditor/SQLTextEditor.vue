@@ -89,13 +89,16 @@ export default Vue.extend({
       await this.setEditorValue(formatted);
     },
     async columnsGetter(tableName: string) {
-      const tableToFind = this.tables.find(
+      let tableToFind = this.tables.find(
         (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
       );
       if (!tableToFind) return null;
       // Only refresh columns if we don't have them cached.
       if (!tableToFind.columns?.length) {
         await this.$store.dispatch("updateTableColumns", tableToFind);
+        tableToFind = this.tables.find(
+          (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+        );
       }
 
       return tableToFind?.columns.map((c) => c.columnName);

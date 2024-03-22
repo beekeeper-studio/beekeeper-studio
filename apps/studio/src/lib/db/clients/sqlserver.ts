@@ -17,6 +17,8 @@ import {
   escapeString,
   joinQueries,
   applyChangesSql,
+  isAllowedReadOnlyQuery,
+  errorMessages,
 } from './utils';
 import logRaw from 'electron-log'
 import { Statement } from "sql-query-identifier/lib/defines";
@@ -178,6 +180,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   query(queryText: string) {
+    const identification = identify(queryText, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
+      throw new Error(errorMessages.readOnly);
+    }
     const queryRequest = null
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this
@@ -239,7 +245,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
 
-    const { data } = await this.driverExecuteQuery({ query: sql });
+    const { data } = await this.driverExecuteQuery({ query: sql, overrideReadonly: true });
 
     return data.recordset.map((row) => {
       const update = row.isupdate === 1 ? 'UPDATE' : null
@@ -343,7 +349,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
     const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
-    const { data }  = await this.driverExecuteQuery({ query: sizeQuery })
+    const { data }  = await this.driverExecuteQuery({ query: sizeQuery, overrideReadonly: true })
     const row = data.recordset ? data.recordset[0] || {} : {}
     const relations = await this.getTableKeys(table, schema)
     return {
@@ -900,9 +906,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async driverExecuteQuery(queryArgs: any, arrayRowMode = false) {
-    this.logger().info('RUNNING', queryArgs)
     const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
-    identify(query || '', { strict: false, dialect: 'mssql' })
+    const identification = identify(query, { strict: false, dialect: this.dialect });
+    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !queryArgs.overrideReadonly) {
+      throw new Error(errorMessages.readOnly);
+    }
+    this.logger().info('RUNNING', queryArgs)
 
     const runQuery = async (connection) => {
       const request = connection.request()
