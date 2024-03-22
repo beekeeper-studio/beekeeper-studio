@@ -761,6 +761,7 @@ export class DBTestUtil {
       cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
       oracle: `insert into "BEEKEEPER"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      duckdb: `insert into "main"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
     }
 
     expect(insertQuery).toBe(expectedQueries[this.dbType])
@@ -792,7 +793,8 @@ export class DBTestUtil {
       sqlserver: "SELECT * FROM [public].[jobs] WHERE [job_name] IN ('Programmer','Surgeon''s Assistant') ORDER BY [hourly_rate] ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE job_name IN ('Programmer','Surgeon''s Assistant') ORDER BY hourly_rate ASC",
-      oracle: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
+      oracle: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      duckdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
     }
     expect(fmt(query)) .toBe(fmt(expectedQueries[dbType]))
 
@@ -868,7 +870,14 @@ export class DBTestUtil {
           0 ROWS
         FETCH NEXT
           100 ROWS ONLY
-      `
+      `,
+      duckdb: `
+        SELECT * FROM "public"."jobs"
+          WHERE "job_name" IN ('Programmer','Surgeon''s Assistant')
+            AND "hourly_rate" >= '41'
+            OR "hourly_rate" >= '31'
+        ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0
+      `,
     }
     expect(fmt(multipleFiltersQuery)).toBe(fmt(expectedFiltersQueries[dbType]))
   }
@@ -953,7 +962,7 @@ export class DBTestUtil {
       [{ field: 'id', dir: 'ASC' }],
       [],
       5,
-      undefined,
+      this.defaultSchema,
     )
     expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
     expect(result.totalRows).toBe(6)

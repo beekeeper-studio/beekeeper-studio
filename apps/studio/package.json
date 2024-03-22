@@ -36,7 +36,6 @@
     "core-js": "3",
     "dateformat": "^3.0.3",
     "diff-match-patch": "^1.0.5",
-    "duckdb": "^0.10.0",
     "duckdb-async": "^0.10.0",
     "electron-log": "^4.2.2",
     "electron-util": "^0.14.1",

@@ -1,5 +1,3 @@
-// @ts-nocheck
-import { TableKey } from "@shared/lib/dialects/models";
 import {
   DatabaseElement,
   IDbConnectionDatabase,
@@ -13,41 +11,47 @@ import {
 import {
   buildInsertQueries,
   buildDeleteQueries,
-  buildSelectTopQuery,
   applyChangesSql,
+  buildSchemaFilter,
 } from "./utils";
 import knexlib from "knex";
 import _ from "lodash";
 import rawLog from "electron-log";
 import { DuckDBClient as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
 import Client from "knex/lib/client";
-import {
-  Database,
-  Connection,
-  Statement,
-  OPEN_READONLY,
-  OPEN_READWRITE,
-} from "duckdb-async";
+import { Database, Connection } from "duckdb-async";
 import { identify } from "sql-query-identifier";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
+  NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
+  Routine,
+  SchemaFilterOptions,
   StreamResults,
+  SupportedFeatures,
+  TableChanges,
   TableFilter,
   TableIndex,
   TableOrView,
   TableProperties,
   TableResult,
   TableTrigger,
+  TableUpdate,
+  TableUpdateResult,
+  TableColumn,
 } from "@/lib/db/models";
-import { fileExists, joinFilters } from "@/common/utils";
+import { joinFilters } from "@/common/utils";
 import { DuckDBCursor } from "./duckdb/DuckDBCursor";
 import { ColumnInfo, TableData } from "duckdb";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { DuckDBChangeBuilder } from "@shared/lib/sql/change_builder/DuckDBChangeBuilder";
+import { DuckDBData } from "@shared/lib/dialects/duckdb";
+import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+import { TableKey } from "@shared/lib/dialects/models";
 
 const log = rawLog.scope("duckdb");
 
@@ -74,6 +78,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   version: string;
   databasePath: string;
   databaseInstance: Database;
+  // We only use one connection to be able to read and write at the same time
+  // https://duckdb.org/docs/connect/concurrency#handling-concurrency
+  connectionInstance: Connection;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, duckDBContext, server, database);
@@ -83,6 +90,23 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     this.databasePath = database?.database;
   }
 
+  getBuilder(table: string, schema: string): ChangeBuilderBase {
+    return new DuckDBChangeBuilder(table, schema);
+  }
+
+  supportedFeatures(): SupportedFeatures {
+    return {
+      customRoutines: false,
+      comments: true,
+      properties: true,
+      partitions: false,
+      editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false,
+    };
+  }
+
   versionString(): string {
     return this.version;
   }
@@ -90,15 +114,16 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    // FIXME check readonly
-    // readOnly: this.readOnlyMode ? OPEN_READONLY : OPEN_READWRITE,
-    this.databaseInstance = await Database.create(this.databasePath);
+    this.databaseInstance = await Database.create(this.databasePath, {
+      access_mode: this.readOnlyMode ? "READ_ONLY" : "READ_WRITE",
+    });
+    this.connectionInstance = await this.databaseInstance.connect();
 
     this.knex = knexlib({
       client: DuckDBKnexClient as Client,
       connection: {
-        databaseInstance: this.databaseInstance.get_ddb_internal(),
-        // filename: this.databasePath,
+        // @ts-expect-error
+        connectionInstance: this.connectionInstance.conn,
       },
     });
 
@@ -107,21 +132,19 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     this.version = result.data[0]["version()"];
   }
 
-  query(queryText: string, options?: any): CancelableQuery {
-    let connection: Connection;
+  async disconnect(): Promise<void> {
+    await super.disconnect();
+    await this.connectionInstance.close();
+    await this.databaseInstance.close();
+  }
 
+  query(queryText: string, options?: any): CancelableQuery {
     return {
       execute: async () => {
-        try {
-          connection = await this.databaseInstance.connect();
-          return await this.executeQuery(queryText, { connection });
-        } finally {
-          connection?.close();
-        }
+        return await this.executeQuery(queryText, options);
       },
       cancel: async () => {
-        // TODO test this
-        await connection?.close();
+        // TODO how to cancel
       },
     };
   }
@@ -130,20 +153,14 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     queryText: string,
     options?: any
   ): Promise<NgQueryResult[]> {
-    const usingInternalConnection = !options?.connection;
-    const connection: Connection = usingInternalConnection
-      ? await this.databaseInstance.connect()
-      : options.connection;
+    const connection: Connection =
+      options?.connection || this.connectionInstance;
 
     const results = await this.driverExecuteMultiple(queryText, {
       connection: connection,
     });
 
-    if (usingInternalConnection) {
-      connection.close();
-    }
-
-    return results.map(({ data, columns, statement }) => {
+    return results.map(({ data, columns }) => {
       const fields = columns.map((field, idx) => ({
         id: `c${idx}`,
         name: field.type.alias || field.name,
@@ -175,56 +192,18 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     table: string,
     schema: string
   ): Promise<TableProperties | null> {
-    // description?: string
-    // size?: number
-    // indexSize?: number
-    // indexes: TableIndex[]
-    // relations: TableKey[]
-    // triggers: TableTrigger[]
-    // partitions?: TablePartition[]
-    // owner?: string,
-    // createdAt?: string
-    //
-
-    // select * from duckdb_tables where table_name
-    //     database_name
-    // database_oid
-    // schema_name
-    // schema_oid
-    // table_name
-    // table_otd
-    // comnent
-    // internal
-    // temporary
-    // has_prünary_key
-    // estimated_stze
-    // column_count
-    // index_count
-    // check_constraint_count
-    // sql
-
     const result = await this.driverExecuteSingle(
       `
         SELECT
           comment,
-          estimated_size
+          estimated_size,
+          index_count
         FROM duckdb_tables
         WHERE schema_name = ?
           AND table_name = ?
       `,
       { params: [schema, table] }
     );
-
-    // const result = await this.driverExecuteSingle(
-    //   `
-    //     SELECT
-    //       comment,
-    //       estimated_size
-    //     FROM duckdb_tables
-    //     WHERE schema_name = ${this.wrapLiteral(schema)}
-    //       AND table_name = ${this.wrapLiteral(table)}
-    //   `
-    // );
 
     const data = result.data[0];
     const indexes = this.listTableIndexes(table, schema);
@@ -233,24 +212,62 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return {
       description: data.comment,
       size: data.estimated_size,
-      // TODO below
-      // indexSize: 0,
+      indexSize: data.index_count,
       indexes: await indexes,
-      // relations: [],
+      relations: [], // TODO
       triggers: await triggers,
-      // owner: "",
-      // createdAt: "",
+      owner: "", // TODO
+      createdAt: "", // TODO
     };
   }
 
-  async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
-    const { data } = await this.driverExecuteSingle("SHOW");
-    const tables = data.map((row: any) => ({
-      schema: row.schema,
-      name: row.name,
+  getQuerySelectTop(table: string, limit: number, schema: string): string {
+    schema = DuckDBData.wrapLiteral(schema);
+    table = DuckDBData.wrapIdentifier(table);
+    return `SELECT * FROM ${schema}.${table} LIMIT ${limit}`;
+  }
+
+  async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
+    let query = "SELECT table_name, schema_name FROM duckdb_tables";
+    if (filter?.schema) {
+      query += ` WHERE schema_name = ${DuckDBData.wrapLiteral(filter.schema)}`;
+    }
+    const { data } = await this.driverExecuteSingle(query);
+    const tables: TableOrView[] = data.map((row: any) => ({
+      schema: row.schema_name,
+      name: row.table_name,
       entityType: "table",
     }));
     return tables;
+  }
+
+  async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
+    let query = "SELECT view_name, schema_name FROM duckdb_views";
+    if (filter?.schema) {
+      query += ` WHERE schema_name = ${DuckDBData.wrapLiteral(filter.schema)}`;
+    }
+    const { data } = await this.driverExecuteSingle(query);
+    const views: TableOrView[] = data.map((row: any) => ({
+      schema: row.schema_name,
+      name: row.table_name,
+      entityType: "view",
+    }));
+    return views;
+  }
+
+  async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
+    return []; // TODO not sure if duckdb has routines
+  }
+
+  async listMaterializedViewColumns(
+    _table: string,
+    _schema?: string
+  ): Promise<TableColumn[]> {
+    return []; // Not supported yet. https://github.com/duckdb/duckdb/discussions/3638
+  }
+
+  async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
+    return []; // Not supported yet. https://github.com/duckdb/duckdb/discussions/3638
   }
 
   async listTableColumns(
@@ -281,7 +298,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
     if (params.length > 0) {
       const conditions = params
-        .map(([column, value]) => `${column} = ${this.wrapLiteral(value)}`)
+        .map(
+          ([column, value]) => `${column} = ${DuckDBData.wrapLiteral(value)}`
+        )
         .join(" AND ");
       query += ` WHERE ${conditions}`;
     }
@@ -302,8 +321,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async listTableTriggers(
-    table: string,
-    schema?: string
+    _table: string,
+    _schema: string
   ): Promise<TableTrigger[]> {
     // DuckDB doesn't support table triggers
     // https://github.com/duckdb/duckdb/issues/750
@@ -342,18 +361,47 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     }));
   }
 
+  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
+    const filterQuery = buildSchemaFilter(filter);
+    const { data } = await this.driverExecuteSingle(`
+      SELECT DISTINCT schema_name
+      FROM information_schema.schemata
+      ${filterQuery ? "WHERE " + filterQuery : ""}
+    `);
+    return data.map((row) => row.schema_name);
+  }
+
+  async getTableReferences(_table: string, _schema: string): Promise<string[]> {
+    return []; // TODO: not implemented yet
+  }
+
+  async getTableKeys(_table: string, _schema: string): Promise<TableKey[]> {
+    // toTable: string;
+    // toSchema: string;
+    // toColumn: string;
+    // fromTable: string;
+    // fromSchema: string;
+    // fromColumn: string;
+    // constraintName?: string;
+    // onUpdate?: string;
+    // onDelete?: string;
+    // const { data } = await this.driverExecuteSingle(`
+    //   SELECT
+    //
+    //
+    //
+    // `);
+    return []; // TODO
+  }
+
   protected async rawExecuteQuery(
     q: string,
     options: any
   ): Promise<DuckDBResult | DuckDBResult[]> {
     const queries = this.identifyCommands(q);
     const params = options.params;
-    const arrayMode = options.arrayMode;
     const results = [];
-    const mustCloseConnection = !options.connection;
-    const conn: Connection = options.connection
-      ? options.connection
-      : await this.databaseInstance.connect();
+    const conn: Connection = options.connection || this.connectionInstance;
 
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
@@ -380,10 +428,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       } catch (error) {
         log.error(error);
         throw error;
-      } finally {
-        if (mustCloseConnection) {
-          await conn.close();
-        }
       }
     }
 
@@ -406,15 +450,16 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         constraint_column_indexes,
         constraint_column_names
       FROM duckdb_constraints
-      WHERE schema_name = ${this.wrapLiteral(schema)}
-        AND table_name = ${this.wrapLiteral(table)}
+      WHERE schema_name = ${DuckDBData.wrapLiteral(schema)}
+        AND table_name = ${DuckDBData.wrapLiteral(table)}
         AND constraint_type = 'PRIMARY KEY'
     `;
 
     const { data } = await this.driverExecuteSingle(sql);
 
     data.forEach((row: any) => {
-      row.constraint_column_names.forEach((name, idx) => {
+      const columnNames: string[] = row.constraint_column_names;
+      columnNames.forEach((name, idx) => {
         keys.push({
           columnName: name,
           position: Number(row.constraint_column_indexes[idx]),
@@ -423,6 +468,21 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     });
 
     return keys;
+  }
+
+  async listCollations(): Promise<string[]> {
+    const result = await this.driverExecuteSingle("PRAGMA collations");
+    return result.data.map((row) => row.collname);
+  }
+
+  async listCharsets(): Promise<string[]> {
+    // No charsets in the docs
+    return [];
+  }
+
+  async getDefaultCharset(): Promise<string> {
+    // No charsets in the docs
+    return "";
   }
 
   /**
@@ -437,6 +497,153 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     await database.close();
   }
 
+  createDatabaseSQL(): string {
+    throw new Error("Method not implemented.");
+  }
+
+  async getTableCreateScript(table: string, schema: string): Promise<string> {
+    const { data } = await this.driverExecuteSingle(
+      `
+        SELECT sql
+        FROM duckdb_tables
+        WHERE table_name = ?
+        AND schema_name = ?
+      `,
+      { params: [table, schema] }
+    );
+    return data[0].sql;
+  }
+
+  async getViewCreateScript(view: string, schema: string): Promise<string[]> {
+    const { data } = await this.driverExecuteSingle(
+      `
+        SELECT sql
+        FROM duckdb_views
+        WHERE view_name = ?
+        AND schema_name = ?
+      `,
+      { params: [view, schema] }
+    );
+    return data.map((row) => row.sql);
+  }
+
+  async getRoutineCreateScript(
+    _routine: string,
+    _type: string,
+    _schema: string
+  ): Promise<string[]> {
+    return []; // TODO not sure if duckdb has routines
+  }
+
+  applyChangesSql(changes: TableChanges): string {
+    return applyChangesSql(changes, this.knex);
+  }
+
+  async applyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
+    let results = [];
+
+    await this.driverExecuteSingle("BEGIN TRANSACTION");
+
+    try {
+      if (changes.inserts) {
+        for (const command of buildInsertQueries(this.knex, changes.inserts)) {
+          await this.driverExecuteSingle(command);
+        }
+      }
+
+      if (changes.updates) {
+        results = await this.updateValues(changes.updates);
+      }
+
+      if (changes.deletes) {
+        for (const command of buildDeleteQueries(this.knex, changes.deletes)) {
+          await this.driverExecuteSingle(command);
+        }
+      }
+
+      await this.driverExecuteSingle("COMMIT");
+    } catch (ex) {
+      log.error("query exception: ", ex);
+      await this.driverExecuteSingle("ROLLBACK");
+      throw ex;
+    }
+
+    return results;
+  }
+
+  async setTableDescription(
+    table: string,
+    description: string,
+    schema: string
+  ): Promise<string> {
+    await this.driverExecuteSingle(
+      `COMMENT ON TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(
+        table
+      )} IS '${description}'`
+    );
+    const result = await this.getTableProperties(table, schema);
+    return result.description;
+  }
+
+  private async updateValues(updates: TableUpdate[]) {
+    const commands = updates.map((update) => {
+      const params = [
+        _.isBoolean(update.value) ? _.toInteger(update.value) : update.value,
+      ];
+      const whereList = [];
+      update.primaryKeys.forEach(({ column, value }) => {
+        whereList.push(`${DuckDBData.wrapIdentifier(column)} = ?`);
+        params.push(value);
+      });
+
+      const where = whereList.join(" AND ");
+      const schema = DuckDBData.wrapIdentifier(update.schema);
+      const table = DuckDBData.wrapIdentifier(update.table);
+      const column = DuckDBData.wrapIdentifier(update.column);
+
+      return {
+        query: `UPDATE ${schema}.${table} SET ${column} = ? WHERE ${where}`,
+        params: params,
+      };
+    });
+
+    const results = [];
+    for (let index = 0; index < commands.length; index++) {
+      const blob = commands[index];
+      await this.driverExecuteSingle(blob.query, {
+        params: blob.params,
+      });
+    }
+
+    const returnQueries = updates.map((update) => {
+      const params = [];
+      const whereList = [];
+      update.primaryKeys.forEach(({ column, value }) => {
+        whereList.push(`${DuckDBData.wrapIdentifier(column)} = ?`);
+        params.push(value);
+      });
+
+      const where = whereList.join(" AND ");
+      const schema = DuckDBData.wrapIdentifier(update.schema);
+      const table = DuckDBData.wrapIdentifier(update.table);
+
+      return {
+        query: `select * from ${schema}.${table} where ${where}`,
+        params: params,
+      };
+    });
+
+    for (let index = 0; index < returnQueries.length; index++) {
+      const blob = returnQueries[index];
+      const r = await this.driverExecuteSingle(blob.query, {
+        params: blob.params,
+      });
+      if (r.data[0]) results.push(r.data[0]);
+    }
+
+    return results;
+  }
+
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,
@@ -444,19 +651,19 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   ): Promise<void> {
     let query: string;
 
-    if (typeOfElement === "TABLE") {
+    if (typeOfElement === DatabaseElement["TABLE"]) {
       query = "DROP TABLE";
     } else if (
-      typeOfElement === "VIEW" ||
-      typeOfElement === "MATERIALIZED-VIEW"
+      typeOfElement === DatabaseElement["VIEW"] ||
+      typeOfElement === DatabaseElement["MATERIALIZED-VIEW"]
     ) {
       query = "DROP VIEW";
     } else {
       throw new Error(`Dropping ${typeOfElement} is not supported.`);
     }
 
-    elementName = DuckDBClient.wrapIdentifier(elementName);
-    schema = DuckDBClient.wrapIdentifier(schema);
+    elementName = DuckDBData.wrapIdentifier(elementName);
+    schema = DuckDBData.wrapIdentifier(schema);
 
     await this.driverExecuteSingle(`${query} ${schema}.${elementName}`);
   }
@@ -466,10 +673,17 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     _typeOfElement: DatabaseElement,
     schema: string
   ): Promise<void> {
-    const query = `TRUNCATE ${DuckDBClient.wrapIdentifier(
+    const query = `TRUNCATE ${DuckDBData.wrapIdentifier(
       schema
-    )}.${DuckDBClient.wrapIdentifier(elementName)}`;
+    )}.${DuckDBData.wrapIdentifier(elementName)}`;
     await this.driverExecuteSingle(query);
+  }
+
+  async truncateAllTables(schema: string): Promise<void> {
+    const tables = await this.listTables({ schema });
+    for (const table of tables) {
+      await this.truncateElement(table.name, DatabaseElement.TABLE, schema);
+    }
   }
 
   async selectTop(
@@ -514,6 +728,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       limit,
       orderBy,
       filters,
+      schema,
       "total",
       columns,
       selects
@@ -526,17 +741,31 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     orderBy: OrderBy[],
     filters: string | TableFilter[],
     chunkSize: number,
-    schema?: string
+    schema: string
   ): Promise<StreamResults> {
-    const columns = await this.listTableColumns(table);
-    const totalRows = await this.getTableLength(table);
+    const columns = await this.listTableColumns(table, schema);
+    const totalRows = await this.getTableLength(table, schema);
     const options = { schema, table, orderBy, filters, chunkSize };
-    const cursor = new DuckDBCursor(this, options, chunkSize);
+    const cursor = new DuckDBCursor(this, options);
     return { totalRows, columns, cursor };
   }
 
-  async getTableLength(table: string, schema?: string): Promise<number> {
-    const { countQuery, params } = DuckDBClient.buildSelectTopQuery(table);
+  async queryStream(
+    _query: string,
+    _chunkSize: number
+  ): Promise<StreamResults> {
+    throw new Error("Method not implemented.");
+  }
+
+  async getTableLength(table: string, schema: string): Promise<number> {
+    const { countQuery, params } = DuckDBClient.buildSelectTopQuery(
+      table,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      schema
+    );
     const countResults = await this.driverExecuteSingle(countQuery, { params });
     const rowWithTotal = countResults.data.find((row) => {
       return row.total;
@@ -554,14 +783,14 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     await this.driverExecuteSingle(query);
   }
 
-  async duplicateTableSql(
+  duplicateTableSql(
     tableName: string,
     duplicateTableName: string,
     schema?: string
   ): string {
-    tableName = DuckDBClient.wrapIdentifier(tableName);
-    duplicateTableName = DuckDBClient.wrapIdentifier(duplicateTableName);
-    schema = DuckDBClient.wrapIdentifier(schema);
+    tableName = DuckDBData.wrapIdentifier(tableName);
+    duplicateTableName = DuckDBData.wrapIdentifier(duplicateTableName);
+    schema = DuckDBData.wrapIdentifier(schema);
 
     return `
       CREATE TABLE ${schema}.${duplicateTableName}
@@ -576,11 +805,20 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     limit?: number,
     orderBy?: OrderBy[],
     filters?: string | TableFilter[],
+    schema?: string,
     countTitle = "total",
     columns: ExtendedTableColumn[] = [],
     selects = ["*"]
   ) {
-    log.debug("building selectTop for", table, offset, limit, orderBy, selects);
+    log.debug(
+      "building selectTop for",
+      table,
+      offset,
+      limit,
+      orderBy,
+      schema,
+      selects
+    );
     let orderByString = "";
 
     if (orderBy && orderBy.length > 0) {
@@ -589,11 +827,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         orderBy
           .map((item: any) => {
             if (_.isObject(item)) {
-              return `${this.wrapIdentifier(item["field"])} ${item[
+              return `${DuckDBData.wrapIdentifier(item["field"])} ${item[
                 "dir"
               ].toUpperCase()}`;
             } else {
-              return this.wrapIdentifier(item);
+              return DuckDBData.wrapIdentifier(item);
             }
           })
           .join(",");
@@ -609,9 +847,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     }
 
     const selectSQL = `SELECT ${selects
-      .map((s) => this.wrapIdentifier(s))
+      .map((s) => DuckDBData.wrapIdentifier(s))
       .join(", ")}`;
-    const baseSQL = `FROM ${this.wrapIdentifier(table)} ${filterString}`;
+    const baseSQL = `FROM ${DuckDBData.wrapIdentifier(
+      schema
+    )}.${DuckDBData.wrapIdentifier(table)} ${filterString}`;
     const countSQL = `select count(*) as ${countTitle} ${baseSQL}`;
     const sql = `
       ${selectSQL} ${baseSQL}
@@ -632,9 +872,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     if (filters && _.isArray(filters) && filters.length > 0) {
       const allFilters = filters.map((item) => {
         const column = columns.find((c) => c.columnName === item.field);
-        const field = column?.dataType.toUpperCase().includes("BINARY")
-          ? `HEX(${this.wrapIdentifier(item.field)})`
-          : this.wrapIdentifier(item.field);
+        const field = column?.dataType.match(/blob|bytea|binary/)
+          ? `HEX(${DuckDBData.wrapIdentifier(item.field)})`
+          : DuckDBData.wrapIdentifier(item.field);
 
         if (item.type === "in") {
           const questionMarks = _.isArray(item.value)
@@ -665,21 +905,15 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   //   return Promise.resolve();
   // }
 
+  wrapIdentifier(value: string): string {
+    return DuckDBData.wrapIdentifier(value);
+  }
+
   private identifyCommands(queryText: string) {
     try {
       return identify(queryText);
     } catch (err) {
       return [];
     }
-  }
-
-  // TODO move this to dialectData
-  static wrapIdentifier(value: string): string {
-    return value !== "*" ? `"${value.replaceAll(/"/g, '""')}"` : "*";
-  }
-
-  // TODO move this to dialectData
-  wrapLiteral(value: string): string {
-    return value !== "*" ? `'${value.replaceAll(/'/g, "''")}'` : "*";
   }
 }

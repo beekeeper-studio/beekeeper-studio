@@ -24,6 +24,7 @@ export const ConnectionTypes = [
   { name: 'Apache Cassandra', value: 'cassandra'},
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
+  { name: 'DuckDB', value: 'duckdb' },
 ]
 
 export const keymapTypes = [

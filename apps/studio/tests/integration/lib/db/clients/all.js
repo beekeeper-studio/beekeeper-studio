@@ -167,7 +167,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
   })
 
-  describe.skip("Duplicate Table Tests", () => {
+  describe("Duplicate Table Tests", () => {
 
     beforeEach(async() => {
       // TODO There is no internal function to duplicate a table in firebird
@@ -209,12 +209,12 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
 
-    describe.only("Alter Table Tests", () => {
+    describe("Alter Table Tests", () => {
       beforeEach(async () => {
         await prepareTestTable(getUtil())
       })
 
-      test.only('should pass add drop tests', async() => {
+      test('should pass add drop tests', async() => {
         if (dbReadOnlyMode) {
           await expect(getUtil().addDropTests()).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -229,7 +229,7 @@ export function runCommonTests(getUtil, opts = {}) {
           await getUtil().alterTableTests()
         }
       })
-      test("should alter indexes", async () => {
+      test.skip("should alter indexes", async () => {
         if (dbReadOnlyMode) {
           await expect(getUtil().indexTests()).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -252,7 +252,7 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      test("should not insert bad data", async () => {
+      test.skip("should not insert bad data", async () => {
         await itShouldNotInsertBadData(getUtil())
       })
 
@@ -264,7 +264,7 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      test("should not commit on change error", async () => {
+      test.skip("should not commit on change error", async () => {
         if (dbReadOnlyMode) {
           await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -287,7 +287,7 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    test("should not insert bad data", async () => {
+    test.skip("should not insert bad data", async () => {
       await itShouldNotInsertBadDataCompositePK(getUtil())
     })
 
@@ -299,7 +299,7 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    test("should not commit on change error", async () => {
+    test.skip("should not commit on change error", async () => {
       if (dbReadOnlyMode) {
         await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
       } else {

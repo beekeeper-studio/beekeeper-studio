@@ -59,6 +59,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'postgresql') return 'postgresql'
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
+  if (d === 'duckdb') return 'sql'
   return 'mysql' // we want this as the default
 }
 

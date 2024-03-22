@@ -33,6 +33,8 @@ describe("Sqlite Tests", () => {
           "seq_people_id",
           "seq_streamtest_id",
           "seq_jobs_id",
+          "seq_add_drop_test_id",
+          "seq_index_test_id",
         ];
         const query = sequences
           .map((seq) => `CREATE SEQUENCE ${seq} START 1`)

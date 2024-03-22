@@ -6432,7 +6432,7 @@ duckdb-async@^0.10.0:
   dependencies:
     duckdb "0.10.0"
 
-duckdb@0.10.0, duckdb@^0.10.0:
+duckdb@0.10.0:
   version "0.10.0"
   resolved "https://registry.yarnpkg.com/duckdb/-/duckdb-0.10.0.tgz#91312cc5f2277df529fa71423838f92f4e9bb2e7"
   integrity sha512-+yVccZZTCYVHccKUUKeqCiQQ5/jggdnfyafN01Cgzzx2F0NSSSqNO9vT39oLmpIhEqsJIHYXVC/LuawN3AxUyA==
@@ -14172,9 +14172,9 @@ tar@^6.0.2:
     yallist "^4.0.0"
 
 tar@^6.1.11, tar@^6.1.2:
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/tar/-/tar-6.2.0.tgz#b14ce49a79cb1cd23bc9b016302dea5474493f73"
-  integrity sha512-/Wo7DcT0u5HUV486xg675HtjNd3BXZ6xDbzsCUZPt5iw8bTQ63bP0Raut3mvro9u+CUyq7YQd8Cx55fsZXxqLQ==
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/tar/-/tar-6.2.1.tgz#717549c541bc3c2af15751bea94b1dd068d4b03a"
+  integrity sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==
   dependencies:
     chownr "^2.0.0"
     fs-minipass "^2.0.0"

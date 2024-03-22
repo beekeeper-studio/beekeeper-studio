@@ -5,11 +5,11 @@ const ColumnCompiler = require("./schema/duckdb-columncompiler");
 class DuckDBClient extends Client_SQLite3 {
   constructor(config) {
     super(config);
-
-    if (config.connection && config.connection.filename === undefined && config.connection.databaseInstance === undefined) {
+    // TODO remove sqlite  warnings
+    if (config.connection && config.connection.filename === undefined && config.connection.connectionInstance === undefined) {
       this.logger.warn(
-        'Could not find `connection.filename` or `connection.databaseInstance` in config. Please specify ' +
-          'the database path and name or an instance of `duckdb.Database` to avoid errors. ' +
+        'Could not find `connection.filename` or `connection.connectionInstance` in config. Please specify ' +
+          'the database path and name or an instance of `duckdb.Connection` to avoid errors. ' +
           '(see docs https://knexjs.org/guide/#configuration-options)'
       );
     }
@@ -32,8 +32,8 @@ class DuckDBClient extends Client_SQLite3 {
   }
 
   acquireRawConnection() {
-    if (this.config.connection.databaseInstance) {
-      return Promise.resolve(this.config.connection.databaseInstance.connect());
+    if (this.config.connection.connectionInstance) {
+      return Promise.resolve(this.config.connection.connectionInstance);
     }
 
     return new Promise((resolve, reject) => {
