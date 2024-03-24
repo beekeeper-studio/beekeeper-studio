@@ -1,60 +1,86 @@
 
-# Release 3.9 - Slow burn, but less slow now
+# 4.2 - One decimal from the life, the universe, and everything
 
-My wife had heart surgery in Feb (she's doing great!) and I've been helping her recover, so it's been a while since the last Beekeeper Studio release (It's not a coincidence that I put out a super stable release at the end of Jan).
+We've spent the first few months of the year working on resolving small complaints, fixing bugs, and smoothing rough edges.
 
-If you are a customer of the commercial edition - 🙏 Thank you, your financial support makes all of this possible.
+In particular we've made maintaining the two different apps a lot easier by moving a lot of code into the open source repo.
 
-If you use the community edition, please consider upgrading to the [commercial edition](https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition). Every purchase supports me, and the continued development of the community edition.
+That said there's a LOT of stuff in this release.
 
-I also have a few part time folks helping me keep Beekeeper Studio features rolling:
-- @wmontgomery
-- @not-night-but
-- @davidkaufman
+## Headline features
 
-Big thanks to them for their help.
-
-## Highlights ✨
-
-- [x] Added support for PostgreSQL partitions in the table structure view (@not-night-but)
-- [x] Added support for Query Magic enum substitution (@not-night-but)
-- [x] Added support for alphanumeric sorting of pinned tables (@tomaskudlicka)
-- [x] Added the ability to pin saved connections (just like pinned tables) (@not-night-but)
+- One tab per table - Ok fine, you all asked for this, now we only allow one tab open per table.
+- Firebird support - The Ultimate edition now has support for the Firebird database engine
+- SQLite duplicate column bug fix - you can now select two columns with the same name without them becoming a single column
+- .sql file import - In the `saved queries` section you can now import .sql files into your saved queries.
+- Better drag/drop support for .sql files - drag and drop a .sql file anywhere to open in a new query tab
 
 
-## More awesome features 🍭 and 🐞 fixes
+## Loads of other stuff
 
-- [x] Added support to copy table data modifications to SQL instead of applying them automatically
-- [x] Added the ability to select field names in the table structure view when they're not editable
-- [x] Huuuuuge upgrade from Electron 13 to Electron 22
-- [x] Colo(u)r sorting of connections fixed
-- [x] SSH2 library upgraded
-- [x] Fixing column names in the JSON download
-- [x] ...more stuff below, man this took a while to write
+- Spreadsheet mode improvements - better resizing, multi-select, and range select behavior.
+- Some regression fixes
+- Exactly 3 bajillion tweaks and minor fixes
+- Generated columns are now shown and correctly labelled
 
 
-## Merged PRs
+## Under the hood
+- We spent a LOT of time trying to make Beekeeper Studio more maintainable, backporting a lot of code from the ultimate version, and rewriting entire components to make them more modular. This has resulted in 0 new fixes, and likely a few bugs, but it helps us move faster in the future.
+  - In particular, merge conflicts when merging community and master have been a real problem lately, these changes should help alleviate that.
+- We also migrated all of our database drivers to a typescript-based class model. While this also probably introduced a few bugs we haven't yet found, it allowed us to remove ~1000+ lines of generic code, and makes implementing a new database driver a lot quicker.
 
 
-85e68d52 Merge pull request #1558 from beekeeper-studio/partitions-fix-96
-a44371d2 Merge pull request #1548 from beekeeper-studio/partitions
-4719c4ce Merge pull request #1525 from MaximeRaynal/master
-7512516c Merge pull request #1551 from tomaskudlicka/feat/pin-tables-sorting
-d61910a7 Merge pull request #1541 from beekeeper-studio/copy-to-sql
-8a97f1db Merge pull request #1530 from beekeeper-studio/pinned-connections
-93694b93 Merge pull request #1512 from beekeeper-studio/1472-selectable-fields
-94f733fb Merge pull request #1502 from krystxf/fix/materialized_view
-8333115d Merge pull request #1537 from beekeeper-studio/interval-sorting
-3ab8ca5a Merge pull request #1511 from beekeeper-studio/electron-15
-50154381 Merge pull request #1492 from beekeeper-studio/dependabot/npm_and_yarn/http-cache-semantics-4.1.1
-470e1d2c Merge pull request #1509 from beekeeper-studio/editing-disabled
-13a4b9c0 Merge pull request #1513 from beekeeper-studio/colour-sorting
-7d931d6c Merge pull request #1516 from beekeeper-studio/mainline-ssh2
-68f09176 Merge pull request #1510 from beekeeper-studio/electron-remote-migration
-245f58d9 Merge pull request #1447 from beekeeper-studio/dependabot/npm_and_yarn/decode-uri-component-0.2.2
-e777f106 Merge pull request #1464 from beekeeper-studio/feature/747_find-replace-in-editor
-02409764 Merge pull request #1487 from leduard/master
-1cda1804 Merge pull request #1494 from davidkaufman/issue-1493-colnames-json-download
-0b475e0b Merge pull request #1473 from beekeeper-studio/dependabot/npm_and_yarn/knex-2.4.0
-76718b81 Merge pull request #1480 from henryliang2/master
-aefa5ff0 Merge pull request #1482 from beekeeper-studio/bugfix/empty-value-on-select
+ee6b7a20 Merge pull request #2024 from beekeeper-studio/autocomplete-load-cols-fix
+e8bfa7b4 Merge pull request #2023 from beekeeper-studio/feat/hidden-column-indicator
+c0202f00 Merge pull request #2022 from beekeeper-studio/mssql-version-tests
+89d98fc5 Merge pull request #2026 from beekeeper-studio/dependabot/npm_and_yarn/follow-redirects-1.15.6
+202e3055 Merge pull request #2016 from beekeeper-studio/cassandra-client
+87445f86 Merge pull request #2014 from beekeeper-studio/fix-clashing-css-class
+7c8c28b9 Merge pull request #2015 from beekeeper-studio/fix-nullable-editor-parser
+56f23474 Merge pull request #1981 from beekeeper-studio/sqlite-result-as-array
+989be53f Merge pull request #1975 from beekeeper-studio/tabulator-update
+769776cd Merge pull request #2004 from beekeeper-studio/fix-codemirror-gutters
+bd7f6c08 Merge pull request #1966 from beekeeper-studio/fix-sqlite-generated-columns
+2cb16a65 Merge pull request #1924 from beekeeper-studio/fix/insert-table-name
+8187e675 Merge pull request #1972 from beekeeper-studio/dependabot/npm_and_yarn/ip-1.1.9
+0c75163d Merge pull request #2001 from beekeeper-studio/table-filter-regressions
+e3c2694e Merge pull request #2007 from beekeeper-studio/fix-empty-column-export
+c1024f36 Merge pull request #1953 from beekeeper-studio/bigquery-client
+dd3f5819 Merge pull request #1989 from MiniGeospatial/getViewCreateScript
+874b29ce Merge pull request #1998 from beekeeper-studio/fix/focus-sql-text-editor
+eeff3b50 Merge pull request #2000 from beekeeper-studio/fix/tabulator-table-regressions
+8d25e159 Merge pull request #1996 from beekeeper-studio/fix/renaming-column
+2c4c1aed Merge pull request #1991 from beekeeper-studio/bugfix/apply-changes-issue
+90062a3f Merge pull request #1990 from beekeeper-studio/fix/redshift-error
+a2e19655 Merge pull request #1988 from beekeeper-studio/bugfix/escapeHtml-Results-Table
+450df82f Merge pull request #1983 from beekeeper-studio/ultimate-driver-backports
+a2de0bda Merge pull request #1974 from beekeeper-studio/wmontgomery-patch-1
+801ea7e9 Merge pull request #1971 from beekeeper-studio/ultimate-backports
+991d1667 Merge pull request #1965 from omahs/patch-1
+8096c987 Merge pull request #1969 from beekeeper-studio/fix/css-vendor
+0e6203c3 Merge pull request #1955 from beekeeper-studio/fix/spreadsheet-data
+2c203e7b Merge pull request #1956 from beekeeper-studio/fix/tabletable-export
+74ab88f6 Merge pull request #1835 from beekeeper-studio/feature/1738_Readable-DateTime
+65af9cb6 Merge pull request #1935 from therealrinku/fix/popup-after-creating-table
+e0b7e016 Merge pull request #1907 from beekeeper-studio/refactor/text-editor
+823a5164 Merge pull request #1928 from beekeeper-studio/feature/1851_SqlServerToClass
+fd725361 Merge pull request #1934 from austinwilcox/fixVimQuit
+6a1167ff Merge pull request #1779 from beekeeper-studio/feature/data-picker
+2f3db7b5 Merge pull request #1941 from beekeeper-studio/fix/header-tooltip-xss
+0dd3d644 Merge pull request #1936 from therealrinku/fix/copy-json-fix
+6701f227 Merge pull request #1938 from jc00ke/master
+1d82f920 Merge pull request #1909 from beekeeper-studio/postgres-client
+65d679b0 Merge pull request #1913 from beekeeper-studio/feat/import-export-sql
+f696fa0a Merge pull request #1917 from beekeeper-studio/fix/minor-fixes
+0ec8fae9 Merge pull request #1861 from beekeeper-studio/refactor/mysql-to-ts
+46bde4c6 Merge pull request #1879 from austinwilcox/vimrcImprovements
+b0aef6a4 Merge pull request #1869 from beekeeper-studio/dependabot/npm_and_yarn/follow-redirects-1.15.4
+5e99ee35 Merge pull request #1834 from beekeeper-studio/fix/one-tab-one-table
+be5ee18c Merge pull request #1873 from beekeeper-studio/sass-migration
+04f10ea9 Merge pull request #1859 from luca1197/tablelength-formatting
+14ddcdaf Merge pull request #1855 from invisal/feat/long-query-notification
+9df859ef Merge pull request #1843 from Christof-P/feat/show-password-option
+d48b399c Merge pull request #1821 from marco-lavagnino/master
+64493d24 Merge pull request #1829 from beekeeper-studio/finish-bigquery
+c20d3692 Merge pull request #1811 from beekeeper-studio/feat/initial-firebird
+dcc2c67b Merge pull request #1904 from beekeeper-studio/add-sort-buttons
