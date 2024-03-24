@@ -15,11 +15,14 @@
         >
           <span v-html="option.name" />
           <div class="expand" />
-          <span
-            class="shortcut"
-            v-if="option.shortcut"
-            v-html="option.shortcut"
-          />
+          <span>
+            <span
+              class="shortcut"
+              v-if="option.shortcut"
+              v-html="option.shortcut"
+            />
+            <i v-if="option.ultimate && $config.isCommunity" class="material-icons menu-icon">stars</i>
+          </span>
         </li>
       </ul>
     </portal>

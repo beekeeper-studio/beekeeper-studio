@@ -345,6 +345,7 @@ export default Vue.extend({
         { event: AppEvent.dropzoneDrop, handler: this.handleDropzoneDrop },
         { event: AppEvent.promptQueryImportFromComputer, handler: this.handlePromptQueryImportFromComputer },
         { event: AppEvent.promptQueryExport, handler: this.handlePromptQueryExport },
+        { event: AppEvent.beginImport, handler: this.beginImport },
       ]
     },
     lastTab() {
@@ -584,6 +585,9 @@ export default Vue.extend({
       this.dbDeleteElementParams = dbActionParams
 
       this.$modal.show(this.modalName)
+    },
+    beginImport() {
+      this.showUpgradeModal()
     },
     duplicateDatabaseTable({ item: dbActionParams, action: dbAction }) {
       this.dbElement = dbActionParams.name
