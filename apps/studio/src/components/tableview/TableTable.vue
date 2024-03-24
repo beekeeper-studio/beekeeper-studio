@@ -1050,9 +1050,11 @@ export default Vue.extend({
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
 
-      if (helpers.isDateTime(dt)) {
-        return vueEditor(DateTimePickerEditorVue)
-      }
+      // FIXME: Enable once the datetime picker behaves itself
+      // when in the table
+      // if (helpers.isDateTime(dt)) {
+      //   return vueEditor(DateTimePickerEditorVue)
+      // }
 
       switch (dt?.toLowerCase() ?? '') {
         case 'text':
