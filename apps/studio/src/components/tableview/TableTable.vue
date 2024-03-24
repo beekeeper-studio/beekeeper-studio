@@ -142,13 +142,11 @@
           v-else
           class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
         >
-          <a tabindex="0">
+          <a tabindex="0" @click.prevent="showColumnFilterModal" v-if="hiddenColumnCount">
             <i class="material-icons">visibility_off</i>
-            {{ hiddenColumnCount > 0 ? `&nbsp;${hiddenColumnCount}` : '' }}
           </a>
           <div class="bks-tooltip bks-tooltip-top-center">
-            <span>Right click a column header to hide it. </span>
-            <a @click="showColumnFilterModal">View hidden</a><span>.</span>
+            <span>{{hiddenColumnMessage}}</span>
           </div>
         </span>
 
@@ -227,7 +225,7 @@
             Confirmation
           </div>
           <div class="modal-form">
-            Sorting or Filtering now will discard {{ pendingChangesCount }} pending change(s). Are you sure?
+            Sorting or Filtering will discard {{ pendingChangesCount }} pending change(s). Are you sure?
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -418,6 +416,9 @@ export default Vue.extend({
     },
     hiddenColumnCount() {
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
+    },
+    hiddenColumnMessage() {
+      return `${pluralize("column", this.hiddenColumnCount, true)} hidden`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
