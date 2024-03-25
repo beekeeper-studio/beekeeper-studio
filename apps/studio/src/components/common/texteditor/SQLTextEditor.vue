@@ -20,7 +20,7 @@
 <script lang="ts">
 import Vue from "vue";
 import TextEditor from "./TextEditor.vue";
-import { mapState } from "vuex";
+import { mapState, mapGetters } from "vuex";
 import { plugins } from "@/lib/editor/utils";
 import { format } from "sql-formatter";
 import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
@@ -34,8 +34,10 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapGetters(['defaultSchema']),
     ...mapState(["tables"]),
     hintOptions() {
+      // We do this so we can order the autocomplete options
       const firstTables = {};
       const secondTables = {};
       const thirdTables = {};
