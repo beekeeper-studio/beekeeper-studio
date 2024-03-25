@@ -87,6 +87,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return this.version.version.split(" on ")[0];
   }
 
+  defaultSchema(): string | null {
+    return this._defaultSchema;
+  }
+
   getBuilder(table: string, schema: string = this._defaultSchema): ChangeBuilderBase {
     return new PostgresqlChangeBuilder(table, schema);
   }
