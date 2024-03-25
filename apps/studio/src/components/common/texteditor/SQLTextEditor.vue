@@ -8,7 +8,7 @@
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
-    :forced-value="forcedValue"
+    :forced-value="dataForcedValue"
     :plugins="plugins"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
@@ -27,10 +27,10 @@ import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions"],
+  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions", "forcedValue"],
   data() {
     return {
-      forcedValue: this.value,
+      dataForcedValue: this.value,
     };
   },
   computed: {
@@ -83,6 +83,11 @@ export default Vue.extend({
       ];
     },
   },
+  watch: {
+    async forcedValue() {
+      await this.setEditorValue(this.forcedValue);
+    },
+  },
   methods: {
     async formatSql() {
       const formatted = format(this.value, {
@@ -128,9 +133,9 @@ export default Vue.extend({
       return newOptions;
     },
     async setEditorValue(value: string) {
-      this.forcedValue = this.value;
+      this.dataForcedValue = this.value;
       await this.$nextTick();
-      this.forcedValue = value;
+      this.dataForcedValue = value;
     },
   },
 });
