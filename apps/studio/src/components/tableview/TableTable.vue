@@ -117,7 +117,7 @@
               <span
                 class="badge"
                 v-if="!error"
-              >{{ pendingChangesCount }}</span>
+              ><small>{{ pendingChangesCount }}</small></span>
               <span>Apply</span>
             </x-button>
             <x-button
