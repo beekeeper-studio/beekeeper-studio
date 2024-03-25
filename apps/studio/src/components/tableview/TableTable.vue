@@ -142,11 +142,15 @@
           v-else
           class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
         >
-          <a tabindex="0" @click.prevent="showColumnFilterModal" v-if="hiddenColumnCount">
+          <a
+            tabindex="0"
+            @click.prevent="showColumnFilterModal"
+            v-if="hiddenColumnCount"
+          >
             <i class="material-icons">visibility_off</i>
           </a>
           <div class="bks-tooltip bks-tooltip-top-center">
-            <span>{{hiddenColumnMessage}}</span>
+            <span>{{ hiddenColumnMessage }}</span>
           </div>
         </span>
 
