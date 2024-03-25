@@ -18,6 +18,7 @@ export class SqlExporter extends Export {
   readonly knexTypes: any = {
     "cockroachdb": "pg",
     "mariadb": "mysql2",
+    "tidb": "mysql2",
     "mysql": "mysql2",
     "postgresql": "pg",
     "sqlite": "sqlite3",

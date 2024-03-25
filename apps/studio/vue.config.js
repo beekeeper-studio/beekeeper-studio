@@ -103,6 +103,11 @@ module.exports = {
             role: "Editor"
           },
           {
+            name: "TiDB URL scheme",
+            schemes: ["tidb"],
+            role: "Editor"
+          },
+          {
             name: "MySQL URL scheme",
             schemes: ["mysql"],
             role: "Editor"

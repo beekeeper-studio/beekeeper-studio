@@ -85,7 +85,7 @@
                   :testing="testing"
                 />
                 <mysql-form
-                  v-else-if="['mysql', 'mariadb'].includes(config.connectionType)"
+                  v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                   @save="save"

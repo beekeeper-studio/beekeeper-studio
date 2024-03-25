@@ -18,6 +18,8 @@ export function dialectFor(s: string): Dialect | null {
       return 'postgresql'
     case 'mariadb':
       return 'mysql'
+    case 'tidb':
+      return 'mysql'
     case 'mssql':
       return 'sqlserver'
     default:

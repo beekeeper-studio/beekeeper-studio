@@ -27,6 +27,7 @@ Currently Beekeeper supports the following database types:
 - SQLite
 - MySQL
 - MariaDB
+- TiDB
 - SQL Server
 - Amazon Redshift
 - CockroachDB

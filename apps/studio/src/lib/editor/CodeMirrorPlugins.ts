@@ -40,6 +40,7 @@ function findSqlQueryIdentifierDialect(connectionType: string) {
     postgresql: "psql",
     mysql: "mysql",
     mariadb: "mysql",
+    tidb: "mysql",
     redshift: "psql",
   };
   return mappings[connectionType] || "generic";
