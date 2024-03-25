@@ -222,6 +222,9 @@ $button-height:     $statusbar-height * 0.72;
       overflow: visible;
       line-height: 1.1;
     }
+    .btn-primary .badge {
+      color: inherit;
+    }
   }
 
   // Results Select
