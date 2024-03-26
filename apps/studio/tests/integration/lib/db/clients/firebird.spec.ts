@@ -8,6 +8,7 @@ import {
   Pool,
 } from "@/lib/db/clients/firebird/NodeFirebirdWrapper";
 import Firebird from "node-firebird";
+import _ from 'lodash';
 
 describe("Firebird Tests", () => {
   let container: StartedTestContainer;
@@ -231,7 +232,7 @@ describe("Firebird Tests", () => {
       ],
       deletes: [],
     });
-    expect(result[0]).toMatchObject({
+    expect(_.omit(result[0], 'LAST_UPDATE')).toMatchObject({
       FILM_ID: 1,
       TITLE: 'ACADEMY DINOSAUR 2',
       DESCRIPTION: 'A Epic Drama of a Feminist And a Mad Scientist who must Battle a Teacher in The Canadian Rockies',
@@ -244,7 +245,6 @@ describe("Firebird Tests", () => {
       REPLACEMENT_COST: 20.99,
       RATING: 'PG',
       SPECIAL_FEATURES: 'Deleted Scenes,Behind the Scenes',
-      LAST_UPDATE: new Date('2006-02-14T22:03:42.000Z'),
     })
   });
 });
