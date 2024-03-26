@@ -8,7 +8,8 @@ const log = rawLog.scope('TabModule')
 
 interface State {
   tabs: OpenTab[],
-  active?: OpenTab
+  active?: OpenTab,
+  lastClosedTabs: OpenTab[]
 }
 
 
@@ -16,7 +17,8 @@ export const TabModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
     tabs: [],
-    active: undefined
+    active: undefined,
+    lastClosedTabs: [],
   }),
   getters: {
     sortedTabs(state) {
@@ -50,9 +52,17 @@ export const TabModule: Module<State, RootState> = {
     },
     remove(state, tab: OpenTab) {
       state.tabs = _.without(state.tabs, tab)
+      state.lastClosedTabs.push(tab)
     },
     setActive(state, tab?: OpenTab) {
       state.active = tab
+    },
+    async reopenLastClosedTab(state){
+      const lastClosedTab = state.lastClosedTabs.pop()
+      if(lastClosedTab){
+        state.tabs.push(lastClosedTab)
+        state.active = lastClosedTab
+      }
     }
   },
   actions: {
@@ -77,6 +87,9 @@ export const TabModule: Module<State, RootState> = {
       await OpenTab.remove(context.state.tabs)
       context.commit('set', [])
       context.commit('setActive', null)
+    },
+    async reopenLastClosedTab(context) {
+      context.commit('reopenLastClosedTab')
     },
     async add(context, item: OpenTab) {
       const { usedConfig } = context.rootState
