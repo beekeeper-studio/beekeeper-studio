@@ -20,6 +20,10 @@
         @submit="triggerFilter"
       />
       <div
+        v-show="isEmpty"
+        class="empty-placeholder"
+      >No Data</div>
+      <div
         ref="table"
         class="spreadsheet-table"
       />
@@ -349,6 +353,9 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
+    isEmpty() {
+      return _.isEmpty(this.data);
+    },
     isCassandra() {
       return this.connection?.connectionType === 'cassandra'
     },
@@ -910,7 +917,6 @@ export default Vue.extend({
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
-        placeholder: "No Data",
         renderHorizontal: 'virtual',
         ajaxURL: "http://fake",
         sortMode: 'remote',
