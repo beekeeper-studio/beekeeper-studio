@@ -836,11 +836,11 @@ export default Vue.extend({
       copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
     },
     pasteSelection() {
-      if (!this.focusingTable()) return
+      if (!this.focusingTable() || !this.editable) return
       pasteRange(_.last(this.tabulator.getRanges()))
     },
     deleteTableSelection(_e: Event, range?: Tabulator.RangeComponent) {
-      if (!this.focusingTable()) return
+      if (!this.focusingTable() || !this.editable) return
       if (!range) range = _.last(this.tabulator.getRanges())
       this.addRowsToPendingDeletes(range.getRows());
     },
@@ -1212,7 +1212,7 @@ export default Vue.extend({
       this.pendingChanges.inserts.push(payload)
     },
     addRowsToPendingDeletes(rows: Tabulator.RowComponent[]) {
-      if (!this.primaryKeys) {
+      if (_.isEmpty(this.primaryKeys)) {
         this.$noty.error("Can't delete row -- couldn't figure out primary key")
         return
       }
