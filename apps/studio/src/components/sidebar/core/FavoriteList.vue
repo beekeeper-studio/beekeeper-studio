@@ -193,7 +193,7 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         this.$root.$emit(AppEvent.promptQueryImport)
       },
       importFromComputer() {
-        this.$root.$emit(AppEvent.promptQueryImportFromComputer)
+        this.$root.$emit(AppEvent.promptSqlFilesImport)
       },
       maybeUnselect(e) {
         if (!this.selected) return
