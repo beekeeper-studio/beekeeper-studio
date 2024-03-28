@@ -16,10 +16,7 @@
                   <x-menuitem @click.prevent="importFromComputer">
                     <x-label>Import .sql files</x-label>
                   </x-menuitem>
-                  <x-menuitem
-                    @click.prevent="importFromLocal"
-                    :disabled="!isCloud"
-                  >
+                  <x-menuitem @click.prevent="importFromLocal">
                     <x-label>Import from local workspace</x-label>
                     <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
                   </x-menuitem>
@@ -190,6 +187,10 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         this.$root.$emit(AppEvent.promptQueryExport, query)
       },
       importFromLocal() {
+        if (!this.isCloud) {
+          this.$root.$emit(AppEvent.upgradeModal)
+          return
+        }
         this.$root.$emit(AppEvent.promptQueryImport)
       },
       importFromComputer() {
