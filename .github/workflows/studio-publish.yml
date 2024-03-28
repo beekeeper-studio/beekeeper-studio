@@ -172,6 +172,7 @@ jobs:
         env:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
+          TEAM_ID: "7KK583U8H2"
           BT_TOKEN: "${{secrets.bintray_apikey}}"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
