@@ -49,6 +49,7 @@ export default class extends DefaultMenu {
         this.menuItems.newWindow,
         this.menuItems.newTab,
         this.menuItems.closeTab,
+        this.menuItems.importSqlFiles,
         this.menuItems.quickSearch,
         this.menuItems.disconnect,
         this.menuItems.quit

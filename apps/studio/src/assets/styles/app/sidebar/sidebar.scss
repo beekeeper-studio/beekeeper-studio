@@ -247,6 +247,7 @@
     align-items: center;
     margin-left: auto;
     gap: $gutter-h;
+    letter-spacing: normal;
     & button {
       font-size: inherit;
       line-height: inherit;
@@ -262,13 +263,16 @@
     & .create-table {
       visibility: visible;
     }
-    .material-icons, .material-icons-outlined {
+    & > * > .material-icons, & > * > .material-icons-outlined {
       font-size: 16px;
       color: $text-light;
       &:hover {
         color: $text-dark;
       }
     }
+  }
+  x-menuitem .menu-icon {
+    padding-left: 0.4rem;
   }
 }
 .list-body {

@@ -55,4 +55,5 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   restoreDatabase = () => send('restoreDatabase')
   exportTables = () => send('exportTables')
   checkForUpdates = () => send('checkForUpdates')
+  importSqlFiles = () => send('importSqlFiles')
 }
