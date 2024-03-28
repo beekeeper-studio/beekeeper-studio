@@ -33,7 +33,7 @@
       <sql-text-editor
         v-model="unsavedText"
         v-bind.sync="editor"
-        :forcedValue="forcedTextEditorValue"
+        :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
         :extra-keybindings="keybindings"

@@ -1,31 +1,72 @@
 <template>
-  <div v-hotkey="keymap" class="tabletable tabcontent flex-col" :class="{'view-only': !editable}">
-    <EditorModal ref="editorModal" @save="onSaveEditorModal" />
+  <div
+    v-hotkey="keymap"
+    class="tabletable tabcontent flex-col"
+    :class="{'view-only': !editable}"
+  >
+    <EditorModal
+      ref="editorModal"
+      @save="onSaveEditorModal"
+    />
     <template v-if="!table && initialized">
       <div class="no-content" />
     </template>
     <template v-else>
-      <row-filter-builder v-if="table.columns?.length" :columns="table.columns" :reactive-filters="tableFilters"
-        @input="handleRowFilterBuilderInput" @submit="triggerFilter" />
-      <div v-show="isEmpty" class="empty-placeholder">No Data</div>
-      <div ref="table" class="spreadsheet-table" />
-      <ColumnFilterModal :modal-name="columnFilterModalName" :columns-with-filter-and-order="columnsWithFilterAndOrder"
-        :has-pending-changes="pendingChangesCount > 0" @changed="applyColumnChanges" />
+      <row-filter-builder
+        v-if="table.columns?.length"
+        :columns="table.columns"
+        :reactive-filters="tableFilters"
+        @input="handleRowFilterBuilderInput"
+        @submit="triggerFilter"
+      />
+      <div
+        v-show="isEmpty"
+        class="empty-placeholder"
+      >
+        No Data
+      </div>
+      <div
+        ref="table"
+        class="spreadsheet-table"
+      />
+      <ColumnFilterModal
+        :modal-name="columnFilterModalName"
+        :columns-with-filter-and-order="columnsWithFilterAndOrder"
+        :has-pending-changes="pendingChangesCount > 0"
+        @changed="applyColumnChanges"
+      />
     </template>
 
     <statusbar :mode="statusbarMode">
       <div class="truncate statusbar-info">
-        <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
+        <x-button
+          @click.prevent="openProperties"
+          class="btn btn-flat btn-icon end"
+          title="View Structure"
+        >
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
-        <table-length :table="table" :connection="connection" />
-        <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable"
-          v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
+        <table-length
+          :table="table"
+          :connection="connection"
+        />
+        <a
+          @click="refreshTable"
+          tabindex="0"
+          role="button"
+          class="statusbar-item hoverable"
+          v-if="lastUpdatedText && !error"
+          :title="'Updated' + ' ' + lastUpdatedText"
+        >
           <i class="material-icons">update</i>
           <span>{{ lastUpdatedText }}</span>
         </a>
-        <span v-if="error" class="statusbar-item error" :title="error.message">
+        <span
+          v-if="error"
+          class="statusbar-item error"
+          :title="error.message"
+        >
           <i class="material-icons">error_outline</i>
           <span class="">{{ error.title }}</span>
         </span>
@@ -34,10 +75,21 @@
       <!-- Pagination -->
       <div class="tabulator-paginator">
         <div class="flex-center flex-middle flex">
-          <a v-if="(this.page > 1)" @click="page = page - 1" v-tooltip="ctrlOrCmd('left')"><i
-              class="material-icons">navigate_before</i></a>
-          <input type="number" v-model="page">
-          <a @click="page = page + 1" v-tooltip="ctrlOrCmd('right')"><i class="material-icons">navigate_next</i></a>
+          <a
+            v-if="(this.page > 1)"
+            @click="page = page - 1"
+            v-tooltip="ctrlOrCmd('left')"
+          ><i
+            class="material-icons"
+          >navigate_before</i></a>
+          <input
+            type="number"
+            v-model="page"
+          >
+          <a
+            @click="page = page + 1"
+            v-tooltip="ctrlOrCmd('right')"
+          ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
 
@@ -53,17 +105,33 @@
         </div> -->
 
         <template v-if="pendingChangesCount > 0">
-          <x-button class="btn btn-flat" @click.prevent="discardChanges">
+          <x-button
+            class="btn btn-flat"
+            @click.prevent="discardChanges"
+          >
             Reset
           </x-button>
           <x-buttons class="pending-changes">
-            <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText"
-              :class="{'error': !!saveError}">
-              <i v-if="error" class="material-icons ">error_outline</i>
-              <span class="badge" v-if="!error"><small>{{ pendingChangesCount }}</small></span>
+            <x-button
+              class="btn btn-primary btn-badge btn-icon"
+              @click.prevent="saveChanges"
+              :title="saveButtonText"
+              :class="{'error': !!saveError}"
+            >
+              <i
+                v-if="error"
+                class="material-icons "
+              >error_outline</i>
+              <span
+                class="badge"
+                v-if="!error"
+              ><small>{{ pendingChangesCount }}</small></span>
               <span>Apply</span>
             </x-button>
-            <x-button class="btn btn-primary" menu>
+            <x-button
+              class="btn btn-primary"
+              menu
+            >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="saveChanges">
@@ -78,8 +146,15 @@
             </x-button>
           </x-buttons>
         </template>
-        <span v-else class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable">
-          <a tabindex="0" @click.prevent="showColumnFilterModal" v-if="hiddenColumnCount">
+        <span
+          v-else
+          class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
+        >
+          <a
+            tabindex="0"
+            @click.prevent="showColumnFilterModal"
+            v-if="hiddenColumnCount"
+          >
             <i class="material-icons">visibility_off</i>
           </a>
           <div class="bks-tooltip bks-tooltip-top-center">
@@ -88,24 +163,41 @@
         </span>
 
         <template v-if="!editable">
-          <span class="statusbar-item item-notice" :title="readOnlyNotice">
+          <span
+            class="statusbar-item item-notice"
+            :title="readOnlyNotice"
+          >
             <i class="material-icons-outlined">info</i>
             <span> Editing Disabled</span>
           </span>
         </template>
 
         <!-- Actions -->
-        <x-button v-tooltip="`Refresh Table (${ctrlOrCmd('r')} or F5)`" class="btn btn-flat" @click="refreshTable">
+        <x-button
+          v-tooltip="`Refresh Table (${ctrlOrCmd('r')} or F5)`"
+          class="btn btn-flat"
+          @click="refreshTable"
+        >
           <i class="material-icons">refresh</i>
         </x-button>
-        <x-button class="btn btn-flat" v-tooltip="`Add row (${ctrlOrCmd('n')})`" @click.prevent="cellAddRow">
+        <x-button
+          class="btn btn-flat"
+          v-tooltip="`Add row (${ctrlOrCmd('n')})`"
+          @click.prevent="cellAddRow"
+        >
           <i class="material-icons">add</i>
         </x-button>
-        <x-button class="actions-btn btn btn-flat" v-title="`actions`">
+        <x-button
+          class="actions-btn btn btn-flat"
+          v-title="`actions`"
+        >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <x-menuitem v-if="isCassandra" @click="cassandraAllowFilter = !this.isCassandra">
+            <x-menuitem
+              v-if="isCassandra"
+              @click="cassandraAllowFilter = !this.isCassandra"
+            >
               <x-label>
                 <i class="material-icons">{{ this.isCassandra ? 'check' : 'horizontal_rule' }}</i>
                 Allow Filtering
@@ -136,7 +228,10 @@
     </statusbar>
 
     <portal to="modals">
-      <modal class="vue-dialog beekeeper-modal" :name="`discard-changes-modal-${tab.id}`">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        :name="`discard-changes-modal-${tab.id}`"
+      >
         <div class="dialog-content">
           <div class="dialog-c-title">
             Confirmation
@@ -147,10 +242,19 @@
           </div>
         </div>
         <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)">
+          <button
+            class="btn btn-flat"
+            type="button"
+            @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)"
+          >
             Cancel
           </button>
-          <button class="btn btn-primary" type="button" @click.prevent="forceFilter" autofocus>
+          <button
+            class="btn btn-primary"
+            type="button"
+            @click.prevent="forceFilter"
+            autofocus
+          >
             I'm Sure
           </button>
         </div>

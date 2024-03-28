@@ -21,7 +21,10 @@
                     :disabled="!isCloud"
                   >
                     <x-label>Import from local workspace</x-label>
-                    <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
+                    <i
+                      v-if="$config.isCommunity"
+                      class="material-icons menu-icon"
+                    >stars</i>
                   </x-menuitem>
                 </x-menu>
               </x-button>
