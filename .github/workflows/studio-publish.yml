@@ -170,10 +170,9 @@ jobs:
           mac_certs: ${{ secrets.mac_dev }}
           mac_certs_password: ${{ secrets.mac_dev_pw }}
         env:
-          API_KEY_ID: ${{ secrets.apple_key_id }}
-          API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
-          TEAM_ID: "7KK583U8H2"
-          BT_TOKEN: "${{secrets.bintray_apikey}}"
+          APPLE_ID: ${{ secrets.apple_id }}
+          APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
+          APPLE_TEAM_ID: "7KK583U8H2"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHON_PATH' }}"
