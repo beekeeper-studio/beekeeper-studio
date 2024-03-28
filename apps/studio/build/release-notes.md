@@ -9,7 +9,7 @@ That said there's a LOT of stuff in this release.
 
 ## Headline features
 
-- One tab per table - Ok fine, you all asked for this, now we only allow one tab open per table.
+- One tab per table - Ok fine, you all asked for this, now we only allow one tab open per table. :-)
 - Firebird support - The Ultimate edition now has support for the Firebird database engine
 - SQLite duplicate column bug fix - you can now select two columns with the same name without them becoming a single column
 - .sql file import - In the `saved queries` section you can now import .sql files into your saved queries.
@@ -18,18 +18,27 @@ That said there's a LOT of stuff in this release.
 
 ## Loads of other stuff
 
+- Show/hide your database passwords with a little eye button
 - Spreadsheet mode improvements - better resizing, multi-select, and range select behavior.
 - Some regression fixes
-- Exactly 3 bajillion tweaks and minor fixes
 - Generated columns are now shown and correctly labelled
+- Exactly 3 bajillion tweaks and minor fixes
 
 
 ## Under the hood
-- We spent a LOT of time trying to make Beekeeper Studio more maintainable, backporting a lot of code from the ultimate version, and rewriting entire components to make them more modular. This has resulted in 0 new fixes, and likely a few bugs, but it helps us move faster in the future.
+- We spent a LOT of time trying to make Beekeeper Studio more maintainable, backporting a lot of code from the ultimate version, and rewriting entire components to make them more modular. This has probably resulted in  a few bugs, but it helps us move faster in the future.
   - In particular, merge conflicts when merging community and master have been a real problem lately, these changes should help alleviate that.
 - We also migrated all of our database drivers to a typescript-based class model. While this also probably introduced a few bugs we haven't yet found, it allowed us to remove ~1000+ lines of generic code, and makes implementing a new database driver a lot quicker.
 
 
+## PR's merged
+
+ce2e016f Merge pull request #2050 from beekeeper-studio/fix/primary-keys-check
+2a5b5069 Merge pull request #2051 from beekeeper-studio/fix/pre-release-tests
+edc3cb17 Merge pull request #2045 from beekeeper-studio/fix/mssql-autocomplete
+b6feb2d3 Merge pull request #2047 from beekeeper-studio/fix/apply-badge-style
+597373ad Merge pull request #2046 from beekeeper-studio/fix/saved-queries-editor
+994b0387 Merge pull request #2044 from beekeeper-studio/fix/autocomplete
 ee6b7a20 Merge pull request #2024 from beekeeper-studio/autocomplete-load-cols-fix
 e8bfa7b4 Merge pull request #2023 from beekeeper-studio/feat/hidden-column-indicator
 c0202f00 Merge pull request #2022 from beekeeper-studio/mssql-version-tests
