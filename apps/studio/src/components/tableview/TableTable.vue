@@ -189,7 +189,6 @@
         </x-button>
         <x-button
           class="actions-btn btn btn-flat"
-          v-title="`actions`"
         >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
