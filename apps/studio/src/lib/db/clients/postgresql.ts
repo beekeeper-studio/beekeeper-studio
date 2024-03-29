@@ -76,7 +76,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   runWithConnection: HasConnection;
   _defaultSchema: string;
   dataTypes: any;
-  
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
     this.dialect = 'psql';
@@ -115,12 +115,26 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       return;
     }
     await super.connect();
- 
+
     const dbConfig = await this.configDatabase(this.server, this.database);
 
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };
+
+    this.conn.pool.on('acquire', (_client) => {
+      log.debug('Pool connection acquired')
+    })
+
+    this.conn.pool.on('error', (err, _client) => {
+      log.error("Pool connection error", err.message)
+    })
+
+    // @ts-ignore
+    this.conn.pool.on('release', (err, client) => {
+      log.debug('Pool connection released')
+    })
+
 
     logger().debug('connected');
     this._defaultSchema = await this.getSchema();
@@ -638,7 +652,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     let results: TableUpdateResult[] = []
 
     await this.cacheConnection();
-    
+
     await this.driverExecuteSingle('BEGIN')
     log.debug("Applying changes", changes)
     try {
@@ -980,7 +994,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     throw new Error('Method not implemented.');
   }
 
-  
+
   alterPartitionSql(payload: AlterPartitionsSpec): string {
     const { table } = payload;
     const builder = new PostgresqlChangeBuilder(table);
@@ -1272,12 +1286,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   // ************************************************************************************
 
   private async cacheConnection() {
+    log.debug("Pool connection cached")
     this.runWithConnection = {
       connection: await this.conn.pool.connect()
     };
   }
 
   private releaseCachedConnection() {
+    log.debug("Pool connection uncached")
     this.runWithConnection.connection.release();
     this.runWithConnection = null;
   }

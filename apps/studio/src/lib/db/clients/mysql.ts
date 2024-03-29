@@ -268,6 +268,15 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
+    this.conn.pool.on('acquire', function (connection) {
+      log.debug('Connection %d acquired', connection.threadId);
+    });
+
+    this.conn.pool.on('release', function (connection) {
+      log.debug('Connection %d released', connection.threadId);
+    });
+
+
     this.versionInfo = await this.getVersion();
   }
 
@@ -1040,7 +1049,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
       };
 
-      pool.getConnection(async (errPool, connection) => {
+      pool.getConnection((errPool, connection) => {
         if (errPool) {
           rejectErr(errPool);
           return;
@@ -1052,9 +1061,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         });
 
         try {
-          resolve(await run(connection));
-        } catch (err) {
-          rejectErr(err);
+          run(connection)
+            .then((res) => resolve(res))
+            .catch((ex) => rejectErr(ex))
         } finally {
           connection.release();
         }
