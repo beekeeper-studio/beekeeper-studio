@@ -132,6 +132,7 @@ export class CockroachClient extends PostgresClient {
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
       // not in the typings, but works.
+      // @ts-ignore
       options: optionsString
     };
 

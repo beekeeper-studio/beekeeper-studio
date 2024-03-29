@@ -64,6 +64,7 @@ const SQLServerContext = {
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
+// TODO (@day): actually type this stuff
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
@@ -73,6 +74,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   readOnlyMode: boolean
   logger: any
   connection: any
+  // store pool
+  pool: ConnectionPool;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
@@ -844,14 +847,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await super.connect();
 
     this.dbConfig = this.configDatabase(this.server, this.database)
+    this.pool = new ConnectionPool(this.dbConfig);
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
     return
   }
 
   async disconnect(): Promise<void> {
-    const connection = await new ConnectionPool(this.dbConfig).connect();
-    await connection.close();
+    await this.pool.close();
 
     await super.disconnect();
   }
@@ -927,7 +930,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async runWithConnection(run) {
-    const connection = await new ConnectionPool(this.dbConfig).connect()
+    const connection = await this.pool.connect()
     this.connection = connection
     this.connection.dbConfig = this.dbConfig
     return run(this.connection)
