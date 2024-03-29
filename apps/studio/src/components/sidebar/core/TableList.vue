@@ -142,7 +142,12 @@
         class="empty truncate"
         v-if="!tablesLoading && (!tables || tables.length === 0)"
       >
-        There are no entities in<br> <span>{{ database }}</span>
+        <p class="no-entities" v-if="database">
+          There are no entities in the <strong>{{ database }}</strong> database
+        </p>
+        <p class="no-entities" v-else>
+          Please select a database to see tables, views, and other entities
+        </p>
       </div>
     </nav>
 
@@ -346,3 +351,9 @@
     }
   }
 </script>
+<style scoped>
+  p.no-entities {
+    width: 100%;
+    white-space:normal;
+  }
+</style>
