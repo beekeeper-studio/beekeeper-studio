@@ -1,4 +1,4 @@
-import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
+import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
@@ -39,14 +39,6 @@ function testWith(dockerTag, socket = false, readonly = false) {
         .withExposedPorts(5432)
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
         .withStartupTimeout(dbtimeout)
-        .withWaitStrategy(Wait.forHealthCheck())
-        .withHealthCheck({
-          test: `/usr/bin/psql -U postgres -c "SELECT 1" -w || exit 1`,
-          interval: 2000,
-          timeout: 3000,
-          retries: 10,
-          startPeriod: 5000,
-        })
         .start()
       jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
