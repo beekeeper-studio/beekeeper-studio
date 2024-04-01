@@ -119,16 +119,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     };
 
     this.conn.pool.on('acquire', (_client) => {
-      log.debug('Pool connection acquired')
+      log.debug('Pool event: connection acquired')
     })
 
     this.conn.pool.on('error', (err, _client) => {
-      log.error("Pool connection error", err.message)
+      log.error("Pool event: connection error:", err.name, err.message)
     })
 
     // @ts-ignore
     this.conn.pool.on('release', (err, client) => {
-      log.debug('Pool connection released')
+      log.debug('Pool event: connection released')
     })
 
 
@@ -140,9 +140,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
-    this.conn.pool.end();
-
     await super.disconnect();
+    this.conn.pool.end();
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -647,7 +646,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
-    this.runWithTransaction(async (connection) => {
+    await this.runWithTransaction(async (connection) => {
       log.debug("Applying changes", changes)
       if (changes.inserts) {
         await this.insertRows(changes.inserts, connection);
@@ -1068,7 +1067,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         log.warn("Pool connection - rolling back ", ex.message)
         await this.runQuery(connection, 'ROLLBACK', {})
         throw ex
-      } 
+      }
     })
   }
 
@@ -1209,6 +1208,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
+
     };
 
     return this.configurePool(config, server, null);
