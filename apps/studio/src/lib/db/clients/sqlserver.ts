@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import { ConnectionPool } from 'mssql'
+import { ConnectionPool, Request } from 'mssql'
 import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -168,7 +168,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return this.version.versionString.split(" \n\t")[0]
   }
 
-  async executeQuery(queryText: string, arrayRowMode = false) {
+  async executeQuery(queryText: string, options) {
+    const { arrayRowMode, connection } = options
+    // FIXME: driverExecuteQuery should be able to accept a connection
     const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, arrayRowMode)
 
     const commands = this.identifyCommands(queryText).map((item) => item.type)
@@ -185,12 +187,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
       throw new Error(errorMessages.readOnly);
     }
-    const queryRequest = null
+    let queryRequest: Request = null
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this
     return {
-      execute() {
-        return self.runWithConnection(async () => {
+      async execute() {
+        return await self.runWithConnection(async (c) => {
+          queryRequest = c
           try {
             return await self.executeQuery(queryText, true)
           } catch (err) {
@@ -921,12 +924,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       return { connection, data, rowsAffected }
     };
 
-    return this.runWithConnection(runQuery)
+    return await this.runWithConnection(runQuery)
   }
 
-  private async runWithConnection(run) {
+  private async runWithConnection<T>(run: (c: Request) => Promise<T>) {
     const connection = this.pool.request();
-    return run(connection);
+    return await run(connection);
   }
 
   private parseFields(data, columns) {
@@ -1175,7 +1178,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         default,
       default);
     `
-    const data = await this.driverExecuteQuery({ query })
+    const { data } = await this.driverExecuteQuery({ query })
     if (!data || !data.recordset || data.recordset.length === 0) {
       return null
     }
