@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import { ConnectionPool } from 'mssql'
+import { ConnectionPool, Request } from 'mssql'
 import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -73,8 +73,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   dbConfig: any
   readOnlyMode: boolean
   logger: any
-  connection: any
-  // store pool
   pool: ConnectionPool;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -427,7 +425,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(this.connection, query, chunkSize)
+      cursor: new SqlServerCursor({ dbConfig: this.dbConfig }, query, chunkSize)
     }
   }
 
@@ -695,7 +693,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return {
       totalRows: undefined,
       columns: undefined,
-      cursor: new SqlServerCursor(this.connection, query, chunkSize),
+      cursor: new SqlServerCursor({ dbConfig: this.dbConfig }, query, chunkSize),
     }
   }
 
@@ -908,7 +906,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private async driverExecuteQuery(queryArgs: any, arrayRowMode = false) {
+  private async driverExecuteQuery(queryArgs: any, arrayRowMode = false, options?: { connection?: Request }) {
     const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
     const identification = identify(query, { strict: false, dialect: this.dialect });
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !queryArgs.overrideReadonly) {
@@ -917,23 +915,20 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     this.logger().info('RUNNING', queryArgs)
 
     const runQuery = async (connection) => {
-      const request = connection.request()
-      request.arrayRowMode = arrayRowMode
-      const data = await request.query(queryArgs.query)
+      connection.arrayRowMode = arrayRowMode
+      const data = await connection.query(queryArgs.query)
       const rowsAffected = _.sum(data.rowsAffected)
-      return { request, data, rowsAffected }
+      return { connection, data, rowsAffected }
     };
 
-    return this.connection
-      ? runQuery(this.connection)
+    return options.connection
+      ? runQuery(options.connection)
       : this.runWithConnection(runQuery)
   }
 
   private async runWithConnection(run) {
-    const connection = await this.pool.connect()
-    this.connection = connection
-    this.connection.dbConfig = this.dbConfig
-    return run(this.connection)
+    const connection = this.pool.request();
+    return run(connection);
   }
 
   private parseFields(data, columns) {
