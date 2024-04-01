@@ -91,9 +91,9 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       properties: true, 
       partitions: false, 
       editPartitions: false,
-      // backups: false, 
-      // backDirFormat: false, 
-      // restore: false 
+      backups: false, 
+      backDirFormat: false, 
+      restore: false 
     }
   }
   versionString(): string {
