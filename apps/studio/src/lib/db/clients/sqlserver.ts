@@ -845,7 +845,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await super.connect();
 
     this.dbConfig = this.configDatabase(this.server, this.database)
-    this.pool = new ConnectionPool(this.dbConfig);
+    this.pool = await new ConnectionPool(this.dbConfig).connect();
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
     return
