@@ -1051,7 +1051,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     try {
       return await child(connection)
     } finally {
-      await connection.release()
+      connection.release()
     }
   }
 
@@ -1068,7 +1068,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         log.warn("Pool connection - rolling back ", ex.message)
         await this.runQuery(connection, 'ROLLBACK', {})
         throw ex
-      }
+      } 
     })
   }
 
@@ -1347,7 +1347,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     log.info("applying updates", updates);
     let results: TableUpdateResult[] = [];
     await this.driverExecuteSingle(buildUpdateQueries(this.knex, updates).join(";"), { connection });
-    // NOTE (@day): this could be a weird issue, we shall see
     const data = await this.driverExecuteSingle(buildSelectQueriesFromUpdates(this.knex, updates).join(";"), { connection });
     results = [data.rows[0]];
 
