@@ -1318,7 +1318,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const columnsList = await Promise.all(rawInserts.map((insert) => {
       return this.listTableColumns(insert.table, insert.schema);
     }));
-
     const fixedInserts = rawInserts.map((insert, idx) => {
       const result = { ...insert};
       const columns = columnsList[idx];
@@ -1327,7 +1326,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           const column = columns.find((c) => c.columnName === key);
           // fix: we used to serialize arrays before this, now we pass them as
           // json arrays properly
-          return this.normalizeValue(value, column.dataType);
+          return this.normalizeValue(value, column?.dataType);
         })
       })
       return result;
