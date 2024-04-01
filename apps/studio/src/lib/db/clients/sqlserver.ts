@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import { ConnectionPool, Request } from 'mssql'
+import { ConnectionPool } from 'mssql'
 import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -906,7 +906,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private async driverExecuteQuery(queryArgs: any, arrayRowMode = false, options?: { connection?: Request }) {
+  private async driverExecuteQuery(queryArgs: any, arrayRowMode = false) {
     const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
     const identification = identify(query, { strict: false, dialect: this.dialect });
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !queryArgs.overrideReadonly) {
@@ -921,9 +921,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       return { connection, data, rowsAffected }
     };
 
-    return options.connection
-      ? runQuery(options.connection)
-      : this.runWithConnection(runQuery)
+    return this.runWithConnection(runQuery)
   }
 
   private async runWithConnection(run) {

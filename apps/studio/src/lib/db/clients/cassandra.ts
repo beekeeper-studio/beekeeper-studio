@@ -260,7 +260,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       this.driverExecuteSingle(propsSql, { params: [ table ] }),
       this.getTableKeys(table)
     ]);
-    this.client.execute
 
     const { rows, length,  } = tableInfo
     const { description } = rows[0]
