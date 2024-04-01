@@ -52,6 +52,11 @@ type SQLServerResult = {
   changes: number
 }
 
+interface ExecuteOptions {
+  arrayRowMode?: boolean
+  connection?: Request
+}
+
 const SQLServerContext = {
   getExecutionContext(): ExecutionContext {
     return null;
@@ -168,7 +173,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return this.version.versionString.split(" \n\t")[0]
   }
 
-  async executeQuery(queryText: string, options) {
+  async executeQuery(queryText: string, options: ExecuteOptions = {}) {
     const { arrayRowMode, connection } = options
     // FIXME: driverExecuteQuery should be able to accept a connection
     const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, arrayRowMode)
@@ -917,7 +922,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
     this.logger().info('RUNNING', queryArgs)
 
-    const runQuery = async (connection) => {
+    const runQuery = async (connection: Request) => {
       connection.arrayRowMode = arrayRowMode
       const data = await connection.query(queryArgs.query)
       const rowsAffected = _.sum(data.rowsAffected)
