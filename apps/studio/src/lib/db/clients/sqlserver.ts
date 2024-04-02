@@ -31,7 +31,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView } from '../models';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -101,7 +101,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async listTables(filter: FilterOptions) {
+  async listTables(filter: FilterOptions): Promise<TableOrView[]> {
     const schemaFilter = buildSchemaFilter(filter, 'table_schema');
     const sql = `
       SELECT
@@ -118,6 +118,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset.map((item) => ({
       schema: item.table_schema,
       name: item.table_name,
+      entityType: 'table'
     }))
   }
 
@@ -174,17 +175,15 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async executeQuery(queryText: string, options: ExecuteOptions = {}) {
-    const { arrayRowMode, connection } = options
-    // FIXME: driverExecuteQuery should be able to accept a connection
-    const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, arrayRowMode)
+    const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, options)
 
     const commands = this.identifyCommands(queryText).map((item) => item.type)
 
     // Executing only non select queries will not return results.
     // So we "fake" there is at least one result.
-    const results = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets
+    const results: any[] = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets
 
-    return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, arrayRowMode))
+    return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, options.arrayRowMode))
   }
 
   query(queryText: string) {
@@ -200,7 +199,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         return await self.runWithConnection(async (c) => {
           queryRequest = c
           try {
-            return await self.executeQuery(queryText, true)
+            return await self.executeQuery(queryText, { arrayRowMode: true })
           } catch (err) {
             if (err.code === mmsqlErrors.CANCELED) {
               err.sqlectronError = 'CANCELED_BY_USER';
@@ -585,7 +584,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return []
   }
 
-  async listViews(filter) {
+  async listViews(filter: any): Promise<TableOrView[]> {
     const schemaFilter = buildSchemaFilter(filter, 'table_schema');
     const sql = `
       SELECT
@@ -601,6 +600,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset.map((item) => ({
       schema: item.table_schema,
       name: item.table_name,
+      entityType: 'view'
     }))
   }
 
@@ -610,7 +610,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return []
   }
 
-  async listRoutines(filter) {
+  async listRoutines(filter: any): Promise<Routine[]> {
     const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
     const sql = `
       SELECT
@@ -660,6 +660,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
         returnType: row.data_type,
         id: row.id,
+        entityType: 'routine',
         routineParams: params.map((p) => {
           return {
             name: p.parameter_name,
@@ -697,7 +698,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset.map((row) => row.referenced_table_name)
   }
 
-  async queryStream(query, chunkSize) {
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
       totalRows: undefined,
       columns: undefined,
@@ -710,11 +711,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   //   return buildInsertQuery(this.knex, tableInsert, columns, _.toString)
   // }
 
-  getQuerySelectTop(table, limit) {
+  getQuerySelectTop(table: string, limit: number): string {
     return `SELECT TOP ${limit} * FROM ${this.wrapIdentifier(table)}`;
   }
 
-  async getTableCreateScript(table) {
+  async getTableCreateScript(table): Promise<string> {
     // Reference http://stackoverflow.com/a/317864
     const sql = `
       SELECT  ('CREATE TABLE ' + so.name + ' (' +
@@ -782,7 +783,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     const { data } = await this.driverExecuteQuery({ query: sql })
 
-    return data.recordset.map((row) => row.createtable)
+    return data.recordset.map((row) => row.createtable)[0]
   }
 
   async getViewCreateScript(view) {
@@ -914,7 +915,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private async driverExecuteQuery(queryArgs: any, arrayRowMode = false) {
+  private async driverExecuteQuery(queryArgs: any, options: ExecuteOptions = {}) {
     const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
     const identification = identify(query, { strict: false, dialect: this.dialect });
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !queryArgs.overrideReadonly) {
@@ -923,13 +924,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     this.logger().info('RUNNING', queryArgs)
 
     const runQuery = async (connection: Request) => {
-      connection.arrayRowMode = arrayRowMode
       const data = await connection.query(queryArgs.query)
       const rowsAffected = _.sum(data.rowsAffected)
       return { connection, data, rowsAffected }
     };
 
-    return await this.runWithConnection(runQuery)
+    return options.connection ? 
+      await runQuery(options.connection) :
+      await this.runWithConnection(runQuery);
   }
 
   private async runWithConnection<T>(run: (c: Request) => Promise<T>) {
@@ -1133,7 +1135,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const sql = 'SELECT schema_name() AS \'schema\''
     const { data } = await this.driverExecuteQuery({ query: sql })
 
-    return data.recordsets[0].schema
+    return (data.recordsets[0] as any).schema
   }
 
   private async listDefaultConstraints(table, schema) {
