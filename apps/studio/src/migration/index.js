@@ -104,10 +104,10 @@ export default class {
       if (!hasRun) {
         try {
           await migration.run(runner, this.env)
+          await Manager.markExists(runner, migration.name)
         } catch (err) {
           console.log(`Migration ${migration.name} failed with`, err.name, err.message)
         }
-        await Manager.markExists(runner, migration.name)
       }
     }
   }
