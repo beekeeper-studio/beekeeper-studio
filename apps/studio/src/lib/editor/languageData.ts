@@ -149,7 +149,7 @@ export function resolveLanguage(lang: Language): CodeMirrorLanguage {
       };
     case "tidb":
       return {
-        mode: "text/x-tidb",
+        mode: "text/x-mysql",
         // @ts-expect-error TODO not fully typed
         hint: CodeMirror.hint.sql,
       };
