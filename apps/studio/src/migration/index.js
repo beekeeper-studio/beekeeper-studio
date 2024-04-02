@@ -46,7 +46,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom,
+  a, b, c, d, ...ultimate, domains, createSettings, addZoom,
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
 
@@ -65,7 +65,7 @@ const devMigrations = [
   dev1, dev2, dev3
 ]
 
-const migrations = [...realMigrations, ...ultimate, ...fixtures, ...devMigrations]
+const migrations = [...realMigrations, ...fixtures, ...devMigrations]
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",
@@ -102,7 +102,11 @@ export default class {
       }
       const hasRun = await Manager.checkExists(runner, migration.name)
       if (!hasRun) {
-        await migration.run(runner, this.env)
+        try {
+          await migration.run(runner, this.env)
+        } catch (err) {
+          console.log(`Migration ${migration.name} failed with`, err.name, err.message)
+        }
         await Manager.markExists(runner, migration.name)
       }
     }
