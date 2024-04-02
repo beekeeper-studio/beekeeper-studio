@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import { ConnectionPool, Request } from 'mssql'
+import { ConnectionPool, IRecordSet, Request } from 'mssql'
 import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -21,7 +21,6 @@ import {
   errorMessages,
 } from './utils';
 import logRaw from 'electron-log'
-import { Statement } from "sql-query-identifier/lib/defines";
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder'
@@ -31,7 +30,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult } from '../models';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -46,10 +45,10 @@ type SQLServerVersion = {
 }
 
 type SQLServerResult = {
+  connection: Request,
   data: any,
-  statement: Statement,
   // Number of changes made by the query
-  changes: number
+  rowsAffected: number
 }
 
 interface ExecuteOptions {
@@ -113,7 +112,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ORDER BY table_schema, table_name
     `;
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql);
 
     return data.recordset.map((item) => ({
       schema: item.table_schema,
@@ -156,7 +155,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ORDER BY table_schema, table_name, ordinal_position
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => ({
       schemaName: row.table_schema,
@@ -175,13 +174,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async executeQuery(queryText: string, options: ExecuteOptions = {}) {
-    const { data, rowsAffected } = await this.driverExecuteQuery({ query: queryText, multiple: true }, options)
+    // NOTE (@day): we were apparently not even setting multiple on the request, so this is gonna be single for now
+    const { data, rowsAffected } = await this.driverExecuteSingle(queryText, options);
 
     const commands = this.identifyCommands(queryText).map((item) => item.type)
 
     // Executing only non select queries will not return results.
     // So we "fake" there is at least one result.
-    const results: any[] = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets
+    const results = !data.recordsets.length && rowsAffected > 0 ? [[] as any] : data.recordsets as IRecordSet<any>
 
     return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, options.arrayRowMode))
   }
@@ -191,25 +191,21 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode)) {
       throw new Error(errorMessages.readOnly);
     }
-    let queryRequest: Request = null
+    const queryRequest: Request = this.pool.request();
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this
     return {
-      async execute() {
-        return await self.runWithConnection(async (c) => {
-          queryRequest = c
-          try {
-            return await self.executeQuery(queryText, { arrayRowMode: true })
-          } catch (err) {
-            if (err.code === mmsqlErrors.CANCELED) {
-              err.sqlectronError = 'CANCELED_BY_USER';
-            }
-
-            throw err
+      execute: async(): Promise<NgQueryResult[]> => {
+        try {
+          return await self.executeQuery(queryText, { arrayRowMode: true, connection: queryRequest })
+        } catch (err) {
+          if (err.code === mmsqlErrors.CANCELED) {
+            err.sqlectronError = 'CANCELED_BY_USER';
           }
-        });
-      },
 
+          throw err;
+        }
+      },
       async cancel() {
         if (!queryRequest) {
           throw new Error('Query not ready to be canceled')
@@ -225,7 +221,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     this.logger().debug(query)
 
-    const result = await this.driverExecuteQuery({ query })
+    const result = await this.driverExecuteSingle(query)
     this.logger().debug(result)
     return {
       result: result.data.recordset,
@@ -253,7 +249,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
 
-    const { data } = await this.driverExecuteQuery({ query: sql, overrideReadonly: true });
+    const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
 
     return data.recordset.map((row) => {
       const update = row.isupdate === 1 ? 'UPDATE' : null
@@ -282,7 +278,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1
     AND TABLE_NAME = ${this.wrapValue(table)} AND TABLE_SCHEMA = ${this.wrapValue(schema)}
     `
-    const { data } = await this.driverExecuteQuery({ query: sql})
+    const { data } = await this.driverExecuteSingle(sql)
     if (!data.recordset || data.recordset.length === 0) return []
 
     return data.recordset.map((r) => ({
@@ -329,7 +325,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           t.name, ind.name, ind.index_id, ic.is_included_column, ic.key_ordinal;
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     const grouped = _.groupBy(data.recordset, 'index_name')
 
@@ -357,7 +353,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
     const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
-    const { data }  = await this.driverExecuteQuery({ query: sizeQuery, overrideReadonly: true })
+    const { data }  = await this.driverExecuteSingle(sizeQuery, { overrideReadonly: true })
     const row = data.recordset ? data.recordset[0] || {} : {}
     const relations = await this.getTableKeys(table, schema)
     return {
@@ -407,7 +403,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA =${this.wrapValue(schema)}
     `;
 
-    const { data } = await this.driverExecuteQuery({ query: sql });
+    const { data } = await this.driverExecuteSingle(sql);
 
     const result = data.recordset.map((row) => ({
       constraintName: row.name,
@@ -432,13 +428,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor({ dbConfig: this.dbConfig }, query, chunkSize)
+      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize)
     }
   }
 
   async getTableLength(table, schema) {
     const countQuery = this.genCountQuery(table, [], schema)
-    const countResults = await this.driverExecuteQuery({ query: countQuery})
+    const countResults = await this.driverExecuteSingle(countQuery)
     const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
     const totalRecords = rowWithTotal ? rowWithTotal.total : 0
     return totalRecords
@@ -446,7 +442,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async dropElement (elementName, typeOfElement, schema = 'dbo') {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
-    await this.driverExecuteQuery({ query: sql })
+    await this.driverExecuteSingle(sql)
   }
 
   async listDatabases(filter) {
@@ -458,7 +454,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ORDER BY name
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => row.name)
   }
@@ -470,7 +466,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   */
   async createDatabase(databaseName) {
     const sql = `create database ${this.wrapIdentifier(databaseName)}`;
-    await this.driverExecuteQuery({ query: sql })
+    await this.driverExecuteSingle(sql)
   }
 
   createDatabaseSQL(): string {
@@ -478,8 +474,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   // should figure out how to not require this because it's being a butt
-  protected async rawExecuteQuery() {
-    return []
+  protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
+    this.logger().info('RUNNING', q, options);
+
+    const runQuery = async (connection: Request) => {
+      connection.arrayRowMode = options.arrayRowMode || false;
+      const data = await connection.query(q)
+      const rowsAffected = _.sum(data.rowsAffected)
+      return { connection, data, rowsAffected }
+    };
+
+    return runQuery(options.connection ? options.connection : this.pool.request());
   }
 
   async truncateAllTables() {
@@ -492,25 +497,26 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       AND table_type NOT LIKE '%VIEW%'
     `;
 
-    const { data } = await this.driverExecuteQuery({ query: sql });
+    const { data } = await this.driverExecuteSingle(sql);
 
     const truncateAll = data.recordset.map((row) => `
       DELETE FROM ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(row.table_name)}
       DBCC CHECKIDENT ('${schema}.${row.table_name}', RESEED, 0);
     `).join('');
 
-    await this.driverExecuteQuery({ query: truncateAll, multiple: true });
+    // NOTE (@day): we were apparently not even setting multiple on the request, so this is gonna be single for now
+    await this.driverExecuteSingle(truncateAll);
   }
 
   async truncateElement (elementName, typeOfElement, schema = 'dbo') {
     const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
-    await this.driverExecuteQuery({ query: sql })
+    await this.driverExecuteSingle(sql)
   }
 
   async duplicateTable(tableName, duplicateTableName, schema = 'dbo') {
     const sql = this.duplicateTableSql(tableName, duplicateTableName, schema)
 
-    await this.driverExecuteQuery({ query: sql })
+    await this.driverExecuteSingle(sql)
   }
 
   duplicateTableSql(tableName, duplicateTableName, schema) {
@@ -527,7 +533,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async alterTable(changes) {
     const query = await this.alterTableSql(changes)
-    await this.executeWithTransaction({ query })
+    await this.executeWithTransaction(query)
   }
 
   // alterIndexSql(payload) {
@@ -540,7 +546,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async alterIndex(payload) {
     const sql = this.alterIndexSql(payload)
-    await this.executeWithTransaction({ query: sql })
+    await this.executeWithTransaction(sql)
   }
 
   async applyChanges(changes) {
@@ -562,13 +568,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
       sql.push('COMMIT')
 
-      await this.driverExecuteQuery({ query: sql.join(';')})
+      await this.driverExecuteSingle(sql.join(';'))
 
       if (changes.updates) {
         const selectQueries = buildSelectQueriesFromUpdates(this.knex, changes.updates)
         for (let index = 0; index < selectQueries.length; index++) {
           const element = selectQueries[index];
-          const r = await this.driverExecuteQuery(element)
+          const r = await this.driverExecuteSingle(element)
           if (r.data[0]) results.push(r.data[0])
         }
       }
@@ -595,7 +601,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ORDER BY table_schema, table_name
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((item) => ({
       schema: item.table_schema,
@@ -648,8 +654,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql });
-    const paramsResult = await this.driverExecuteQuery({ query: paramsSQL })
+    const { data } = await this.driverExecuteSingle(sql);
+    const paramsResult = await this.driverExecuteSingle(paramsSQL)
     const grouped = _.groupBy(paramsResult.data.recordset, 'specific_name')
 
     return data.recordset.map((row) => {
@@ -681,7 +687,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       ORDER BY schema_name
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => row.schema_name)
   }
@@ -693,7 +699,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       WHERE parent_object_id = OBJECT_ID('${table}')
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => row.referenced_table_name)
   }
@@ -702,7 +708,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return {
       totalRows: undefined,
       columns: undefined,
-      cursor: new SqlServerCursor({ dbConfig: this.dbConfig }, query, chunkSize),
+      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize),
     }
   }
 
@@ -781,7 +787,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       AND so.name = '${table}'
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => row.createtable)[0]
   }
@@ -789,7 +795,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async getViewCreateScript(view) {
     const sql = `SELECT OBJECT_DEFINITION (OBJECT_ID('${view}')) AS ViewDefinition;`;
 
-    const { data } = await this.driverExecuteQuery({ query: sql });
+    const { data } = await this.driverExecuteSingle(sql);
 
     return data.recordset.map((row) => row.ViewDefinition);
   }
@@ -805,7 +811,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       WHERE routine_name = '${routine}'
     `
 
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => row.routine_definition)
   }
@@ -826,11 +832,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async alterRelation(payload) {
     const query = this.alterRelationSql(payload)
-    await this.executeWithTransaction({ query });
+    await this.executeWithTransaction(query);
   }
 
   async importData(insertSQL) {
-    return await this.executeWithTransaction({ query: insertSQL })
+    return await this.executeWithTransaction(insertSQL)
   }
 
   getImportSQL (importedData, isTruncate) {
@@ -855,6 +861,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     this.dbConfig = this.configDatabase(this.server, this.database)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
+
+    this.pool.on('error', (err) => {
+      log.error("Pool event: connection error:", err.name, err.message);
+    });
+
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
     return
@@ -905,38 +916,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return new SqlServerChangeBuilder(table, schema, [], [])
   }
 
-  private async executeWithTransaction(queryArgs) {
+  private async executeWithTransaction(q: string) {
     try {
-      const query = joinQueries(['SET XACT_ABORT ON', 'BEGIN TRANSACTION', queryArgs.query, 'COMMIT'])
-      await this.driverExecuteQuery({ ...queryArgs, query })
+      const query = joinQueries(['SET XACT_ABORT ON', 'BEGIN TRANSACTION', q, 'COMMIT'])
+      await this.driverExecuteSingle(query)
     } catch (ex) {
       this.logger().error(ex)
       throw ex
     }
-  }
-
-  private async driverExecuteQuery(queryArgs: any, options: ExecuteOptions = {}) {
-    const query = _.isObject(queryArgs)? (queryArgs as {query: string}).query : queryArgs
-    const identification = identify(query, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !queryArgs.overrideReadonly) {
-      throw new Error(errorMessages.readOnly);
-    }
-    this.logger().info('RUNNING', queryArgs)
-
-    const runQuery = async (connection: Request) => {
-      const data = await connection.query(queryArgs.query)
-      const rowsAffected = _.sum(data.rowsAffected)
-      return { connection, data, rowsAffected }
-    };
-
-    return options.connection ? 
-      await runQuery(options.connection) :
-      await this.runWithConnection(runQuery);
-  }
-
-  private async runWithConnection<T>(run: (c: Request) => Promise<T>) {
-    const connection = this.pool.request();
-    return await run(connection);
   }
 
   private parseFields(data, columns) {
@@ -1133,7 +1120,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   private async getSchema() {
     const sql = 'SELECT schema_name() AS \'schema\''
-    const { data } = await this.driverExecuteQuery({ query: sql })
+    const { data } = await this.driverExecuteSingle(sql)
 
     return (data.recordsets[0] as any).schema
   }
@@ -1163,7 +1150,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         schemas.name = ${D.escapeString(schema || this.defaultSchema(), true)}
         AND tables.name = ${D.escapeString(table, true)}
     `
-    const { data } = await this.driverExecuteQuery({ query: sql})
+    const { data } = await this.driverExecuteSingle(sql)
     return data.recordset.map((d) => {
       return {
         column: d.columnName,
@@ -1185,7 +1172,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         default,
       default);
     `
-    const { data } = await this.driverExecuteQuery({ query })
+    const { data } = await this.driverExecuteSingle(query)
     if (!data || !data.recordset || data.recordset.length === 0) {
       return null
     }

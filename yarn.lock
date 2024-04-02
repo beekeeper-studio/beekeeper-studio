@@ -2451,9 +2451,9 @@
   integrity sha512-8o2XkyAw2HZoVD5KpIoUJmEgZ7BPVv33p7rY1jmn/wJUbugtQUc44vNMDTguUNUGiLv+oqgtyYmiYctHDZEzdQ==
 
 "@types/es-aggregate-error@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@types/es-aggregate-error/-/es-aggregate-error-1.0.2.tgz#a970b4a5bbee95d87aebaa2aa317c846c18429df"
-  integrity sha512-erqUpFXksaeR2kejKnhnjZjbFxUpGZx4Z7ydNL9ie8tEhXPiZTsLeUDJ6aR1F8j5wWUAtOAQWUqkc7givBJbBA==
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@types/es-aggregate-error/-/es-aggregate-error-1.0.6.tgz#1472dfb0fb1cb4c3f2bd3b2a7b7e19f60a1d66c0"
+  integrity sha512-qJ7LIFp06h1QE1aVxbVd+zJP2wdaugYXYfd6JxsyRMrYHaxb6itXPogW2tz+ylUJ1n1b+JF1PHyYCfYHm0dvUg==
   dependencies:
     "@types/node" "*"
 
@@ -2603,10 +2603,10 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.31.tgz#31b7ca6407128a3d2bbc27fe2d21b345397f6197"
   integrity sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==
 
-"@types/mssql@^7.1.5":
-  version "7.1.5"
-  resolved "https://registry.yarnpkg.com/@types/mssql/-/mssql-7.1.5.tgz#980fc3f48e3d35abe25b770d2a9ad760cef393fd"
-  integrity sha512-+I/4wNTUlZVxWSDo8BBo3Hw7aAKvmH+0JiovF3aW7NqjOvZZNa1xeqyjp7BBiktZx1wiV/ZKAxi21viAR53vjQ==
+"@types/mssql@^9.1.5":
+  version "9.1.5"
+  resolved "https://registry.yarnpkg.com/@types/mssql/-/mssql-9.1.5.tgz#1574a5870aeb029c6d787861af101161b9b8d3b6"
+  integrity sha512-Q9EsgXwuRoX5wvUSu24YfbKMbFChv7pZ/jeCzPkj47ehcuXYsBcfogwrtVFosSjinD4Q/MY2YPGk9Yy1cM2Ywg==
   dependencies:
     "@types/node" "*"
     "@types/tedious" "*"
@@ -4318,7 +4318,7 @@ bindings@^1.5.0:
   dependencies:
     file-uri-to-path "1.0.0"
 
-bks-oracledb@5.3.3, "oracledb@npm:bks-oracledb":
+bks-oracledb@5.3.3:
   version "5.3.3"
   resolved "https://registry.yarnpkg.com/bks-oracledb/-/bks-oracledb-5.3.3.tgz#2d68ac5ccf12140a40daf3fa6723d535223a1826"
   integrity sha512-3og0hbhu+WBocyQIZyJX+/dxlgR7F1QfbI6wVwYVK1fKv06lPOky7tPoAyqWJpG2krYnYXSD7crmWj1O2liL8Q==
@@ -11047,6 +11047,11 @@ ora@^3.4.0:
     log-symbols "^2.2.0"
     strip-ansi "^5.2.0"
     wcwidth "^1.0.1"
+
+"oracledb@npm:bks-oracledb":
+  version "5.3.3"
+  resolved "https://registry.yarnpkg.com/bks-oracledb/-/bks-oracledb-5.3.3.tgz#2d68ac5ccf12140a40daf3fa6723d535223a1826"
+  integrity sha512-3og0hbhu+WBocyQIZyJX+/dxlgR7F1QfbI6wVwYVK1fKv06lPOky7tPoAyqWJpG2krYnYXSD7crmWj1O2liL8Q==
 
 os-browserify@^0.3.0:
   version "0.3.0"

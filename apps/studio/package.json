@@ -109,7 +109,7 @@
     "@types/jquery": "^3.5.1",
     "@types/lodash": "^4.14.159",
     "@types/mkdirp": "^1.0.1",
-    "@types/mssql": "^7.1.5",
+    "@types/mssql": "^9.1.5",
     "@types/node": "^12.12.54",
     "@types/oracledb": "^5.2.2",
     "@types/papaparse": "^5.2.5",
