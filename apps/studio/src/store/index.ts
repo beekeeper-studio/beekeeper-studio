@@ -16,7 +16,7 @@ import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
 import RawLog from 'electron-log'
-import { Dialect, dialectFor } from '@shared/lib/dialects/models'
+import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
@@ -127,6 +127,9 @@ const store = new Vuex.Store<State>({
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
+    },
+    dialectTitle(_state: State, getters): string {
+      return DialectTitles[getters.dialect] || getters.dialect || 'Unknown'
     },
     dialectData(_state: State, getters) {
       return getDialectData(getters.dialect)

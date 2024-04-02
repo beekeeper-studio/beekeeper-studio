@@ -21,8 +21,8 @@ export const ConnectionTypes = [
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
-  { name: 'Oracle Database', value: 'oracle'},
-  { name: 'Apache Cassandra', value: 'cassandra'},
+  { name: 'Oracle', value: 'other' },
+  { name: 'Cassandra', value: 'other' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
 ]
@@ -45,6 +45,7 @@ export interface RedshiftOptions {
 export interface CassandraOptions {
   localDataCenter?: string
 }
+
 export interface BigQueryOptions {
   keyFilename?: string;
   projectId?: string;
@@ -78,7 +79,7 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'varchar', name: 'connectionType' })
   public set connectionType(value: Nullable<ConnectionType>) {
     if (this._connectionType !== value) {
-      const changePort = this._port === this.defaultPort || !this._port
+      const changePort = this._port === this.defaultPort
       this._connectionType = parseConnectionType(value)
       this._port = changePort ? this.defaultPort : this._port
     }

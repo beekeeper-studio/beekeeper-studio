@@ -33,6 +33,7 @@
       <sql-text-editor
         v-model="unsavedText"
         v-bind.sync="editor"
+        :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
@@ -349,6 +350,8 @@
         runningCount: 1,
         runningType: 'all queries',
         selectedResult: 0,
+        unsavedText: editorDefault,
+        forcedTextEditorValue: editorDefault,
         editor: {
           height: 100,
           selection: null,
@@ -411,14 +414,6 @@
       },
       showDryRun() {
         return this.dialect == 'bigquery'
-      },
-      unsavedText: {
-        get () {
-          return this.tab.unsavedQueryText || editorDefault
-        },
-        set(value) {
-          this.tab.unsavedQueryText = value
-        },
       },
       identifyDialect() {
         // dialect for sql-query-identifier
@@ -614,6 +609,7 @@
         if (this.shouldInitialize) this.initialize()
       },
       unsavedText() {
+        this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
       remoteDeleted() {
@@ -949,9 +945,11 @@
         if (!this.tab.unsavedChanges && this.query?.text) {
           this.unsavedText = null
         }
-        if (this.query?.text) {
-          this.originalText = this.query.text
-          if (!this.unsavedText) this.unsavedText = this.query.text
+        const originalText = this.query?.text || this.tab.unsavedQueryText
+        if (originalText) {
+          this.originalText = originalText
+          this.unsavedText = originalText
+          this.forcedTextEditorValue = originalText
         }
       },
       fakeRemoteChange() {

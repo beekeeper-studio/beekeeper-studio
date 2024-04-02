@@ -12,6 +12,7 @@ export interface ContextOption {
   handler: (...any) => void
   class?: string
   shortcut?: string
+  ultimate?: boolean
 }
 
 interface MenuProps {

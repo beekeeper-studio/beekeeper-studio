@@ -97,13 +97,13 @@
         >{{ shownEntities }} / {{ totalEntities }}</span>
         <span
           v-show="totalHiddenEntities > 0 && !filterQuery"
-          class="hidden-indicator"
+          class="hidden-indicator bks-tooltip-wrapper"
         >
           <span class="badge">
             <i class="material-icons">visibility_off</i>
             <span>{{ totalHiddenEntities > 99 ? '99+' : totalHiddenEntities }}</span>
           </span>
-          <div class="hi-tooltip">
+          <div class="hi-tooltip bks-tooltip bks-tooltip-bottom-center">
             <span>Right click an entity to hide it. </span>
             <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
           </div>
@@ -142,7 +142,12 @@
         class="empty truncate"
         v-if="!tablesLoading && (!tables || tables.length === 0)"
       >
-        There are no entities in<br> <span>{{ database }}</span>
+        <p class="no-entities" v-if="database">
+          There are no entities in the <strong>{{ database }}</strong> database
+        </p>
+        <p class="no-entities" v-else>
+          Please select a database to see tables, views, and other entities
+        </p>
       </div>
     </nav>
 
@@ -346,3 +351,9 @@
     }
   }
 </script>
+<style scoped>
+  p.no-entities {
+    width: 100%;
+    white-space:normal;
+  }
+</style>

@@ -21,7 +21,7 @@ Beekeeper Studio currently supports the following database types:
 - Oracle Database
 - Cassandra
 - Google BigQuery
-
+- Firebird
 
 ![Image Alt Tag](../../assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen

@@ -14,14 +14,17 @@
                 <i class="material-icons">save_alt</i>
                 <x-menu>
                   <x-menuitem @click.prevent="importFromComputer">
-                    <x-label>Import from local computer</x-label>
+                    <x-label>Import .sql files</x-label>
                   </x-menuitem>
                   <x-menuitem
                     @click.prevent="importFromLocal"
                     :disabled="!isCloud"
                   >
-                    <x-label>Import from workspace</x-label>
-                    <i class="material-icons menu-icon">stars</i>
+                    <x-label>Import from local workspace</x-label>
+                    <i
+                      v-if="$config.isCommunity"
+                      class="material-icons menu-icon"
+                    >stars</i>
                   </x-menuitem>
                 </x-menu>
               </x-button>

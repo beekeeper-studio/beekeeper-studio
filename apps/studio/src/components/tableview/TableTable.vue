@@ -20,6 +20,12 @@
         @submit="triggerFilter"
       />
       <div
+        v-show="isEmpty"
+        class="empty-placeholder"
+      >
+        No Data
+      </div>
+      <div
         ref="table"
         class="spreadsheet-table"
       />
@@ -73,7 +79,9 @@
             v-if="(this.page > 1)"
             @click="page = page - 1"
             v-tooltip="ctrlOrCmd('left')"
-          ><i class="material-icons">navigate_before</i></a>
+          ><i
+            class="material-icons"
+          >navigate_before</i></a>
           <input
             type="number"
             v-model="page"
@@ -117,7 +125,7 @@
               <span
                 class="badge"
                 v-if="!error"
-              >{{ pendingChangesCount }}</span>
+              ><small>{{ pendingChangesCount }}</small></span>
               <span>Apply</span>
             </x-button>
             <x-button
@@ -138,6 +146,22 @@
             </x-button>
           </x-buttons>
         </template>
+        <span
+          v-else
+          class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
+        >
+          <a
+            tabindex="0"
+            @click.prevent="showColumnFilterModal"
+            v-if="hiddenColumnCount"
+          >
+            <i class="material-icons">visibility_off</i>
+          </a>
+          <div class="bks-tooltip bks-tooltip-top-center">
+            <span>{{ hiddenColumnMessage }}</span>
+          </div>
+        </span>
+
         <template v-if="!editable">
           <span
             class="statusbar-item item-notice"
@@ -150,24 +174,21 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`${ctrlOrCmd('r')} or F5`"
+          v-tooltip="`Refresh Table (${ctrlOrCmd('r')} or F5)`"
           class="btn btn-flat"
-          title="Refresh table"
           @click="refreshTable"
         >
           <i class="material-icons">refresh</i>
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="ctrlOrCmd('n')"
-          title="Add row"
+          v-tooltip="`Add row (${ctrlOrCmd('n')})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
         </x-button>
         <x-button
           class="actions-btn btn btn-flat"
-          title="actions"
         >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
@@ -189,7 +210,7 @@
               <x-label>Export filtered view</x-label>
             </x-menuitem>
             <x-menuitem @click="showColumnFilterModal">
-              <x-label>Show or hide columns</x-label>
+              <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
             <x-menuitem @click="importTab">
               <x-label>
@@ -215,7 +236,8 @@
             Confirmation
           </div>
           <div class="modal-form">
-            Sorting or Filtering now will discard {{ pendingChangesCount }} pending change(s). Are you sure?
+            Sorting or Filtering will discard {{ pendingChangesCount }} pending change(s) to <b>{{ table.name }}</b>.
+            Are you sure?
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -335,6 +357,9 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
+    isEmpty() {
+      return _.isEmpty(this.data);
+    },
     isCassandra() {
       return this.connection?.connectionType === 'cassandra'
     },
@@ -406,6 +431,9 @@ export default Vue.extend({
     },
     hiddenColumnCount() {
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
+    },
+    hiddenColumnMessage() {
+      return `${pluralize("column", this.hiddenColumnCount, true)} hidden`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
@@ -494,6 +522,12 @@ export default Vue.extend({
 
       const columnMenu = (_e, column: Tabulator.ColumnComponent) => {
         const range = _.last(column.getRanges())
+        let hideColumnLabel = `Hide ${column.getDefinition().title}`
+
+        if (hideColumnLabel.length > 33) {
+          hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
+        }
+
         return [
           this.setAsNullMenuItem(range),
           { separator: true },
@@ -505,6 +539,11 @@ export default Vue.extend({
           }),
           { separator: true },
           ...commonColumnMenu,
+          { separator: true },
+          {
+            label: createMenuItem(hideColumnLabel),
+            action: () => this.hideColumnByField(column.getField()),
+          },
           this.openColumnFilterMenuItem,
         ]
       }
@@ -527,7 +566,7 @@ export default Vue.extend({
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
 
-        let headerTooltip = escapeHtml(`${column.columnName} ${column.dataType}`)
+        let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
         if (hasKeyDatas) {
           const keyData = keyDatas[0][1];
           if (keyData.length === 1)
@@ -808,11 +847,11 @@ export default Vue.extend({
       copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
     },
     pasteSelection() {
-      if (!this.focusingTable()) return
+      if (!this.focusingTable() || !this.editable) return
       pasteRange(_.last(this.tabulator.getRanges()))
     },
     deleteTableSelection(_e: Event, range?: Tabulator.RangeComponent) {
-      if (!this.focusingTable()) return
+      if (!this.focusingTable() || !this.editable) return
       if (!range) range = _.last(this.tabulator.getRanges())
       this.addRowsToPendingDeletes(range.getRows());
     },
@@ -882,7 +921,6 @@ export default Vue.extend({
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
-        placeholder: "No Data",
         renderHorizontal: 'virtual',
         ajaxURL: "http://fake",
         sortMode: 'remote',
@@ -1027,9 +1065,11 @@ export default Vue.extend({
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
 
-      if (helpers.isDateTime(dt)) {
-        return vueEditor(DateTimePickerEditorVue)
-      }
+      // FIXME: Enable once the datetime picker behaves itself
+      // when in the table
+      // if (helpers.isDateTime(dt)) {
+      //   return vueEditor(DateTimePickerEditorVue)
+      // }
 
       switch (dt?.toLowerCase() ?? '') {
         case 'text':
@@ -1182,7 +1222,7 @@ export default Vue.extend({
       this.pendingChanges.inserts.push(payload)
     },
     addRowsToPendingDeletes(rows: Tabulator.RowComponent[]) {
-      if (!this.primaryKeys) {
+      if (_.isEmpty(this.primaryKeys)) {
         this.$noty.error("Can't delete row -- couldn't figure out primary key")
         return
       }
@@ -1569,6 +1609,12 @@ export default Vue.extend({
 
       this.tabulator.restoreRedraw();
 
+      this.tabulator.redraw(true)
+    },
+    hideColumnByField(field: string) {
+      this.tabulator.blockRedraw();
+      this.tabulator.hideColumn(field);
+      this.tabulator.restoreRedraw();
       this.tabulator.redraw(true)
     },
     forceFilter() {

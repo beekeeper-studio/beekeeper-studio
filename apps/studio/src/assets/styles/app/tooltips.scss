@@ -1,0 +1,72 @@
+.bks-tooltip-wrapper {
+  position: relative;
+
+  &.statusbar-item {
+    overflow: visible;
+    &.hoverable:hover {
+      opacity: 1;
+    }
+  }
+
+  &:hover .bks-tooltip {
+    visibility: visible;
+  }
+
+  .bks-tooltip {
+    $gap: 0.5rem;
+
+    visibility: hidden;
+
+    position: absolute;
+    display: block;
+
+    width: 14rem;
+    padding: $gutter-h $gutter-w !important;
+    border-radius: 0.5rem;
+    background-color: #4f4f4f;
+
+    text-transform: none;
+    font-weight: normal;
+    font-size: 0.9rem;
+
+    &, a {
+      display: inline;
+      color: #eee;
+      line-height: 1.35rem;
+    }
+
+    a {
+      border-bottom: 1px solid #dadada;
+    }
+
+    // acting as a "bridge" so the tooltip stays visible when the cursor is
+    // in between the target element and the tooltip
+    &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        width: 100%;
+        height: $gap;
+    }
+
+    &.bks-tooltip-top-center {
+      bottom: calc(100% + #{$gap});
+      left: 50%;
+      transform: translateX(-50%);
+
+      &::before {
+        bottom: -$gap;
+      }
+    }
+
+    &.bks-tooltip-bottom-center {
+      top: calc(100% + #{$gap});
+      left: 50%;
+      transform: translateX(-50%);
+
+      &::before {
+        top: -$gap;
+      }
+    }
+  }
+}
