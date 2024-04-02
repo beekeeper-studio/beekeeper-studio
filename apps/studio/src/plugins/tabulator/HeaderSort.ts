@@ -1,10 +1,12 @@
+// @ts-nocheck Module class not fully typed
+
 import { Module } from "tabulator-tables";
 
-export class HeaderSortTabulatorModule extends Module {
+export class HeaderSort extends Module {
+  static moduleName = "header-sort";
   static moduleInitOrder = 100;
 
   initialize() {
-    // @ts-expect-error Module class not fully typed
     this.subscribe("column-layout", this.moveSorterToTitleElement.bind(this));
   }
 

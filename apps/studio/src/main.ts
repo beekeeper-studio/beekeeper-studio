@@ -34,7 +34,7 @@ import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
-import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+import { HeaderSort, FullPersistence } from './plugins/tabulator'
 
 (async () => {
 
@@ -85,7 +85,7 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
     Tabulator.defaultOptions.resizeColumnsMode = 'guide';
     // @ts-expect-error default options not fully typed
     Tabulator.defaultOptions.resizeColumnsHandles = 'header-only';
-    Tabulator.registerModule([HeaderSortTabulatorModule]);
+    Tabulator.registerModule([HeaderSort, FullPersistence]);
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])

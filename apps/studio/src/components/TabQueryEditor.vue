@@ -135,6 +135,7 @@
         :table-height="tableHeight"
         :result="result"
         :query="query"
+        :tab="tab"
       />
       <div
         class="message"

@@ -4318,7 +4318,7 @@ bindings@^1.5.0:
   dependencies:
     file-uri-to-path "1.0.0"
 
-bks-oracledb@5.3.3, "oracledb@npm:bks-oracledb":
+bks-oracledb@5.3.3:
   version "5.3.3"
   resolved "https://registry.yarnpkg.com/bks-oracledb/-/bks-oracledb-5.3.3.tgz#2d68ac5ccf12140a40daf3fa6723d535223a1826"
   integrity sha512-3og0hbhu+WBocyQIZyJX+/dxlgR7F1QfbI6wVwYVK1fKv06lPOky7tPoAyqWJpG2krYnYXSD7crmWj1O2liL8Q==
@@ -11048,6 +11048,11 @@ ora@^3.4.0:
     strip-ansi "^5.2.0"
     wcwidth "^1.0.1"
 
+"oracledb@npm:bks-oracledb":
+  version "5.3.3"
+  resolved "https://registry.yarnpkg.com/bks-oracledb/-/bks-oracledb-5.3.3.tgz#2d68ac5ccf12140a40daf3fa6723d535223a1826"
+  integrity sha512-3og0hbhu+WBocyQIZyJX+/dxlgR7F1QfbI6wVwYVK1fKv06lPOky7tPoAyqWJpG2krYnYXSD7crmWj1O2liL8Q==
+
 os-browserify@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/os-browserify/-/os-browserify-0.3.0.tgz#854373c7f5c2315914fc9bfc6bd8238fdda1ec27"
@@ -13761,9 +13766,10 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@beekeeper-studio/tabulator#a00978c782ead8470fa0b099f0a082911039906c:
-  version "5.6.1-bks-1"
-  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/a00978c782ead8470fa0b099f0a082911039906c"
+tabulator-tables@6.2.0:
+  version "6.2.0"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-6.2.0.tgz#48322183130a957dbe83c3a3b4c5025bf5308dc0"
+  integrity sha512-x7K2m3sizHJZdjBCn1xH6oewtlkqkXFfKNw2wli7Px7DFSG7dOqrUrRey0LINeuJ0Oyfn17yUWjLZvqRw8V3eA==
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"

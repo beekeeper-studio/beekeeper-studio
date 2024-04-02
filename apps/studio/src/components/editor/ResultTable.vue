@@ -25,7 +25,7 @@
   import * as intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyRange, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
-  import { rowHeaderField } from '@/lib/table-grid/utils'
+  import { rowHeaderField } from '@/common/utils'
 
   export default {
     mixins: [Converter, Mutators],
@@ -35,7 +35,7 @@
         actualTableHeight: '100%',
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active'],
+    props: ['result', 'tableHeight', 'query', 'active', 'tab'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -58,7 +58,7 @@
       }
     },
     computed: {
-      ...mapState(['connection']),
+      ...mapState(['connection', 'usedConfig']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -172,7 +172,12 @@
           result[column.field] = column.title
         })
         return result
-      }
+      },
+      tableId() {
+        // the id for a tabulator table
+        if (!this.usedConfig.id) return null;
+        return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.tab-${this.tab.id}`
+      },
     },
     beforeDestroy() {
       if (this.tabulator) {
@@ -188,6 +193,7 @@
           this.tabulator.destroy()
         }
         this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+          fullPersistenceId: this.tableId,
           selectableRange: true,
           selectableRangeColumns: true,
           selectableRangeRows: true,

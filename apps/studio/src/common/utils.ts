@@ -239,3 +239,11 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
 
   return transformedRangeData;
 }
+
+export const rowHeaderField = '--row-header--bks';
+
+export function isBksInternalColumn(field: string) {
+  return field.endsWith('--bks')
+    || field.startsWith('__beekeeper_internal')
+    || field === rowHeaderField;
+}

@@ -300,7 +300,7 @@ import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent } from '@/lib/menu/tableMenu';
-import { rowHeaderField } from '@/lib/table-grid/utils';
+import { rowHeaderField } from "@/common/utils";
 
 const log = rawLog.scope('TableTable')
 
@@ -665,55 +665,6 @@ export default Vue.extend({
       }
       results.push(result)
 
-      const rowHeader = {
-        field: rowHeaderField,
-        resizable: false,
-        frozen: true,
-        headerSort: false,
-        editor: false,
-        htmlOutput: false,
-        print: false,
-        clipboard: false,
-        download: false,
-        width: 40,
-        hozAlign: 'center',
-        formatter: 'rownum',
-        formatterParams: { relativeToPage: true },
-        contextMenu: (_e, cell: Tabulator.CellComponent) => {
-          const range = _.last(cell.getRanges())
-          return [
-            this.setAsNullMenuItem(range),
-            { separator: true },
-            ...copyActionsMenu({
-              range,
-              connection: this.connection,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
-            { separator: true },
-            ...this.rowActionsMenu(range),
-          ]
-        },
-        headerContextMenu: () => {
-          const range: Tabulator.RangeComponent = _.last(this.tabulator.getRanges())
-          return [
-            this.setAsNullMenuItem(range),
-            { separator: true },
-            ...copyActionsMenu({
-              range,
-              connection: this.connection,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
-            { separator: true },
-            resizeAllColumnsToFitContent,
-            resizeAllColumnsToFixedWidth,
-            this.openColumnFilterMenuItem,
-          ]
-        },
-      }
-      results.unshift(rowHeader)
-
       return results
     },
 
@@ -721,22 +672,6 @@ export default Vue.extend({
       // the id for a tabulator table
       if (!this.usedConfig.id) return null;
       return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
-    },
-    persistenceOptions() {
-      // return {}
-      if (!this.tableId) return {}
-
-      return {
-        persistence: {
-          sort: false,
-          filter: false,
-          group: false,
-          columns: ['visible', 'width'],
-
-        },
-        persistenceMode: 'local',
-        persistenceID: this.tableId,
-      }
     },
     initialSort() {
       // FIXME: Don't specify an initial sort order
@@ -913,11 +848,60 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
+        fullPersistenceId: this.tableId,
+        printConfig: { rowHeaders: false },
+        downloadConfig: { rowHeaders: false },
+        clipboardConfig: { rowHeaders: false },
+        htmlOutputConfig: { rowHeaders: false },
+        // movableColumns: true,
+        rowHeader: {
+          field: rowHeaderField,
+          resizable: false,
+          frozen: true,
+          headerSort: false,
+          editor: false,
+          hozAlign: 'center',
+          formatter: 'rownum',
+          formatterParams: { relativeToPage: true },
+          contextMenu: (_e, cell: Tabulator.CellComponent) => {
+            const range = _.last(cell.getRanges())
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                range,
+                connection: this.connection,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              ...this.rowActionsMenu(range),
+            ]
+          },
+          headerContextMenu: () => {
+            const range: Tabulator.RangeComponent = _.last(this.tabulator.getRanges())
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                range,
+                connection: this.connection,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              resizeAllColumnsToFitContent,
+              resizeAllColumnsToFixedWidth,
+              this.openColumnFilterMenuItem,
+            ]
+          },
+        },
         selectableRange: true,
         selectableRangeColumns: true,
         selectableRangeRows: true,
         resizableColumnGuide: true,
         editTriggerEvent:"dblclick",
+
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
@@ -933,7 +917,6 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: this.initialFilters ?? [{}],
-        ...this.persistenceOptions,
 
         // callbacks
         ajaxRequestFunc: this.dataFetch,

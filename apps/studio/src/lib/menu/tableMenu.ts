@@ -2,9 +2,8 @@ import { Tabulator } from "tabulator-tables";
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData } from "@/common/utils";
+import { stringifyRangeData, rowHeaderField } from "@/common/utils";
 import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
-import { rowHeaderField } from "@/lib/table-grid/utils";
 import { escapeHtml } from "@shared/lib/tabulator";
 
 type ColumnMenuItem = Tabulator.MenuObject<Tabulator.ColumnComponent>;
@@ -33,6 +32,7 @@ export const resizeAllColumnsToMatch: ColumnMenuItem = {
       columns.forEach((col) => {
         if (col.getField() !== rowHeaderField) {
           col.setWidth(column.getWidth());
+          col.persistenceSave();
         }
       });
     } catch (error) {
@@ -52,6 +52,7 @@ export const resizeAllColumnsToFitContent: ColumnMenuItem = {
       columns.forEach((col) => {
         if (col.getField() !== rowHeaderField) {
           col.setWidth(true);
+          col.persistenceSave();
         }
       });
     } catch (error) {
@@ -71,6 +72,7 @@ export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
       columns.forEach((col) => {
         if (col.getField() !== rowHeaderField) {
           col.setWidth(200);
+          col.persistenceSave();
         }
       });
     } catch (error) {

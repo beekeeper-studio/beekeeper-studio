@@ -12,6 +12,11 @@ declare module "tabulator-tables" {
       getBottomEdge(): number;
       getLeftEdge(): number;
       getRightEdge(): number;
+      /**
+       * Save column's state. Use this after changing width programmatically
+       * (e.g. `setWidth`). See FullPersistence module.
+       **/
+      persistenceSaveColumn(column: Tabulator.ColumnComponent): void;
     }
 
     export class CellComponent {
@@ -24,6 +29,11 @@ declare module "tabulator-tables" {
 
     export class ColumnComponent {
       getRanges(): Tabulator.RangeComponent[];
+      /**
+       * Save column's state. Use this after changing width programmatically
+       * (e.g. `setWidth`). See FullPersistence module.
+       **/
+      persistenceSave(): void;
     }
   }
 }
