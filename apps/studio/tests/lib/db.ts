@@ -1,7 +1,7 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index' 
+import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
@@ -937,7 +937,11 @@ export class DBTestUtil {
       undefined,
     )
     expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
-    expect(result.totalRows).toBe(6)
+    if (this.connection.connectionType !== 'tidb') {
+      // tiDB doesn't always update statistics, so this might not
+      // be correct
+      expect(result.totalRows).toBe(6)
+    }
     const cursor = result.cursor
     await cursor.start()
     const b1 = await cursor.read()
