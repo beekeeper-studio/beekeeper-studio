@@ -53,6 +53,7 @@
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import Vue from 'vue'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
@@ -90,14 +91,21 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
+          const lastSavedSplitSizes = SmartLocalStorage.getItem("coreInterfaceSplitSizes")
+          const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
+
           this.split = Split(this.splitElements, {
             elementStyle: (_dimension, size) => ({
                 'flex-basis': `calc(${size}%)`,
             }),
-            sizes: [25,75],
+            sizes: splitSizes,
             minSize: 280,
             expandToMin: true,
             gutterSize: 5,
+            onDragEnd: () => {
+              const splitSizes = this.split.getSizes()
+              SmartLocalStorage.addItem("coreInterfaceSplitSizes", splitSizes)
+            }
           })
         })
       }
