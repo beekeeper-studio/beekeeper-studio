@@ -885,31 +885,30 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     cli: Connection | Transaction,
     updates: TableUpdate[]
   ): Promise<TableUpdateResult[]> {
-    const commands = updates.map((update) => {
-      const params = [
+    const results = [];
+
+    for (const update of updates) {
+      const updateParams = [
         _.isBoolean(update.value) ? _.toInteger(update.value) : update.value,
       ];
+
       const whereList = [];
+      const whereParams = [];
       update.primaryKeys.forEach(({ column, value }) => {
         whereList.push(`${FirebirdData.wrapIdentifier(column)} = ?`);
-        params.push(value);
+        whereParams.push(value);
       });
 
       const where = whereList.join(" AND ");
 
-      return {
-        query: `
-          UPDATE ${update.table} SET ${update.column} = ?
-          WHERE ${where} RETURNING *
-        `,
-        params: params,
-      };
-    });
+      const updateQuery = `
+        UPDATE ${update.table} SET ${update.column} = ?
+        WHERE ${where}
+      `;
+      const selectQuery = `SELECT * FROM ${update.table} WHERE ${where}`;
 
-    const results = [];
-    for (let index = 0; index < commands.length; index++) {
-      const blob = commands[index];
-      const result = await cli.query(blob.query, blob.params);
+      await cli.query(updateQuery, [updateParams, ...whereParams]);
+      const result = await cli.query(selectQuery, whereParams);
       results.push(result.rows[0]);
     }
 
