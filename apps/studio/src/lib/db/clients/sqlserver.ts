@@ -527,14 +527,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query)
   }
 
-  // alterIndexSql(payload) {
-  //   const { table, schema, additions, drops } = payload
-  //   const changeBuilder = new SqlServerChangeBuilder(table, schema, [], [])
-  //   const newIndexes = changeBuilder.createIndexes(additions)
-  //   const droppers = changeBuilder.dropIndexes(drops)
-  //   return [newIndexes, droppers].filter((f) => !!f).join(";")
-  // }
-
   async alterIndex(payload: IndexAlterations) {
     const sql = this.alterIndexSql(payload)
     await this.executeWithTransaction(sql)
@@ -602,7 +594,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async listMaterializedViews() {
-    // const schemaFilter = buildSchemaFilter(filter, '')
     // TODO: materialized views in SQL server
     return []
   }
@@ -702,11 +693,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       cursor: new SqlServerCursor(this.pool.request(), query, chunkSize),
     }
   }
-
-  // async getInsertQuery(database, tableInsert) {
-  //   const columns = await this.listTableColumns(database, tableInsert.table, tableInsert.schema)
-  //   return buildInsertQuery(this.knex, tableInsert, columns, _.toString)
-  // }
 
   getQuerySelectTop(table: string, limit: number): string {
     return `SELECT TOP ${limit} * FROM ${this.wrapIdentifier(table)}`;
