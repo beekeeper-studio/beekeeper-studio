@@ -30,7 +30,6 @@ export class SqlServerCursor extends BeeCursor {
     const request = this.connection.request()
     this.request = request
 
-    // @ts-expect-error Doesn't have this in the typings
     request.arrayRowMode = true
     request.stream = true
 

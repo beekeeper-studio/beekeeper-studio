@@ -131,8 +131,6 @@ export class CockroachClient extends PostgresClient {
       max: 5, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
-      // not in the typings, but works.
-      // @ts-expect-error Fix Typings
       options: optionsString
     };
 
