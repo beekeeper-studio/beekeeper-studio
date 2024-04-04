@@ -69,9 +69,6 @@ export default Vue.extend({
     })
   },
   watch: {
-    connection() {
-      log.info("connection changed", this.connection)
-    },
     database() {
       log.info('database changed', this.database)
     },

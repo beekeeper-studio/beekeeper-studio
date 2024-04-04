@@ -27,7 +27,7 @@ import {
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
-import { createCancelablePromise, waitPromise } from "@/common/utils";
+import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
@@ -315,7 +315,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
     const sql = "show databases";
 
-    await waitPromise(2000);
     const { data } = await this.driverExecuteSingle(sql);
 
     return data
@@ -1079,7 +1078,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         return result;
       } catch (ex) {
         await this.driverExecuteSingle("ROLLBACK");
-        console.error(ex);
+        log.error(ex)
         throw ex;
       }
     });
