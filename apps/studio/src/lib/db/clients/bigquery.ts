@@ -74,7 +74,6 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // For BigQuery Only -- IAM authentication and credential exchange
     const bigQueryOptions = this.server.config.bigQueryOptions
 
-    // TODO (@day): this seems like it was a mistake
     this.config.projectId = bigQueryOptions.projectId /* || this.server.config.projectId */
     this.config.keyFilename = bigQueryOptions.keyFilename
     // For testing purposes

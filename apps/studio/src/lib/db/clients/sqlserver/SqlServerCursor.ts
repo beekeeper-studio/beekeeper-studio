@@ -2,13 +2,8 @@ import { BeeCursor } from "../../models";
 import { ConnectionPool, Request } from 'mssql';
 import { waitFor } from "../base/wait";
 
-interface Conn {
-  dbConfig: any
-}
-
 export class SqlServerCursor extends BeeCursor {
   private connection: ConnectionPool | undefined
-  private request: Request | undefined;
   private end = false;
   private bufferReady = false;
   private error: Error | undefined;
@@ -16,7 +11,7 @@ export class SqlServerCursor extends BeeCursor {
 
 
   constructor(
-    private conn: Conn,
+    private request: Request,
     private query: string,
     chunkSize: number
   ) {
@@ -24,20 +19,14 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   async start(): Promise<void> {
+    this.request.arrayRowMode = true
+    this.request.stream = true
 
-    this.connection = await new ConnectionPool(this.conn.dbConfig).connect()
-    
-    const request = this.connection.request()
-    this.request = request
-
-    request.arrayRowMode = true
-    request.stream = true
-
-    request.on('recordset', this.handleRecordset.bind(this))
-    request.on('row', this.handleRow.bind(this).bind(this))
-    request.on('error', this.handleError.bind(this))
-    request.on('done', this.handleEnd.bind(this))
-    request.query(this.query);
+    this.request.on('recordset', this.handleRecordset.bind(this))
+    this.request.on('row', this.handleRow.bind(this).bind(this))
+    this.request.on('error', this.handleError.bind(this))
+    this.request.on('done', this.handleEnd.bind(this))
+    this.request.query(this.query);
   }
 
   private handleRecordset() {

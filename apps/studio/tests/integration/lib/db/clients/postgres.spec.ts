@@ -16,9 +16,9 @@ const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: true},
   { version: '9.4', socket: false, readonly: false},
   { version: '9.4', socket: false, readonly: true},
-  { version: 'latest', socket: false, readonly: false },
-  { version: 'latest', socket: false, readonly: true },
   { version: 'latest', socket: true, readonly: false },
+  { version: 'latest', socket: false, readonly: true },
+  { version: 'latest', socket: false, readonly: false },
 ]
 
 function testWith(dockerTag, socket = false, readonly = false) {
@@ -156,6 +156,7 @@ function testWith(dockerTag, socket = false, readonly = false) {
       if (container) {
         await container.stop()
       }
+
     })
 
 

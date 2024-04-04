@@ -91,9 +91,9 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       properties: true, 
       partitions: false, 
       editPartitions: false,
-      // backups: false, 
-      // backDirFormat: false, 
-      // restore: false 
+      backups: false, 
+      backDirFormat: false, 
+      restore: false 
     }
   }
   versionString(): string {
@@ -260,7 +260,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       this.driverExecuteSingle(propsSql, { params: [ table ] }),
       this.getTableKeys(table)
     ]);
-    this.client.execute
 
     const { rows, length,  } = tableInfo
     const { description } = rows[0]

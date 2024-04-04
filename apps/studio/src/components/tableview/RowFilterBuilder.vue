@@ -360,9 +360,9 @@ export default Vue.extend({
     },
     externalFilters() {
       if (platformInfo.isCommunity) {
-        this.filters = this.externalFilters.slice(0, 2);
+        this.filters = this.externalFilters?.slice(0, 2) || [];
       } else {
-        this.filters = this.externalFilters;
+        this.filters = this.externalFilters || [];
       }
     },
   },

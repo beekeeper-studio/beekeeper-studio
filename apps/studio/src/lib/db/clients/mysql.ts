@@ -268,6 +268,15 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
+    this.conn.pool.on('acquire', function (connection) {
+      log.debug('Pool connection %d acquired', connection.threadId);
+    });
+
+    this.conn.pool.on('release', function (connection) {
+      log.debug('Pool connection %d released', connection.threadId);
+    });
+
+
     this.versionInfo = await this.getVersion();
   }
 
@@ -1027,9 +1036,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       : this.runWithConnection(runQuery);
   }
 
-  async runWithConnection<T>(
-    run: (connection: mysql.PoolConnection) => Promise<T>
-  ): Promise<T> {
+  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     const { pool } = this.conn;
     let rejected = false;
     return new Promise((resolve, reject) => {
@@ -1040,7 +1047,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
       };
 
-      pool.getConnection(async (errPool, connection) => {
+      pool.getConnection((errPool, connection) => {
         if (errPool) {
           rejectErr(errPool);
           return;
@@ -1050,22 +1057,16 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           // it will be handled later in the next query execution
           logger().error("Connection fatal error %j", error);
         });
-
-        try {
-          resolve(await run(connection));
-        } catch (err) {
-          rejectErr(err);
-        } finally {
-          connection.release();
-        }
+        run(connection)
+          .then((res) => resolve(res))
+          .catch((ex) => rejectErr(ex))
+          .finally(() => connection.release())
       });
     });
   }
 
-  async runWithTransaction(
-    func: (connection: mysql.PoolConnection) => Promise<any>
-  ): Promise<void> {
-    await this.runWithConnection(async (connection) => {
+  async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
+    return await this.runWithConnection(async (connection) => {
       try {
         await this.driverExecuteSingle("START TRANSACTION");
         const result = await func(connection);
