@@ -1,13 +1,16 @@
 // Copyright (c) 2015 The SQLECTRON Team
-import { createConnection, DBConnection, IDbConnectionServer, IDbConnectionServerConfig } from './client';
+import { createConnection } from './client';
+import { IDbConnectionServer, IDbConnectionServerConfig } from './types';
 import { findClient } from './clients';
+import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 
 export interface IDbConnectionPublicServer {
-  db: (dbName: string) => DBConnection
+  db: (dbName: string) => BasicDatabaseClient<any>
   disconnect: () => void
   end: () => void
-  createConnection: (dbName?: string, cryptoSecret?: string) => DBConnection
+  createConnection: (dbName?: string, cryptoSecret?: string) => BasicDatabaseClient<any>
   versionString: () => string
+  getServerConfig: () => IDbConnectionServerConfig
 }
 
 export function createServer(config: IDbConnectionServerConfig): IDbConnectionPublicServer {
@@ -80,6 +83,9 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
     versionString() {
       // get version string from the first db, since all db's on the server have the same version
       return server.db[Object.keys(server.db)[0]].versionString();
+    },
+    getServerConfig() {
+      return server.config;
     }
   } as IDbConnectionPublicServer;
 }

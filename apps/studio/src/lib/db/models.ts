@@ -100,6 +100,7 @@ export interface ExtendedTableColumn extends SchemaItem {
   schemaName?: string
   tableName: string
   hasDefault?: boolean
+  generated?: boolean
 }
 
 export interface PrimaryKeyColumn {
@@ -226,6 +227,10 @@ export interface SupportedFeatures {
   properties: boolean;
   partitions: boolean;
   editPartitions: boolean;
+  backups: boolean;
+  // Some databases support a directory backup format.
+  backDirFormat: boolean;
+  restore: boolean;
 }
 
 export interface FieldDescriptor {

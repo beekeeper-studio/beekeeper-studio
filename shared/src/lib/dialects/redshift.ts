@@ -29,6 +29,7 @@ export const RedshiftData: DialectData = {
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   usesOffsetPagination: true,
+  requireDataset: false,
   unwrapIdentifier: (s) => s,
   disabledFeatures: {
     alter: {

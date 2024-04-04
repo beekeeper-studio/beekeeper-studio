@@ -1,5 +1,5 @@
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
-import { IDbConnectionServerConfig } from "@/lib/db/client";
+import { IDbConnectionServerConfig } from "@/lib/db/types";
 import { DBTestUtil, dbtimeout, Options } from "../../../../lib/db";
 import { runCommonTests } from "./all";
 import {
@@ -53,10 +53,12 @@ describe("Firebird Tests", () => {
       domain: null,
       socketPath: null,
       socketPathEnabled: false,
+      readOnlyMode: false
     };
     const options: Options = {
       dialect: "firebird",
       skipPkQuote: true,
+      skipGeneratedColumns: true,
       knexConnectionOptions: {
         lowercase_keys: true,
       },

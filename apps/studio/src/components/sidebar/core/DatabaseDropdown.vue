@@ -14,6 +14,7 @@
         v-model="selectedDatabase"
         :options="availableDatabases"
         :components="{OpenIndicator}"
+        placeholder="Select a database..."
         class="dropdown-search"
       />
       <a

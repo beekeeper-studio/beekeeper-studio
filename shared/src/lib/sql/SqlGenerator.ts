@@ -1,6 +1,9 @@
 import { Dialect, KnexDialect, Schema, SchemaItem } from '../dialects/models'
 import {Knex} from 'knex'
 import knexlib from 'knex'
+// Cassandra needs this to run since it is the only one we use NOT supported out of the box by Knex
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
 import knexFirebirdDialect from "knex-firebird-dialect"
 import { identify } from 'sql-query-identifier'
@@ -41,7 +44,6 @@ export class SqlGenerator {
     this.createKnexLib()
   }
 
-
   public buildSql(schema: Schema): string {
     let k
     if (this.isNativeKnex) {
@@ -59,9 +61,14 @@ export class SqlGenerator {
       schema.columns.forEach((column: SchemaItem) => {
         // TODO: autoincrement makes cassandra just roll over and die Need to remove it from the default values.
         // Other than that, was creating tables pretty ok I think
-        const col = column.dataType === 'autoincrement' ?
-          table.increments(column.columnName) :
-          table.specificType(column.columnName, column.dataType)
+        let col: Knex.ColumnBuilder;
+        if (column.dataType.match(/autoincrement/i) && this.dialect === 'postgresql') {
+          col = table.specificType(column.columnName, 'serial')
+        } else if (column.dataType.match(/autoincrement/i)) {
+          col = table.increments(column.columnName)
+        } else {
+          col = table.specificType(column.columnName, column.dataType)
+        }
 
         if (column.defaultValue) col.defaultTo(this.knex.raw(column.defaultValue))
         if (column.unsigned) col.unsigned()
@@ -97,6 +104,19 @@ export class SqlGenerator {
 
     if (this.isNativeKnex) {
         this.knex = knexlib({ client: this.knexDialect })
+    } else if (this.dialect === 'cassandra') {
+      this.knex  = knexlib({
+        client: CassandraKnex,
+        connection: {
+          // @ts-ignore
+          contactPoints: [dbConfig.host],
+          localDataCenter: dbConfig?.cassandraOptions?.localDataCenter ? [dbConfig?.cassandraOptions?.localDataCenter] : [],
+          protocolOptions: {
+            port: dbConfig.port
+          },
+          keyspace: dbName
+        }
+      })
     } else if (this.dialect === 'firebird') {
         this.knex = knexlib({
           client: knexFirebirdDialect,
@@ -129,6 +149,4 @@ export class SqlGenerator {
   private get knexDialect() {
     return KnexDialect(this.dialect)
   }
-
-
 }

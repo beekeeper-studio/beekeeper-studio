@@ -23,6 +23,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.sslCaFile = other.sslCaFile
       this.sslCertFile = other.sslCertFile
       this.sslKeyFile = other.sslKeyFile
+      this.readOnlyMode = other.readOnlyMode
       if (other.id && other.workspaceId) {
         this.connectionId = other.id
         this.workspaceId = other.workspaceId
@@ -30,6 +31,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.options = other.options
       this.trustServerCertificate = other.trustServerCertificate
       this.redshiftOptions = other.redshiftOptions
+      this.cassandraOptions = other.cassandraOptions
       this.socketPath = other.socketPath
       this.socketPathEnabled = other.socketPathEnabled
       this.bigQueryOptions = other.bigQueryOptions
