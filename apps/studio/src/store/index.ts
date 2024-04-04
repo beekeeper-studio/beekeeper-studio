@@ -90,8 +90,8 @@ const store = new Vuex.Store<State>({
       showViews: true,
       showPartitions: false
     },
-    tablesLoading: "Loading tables...",
-    columnsLoading: 'Loading columns...',
+    tablesLoading: null,
+    columnsLoading: null,
     tablesInitialLoaded: false,
     connectionConfigs: [],
     username: null,
@@ -376,6 +376,7 @@ const store = new Vuex.Store<State>({
         connection.connectionType = config.connectionType;
 
         context.commit('newConnection', {config: config, server, connection})
+        await context.dispatch('updateDatabaseList')
         context.dispatch('recordUsedConfig', config)
         context.dispatch('updateWindowTitle', config)
       } else {
@@ -409,6 +410,7 @@ const store = new Vuex.Store<State>({
       context.dispatch('updateWindowTitle', null)
     },
     async changeDatabase(context, newDatabase: string) {
+      log.info("Pool changing database to", newDatabase)
       if (context.state.server) {
         const server = context.state.server
         let connection = server.db(newDatabase)
@@ -458,7 +460,7 @@ const store = new Vuex.Store<State>({
       if (context.state.connection) {
         try {
           const schema = null
-          context.commit("tablesLoading", "Finding tables")
+          context.commit("tablesLoading", "Loading tables...")
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'
