@@ -286,12 +286,27 @@ export default Vue.extend({
 
       // Populate raw filter query with existing filter if raw filter is empty
       if (filterMode === RAW && filters.length && !this.filterRaw) {
-        const allFilters = filters.map((filter) =>
-          this.connection.knex
-            .where(filter.field, filter.type, filter.value)
-            .toString()
-            .split("where")[1]
-            .trim()
+        const allFilters = filters.map((filter) => {
+          if (filter.type == 'is') {
+            return this.connectection.knex
+              .whereNull(filter.field)
+              .toString()
+              .split("where")[1]
+              .trim()
+          } else if (filter.type == 'is not') {
+            return this.connectection.knex
+              .whereNotNull(filter.field)
+              .toString()
+              .split("where")[1]
+              .trim()
+          } else {
+            return this.connection.knex
+              .where(filter.field, filter.type, filter.value)
+              .toString()
+              .split("where")[1]
+              .trim()
+          }
+        }
         );
         const filterString = joinFilters(allFilters, filters);
         this.filterRaw = filterString;

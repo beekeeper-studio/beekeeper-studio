@@ -186,16 +186,14 @@ export function normalizeFilters(filters: TableFilter[]) {
     if (filter.type === "in") {
       const value = (filter.value as string).split(/\s*,\s*/);
       normalized.push({ ...filter, value });
-    } else if (filter.type.includes('is')){
-      filter.value = 'NULL';
-      normalized.push(filter);
     } else {
       normalized.push(filter);
+
+      if (filter.type.includes('is')) {
+        continue;
+      }
     }
     filter.value = filter.value.toString();
-    if (filter.type.includes('is')) {
-      console.log('FILTER: ', filter)
-    }
   }
   return normalized;
 }
