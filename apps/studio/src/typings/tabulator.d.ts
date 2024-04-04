@@ -1,5 +1,6 @@
 import { Tabulator } from "tabulator-tables";
 
+
 declare module "tabulator-tables" {
   export namespace Tabulator {
     export class RangeComponent {
@@ -12,11 +13,6 @@ declare module "tabulator-tables" {
       getBottomEdge(): number;
       getLeftEdge(): number;
       getRightEdge(): number;
-      /**
-       * Save column's state. Use this after changing width programmatically
-       * (e.g. `setWidth`). See FullPersistence module.
-       **/
-      persistenceSaveColumn(column: Tabulator.ColumnComponent): void;
     }
 
     export class CellComponent {

@@ -3,24 +3,36 @@
 import { isBksInternalColumn } from "@/common/utils";
 import { Module } from "tabulator-tables";
 
+interface State {
+  columns: Record<string, { width: number, visible: boolean }>
+}
+
 // We do this because after calling redraw the widths of all columns are reset.
-export class FullPersistence extends Module {
+export class Persist extends Module {
   static moduleName = "full-persistence";
+
+  id: string;
+  state: State;
+  deleteOnDestroy: boolean;
 
   constructor(table) {
     super(table);
 
-    this.id = null;
-    this.state = null;
+    this.registerTableOption("persistId", null);
+		this.registerTableOption("persistDeleteOnDestroy", false);
 
-    this.registerTableOption("fullPersistenceId", null);
-		this.registerTableFunction("persistenceDelete", this.delete.bind(this));
-		this.registerTableFunction("persistenceSaveColumn", this.saveColumn.bind(this));
-    this.registerComponentFunction("column", "persistenceSave", this.saveColumn.bind(this));
+    /* Save column state */
+		this.registerTableFunction("persistColumn", this.saveColumn.bind(this));
+
+    /* Delete state from the localStorage */
+		this.registerTableFunction("persistDelete", this.delete.bind(this));
+
+    /* Save column state */
+    this.registerComponentFunction("column", "persist", this.saveColumn.bind(this));
   }
 
   initialize() {
-    this.id = this.options("fullPersistenceId");
+    this.id = 'persist-' + this.options("persistId");
 
     if (!this.id) {
       return;
@@ -29,10 +41,13 @@ export class FullPersistence extends Module {
     this.loadState();
 
     this.subscribe("table-redraw", this.handleTableRedraw.bind(this));
-    this.subscribe("table-destroy", this.delete.bind(this));
     this.subscribe("column-show", this.saveColumn.bind(this));
     this.subscribe("column-hide", this.saveColumn.bind(this));
     this.subscribe("column-resized", this.saveColumn.bind(this));
+
+    if (this.deleteOnDestroy) {
+      this.subscribe("table-destroy", this.delete.bind(this));
+    }
 
     /**
      * `column-width` is called so frequently that it's hard to determine which
@@ -76,6 +91,14 @@ export class FullPersistence extends Module {
       columns: {},
     };
     this.saveState();
+  }
+
+  lockDeletion() {
+    this._lockDeletion = true;
+  }
+
+  unlockDeletion() {
+    this._lockDeletion = false;
   }
 
   delete() {

@@ -1,2 +1,2 @@
 export { HeaderSort } from './HeaderSort';
-export { FullPersistence } from './FullPersistence';
+export { Persist } from './Persist';

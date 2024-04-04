@@ -193,11 +193,12 @@
           this.tabulator.destroy()
         }
         this.tabulator = new TabulatorFull(this.$refs.tabulator, {
-          fullPersistenceId: this.tableId,
+          persistId: this.tableId,
           selectableRange: true,
           selectableRangeColumns: true,
           selectableRangeRows: true,
           resizableColumnGuide: true,
+
           data: this.tableData, //link data to table
           reactiveData: true,
           renderHorizontal: 'virtual',
