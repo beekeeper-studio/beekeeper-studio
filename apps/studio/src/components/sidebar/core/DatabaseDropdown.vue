@@ -104,7 +104,9 @@
         }
       },
       selectedDatabase() {
-        this.$emit('databaseSelected', this.selectedDatabase)
+        if (this.selectedDatabase != this.currentDatabase) {
+          this.$emit('databaseSelected', this.selectedDatabase)
+        }
       }
     }
   }

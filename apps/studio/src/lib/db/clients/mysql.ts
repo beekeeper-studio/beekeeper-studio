@@ -60,6 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+import { uuidv4 } from "@/lib/uuid";
 
 type ResultType = {
   data: any[];
@@ -251,8 +252,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     pool: mysql.Pool;
   };
 
+  clientId: string
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context, server, database);
+    this.clientId = uuidv4();
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
@@ -268,12 +272,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
-    this.conn.pool.on('acquire', function (connection) {
-      log.debug('Pool connection %d acquired', connection.threadId);
+    this.conn.pool.on('acquire', (connection) => {
+      log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
     });
 
-    this.conn.pool.on('release', function (connection) {
-      log.debug('Pool connection %d released', connection.threadId);
+    this.conn.pool.on('release', (connection) => {
+      log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
     });
 
 
@@ -1074,7 +1078,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         return result;
       } catch (ex) {
         await this.driverExecuteSingle("ROLLBACK");
-        console.error(ex);
+        log.error(ex)
         throw ex;
       }
     });
