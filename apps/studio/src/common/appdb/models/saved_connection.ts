@@ -20,8 +20,8 @@ export const ConnectionTypes = [
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
-  { name: 'Oracle', value: 'other' },
-  { name: 'Cassandra', value: 'other' },
+  { name: 'Oracle', value: 'oracle' },
+  { name: 'Cassandra', value: 'cassandra' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
 ]

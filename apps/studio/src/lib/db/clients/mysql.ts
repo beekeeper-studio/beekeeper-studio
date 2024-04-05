@@ -60,6 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+import { uuidv4 } from "@/lib/uuid";
 
 type ResultType = {
   data: any[];
@@ -251,8 +252,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     pool: mysql.Pool;
   };
 
+  clientId: string
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context, server, database);
+    this.clientId = uuidv4();
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
@@ -267,6 +271,15 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     this.conn = {
       pool: mysql.createPool(dbConfig),
     };
+
+    this.conn.pool.on('acquire', (connection) => {
+      log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
+    });
+
+    this.conn.pool.on('release', (connection) => {
+      log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
+    });
+
 
     this.versionInfo = await this.getVersion();
   }
@@ -1028,9 +1041,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       : this.runWithConnection(runQuery);
   }
 
-  async runWithConnection<T>(
-    run: (connection: mysql.PoolConnection) => Promise<T>
-  ): Promise<T> {
+  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     const { pool } = this.conn;
     let rejected = false;
     return new Promise((resolve, reject) => {
@@ -1041,7 +1052,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
       };
 
-      pool.getConnection(async (errPool, connection) => {
+      pool.getConnection((errPool, connection) => {
         if (errPool) {
           rejectErr(errPool);
           return;
@@ -1051,22 +1062,16 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           // it will be handled later in the next query execution
           logger().error("Connection fatal error %j", error);
         });
-
-        try {
-          resolve(await run(connection));
-        } catch (err) {
-          rejectErr(err);
-        } finally {
-          connection.release();
-        }
+        run(connection)
+          .then((res) => resolve(res))
+          .catch((ex) => rejectErr(ex))
+          .finally(() => connection.release())
       });
     });
   }
 
-  async runWithTransaction(
-    func: (connection: mysql.PoolConnection) => Promise<any>
-  ): Promise<void> {
-    await this.runWithConnection(async (connection) => {
+  async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
+    return await this.runWithConnection(async (connection) => {
       try {
         await this.driverExecuteSingle("START TRANSACTION");
         const result = await func(connection);
@@ -1074,7 +1079,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         return result;
       } catch (ex) {
         await this.driverExecuteSingle("ROLLBACK");
-        console.error(ex);
+        log.error(ex)
         throw ex;
       }
     });

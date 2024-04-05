@@ -53,6 +53,9 @@
   import DatabaseDropdown from './core/DatabaseDropdown'
 
   import { mapState } from 'vuex'
+  import rawLog from 'electron-log'
+
+  const log = rawLog.scope('core-sidebar')
 
   export default {
     props: ['sidebarShown'],
@@ -97,6 +100,7 @@
         }
       },
       async databaseSelected(db) {
+        log.info("Pool database selected", db)
         this.$store.dispatch('changeDatabase', db)
         this.allExpanded = false
       },

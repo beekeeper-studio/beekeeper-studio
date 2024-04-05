@@ -191,6 +191,7 @@
           selectableRange: true,
           selectableRangeColumns: true,
           selectableRangeRows: true,
+          selectableRangeAutoFocus: false,
           resizableColumnGuide: true,
           data: this.tableData, //link data to table
           reactiveData: true,
