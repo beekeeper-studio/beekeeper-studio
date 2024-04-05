@@ -16,7 +16,8 @@ import {
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  applyChangesSql
+  applyChangesSql,
+  buildInsertQuery
 } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
@@ -538,7 +539,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     try {
       if (changes.inserts) {
-        sql = sql.concat(buildInsertQueries(this.knex, changes.inserts))
+        const columnsList = await Promise.all(changes.inserts.map((insert) => {
+          return this.listTableColumns(insert.table, insert.schema);
+        }));
+        sql = sql.concat(changes.inserts.map((insert, index) => buildInsertQuery(this.knex, insert, columnsList[index])))
       }
 
       if (changes.updates) {
@@ -880,6 +884,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   applyChangesSql(changes: TableChanges): string {
+    // fix for bit fields
+    if (changes.inserts) {
+      changes.inserts.forEach((insert) => {
+        insert.data.forEach((item) => {
+          const columns = Object.keys(item);
+          columns.forEach((ic) => {
+            if (_.isBoolean(item[ic])) {
+              item[ic] = `${item[ic]}`
+            }
+          })
+        })
+      })
+    }
     return applyChangesSql(changes, this.knex)
   }
 

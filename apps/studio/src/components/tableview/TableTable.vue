@@ -1197,7 +1197,7 @@ export default Vue.extend({
 
       })
     },
-    cellCloneRow(_, cell: Tabulator.CellComponent) {
+    cellCloneRow(_e, cell: Tabulator.CellComponent) {
       this.cloneSelection(_.last(cell.getRanges()))
     },
     cellAddRow() {
