@@ -57,7 +57,10 @@
       </div>
     </div>
 
-    <x-progressbar v-show="tablesLoading" style="margin-top: -5px;" />
+    <x-progressbar
+      v-show="tablesLoading"
+      style="margin-top: -5px;"
+    />
 
     <!-- Pinned Tables -->
     <div
@@ -75,7 +78,10 @@
     <!-- Tables -->
     <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
 
-    <nav class="list-group flex-col" ref="tables">
+    <nav
+      class="list-group flex-col"
+      ref="tables"
+    >
       <div class="list-heading">
         <span class="sub">Entities</span>
         <span
@@ -91,13 +97,13 @@
         >{{ shownEntities }} / {{ totalEntities }}</span>
         <span
           v-show="totalHiddenEntities > 0 && !filterQuery"
-          class="hidden-indicator"
+          class="hidden-indicator bks-tooltip-wrapper"
         >
           <span class="badge">
             <i class="material-icons">visibility_off</i>
             <span>{{ totalHiddenEntities > 99 ? '99+' : totalHiddenEntities }}</span>
           </span>
-          <div class="hi-tooltip">
+          <div class="hi-tooltip bks-tooltip bks-tooltip-bottom-center">
             <span>Right click an entity to hide it. </span>
             <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
           </div>
@@ -122,6 +128,7 @@
             title="New Table"
             class="create-table"
             :disabled="tablesLoading"
+            v-if="canCreateTable"
           >
             <i class="material-icons">add</i>
           </button>
@@ -135,7 +142,12 @@
         class="empty truncate"
         v-if="!tablesLoading && (!tables || tables.length === 0)"
       >
-        There are no entities in<br> <span>{{ database }}</span>
+        <p class="no-entities" v-if="database">
+          There are no entities in the <strong>{{ database }}</strong> database
+        </p>
+        <p class="no-entities" v-else>
+          Please select a database to see tables, views, and other entities
+        </p>
       </div>
     </nav>
 
@@ -230,6 +242,9 @@
       supportsRoutines() {
         return this.connection.supportedFeatures().customRoutines
       },
+      canCreateTable() {
+        return !this.dialectData.disabledFeatures?.createTable
+      },
       loadedWithPins() {
         return !this.tablesLoading && this.pinnedEntities.length > 0
       },
@@ -239,7 +254,7 @@
         ]
       },
       ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
-      ...mapGetters(['filteredTables', 'filteredRoutines']),
+      ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',
           orderedPins: 'pins/orderedPins',
@@ -281,15 +296,18 @@
           }
         })
       },
-      refreshTables() {
-        this.$store.dispatch('updateRoutines')
-        this.$store.dispatch('updateTables').then(() => {
+      async refreshTables() {
+        try {
+          this.$store.dispatch('updateRoutines')
+          await this.$store.dispatch('updateTables')
           // When we refresh sidebar tables we need to also refresh:
           // 1. Any open tables
           // 2. Any pinned tables
           this.refreshExpandedColumns()
           this.refreshPinnedColumns()
-        })
+        } catch (ex) {
+          this.$noty.error(`Unable to refresh tables ${ex.message}`)
+        }
       },
       newTable() {
         this.$root.$emit(AppEvent.createTable)
@@ -319,7 +337,7 @@
       document.addEventListener('mousedown', this.maybeUnselect)
       const components = [this.$refs.pinned, this.$refs.tables]
       this.split = Split(components, {
-        elementStyle: (dimension, size) => ({
+        elementStyle: (_dimension, size) => ({
             'flex-basis': `calc(${size}%)`,
         }),
         direction: 'vertical',
@@ -336,3 +354,9 @@
     }
   }
 </script>
+<style scoped>
+  p.no-entities {
+    width: 100%;
+    white-space:normal;
+  }
+</style>

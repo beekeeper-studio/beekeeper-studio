@@ -1,22 +1,16 @@
 <template>
-  <div
-    class="advanced-connection-settings"
-    v-show="!config.socketPathEnabled"
+  <toggle-form-area
+    title="SSH Tunnel"
+    hide-toggle="true"
+    :expanded="config.sshEnabled"
   >
-    <h4
-      class="advanced-heading flex"
-      :class="{enabled: config.sshEnabled}"
-    >
-      <span class="expand">SSH Tunnel</span>
+    <template v-slot:header>
       <x-switch
         @click.prevent="config.sshEnabled = !config.sshEnabled"
         :toggled="config.sshEnabled"
       />
-    </h4>
-    <div
-      class="advanced-body"
-      v-show="config.sshEnabled"
-    >
+    </template>
+    <template>
       <div class="row gutter">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
@@ -201,8 +195,8 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </template>
+  </toggle-form-area>
 </template>
 <script>
   import FilePicker from '@/components/common/form/FilePicker'
@@ -210,12 +204,14 @@
 
   import { join as pathJoin } from 'path'
 import platformInfo from '@/common/platform_info'
+import ToggleFormArea from '../common/ToggleFormArea.vue'
 
   export default {
     props: ['config'],
     components: {
-      FilePicker, ExternalLink
-    },
+    FilePicker, ExternalLink,
+    ToggleFormArea
+},
     data() {
       return {
         enableSshLink: "https://docs.beekeeperstudio.io/pages/linux#ssh-key-access-for-the-snap",

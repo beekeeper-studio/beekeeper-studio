@@ -15,7 +15,8 @@
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
-  import Mutators, { escapeHtml } from '../../mixins/data_mutators'
+  import Mutators from '../../mixins/data_mutators'
+  import { escapeHtml } from '@shared/lib/tabulator'
   import { dialectFor } from '@shared/lib/dialects/models'
   import globals from '@/common/globals'
   import Papa from 'papaparse'
@@ -23,7 +24,8 @@
   import { markdownTable } from 'markdown-table'
   import * as intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRange, copyActionsMenu, commonColumnMenu } from '@/lib/menu/tableMenu';
+  import { copyRange, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
+  import { rowHeaderField } from '@/lib/table-grid/utils'
 
   export default {
     mixins: [Converter, Mutators],
@@ -46,15 +48,10 @@
           this.tabulator.blockRedraw()
         }
       },
-      tableData: {
-        handler() {
-          this.tabulator.replaceData(this.tableData)
-        }
-      },
-      tableColumns: {
-        handler() {
-          this.tabulator.setColumns(this.tableColumns)
-        }
+      result() {
+        // This is better than just setting data because
+        // the whole dataset has changed.
+        this.initializeTabulator()
       },
       tableHeight() {
         this.tabulator.setHeight(this.actualTableHeight)
@@ -76,19 +73,19 @@
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
 
-        const cellMenu = (_, cell) => {
+        const cellMenu = (_e, cell) => {
           return copyActionsMenu({
-            range: cell.getRange(),
+            range: _.last(cell.getRanges()),
             connection: this.connection,
-            table: 'mytable',
+            table: this.result.tableName,
             schema: this.connection.defaultSchema(),
           })
         }
 
-        const columnMenu = (_, column) => {
+        const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              range: column.getRange(),
+              range: _.last(column.getRanges()),
               connection: this.connection,
               table: 'mytable',
               schema: this.connection.defaultSchema(),
@@ -98,10 +95,13 @@
           ]
         }
 
-        return this.result.fields.map((column, index) => {
+        const columns = this.result.fields.map((column, index) => {
           const title = column.name || `Result ${index}`
           const result = {
-            title: `<span class="title">${escapeHtml(title)}</span>`,
+            title,
+            titleFormatter() {
+              return `<span class="title">${escapeHtml(title)}</span>`
+            },
             field: column.id,
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
@@ -113,6 +113,8 @@
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,
             headerMenu: columnMenu,
+            resizable: 'header',
+            cssClass: 'hide-header-menu-icon',
           }
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
@@ -120,6 +122,49 @@
           }
           return result;
         })
+
+        const rowHeader = {
+          field: rowHeaderField,
+          resizable: false,
+          frozen: true,
+          headerSort: false,
+          editor: false,
+          htmlOutput: false,
+          print: false,
+          clipboard: false,
+          download: false,
+          minWidth: 38,
+          width: 38,
+          hozAlign: 'center',
+          formatter: 'rownum',
+          formatterParams: { relativeToPage: true },
+          contextMenu: (_e, cell) => {
+            return copyActionsMenu({
+              range: _.last(cell.getRanges()),
+              connection: this.connection,
+              table: 'mytable',
+              schema: this.connection.defaultSchema(),
+            })
+          },
+          headerContextMenu: () => {
+            const range = _.last(this.tabulator.getRanges())
+            return [
+              ...copyActionsMenu({
+                range,
+                connection: this.connection,
+                table: 'mytable',
+                schema: this.connection.defaultSchema(),
+              }),
+              { separator: true },
+              resizeAllColumnsToFitContent,
+              resizeAllColumnsToFixedWidth,
+            ]
+          },
+        }
+
+        columns.unshift(rowHeader)
+
+        return columns
       },
       columnIdTitleMap() {
         const result = {}
@@ -135,33 +180,33 @@
       }
     },
     async mounted() {
-      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
-        spreadsheet: true,
-        data: this.tableData, //link data to table
-        reactiveData: true,
-        renderHorizontal: 'virtual',
-        columns: this.tableColumns, //define table columns
-        height: this.actualTableHeight,
-        nestedFieldSeparator: false,
-        rowHeader: {
-          contextMenu: (_, cell) => {
-            return copyActionsMenu({
-              range: cell.getRange(),
-              connection: this.connection,
-              table: 'mytable',
-              schema: this.connection.defaultSchema(),
-            })
-          }
-        },
-        downloadConfig: {
-          columnHeaders: true
-        },
-      });
+      this.initializeTabulator()
     },
     methods: {
+      initializeTabulator() {
+        if (this.tabulator) {
+          this.tabulator.destroy()
+        }
+        this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+          selectableRange: true,
+          selectableRangeColumns: true,
+          selectableRangeRows: true,
+          selectableRangeAutoFocus: false,
+          resizableColumnGuide: true,
+          data: this.tableData, //link data to table
+          reactiveData: true,
+          renderHorizontal: 'virtual',
+          columns: this.tableColumns, //define table columns
+          height: this.actualTableHeight,
+          nestedFieldSeparator: false,
+          downloadConfig: {
+            columnHeaders: true
+          },
+        });
+      },
       copySelection() {
         if (!document.activeElement.classList.contains('tabulator-tableholder')) return
-        copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
+        copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]

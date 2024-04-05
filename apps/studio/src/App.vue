@@ -23,8 +23,9 @@
       name="modals"
       multiple
     />
+    <dropzone />
     <data-manager />
-    <confirmation-modal />
+    <confirmation-modal :name="$confirmModalName" />
   </div>
 </template>
 
@@ -42,12 +43,17 @@ import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
+import Dropzone from '@/components/Dropzone.vue'
+
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('app.vue')
 
 export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal, Dropzone,
   },
   data() {
     return {
@@ -56,17 +62,16 @@ export default Vue.extend({
     }
   },
   computed: {
-    connection() {
-
-      return this.$store.state.connection
-    },
-    ...mapState(['storeInitialized']),
+    ...mapState(['storeInitialized', 'connection', 'database']),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'
     })
   },
   watch: {
+    database() {
+      log.info('database changed', this.database)
+    },
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
     }

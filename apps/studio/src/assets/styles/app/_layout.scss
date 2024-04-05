@@ -17,15 +17,13 @@ a {
   }
 }
 i {
-  @extend .noselect;
+  @include noselect;
 }
 .expand {
   flex-grow: 1;
 }
 .truncate {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  @include truncate;
 }
 .sub {
   font-weight: bold;
@@ -34,9 +32,7 @@ i {
   letter-spacing: 0.05rem;
 }
 .noselect {
-        -ms-user-select: none;
-    -webkit-user-select: none;
-            user-select: none;
+  @include noselect;
 }
 .clickable,
 .cursor-pointer {
@@ -86,6 +82,12 @@ hr {
 
 // Buttons
 // ---------------------------------------
+
+.a-icon {
+  display: flex;
+  text-decoration: none !important;
+  align-items: center;
+}
 .btn {
   display: inline-flex;
   font-size: 12px;
@@ -118,6 +120,9 @@ hr {
     }
   }
 }
+x-buttons > x-button[menu].btn {
+  border-left: 1px solid rgba(black, 0.35);
+}
 .btn-primary {
   background: $theme-base;
   color: rgba($theme-bg, 0.87);
@@ -138,11 +143,7 @@ hr {
 }
 
 .btn-flat {
-  color: $theme-base;
-  background: rgba($theme-base, 0.06);
-  &:hover, &:focus {
-    background: rgba($theme-base, 0.12);
-  }
+  @include btn-flat;
 }
 .btn-link {
   color: $theme-base;
@@ -153,8 +154,12 @@ hr {
   }
 }
 .btn-icon {
-  .material-icons {
+  .material-icons:first-child {
     margin-right: $gutter-h * 0.65;
+  }
+
+  .material-icons:last-child {
+    margin-left: $gutter-h * 0.65;
   }
 }
 .btn-info {
@@ -178,15 +183,15 @@ hr {
   max-width: 250px;
 }
 .btn-small {
-  font-size: 0.85rem;
-  padding: 0 .65rem;
-  min-width: 0;
-  height: 24px;
-  line-height: 24px;
-  border-radius: $btn-border-radius-small;
-  x-label {
-    line-height: 24px;
-  }
+  @include btn-small;
+}
+x-buttons > x-button.btn-small:first-of-type {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+x-buttons > x-button.btn-small:last-of-type {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 .btn-block {
   display: flex;
@@ -206,8 +211,8 @@ hr {
   margin: 0;
   text-align: center;
   box-shadow: none;
-  @extend .noselect;
-  @extend .layout-center !optional;
+  @include noselect;
+  @include layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
     background: rgba($theme-base, 0.1);
@@ -317,21 +322,7 @@ hr {
   }
 }
 .form-control {
-  position: relative;
-  display: flex;
-  height: $input-height;
-  padding: 0 0.75rem;
-  font-size: 0.9rem;
-  font-weight: normal;
-  line-height: $input-height;
-  color: $text;
-  background: transparent;
-  border-radius: $input-radius;
-  border: 1px solid $border-color;
-  outline: none;
-  box-shadow: none;
-  width: 100%;
-  transition: border-color 0.15s ease-in-out;
+  @include form-control;
 }
 
 label {
@@ -343,7 +334,7 @@ label {
 }
 
 input, select, textarea, .bk-form-input {
-  @extend .form-control;
+  @include form-control;
   &:focus {
     border-color: $input-highlight;
   }
@@ -374,6 +365,11 @@ input, select, textarea, .bk-form-input {
     > .btn {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
+    }
+
+    &.not-last > .btn {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
     }
   }
 }
@@ -557,6 +553,10 @@ input[type=file] {
   }
 }
 
+.text-center {
+  text-align: center;
+}
+
 // Nav
 // ----------------------------------
 .nav {
@@ -612,6 +612,12 @@ input[type=file] {
   }
   &.query {
     color: $brand-pink;
+  }
+  &.database {
+    color: $brand-purple;
+  }
+  &.connection {
+    color: $brand-secondary;
   }
   &.settings {
     color: $text-lighter;
@@ -682,11 +688,11 @@ input[type=file] {
 }
 .card {
   background: lighten($theme-bg, 6%);
-  @extend .card-shadow;
+  @include card-shadow;
 }
 .card-flat {
-  background: rgba($theme-base, 0.04);
-  box-shadow: none;
+    background: $theme-bg;
+    box-shadow: none;
 }
 .card-title {
   color: $text-dark;
@@ -741,6 +747,26 @@ input[type=file] {
 
 // Alerts
 // --------------------------
+
+.inline-alert {
+  a {
+    color: inherit;
+    text-decoration: underline;
+    &:hover {
+      color: $link-color;
+    }
+
+    i.close {
+      font-size: inherit;
+      vertical-align: middle;
+      color: $text;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+}
+
 .alert {
   display: flex;
   border-radius: 6px;

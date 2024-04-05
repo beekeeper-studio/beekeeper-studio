@@ -1,7 +1,7 @@
+import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from "knex";
 import { Knex } from 'knex';
 import _ from 'lodash';
-import { DBConnection } from '../../db/client';
 import { TableFilter, TableOrView, TableColumn } from '../../db/models';
 import { Export } from '../export';
 import { ExportOptions } from '../models';
@@ -28,7 +28,7 @@ export class SqlExporter extends Export {
 
   constructor(
     filePath: string,
-    connection: DBConnection,
+    connection: BasicDatabaseClient<any>,
     table: TableOrView,
     query: string,
     queryName: string,

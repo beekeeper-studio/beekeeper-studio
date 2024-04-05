@@ -35,7 +35,7 @@
           <div>Open </div>
           <div class="shortcut">
             <span>Enter</span>
-          </div> 
+          </div>
         </div>
         <div class="shortcut-item">
           <div>Alt Open</div>
@@ -69,10 +69,10 @@
         class="results"
         v-if="results && results.length"
       >
-        <li 
-          class="result-item" 
-          v-for="(blob, idx) in results" 
-          :key="idx" 
+        <li
+          class="result-item"
+          v-for="(blob, idx) in results"
+          :key="idx"
           :class="{selected: idx === selectedItem}"
           @click.prevent="handleClick($event, blob)"
         >
@@ -83,7 +83,15 @@
           <i
             class="material-icons item-icon query"
             v-if="blob.type === 'query'"
-          >code</i> 
+          >code</i>
+          <i
+            class="material-icons item-icon connection"
+            v-if="blob.type === 'connection'"
+          >power</i>
+          <i
+            class="material-icons item-icon database"
+            v-if="blob.type === 'database'"
+          >storage</i>
           <span v-html="highlight(blob)" />
         </li>
       </ul>
@@ -96,8 +104,8 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
-import { escapeHtml } from '@/mixins/data_mutators'
 import TableIcon from '@/components/common/TableIcon.vue'
+import { escapeHtml } from '@shared/lib/tabulator'
 export default Vue.extend({
   components: { TableIcon },
   mounted() {
@@ -188,18 +196,37 @@ export default Vue.extend({
     closeSearch() {
       this.$emit('close')
     },
-    selectUp() {
+    selectUp(e: Event) {
+      e.stopPropagation()
       this.selectedItem = this.selectedItem - 1
     },
-    selectDown() {
+    selectDown(e) {
+      e.stopPropagation()
       this.selectedItem = this.selectedItem + 1
     },
-    submit(result, persistSearch = false) {
+    async submit(result, persistSearch = false) {
       if(!result?.item) return
-      if (result.type === 'table') {
-        this.$root.$emit(AppEvent.loadTable, {table: result.item})
-      } else {
-        this.$root.$emit('favoriteClick', result.item)
+      switch (result.type) {
+        case 'table':
+          this.$root.$emit(AppEvent.loadTable, {table: result.item})
+          break;
+        case 'query':
+          this.$root.$emit('favoriteClick', result.item)
+          break;
+        case 'connection':
+          await this.$store.dispatch('disconnect')
+          try {
+            await this.$store.dispatch('connect', result.item)
+          } catch (ex) {
+            this.$noty.error("Error establishing a connection")
+            console.error(ex)
+          }
+          break;
+        case 'database':
+          this.$store.dispatch('changeDatabase', result.item)
+          break;
+        default:
+          break;
       }
       if (!persistSearch) this.closeSearch()
     },

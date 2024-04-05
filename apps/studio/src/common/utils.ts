@@ -9,6 +9,7 @@ import _ from 'lodash';
 import platformInfo from './platform_info';
 import { format } from 'sql-formatter';
 import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
+import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -70,8 +71,8 @@ export function readJSONFile(filename: string): Promise<any> {
   return readFile(filename).then((data) => JSON.parse(data));
 }
 
-export function readVimrc(): string[] {
-  const vimrcPath = path.join(platformInfo.userDirectory, ".beekeeper.vimrc");
+export function readVimrc(pathToVimrc?: string): string[] {
+  const vimrcPath = path.join(pathToVimrc ?? platformInfo.userDirectory, ".beekeeper.vimrc");
   if (fileExistsSync(vimrcPath)) {
     const data = fs.readFileSync(vimrcPath, { encoding: 'utf-8', flag: 'r'});
     const dataSplit = data.split("\n");
@@ -85,6 +86,26 @@ export function readJSONFileSync(filename: string): any {
   const filePath = resolveHomePathToAbsolute(filename);
   const data = fs.readFileSync(path.resolve(filePath), 'utf-8');
   return JSON.parse(data);
+}
+
+export function readWebFile(file: File) {
+  const reader = new FileReader()
+  const result = new Promise<string>((resolve, reject) => {
+    reader.onload = () => {
+      resolve(reader.result as string)
+    }
+    reader.onerror = () => {
+      reject(reader.error)
+    }
+    reader.onabort = () => {
+      reject(new Error('File reading aborted'))
+    }
+  })
+  reader.readAsText(file)
+  return {
+    result,
+    abort: reader.abort,
+  }
 }
 
 export function createParentDirectory(filename: string): Promise<string> {
@@ -104,18 +125,20 @@ export function resolveHomePathToAbsolute(filename: string): string {
   return path.join(homedir(), filename.substring(2));
 }
 
+export async function waitPromise(time: number) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
 
 
 export function createCancelablePromise(error: CustomError, timeIdle = 100): any {
   let canceled = false;
   let discarded = false;
 
-  const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
 
   return {
     async wait() {
       while (!canceled && !discarded) {
-        await wait(timeIdle);
+        await waitPromise(timeIdle);
       }
 
       if (canceled) {
@@ -177,4 +200,44 @@ export function normalizeFilters(filters: TableFilter[]) {
 export function entityId(schema: string, entity?: TableOrView | Routine) {
   if (entity) return `${entity.entityType}.${schema}.${entity.name}`;
   return `schema.${schema}`;
+}
+
+export function isFile(e: DragEvent) {
+    const dt = e.dataTransfer;
+    for (let i = 0; i < dt.types.length; i++) {
+        if (dt.types[i] === "Files") {
+            return true;
+        }
+    }
+    return false;
+}
+
+export async function getLastExportPath(filename?: string) {
+  return await SettingsPlugin.get(
+    "lastExportPath",
+    path.join(homedir(), filename)
+  );
+}
+
+export async function setLastExportPath(exportPath: string) {
+  await SettingsPlugin.set('lastExportPath', exportPath)
+}
+
+// Stringify all the arrays and objects in range data
+export function stringifyRangeData(rangeData: Record<string, any>[]) {
+  const transformedRangeData:Record<string, any>[]  = [];
+
+  for (let i = 0; i < rangeData.length; i++) {
+    const keys = Object.keys(rangeData[i]);
+
+    transformedRangeData[i] = {};
+
+    for (const key of keys) {
+      const value = rangeData[i][key];
+      transformedRangeData[i][key] =
+        value && typeof value === "object" ? JSON.stringify(value) : value;
+    }
+  }
+
+  return transformedRangeData;
 }

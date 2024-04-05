@@ -88,11 +88,12 @@ export default Vue.extend({
       return this.columnsModified
     },
     autoCompleteOptions() {
+      const { defaultColumnType, columnTypes } = getDialectData(this.dialect)
       return {
         freetext: true,
         allowEmpty: false,
-        values: getDialectData(this.dialect).columnTypes.map((d) => d.pretty),
-        defaultValue: 'varchar(255)',
+        values: columnTypes.map((d) => d.pretty),
+        defaultValue: defaultColumnType || 'varchar(255)',
         showListOnEmpty: true
       }
     },
@@ -109,7 +110,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditor),
           formatter: this.cellFormatter,
           tooltip: true,
-          frozen: true,
+          // frozen: true,
           minWidth: 100,
           editorParams: {
           }
@@ -122,7 +123,7 @@ export default Vue.extend({
           minWidth: 90,
           widthShrink: 1,
         },
-        {
+        (this.disabledFeatures?.nullable) ? null :{
           title: 'Nullable',
           field: 'nullable',
           cssClass: "no-padding no-edit-highlight",
@@ -136,7 +137,7 @@ export default Vue.extend({
           maxWidth: 68,
           widthShrink: 1,
         },
-        {
+        (this.disabledFeatures?.defaultValue) ? null : {
           title: 'Default Value',
           field: 'defaultValue',
           editor: vueEditor(NullableInputEditor),
@@ -212,8 +213,9 @@ export default Vue.extend({
 
       const num = this.tabulator.getData().length + 1
       const columnName = `column_${num}`
+      const defaultDataType = getDialectData(this.dialect).defaultColumnType || 'varchar(255)'
 
-      const row: Tabulator.RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
+      const row: Tabulator.RowComponent = await this.tabulator.addRow({ columnName, dataType: defaultDataType, nullable: true})
       const nameCell = row.getCell('columnName')
       if (nameCell){
         // don't know why we need this, but we do.
@@ -318,6 +320,7 @@ export default Vue.extend({
       &.tabulator-row-even,
       &:nth-child(odd) {
         background: rgba($theme-base, 0.05);
+        --row-bg-color: #{rgba($theme-base, 0.05)};
       }
       .tabulator-cell {
         min-height: $row-height;
@@ -376,6 +379,8 @@ export default Vue.extend({
         // Read Only
         &.read-only,
         &.read-only:hover {
+          --row-bg-color: transparent;
+          --row-hover-bg-color: transparent;
           background: transparent!important;
           cursor: default;
           input {

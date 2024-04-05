@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery']
-const ultimateDialects = []
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -9,11 +9,13 @@ export const Dialects = [...communityDialects, ...ultimateDialects] as const
 export const SpecialTypes = ['autoincrement']
 export type Dialect = typeof Dialects[number]
 
+export function isUltimateDialect(d: any) {
+  return ultimateDialects.includes(d)
+}
 export function dialectFor(s: string): Dialect | null {
   switch (s) {
     case 'cockroachdb':
       return 'postgresql'
-      break;
     case 'mariadb':
       return 'mysql'
     case 'mssql':
@@ -24,28 +26,26 @@ export function dialectFor(s: string): Dialect | null {
 }
 
 
-const UltimateDialectTitles: {[K in Dialect]: string} = {
-
-}
-
 export const DialectTitles: {[K in Dialect]: string} = {
   postgresql: "Postgres",
   mysql: "MySQL",
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
   sqlite: "SQLite",
+  cassandra: "Apache Cassandra",
   bigquery: "BigQuery",
-  ...UltimateDialectTitles
-
+  firebird: "Firebird",
+  oracle: "Oracle Database",
 }
 
-export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb']
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
 export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'sqlserver') return 'mssql'
   if (d === 'sqlite') return 'sqlite3'
   if (d === 'oracle') return 'oracledb'
+  if (d === 'cassandra') return 'cassandra-knex'
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
@@ -57,6 +57,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'oracle') return 'plsql'
   if (d === 'postgresql') return 'postgresql'
   if (d === 'redshift') return 'redshift'
+  if (d === 'cassandra') return 'sql'
   return 'mysql' // we want this as the default
 }
 
@@ -87,6 +88,9 @@ export interface DialectData {
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   unwrapIdentifier: (s: string) => string
+  defaultSchema?: string
+  usesOffsetPagination: boolean
+  requireDataset?: boolean,
   disabledFeatures?: {
     informationSchema?: {
       extra?: boolean
@@ -102,7 +106,10 @@ export interface DialectData {
       addConstraint?: boolean
       dropConstraint?: boolean
       everything?: boolean
+      indexes?: boolean
     },
+    triggers?: boolean,
+    relations?: boolean,
     constraints?: {
       onUpdate?: boolean,
       onDelete?: boolean
@@ -110,9 +117,22 @@ export interface DialectData {
     index?: {
       desc?: boolean
     }
+    defaultValue?: boolean
+    nullable?: boolean
     createIndex?: boolean
     comments?: boolean
     filterWithOR?: boolean
+    backup?: boolean
+    truncateElement?: boolean
+    exportTable?: boolean
+    createTable?: boolean
+    collations?: boolean
+    importFromFile?: boolean,
+    headerSort?: boolean,
+    duplicateTable?: boolean,
+    export?: {
+      sql?: boolean
+    }
   },
   notices?: {
     infoSchema?: string
@@ -122,6 +142,7 @@ export interface DialectData {
     tableTable?: string
     query?: string
   },
+  defaultColumnType?: string
   charsets?: string[]|null
   boolean?: {
     true: any
@@ -139,7 +160,7 @@ export const defaultConstraintActions = [
 
 export function defaultEscapeString(value: string, quote?: boolean): string {
   if (!value) return null
-  const result = `${value.replaceAll(/'/g, "''")}`
+  const result = `${value.toString().replaceAll(/'/g, "''")}`
   return quote ? `'${result}'` : result
 }
 
@@ -151,10 +172,10 @@ export function defaultWrapIdentifier(value: string): string {
   return value ? `"${value.replaceAll(/"/g, '""')}"` : ''
 }
 
-const mayebWrapIdentifierRegex = /(?:[^a-z0-9_]|^\d)/;
+const maybeWrapIdentifierRegex = /(?:[^a-z0-9_]|^\d)/;
 
 export function friendlyNormalizedIdentifier(value: string, quote: '`' | "'" | '"' = '"', tester?: RegExp): string {
-  const regex = tester || mayebWrapIdentifierRegex
+  const regex = tester || maybeWrapIdentifierRegex
   return regex.test(value) ? `${quote}${value}${quote}` : value;
 }
 
@@ -220,6 +241,8 @@ export interface CreateIndexSpec {
   name?: string
   columns: IndexColumn[]
   unique: boolean
+  // Set order for entire index. Used in firebird.
+  order?: 'ASC' | 'DESC'
 }
 
 export interface DropIndexSpec {
@@ -247,7 +270,7 @@ export interface CreateRelationSpec {
 
 
 export type DialectConfig = {
-  [K in Dialect]: SchemaConfig
+  [K in Dialect]?: SchemaConfig
 }
 
 

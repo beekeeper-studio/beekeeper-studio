@@ -20,7 +20,7 @@
       flex-direction: row;
       align-items: center;
       padding: 0;
-      margin-bottom: $gutter-h / 2;
+      margin-bottom: calc($gutter-h / 2);
       label {
         width: 85px;
         font-size: 80%;
@@ -80,6 +80,9 @@
         .tabulator-col {
           padding: 0 $cell-padding;
           font-size: ($cell-font-size * 0.9);
+          &.tabulator-frozen {
+            border-right: 0;
+          }
         }
       }
     }
@@ -90,6 +93,7 @@
       &.tabulator-row-even,
       &:nth-child(odd){
         background: rgba($theme-base, 0.05)!important;
+        --row-bg-color: #{rgba($theme-base, 0.05)};
       }
       .tabulator-cell {
         min-height: $row-height;

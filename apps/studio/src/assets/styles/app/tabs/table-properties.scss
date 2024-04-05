@@ -103,7 +103,7 @@ $cell-success:           $row-add;
     padding-top: $gutter-w * 4;
     .table-name {
       padding: 0 $gutter-w;
-      margin: 0 -$gutter-h;
+      margin: 0 - $gutter-h;
       margin-bottom: $gutter-h;
       display: flex;
       align-items: center;
@@ -114,7 +114,7 @@ $cell-success:           $row-add;
     }
     .table-meta {
       padding: $gutter-w;
-      margin: 0 -$gutter-h;
+      margin: 0 - $gutter-h;
       color: $text-lighter;
     }
     .table-description {
@@ -212,6 +212,13 @@ $cell-success:           $row-add;
       .yesno-icon {
         float:right;
       }
+
+      .tabulator-cell:not(.tabulator-editable) {
+        color: $text-lighter;
+        &:hover {
+          background-color: transparent;
+        }
+      }
     }
   }
 }
@@ -255,6 +262,9 @@ $cell-success:           $row-add;
         .tabulator-col {
           padding: 0 $cell-padding;
           font-size: ($cell-font-size * 0.9);
+          &.tabulator-frozen {
+            border-right: 0;
+          }
         }
       }
     }
@@ -295,7 +305,7 @@ $cell-success:           $row-add;
           padding: 0!important;
           // Make checkboxes behave correctly
           .tabulator-bks-checkbox {
-            padding: $cell-padding / 2;
+            padding: calc($cell-padding / 2);
           }
           pre, input:not([type="checkbox"]) {
             padding: 0 $cell-padding;

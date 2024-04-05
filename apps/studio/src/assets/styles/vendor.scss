@@ -1,11 +1,3 @@
-@import "~codemirror/lib/codemirror";
-@import "~codemirror/addon/hint/show-hint";
-@import "~noty/lib/noty.css";
-@import "~tabulator-tables/dist/css/tabulator_midnight.css";
-@import "~codemirror/theme/monokai";
-@import "~codemirror/addon/merge/merge";
-@import "~vue-select/dist/vue-select.css";
-
 @import "./app/vendor/xel";
 @import "./app/vendor/tabulator";
 @import "./app/vendor/codemirror";
@@ -14,4 +6,5 @@
 @import "./app/vendor/noty";
 @import "./app/vendor/vue-js-modal";
 @import "./app/vendor/diff-viewer";
-@import "./app/vendor/dialog.scss"
+@import "./app/vendor/dialog.scss";
+@import "./app/vendor/datepicker/index";

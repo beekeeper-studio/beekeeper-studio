@@ -5,23 +5,25 @@ declare module "tabulator-tables" {
     export class RangeComponent {
       getData(): Record<string, any>[];
       getElement(): HTMLElement;
-      getCells(): Tabulator.CellComponent[];
+      getCells(): Tabulator.CellComponent[][];
       getRows(): Tabulator.RowComponent[];
       getColumns(): Tabulator.ColumnComponent[];
-      getTop(): number;
-      getBottom(): number;
+      getTopEdge(): number;
+      getBottomEdge(): number;
+      getLeftEdge(): number;
+      getRightEdge(): number;
     }
 
     export class CellComponent {
-      getRange(): Tabulator.RangeComponent;
+      getRanges(): Tabulator.RangeComponent[];
     }
 
     export class RowComponent {
-      getRange(): Tabulator.RangeComponent;
+      getRanges(): Tabulator.RangeComponent[];
     }
 
     export class ColumnComponent {
-      getRange(): Tabulator.RangeComponent;
+      getRanges(): Tabulator.RangeComponent[];
     }
   }
 }

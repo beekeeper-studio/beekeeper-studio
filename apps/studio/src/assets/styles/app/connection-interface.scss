@@ -35,11 +35,7 @@
   }
 
   .small-wrap {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    max-width: 550px;
-    // max-height: -webkit-fill-available;
+    @include small-wrap;
   }
   .card-flat {
     background: $theme-bg;
@@ -75,6 +71,10 @@
     }
   }
 
+  textarea {
+    height: auto;
+  }
+
   .save-connection {
     margin-top: ($gutter-w * 1.25);
     padding-top: ($gutter-w * 1.25);
@@ -96,7 +96,7 @@
     .save-actions {
       margin-top: $gutter-h;
       .save {
-        @extend .btn-flat;
+        @include btn-flat;
       }
     }
   }
@@ -180,4 +180,13 @@
   .private-key {
     margin-bottom: $gutter-h;
   }
+}
+
+.password {
+  display: inline-block;
+}
+.password-icon {
+  position: absolute; 
+  right: 12px;
+  bottom: 5px;
 }

@@ -1,0 +1,24 @@
+.dropzone {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  visibility: hidden;
+
+  &[data-dragging] {
+    visibility: visible;
+  }
+
+  .dropzone-core-tabs {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $theme-bg;
+    color: $theme-base;
+    opacity: 0.5;
+    font-size: 2rem;
+  }
+}
+

@@ -9,7 +9,6 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection } from '../lib/db/client'
 import { Routine, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
@@ -17,7 +16,7 @@ import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
 import RawLog from 'electron-log'
-import { Dialect, dialectFor } from '@shared/lib/dialects/models'
+import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
@@ -27,6 +26,8 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import { UserSetting } from '@/common/appdb/models/user_setting'
 
 const log = RawLog.scope('store/index')
 
@@ -41,8 +42,9 @@ export interface State {
   usedConfig: Nullable<IConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
-  connection: Nullable<DBConnection>,
+  connection: Nullable<BasicDatabaseClient<any>>,
   database: Nullable<string>,
+  databaseList: string[],
   tables: TableOrView[],
   routines: Routine[],
   entityFilter: EntityFilter,
@@ -78,6 +80,7 @@ const store = new Vuex.Store<State>({
     server: null,
     connection: null,
     database: null,
+    databaseList: [],
     tables: [],
     routines: [],
     entityFilter: {
@@ -87,8 +90,8 @@ const store = new Vuex.Store<State>({
       showViews: true,
       showPartitions: false
     },
-    tablesLoading: "Loading tables...",
-    columnsLoading: 'Loading columns...',
+    tablesLoading: null,
+    columnsLoading: null,
     tablesInitialLoaded: false,
     connectionConfigs: [],
     username: null,
@@ -125,6 +128,9 @@ const store = new Vuex.Store<State>({
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
     },
+    dialectTitle(_state: State, getters): string {
+      return DialectTitles[getters.dialect] || getters.dialect || 'Unknown'
+    },
     dialectData(_state: State, getters) {
       return getDialectData(getters.dialect)
     },
@@ -158,7 +164,7 @@ const store = new Vuex.Store<State>({
             obj[key] = [];
         }
       }
-      
+
       return _(obj).keys().map(k => {
         return {
           schema: k,
@@ -235,6 +241,7 @@ const store = new Vuex.Store<State>({
       state.connection = null
       state.server = null
       state.database = null
+      state.databaseList = []
       state.tables = []
       state.routines = []
       state.entityFilter = {
@@ -248,6 +255,9 @@ const store = new Vuex.Store<State>({
     updateConnection(state, {connection, database}) {
       state.connection = connection
       state.database = database
+    },
+    databaseList(state, dbs: string[]) {
+      state.databaseList = dbs
     },
     unloadTables(state) {
       state.tables = []
@@ -318,7 +328,8 @@ const store = new Vuex.Store<State>({
     async test(context, config: SavedConnection) {
       // TODO (matthew): fix this mess.
       if (context.state.username) {
-        const server = ConnectionProvider.for(config, context.state.username)
+        const settings = await UserSetting.all()
+        const server = ConnectionProvider.for(config, context.state.username, settings)
         await server?.createConnection(config.defaultDatabase || undefined).connect()
         server.disconnect()
       } else {
@@ -357,13 +368,17 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
-        const server = ConnectionProvider.for(config, context.state.username)
+        const settings = await UserSetting.all()
+        const server = ConnectionProvider.for(config, context.state.username, settings)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
         await connection.connect()
         connection.connectionType = config.connectionType;
 
         context.commit('newConnection', {config: config, server, connection})
+        await context.dispatch('updateDatabaseList')
+        await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines')
         context.dispatch('recordUsedConfig', config)
         context.dispatch('updateWindowTitle', config)
       } else {
@@ -397,6 +412,7 @@ const store = new Vuex.Store<State>({
       context.dispatch('updateWindowTitle', null)
     },
     async changeDatabase(context, newDatabase: string) {
+      log.info("Pool changing database to", newDatabase)
       if (context.state.server) {
         const server = context.state.server
         let connection = server.db(newDatabase)
@@ -406,6 +422,7 @@ const store = new Vuex.Store<State>({
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
+        await context.dispatch('updateDatabaseList')
         await context.dispatch('updateRoutines')
       }
     },
@@ -431,7 +448,12 @@ const store = new Vuex.Store<State>({
         context.commit("columnsLoading", null)
       }
     },
-
+    async updateDatabaseList(context) {
+      if (context.state.connection) {
+        const databaseList = await context.state.connection.listDatabases()
+        context.commit('databaseList', databaseList)
+      }
+    },
     async updateTables(context) {
       // FIXME: We should only load tables for the active/default schema
       //        then we should load new tables when a schema is expanded in the sidebar
@@ -440,7 +462,7 @@ const store = new Vuex.Store<State>({
       if (context.state.connection) {
         try {
           const schema = null
-          context.commit("tablesLoading", "Finding tables")
+          context.commit("tablesLoading", "Loading tables...")
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'

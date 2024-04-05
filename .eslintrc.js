@@ -19,13 +19,15 @@ module.exports = {
   "rules": {
     "no-console": "off",
     "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
     "no-unused-vars": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "no-explicit-any": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "vue/require-prop-types": "off",
     "vue/require-default-prop": "off",
-    "@typescript-eslint/no-non-null-assertion": "off"
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "vue/max-attributes-per-line": "off"
   },
   "parser": "vue-eslint-parser",
   "parserOptions": {

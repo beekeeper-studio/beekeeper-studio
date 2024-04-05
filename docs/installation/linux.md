@@ -27,15 +27,13 @@ A repo is provided for Debian and Ubuntu 16.04+.
 
 ```bash
 # Install our GPG key
-wget --quiet -O - https://deb.beekeeperstudio.io/beekeeper.key | sudo apt-key add -
-
-# add our repo to your apt lists directory
-echo "deb https://deb.beekeeperstudio.io stable main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio-app.list
+curl -fsSL https://deb.beekeeperstudio.io/beekeeper.key | sudo gpg --dearmor --output /usr/share/keyrings/beekeeper.gpg \
+  && sudo chmod go+r /usr/share/keyrings/beekeeper.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/beekeeper.gpg] https://deb.beekeeperstudio.io stable main" \
+  | sudo tee /etc/apt/sources.list.d/beekeeper-studio-app.list > /dev/null
 
 # Update apt and install
-sudo apt update
-sudo apt install beekeeper-studio
-
+sudo apt update && sudo apt install beekeeper-studio -y
 ```
 
 
@@ -73,3 +71,29 @@ Run `sudo snap connect beekeeper-studio:ssh-keys :ssh-keys`.
 
 - **SSH Agent**: Unfortunately, Snaps have no way to access your SSH Agent, so if you need to use the SSH agent we recommend you use the `deb` or `AppImage` version of the app.
 
+## Wayland support (including fractional scaling)
+
+Beekeeper Studio fully supports Wayland (tested on Gnome only) with fractional scaling too.
+
+If you are experiencing a blurry app UI using Wayland mode and fractional scaling -- enable native wayland mode below.
+
+However Wayland native mode is not enabled by default due to the issues with Nvidia drivers and wayland renderers (womp womp).
+
+To enable wayland native mode create a `~/.config/bks-flags.conf` file. This idea is copied from the [AUR implementation of code-flags for VSCode in the visual-studio-code-bin wrapper](https://aur.archlinux.org/cgit/aur.git/commit/?h=visual-studio-code-bin&id=a0595836467bb205fcabb7e6d44ad7da82b29ed2).
+
+
+### Enabling Wayland support
+
+1. Create ~/.config/bks-flags.conf
+2. Add flags to enable wayland support
+
+```bash
+# create the file
+touch ~/.config/bks-flags.conf
+```
+
+```bash
+# add the flags
+echo "--ozone-platform-hint=auto" >> ~/.config/bks-flags.conf
+echo "--enable-features=UseOzonePlatform" >> ~/.config/bks-flags.conf
+```

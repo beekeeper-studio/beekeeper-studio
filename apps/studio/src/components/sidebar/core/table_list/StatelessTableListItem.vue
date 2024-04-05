@@ -26,14 +26,26 @@
           class="table-item-wrapper"
           :class="{ draggable: draggable, 'drag-handle': draggable }"
         >
-          <table-icon :table="table" class="table-icon" />
-          <i class="material-icons item-icon dh" v-if="draggable">menu</i>
+          <table-icon
+            :table="table"
+            class="table-icon"
+          />
+          <i
+            class="material-icons item-icon dh"
+            v-if="draggable"
+          >menu</i>
         </span>
-        <span class="table-name truncate" :title="table.name">{{
+        <span
+          class="table-name truncate"
+          :title="table.name"
+        >{{
           table.name
         }}</span>
       </span>
-      <span class="actions" :class="{ pinned: pinned }">
+      <span
+        class="actions"
+        :class="{ pinned: pinned }"
+      >
         <span
           class="btn-fab pin"
           :class="{ pinned: pinned }"
@@ -45,8 +57,14 @@
         </span>
       </span>
     </a>
-    <div v-if="expanded" class="sub-items">
-      <span class="sub-item" v-if="!loadingColumns && !table.columns?.length">
+    <div
+      v-if="expanded"
+      class="sub-items"
+    >
+      <span
+        class="sub-item"
+        v-if="!loadingColumns && !table.columns?.length"
+      >
         No Columns
       </span>
       <template v-else-if="table.columns?.length > 0">
@@ -55,15 +73,23 @@
           v-for="(c, i) in table.columns"
           class="sub-item"
         >
-          <span class="title truncate" ref="title" @click="selectColumn(i)">{{
+          <span
+            class="title truncate"
+            ref="title"
+            @click="selectColumn(i)"
+          >{{
             c.columnName
           }}</span>
-          <span class="badge" :class="c.dataType"
-            ><span>{{ c.dataType }}</span></span
-          >
+          <span
+            class="badge"
+            :class="c.dataType"
+          ><span>{{ c.dataType }}</span></span>
         </span>
       </template>
-      <span class="sub-item" v-else>
+      <span
+        class="sub-item"
+        v-else
+      >
         Loading columns...
       </span>
     </div>

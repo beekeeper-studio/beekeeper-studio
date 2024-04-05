@@ -8,14 +8,30 @@ $gutter: 1rem;
 
 // Wrappers
 // -------------------------
-.form-wrap, .small-wrap, .center-wrap, .big-wrap {
+.form-wrap, .small-wrap, .center-wrap, .big-wrap, .mini-wrap {
   width: 100%;
   margin-left: auto;
   margin-right: auto;
+
+  &.vertical-center {
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+  }
 }
 .form-wrap {
   max-width: 400px;
 }
+
+.mini-wrap {
+  max-width: 550px;
+}
+
 .small-wrap {
   max-width: 780px;
 }
@@ -62,13 +78,13 @@ $gutter: 1rem;
   }
   &.gutter {
     width: initial !important; // split.js class overlap fix
-    margin-left: -$gutter / 2;
-    margin-right: -$gutter / 2;
+    margin-left: calc(-1 * $gutter / 2);
+    margin-right: calc(-1 * $gutter / 2);
     >.col {
-      padding-left: $gutter / 2;
-      padding-right: $gutter / 2;
-      margin-top: $gutter / 2;
-      margin-bottom: $gutter / 2;
+      padding-left: calc($gutter / 2);
+      padding-right: calc($gutter / 2);
+      margin-top: calc($gutter / 2);
+      margin-bottom: calc($gutter / 2);
     }
   }
 }

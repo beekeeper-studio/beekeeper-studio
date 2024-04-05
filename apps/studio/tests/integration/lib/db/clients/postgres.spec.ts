@@ -1,23 +1,28 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
-import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { runCommonTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/client'
+import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
+import { runCommonTests, runReadOnlyTests } from './all'
+import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
-import { buildSelectTopQueries, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
+import { errorMessages } from '../../../../../src/lib/db/clients/utils'
+import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
+import _ from 'lodash';
 
 const TEST_VERSIONS = [
-  { version: '9.3', socket: false},
-  { version: '9.4', socket: false},
-  { version: 'latest', socket: false },
-  { version: 'latest', socket: true },
+  { version: '9.3', socket: false, readonly: false},
+  { version: '9.3', socket: false, readonly: true},
+  { version: '9.4', socket: false, readonly: false},
+  { version: '9.4', socket: false, readonly: true},
+  { version: 'latest', socket: true, readonly: false },
+  { version: 'latest', socket: false, readonly: true },
+  { version: 'latest', socket: false, readonly: false },
 ]
 
-function testWith(dockerTag, socket = false) {
-  describe(`Postgres [${dockerTag} - socket? ${socket}]`, () => {
+function testWith(dockerTag, socket = false, readonly = false) {
+  describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
@@ -52,6 +57,7 @@ function testWith(dockerTag, socket = false) {
         domain: null,
         socketPath: null,
         socketPathEnabled: false,
+        readOnlyMode: readonly
       }
 
       if (socket) {
@@ -60,7 +66,17 @@ function testWith(dockerTag, socket = false) {
         config.socketPath = path.join(temp, "postgresql")
       }
 
-      util = new DBTestUtil(config, "banana", { dialect: 'postgresql', defaultSchema: 'public' })
+      const utilOptions: Options = {
+        dialect: 'postgresql',
+        defaultSchema: 'public',
+      }
+
+      if (dockerTag !== 'latest') {
+        // Generated columns was introduced in postgres 12
+        utilOptions.skipGeneratedColumns = true
+      }
+
+      util = new DBTestUtil(config, "banana", utilOptions)
       await util.setupdb()
 
       await util.knex.schema.createTable('witharrays', (table) => {
@@ -144,17 +160,6 @@ CREATE AGGREGATE group_concat(text) (
           );
         `);
 
-      // NOTE (@day): this query doesn't run properly unless we use this
-      const query = util.connection.query(`
-          CREATE TABLE public.withquestionmark (
-            "approved?" boolean NULL DEFAULT false,
-            str_col character varying(255) NOT NULL,
-            another_str_col character varying(255) NOT NULL PRIMARY KEY
-          );
-        `);
-
-      await query.execute();
-
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -169,9 +174,11 @@ CREATE AGGREGATE group_concat(text) (
       if (util.connection) {
         await util.connection.disconnect()
       }
+
       if (container) {
         await container.stop()
       }
+
     })
 
 
@@ -188,10 +195,14 @@ CREATE AGGREGATE group_concat(text) (
         }
       ]
 
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
-      expect(result).toMatchObject([
-        { id: 1, names: [], normal: 'foo' }
-      ])
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: []})).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
+        expect(result).toMatchObject([
+          { id: 1, names: [], normal: 'foo' }
+        ])
+      }
     })
 
     it("Should be able to get a table create script without erroring", async() => {
@@ -205,20 +216,26 @@ CREATE AGGREGATE group_concat(text) (
         table:'witharrays',
         schema: 'public',
         data: [
-          {names: '[]', id: 2, normal: 'xyz'}
+          {names: [], id: 2, normal: 'xyz'}
         ]
       }
 
-      const result = await util.connection.applyChanges(
-        { updates: [], inserts: [newRow], deletes: []}
-      )
-      expect(result).not.toBeNull()
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges(
+          { updates: [], inserts: [newRow], deletes: []}
+        )).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges(
+          { updates: [], inserts: [newRow], deletes: []}
+        )
+        expect(result).not.toBeNull()
+      }
     })
 
     it("Should allow me to update rows with array types", async () => {
 
       const updates = [{
-        value: '["x", "y", "z"]',
+        value: ["x", "y", "z"],
         column: "names",
         primaryKeys: [
           { column: 'id', value: 1}
@@ -236,8 +253,44 @@ CREATE AGGREGATE group_concat(text) (
         columnType: 'text',
       }
       ]
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
-      expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      }
+
+    })
+
+
+    it("Should allow me to update rows with array types when passed as string", async () => {
+
+      const updates = [{
+        value: '["x", "y", "z"]',
+        column: "names",
+        primaryKeys: [
+          { column: 'id', value: 1 }
+        ],
+        columnType: "_text",
+        table: "witharrays",
+      },
+      {
+        value: 'Bananas',
+        table: 'witharrays',
+        column: 'normal',
+        primaryKeys: [
+          { column: 'id', value: 1 }
+        ],
+        columnType: 'text',
+      }
+      ]
+
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      }
     })
 
     // regression test for Bug #1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -278,7 +331,7 @@ CREATE AGGREGATE group_concat(text) (
 
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
-      const tables = await util.connection.listTables({});
+      const tables = await util.connection.listTables({ schema: null});
       const schema1 = tables.filter((t) => t.schema == "schema1");
       const schema2 = tables.filter((t) => t.schema == "schema2");
 
@@ -289,7 +342,7 @@ CREATE AGGREGATE group_concat(text) (
     // regression test for Bug #1572 "Only schemas that show are now information_schema and pg_catalog"
     it("Numeric names should still be pulled back in queries", async () => {
       const tables = await util.connection.listTables({ schema: '1234' });
-      const columns = await util.connection.listTableColumns('banana', '5678', '1234');
+      const columns = await util.connection.listTableColumns('5678', '1234');
 
       expect(tables.length).toBe(1);
       expect(tables[0].name).toBe('5678');
@@ -325,6 +378,7 @@ CREATE AGGREGATE group_concat(text) (
     // END regression tests for Bug #1583
 
     it("should build select top query with inline parameters", async () => {
+      const client = new PostgresClient(null, null);
       const fmt = (sql: string) =>
         safeSqlFormat(sql, { language: 'postgresql' })
 
@@ -344,16 +398,13 @@ CREATE AGGREGATE group_concat(text) (
         schema: "public",
         version: {
           version: "",
-          isPostgres: true,
-          isCockroach: false,
-          isRedshift: false,
           number: 0,
           hasPartitions: false,
         },
       }
 
-      const { query: defaultQuery } = buildSelectTopQueries(options)
-      const { query: inlineParams } = buildSelectTopQueries({
+      const { query: defaultQuery } = client.buildSelectTopQueries(options)
+      const { query: inlineParams } = client.buildSelectTopQueries({
         ...options,
         inlineParams: true
       })
@@ -367,6 +418,9 @@ CREATE AGGREGATE group_concat(text) (
 
     // regression test for #1734
     it("should be able to insert to a table with a ? in a column name", async () => {
+      // We have enough coverage of read only mode.
+      if (util.connection.readOnlyMode) return;
+
       const data = {
         str_col: 'hello?',
         another_str_col: '???'
@@ -380,24 +434,50 @@ CREATE AGGREGATE group_concat(text) (
         ]
       }
 
-      const result = await util.connection.applyChanges(
-        { updates: [], inserts: [newRow], deletes: []}
-      )
+      const query = util.connection.query(`
+        CREATE TABLE IF NOT EXISTS public.withquestionmark (
+          "approved?" boolean NULL DEFAULT false,
+          str_col character varying(255) NOT NULL,
+          another_str_col character varying(255) NOT NULL PRIMARY KEY
+        );
+      `);
+
+      await query.execute();
+
+      const payload = { updates: [], inserts: [newRow], deletes: []}
+      const result = await util.connection.applyChanges(payload)
       expect(result).not.toBeNull()
     })
 
-    describe("Common Tests", () => {
-      runCommonTests(() => util)
+    it("should be able to list table columns with correct types", async () => {
+      await util.knex.schema.createTable('various_types', (table) => {
+        table.integer("id").primary()
+        table.specificType('amount', 'double precision')
+      })
+
+      const columns = await util.connection.listTableColumns('various_types', 'public');
+      expect(columns.map((row) => _.pick(row, ['columnName', 'dataType']))).toEqual([
+        {
+          columnName: 'id',
+          dataType: 'int4(32,0)'
+        },
+        {
+          columnName: 'amount',
+          dataType: 'float8(53)'
+        }
+      ])
     })
 
-    describe("Routines:", () => {
-      it.only("Should get the SQL to create a routine", async () => {
-      await util.connection.getRoutineCreateScript('group_concat', "something", "public")
-      })
+    describe("Common Tests", () => {
+      if (readonly) {
+        runReadOnlyTests(() => util)
+      } else {
+        runCommonTests(() => util, { dbReadOnlyMode: readonly })
+      }
     })
 
 
   })
 }
 
-TEST_VERSIONS.forEach(({ version, socket }) => testWith(version, socket))
+TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))

@@ -19,7 +19,6 @@ import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_se
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
 import { buildWindow, getActiveWindows } from './background/WindowBuilder'
-import yargs from 'yargs-parser'
 import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
@@ -43,11 +42,16 @@ const isDevelopment = platformInfo.isDevelopment
 initUserDirectory(platformInfo.userDirectory)
 log.info("initializing user ORM connection")
 const ormConnection = new Connection(platformInfo.appDbPath, false)
+log.debug("ELECTRON BOOTING")
+log.debug("####################################")
+
+log.debug("Platform Information (Electron)")
+log.debug(JSON.stringify(platformInfo, null, 2))
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let settings: IGroupedUserSettings
 let menuHandler
-log.info("registering schema")
+log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 let initialized = false
@@ -60,14 +64,14 @@ async function initBasics() {
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
-  log.info("getting settings")
+  log.debug("getting settings")
   settings = await UserSetting.all()
 
-  log.info("setting up the menu")
+  log.debug("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
-  log.info("Building the window")
-  log.info("managing updates")
+  log.debug("Building the window")
+  log.debug("managing updates")
   manageUpdates()
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     const url = args[0]
@@ -76,17 +80,6 @@ async function initBasics() {
   })
   return settings
 }
-
-// so we need to check that the DM is running in wayland
-// and we need to check that wayland has been enabled
-// why? Because we have to force the usage of the client titlebar
-function isWaylandMode() {
-  const slice = platformInfo.isDevelopment ? 2 : 1
-  const parsedArgs = yargs(process.argv.slice(slice))
-  return parsedArgs['ozone-platform-hint'] &&
-    platformInfo.isWayland && platformInfo.isLinux
-}
-
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -102,8 +95,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   // dock icon is clicked and there are no other windows open.
   if (!hasVisibleWindows) {
     if (!settings) throw "No settings initialized!"
-    const runningWayland = isWaylandMode()
-    buildWindow(settings, { runningWayland })
+    buildWindow(settings)
   }
 })
 
@@ -126,14 +118,9 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  const slice = platformInfo.isDevelopment ? 2 : 1
-  const parsedArgs = yargs(process.argv.slice(slice))
-
-  log.debug("Parsing app args", parsedArgs)
-  const runningWayland = isWaylandMode()
 
   // this gets positional arguments
-  const options = parsedArgs._.map((url: string) => ({ url, runningWayland }))
+  const options = platformInfo.parsedArgs._.map((url: string) => ({ url }))
   const settings = await initBasics()
 
   if (options.length > 0) {
@@ -142,8 +129,7 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
-      const runningWayland = isWaylandMode()
-      await buildWindow(settings, { runningWayland })
+      await buildWindow(settings)
     }
   }
 })
@@ -152,17 +138,15 @@ app.on('ready', async () => {
 app.on('open-file', async (event, file) => {
   event.preventDefault();
   const settings = await initBasics()
-  const runningWayland = isWaylandMode()
-  await buildWindow(settings, { url: file, runningWayland })
+  await buildWindow(settings, { url: file })
 });
 
 // Open a connection from a url (e.g. postgres://host)
 app.on('open-url', async (event, url) => {
   event.preventDefault();
   const settings = await initBasics()
-  const runningWayland = isWaylandMode()
 
-  await buildWindow(settings, { url, runningWayland })
+  await buildWindow(settings, { url })
 });
 
 // Exit cleanly on request from parent process in development mode.

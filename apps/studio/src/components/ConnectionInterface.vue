@@ -2,8 +2,6 @@
   <div class="interface connection-interface">
     <div
       class="interface-wrap row"
-      @dragover.prevent=""
-      @drop.prevent="maybeLoadSqlite"
     >
       <sidebar
         class="connection-sidebar"
@@ -80,13 +78,14 @@
               </div>
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
+                <other-database-notice v-if="shouldUpsell" />
                 <postgres-form
-                  v-if="config.connectionType === 'cockroachdb'"
+                  v-else-if="config.connectionType === 'cockroachdb'"
                   :config="config"
                   :testing="testing"
                 />
                 <mysql-form
-                  v-if="['mysql', 'mariadb'].includes(config.connectionType)"
+                  v-else-if="['mysql', 'mariadb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                   @save="save"
@@ -94,35 +93,40 @@
                   @connect="submit"
                 />
                 <postgres-form
-                  v-if="config.connectionType === 'postgresql'"
+                  v-else-if="config.connectionType === 'postgresql'"
                   :config="config"
                   :testing="testing"
                 />
                 <redshift-form
-                  v-if="config.connectionType === 'redshift'"
+                  v-else-if="config.connectionType === 'redshift'"
                   :config="config"
                   :testing="testing"
                 />
                 <sqlite-form
-                  v-if="config.connectionType === 'sqlite'"
+                  v-else-if="config.connectionType === 'sqlite'"
                   :config="config"
                   :testing="testing"
                 />
                 <sql-server-form
-                  v-if="config.connectionType === 'sqlserver'"
+                  v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
                 />
                 <big-query-form
-                  v-if="config.connectionType === 'bigquery'"
+                  v-else-if="config.connectionType === 'bigquery'"
                   :config="config"
                   :testing="testing"
                 />
-                <other-database-notice v-if="config.connectionType === 'other'" />
+                <firebird-form
+                  v-else-if="config.connectionType === 'firebird'"
+                  :config="config"
+                  :testing="testing"
+                />
+
 
                 <!-- TEST AND CONNECT -->
                 <div
-                  v-if="config.connectionType !== 'other'"
+                  v-if="!shouldUpsell"
                   class="test-connect row flex-middle"
                 >
                   <span class="expand" />
@@ -159,7 +163,7 @@
                   </div>
                 </div>
                 <SaveConnectionForm
-                  v-if="config.connectionType !== 'other'"
+                  v-if="!shouldUpsell"
                   :config="config"
                   @save="save"
                 />
@@ -168,7 +172,7 @@
           </div>
           <div
             class="pitch"
-            v-if="!config.connectionType"
+            v-if="!config.connectionType && shouldUpsell"
           >
             🌟 <strong>Upgrade to premium</strong> for data import, multi-table export, backup & restore, Oracle support, and more.
             <a
@@ -197,6 +201,7 @@ import SqliteForm from './connection/SqliteForm.vue'
 import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
+import FirebirdForm from './connection/FirebirdForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import _ from 'lodash'
@@ -208,12 +213,15 @@ import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 import Vue from 'vue'
+import { AppEvent } from '@/common/AppEvent'
+import { isUltimateType } from '@/common/interfaces/IConnection'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, BigQueryForm, },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, BigQueryForm, FirebirdForm },
 
   data() {
     return {
@@ -235,6 +243,10 @@ export default Vue.extend({
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
+    shouldUpsell() {
+      if (platformInfo.isUltimate) return false
+      return isUltimateType(this.config.connectionType)
+    },
     pageTitle() {
       if (_.isNull(this.config) || _.isUndefined(this.config.id)) {
         return "New Connection"
@@ -247,7 +259,12 @@ export default Vue.extend({
     },
     determineLabelColor() {
       return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
-    }
+    },
+    rootBindings() {
+      return [
+        { event: AppEvent.dropzoneDrop, handler: this.maybeLoadSqlite },
+      ]
+    },
   },
   watch: {
     workspaceId() {
@@ -281,7 +298,6 @@ export default Vue.extend({
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
-    await this.$store.dispatch('loadUsedConfigs')
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
     this.config.sshUsername = os.userInfo().username
@@ -290,26 +306,35 @@ export default Vue.extend({
         this.$refs.sidebar.$refs.sidebar,
         this.$refs.content
       ]
+      const lastSavedSplitSizes = SmartLocalStorage.getItem("connInterfaceSplitSizes")
+      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [300, 500]
+
       this.split = Split(components, {
         elementStyle: (_dimension, size) => ({
           'flex-basis': `calc(${size}%)`,
         }),
-        sizes: [300, 500],
+        sizes: splitSizes,
         gutterize: 8,
         minSize: [300, 300],
         expandToMin: true,
+        onDragEnd: () => {
+          const splitSizes = this.split.getSizes()
+          SmartLocalStorage.addItem("connInterfaceSplitSizes", splitSizes)
+        }
       } as Split.Options)
     })
+      await this.$store.dispatch('loadUsedConfigs')
+    this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
     if (this.split) {
       this.split.destroy()
     }
+    this.unregisterHandlers(this.rootBindings)
   },
   methods: {
-    maybeLoadSqlite(e) {
+    maybeLoadSqlite({ files }) {
       // cast to an array
-      const files = [...e.dataTransfer.files || []]
       if (!files || !files.length) return
       if (!this.config) return;
       // we only load the first
@@ -327,7 +352,7 @@ export default Vue.extend({
       this.config = new SavedConnection()
     },
     edit(config) {
-      this.config = config
+      this.config = _.clone(config)
       this.errors = null
       this.connectionError = null
     },
@@ -354,6 +379,10 @@ export default Vue.extend({
 
     },
     async submit() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
+
       this.connectionError = null
       try {
         await this.$store.dispatch('connect', this.config)
@@ -368,6 +397,9 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
 
       try {
         this.testing = true
