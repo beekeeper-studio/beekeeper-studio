@@ -377,6 +377,8 @@ const store = new Vuex.Store<State>({
 
         context.commit('newConnection', {config: config, server, connection})
         await context.dispatch('updateDatabaseList')
+        await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines')
         context.dispatch('recordUsedConfig', config)
         context.dispatch('updateWindowTitle', config)
       } else {
@@ -412,6 +414,7 @@ const store = new Vuex.Store<State>({
     async changeDatabase(context, newDatabase: string) {
       log.info("Pool changing database to", newDatabase)
       if (context.state.server) {
+        console.log('changing database')
         const server = context.state.server
         let connection = server.db(newDatabase)
         if (!connection) {
