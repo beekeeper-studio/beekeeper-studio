@@ -601,6 +601,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       nullable: Number(row.notnull || 0) === 0,
       defaultValue: row.dflt_value === 'NULL' ? null : row.dflt_value,
       ordinalPosition: Number(row.cid),
+      hasDefault: row.dflt_value !== 'NULL',
       generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
     }))
   }
