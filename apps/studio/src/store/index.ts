@@ -377,6 +377,8 @@ const store = new Vuex.Store<State>({
 
         context.commit('newConnection', {config: config, server, connection})
         await context.dispatch('updateDatabaseList')
+        await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines')
         context.dispatch('recordUsedConfig', config)
         context.dispatch('updateWindowTitle', config)
       } else {

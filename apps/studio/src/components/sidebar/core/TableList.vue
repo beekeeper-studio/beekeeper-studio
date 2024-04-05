@@ -337,7 +337,7 @@
       document.addEventListener('mousedown', this.maybeUnselect)
       const components = [this.$refs.pinned, this.$refs.tables]
       this.split = Split(components, {
-        elementStyle: (dimension, size) => ({
+        elementStyle: (_dimension, size) => ({
             'flex-basis': `calc(${size}%)`,
         }),
         direction: 'vertical',
