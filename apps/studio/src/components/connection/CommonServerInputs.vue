@@ -213,10 +213,10 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
       }
     },
     components: {
-    FilePicker,
-    ExternalLink,
-    ToggleFormArea
-},
+      FilePicker,
+      ExternalLink,
+      ToggleFormArea
+    },
     data() {
       return {
         sslToggled: false,
