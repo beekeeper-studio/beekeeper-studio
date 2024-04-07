@@ -334,9 +334,10 @@ export class DBTestUtil {
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
 
-    if (this.dbType === 'mariadb') expect(defaultValues).toStrictEqual([true,  true])
-    else if (this.dbType === 'mysql') expect(defaultValues).toStrictEqual([true,  false])
-    else expect(defaultValues).toStrictEqual([false, false])
+    if (this.dbType === 'mariadb') expect(defaultValues).toEqual([true,  true])
+    else if (this.dbType === 'mysql') expect(defaultValues).toEqual([true,  false])
+    else if (this.dbType === 'postgresql') expect(defaultValues).toEqual([true,  false])
+    else expect(defaultValues).toEqual([false, false])
 
     const groupColumns = columns.filter((row) => row.tableName.toLowerCase() === 'group_table')
     expect(groupColumns.length).toBe(2)
