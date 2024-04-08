@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import helpers, { escapeHtml } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
-import {Tabulator} from 'tabulator-tables'
+import {CellComponent} from 'tabulator-tables'
 
 export function buildNullValue(text: string) {
   return `<span class="null-value">(${escapeHtml(text)})</span>`
@@ -35,7 +35,7 @@ export default {
 
   methods: {
     niceString: helpers.niceString,
-    pillFormatter(cell: Tabulator.CellComponent) {
+    pillFormatter(cell: CellComponent) {
       const nullValue = emptyResult(cell.getValue())
       if (nullValue) {
         return ''
@@ -44,13 +44,13 @@ export default {
       const cellValue = cell.getValue()
       return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
     },
-    cellTooltip(_event, cell: Tabulator.CellComponent) {
+    cellTooltip(_event, cell: CellComponent) {
       const nullValue = emptyResult(cell.getValue())
       return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue(), true))
     },
     cellFormatter(
-      cell: Tabulator.CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: Tabulator.CellComponent) => void },
+      cell: CellComponent,
+      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void },
       onRendered: (func: () => void) => void
     ) {
       const nullValue = emptyResult(cell.getValue())
