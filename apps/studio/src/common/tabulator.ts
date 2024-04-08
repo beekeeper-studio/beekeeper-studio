@@ -36,6 +36,7 @@ export function tabulatorForTableData(
     selectableRangeAutoFocus: false,
     selectableRangeRows: true,
     resizableColumnGuide: true,
+    movableColumns: true,
     height: "100%",
     rowHeader: {
       field: rowHeaderField,

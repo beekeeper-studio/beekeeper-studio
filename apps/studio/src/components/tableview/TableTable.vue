@@ -273,7 +273,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import pluralize from 'pluralize'
-import { TabulatorFull, CellComponent, RangeComponent } from 'tabulator-tables'
+import { TabulatorFull, ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
@@ -520,7 +520,7 @@ export default Vue.extend({
         }
       }
 
-      const columnMenu = (_e, column: Tabulator.ColumnComponent) => {
+      const columnMenu = (_e, column: ColumnComponent) => {
         const range = _.last(column.getRanges())
         let hideColumnLabel = `Hide ${column.getDefinition().title}`
 
@@ -543,6 +543,10 @@ export default Vue.extend({
           {
             label: createMenuItem(hideColumnLabel),
             action: () => this.hideColumnByField(column.getField()),
+          },
+          {
+            label: createMenuItem(`Reset layout`),
+            action: () => column.getTable().setColumnLayout(this.tableColumns),
           },
           this.openColumnFilterMenuItem,
         ]
