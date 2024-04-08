@@ -25,7 +25,7 @@ export function tabulatorForTableData(
   const { table, schema, ...tabulatorOptions } = options;
   const defaultOptions: Options = {
     persistence: {
-      columns: ["width"],
+      columns: ["width", "visible"],
     },
     persistenceMode: "local",
     renderHorizontal: "virtual",
