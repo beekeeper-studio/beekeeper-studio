@@ -911,11 +911,8 @@ export default Vue.extend({
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
-
-      this.$nextTick(() => {
-        if (this.$refs.valueInput) {
-          this.$refs.valueInput.focus()
-        }
+      this.tabulator.on('tableBuilt', () => {
+        this.tabulator.modules.selectRange.restoreFocus()
       })
     },
     rowActionsMenu(range: Tabulator.RangeComponent) {
