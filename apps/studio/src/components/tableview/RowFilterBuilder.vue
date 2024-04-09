@@ -163,15 +163,15 @@
           </div>
           <div class="filter-add-apply">
             <div class="row fixed">
-               <button
+              <button
                 v-if="filters.length > 1"
                 class="btn btn-flat btn-fab remove-filter"
                 type="button"
                 title="Remove filter"
                 @click="removeFilter(-1)"
-                >
-                  <i class="material-icons">remove</i>
-                </button>
+              >
+                <i class="material-icons">remove</i>
+              </button>
               <div class="btn-wrap add-filter">
                 <button
                   class="btn btn-flat btn-fab"
