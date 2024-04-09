@@ -178,7 +178,7 @@ export default Vue.extend({
         ))
         if (newTable) {
           this.$root.$emit(AppEvent.openTableProperties, { table: newTable })
-          this.$root.$emit(AppEvent.closeTab, this.tabId)
+          this.$root.$emit(AppEvent.closeTab, this.tabId, { ignoreUnsavedChanges: true })
         }
       } catch (error) {
         this.error = error

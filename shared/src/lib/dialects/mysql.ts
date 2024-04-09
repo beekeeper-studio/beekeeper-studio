@@ -28,8 +28,10 @@ export const MysqlData: DialectData = {
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
+  usesOffsetPagination: true,
   editorFriendlyIdentifier: (s) => s,
   escapeString: defaultEscapeString,
+  requireDataset: false,
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   },

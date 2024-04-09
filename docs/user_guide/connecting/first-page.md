@@ -20,7 +20,7 @@ Beekeeper Studio currently supports the following database types:
 - Oracle Database
 - Cassandra
 - Google BigQuery
-
+- Firebird
 
 ![Image Alt Tag](../../assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen
@@ -105,7 +105,7 @@ Beekeeper supports tunneling your connection via SSH. To connect to a remote dat
 
 4. **Enter Bastion Host (JumpHost)** (optional) if your server's network requires that you connect through a [JumpHost](https://www.redhat.com/sysadmin/ssh-proxy-bastion-proxyjump)
 
-5. **Enter the Keepalive Interval** (optional) to specify, _in seconds_, how often to ping the server while idle to prevent getting disconnected due to a timeout.  This is equivalent to the [ServerAliveInterval](https://superuser.com/questions/37738/how-to-reliably-keep-an-ssh-tunnel-open#answer-601644) option you might use on the ssh commmand line, or in your `~/.ssh/config` file -- **Entering 0 (zero) disables this feature**
+5. **Enter the Keepalive Interval** (optional) to specify, _in seconds_, how often to ping the server while idle to prevent getting disconnected due to a timeout.  This is equivalent to the [ServerAliveInterval](https://superuser.com/questions/37738/how-to-reliably-keep-an-ssh-tunnel-open#answer-601644) option you might use on the ssh command line, or in your `~/.ssh/config` file -- **Entering 0 (zero) disables this feature**
 
 6. **Select your SSH Authentication method**:
 
@@ -115,7 +115,7 @@ Beekeeper supports tunneling your connection via SSH. To connect to a remote dat
 
     * `Key File` Select your **SSH Private key File** (and optionally enter your **Key File PassPhrase**) if you use your [SSH Public Key](https://stackoverflow.com/questions/7260/how-do-i-setup-public-key-authentication#answers-header) on the server for authentication
 
-7. **Enter a name for your Connection** (optionally check the **Save Passords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
+7. **Enter a name for your Connection** (optionally check the **Save Passwords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
 
 8. **Press the Connect button** to access your database!
 

@@ -63,7 +63,7 @@ Beekeeper Studio supports connecting to the following databases:
 - SQL Server
 - Amazon Redshift
 
-The commercial version of Beekeeper Studio ([avaliable here](https://beekeeperstudio.io/get)) also supports:
+The commercial version of Beekeeper Studio ([available here](https://beekeeperstudio.io/get)) also supports:
 
 - Oracle Database
 - Cassandra Database

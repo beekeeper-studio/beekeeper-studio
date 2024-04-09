@@ -3,6 +3,7 @@ import _ from 'lodash'
 import logRaw from 'electron-log'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
 import { joinFilters } from '@/common/utils'
+import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
 const log = logRaw.scope('db/util')
 
@@ -53,7 +54,7 @@ export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   return where.join(' AND ');
 }
 
-export function buildDatabseFilter(filter, databaseField) {
+export function buildDatabaseFilter(filter, databaseField) {
   if (!filter) {
     return null
   }
@@ -118,7 +119,7 @@ export function applyChangesSql(changes: TableChanges, knex: any): string {
     ...buildDeleteQueries(knex, changes.deletes || [])
   ].filter((i) => !!i && _.isString(i)).join(';')
 
-  if (queries.length) 
+  if (queries.length)
     return queries.endsWith(';') ? queries : `${queries};`
 }
 
@@ -211,10 +212,13 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
 }
 
 export function buildInsertQueries(knex, inserts) {
+  if (!inserts) return []
   return inserts.map(insert => buildInsertQuery(knex, insert))
 }
 
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {
+  if (!updates) return []
+
   return updates.map(update => {
     const where = {}
     const updateblob = {}
@@ -268,7 +272,9 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
+
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
+  if (!deletes) return []
   return deletes.map(deleteRow => {
     const where = {}
 
@@ -284,4 +290,12 @@ export function buildDeleteQueries(knex, deletes: TableDelete[]) {
       .delete()
       .toQuery()
   })
+}
+
+export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], readOnlyMode: boolean): boolean {
+  return (!readOnlyMode || readOnlyMode && identifiedQueries.every(f => ['LISTING', 'INFORMATION'].includes(f.executionType?.toUpperCase())))
+}
+
+export const errorMessages = {
+  readOnly: 'Write action(s) not allowed in Read-Only Mode.'
 }

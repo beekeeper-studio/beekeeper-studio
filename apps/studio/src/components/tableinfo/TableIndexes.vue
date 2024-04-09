@@ -124,7 +124,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
 import { mapGetters } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
-import { escapeHtml } from '@/mixins/data_mutators'
+import { escapeHtml } from '@shared/lib/tabulator'
 
 interface State {
   tabulator: Tabulator

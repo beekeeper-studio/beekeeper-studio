@@ -117,7 +117,7 @@ import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
 import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
-import { escapeHtml } from '@/mixins/data_mutators';
+import { escapeHtml } from '@shared/lib/tabulator'
 
 export default Vue.extend({
   props: ["table", "connection", "tabId", "active", "properties", 'tabState'],

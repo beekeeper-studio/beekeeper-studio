@@ -22,7 +22,6 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { mapMutations, mapGetters } from 'vuex'
 import { AppEvent, RootBinding } from '../../common/AppEvent'
-import { DBConnection } from '../../lib/db/client'
 import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
@@ -62,9 +61,7 @@ interface StartExportOptions {
 
 export default Vue.extend({
   components: { ExportModal, ExportNotification },
-  props: {
-    connection: DBConnection
-  },
+  props: ['connection'],
   data() {
     return {
       // these are like 'pending Export'

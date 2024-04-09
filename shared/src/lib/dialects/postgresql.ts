@@ -36,6 +36,9 @@ export const PostgresData: DialectData = {
   editorFriendlyIdentifier: (s) => friendlyNormalizedIdentifier(s, '"'),
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
+  usesOffsetPagination: true,
+  defaultSchema: 'public',
+  requireDataset: false,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;

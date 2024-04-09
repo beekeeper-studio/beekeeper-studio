@@ -1,6 +1,9 @@
 import { Dialect, KnexDialect, Schema, SchemaItem } from '../dialects/models'
 import {Knex} from 'knex'
 import knexlib from 'knex'
+// Cassandra needs this to run since it is the only one we use NOT supported out of the box by Knex
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
 import knexFirebirdDialect from "knex-firebird-dialect"
 import { identify } from 'sql-query-identifier'
@@ -28,7 +31,7 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['bigquery', 'firebird'].includes(v)
+    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird'].includes(v)
     this.createKnexLib()
   }
 
@@ -37,10 +40,9 @@ export class SqlGenerator {
   }
 
   public set connection(config: any) {
-    this._connection = config;
+    this._connection = config
     this.createKnexLib()
   }
-
 
   public buildSql(schema: Schema): string {
     let k
@@ -57,9 +59,17 @@ export class SqlGenerator {
         table.primary(primaries.map((c) => c.columnName))
       }
       schema.columns.forEach((column: SchemaItem) => {
-        const col = column.dataType === 'autoincrement' ?
-          table.increments(column.columnName) :
-          table.specificType(column.columnName, column.dataType)
+        // TODO: autoincrement makes cassandra just roll over and die Need to remove it from the default values.
+        // Other than that, was creating tables pretty ok I think
+        let col: Knex.ColumnBuilder;
+        if (column.dataType.match(/autoincrement/i) && this.dialect === 'postgresql') {
+          col = table.specificType(column.columnName, 'serial')
+        } else if (column.dataType.match(/autoincrement/i)) {
+          col = table.increments(column.columnName)
+        } else {
+          col = table.specificType(column.columnName, column.dataType)
+        }
+
         if (column.defaultValue) col.defaultTo(this.knex.raw(column.defaultValue))
         if (column.unsigned) col.unsigned()
         if (column.comment) col.comment(column.comment)
@@ -91,10 +101,23 @@ export class SqlGenerator {
   private async createKnexLib () {
     const { dbConfig, dbName } = this.connection
     if (!this.dialect || !this.connection) return
+
     if (this.isNativeKnex) {
         this.knex = knexlib({ client: this.knexDialect })
-    } else {
-      if (this.dialect === 'firebird') {
+    } else if (this.dialect === 'cassandra') {
+      this.knex  = knexlib({
+        client: CassandraKnex,
+        connection: {
+          // @ts-ignore
+          contactPoints: [dbConfig.host],
+          localDataCenter: dbConfig?.cassandraOptions?.localDataCenter ? [dbConfig?.cassandraOptions?.localDataCenter] : [],
+          protocolOptions: {
+            port: dbConfig.port
+          },
+          keyspace: dbName
+        }
+      })
+    } else if (this.dialect === 'firebird') {
         this.knex = knexlib({
           client: knexFirebirdDialect,
           connection: {
@@ -108,25 +131,22 @@ export class SqlGenerator {
             blobAsText: true,
           },
         })
-      } else if (this.dialect === 'bigquery') {
-        const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
-        this.knex = knexlib({
-          // ewwwwwwwww
-          client: BigQueryClient as any,
-          connection: {
-            projectId: dbConfig.bigQueryOptions?.projectId,
-            keyFilename: dbConfig.bigQueryOptions?.keyFilename,
-            // for testing
-            apiEndpoint
-          } as any
-        })
-      }
+    } else if (this.dialect === 'bigquery') {
+      const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
+      this.knex = knexlib({
+        // ewwwwwwwww
+        client: BigQueryClient as any,
+        connection: {
+          projectId: dbConfig.bigQueryOptions?.projectId,
+          keyFilename: dbConfig.bigQueryOptions?.keyFilename,
+          // for testing
+          apiEndpoint
+        } as any
+      })
     }
   }
 
   private get knexDialect() {
     return KnexDialect(this.dialect)
   }
-
-
 }

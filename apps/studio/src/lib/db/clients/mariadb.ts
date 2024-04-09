@@ -1,4 +1,3 @@
-import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { MysqlClient } from "./mysql";
 import mysql from "mysql2";
 import { BkConfig } from "@/lib/config/config-loader";
@@ -93,13 +92,4 @@ export class MariaDBClient extends MysqlClient {
 
     return config;
   }
-}
-
-export default async function (
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-) {
-  const client = new MariaDBClient(server, database);
-  await client.connect();
-  return client;
 }

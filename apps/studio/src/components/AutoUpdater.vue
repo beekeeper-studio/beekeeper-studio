@@ -17,8 +17,7 @@ export default Vue.extend({
         text: "A new version is available. Download from our website now.",
         layout: 'bottomRight',
         timeout: false,
-        // @ts-ignore
-        closeWith: 'button',
+        closeWith: ['button'],
         buttons: [ 
           Noty.button('Not now', 'btn btn-flat', () => {
             // @ts-ignore
@@ -33,8 +32,7 @@ export default Vue.extend({
         text: 'A new version is available. Download now?',
         layout: 'bottomRight',
         timeout: false,
-        // @ts-ignore
-        closeWith: 'button',
+        closeWith: ['button'],
         buttons: [
           Noty.button('Not now', 'btn btn-flat', () => {
               // @ts-ignore
@@ -49,8 +47,7 @@ export default Vue.extend({
         text: "Update downloaded. Restart Beekeeper Studio to install",
         layout: 'bottomRight',
         timeout: false,
-        // @ts-ignore
-        closeWith: 'button',
+        closeWith: ['button'],
         buttons: [
           Noty.button('Later', 'btn btn-flat', () => {
             // @ts-ignore

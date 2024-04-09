@@ -212,6 +212,13 @@ $cell-success:           $row-add;
       .yesno-icon {
         float:right;
       }
+
+      .tabulator-cell:not(.tabulator-editable) {
+        color: $text-lighter;
+        &:hover {
+          background-color: transparent;
+        }
+      }
     }
   }
 }
@@ -255,6 +262,9 @@ $cell-success:           $row-add;
         .tabulator-col {
           padding: 0 $cell-padding;
           font-size: ($cell-font-size * 0.9);
+          &.tabulator-frozen {
+            border-right: 0;
+          }
         }
       }
     }

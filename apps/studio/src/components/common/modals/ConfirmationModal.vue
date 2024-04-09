@@ -68,7 +68,7 @@ export default Vue.extend({
       this.$modal.hide(this.name, { confirmed: false });
     },
     beforeClose(event: any) {
-      if (event.params.confirmed) this.onConfirm?.();
+      if (event.params?.confirmed) this.onConfirm?.();
       else this.onCancel?.();
     },
     confirm(title?: string, message?: string) {

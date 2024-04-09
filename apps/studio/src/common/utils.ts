@@ -125,18 +125,20 @@ export function resolveHomePathToAbsolute(filename: string): string {
   return path.join(homedir(), filename.substring(2));
 }
 
+export async function waitPromise(time: number) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
 
 
 export function createCancelablePromise(error: CustomError, timeIdle = 100): any {
   let canceled = false;
   let discarded = false;
 
-  const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
 
   return {
     async wait() {
       while (!canceled && !discarded) {
-        await wait(timeIdle);
+        await waitPromise(timeIdle);
       }
 
       if (canceled) {
@@ -219,4 +221,23 @@ export async function getLastExportPath(filename?: string) {
 
 export async function setLastExportPath(exportPath: string) {
   await SettingsPlugin.set('lastExportPath', exportPath)
+}
+
+// Stringify all the arrays and objects in range data
+export function stringifyRangeData(rangeData: Record<string, any>[]) {
+  const transformedRangeData:Record<string, any>[]  = [];
+
+  for (let i = 0; i < rangeData.length; i++) {
+    const keys = Object.keys(rangeData[i]);
+
+    transformedRangeData[i] = {};
+
+    for (const key of keys) {
+      const value = rangeData[i][key];
+      transformedRangeData[i][key] =
+        value && typeof value === "object" ? JSON.stringify(value) : value;
+    }
+  }
+
+  return transformedRangeData;
 }

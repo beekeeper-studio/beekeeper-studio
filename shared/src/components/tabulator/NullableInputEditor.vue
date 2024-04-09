@@ -1,6 +1,7 @@
 <template>
   <div>
     <input
+      v-if="!typeEditorActive"
       class="nullible-input"
       :placeholder="smartPlaceholder"
       ref="input"
@@ -10,6 +11,7 @@
       @change.prevent="submit"
       @keydown="keydown"
     >
+    <slot />
     <i
       class="material-icons clear"
       @mousedown.prevent.stop="clear"
@@ -31,7 +33,8 @@ export default Vue.extend({
     return {
       value: null,
       rendered: false,
-      everEdited: false
+      everEdited: false,
+      typeEditorActive: false
     }
   },
   computed: {
@@ -97,10 +100,16 @@ export default Vue.extend({
 
     },
     clear() {
+      this.typeEditorActive = false
+      // nullifyInput is listened to by any slots which will then nullify the value and go through the whole submission process. Not having the below line caused sadness
+      this.$emit('nullifyInput')
       this.$emit('value', null)
     },
     parseValue() {
       const typeHint = this.params.typeHint;
+      if (typeof typeHint !== 'string') {
+        return this.value
+      }
       const floatTypes = [
         'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
       ]
@@ -117,7 +126,7 @@ export default Vue.extend({
     rendered() {
       if (this.rendered) {
         const cellValue = this.cell.getValue()
-        this.value = _.isNil(cellValue) ? '' : helpers.niceString(cellValue)
+        this.value = _.isNil(cellValue) ? null : helpers.niceString(cellValue)
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {
@@ -150,11 +159,7 @@ export default Vue.extend({
   }
   .clear {
     position: absolute;
-    top: 0;
-    bottom: 0;
     right: 3px;
-    display: flex;
-    align-items: center;
     font-size: 14px!important;
     width: 16px;
     text-align: center;

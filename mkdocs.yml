@@ -46,11 +46,11 @@ extra_css:
   - stylesheets/extra.css
 plugins:
   - search
-  - social:
-      cards_layout_options:
-        background_color: "#2c2c2c"
-        color: "#ffffff"
-        font_family: Rubik
+#  - social:
+#      cards_layout_options:
+#        background_color: "#2c2c2c"
+#        color: "#ffffff"
+#        font_family: Rubik
 
 
 markdown_extensions:
@@ -94,6 +94,7 @@ nav:
     - user_guide/importing-data-csv-json-etc.md
     - user_guide/query-magics.md
   - Support:
+    - support/subscription-management.md
     - support/contact-support.md
     - support/open-source.md
     - support/troubleshooting.md
