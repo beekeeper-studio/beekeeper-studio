@@ -110,14 +110,14 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   &.tabulator-row-odd {
     background-color: rgba($theme-base, 0.015);
   }
-  &.tabulator-spreadsheet-selected.tabulator-row-even:hover {
+  &.tabulator-range-selected.tabulator-row-even:hover {
     background-color: transparent;
   }
-  &.tabulator-spreadsheet-highlight .tabulator-cell.tabulator-frozen.tabulator-spreadsheet-row-header {
+  &.tabulator-range-highlight .tabulator-cell.tabulator-frozen.tabulator-range-row-header {
     background-color: $header-highlight !important;
     color: $text-dark;
   }
-  &.tabulator-spreadsheet-selected .tabulator-cell.tabulator-frozen.tabulator-spreadsheet-row-header {
+  &.tabulator-range-selected .tabulator-cell.tabulator-frozen.tabulator-range-row-header {
     background-color: $header-selected !important;
     color: black;
     font-weight: bold;
@@ -149,7 +149,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     height: $row-height;
     line-height: $row-height;
     cursor: default;
-    &:not(.tabulator-spreadsheet-row-header) {
+    &:not(.tabulator-range-row-header) {
       border-radius: $cell-radius;
     }
     &:first-of-type {
@@ -158,7 +158,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     &:last-of-type {
       padding-right: $cell-padding * 1.5;
     }
-    &.tabulator-frozen.tabulator-spreadsheet-row-header {
+    &.tabulator-frozen.tabulator-range-row-header {
       padding: 0;
       background-color: $query-editor-bg;
       border-right: 0 !important;
@@ -320,11 +320,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     &:hover {
       background-color: rgba($theme-base, 0.05);
       cursor: default;
-      &.tabulator-spreadsheet-selected:not(.tabulator-spreadsheet-only-cell-selected) {
+      &.tabulator-range-selected:not(.tabulator-range-only-cell-selected) {
         background-color: rgba($theme-base, 0.05);
       }
     }
-    &.tabulator-spreadsheet-selected:not(.tabulator-spreadsheet-only-cell-selected) {
+    &.tabulator-range-selected:not(.tabulator-range-only-cell-selected) {
       background-color: rgba($theme-base, 0.05);
     }
   }
@@ -422,18 +422,18 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       font-size: 90%;
       line-height: 1;
       flex-direction: row;
-      &:not(.tabulator-spreadsheet-row-header):not(.tabulator-spreadsheet-selected) {
+      &:not(.tabulator-range-row-header):not(.tabulator-range-selected) {
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
       }
-      &.tabulator-spreadsheet-highlight {
+      &.tabulator-range-highlight {
         background-color: $header-highlight;
       }
-      &.tabulator-spreadsheet-selected {
+      &.tabulator-range-selected {
         background-color: $header-selected;
         color: black;
       }
-      &.tabulator-spreadsheet-row-header {
+      &.tabulator-range-row-header {
         background-color: transparent;
         border: none;
       }
@@ -462,6 +462,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
             opacity: 1;
           }
         }
+      }
+      &.hide-header-menu-icon .tabulator-header-popup-button {
+        display: none;
       }
       .tabulator-col-title {
         color: $text-dark;
@@ -525,6 +528,16 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       }
       &.foreign-key-button {
         display: none;
+      }
+      &.generated-column:before {
+        $font-size: 13px;
+        content: 'bolt';
+        font-family: 'Material Icons';
+        font-size: $font-size;
+        color: rgba($theme-base, 0.35);
+        padding-left: $foreign-key-width - $font-size;
+        display: inline-flex;
+        align-items: center;
       }
       .tabulator-col-content {
         padding: 0 4px 0 8px;
@@ -736,6 +749,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   padding: 0.3rem 0;
 
   .tabulator-menu-item {
+    // TODO this might not be used
     &:hover, &.tabulator-spreadsheet-menu-item-focused {
       background: rgba($theme-base, 0.05);
     }
@@ -772,7 +786,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 
 @import './tabulator/magics.scss';
 
-.tabulator-range-overlay {
+.tabulator .tabulator-tableholder .tabulator-range-overlay {
   .tabulator-range, .tabulator-range-cell-active {
     border-color: darken($theme-primary, 20%);
     border-width: 1px;
@@ -790,11 +804,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     outline: none;
     .tabulator-col {
 
-      &:hover:not(.tabulator-spreadsheet-selected) {
+      &:hover:not(.tabulator-range-selected) {
         background: rgba($theme-base, 0.035);
       }
 
-      &.tabulator-spreadsheet-selected {
+      &.tabulator-range-selected {
         &.primary-key:before {
           color: black;
         }

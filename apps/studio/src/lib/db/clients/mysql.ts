@@ -60,6 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+import { uuidv4 } from "@/lib/uuid";
 
 type ResultType = {
   data: any[];
@@ -243,8 +244,6 @@ function filterDatabase(
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
-  server: IDbConnectionServer;
-  database: IDbConnectionDatabase;
   versionInfo: {
     versionString: string;
     version: number;
@@ -253,16 +252,19 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     pool: mysql.Pool;
   };
 
+  clientId: string
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, context);
+    super(knex, context, server, database);
+    this.clientId = uuidv4();
 
     this.dialect = 'mysql';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
-    this.server = server;
-    this.database = database;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   async connect() {
+    await super.connect();
+
     const dbConfig = configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
@@ -270,11 +272,22 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
+    this.conn.pool.on('acquire', (connection) => {
+      log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
+    });
+
+    this.conn.pool.on('release', (connection) => {
+      log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
+    });
+
+
     this.versionInfo = await this.getVersion();
   }
 
   async disconnect() {
     this.conn?.pool.end();
+
+    await super.disconnect();
   }
 
   versionString() {
@@ -310,7 +323,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listTables(
-    _db: string,
     _filter?: FilterOptions
   ): Promise<TableOrView[]> {
     const sql = `
@@ -325,7 +337,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listTableIndexes(
-    _database: string,
     table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
@@ -358,7 +369,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listTableColumns(
-    _database: string,
     table?: string,
     _schema?: string,
     connection?: Connection
@@ -395,7 +405,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       nullable: row.is_nullable === "YES",
       defaultValue: this.resolveDefault(row.column_default),
       extra: _.isEmpty(row.extra) ? null : row.extra,
+      hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
+      generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
     }));
   }
 
@@ -494,11 +506,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getPrimaryKeys(
-    database: string,
     table: string,
     _schema?: string
   ): Promise<PrimaryKeyColumn[]> {
-    logger().debug("finding primary keys for", database, table);
+    logger().debug("finding primary keys for", this.db, table);
     const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`;
     const params = [table];
     const { data } = await this.driverExecuteSingle(sql, { params });
@@ -512,11 +523,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getPrimaryKey(
-    database: string,
     table: string,
     _schema?: string
   ): Promise<string | null> {
-    const res = await this.getPrimaryKeys(database, table);
+    const res = await this.getPrimaryKeys(table);
     return res.length === 1 ? res[0].columnName : null;
   }
 
@@ -529,7 +539,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string,
     selects?: string[]
   ): Promise<TableResult> {
-    const columns = await this.listTableColumns(null, table);
+    const columns = await this.listTableColumns(table);
     const queries = buildSelectTopQuery(
       table,
       offset,
@@ -559,7 +569,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string,
     selects?: string[]
   ): Promise<string> {
-    const columns = await this.listTableColumns(null, table);
+    const columns = await this.listTableColumns(table);
     const { query, params } = buildSelectTopQuery(
       table,
       offset,
@@ -574,7 +584,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async selectTopStream(
-    db: string,
     table: string,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
@@ -582,7 +591,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<StreamResults> {
     const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
-    const columns = await this.listTableColumns(db, table);
+    const columns = await this.listTableColumns(table);
     const rowCount = await this.getTableLength(table);
     // TODO: DEBUG HERE
     const { query, params } = qs;
@@ -620,7 +629,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getTableKeys(
-    _database: string,
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
@@ -686,9 +694,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       data.length > 0 ? data[0] : {};
 
     // const length = await this.getTableLength(table, []);
-    const relations = await this.getTableKeys(null, table);
+    const relations = await this.getTableKeys(table);
     const triggers = await this.listTableTriggers(table);
-    const indexes = await this.listTableIndexes(null, table);
+    const indexes = await this.listTableIndexes(table);
 
     return {
       description: description || undefined,
@@ -753,7 +761,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   async insertRows(inserts: TableInsert[], connection: mysql.PoolConnection) {
     for (const insert of inserts) {
       const columns = await this.listTableColumns(
-        null,
         insert.table,
         undefined,
         connection
@@ -1034,9 +1041,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       : this.runWithConnection(runQuery);
   }
 
-  async runWithConnection<T>(
-    run: (connection: mysql.PoolConnection) => Promise<T>
-  ): Promise<T> {
+  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     const { pool } = this.conn;
     let rejected = false;
     return new Promise((resolve, reject) => {
@@ -1047,7 +1052,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
       };
 
-      pool.getConnection(async (errPool, connection) => {
+      pool.getConnection((errPool, connection) => {
         if (errPool) {
           rejectErr(errPool);
           return;
@@ -1057,22 +1062,16 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           // it will be handled later in the next query execution
           logger().error("Connection fatal error %j", error);
         });
-
-        try {
-          resolve(await run(connection));
-        } catch (err) {
-          rejectErr(err);
-        } finally {
-          connection.release();
-        }
+        run(connection)
+          .then((res) => resolve(res))
+          .catch((ex) => rejectErr(ex))
+          .finally(() => connection.release())
       });
     });
   }
 
-  async runWithTransaction(
-    func: (connection: mysql.PoolConnection) => Promise<any>
-  ): Promise<void> {
-    await this.runWithConnection(async (connection) => {
+  async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
+    return await this.runWithConnection(async (connection) => {
       try {
         await this.driverExecuteSingle("START TRANSACTION");
         const result = await func(connection);
@@ -1080,14 +1079,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         return result;
       } catch (ex) {
         await this.driverExecuteSingle("ROLLBACK");
-        console.error(ex);
+        log.error(ex)
         throw ex;
       }
     });
   }
 
   async alterTableSql(change: AlterTableSpec): Promise<string> {
-    const columns = await this.listTableColumns(null, change.table);
+    const columns = await this.listTableColumns(change.table);
     const builder = new MySqlChangeBuilder(change.table, columns);
     return builder.alterTable(change);
   }
@@ -1130,7 +1129,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listMaterializedViewColumns(
-    _db: string,
     _table: string,
     _schema?: string
   ): Promise<TableColumn[]> {
@@ -1138,7 +1136,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listSchemas(
-    _db: string,
     _filter?: SchemaFilterOptions
   ): Promise<string[]> {
     return [];
@@ -1232,7 +1229,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async queryStream(
-    _db: string,
     query: string,
     chunkSize: number
   ): Promise<StreamResults> {
@@ -1298,6 +1294,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return data[0].schema;
   }
 
+  hasDefaultValue(defaultValue: string|null, extraValue: string|null): boolean {
+    return !_.isNil(defaultValue) || !_.isNil(extraValue) && ['auto_increment', 'default_generated'].includes(extraValue.toLowerCase())
+  }
+
   resolveDefault(defaultValue: string) {
     return defaultValue;
   }
@@ -1325,15 +1325,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     return joinQueries(queries)
   }
-}
-
-export default async function (
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-) {
-  const client = new MysqlClient(server, database);
-  await client.connect();
-  return client;
 }
 
 export const testOnly = {

@@ -9,7 +9,6 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection } from '../lib/db/client'
 import { Routine, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
@@ -17,7 +16,7 @@ import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
 import RawLog from 'electron-log'
-import { Dialect, dialectFor } from '@shared/lib/dialects/models'
+import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
@@ -27,6 +26,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { UserSetting } from '@/common/appdb/models/user_setting'
 
 const log = RawLog.scope('store/index')
@@ -42,7 +42,7 @@ export interface State {
   usedConfig: Nullable<IConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
-  connection: Nullable<DBConnection>,
+  connection: Nullable<BasicDatabaseClient<any>>,
   database: Nullable<string>,
   databaseList: string[],
   tables: TableOrView[],
@@ -90,8 +90,8 @@ const store = new Vuex.Store<State>({
       showViews: true,
       showPartitions: false
     },
-    tablesLoading: "Loading tables...",
-    columnsLoading: 'Loading columns...',
+    tablesLoading: null,
+    columnsLoading: null,
     tablesInitialLoaded: false,
     connectionConfigs: [],
     username: null,
@@ -127,6 +127,9 @@ const store = new Vuex.Store<State>({
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
+    },
+    dialectTitle(_state: State, getters): string {
+      return DialectTitles[getters.dialect] || getters.dialect || 'Unknown'
     },
     dialectData(_state: State, getters) {
       return getDialectData(getters.dialect)
@@ -231,7 +234,7 @@ const store = new Vuex.Store<State>({
       state.server = payload.server
       state.usedConfig = payload.config
       state.connection = payload.connection
-      state.database = payload.database || payload.config.defaultDatabase
+      state.database = payload.config.defaultDatabase
     },
     clearConnection(state) {
       state.usedConfig = null
@@ -373,6 +376,9 @@ const store = new Vuex.Store<State>({
         connection.connectionType = config.connectionType;
 
         context.commit('newConnection', {config: config, server, connection})
+        await context.dispatch('updateDatabaseList')
+        await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines')
         context.dispatch('recordUsedConfig', config)
         context.dispatch('updateWindowTitle', config)
       } else {
@@ -406,6 +412,7 @@ const store = new Vuex.Store<State>({
       context.dispatch('updateWindowTitle', null)
     },
     async changeDatabase(context, newDatabase: string) {
+      log.info("Pool changing database to", newDatabase)
       if (context.state.server) {
         const server = context.state.server
         let connection = server.db(newDatabase)
@@ -455,7 +462,7 @@ const store = new Vuex.Store<State>({
       if (context.state.connection) {
         try {
           const schema = null
-          context.commit("tablesLoading", "Finding tables")
+          context.commit("tablesLoading", "Loading tables...")
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'

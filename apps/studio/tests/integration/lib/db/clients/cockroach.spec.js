@@ -32,6 +32,9 @@ describe("CockroachDB Tests", () => {
     if (container) {
       await container.stop()
     }
+    if (environment) {
+      await environment.stop()
+    }
   })
 
   describe("Common Tests", () => {

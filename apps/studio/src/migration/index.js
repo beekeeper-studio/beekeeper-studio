@@ -1,5 +1,3 @@
-
-
 import a from './20200101'
 import b from './20200422'
 import c from './20200514'
@@ -21,7 +19,6 @@ import workspaceScoping from './20211007_workspace_scoping'
 import workspace2 from './20211015_workspace_used_query'
 import addTabs from './20211220-create_opentabs'
 import scWorkspace from './20211227_add_workspaceId_to_saved_connections'
-import createLogger from '../lib/logger'
 import systemTheme from './20220307-default-theme-system'
 import serverCerts from './20220401_add_trust_server_certificate_to_connections'
 import socketPath from './20220408_add_socket_path'
@@ -38,9 +35,13 @@ import bigQueryOptions from './20230426_add_bigquery_options'
 import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
 import ultimate from './ultimate/index'
+
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
-const logger = createLogger('migrations')()
+import rawLog from "electron-log";
+
+
+const logger = rawLog.scope('migrations');
 
 const setupSQL = `
  CREATE TABLE IF NOT EXISTS BK_MIGRATIONS(
@@ -49,7 +50,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom,
+  a, b, c, d, ...ultimate, domains, createSettings, addZoom,
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
 
@@ -68,7 +69,7 @@ const devMigrations = [
   dev1, dev2, dev3
 ]
 
-const migrations = [...realMigrations, ...ultimate, ...fixtures, ...devMigrations]
+const migrations = [...realMigrations, ...fixtures, ...devMigrations]
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",
@@ -105,8 +106,12 @@ export default class {
       }
       const hasRun = await Manager.checkExists(runner, migration.name)
       if (!hasRun) {
-        await migration.run(runner, this.env)
-        await Manager.markExists(runner, migration.name)
+        try {
+          await migration.run(runner, this.env)
+          await Manager.markExists(runner, migration.name)
+        } catch (err) {
+          console.log(`Migration ${migration.name} failed with`, err.name, err.message)
+        }
       }
     }
   }

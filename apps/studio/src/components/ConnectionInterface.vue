@@ -215,6 +215,7 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -305,14 +306,21 @@ export default Vue.extend({
         this.$refs.sidebar.$refs.sidebar,
         this.$refs.content
       ]
+      const lastSavedSplitSizes = SmartLocalStorage.getItem("connInterfaceSplitSizes")
+      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [300, 500]
+
       this.split = Split(components, {
         elementStyle: (_dimension, size) => ({
           'flex-basis': `calc(${size}%)`,
         }),
-        sizes: [300, 500],
+        sizes: splitSizes,
         gutterize: 8,
         minSize: [300, 300],
         expandToMin: true,
+        onDragEnd: () => {
+          const splitSizes = this.split.getSizes()
+          SmartLocalStorage.addItem("connInterfaceSplitSizes", splitSizes)
+        }
       } as Split.Options)
     })
       await this.$store.dispatch('loadUsedConfigs')
@@ -371,6 +379,10 @@ export default Vue.extend({
 
     },
     async submit() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
+
       this.connectionError = null
       try {
         await this.$store.dispatch('connect', this.config)
@@ -385,6 +397,9 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
+      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+        return
+      }
 
       try {
         this.testing = true

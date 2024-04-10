@@ -163,6 +163,15 @@
           </div>
           <div class="filter-add-apply">
             <div class="row fixed">
+              <button
+                v-if="filters.length > 1"
+                class="btn btn-flat btn-fab remove-filter"
+                type="button"
+                title="Remove filter"
+                @click="removeFilter(-1)"
+              >
+                <i class="material-icons">remove</i>
+              </button>
               <div class="btn-wrap add-filter">
                 <button
                   class="btn btn-flat btn-fab"
@@ -214,7 +223,7 @@
 import Vue from "vue";
 import { TableFilter } from "@/lib/db/models";
 import { joinFilters, normalizeFilters } from "@/common/utils";
-import { mapGetters } from "vuex";
+import { mapGetters, mapState } from "vuex";
 import platformInfo from "@/common/platform_info";
 import { AppEvent } from "@/common/AppEvent";
 
@@ -222,7 +231,7 @@ const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
-  props: ["columns", "initialFilters"],
+  props: ["columns", "reactiveFilters"],
   data() {
     return {
       filterTypes: {
@@ -235,14 +244,7 @@ export default Vue.extend({
         "greater than or equal": ">=",
         in: "in",
       },
-      filters: this.initialFilters ?? [
-        {
-          op: "AND",
-          field: this.columns[0]?.columnName,
-          type: "=",
-          value: "",
-        },
-      ],
+      filters: this.reactiveFilters,
       filterRaw: "",
       filterMode: BUILDER,
       RAW,
@@ -251,6 +253,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(["dialectData"]),
+    ...mapState(['connection']),
     additionalFilters() {
       const [_, ...additional] = this.filters;
       return additional;
@@ -259,7 +262,10 @@ export default Vue.extend({
       return {
         [this.ctrlOrCmd('f')]: this.focusOnInput,
       }
-    }
+    },
+    externalFilters() {
+      return this.reactiveFilters;
+    },
   },
   methods: {
     focusOnInput() {
@@ -272,12 +278,12 @@ export default Vue.extend({
 
       // Populate raw filter query with existing filter if raw filter is empty
       if (filterMode === RAW && filters.length && !this.filterRaw) {
-        const allFilters = filters.map(
-          (filter) =>
-            `${filter.field} ${filter.type} ${this.dialectData.escapeString(
-              filter.value,
-              true
-            )}`
+        const allFilters = filters.map((filter) =>
+          this.connection.knex
+            .where(filter.field, filter.type, filter.value)
+            .toString()
+            .split("where")[1]
+            .trim()
         );
         const filterString = joinFilters(allFilters, filters);
         this.filterRaw = filterString;
@@ -334,6 +340,13 @@ export default Vue.extend({
     },
     filterRaw() {
       if (this.filterRaw === "") this.submit();
+    },
+    externalFilters() {
+      if (platformInfo.isCommunity) {
+        this.filters = this.externalFilters?.slice(0, 2) || [];
+      } else {
+        this.filters = this.externalFilters || [];
+      }
     },
   },
 });

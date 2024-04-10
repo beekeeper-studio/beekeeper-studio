@@ -7,7 +7,7 @@ import {
   DatabaseElement,
   IDbConnectionDatabase,
   IDbConnectionServer,
-} from "../client";
+} from "../types";
 import {
   CancelableQuery,
   NgQueryResult,
@@ -212,12 +212,12 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   firebirdOptions: Firebird.Options;
 
   constructor(
-    protected server: IDbConnectionServer,
-    protected database: IDbConnectionDatabase
+    server: IDbConnectionServer,
+    database: IDbConnectionDatabase
   ) {
-    super(null, context);
+    super(null, context, server, database);
     this.dialect = 'generic';
-    this.dbReadOnlyMode = server?.config?.readOnlyMode || false;
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   versionString(): string {
@@ -225,6 +225,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async connect(): Promise<void> {
+    await super.connect();
+
     const config = {
       host: this.server.config.host,
       port: this.server.config.port,
@@ -273,7 +275,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async listTables(
-    _db: string,
     _filter?: FilterOptions
   ): Promise<TableOrView[]> {
     const result = await this.driverExecuteSingle(`
@@ -288,7 +289,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async listTableColumns(
-    _db: string,
     table?: string,
     _schema?: string
   ): Promise<ExtendedTableColumn[]> {
@@ -368,6 +368,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           defaultValue,
           nullable,
           primaryKey,
+          hasDefault: !_.isNil(defaultValue),
         };
       })
     );
@@ -494,16 +495,14 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async getPrimaryKey(
-    _db: string,
     table: string,
     _schema?: string
   ): Promise<string | null> {
-    const columns = await this.getPrimaryKeys(_db, table, _schema);
+    const columns = await this.getPrimaryKeys(table, _schema);
     return columns[0]?.columnName ?? null;
   }
 
   async getPrimaryKeys(
-    _db: string,
     table: string,
     _schema?: string
   ): Promise<PrimaryKeyColumn[]> {
@@ -628,40 +627,46 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     return {
       execute: async () => {
-        connection = await Connection.attach(this.firebirdOptions);
+        connection = await this.pool.getConnection()
 
-        const results = await this.driverExecuteMultiple(queryText, {
-          rowAsArray: true,
-          connection,
-        });
-
-        connection.release();
-
-        return results.map(({ rows, meta }) => {
-          const fields = meta.map((field, idx) => ({
-            id: `c${idx}`,
-            name: field.alias || field.field,
-            // TODO add dataType prop
-          }));
-
-          rows = rows.map((row: Record<string, any>) => {
-            const transformedRow = {};
-            Object.keys(row).forEach((key, idx) => {
-              let val = row[key];
-              if (TRIM_END_CHAR && meta[idx].type === 452) {
-                // SQLVarText or CHAR
-                val = val.trimEnd();
-              }
-              transformedRow[`c${idx}`] = val;
-            });
-            return transformedRow;
+        try {
+          const results = await this.driverExecuteMultiple(queryText, {
+            rowAsArray: true,
+            connection,
           });
+          return results.map(({ rows, meta }) => {
+            const fields = meta.map((field, idx) => ({
+              id: `c${idx}`,
+              name: field.alias || field.field,
+              // TODO add dataType prop
+            }));
 
-          return { fields, rows };
-        });
+            rows = rows.map((row: Record<string, any>) => {
+              const transformedRow = {};
+              Object.keys(row).forEach((key, idx) => {
+                let val = row[key];
+                if (TRIM_END_CHAR && meta[idx].type === 452) {
+                  // SQLVarText or CHAR
+                  val = val.trimEnd();
+                }
+                transformedRow[`c${idx}`] = val;
+              });
+              return transformedRow;
+            });
+
+            return { fields, rows };
+          });
+        } finally {
+          await connection.release();
+        }
+
       },
       cancel: async () => {
-        connection?.release();
+        try {
+          await connection?.release();
+        } catch (ex) {
+          log.warn("Unable to release connection", ex.message)
+        }
       },
     };
   }
@@ -674,7 +679,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       throw new Error("Inserting multiple rows is not supported.");
     }
     const columns = await this.listTableColumns(
-      null,
       tableInsert.table,
       tableInsert.schema
     );
@@ -736,7 +740,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async listTableIndexes(
-    _db: string,
     table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
@@ -854,18 +857,15 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           await transaction.query(command);
         }
       }
-
       await transaction.commit();
+      return results;
     } catch (ex) {
       log.error("query exception: ", ex);
       await transaction.rollback();
-      await connection.release();
       throw ex;
+    } finally {
+      await connection.release()
     }
-
-    await connection.release();
-
-    return results;
   }
 
   applyChangesSql(changes: TableChanges): string {
@@ -886,31 +886,30 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     cli: Connection | Transaction,
     updates: TableUpdate[]
   ): Promise<TableUpdateResult[]> {
-    const commands = updates.map((update) => {
-      const params = [
+    const results = [];
+
+    for (const update of updates) {
+      const updateParams = [
         _.isBoolean(update.value) ? _.toInteger(update.value) : update.value,
       ];
+
       const whereList = [];
+      const whereParams = [];
       update.primaryKeys.forEach(({ column, value }) => {
         whereList.push(`${FirebirdData.wrapIdentifier(column)} = ?`);
-        params.push(value);
+        whereParams.push(value);
       });
 
       const where = whereList.join(" AND ");
 
-      return {
-        query: `
-          UPDATE ${update.table} SET ${update.column} = ?
-          WHERE ${where} RETURNING *
-        `,
-        params: params,
-      };
-    });
+      const updateQuery = `
+        UPDATE ${update.table} SET ${update.column} = ?
+        WHERE ${where}
+      `;
+      const selectQuery = `SELECT * FROM ${update.table} WHERE ${where}`;
 
-    const results = [];
-    for (let index = 0; index < commands.length; index++) {
-      const blob = commands[index];
-      const result = await cli.query(blob.query, blob.params);
+      await cli.query(updateQuery, [updateParams, ...whereParams]);
+      const result = await cli.query(selectQuery, whereParams);
       results.push(result.rows[0]);
     }
 
@@ -931,8 +930,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         WHERE rdb$relation_name = ${Firebird.escape(table)}
       `
     ).then((result) => result.rows[0]);
-    const indexes = this.listTableIndexes("", table);
-    const relations = this.getTableKeys("", table);
+    const indexes = this.listTableIndexes(table);
+    const relations = this.getTableKeys(table);
     const triggers = this.listTableTriggers(table);
 
     return {
@@ -949,7 +948,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async getTableKeys(
-    _db: string,
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
@@ -1025,6 +1023,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async disconnect(): Promise<void> {
     this.pool.destroy();
+
+    await super.disconnect();
   }
 
   protected async rawExecuteQuery(
@@ -1057,7 +1057,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async listMaterializedViewColumns(
-    _db: string,
     _table: string,
     _schema?: string
   ): Promise<TableColumn[]> {
@@ -1065,7 +1064,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async listSchemas(
-    _db: string,
     _filter?: SchemaFilterOptions
   ): Promise<string[]> {
     return []; // Doesn't support schemas
@@ -1083,7 +1081,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const columns = await this.listTableColumns("", table);
+    const columns = await this.listTableColumns(table);
     const columnsQuery = columns
       .map((column) => {
         const defaultValue = column.defaultValue
@@ -1109,8 +1107,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     throw new Error("Method not implemented.");
   }
 
-  async truncateAllTables(db: string, _schema?: string): Promise<void> {
-    const tables = await this.listTables(db);
+  async truncateAllTables(_schema?: string): Promise<void> {
+    const tables = await this.listTables();
     const query = tables.map((table) => `DELETE FROM ${table.name};`).join("");
     await this.driverExecuteSingle(query);
   }
@@ -1123,14 +1121,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async selectTopStream(
-    _db: string,
     table: string,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
     chunkSize: number,
     _schema?: string
   ): Promise<StreamResults> {
-    const columns = this.listTableColumns("", table);
+    const columns = this.listTableColumns(table);
     const totalRows = this.getTableLength(table);
     const cursor = new FirebirdCursor({
       config: this.firebirdOptions,
@@ -1148,7 +1145,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   queryStream(
-    _db: string,
     _query: string,
     _chunkSize: number
   ): Promise<StreamResults> {
@@ -1218,8 +1214,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     } catch (ex) {
       log.error("importData", sql, ex);
       await transaction.rollback();
-      await connection.release();
       throw ex;
+    } finally {
+      await connection.release()
     }
   }
 
@@ -1234,13 +1231,4 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return joinQueries(queries);
   }
 
-}
-
-export default async function (
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-) {
-  const client = new FirebirdClient(server, database);
-  await client.connect();
-  return client;
 }

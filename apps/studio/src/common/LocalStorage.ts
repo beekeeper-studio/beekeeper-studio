@@ -1,6 +1,13 @@
 
 
 export const SmartLocalStorage = {
+  addItem(key:string, value:any): void{
+    localStorage.setItem(key, JSON.stringify(value))
+  },
+  getItem(key:string): any{
+    const value = localStorage.getItem(key)
+    return value
+  },
   removeItem(key: string): void {
     localStorage.removeItem(key)
   },

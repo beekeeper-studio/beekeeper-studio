@@ -4,6 +4,7 @@ on:
   pull_request:
     paths-ignore:
       - apps/sqltools/**
+      - docs/**
 
 jobs:
   build:
@@ -11,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-11, ubuntu-20.04, windows-latest]
+        os: [ubuntu-20.04]
 
     steps:
       - name: Check out Git repository
@@ -70,12 +71,12 @@ jobs:
         run: "yarn run electron:build --publish never"
 
       - name: Cleanup artifacts
-        if: matrix.os != 'windows-latest'
+        if: "!startsWith(matrix.os, 'windows')"
         run: |
           npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
 
       - name: Cleanup artifacts Win
-        if: matrix.os == 'windows-latest'
+        if: "startsWith(matrix.os, 'windows')"
         continue-on-error: true
         run: |
           npx rimraf "apps\studio\dist_electron\!(*.exe)"

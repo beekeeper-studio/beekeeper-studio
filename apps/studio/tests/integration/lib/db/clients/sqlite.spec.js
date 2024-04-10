@@ -33,6 +33,9 @@ describe("Sqlite Tests", () => {
     if (util.connection) {
       await util.connection.disconnect()
     }
+    if (dbfile) {
+      dbfile.removeCallback();
+    }
   })
 
   describe("Common Tests", () => {

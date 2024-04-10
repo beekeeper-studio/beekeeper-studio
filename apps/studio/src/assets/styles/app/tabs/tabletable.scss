@@ -61,5 +61,26 @@
 
   }
 
+  .statusbar-item.hidden-column-count {
+    margin-right: 0.1rem;
+    & > a {
+      color: inherit;
+      display: inline-flex;
+    }
+    i {
+      margin-right: 0;
+      font-size: 16px;
+      line-height: 1;
+    }
+  }
 
+  .empty-placeholder {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: $text;
+  }
 }
