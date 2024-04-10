@@ -176,6 +176,8 @@ export function resolveLanguage(lang: Language): CodeMirrorLanguage {
         // @ts-expect-error TODO not fully typed
         hint: CodeMirror.hint.sql,
       };
+    case "oracle":
+    case "firebird":
     case "bigquery":
     case "sql":
       return {
