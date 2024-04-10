@@ -32,7 +32,7 @@ import CodeMirror from "codemirror";
 
 import { EditorMarker } from "@/lib/editor/utils";
 import { resolveLanguage } from "@/lib/editor/languageData";
-import { setKeybindingsFromVimrc, applyConfig } from "@/lib/editor/vim";
+import { setKeybindingsFromVimrc, applyConfig, Register } from "@/lib/editor/vim";
 
 export default {
   props: [
@@ -57,7 +57,7 @@ export default {
   ],
   data() {
     return {
-      editor: null,
+      editor: null
     };
   },
   computed: {
@@ -104,7 +104,7 @@ export default {
       this.editor.setOption("lineWrapping", this.lineWrapping);
     },
     async focus() {
-      if (this.focus) {
+      if (this.focus && this.editor) {
         this.editor.focus();
         await this.$nextTick();
         // this fixes the editor not showing because it doesn't think it's dom element is in view.
@@ -214,6 +214,10 @@ export default {
             applyConfig(codeMirrorVimInstance, this.vimConfig);
           }
           setKeybindingsFromVimrc(codeMirrorVimInstance);
+
+          // Doing this instaed of defineRegister allows us to reset the register while the application is running
+          // which causes errors with defineRegister
+          codeMirrorVimInstance.getRegisterController().registers['*'] = new Register(this.$native.clipboard);
         }
       }
 
