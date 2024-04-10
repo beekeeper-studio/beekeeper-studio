@@ -1,7 +1,7 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index' 
+import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
@@ -48,6 +48,7 @@ const KnexTypes: any = {
   postgresql: 'pg',
   'mysql': 'mysql2',
   "mariadb": "mysql2",
+  "tidb": "mysql2",
   "sqlite": "sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",
@@ -181,6 +182,7 @@ export class DBTestUtil {
     const expectedQueries = {
       postgresql: 'test_inserts"drop table test_inserts"',
       mysql: "test_inserts'drop table test_inserts'",
+      tidb: "test_inserts'drop table test_inserts'",
       mariadb: "test_inserts'drop table test_inserts'",
       sqlite: 'test_inserts"drop table test_inserts"',
       sqlserver: 'test_inserts[drop table test_inserts]',
@@ -251,6 +253,7 @@ export class DBTestUtil {
     const expectedQueries = {
       postgresql: 'group"drop table test_inserts"',
       mysql: "group'drop table test_inserts'",
+      tidb: "group'drop table test_inserts'",
       mariadb: "group'drop table test_inserts'",
       sqlite: 'group"Delete from test_inserts; vacuum;"',
       sqlserver: 'group[drop table test_inserts]',
@@ -741,6 +744,7 @@ export class DBTestUtil {
     const expectedQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
@@ -753,7 +757,7 @@ export class DBTestUtil {
   }
 
   async buildSelectTopQueryTests() {
-    const dbType = this.dbType === 'mariadb' ? 'mysql' : this.dbType
+    const dbType = ['mariadb','tidb'].includes(this.dbType) ? 'mysql' : this.dbType
     const fmt = (sql: string) => safeSqlFormat(sql, {
       language: FormatterDialect(dbType === 'cockroachdb'
           ? 'postgresql'
@@ -942,7 +946,11 @@ export class DBTestUtil {
       undefined,
     )
     expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
-    expect(result.totalRows).toBe(6)
+    if (this.connection.connectionType !== 'tidb') {
+      // tiDB doesn't always update statistics, so this might not
+      // be correct
+      expect(result.totalRows).toBe(6)
+    }
     const cursor = result.cursor
     await cursor.start()
     const b1 = await cursor.read()
@@ -1055,6 +1063,7 @@ export class DBTestUtil {
       const generatedDefs = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
+        tidb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
         mariadb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
         sqlserver: "AS (first_name + ' ' + last_name) PERSISTED",
         oracle: `VARCHAR2(511) GENERATED ALWAYS AS ("first_name" || ' ' || "last_name")`,

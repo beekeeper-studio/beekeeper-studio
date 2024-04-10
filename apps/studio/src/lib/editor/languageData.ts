@@ -147,6 +147,12 @@ export function resolveLanguage(lang: Language): CodeMirrorLanguage {
         // @ts-expect-error TODO not fully typed
         hint: CodeMirror.hint.sql,
       };
+    case "tidb":
+      return {
+        mode: "text/x-mysql",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
     case "postgresql":
     case "redshift":
     case "cockroachdb":

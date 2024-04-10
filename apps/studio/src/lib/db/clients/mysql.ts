@@ -614,7 +614,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const queries = buildSelectTopQuery(table, 1, 1, [], []);
     let title = "total";
     if (isTable) {
-      queries.countQuery = `show table status like '${table}'`;
+      queries.countQuery = `show table status like '${MysqlData.wrapLiteral(table)}'`;
       title = "Rows";
     }
     const { countQuery, params } = queries;

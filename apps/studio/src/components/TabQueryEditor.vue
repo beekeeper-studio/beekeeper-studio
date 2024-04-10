@@ -424,6 +424,7 @@
           'postgresql': 'psql',
           'mysql': 'mysql',
           'mariadb': 'mysql',
+          'tidb': 'mysql',
           'redshift': 'psql',
         }
         return mappings[this.connectionType] || 'generic'
