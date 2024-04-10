@@ -133,7 +133,7 @@ export class Register {
       this.linewise = true;
     }
     this.keyBuffer.push(text);
-    this.clipboard.writeText(this.toString(), false)
+    this.clipboard.writeText(this.keyBuffer.join(' '), false)
   }
 
   pushInsertModeChanges(changes: any) {
@@ -152,7 +152,8 @@ export class Register {
   }
 
   toString() {
-    return this.keyBuffer.join('');
+    return this.clipboard.readText();
+    // return this.keyBuffer.join('');
   }
 
   private createInsertModeChanges(c: any) {
