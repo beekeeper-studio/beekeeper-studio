@@ -4318,7 +4318,7 @@ bindings@^1.5.0:
   dependencies:
     file-uri-to-path "1.0.0"
 
-bks-oracledb@5.3.3:
+bks-oracledb@5.3.3, "oracledb@npm:bks-oracledb":
   version "5.3.3"
   resolved "https://registry.yarnpkg.com/bks-oracledb/-/bks-oracledb-5.3.3.tgz#2d68ac5ccf12140a40daf3fa6723d535223a1826"
   integrity sha512-3og0hbhu+WBocyQIZyJX+/dxlgR7F1QfbI6wVwYVK1fKv06lPOky7tPoAyqWJpG2krYnYXSD7crmWj1O2liL8Q==
@@ -10424,6 +10424,11 @@ minipass@^3.0.0, minipass@^3.1.1:
   dependencies:
     yallist "^4.0.0"
 
+minipass@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/minipass/-/minipass-5.0.0.tgz#3e9788ffb90b694a5d0ec94479a45b5d8738133d"
+  integrity sha512-3FnjYuehv9k6ovOEbyOswadCDPX1piCfhV8ncmYtHOjuPwylVWsghTLo7rabjC3Rx5xD4HDx8Wm1xnMF7S5qFQ==
+
 minizlib@^2.1.1:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/minizlib/-/minizlib-2.1.2.tgz#e90d3466ba209b932451508a11ce3d3632145931"
@@ -11052,11 +11057,6 @@ ora@^3.4.0:
     log-symbols "^2.2.0"
     strip-ansi "^5.2.0"
     wcwidth "^1.0.1"
-
-"oracledb@npm:bks-oracledb":
-  version "5.3.3"
-  resolved "https://registry.yarnpkg.com/bks-oracledb/-/bks-oracledb-5.3.3.tgz#2d68ac5ccf12140a40daf3fa6723d535223a1826"
-  integrity sha512-3og0hbhu+WBocyQIZyJX+/dxlgR7F1QfbI6wVwYVK1fKv06lPOky7tPoAyqWJpG2krYnYXSD7crmWj1O2liL8Q==
 
 os-browserify@^0.3.0:
   version "0.3.0"
@@ -13869,13 +13869,13 @@ tar-stream@^2.0.0, tar-stream@^2.1.4, tar-stream@^2.2.0:
     readable-stream "^3.1.1"
 
 tar@^6.0.2:
-  version "6.1.11"
-  resolved "https://registry.yarnpkg.com/tar/-/tar-6.1.11.tgz#6760a38f003afa1b2ffd0ffe9e9abbd0eab3d621"
-  integrity sha512-an/KZQzQUkZCkuoAA64hM92X0Urb6VpRhAFllDzz44U2mcD5scmT3zBc4VgVpkugF580+DQn8eAFSyoQt0tznA==
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/tar/-/tar-6.2.1.tgz#717549c541bc3c2af15751bea94b1dd068d4b03a"
+  integrity sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==
   dependencies:
     chownr "^2.0.0"
     fs-minipass "^2.0.0"
-    minipass "^3.0.0"
+    minipass "^5.0.0"
     minizlib "^2.1.1"
     mkdirp "^1.0.3"
     yallist "^4.0.0"
