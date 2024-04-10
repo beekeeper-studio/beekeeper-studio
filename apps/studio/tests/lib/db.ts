@@ -331,6 +331,15 @@ export class DBTestUtil {
 
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
+    const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
+    const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
+
+    if (this.dbType === 'mariadb') expect(defaultValues).toEqual([true,  true])
+    else if (this.dbType === 'mysql') expect(defaultValues).toEqual([true,  false])
+    else if (this.dbType === 'postgresql') expect(defaultValues).toEqual([true,  false])
+    else if (this.dbType === 'cockroachdb') expect(defaultValues).toEqual([true,  false])
+    else expect(defaultValues).toEqual([false, false])
+
     const groupColumns = columns.filter((row) => row.tableName.toLowerCase() === 'group_table')
     expect(groupColumns.length).toBe(2)
   }
