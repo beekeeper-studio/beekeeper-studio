@@ -627,6 +627,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         dataType: this.parseDataType(row.DATA_TYPE, row.CHAR_LENGTH),
         nullable: row.NULLABLE === 'Y',
         defaultValue: this.parseDefault(row.DATA_DEFAULT),
+        hasDefault: !_.isNil(this.parseDefault(row.DATA_DEFAULT)),
         generated: row.VIRTUAL_COLUMN === 'YES',
       }
     })

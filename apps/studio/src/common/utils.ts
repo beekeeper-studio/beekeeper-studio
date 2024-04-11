@@ -125,18 +125,20 @@ export function resolveHomePathToAbsolute(filename: string): string {
   return path.join(homedir(), filename.substring(2));
 }
 
+export async function waitPromise(time: number) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
 
 
 export function createCancelablePromise(error: CustomError, timeIdle = 100): any {
   let canceled = false;
   let discarded = false;
 
-  const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
 
   return {
     async wait() {
       while (!canceled && !discarded) {
-        await wait(timeIdle);
+        await waitPromise(timeIdle);
       }
 
       if (canceled) {
