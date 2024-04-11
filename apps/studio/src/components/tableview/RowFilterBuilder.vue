@@ -289,10 +289,10 @@ export default Vue.extend({
         const allFilters = filters.map((filter) => {
           let where;
           if (filter.type == 'is') {
-            where = this.connectection.knex
+            where = this.connection.knex
               .whereNull(filter.field);
           } else if (filter.type == 'is not') {
-            where = this.connectection.knex
+            where = this.connection.knex
               .whereNotNull(filter.field);
           } else {
             where = this.connection.knex
