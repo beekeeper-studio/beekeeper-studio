@@ -286,10 +286,8 @@ import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
-import helpers from '@shared/lib/tabulator'
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
-import DateTimePickerEditorVue from '@shared/components/tabulator/DateTimePickerEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
@@ -553,7 +551,7 @@ export default Vue.extend({
       // to the FK table.
       this.table.columns.forEach(column => {
 
-        const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0].includes(column.columnName));
+        const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
         // because it uses the PK to fetch the result.
@@ -621,7 +619,7 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           formatterParams: {
             fk: hasKeyDatas && keyDatas[0][1],
-            fkOnClick: hasKeyDatas && ((e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+            fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
             isPK: isPK
           },
           editorParams: {
