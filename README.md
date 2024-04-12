@@ -117,7 +117,7 @@ We have you covered, read our [guide to contributing in 10 minutes without codin
 Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
 
 ```bash
-# First: Install NodeJS 12 or 14, NPM, and Yarn
+# First: Install NodeJS 16, NPM, and Yarn
 # ...
 
 # 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)
@@ -126,11 +126,28 @@ git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
 yarn install # installs dependencies
 
-# if using Node 16.17+:
-export NODE_OPTIONS=--openssl-legacy-provider
 
 # Now you can start the app:
 yarn run electron:serve ## the app will now start
+```
+
+**If you get `error:03000086:digital envelope routines::initialization error`, you'll have to update openssl.** 
+
+- On Ubuntu/Debian:
+```
+sudo apt-get update
+sudo apt-get upgrade openssl
+```
+
+- On CentOS/RHEL:
+```
+sudo yum update openssl
+```
+
+- On macOS (using Homebrew):
+```
+brew update
+brew upgrade openssl
 ```
 
 ### Where to make changes?
