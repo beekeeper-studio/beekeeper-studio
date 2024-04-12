@@ -34,6 +34,7 @@ export abstract class Export {
     progress: Array<ProgressCallback>()
   }
 
+  managerNotify = true
   constructor(
     public filePath: string,
     public connection: BasicDatabaseClient<any>,

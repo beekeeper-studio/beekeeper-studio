@@ -60,12 +60,17 @@ async function initBasics() {
   if (initialized) return settings
   initialized = true
   await ormConnection.connect()
+  console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
   log.info("running migrations")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
   log.debug("getting settings")
   settings = await UserSetting.all()
+
+  if (settings.oracleInstantClient) {
+    process.env['LD_LIBRARY_PATH'] = `${process.env.LD_LIBRARY_PATH}:${settings.oracleInstantClient.value}`
+  }
 
   log.debug("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
