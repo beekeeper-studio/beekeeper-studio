@@ -32,7 +32,7 @@ describe("Oracle Tests", () => {
         startPeriod: 60000
       })
       .withWaitStrategy(Wait.forHealthCheck())
-      .withStartupTimeout(timeoutDefault)
+      .withStartupTimeout(timeoutDefault * 2) // just wait a really long time ok?
       .start()
 
     const config = {
