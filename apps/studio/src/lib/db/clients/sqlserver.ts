@@ -891,7 +891,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           const columns = Object.keys(item);
           columns.forEach((ic) => {
             if (_.isBoolean(item[ic])) {
-              item[ic] = `${item[ic]}`
+              item[ic] = item[ic] ? 1 : 0
             }
           })
         })
