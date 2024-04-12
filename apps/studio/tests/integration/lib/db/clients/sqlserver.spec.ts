@@ -58,6 +58,7 @@ function testWith(dockerTag: string, readonly: boolean) {
       await util.knex.schema.raw("CREATE SCHEMA hello")
       await util.knex.schema.raw("CREATE TABLE hello.world(id int, name varchar(255))")
       await util.knex.schema.raw("INSERT INTO hello.world(id, name) VALUES(1, 'spiderman')")
+      await util.knex.schema.raw("CREATE TABLE withbits(id int, bitcol bit NOT NULL)");
     })
 
     afterAll(async () => {
@@ -86,6 +87,47 @@ function testWith(dockerTag: string, readonly: boolean) {
         const result = await util.connection.selectTop('world', 0, 100, [], [], 'hello')
         expect(result.result.length).toBe(1)
         expect(result.fields.length).toBe(2)
+      })
+    })
+
+    // Regression test for #1945 -> cloning with bit fields doesn't work
+    it("Should be able to insert with bit fields", async () => {
+      if (readonly) return;
+
+      const changes = {
+        inserts: [
+          {
+            table: 'withbits',
+            data: [
+              {
+                id: 1,
+                bitcol: 0
+              },
+              {
+                id: 2,
+                bitcol: true
+              }
+            ]
+          }
+        ]
+      };
+
+      await util.connection.applyChanges(changes);
+
+      const results = await util.knex.select().table('withbits');
+      expect(results.length).toBe(2);
+
+      const firstResult = { ...results[0] };
+      const secondResult = { ...results[1] };
+
+      expect(firstResult).toStrictEqual({
+        id: 1,
+        bitcol: false
+      });
+
+      expect(secondResult).toStrictEqual({
+        id: 2,
+        bitcol: true
       })
     })
   })

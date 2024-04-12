@@ -11,6 +11,7 @@ import { CockroachClient } from './clients/cockroach';
 import { BigQueryClient } from './clients/bigquery';
 import { FirebirdClient } from './clients/firebird';
 import { OracleClient } from "./clients/oracle";
+import { CassandraClient } from "./clients/cassandra";
 
 const clients = new Map<string, any>([
   ['mysql', MysqlClient],
@@ -23,7 +24,8 @@ const clients = new Map<string, any>([
   ['cockroachdb', CockroachClient],
   ['bigquery', BigQueryClient],
   ['firebird', FirebirdClient],
-  ['oracle', OracleClient]
+  ['oracle', OracleClient],
+  ['cassandra', CassandraClient]
 ], );
 
 

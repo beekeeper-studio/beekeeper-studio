@@ -579,8 +579,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     }
   }
 
-  private parseFields(fields, row) {
-    return fields.map((field, idx) => {
+  private parseFields(fields, _row) {
+    return fields.map((field) => {
       field.dataType = dataTypesToMatchTypeCode[field?.type?.code] || 'user-defined'
       field.id = field.name
       return field

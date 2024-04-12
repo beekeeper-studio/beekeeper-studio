@@ -28,6 +28,18 @@ services:
     ports:
       - 1521:1521
 
+  psql15:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql13:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5434:5432
+
   psql13:
     image: postgres:13
     environment:
