@@ -3,7 +3,7 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { RootBinding, AppEvent } from './common/AppEvent'
 import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
-import { BkConfig } from './lib/config/config-loader'
+import { BkConfig } from './lib/config/configLoader'
 import { createVHotkeyKeymapFunc } from './plugins/ConfigPlugin'
 
 // 2. Specify a file with the types you want to augment

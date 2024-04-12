@@ -6,7 +6,7 @@ import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
-import { BkConfig } from "@/lib/config/config-loader";
+import { BkConfig } from "@/lib/config/configLoader";
 import { TableKey } from "@shared/lib/dialects/models";
 
 export class RedshiftClient extends PostgresClient {

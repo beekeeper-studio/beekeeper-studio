@@ -8,7 +8,7 @@ import {
   BkConfig,
   KeybindingPath,
   watchConfigFile,
-} from "@/lib/config/config-loader";
+} from "@/lib/config/configLoader";
 
 export function createVHotkeyKeymap(
   obj: Partial<Record<KeybindingPath, any>>

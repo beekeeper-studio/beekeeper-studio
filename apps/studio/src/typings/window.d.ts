@@ -1,4 +1,4 @@
-import type { IBkConfigHandler } from "@/lib/config/config-loader";
+import type { IBkConfigHandler } from "@/lib/config/configLoader";
 
 declare global {
   interface Window {

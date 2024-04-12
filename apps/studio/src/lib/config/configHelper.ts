@@ -1,4 +1,4 @@
-import { transform } from "../../../config-transformer";
+import { transform } from "../../../configTransformer";
 import ini from "ini";
 import _ from "lodash";
 

@@ -11,18 +11,18 @@ import {
   isIniArray,
   parseIni,
   UserConfigWarning,
-} from "./config-helper";
+} from "./configHelper";
 
 if (platformInfo.isDevelopment) {
   // run types builder
-  require("../../../config-types-builder.js");
+  require("../../../configTypesBuilder.mjs");
 }
 
 const DEFAULT_CONFIG_FILENAME = "default.config.ini";
 const DEV_CONFIG_FILENAME = "local.config.ini";
 const USER_CONFIG_FILENAME = "user.config.ini";
 
-const log = rawLog.scope("config-loader");
+const log = rawLog.scope("configLoader");
 
 type ConfigSource = "default" | "user";
 
@@ -112,10 +112,12 @@ export const BkConfigHandler: IBkConfigHandler = {
 
     if (isIniArray(keybindings)) {
       return Object.keys(keybindings).map((idx) =>
+        // @ts-expect-error TODO remove this
         convertKeybinding(target, keybindings[idx], platformInfo.platform)
       );
     }
 
+        // @ts-expect-error TODO remove this
     return convertKeybinding(target, keybindings, platformInfo.platform);
   },
 };

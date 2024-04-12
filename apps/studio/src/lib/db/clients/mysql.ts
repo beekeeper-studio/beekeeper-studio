@@ -60,7 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { BkConfig } from "@/lib/config/config-loader";
+import { BkConfig } from "@/lib/config/configLoader";
 import { uuidv4 } from "@/lib/uuid";
 
 type ResultType = {

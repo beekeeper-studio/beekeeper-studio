@@ -4,7 +4,7 @@ import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartiti
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
-import { BkConfig } from '@/lib/config/config-loader';
+import { BkConfig } from '@/lib/config/configLoader';
 
 export class CockroachClient extends PostgresClient {
   supportedFeatures(): SupportedFeatures {

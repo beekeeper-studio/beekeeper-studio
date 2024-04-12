@@ -6,7 +6,7 @@ import rawlog from 'electron-log'
 const log = rawlog.scope('update-manager')
 
 import platformInfo from '../common/platform_info'
-import { BkConfig } from '@/lib/config/config-loader'
+import { BkConfig } from '@/lib/config/configLoader'
 
 autoUpdater.autoDownload = false
 autoUpdater.logger = log
