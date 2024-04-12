@@ -126,17 +126,16 @@
                 </option>
               </select>
             </div>
-            <div class="expand filter"
-              v-tooltip="isNullFilter(filter) ? 
-                'You cannot provide a comparison value when checking for NULL or NOT NULL' : 
-                ''"
-              >
+            <div class="expand filter">
               <div class="filter-wrap">
                 <input
                   class="form-control filter-value"
                   type="text"
                   v-model="filter.value"
                   :disabled="isNullFilter(filter)"
+                  :title="isNullFilter(filter) ? 
+                    'You cannot provide a comparison value when checking for NULL or NOT NULL' : 
+                    ''"
                   :placeholder="
                     filter.type === 'in'
                       ? `Enter values separated by comma, eg: foo,bar`
@@ -144,6 +143,7 @@
                   "
                 >
                 <button
+                  v-if="!isNullFilter(filter)"
                   type="button"
                   class="clear btn-link"
                   @click.prevent="filter.value = ''"
@@ -249,7 +249,6 @@ export default Vue.extend({
         "greater than": ">",
         "greater than or equal": ">=",
         in: "in",
-        // TODO (@day): check which databases don't support these
         "is null": "is",
         "is not null": "is not"
       },

@@ -135,7 +135,7 @@ export interface OrderBy {
 export interface TableFilter {
   field: string;
   type: string;
-  value: string | string[];
+  value?: string | string[];
   op?: 'AND' | 'OR';
 }
 
