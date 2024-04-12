@@ -127,7 +127,7 @@ export class CockroachClient extends PostgresClient {
       port: server.config.port || undefined,
       password: server.config.password || undefined,
       database: database.database,
-      max: BkConfig.db.postgres.maxClient, // max idle connections per time (30 secs)
+      max: BkConfig.db.cockroachdb.maxClient, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BkConfig.db.cockroachdb.connectionTimeout,
       idleTimeoutMillis: BkConfig.db.cockroachdb.idleTimeout,
       // not in the typings, but works.
