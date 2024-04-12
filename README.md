@@ -64,6 +64,7 @@ The commercial version of Beekeeper Studio ([available here](https://beekeeperst
 
 - Oracle Database
 - Cassandra Database
+- Firebird
 
 ## Supporting Beekeeper Studio
 
