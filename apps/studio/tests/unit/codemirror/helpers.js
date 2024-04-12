@@ -5,6 +5,7 @@ import {
   registerAutoquote,
   autoquoteHandler,
 } from "../../../src/lib/editor/CodeMirrorPlugins";
+import _ from 'lodash';
 
 class Editor {
   constructor(opts = {}) {
@@ -59,9 +60,9 @@ function _testCompletions(it, name, spec) {
     });
     editor.cm.setCursor(spec.cursor);
     const completions = await editor.hint();
-    expect(spec.list.sort()).toEqual(completions.list.sort());
-    expect(spec.from).toEqual(completions.from);
-    expect(spec.to).toEqual(completions.to);
+    expect(_.sortBy(completions.list, ['text'])).toEqual(_.sortBy(spec.list, ['text']));
+    expect(completions.from).toEqual(spec.from);
+    expect(completions.to).toEqual(spec.to);
     editor.destroy();
   });
 }
