@@ -60,6 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+import { uuidv4 } from "@/lib/uuid";
 
 type ResultType = {
   data: any[];
@@ -251,8 +252,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     pool: mysql.Pool;
   };
 
+  clientId: string
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context, server, database);
+    this.clientId = uuidv4();
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
@@ -268,12 +272,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
-    this.conn.pool.on('acquire', function (connection) {
-      log.debug('Pool connection %d acquired', connection.threadId);
+    this.conn.pool.on('acquire', (connection) => {
+      log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
     });
 
-    this.conn.pool.on('release', function (connection) {
-      log.debug('Pool connection %d released', connection.threadId);
+    this.conn.pool.on('release', (connection) => {
+      log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
     });
 
 
@@ -401,6 +405,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       nullable: row.is_nullable === "YES",
       defaultValue: this.resolveDefault(row.column_default),
       extra: _.isEmpty(row.extra) ? null : row.extra,
+      hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
       generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
     }));
@@ -609,7 +614,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const queries = buildSelectTopQuery(table, 1, 1, [], []);
     let title = "total";
     if (isTable) {
-      queries.countQuery = `show table status like '${table}'`;
+      queries.countQuery = `show table status like '${MysqlData.wrapLiteral(table)}'`;
       title = "Rows";
     }
     const { countQuery, params } = queries;
@@ -1074,7 +1079,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         return result;
       } catch (ex) {
         await this.driverExecuteSingle("ROLLBACK");
-        console.error(ex);
+        log.error(ex)
         throw ex;
       }
     });
@@ -1287,6 +1292,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const sql = "SELECT database() AS 'schema'";
     const { data } = await this.driverExecuteSingle(sql, { connection });
     return data[0].schema;
+  }
+
+  hasDefaultValue(defaultValue: string|null, extraValue: string|null): boolean {
+    return !_.isNil(defaultValue) || !_.isNil(extraValue) && ['auto_increment', 'default_generated'].includes(extraValue.toLowerCase())
   }
 
   resolveDefault(defaultValue: string) {

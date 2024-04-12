@@ -300,17 +300,6 @@
 <script lang="ts">
 
   import _ from 'lodash'
-  import CodeMirror from 'codemirror'
-  import 'codemirror/addon/comment/comment'
-  import 'codemirror/keymap/vim.js'
-  import 'codemirror/addon/dialog/dialog'
-  import 'codemirror/addon/search/search'
-  import 'codemirror/addon/search/jump-to-line'
-  import 'codemirror/addon/scroll/annotatescrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar.css'
-  import 'codemirror/addon/search/searchcursor'
-
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
@@ -424,6 +413,7 @@
           'postgresql': 'psql',
           'mysql': 'mysql',
           'mariadb': 'mysql',
+          'tidb': 'mysql',
           'redshift': 'psql',
         }
         return mappings[this.connectionType] || 'generic'

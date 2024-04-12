@@ -148,4 +148,13 @@ export const CLIENTS: ClientConfig[] = [
       'server:socketPath',
     ],
   },
+  {
+    key: 'tidb',
+    name: 'TiDB',
+    defaultPort: 4000,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+    ],
+  },
 ];

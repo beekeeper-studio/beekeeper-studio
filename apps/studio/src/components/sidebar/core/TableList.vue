@@ -296,15 +296,18 @@
           }
         })
       },
-      refreshTables() {
-        this.$store.dispatch('updateRoutines')
-        this.$store.dispatch('updateTables').then(() => {
+      async refreshTables() {
+        try {
+          this.$store.dispatch('updateRoutines')
+          await this.$store.dispatch('updateTables')
           // When we refresh sidebar tables we need to also refresh:
           // 1. Any open tables
           // 2. Any pinned tables
           this.refreshExpandedColumns()
           this.refreshPinnedColumns()
-        })
+        } catch (ex) {
+          this.$noty.error(`Unable to refresh tables ${ex.message}`)
+        }
       },
       newTable() {
         this.$root.$emit(AppEvent.createTable)
@@ -334,7 +337,7 @@
       document.addEventListener('mousedown', this.maybeUnselect)
       const components = [this.$refs.pinned, this.$refs.tables]
       this.split = Split(components, {
-        elementStyle: (dimension, size) => ({
+        elementStyle: (_dimension, size) => ({
             'flex-basis': `calc(${size}%)`,
         }),
         direction: 'vertical',
