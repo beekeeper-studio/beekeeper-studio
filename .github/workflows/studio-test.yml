@@ -14,8 +14,17 @@ on:
       - apps/sqltools/**
 
 jobs:
-  testing:
-    name: Test Suite
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      test-chunks: ${{ steps['set-test-chunks'].outputs['test-chunks'] }}
+    steps:
+      - uses: actions/checkout@v2
+      - id: set-test-chunks
+        name: Set Chunks
+        run: echo "::set-output name=test-chunks::$(find apps/studio/tests/integration | grep 'spec.js')"
+  unit:
+    name: Unit Test Suite
     runs-on: ubuntu-latest
     steps:
       - name: Check out Git repository
@@ -39,7 +48,29 @@ jobs:
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
+
+  integration:
+    name: Integration Test Suite
+    runs-on: ubuntu-latest
+    needs:
+      - setup
+    strategy:
+      matrix:
+        chunk: ${{ needs.setup.outputs['test-chunks'] }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
       - name: Integration Tests
-        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent
+        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent ${matrix.chunk}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
