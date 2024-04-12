@@ -84,6 +84,7 @@ function testWith(tag, socket = false, readonly = false) {
       await util.knex.schema.raw(functionDDL)
       await util.knex.schema.raw(routine1DDL)
       await util.knex.schema.raw(routine2DDL)
+      await util.knex.schema.raw("CREATE TABLE bittable(id int, bitcol bit NOT NULL)");
     })
 
     afterAll(async () => {
@@ -222,6 +223,40 @@ function testWith(tag, socket = false, readonly = false) {
           data: [{ number: -1, tiny_number: -1 }],
         }]
       })).rejects.toThrowError()
+    })
+
+    // Regression test for #1945 -> cloning with bit fields doesn't work
+    it("Should be able to insert with bit fields", async () => {
+      if (readonly) return;
+
+      const changes = {
+        inserts: [
+          {
+            table: 'bittable',
+            data: [
+              {
+                id: 1,
+                bitcol: 0
+              },
+              {
+                id: 2,
+                bitcol: true
+              }
+            ]
+          }
+        ]
+      };
+
+      await util.connection.applyChanges(changes);
+
+      const results = await util.knex.select().table('bittable');
+      expect(results.length).toBe(2);
+
+      const firstResult = { ...results[0] };
+      const secondResult = { ...results[1] };
+
+      expect(firstResult.bitcol[0]).toBe(0)
+      expect(secondResult.bitcol[0]).toBe(1)
     })
   })
 
