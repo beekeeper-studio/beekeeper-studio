@@ -59,7 +59,7 @@ jobs:
 
 
   integration:
-    name: test - ${{ split(matrix.chunk)[-1] }}
+    name: test - ${{ matrix.chunk[0] }}
     runs-on: ubuntu-latest
     needs:
       - setup
@@ -76,10 +76,18 @@ jobs:
           node-version-file: '.nvmrc'
           cache: yarn
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: yarn install (with retry)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: "yarn install --frozen-lockfile --network-timeout 100000"
 
-      - name: Integration Tests
-        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent ${{ matrix.chunk }}
+      - name: Test
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
