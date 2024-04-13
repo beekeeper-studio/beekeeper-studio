@@ -59,7 +59,7 @@ jobs:
 
 
   integration:
-    name: test - ${{ matrix.chunk }}
+    name: test - ${{ split(matrix.chunk)[-1] }}
     runs-on: ubuntu-latest
     needs:
       - setup
