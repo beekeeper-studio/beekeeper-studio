@@ -76,6 +76,8 @@ export const Mutators = {
     // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead
     // of futzing around in here too much? The goal is to keep the true/false as showing
 
+    if (!value) return value
+
     if (dialect && dialect === 'sqlserver') return value
 
     const result = []
