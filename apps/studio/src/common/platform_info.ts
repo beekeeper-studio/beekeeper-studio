@@ -31,7 +31,7 @@ const isDevEnv = !(e.app && e.app.isPackaged);
 const isWindows = platform === 'win32'
 const isMac = platform === 'darwin'
 const isArm = p.arch.startsWith('arm')
-const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
+const easyPlatform: 'windows' | 'mac' | 'linux' = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
 const locale = e.app?.getLocale();
 let windowPrefersDarkMode = false
 if (isRenderer()) {

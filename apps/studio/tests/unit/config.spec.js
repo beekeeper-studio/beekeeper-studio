@@ -2,7 +2,7 @@ import {
   parseIni,
   convertKeybinding,
   checkConfigWarnings,
-} from "../../src/lib/config/configHelper";
+} from "../../src/lib/bkConfig"
 import _ from "lodash";
 
 describe("Config", () => {

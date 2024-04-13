@@ -147,8 +147,10 @@ import TabIcon from './tab/TabIcon.vue'
         return null
       },
       keymap() {
+        if (!this.selected) return {}
+
         return this.$vHotkeyKeymap({
-          'coreTabs.closeTab': () => this.maybeClose,
+          'tab.closeTab': this.maybeClose,
         })
       },
       cleanText() {

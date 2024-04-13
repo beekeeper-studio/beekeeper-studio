@@ -35,6 +35,7 @@ import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+import { BkConfig } from './lib/bkConfig'
 
 (async () => {
 
@@ -53,6 +54,8 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
     log.debug("####################################")
     log.debug("Platform Information (App)")
     log.debug(JSON.stringify(platformInfo, null, 2))
+
+    await BkConfig.initialize();
 
     _.mixin({
       'deepMapKeys': function (obj, fn) {

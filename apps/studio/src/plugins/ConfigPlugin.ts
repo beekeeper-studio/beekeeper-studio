@@ -4,11 +4,7 @@ import platformInfo from "@/common/platform_info";
 import { AppEvent } from "@/common/AppEvent";
 import { ipcRenderer } from "electron";
 import { VueConstructor } from "vue/types/umd";
-import {
-  BkConfig,
-  KeybindingPath,
-  watchConfigFile,
-} from "@/lib/config/configLoader";
+import { BkConfig, KeybindingPath } from "@/lib/bkConfig";
 
 export function createVHotkeyKeymap(
   obj: Partial<Record<KeybindingPath, any>>
@@ -30,17 +26,15 @@ export function createVHotkeyKeymap(
   return keymap;
 }
 
-export type createVHotkeyKeymapFunc = typeof createVHotkeyKeymap;
-
 export default {
   install(Vue: VueConstructor) {
     if (platformInfo.isDevelopment) {
-      watchConfigFile({
+      BkConfig.watchConfigFile({
         type: "default",
         callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
       });
 
-      watchConfigFile({
+      BkConfig.watchConfigFile({
         type: "user",
         callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
       });

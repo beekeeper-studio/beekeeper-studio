@@ -1,7 +1,7 @@
-import type { IBkConfigHandler } from "@/lib/config/configLoader";
+import { BkConfig } from "@/lib/bkConfig";
 
 declare global {
   interface Window {
-    BkConfig: IBkConfigHandler;
+    BkConfig: typeof BkConfig;
   }
 }
