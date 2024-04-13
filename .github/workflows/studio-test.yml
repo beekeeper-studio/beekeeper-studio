@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v2
       - id: set-test-chunks
         name: Set Chunks
-        run: echo "::set-output name=test-chunks::$(find apps/studio/tests/integration/ | grep "lib/db" | grep "spec.js" | jq -R -s -c 'split("\n")[:-1]')"
+        run: echo "::set-output name=test-chunks::$(find apps/studio/tests/integration/ | grep 'lib/db' | grep 'spec.js' | jq -R -s -c 'split(\"\n\")[:-1]')"
   unit:
     name: Normal Tests
     runs-on: ubuntu-latest
