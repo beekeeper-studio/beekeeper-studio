@@ -2,7 +2,9 @@
 
 set -euxo pipefail
 
-FILES=`find apps/studio/tests/integration/lib/db | grep "spec.js"`
-JSON=`echo "$FILES" | jq -R -s -c 'split(\"n")[:-1]'`
+# Use $(...) for command substitution
+FILES=$(find apps/studio/tests/integration/lib/db -name "*spec.js")
+# Properly handle newline characters and convert to JSON array
+JSON=$(echo "$FILES" | jq -R -s 'split("\n")[:-1]')
 
 echo "$JSON"
