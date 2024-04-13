@@ -56,13 +56,17 @@ export const Mutators = {
     return value
   },
   /**
-   * Stringify bit(1) data for use in UIs and JSON.
+   * Convert bit(1) data to a number for use in UIs and JSON.
    * Typically Bit1 data is like a true/false flag.
    * @param  {any} value
    * @returns JsonFriendly
    */
   bit1Mutator(value: any): JsonFriendly {
     if (!value) return 0
+
+    // No need to convert if it's number
+    if (_.isNumber(value)) return value
+
     return Number(value[0])
   },
 
@@ -79,6 +83,9 @@ export const Mutators = {
     if (!value) return value
 
     if (dialect && dialect === 'sqlserver') return value
+
+    // No need to convert if it's string
+    if (_.isString(value)) return value
 
     const result = []
     for (let index = 0; index < value.length; index++) {
