@@ -189,6 +189,8 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
         } else {
           item[ic] = parseInt(item[ic].split("'")[1], 2)
         }
+      } else if (matching && matching.dataType && matching.dataType.startsWith('bit') && _.isBoolean(item[ic])) {
+        item[ic] = item[ic] ? 1 : 0;
       }
 
       // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
