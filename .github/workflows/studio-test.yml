@@ -19,6 +19,8 @@ jobs:
     outputs:
       test-chunks: ${{ steps['set-test-chunks'].outputs['test-chunks'] }}
     steps:
+      - name: 'Setup jq'
+        uses: dcarbone/install-jq-action@v2
       - uses: actions/checkout@v2
       - id: set-test-chunks
         name: Set Chunks
