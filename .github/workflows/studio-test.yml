@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: 'Setup jq'
         uses: dcarbone/install-jq-action@v2
+        with:
+          version: "1.7"
+          force: true
+
       - uses: actions/checkout@v2
       - id: set-test-chunks
         name: Set Chunks
