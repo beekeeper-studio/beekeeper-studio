@@ -30,7 +30,7 @@ jobs:
         name: Set Chunks
         run: echo "::set-output name=test-chunks::$(./bin/get-db-files-as-json.sh)"
   unit:
-    name: Normal Tests
+    name: Non-terrible tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out Git repository
@@ -59,7 +59,7 @@ jobs:
 
 
   integration:
-    name: test - ${{ matrix.chunk[0] }}
+    name: 🎱 ${{ matrix.chunk[0] }}
     runs-on: ubuntu-latest
     needs:
       - setup
