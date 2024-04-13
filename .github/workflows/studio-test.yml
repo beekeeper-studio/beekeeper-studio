@@ -64,6 +64,7 @@ jobs:
     needs:
       - setup
     strategy:
+      fail-fast: false
       matrix:
         chunk: ${{ fromJson(needs.setup.outputs['test-chunks']) }}
     steps:
