@@ -67,7 +67,8 @@ jobs:
 
       - name: Check dependencies
         run: "yarn install --frozen-lockfile --network-timeout 100000"
-
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
         env:
