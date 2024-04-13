@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v2
       - id: set-test-chunks
         name: Set Chunks
-        run: echo "::set-output name=test-chunks::$(./.bin/get-db-files-as-json.sh)"
+        run: echo "::set-output name=test-chunks::$(./bin/get-db-files-as-json.sh)"
   unit:
     name: Normal Tests
     runs-on: ubuntu-latest
