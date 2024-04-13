@@ -59,7 +59,7 @@ jobs:
 
 
   integration:
-    name: 🎱 ${{ matrix.chunk[0] }}
+    name: 🥞 ${{ matrix.chunk[0] }}
     runs-on: ubuntu-latest
     needs:
       - setup
