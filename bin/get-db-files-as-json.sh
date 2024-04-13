@@ -2,7 +2,7 @@
 
 # Use $(...) for command substitution
 FILES=$(find apps/studio/tests/integration/lib/db -name "*spec.js")
-# Properly handle newline characters and convert to JSON array
-JSON=$(echo "$FILES" | jq -R -s 'split("\n")[:-1]')
+# Convert to JSON array directly
+JSON=$(echo "$FILES" | jq -Rsc 'split("\n") | if last == "" then .[:-1] else . end')
 
 echo "$JSON"
