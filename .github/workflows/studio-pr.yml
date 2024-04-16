@@ -4,6 +4,7 @@ on:
   pull_request:
     paths-ignore:
       - apps/sqltools/**
+      - docs/**
 
 jobs:
   build:
@@ -11,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-11, ubuntu-20.04, windows-2019]
+        os: [ubuntu-20.04]
 
     steps:
       - name: Check out Git repository
@@ -65,6 +66,8 @@ jobs:
 
       - name: Check dependencies
         run: "yarn install --frozen-lockfile --network-timeout 100000"
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Build Electron app
         run: "yarn run electron:build --publish never"

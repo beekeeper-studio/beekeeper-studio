@@ -13,8 +13,8 @@ describe("Oracle Tests", () => {
 
   beforeAll(async () => {
     // this is the testcontainers default startup wait time.
-    const timeoutDefault = 120000
-    jest.setTimeout(timeoutDefault)
+    const timeoutDefault = 1000 * 60 * 5 // 5 minutes
+    jest.setTimeout(timeoutDefault + 500) // give jest a buffer
     const localDir = path.resolve('./tests/docker/oracle_init')
     container = await new GenericContainer('gvenzl/oracle-xe:18')
       .withName('oracle')
@@ -32,6 +32,7 @@ describe("Oracle Tests", () => {
         startPeriod: 60000
       })
       .withWaitStrategy(Wait.forHealthCheck())
+      .withStartupTimeout(timeoutDefault) // just wait a really long time ok?
       .start()
 
     const config = {

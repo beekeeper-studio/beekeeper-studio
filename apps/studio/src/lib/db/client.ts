@@ -5,11 +5,13 @@ import { PostgresClient } from './clients/postgresql';
 import { SQLServerClient } from './clients/sqlserver';
 import { SqliteClient } from './clients/sqlite';
 import { MariaDBClient } from './clients/mariadb';
+import { TiDBClient } from './clients/tidb';
 import { RedshiftClient } from './clients/redshift';
 import { CockroachClient } from './clients/cockroach';
 import { BigQueryClient } from './clients/bigquery';
 import { FirebirdClient } from './clients/firebird';
 import { OracleClient } from "./clients/oracle";
+import { CassandraClient } from "./clients/cassandra";
 
 const clients = new Map<string, any>([
   ['mysql', MysqlClient],
@@ -18,10 +20,12 @@ const clients = new Map<string, any>([
   ['sqlite', SqliteClient],
   ['redshift', RedshiftClient],
   ['mariadb', MariaDBClient],
+  ['tidb', TiDBClient],
   ['cockroachdb', CockroachClient],
   ['bigquery', BigQueryClient],
   ['firebird', FirebirdClient],
-  ['oracle', OracleClient]
+  ['oracle', OracleClient],
+  ['cassandra', CassandraClient]
 ], );
 
 

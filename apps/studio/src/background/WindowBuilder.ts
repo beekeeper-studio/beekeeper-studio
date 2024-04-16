@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow } from "electron"
+import { BrowserWindow, Rectangle } from "electron"
 import electron from 'electron'
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
@@ -28,7 +28,7 @@ class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
 
-  constructor(settings: IGroupedUserSettings, openOptions: OpenOptions) {
+  constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
     const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
     let showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
@@ -41,8 +41,7 @@ class BeekeeperWindow {
 
       log.info('constructing the window')
     this.win = new BrowserWindow({
-      width: 1200,
-      height: 800,
+      ...this.getWindowPosition(settings),
       minWidth: 800,
       minHeight: 600,
       backgroundColor: dark ? "#252525" : '#ffffff',
@@ -105,6 +104,37 @@ class BeekeeperWindow {
     })
   }
 
+  private getWindowPosition(settings: IGroupedUserSettings) {
+    const options: Electron.BrowserWindowConstructorOptions = {
+      width: 1200,
+      height: 800,
+    }
+
+    const isRectangle = (obj: any): obj is Rectangle => typeof obj === "object" &&
+      typeof obj.x === "number" &&
+      typeof obj.y === "number" &&
+      typeof obj.width === "number" &&
+      typeof obj.height === "number"
+
+    const winPosition = settings.windowPosition.value as Record<string, any>
+    if (isRectangle(winPosition)) {
+      const area = electron.screen.getDisplayMatching(winPosition).workArea
+      if (winPosition.x >= area.x &&
+        winPosition.y >= area.y &&
+        winPosition.x + winPosition.width <= area.x + area.width &&
+        winPosition.y + winPosition.height <= area.y + area.height) {
+        options.x = winPosition.x
+        options.y = winPosition.y
+      }
+      if (winPosition.width <= area.width ||
+        winPosition.height <= area.height) {
+        options.width = winPosition.width
+        options.height = winPosition.height
+      }
+    }
+    return options
+  }
+
   get webContents() {
     return this.win ? this.win.webContents : null
   }
@@ -120,6 +150,16 @@ class BeekeeperWindow {
     this.win?.on('closed', () => {
       this.win = null
     })
+
+    const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
+    this.win.on('resize',windowMoveResizeListener)
+    this.win.on('move', windowMoveResizeListener)
+  }
+
+  windowMoveResizeListener(){
+    const bounds = this.win.getNormalBounds()
+    this.settings.windowPosition.value = bounds
+    this.settings.windowPosition.save().then(_.noop).catch(log.error)
   }
 
   finishLoadListener() {

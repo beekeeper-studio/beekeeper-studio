@@ -339,6 +339,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       nullable: row.is_nullable === "YES",
       defaultValue: this.resolveDefault(row.column_default),
       extra: _.isEmpty(row.extra) ? null : row.extra,
+      hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
       generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
     }));
@@ -547,7 +548,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const queries = buildSelectTopQuery(table, 1, 1, [], []);
     let title = "total";
     if (isTable) {
-      queries.countQuery = `show table status like '${table}'`;
+      queries.countQuery = `show table status like '${MysqlData.wrapLiteral(table)}'`;
       title = "Rows";
     }
     const { countQuery, params } = queries;
@@ -1225,6 +1226,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const sql = "SELECT database() AS 'schema'";
     const { data } = await this.driverExecuteSingle(sql, { connection });
     return data[0].schema;
+  }
+
+  hasDefaultValue(defaultValue: string|null, extraValue: string|null): boolean {
+    return !_.isNil(defaultValue) || !_.isNil(extraValue) && ['auto_increment', 'default_generated'].includes(extraValue.toLowerCase())
   }
 
   resolveDefault(defaultValue: string) {

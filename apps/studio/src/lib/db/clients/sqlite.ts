@@ -57,7 +57,6 @@ type SqliteResult = {
 const SD = SqliteData;
 
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
-
   version: SqliteResult;
   databasePath: string;
 
@@ -594,15 +593,19 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {
-    return data.map((row) => ({
-      tableName,
-      columnName: row.name,
-      dataType: row.type,
-      nullable: Number(row.notnull || 0) === 0,
-      defaultValue: row.dflt_value === 'NULL' ? null : row.dflt_value,
-      ordinalPosition: Number(row.cid),
-      generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
-    }))
+    return data.map((row) => {
+      const defaultValue = row.dflt_value === 'NULL' ? null : row.dflt_value
+      return {
+        tableName,
+        columnName: row.name,
+        dataType: row.type,
+        nullable: Number(row.notnull || 0) === 0,
+        defaultValue,
+        ordinalPosition: Number(row.cid),
+        hasDefault: !_.isNil(defaultValue),
+        generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
+      } 
+    })
   }
 
   private identifyCommands(queryText: string) {
