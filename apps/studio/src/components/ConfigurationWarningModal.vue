@@ -13,12 +13,8 @@
             :key="`${idx}-${warning.type}-${warning.section}-${warning.key}`"
           >
             <template v-if="warning.type === 'section'">
-              <span
-                >Unexpected section
-                <span style="font-weight: bold"
-                  >[{{ warning.section }}]</span
-                ></span
-              >
+              <span>Unexpected section
+                <span style="font-weight: bold">[{{ warning.section }}]</span></span>
             </template>
             <template v-else-if="warning.type === 'key'">
               <span>
