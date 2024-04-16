@@ -1,6 +1,7 @@
 /* eslint-disable */
 const path = require('path')
 const { resolve } = require('path')
+const merge = require('lodash/merge')
 /* eslint-enable */
 
 module.exports = {
@@ -11,4 +12,8 @@ module.exports = {
   },
   setupFilesAfterEnv: [resolve(__dirname, './tests/setupTests.js')],
   setupFiles: ['./jest.polyfills.js'],
+  transform: merge(
+    require('@vue/cli-plugin-unit-jest/presets/typescript-and-babel/jest-preset').transform,
+    { '^.+\\.mjs$': 'babel-jest' }
+  ),
 }

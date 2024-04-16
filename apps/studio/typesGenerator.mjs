@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-const fs = require("fs");
-const dtsGen = require("dts-gen");
-const path = require("path");
-const ini = require("ini");
-const _ = require("lodash");
+import fs from "fs";
+import dtsGen from "dts-gen";
+import path from "path";
+import ini from "ini";
+import _ from "lodash";
 
 function resolveRootPath() {
   const __dirname = path.resolve();
@@ -24,7 +24,7 @@ function isNumeric(str) {
   ); // ...and ensure strings of whitespace fail
 }
 
-function parseIni(text) {
+export function parseIni(text) {
   const obj = ini.parse(text);
   return _.cloneDeepWith(obj, (value) => {
     if (isNumeric(value)) {
@@ -33,7 +33,7 @@ function parseIni(text) {
   });
 }
 
-function generateConfigTypes() {
+export function generateConfigTypes() {
   const rootPath = resolveRootPath();
 
   const rawConfig = fs.readFileSync(
@@ -58,8 +58,3 @@ function generateConfigTypes() {
 if (process.env.CLI_MODE) {
   generateConfigTypes();
 }
-
-module.exports = {
-  parseIni,
-  generateConfigTypes,
-};

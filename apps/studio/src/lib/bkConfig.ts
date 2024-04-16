@@ -4,7 +4,8 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, watch, writeFileSync } from "fs";
-import { parseIni } from "../../typesGenerator.js";
+// @ts-expect-error
+import { parseIni } from "../../typesGenerator.mjs";
 
 /**
  * Array that is parsed by ini.parse. Not exact array or array-like because
