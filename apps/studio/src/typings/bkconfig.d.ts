@@ -37,10 +37,7 @@ declare interface IBkConfig {
             openInSqlEditor: string;
             openQuickSearch: string;
             pasteSelection: string;
-            refresh: {
-                "0": string;
-                "1": string;
-            };
+            refresh: string[];
             save: string;
         };
         queryEditor: {
@@ -55,20 +52,11 @@ declare interface IBkConfig {
             altOpen: string;
             altOpenInBackground: string;
             close: string;
-            focusSearch: {
-                "0": string;
-                "1": string;
-            };
+            focusSearch: string[];
             open: string;
             openInBackground: string;
-            selectDown: {
-                "0": string;
-                "1": string;
-            };
-            selectUp: {
-                "0": string;
-                "1": string;
-            };
+            selectDown: string[];
+            selectUp: string[];
         };
         tab: {
             closeTab: string;

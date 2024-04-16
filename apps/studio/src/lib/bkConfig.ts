@@ -4,7 +4,7 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, watch, writeFileSync } from "fs";
-import { transform } from "@/../configTransformer";
+import { parseIni } from "../../typesGenerator.js";
 
 /**
  * Array that is parsed by ini.parse. Not exact array or array-like because
@@ -146,9 +146,7 @@ export function checkConfigWarnings(
   return results;
 }
 
-export function parseIni(text: string) {
-  return transform(ini.parse(text));
-}
+export { parseIni }
 
 export function isIniArray(value: any): value is IniArray {
   return (
@@ -296,6 +294,8 @@ class BkConfigManager {
     this.log.debug("Config successfully initialized.", JSON.stringify(mergedConfig, null, 2));
 
     this._initialized = true;
+
+    return true
   }
 
   has(path: string): boolean {
@@ -427,8 +427,8 @@ class BkConfigManager {
       return path.resolve(dirpath, "../..");
     }
 
-    if (process.env.TEST_MODE) {
-      return path.resolve(dirpath, "../../../../..");
+    if (platformInfo.testMode) {
+      return path.resolve(dirpath, "../../../..");
     }
 
     return path.resolve(__dirname, "../../..");

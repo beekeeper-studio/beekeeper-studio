@@ -1,7 +1,7 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index' 
+import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
@@ -14,6 +14,7 @@ import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import { BkConfig } from '@/lib/bkConfig'
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -149,6 +150,8 @@ export class DBTestUtil {
   }
 
   async setupdb() {
+    await BkConfig.initialize();
+
     await this.connection.connect()
     await this.createTables()
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
