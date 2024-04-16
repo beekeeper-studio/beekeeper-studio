@@ -13,6 +13,7 @@ module.exports = {
   setupFilesAfterEnv: [resolve(__dirname, './tests/setupTests.js')],
   setupFiles: ['./jest.polyfills.js'],
   transform: merge(
+    // eslint-disable-next-line
     require('@vue/cli-plugin-unit-jest/presets/typescript-and-babel/jest-preset').transform,
     { '^.+\\.mjs$': 'babel-jest' }
   ),

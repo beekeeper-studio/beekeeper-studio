@@ -50,7 +50,7 @@ export function generateConfigTypes() {
       .replace("declare const IBkConfig:", "declare interface IBkConfig");
 
   fs.writeFileSync(
-    path.join(rootPath, "apps/studio/src/typings/bkconfig.d.ts"),
+    path.join(rootPath, "apps/studio/src/typings/bkConfig.d.ts"),
     result
   );
 }

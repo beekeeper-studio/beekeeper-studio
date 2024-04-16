@@ -152,6 +152,9 @@
     "ignorePatterns": [
       "node_modules",
       "../**/dist"
+    ],
+    "ignores": [
+      "bkConfig.d.ts"
     ]
   },
   "postcss": {
