@@ -273,7 +273,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import pluralize from 'pluralize'
-import { TabulatorFull, ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
+import { ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
@@ -915,7 +915,7 @@ export default Vue.extend({
         this.tabulator.modules.selectRange.restoreFocus()
       })
     },
-    rowActionsMenu(range: Tabulator.RangeComponent) {
+    rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
       return [
         {
@@ -939,22 +939,20 @@ export default Vue.extend({
         },
       ]
     },
-    setAsNullMenuItem(range: Tabulator.RangeComponent) {
+    setAsNullMenuItem(range: RangeComponent) {
       const areAllCellsPrimarykey = range
         .getColumns()
         .every((col) => this.isPrimaryKey(col.getField()));
       return {
         label: createMenuItem("Set as NULL"),
         action: () => range.getCells().flat().forEach((cell) => {
-          // FIXME getCells must return components, fix from tabulator
-          cell = cell.getComponent()
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
         disabled: areAllCellsPrimarykey || !this.editable,
       }
     },
-    openEditorMenu(cell: Tabulator.CellComponent) {
-      const disabled = (cell: Tabulator.CellComponent) => {
+    openEditorMenu(cell: CellComponent) {
+      const disabled = (cell: CellComponent) => {
         if (this.isPrimaryKey(cell.getField())) return true
         return !this.editable && !this.insertionCellCheck(cell)
       }

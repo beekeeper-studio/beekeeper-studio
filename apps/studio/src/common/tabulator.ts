@@ -38,6 +38,7 @@ export function tabulatorForTableData(
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
+    editTriggerEvent: "dblclick",
     rowHeader: {
       field: rowHeaderField,
       resizable: false,

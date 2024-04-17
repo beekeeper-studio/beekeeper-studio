@@ -183,17 +183,14 @@ export function pasteRange(range: RangeComponent) {
     setCellValue(cell, text);
   } else {
     const table = range.getRows()[0].getTable();
-    const rows = table.modules.selectRange
-      .getTableRows()
-      .slice(range.getTopEdge());
-    const columns = table.modules.selectRange
-      .getTableColumns()
+    const rows = table.getRows('active').slice(range.getTopEdge());
+    const columns = table.getColumns(false).filter((col) => col.isVisible())
       .slice(range.getLeftEdge());
     const cells: CellComponent[][] = rows.map((row) => {
       const arr = [];
       row.getCells().forEach((cell) => {
-        if (columns.includes(cell.column)) {
-          arr.push(cell.getComponent());
+        if (columns.includes(cell.getColumn())) {
+          arr.push(cell);
         }
       });
       return arr;

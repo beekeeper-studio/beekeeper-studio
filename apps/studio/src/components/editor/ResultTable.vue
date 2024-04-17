@@ -11,7 +11,6 @@
 </template>
 
 <script type="text/javascript">
-  import { Tabulator, TabulatorFull} from 'tabulator-tables'
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
