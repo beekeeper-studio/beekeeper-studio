@@ -748,7 +748,7 @@ export default Vue.extend({
       const primaryFilter: TableFilter | false = _.isArray(this.filters) &&
         this.filters.find((filter: TableFilter) => this.isPrimaryKey(filter.field));
       let result = 'all'
-      if (this.primaryKeys?.length && primaryFilter) {
+      if (this.primaryKeys?.length && primaryFilter && primaryFilter.value) {
         log.info("setting scope", primaryFilter.value)
         result = _.truncate(primaryFilter.value.toString())
       } else if (_.isString(this.filters)) {

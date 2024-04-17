@@ -115,6 +115,7 @@
                 name="Filter Type"
                 class="form-control"
                 v-model="filter.type"
+                @change="clearInput(filter)"
               >
                 <option
                   v-for="(v, k) in filterTypes"
@@ -131,6 +132,10 @@
                   class="form-control filter-value"
                   type="text"
                   v-model="filter.value"
+                  :disabled="isNullFilter(filter)"
+                  :title="isNullFilter(filter) ? 
+                    'You cannot provide a comparison value when checking for NULL or NOT NULL' : 
+                    ''"
                   :placeholder="
                     filter.type === 'in'
                       ? `Enter values separated by comma, eg: foo,bar`
@@ -138,6 +143,7 @@
                   "
                 >
                 <button
+                  v-if="!isNullFilter(filter)"
                   type="button"
                   class="clear btn-link"
                   @click.prevent="filter.value = ''"
@@ -243,6 +249,8 @@ export default Vue.extend({
         "greater than": ">",
         "greater than or equal": ">=",
         in: "in",
+        "is null": "is",
+        "is not null": "is not"
       },
       filters: this.reactiveFilters,
       filterRaw: "",
@@ -268,6 +276,14 @@ export default Vue.extend({
     },
   },
   methods: {
+    clearInput(filter: any) {
+      if (filter.type.includes('is')) {
+        filter.value = null
+      }
+    },
+    isNullFilter(filter) {
+      return filter.type.includes('is')
+    },
     focusOnInput() {
       if (this.filterMode === RAW) this.$refs.valueInput.focus();
       else this.$refs.multipleFilters.querySelector('.filter-value')?.focus();
@@ -278,13 +294,22 @@ export default Vue.extend({
 
       // Populate raw filter query with existing filter if raw filter is empty
       if (filterMode === RAW && filters.length && !this.filterRaw) {
-        const allFilters = filters.map((filter) =>
-          this.connection.knex
-            .where(filter.field, filter.type, filter.value)
-            .toString()
+        const allFilters = filters.map((filter) => {
+          let where;
+          if (filter.type == 'is') {
+            where = this.connection.knex
+              .whereNull(filter.field);
+          } else if (filter.type == 'is not') {
+            where = this.connection.knex
+              .whereNotNull(filter.field);
+          } else {
+            where = this.connection.knex
+              .where(filter.field, filter.type, filter.value);
+          }
+          return where.toString()
             .split("where")[1]
-            .trim()
-        );
+            .trim();
+        });
         const filterString = joinFilters(allFilters, filters);
         this.filterRaw = filterString;
       }

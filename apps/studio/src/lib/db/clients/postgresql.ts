@@ -1129,6 +1129,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           })
           paramIdx += values.length
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
+        } else if (item.type.includes('is')) {
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
         const value = options.inlineParams
           ? knex.raw('?', [item.value]).toQuery()
@@ -1138,7 +1140,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
 
-      params = filters.flatMap((item) => {
+      params = filters.filter((item) => !!item.value).flatMap((item) => {
         return _.isArray(item.value) ? item.value : [item.value]
       })
     }
