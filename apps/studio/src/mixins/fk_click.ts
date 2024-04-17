@@ -1,12 +1,12 @@
 import rawLog from 'electron-log'
-import { Tabulator } from 'tabulator-tables';
+import { CellComponent } from 'tabulator-tables';
 
 const log = rawLog.scope('fk_click');
 
 export const FkLinkMixin = {
   methods: {
 
-    async fkClick(rawKeyData, cell: Tabulator.CellComponent) {
+    async fkClick(rawKeyData, cell: CellComponent) {
       log.debug('fk click', rawKeyData)
       const fromColumn = cell.getField().replace(/-link--bks$/g, "")
 
