@@ -17,13 +17,12 @@ export default class extends DefaultMenu {
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
-        this.menuItems.sidebarToggle
+        this.menuItems.sidebarToggle,
+        this.menuItems.reload,
       ]
     }
     if (!platformInfo.isMac)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
-    if (platformInfo.environment === 'development')
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
     return result
   }
 

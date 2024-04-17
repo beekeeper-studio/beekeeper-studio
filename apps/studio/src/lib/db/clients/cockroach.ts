@@ -1,11 +1,10 @@
-import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
 import { IDbConnectionServer } from "../types";
 import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
-
+import { BkConfig } from '@/lib/bkConfig';
 
 export class CockroachClient extends PostgresClient {
   supportedFeatures(): SupportedFeatures {
@@ -128,9 +127,9 @@ export class CockroachClient extends PostgresClient {
       port: server.config.port || undefined,
       password: server.config.password || undefined,
       database: database.database,
-      max: 5, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: globals.psqlTimeout,
-      idleTimeoutMillis: globals.psqlIdleTimeout,
+      max: BkConfig.db.cockroachdb.maxClient, // max idle connections per time (30 secs)
+      connectionTimeoutMillis: BkConfig.db.cockroachdb.connectionTimeout,
+      idleTimeoutMillis: BkConfig.db.cockroachdb.idleTimeout,
       // not in the typings, but works.
       // @ts-ignore
       options: optionsString

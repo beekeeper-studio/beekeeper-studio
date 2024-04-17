@@ -16,7 +16,7 @@ const externals = ['better-sqlite3',
   'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'oracledb', '@electron/remote'
 ]
 module.exports = {
-  transpileDependencies: ['@aws-sdk/*'],
+  transpileDependencies: ['@aws-sdk/*', 'ini'],
   pluginOptions: {
     electronBuilder: {
       nodeModulesPath: ['./node_modules', '../../node_modules'],

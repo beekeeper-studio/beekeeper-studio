@@ -13,7 +13,6 @@ import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Ro
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
-import globals from '../../../common/globals';
 import { HasPool, VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
@@ -22,6 +21,7 @@ import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import { BkConfig } from '@/lib/bkConfig';
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -1207,9 +1207,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       password: server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: globals.psqlTimeout,
-      idleTimeoutMillis: globals.psqlIdleTimeout,
-
+      connectionTimeoutMillis: BkConfig.db.postgres.connectionTimeout,
+      idleTimeoutMillis: BkConfig.db.postgres.idleTimeout,
     };
 
     return this.configurePool(config, server, null);

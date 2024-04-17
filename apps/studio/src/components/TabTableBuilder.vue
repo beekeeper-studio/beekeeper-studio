@@ -128,12 +128,11 @@ export default Vue.extend({
       if (!this.active) {
         return {}
       }
-      const results = {}
-
-      results[this.ctrlOrCmd('s')] = this.create.bind(this)
-      results[this.ctrlOrCmd('shift+s')] = this.sql.bind(this)
-      results[this.ctrlOrCmd('n')] = () => this.$refs.sb.addRow()
-      return results
+      return this.$vHotkeyKeymap({
+        'general.save': this.create.bind(this),
+        'general.openInSqlEditor': this.sql.bind(this),
+        'general.addRow': () => this.$refs.sb.addRow(),
+      })
     },
     defaultSchema() {
       return this.connection.defaultSchema ?

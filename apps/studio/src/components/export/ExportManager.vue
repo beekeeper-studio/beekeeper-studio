@@ -27,8 +27,6 @@ import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
 import { ExportProgress, ExportStatus } from '../../lib/export/models'
-import globals from '@/common/globals'
-import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
@@ -109,7 +107,7 @@ export default Vue.extend({
               error_notice.close()
             })
           ]
-        }).setTimeout(globals.errorNoticeTimeout)
+        }).setTimeout(this.$bkConfig.ui.export.errorNoticeTimeout)
         return
       }
       if (exporter.status !== ExportStatus.Completed) return;

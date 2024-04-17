@@ -14,6 +14,7 @@ import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import { BkConfig } from '@/lib/bkConfig'
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -150,6 +151,8 @@ export class DBTestUtil {
   }
 
   async setupdb() {
+    await BkConfig.initialize();
+
     await this.connection.connect()
     await this.createTables()
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')

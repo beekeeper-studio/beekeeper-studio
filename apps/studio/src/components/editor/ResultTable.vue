@@ -18,7 +18,6 @@
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml } from '@shared/lib/tabulator'
   import { dialectFor } from '@shared/lib/dialects/models'
-  import globals from '@/common/globals'
   import Papa from 'papaparse'
   import { mapState } from 'vuex'
   import { markdownTable } from 'markdown-table'
@@ -60,9 +59,9 @@
     computed: {
       ...mapState(['connection']),
       keymap() {
-        const result = {}
-        result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-        return result
+        return this.$vHotkeyKeymap({
+          'queryEditor.copyResultSelection': this.copySelection.bind(this),
+        });
       },
       tableData() {
           return this.dataToTableData(this.result, this.tableColumns)
@@ -71,7 +70,7 @@
           return this.result.truncated
       },
       tableColumns() {
-        const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
+        const columnWidth = this.result.fields.length > 30 ? this.$bkConfig.ui.tableTable.defaultColumnWidth : undefined
 
         const cellMenu = (_e, cell) => {
           return copyActionsMenu({
@@ -108,7 +107,7 @@
             width: columnWidth,
             mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
             formatter: this.cellFormatter,
-            maxInitialWidth: globals.maxColumnWidth,
+            maxInitialWidth: this.$bkConfig.ui.tableTable.maxColumnWidth,
             tooltip: this.cellTooltip,
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,

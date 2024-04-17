@@ -33,7 +33,6 @@ import { AppEvent } from "@/common/AppEvent";
 import { mapGetters, mapState } from "vuex";
 import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { entityId } from "@/common/utils";
-import globals from '@/common/globals';
 import "scrollyfills";
 
 type Entity = TableOrView | Routine | string;
@@ -84,7 +83,7 @@ export default Vue.extend({
       items: [],
       displayItems: [],
       itemComponent: ItemComponent,
-      estimateItemHeight: globals.tableListItemHeight, // height of collapsed item
+      estimateItemHeight: this.$bkConfig.ui.tableList.itemHeight, // height of collapsed item
       keeps: 30,
       generated: false,
     };
@@ -184,7 +183,7 @@ export default Vue.extend({
 
           // Summarizing the total height of all list items to get the average height
 
-          totalHeight += globals.tableListItemHeight; // height of list item
+          totalHeight += this.$bkConfig.ui.tableList.itemHeight; // height of list item
 
           if (item.expanded) {
             if (item.type === "table") {
@@ -201,7 +200,7 @@ export default Vue.extend({
       if (displayItems.length > 0) {
         this.estimateItemHeight = totalHeight / displayItems.length;
       } else {
-        this.estimateItemHeight = globals.tableListItemHeight;
+        this.estimateItemHeight = this.$bkConfig.ui.tableList.itemHeight;
       }
       this.displayItems = displayItems;
     },

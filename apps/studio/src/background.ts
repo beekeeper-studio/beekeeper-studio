@@ -13,6 +13,7 @@ log.catchErrors({ showDialog: false})
 log.info("initializing background")
 
 import { manageUpdates } from './background/update_manager'
+import { manageConfigs } from './background/config_manager'
 
 import MenuHandler from './background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_setting'
