@@ -214,10 +214,13 @@ function testWith(dockerTag, socket = false, readonly = false) {
     })
 
     it("Should allow me to update rows with array types", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: ["x", "y", "z"],
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1}
         ],
@@ -245,10 +248,13 @@ function testWith(dockerTag, socket = false, readonly = false) {
 
 
     it("Should allow me to update rows with array types when passed as string", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: '["x", "y", "z"]',
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1 }
         ],
