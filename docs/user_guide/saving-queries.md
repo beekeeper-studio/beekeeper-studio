@@ -9,21 +9,23 @@ Sometimes we have queries that we use repetitively. To avoid losing our SQL quer
 
 You can save a query by pressing `Ctrl+S` or clicking the `Save` button at the bottom right of the Query Editor.
 
-[IMAGE HERE]
+![Saving a query in Query Editor](../assets/images/saving-queries-1.gif)
 
 After that, you can type the name of the query (you can rename it later), and then click `Save`.
 
-## Use the saved queries
+## Open the saved queries
 
-You can open the Saved Queries panel to see all your saved queries by clicking the Saved Queries icon at the sidebar. After that, you can open the query by double clicking it.
+You can open the Saved Queries panel by clicking the Saved Queries icon at the sidebar. After that, open the query with double click.
 
-[IMAGE HERE AGANE]
+![Opening Saved Queries](../assets/images/saving-queries-2.gif)
 
 ## Import SQL files
 
-To import query files to Saved Queries, you can click the import button, and then click `Import .sql files`. From here, you can import multiple files of `.sql` or any text file format. This will make a copy of your file to your Saved Queries. Any changes from the original files will not be reflected in Beekeepe Studio.
+To import query files, you can click the import button, and then click `Import .sql files`. Or click `File > Import SQL Files`. It accepts multiple files of `.sql` or any text file format. Be aware that this will make a copy of your file to your Saved Queries. Any changes from the original files will not be reflected in Beekeepe Studio.
 
-[IMAGE HERE AGANE]
+![Clicking import from Saved Queries](../assets/images/saving-queries-3.png)
+
+![Clicking import from File menu](../assets/images/saving-queries-4.png)
 
 ## Where does Beekeeper Studio save my SQL Queries?
 

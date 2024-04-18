@@ -12,7 +12,7 @@
                 title="Import queries"
               >
                 <i class="material-icons">save_alt</i>
-                <x-menu>
+                <x-menu style="--align: end;">
                   <x-menuitem @click.prevent="importFromComputer">
                     <x-label>Import .sql files</x-label>
                   </x-menuitem>
