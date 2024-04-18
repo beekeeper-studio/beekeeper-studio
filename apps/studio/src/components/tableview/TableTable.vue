@@ -631,7 +631,7 @@ export default Vue.extend({
             dataType: column.dataType,
             search: true,
             allowEmpty: true,
-            preserveObject: column.dataType?.startsWith('_'),
+            preserveObject: column.array,
             onPreserveObjectFail: (value: unknown) => {
               log.error('Failed to preserve object for', value)
               return true
@@ -1124,6 +1124,7 @@ export default Vue.extend({
           dataset: this.dialectData.requireDataset ? this.database: null,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
+          columnObject: column,
           primaryKeys,
           oldValue: cell.getOldValue(),
           cell: cell,

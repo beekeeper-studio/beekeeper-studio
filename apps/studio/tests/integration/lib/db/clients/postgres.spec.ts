@@ -161,6 +161,8 @@ function testWith(dockerTag, socket = false, readonly = false) {
 
 
     it("Should allow me to update rows with an empty array", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
       const updates = [
         {
           value: "[]",
@@ -169,6 +171,7 @@ function testWith(dockerTag, socket = false, readonly = false) {
             column: 'id', value: 1
           }],
           columnType: "_text",
+          columnObject: nameColumn,
           table: "witharrays"
         }
       ]

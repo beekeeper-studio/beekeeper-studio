@@ -336,7 +336,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN datetime_precision is not null AND udt_name != 'date' THEN
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
-        END as data_type
+        END as data_type,
+        CASE
+          WHEN data_type = 'ARRAY' THEN 'YES'
+          ELSE 'NO'
+        END as is_array
       FROM information_schema.columns
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position
@@ -354,6 +358,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       ordinalPosition: Number(row.ordinal_position),
       hasDefault: !_.isNil(row.column_default),
       generated: row.is_generated === 'ALWAYS' || row.is_generated === 'YES',
+      array: row.is_array === 'YES',
     }));
   }
 
@@ -1329,7 +1334,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           const column = columns.find((c) => c.columnName === key);
           // fix: we used to serialize arrays before this, now we pass them as
           // json arrays properly
-          return this.normalizeValue(value, column?.dataType);
+          return this.normalizeValue(value, column);
         })
       })
       return result;
@@ -1343,7 +1348,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   private async updateValues(rawUpdates: TableUpdate[], connection): Promise<TableUpdateResult[]> {
     const updates = rawUpdates.map((update) => {
       const result = { ...update };
-      result.value = this.normalizeValue(update.value, update.columnType);
+      result.value = this.normalizeValue(update.value, update.columnObject);
       return result;
     })
     log.info("applying updates", updates);
@@ -1442,10 +1447,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
   // if a type is BYTEA, decodes BASE64 URL encoded to hex
-  private normalizeValue(value: string, columnType: string) {
-    if (columnType?.startsWith('_') && _.isString(value)) {
+  private normalizeValue(value: string, column?: ExtendedTableColumn) {
+    if (column?.array && _.isString(value)) {
       return JSON.parse(value)
-    } else if (columnType === 'bytea' && value) {
+    } else if (column?.dataType === 'bytea' && value) {
       return '\\x' + base64.decode(value, 'hex')
     }
     return value
