@@ -55,6 +55,14 @@ export default class extends DefaultMenu {
       ]
     }
 
+    const windowMenu: Electron.MenuItemConstructorOptions[] = []
+    if (platformInfo.isMac) {
+      windowMenu.push({
+        label: 'Window',
+        role: 'windowMenu'
+      })
+    }
+
     return [
       ...appMenu,
       fileMenu,
@@ -78,6 +86,7 @@ export default class extends DefaultMenu {
           this.menuItems.upgradeModal("Restore a Backup")
         ]
       },
+      ...windowMenu,
       {
         label: "Help",
         submenu: [
