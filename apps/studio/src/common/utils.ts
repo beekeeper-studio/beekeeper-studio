@@ -184,12 +184,16 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
 export function normalizeFilters(filters: TableFilter[]) {
   const normalized: TableFilter[] = [];
   for (const filter of filters as TableFilter[]) {
-    if (!(filter.type && filter.field && filter.value)) continue;
+    if (!(filter.type && filter.field && (filter.value || filter.type.includes('is')))) continue;
     if (filter.type === "in") {
       const value = (filter.value as string).split(/\s*,\s*/);
       normalized.push({ ...filter, value });
     } else {
       normalized.push(filter);
+
+      if (filter.type.includes('is')) {
+        continue;
+      }
     }
     filter.value = filter.value.toString();
   }
@@ -240,4 +244,12 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
   }
 
   return transformedRangeData;
+}
+
+export const rowHeaderField = '--row-header--bks';
+
+export function isBksInternalColumn(field: string) {
+  return field.endsWith('--bks')
+    || field.startsWith('__beekeeper_internal')
+    || field === rowHeaderField;
 }

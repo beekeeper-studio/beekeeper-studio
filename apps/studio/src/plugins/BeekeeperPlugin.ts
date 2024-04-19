@@ -4,6 +4,7 @@ import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import path from 'path'
 import { uuidv4 } from "@/lib/uuid"
+import { isBksInternalColumn } from "@/common/utils"
 
 export interface ContextOption {
   name: string,
@@ -91,7 +92,7 @@ export const BeekeeperPlugin = {
     Object.keys(data).forEach((key) => {
       const v = data[key]
       // internal table fields used just for us
-      if (!key.endsWith('--bks') && !key.startsWith('__beekeeper_internal')) {
+      if (!isBksInternalColumn(key)) {
         const column = columns.find((c) => c.field === key)
         const nuKey = column ? column.title : key
         fixed[nuKey] = v

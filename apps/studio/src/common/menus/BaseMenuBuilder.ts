@@ -9,7 +9,7 @@ export default class BaseMenuBuilder {
 
   app = "Beekeeper Studio"
 
-  constructor(private settings: IGroupedUserSettings, private actionHandlers: IMenuActionHandler) {}
+  constructor(protected settings: IGroupedUserSettings, private actionHandlers: IMenuActionHandler) {}
 
   buildTemplate(): any {
     throw new Error("Must implement buildTemplate for your platform")

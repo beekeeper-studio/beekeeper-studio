@@ -26,7 +26,7 @@
           <li
             class="menu-item"
             :class="{'has-children': !!item.submenu, ...hoverClass(item)}"
-            v-for="(item, idx) in menu.submenu"
+            v-for="(item, idx) in (menu.submenu || [])"
             :key="item.id || idx"
           >
             <a
@@ -42,7 +42,7 @@
             <ul v-if="item.submenu">
               <li
                 class="menu-item"
-                v-for="subitem in item.submenu"
+                v-for="subitem in (item.submenu || [])"
                 :key="subitem.label"
               >
                 <a
@@ -102,7 +102,7 @@ export default {
     allHotkeys() {
       const result = {}
       this.menus.forEach(menu => {
-        menu.submenu.forEach(item => {
+        menu.submenu?.forEach(item => {
           if (item.accelerator && item.click) {
             const shortcut = this.shortcut(item)
             if (shortcut)

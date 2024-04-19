@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import {Tabulator} from 'tabulator-tables'
+import {CellComponent} from 'tabulator-tables'
 
 
 const htmlMap = {
@@ -34,7 +34,7 @@ export default {
     }
     return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue
   },
-  cellFormatter(cell: Tabulator.CellComponent) {
+  cellFormatter(cell: CellComponent) {
     if (_.isNil(cell.getValue())) {
       return '<span class="null-value">(NULL)</span>'
     }

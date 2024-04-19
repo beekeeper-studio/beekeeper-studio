@@ -1081,9 +1081,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     let filterString = ""
     if (filters && filters.length > 0) {
       const allFilters = filters.map((item) => {
-        const wrappedValue = _.isArray(item.value) ?
+        let wrappedValue = _.isArray(item.value) ?
           `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
           D.escapeString(item.value, true)
+
+        if (item.type.includes('is')) wrappedValue = 'NULL';
 
         return `${this.wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
       })

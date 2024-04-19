@@ -336,12 +336,9 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
+    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'postresql', 'cockroachdb']
 
-    if (this.dbType === 'mariadb') expect(defaultValues).toEqual([true,  true])
-    else if (this.dbType === 'mysql') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'tidb') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'postgresql') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'cockroachdb') expect(defaultValues).toEqual([true,  false])
+    if (trueFalseDBs.indexOf(this.dbType) !== -1) expect(defaultValues).toEqual([true,  false])
     else expect(defaultValues).toEqual([false, false])
 
     const groupColumns = columns.filter((row) => row.tableName.toLowerCase() === 'group_table')
@@ -862,6 +859,66 @@ export class DBTestUtil {
       `
     }
     expect(fmt(multipleFiltersQuery)).toBe(fmt(expectedFiltersQueries[dbType]))
+  }
+
+  async buildIsNullTests() {
+    const dbType = ['mariadb','tidb'].includes(this.dbType) ? 'mysql' : this.dbType
+    const fmt = (sql: string) => safeSqlFormat(sql, {
+      language: FormatterDialect(dbType === 'cockroachdb'
+          ? 'postgresql'
+          : this.dialect
+        )
+      })
+
+    const queryIsNull = await this.connection.selectTopSql(
+      'jobs',
+      0,
+      100,
+      [],
+      [{ field: 'hourly_rate', type: 'is' }],
+      ['sqlserver', 'oracle'].includes(dbType) ? null : 'public',
+      ['*']
+    );
+
+    const expectedQueriesIsNull = {
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
+      // mariadb: same as mysql
+      sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NULL",
+      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
+    }
+
+    expect(fmt(queryIsNull)).toBe(fmt(expectedQueriesIsNull[dbType]))
+
+    await expect(this.connection.executeQuery(queryIsNull)).resolves.not.toThrow();
+
+    const queryIsNotNull = await this.connection.selectTopSql(
+      'jobs',
+      0,
+      100,
+      [],
+      [{ field: 'hourly_rate', type: 'is not' }],
+      ['sqlserver', 'oracle'].includes(dbType) ? null : 'public',
+      ['*']
+    );
+
+    const expectedQueriesIsNotNull = {
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
+      // mariadb: same as mysql
+      sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NOT NULL",
+      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
+    }
+
+    expect(fmt(queryIsNotNull)).toBe(fmt(expectedQueriesIsNotNull[dbType]))
+
+    await expect(this.connection.executeQuery(queryIsNotNull)).resolves.not.toThrow();
   }
 
   // lets start simple, it should resolve for all connection types
