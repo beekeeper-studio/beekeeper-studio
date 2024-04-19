@@ -298,7 +298,6 @@ import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent } from '@/lib/menu/tableMenu';
-import { rowHeaderField } from "@/common/utils";
 import { tabulatorForTableData } from "@/common/tabulator";
 
 const log = rawLog.scope('TableTable')
@@ -486,7 +485,7 @@ export default Vue.extend({
       if (!this.table) return []
 
       const cellMenu = (keyDatas?: any[]) => {
-        return (_e, cell: Tabulator.CellComponent) => {
+        return (_e, cell: CellComponent) => {
           const range = _.last(cell.getRanges())
           const menu = [
             this.openEditorMenu(cell),
@@ -788,7 +787,7 @@ export default Vue.extend({
       if (!this.focusingTable() || !this.editable) return
       pasteRange(_.last(this.tabulator.getRanges()))
     },
-    deleteTableSelection(_e: Event, range?: Tabulator.RangeComponent) {
+    deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
       if (!range) range = _.last(this.tabulator.getRanges())
       this.addRowsToPendingDeletes(range.getRows());
@@ -963,7 +962,7 @@ export default Vue.extend({
         }
       }
     },
-    onSaveEditorModal(content: string, _: LanguageData, cell: Tabulator.CellComponent){
+    onSaveEditorModal(content: string, _: LanguageData, cell: CellComponent){
       cell.setValue(content)
     },
     openProperties() {
@@ -1041,7 +1040,7 @@ export default Vue.extend({
         default: return ne
       }
     },
-    cellEditCheck(cell: Tabulator.CellComponent) {
+    cellEditCheck(cell: CellComponent) {
       if (this.isGeneratedColumn(cell.getField())) return false;
 
       if (this.insertionCellCheck(cell)) return true;
@@ -1065,7 +1064,7 @@ export default Vue.extend({
 
       return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
     },
-    insertionCellCheck(cell: Tabulator.CellComponent) {
+    insertionCellCheck(cell: CellComponent) {
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
       return pendingInsert
         ? this.table.entityType === 'table' && !this.dialectData.disabledFeatures?.tableTable
@@ -1135,7 +1134,7 @@ export default Vue.extend({
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
       }
     },
-    cloneSelection(range?: Tabulator.RangeComponent) {
+    cloneSelection(range?: RangeComponent) {
       if (!range) range = _.last(this.tabulator.getRanges())
 
       range.getRows().forEach((row) => {
@@ -1154,7 +1153,7 @@ export default Vue.extend({
 
       })
     },
-    cellCloneRow(_e, cell: Tabulator.CellComponent) {
+    cellCloneRow(_e, cell: CellComponent) {
       this.cloneSelection(_.last(cell.getRanges()))
     },
     cellAddRow() {
@@ -1178,7 +1177,7 @@ export default Vue.extend({
 
       this.pendingChanges.inserts.push(payload)
     },
-    addRowsToPendingDeletes(rows: Tabulator.RowComponent[]) {
+    addRowsToPendingDeletes(rows: RowComponent[]) {
       if (_.isEmpty(this.primaryKeys)) {
         this.$noty.error("Can't delete row -- couldn't figure out primary key")
         return

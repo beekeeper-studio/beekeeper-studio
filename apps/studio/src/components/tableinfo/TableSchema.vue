@@ -118,9 +118,7 @@
 </style>
 
 <script lang="ts">
-import { TabulatorFull, Tabulator } from 'tabulator-tables'
-type CellComponent = Tabulator.CellComponent
-type RowComponent = Tabulator.RowComponent
+import { TabulatorFull, CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
 import { format } from 'sql-formatter'
 import _ from 'lodash'
