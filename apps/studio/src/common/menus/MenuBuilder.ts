@@ -56,7 +56,8 @@ export default class extends DefaultMenu {
     }
 
     const windowMenu: Electron.MenuItemConstructorOptions[] = []
-    if (platformInfo.isMac) {
+    console.log("Menu style", this.settings.menuStyle)
+    if ((platformInfo.isMac || this.settings.menuStyle?.stringValue === 'native') && !platformInfo.isWayland) {
       windowMenu.push({
         label: 'Window',
         role: 'windowMenu'
