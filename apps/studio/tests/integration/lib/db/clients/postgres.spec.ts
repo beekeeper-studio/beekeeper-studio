@@ -27,7 +27,6 @@ function testWith(dockerTag, socket = false, readonly = false) {
     let util: DBTestUtil
 
     beforeAll(async () => {
-      const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
@@ -40,7 +39,6 @@ function testWith(dockerTag, socket = false, readonly = false) {
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
         .withStartupTimeout(dbtimeout)
         .start()
-      jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
         host: container.getHost(),
