@@ -91,7 +91,7 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const lastSavedSplitSizes = SmartLocalStorage.getItem("coreInterfaceSplitSizes")
+          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
           const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
 
           this.split = Split(this.splitElements, {
@@ -99,12 +99,12 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
                 'flex-basis': `calc(${size}%)`,
             }),
             sizes: splitSizes,
-            minSize: 280,
+            minSize: [25, 75],
             expandToMin: true,
             gutterSize: 5,
             onDragEnd: () => {
               const splitSizes = this.split.getSizes()
-              SmartLocalStorage.addItem("coreInterfaceSplitSizes", splitSizes)
+              SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
             }
           })
         })
