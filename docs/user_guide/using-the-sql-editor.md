@@ -21,7 +21,7 @@ In these situations, Beekeeper will automatically resolve the correct table and 
 
 ### Manually triggering autocomplete
 
-The default key combo to manually trigger autocomplete is `Ctrl+Space`, or `Cmd+Space` for MacOS users.
+The default key combo to manually trigger autocomplete is `Ctrl+Space`.
 
 ![Image Alt Tag](../assets/images/using-the-sql-editor-11.gif)
 
