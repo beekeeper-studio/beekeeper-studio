@@ -16,6 +16,12 @@
       </div>
     </div>
     <div class="shortcut-item">
+      <div>Autocomplete</div>
+      <div class="shortcut">
+        <span>Ctrl</span><span>Space</span>
+      </div>
+    </div>
+    <div class="shortcut-item">
       <div>Run</div>
       <div
         class="shortcut"
