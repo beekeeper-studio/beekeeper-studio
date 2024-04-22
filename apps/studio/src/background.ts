@@ -22,7 +22,6 @@ import { buildWindow, getActiveWindows } from './background/WindowBuilder'
 import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
-import { DemoSetup } from './lib/tutorial/DemoSetup'
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
