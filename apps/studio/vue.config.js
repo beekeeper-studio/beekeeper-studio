@@ -57,6 +57,10 @@ module.exports = {
         afterPack: "./build/afterPack.js",
         extraResources: [
           {
+            from: './extra_resources/**/*',
+            to: ''
+          },
+          {
             from: 'build/launcher-script.sh',
             to: 'launcher-script.sh'
           },

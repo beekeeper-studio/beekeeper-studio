@@ -22,6 +22,7 @@ import { buildWindow, getActiveWindows } from './background/WindowBuilder'
 import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
+import { DemoSetup } from './lib/tutorial/DemoSetup'
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -64,6 +65,7 @@ async function initBasics() {
   log.info("running migrations")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
+
 
   log.debug("getting settings")
   settings = await UserSetting.all()
