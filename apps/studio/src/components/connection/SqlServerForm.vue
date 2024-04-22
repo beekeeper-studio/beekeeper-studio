@@ -42,6 +42,7 @@
       </div>
     </common-server-inputs>
     <common-advanced :config="config" />
+    <button @click.prevent="azure" >AZURE AUTH</button>
   </div>
 </template>
 
@@ -49,10 +50,18 @@
 
   import CommonServerInputs from './CommonServerInputs'
   import CommonAdvanced from './CommonAdvanced'
+  import { AzureAuthService } from '../../lib/db/authentication/azure'
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
-    props: ['config']
+    props: ['config'],
+    methods: {
+      async azure() {
+        const auth = new AzureAuthService();
+
+        await auth.auth();
+      }
+    }
 
   }
 </script>
