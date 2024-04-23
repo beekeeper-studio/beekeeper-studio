@@ -97,6 +97,14 @@ function testWith(dockerTag, socket = false, readonly = false) {
           );
       `)
 
+      await util.knex.raw(`
+        CREATE TABLE
+          public.extra_moody_people (
+            id serial NOT NULL,
+            current_moods this_is_a_mood[] NULL DEFAULT '{sad, happy}'
+          );
+      `)
+
       if (dockerTag == 'latest') {
         await util.knex.raw(`
           CREATE TABLE partitionedtable (
@@ -453,6 +461,20 @@ function testWith(dockerTag, socket = false, readonly = false) {
           dataType: 'float8(53)'
         }
       ])
+    })
+
+    it("should be able to define array column correctly", async () => {
+      const arrayTable = await util.connection.listTableColumns('witharrays');
+      const enumTable = await util.connection.listTableColumns('moody_people');
+      const enumArrayTable = await util.connection.listTableColumns('extra_moody_people');
+
+      const arrayColumn = arrayTable.find((col) => col.columnName === 'names')
+      const enumColumn = enumTable.find((col) => col.columnName === 'current_mood')
+      const enumArrayColumn = enumArrayTable.find((col) => col.columnName === 'current_moods')
+
+      expect(arrayColumn.array).toBeTruthy()
+      expect(enumColumn.array).toBeFalsy()
+      expect(enumArrayColumn.array).toBeTruthy()
     })
 
     describe("Common Tests", () => {
