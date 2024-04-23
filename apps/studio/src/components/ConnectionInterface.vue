@@ -306,8 +306,8 @@ export default Vue.extend({
         this.$refs.sidebar.$refs.sidebar,
         this.$refs.content
       ]
-      const lastSavedSplitSizes = SmartLocalStorage.getItem("connInterfaceSplitSizes")
-      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [300, 500]
+      const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
+      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
 
       this.split = Split(components, {
         elementStyle: (_dimension, size) => ({
@@ -315,11 +315,11 @@ export default Vue.extend({
         }),
         sizes: splitSizes,
         gutterize: 8,
-        minSize: [300, 300],
+        minSize: [25, 75],
         expandToMin: true,
         onDragEnd: () => {
           const splitSizes = this.split.getSizes()
-          SmartLocalStorage.addItem("connInterfaceSplitSizes", splitSizes)
+          SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
         }
       } as Split.Options)
     })
