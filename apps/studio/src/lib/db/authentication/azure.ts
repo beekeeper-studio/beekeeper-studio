@@ -1,5 +1,7 @@
 import * as msal from '@azure/msal-node'
 import axios from 'axios';
+// not sure about this
+import { shell } from '@electron/remote'
 
 export interface CloudToken {
   id: string,
@@ -33,12 +35,13 @@ export class AzureAuthService {
 
     const authCodeUrlParams = {
       scopes: ['https://database.windows.net/.default', 'offline_access'],
-      redirectUri: beekeeperCloudToken.url
+      redirectUri: beekeeperCloudToken.url,
+      prompt: 'consent'
     };
     const authUrl = await pca.getAuthCodeUrl(authCodeUrlParams);
 
     console.log(authUrl);
 
-    
+    shell.openExternal(authUrl);
   }
 }

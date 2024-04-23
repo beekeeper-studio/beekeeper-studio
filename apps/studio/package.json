@@ -22,7 +22,7 @@
   "main": "background.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
-    "@azure/msal-node": "^2.7.0",
+    "@azure/msal-node": "1.18.4",
     "@electron/remote": "^2.0.9",
     "axios": "^1.6.0",
     "axios-retry": "^3.2.4",

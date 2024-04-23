@@ -222,22 +222,6 @@ module.exports = {
             aliasFields: ['main']
           }
         },
-        {
-          test: /\.mjs$/,
-          use: {
-            loader: 'babel-loader',
-            options: {
-              presets: [
-                ['@babel/preset-env', {
-                  modules: false,
-                  targets: {
-                      esmodules: true
-                    }
-                }],
-              ],
-            }
-          }
-        }
       ]
     }
 
