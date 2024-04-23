@@ -2,6 +2,7 @@ import * as msal from '@azure/msal-node'
 import axios from 'axios';
 // not sure about this
 import { shell } from '@electron/remote'
+import { wait } from '@shared/lib/wait';
 
 export interface CloudToken {
   id: string,
@@ -35,7 +36,8 @@ export class AzureAuthService {
 
     const authCodeUrlParams = {
       scopes: ['https://database.windows.net/.default', 'offline_access'],
-      redirectUri: beekeeperCloudToken.url,
+      redirectUri: beekeeperCloudToken.fulfillment_url,
+      state: beekeeperCloudToken.id,
       prompt: 'consent'
     };
     const authUrl = await pca.getAuthCodeUrl(authCodeUrlParams);
@@ -43,5 +45,23 @@ export class AzureAuthService {
     console.log(authUrl);
 
     shell.openExternal(authUrl);
+    let count = 0;
+
+    async function checkStatus() {
+      count += 1
+      const result = await axios.get(beekeeperCloudToken.url);
+      console.log("result", result)
+      console.log('count', count)
+      if (result?.data && result.data.cloud_token.status !== 'fulfilled' && count <= 20) {
+        await wait(2000);
+        await checkStatus();
+      } else {
+        console.log('FULFILLED or failed')
+        return
+      }
+    }
+
+    await checkStatus();
+
   }
 }
