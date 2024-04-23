@@ -100,10 +100,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import { Tabulator, TabulatorFull } from 'tabulator-tables'
-type CellComponent = Tabulator.CellComponent
-type RowComponent = Tabulator.RowComponent
-type ColumnDefinition = Tabulator.ColumnDefinition
+import { Tabulator, TabulatorFull, CellComponent, RowComponent, ColumnDefinition } from 'tabulator-tables'
 
 import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
