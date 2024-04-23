@@ -1,6 +1,7 @@
 <template>
   <div
     class="query-editor"
+    ref="container"
     v-hotkey="keymap"
   >
     <div
@@ -366,7 +367,8 @@
         originalText: "",
         initialized: false,
         blankQuery: new FavoriteQuery(),
-        dryRun: false
+        dryRun: false,
+        containerResizeObserver: null,
       }
     },
     computed: {
@@ -955,11 +957,17 @@
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()
+
+      this.containerResizeObserver = new ResizeObserver(() => {
+        this.updateEditorHeight()
+      })
+      this.containerResizeObserver.observe(this.$refs.container)
     },
     beforeDestroy() {
       if(this.split) {
         this.split.destroy()
       }
+      this.containerResizeObserver.disconnect()
     },
   }
 </script>
