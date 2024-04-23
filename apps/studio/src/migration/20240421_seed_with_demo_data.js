@@ -1,5 +1,6 @@
 import platformInfo from '@/common/platform_info'
 import rawLog from 'electron-log'
+import { copyFileSync } from 'fs'
 import path from 'path'
 
 const log = rawLog.scope('migrations/seed')
@@ -42,13 +43,21 @@ export default {
   name: "20240421_seed_with_demo_data",
   async run(runner) {
 
+
     const check = "select * from used_connection limit 1"
     const result = await runner.query(check)
     if (result.length > 0) {
       log.info("Not adding seed data, used connections exist")
       return
     }
-    const filePath = path.join(platformInfo.resourcesPath, 'demo.db')
+
+    // this really shouldn't be part of a migration, but 🤷
+
+    const badPath = path.join(platformInfo.resourcesPath, 'demo.db')
+    const filePath = path.join(platformInfo.userDirectory, 'demo.db')
+
+    await copyFileSync(badPath, filePath)
+
     const filePathSQL = escapeString(filePath, true)
     const scQ = `
       INSERT INTO saved_connection(name,connectionType,host,defaultDatabase, version, uniqueHash)
