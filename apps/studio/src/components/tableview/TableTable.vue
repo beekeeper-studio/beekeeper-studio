@@ -78,7 +78,6 @@
           <a
             v-if="(this.page > 1)"
             @click="page = page - 1"
-            v-tooltip="ctrlOrCmd('left')"
           ><i
             class="material-icons"
           >navigate_before</i></a>
@@ -88,7 +87,6 @@
           >
           <a
             @click="page = page + 1"
-            v-tooltip="ctrlOrCmd('right')"
           ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
@@ -400,14 +398,16 @@ export default Vue.extend({
       if (!this.active) return {}
       const result = {}
       result['f5'] = this.refreshTable.bind(this)
-      result[this.ctrlOrCmd('right')] = () => {
-        const focusingTable = this.tabulator.element.contains(document.activeElement)
-        if (!focusingTable) this.page++
-      }
-      result[this.ctrlOrCmd('left')] = () => {
-        const focusingTable = this.tabulator.element.contains(document.activeElement)
-        if (!focusingTable) this.page--
-      }
+      // TODO these need to be in config.ini
+      // TODO if we enable this, make sure we add the tooltips in pagination as well
+      // result[this.ctrlOrCmd('right')] = () => {
+      //   const focusingTable = this.tabulator.element.contains(document.activeElement)
+      //   if (!focusingTable) this.page++
+      // }
+      // result[this.ctrlOrCmd('left')] = () => {
+      //   const focusingTable = this.tabulator.element.contains(document.activeElement)
+      //   if (!focusingTable) this.page--
+      // }
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
