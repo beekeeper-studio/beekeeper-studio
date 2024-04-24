@@ -1,8 +1,11 @@
-import * as msal from '@azure/msal-node'
+import * as msal from '@azure/msal-node';
 import axios from 'axios';
 // not sure about this
-import { shell } from '@electron/remote'
+import { shell } from '@electron/remote';
 import { wait } from '@shared/lib/wait';
+import rawLog from 'electron-log';
+
+const log = rawLog.scope('auth/azure');
 
 export interface CloudToken {
   id: string,
@@ -24,14 +27,16 @@ export class AzureAuthService {
   async auth() {
     const res = await axios.post('https://app.beekeeperstudio.io/api/cloud_tokens');
     // DANGER
+    log.debug('Getting beekeeper cloud token');
     const beekeeperCloudToken = res.data?.cloud_token as CloudToken;
-    console.log(beekeeperCloudToken)
+    console.log(beekeeperCloudToken);
     const clientConfig = {
      auth: {
        clientId: 'da931511-74dc-4f3d-ae50-5436c6407572'
      }
     };
-    console.log(clientConfig)
+    console.log(clientConfig);
+    log.debug('Creating PCA');
     const pca = new msal.PublicClientApplication(clientConfig);
 
     const authCodeUrlParams = {
@@ -44,6 +49,7 @@ export class AzureAuthService {
 
     console.log(authUrl);
 
+    log.debug('Getting auth code')
     shell.openExternal(authUrl);
     let count = 0;
 
@@ -54,14 +60,17 @@ export class AzureAuthService {
       console.log('count', count)
       if (result?.data && result.data.cloud_token.status !== 'fulfilled' && count <= 20) {
         await wait(2000);
-        await checkStatus();
+        return await checkStatus();
       } else {
         console.log('FULFILLED or failed')
-        return
+        // TODO (@day): set cloud token to claimed here
+        // TODO (@day): fail if not fulfilled
+        return result;
       }
     }
 
-    await checkStatus();
+    const result = await checkStatus();
+    console.log('result: ', result)
 
   }
 }
