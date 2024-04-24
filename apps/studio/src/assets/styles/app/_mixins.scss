@@ -26,7 +26,8 @@
 @mixin btn {
   display: inline-flex;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
+  font-family: inherit;
   line-height: $input-height;
   height: $input-height;
   font-weight: 700;
