@@ -38,6 +38,27 @@
                 >refresh</i>
               </a>
             </div>
+            <!-- Filter -->
+          </div>
+        </div>
+        <div class="fixed query-filter">
+          <div class="filter">
+            <div class="filter-wrap">
+              <input 
+                class="filter-input"
+                type="text"
+                placeholder="Filter"
+                v-model="filterQuery"
+              >
+              <x-buttons class="filter-actions">
+                <x-button
+                  @click="clearFilter"
+                  v-if="filterQuery"
+                >
+                  <i class="clear material-icons">cancel</i>
+                </x-button>
+              </x-buttons>
+            </div>
           </div>
         </div>
         <error-alert
@@ -47,7 +68,7 @@
         />
         <sidebar-loading v-if="loading" />
         <nav
-          v-else-if="savedQueries.length > 0"
+          v-else-if="filteredQueries.length > 0"
           class="list-body"
           ref="wrapper"
         >
@@ -152,9 +173,18 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
     },
     computed: {
       ...mapGetters(['workspace', 'isCloud']),
+      ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
       ...mapState('tabs', {'activeTab': 'active'}),
-      ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error'}),
+      ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
       ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+      filterQuery: {
+        get() {
+          return this.savedQueryFilter;
+        },
+        set(newFilter) {
+          this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
+        }
+      },
       loading() {
         return this.queriesLoading || this.foldersLoading || null
       },
@@ -165,14 +195,14 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         return this.folders.map((folder) => {
           return {
             folder,
-            queries: this.savedQueries.filter((q) =>
+            queries: this.filteredQueries.filter((q) =>
               q.queryFolderId === folder.id
             )
           }
         })
       },
       lonelyQueries() {
-        return this.savedQueries.filter((query) => {
+        return this.filteredQueries.filter((query) => {
           const folderIds = this.folders.map((f) => f.id)
           return !query.queryFolderId || !folderIds.includes(query.queryFolderId)
         })
@@ -182,6 +212,9 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
       }
     },
     methods: {
+      clearFilter() {
+        this.filterQuery = null
+      },
       createQuery() {
         this.$root.$emit(AppEvent.newTab)
       },
@@ -235,3 +268,6 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
     }
   }
 </script>
+
+<style lang="scss" scoped>
+</style>
