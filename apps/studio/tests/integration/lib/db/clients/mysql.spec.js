@@ -81,10 +81,15 @@ function testWith(tag, socket = false, readonly = false) {
         SELECT id, name, email, status FROM user limit 10;
         END
     `
+
+      const dotTableCreator = "CREATE TABLE `foo.bar`(id integer, name varchar(255))"
+      const dotInsert = "INSERT INTO `foo.bar`(id, name) values(1, 'Dot McDot')"
       await util.knex.schema.raw(functionDDL)
       await util.knex.schema.raw(routine1DDL)
       await util.knex.schema.raw(routine2DDL)
       await util.knex.schema.raw("CREATE TABLE bittable(id int, bitcol bit NOT NULL)");
+      await util.knex.schema.raw(dotTableCreator);
+      await util.knex.schema.raw(dotInsert);
     })
 
     afterAll(async () => {
@@ -102,6 +107,12 @@ function testWith(tag, socket = false, readonly = false) {
       } else {
         runCommonTests(() => util, { dbReadOnlyMode: readonly })
       }
+    })
+
+    it.only("Should work properly with tables that have dots in them", async () => {
+      const r = await util.connection.selectTop("foo.bar", 0, 10, [{field: 'id', dir: 'ASC'}])
+      const result = r.result.map((r) => r.name || r.NAME)
+      expect(result).toMatchObject(['Dot McDot'])
     })
 
     it("Should fetch routines correctly", async () => {
