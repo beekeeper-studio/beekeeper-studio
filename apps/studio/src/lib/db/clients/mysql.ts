@@ -340,11 +340,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
-    const sql = "SHOW INDEX FROM ??";
+    const sql = `SHOW INDEX FROM ${this.wrapIdentifier(table)}`;
 
-    const params = [table];
-
-    const { data } = await this.driverExecuteSingle(sql, { params });
+    const { data } = await this.driverExecuteSingle(sql);
 
     const grouped = _.groupBy(data, "Key_name");
 
@@ -510,9 +508,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<PrimaryKeyColumn[]> {
     logger().debug("finding primary keys for", this.db, table);
-    const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`;
-    const params = [table];
-    const { data } = await this.driverExecuteSingle(sql, { params });
+    const sql = `SHOW KEYS FROM ${this.wrapIdentifier(table)} WHERE Key_name = 'PRIMARY'`;
+    const { data } = await this.driverExecuteSingle(sql);
 
     if (!data || data.length === 0) return [];
 
@@ -1162,7 +1159,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const sql = `SHOW CREATE TABLE ${table}`;
+    const sql = `SHOW CREATE TABLE ${this.wrapIdentifier(table)}`;
 
     const { data } = await this.driverExecuteSingle(sql);
 
@@ -1170,7 +1167,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
-    const sql = `SHOW CREATE VIEW ${view}`;
+    const sql = `SHOW CREATE VIEW ${this.wrapIdentifier(view)}`;
 
     const { data } = await this.driverExecuteSingle(sql);
 
@@ -1182,7 +1179,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     type: string,
     _schema?: string
   ): Promise<string[]> {
-    const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
+    const sql = `SHOW CREATE ${type.toUpperCase()} ${this.wrapIdentifier(routine)}`;
     const { data } = await this.driverExecuteSingle(sql);
     const result = data.map((row) => {
       const upperCaseIndexedRow = Object.keys(row).reduce(

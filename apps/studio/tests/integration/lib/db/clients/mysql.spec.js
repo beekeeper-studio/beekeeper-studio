@@ -109,10 +109,18 @@ function testWith(tag, socket = false, readonly = false) {
       }
     })
 
-    it.only("Should work properly with tables that have dots in them", async () => {
+    it("Should work properly with tables that have dots in them", async () => {
+      const keys = await util.connection.getPrimaryKeys("foo.bar")
+      expect(keys).toMatchObject([])
       const r = await util.connection.selectTop("foo.bar", 0, 10, [{field: 'id', dir: 'ASC'}])
       const result = r.result.map((r) => r.name || r.NAME)
       expect(result).toMatchObject(['Dot McDot'])
+      const tcRes = await util.connection.getTableCreateScript("foo.bar")
+      expect(tcRes).not.toBeNull()
+      // shouldn't error
+      await util.connection.getTableReferences("foo.bar")
+      const properties = await util.connection.getTableProperties("foo.bar")
+      expect(properties).not.toBeNull()
     })
 
     it("Should fetch routines correctly", async () => {

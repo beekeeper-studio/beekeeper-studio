@@ -67,9 +67,15 @@ describe("Sqlite Tests", () => {
   })
 
   it.only("Should work properly with tables that have dots in them", async () => {
-    const r = await util.connection.selectTop("foo.bar", 0, 10, [{ field: 'id', dir: 'ASC' }], this.defaultSchema)
+    const keys = await util.connection.getPrimaryKeys("foo.bar")
+    expect(keys).toMatchObject([])
+    const r = await util.connection.selectTop("foo.bar", 0, 10, [{ field: 'id', dir: 'ASC' }])
     const result = r.result.map((r) => r.name || r.NAME)
     expect(result).toMatchObject(['Dot McDot'])
+    const tcRes = await util.connection.getTableCreateScript("foo.bar")
+    expect(tcRes).not.toBeNull()
+    // shouldn't error
+    await util.connection.getTableReferences("foo.bar")
   })
 
   it("Should apply changes to boolean values correctly", async () => {
