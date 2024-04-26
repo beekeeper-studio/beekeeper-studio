@@ -66,7 +66,7 @@ describe("Sqlite Tests", () => {
     }).not.toThrowError()
   })
 
-  it.only("Should work properly with tables that have dots in them", async () => {
+  it("Should work properly with tables that have dots in them", async () => {
     const keys = await util.connection.getPrimaryKeys("foo.bar")
     expect(keys).toMatchObject([])
     const r = await util.connection.selectTop("foo.bar", 0, 10, [{ field: 'id', dir: 'ASC' }])
