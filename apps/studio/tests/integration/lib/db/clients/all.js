@@ -327,7 +327,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("Should generate scripts for top selection", async () => {
       await getUtil().buildSelectTopQueryTests()
     })
-  
+
     test("Is (not) null filter", async () => {
       await getUtil().buildIsNullTests()
     })

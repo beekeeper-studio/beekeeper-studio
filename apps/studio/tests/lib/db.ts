@@ -163,6 +163,10 @@ export class DBTestUtil {
     this.personId = isOracle ? Number(people[0].id) : people[0].id
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
 
+    // See createTables for why this is commented out
+    // await this.knex("foo.bar").insert({ id: 1, name: "Dots are evil" });
+
+
     if (!this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
@@ -345,6 +349,15 @@ export class DBTestUtil {
     expect(groupColumns.length).toBe(2)
   }
 
+
+  async testDotTable() {
+    // FIXME: Make this generic to all tables.
+    // see 'createTables' for why this is commented out
+    // const r = await this.connection.selectTop("foo.bar", 0, 10, [{field: 'id', dir: 'ASC'}], this.defaultSchema)
+    // const result = r.result.map((r: any) => r.name || r.NAME)
+    // expect(result).toMatchObject(['Dots are evil'])
+  }
+
   /**
    * Tests related to the table view
    * fetching PK, selecting data, etc.
@@ -366,6 +379,7 @@ export class DBTestUtil {
     await this.knex("group_table").insert({select_col: "bar"})
     await this.knex("group_table").insert({select_col: "abc"})
 
+
     let r = await this.connection.selectTop("group_table", 0, 10, [{field: "select_col", dir: 'ASC'}], [], this.defaultSchema)
     let result = r.result.map((r: any) => r.select_col || r.SELECT_COL)
     expect(result).toMatchObject(["abc", "bar"])
@@ -385,6 +399,8 @@ export class DBTestUtil {
     r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(["pears"])
+
+    await this.testDotTable()
 
     await this.knex("group_table").where({select_col: "bar"}).delete()
     await this.knex("group_table").where({select_col: "abc"}).delete()
@@ -1055,6 +1071,14 @@ export class DBTestUtil {
       table.string("state")
       table.string("country").notNullable()
     })
+
+    // FIXME: Knex doesn't support tables with dots in the name
+    // https://github.com/knex/knex/issues/2762
+    // Should be used in the dot table tests
+    // await this.knex.schema.createTable(knex.raw('`foo.bar`'), (table) => {
+    //   table.integer('id')
+    //   table.string('name')
+    // })
 
     await this.knex.schema.createTable('MixedCase', (table) => {
       primary(table)
