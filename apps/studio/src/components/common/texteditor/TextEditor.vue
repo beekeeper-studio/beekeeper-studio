@@ -38,6 +38,7 @@ export default {
   props: [
     "value",
     "lang",
+    "langType",
     "keybindings",
     "vimConfig",
     "lineWrapping",
@@ -131,7 +132,7 @@ export default {
     initialize() {
       this.destroyEditor();
 
-      const { mode, hint } = resolveLanguage(this.lang);
+      const { mode, hint } = resolveLanguage(this.lang, this.langType);
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         lineNumbers: true,
