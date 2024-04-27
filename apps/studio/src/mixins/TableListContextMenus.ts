@@ -33,8 +33,11 @@ export default {
           class: isBQClass,
           handler: this.routineMenuClick
         },
-
-
+        {
+          name: "Rename",
+          slug: 'rename',
+          handler: ({ item }) => this.trigger(AppEvent.renameEntity, { type: 'routine', item })
+        }
       ] as ContextOption[],
 
     }
@@ -109,6 +112,11 @@ export default {
           }
         },
         {
+          name: "Rename",
+          slug: 'rename',
+          handler: ({ item }) => this.trigger(AppEvent.renameEntity, { type: item.entityType, item })
+        },
+        {
           name: "Drop",
           slug: 'sql-drop',
           class: isBQClass,
@@ -144,6 +152,12 @@ export default {
           handler: ({ item }) => {
             this.trigger(AppEvent.toggleHideSchema, item, true)
           },
+        },
+        { type: 'divider' },
+        {
+          name: "Rename",
+          slug: 'rename',
+          handler: ({ item }) => this.trigger(AppEvent.renameEntity, { type: 'schema', item })
         },
         {
           name: "Drop",

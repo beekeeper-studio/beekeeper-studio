@@ -41,6 +41,7 @@ export enum AppEvent {
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
   dropzoneDrop = 'dropzoneDrop',
+  renameEntity = 'renameEntity',
 }
 
 export interface RootBinding {
