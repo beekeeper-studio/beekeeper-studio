@@ -221,7 +221,7 @@ export default Vue.extend({
           title: 'Columns',
           field: 'columns',
           editable,
-          editor: 'select',
+          editor: 'list',
           formatter: this.cellFormatter,
           editorParams: {
             multiselect: true,

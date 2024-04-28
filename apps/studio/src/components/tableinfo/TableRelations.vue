@@ -224,7 +224,7 @@ export default Vue.extend({
           field: 'toColumn',
           title: "FK Column",
           editable,
-          editor: 'select',
+          editor: 'list',
           editorParams: {
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getColumns
@@ -233,7 +233,7 @@ export default Vue.extend({
         {
           field: 'onUpdate',
           title: "On Update",
-          editor: 'select',
+          editor: 'list',
           editable,
           editorParams: {
             values: this.dialectData.constraintActions,
@@ -244,7 +244,7 @@ export default Vue.extend({
           field: 'onDelete',
           title: 'On Delete',
           editable,
-          editor: 'select',
+          editor: 'list',
           // @ts-expect-error Bad Type
           editorParams: {
             values: this.dialectData.constraintActions,
