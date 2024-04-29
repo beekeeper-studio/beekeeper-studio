@@ -94,7 +94,8 @@ export default Vue.extend({
         allowEmpty: false,
         values: columnTypes.map((d) => d.pretty),
         defaultValue: defaultColumnType || 'varchar(255)',
-        showListOnEmpty: true
+        listOnEmpty: true,
+        autocomplete: true,
       }
     },
     disabledFeatures() {
@@ -118,7 +119,7 @@ export default Vue.extend({
         {
           title: "Type",
           field: "dataType",
-          editor: "autocomplete",
+          editor: "list",
           editorParams: this.autoCompleteOptions,
           minWidth: 90,
           widthShrink: 1,
