@@ -179,7 +179,7 @@
       },
       download(format) {
         let formatter = format !== 'md' ? format : (rows, options, setFileContents) => {
-          const values = rows.map(row => row.columns.map(col => col.value))
+          const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value))
           setFileContents(markdownTable(values), 'text/markdown')
         };
         // Fix Issue #1493 Lost column names in json query download
@@ -210,7 +210,12 @@
         if (format === 'md') {
           const mdContent = [
             Object.keys(result[0]),
-            ...result.map((row) => Object.values(row)),
+            ...result
+                .map((row) =>
+                  Object.values(row).map(v =>
+                    (typeof v === 'object') ? JSON.stringify(v) : v
+                  )
+                )
           ];
           this.$native.clipboard.writeText(markdownTable(mdContent))
         } else if (format === 'json') {

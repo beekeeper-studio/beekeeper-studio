@@ -34,6 +34,7 @@ import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
 import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
+import demoSetup from './20240421_seed_with_demo_data'
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
@@ -57,6 +58,7 @@ const realMigrations = [
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   firebirdConnection, exportPath, UserSettingsWindowPosition,
+  demoSetup
 
 ]
 
@@ -92,27 +94,44 @@ export default class {
     this.env = env
   }
 
+  async isFreshInstall() {
+
+    const runner = this.connection.connection.createQueryRunner()
+
+    try {
+      const sql = `SELECT name FROM sqlite_master WHERE type='table' AND name='bk_migrations';`
+      const runPreviously = await runner.query(sql)
+      return runPreviously.length === 0
+    } finally {
+      runner.release()
+    }
+  }
+
   async run() {
     console.log("running migrations")
     const runner = this.connection.connection.createQueryRunner()
-    await runner.query(setupSQL)
-    for(let i = 0; i < migrations.length; i++) {
-      const migration = migrations[i]
-      logger.debug(`Checking migration ${migration.name}`)
-      if(migration.env && migration.env !== this.env) {
-        // env defined, and does not match
-        logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
-        continue
-      }
-      const hasRun = await Manager.checkExists(runner, migration.name)
-      if (!hasRun) {
-        try {
-          await migration.run(runner, this.env)
-          await Manager.markExists(runner, migration.name)
-        } catch (err) {
-          console.log(`Migration ${migration.name} failed with`, err.name, err.message)
+    try {
+      await runner.query(setupSQL)
+      for(let i = 0; i < migrations.length; i++) {
+        const migration = migrations[i]
+        logger.debug(`Checking migration ${migration.name}`)
+        if(migration.env && migration.env !== this.env) {
+          // env defined, and does not match
+          logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
+          continue
+        }
+        const hasRun = await Manager.checkExists(runner, migration.name)
+        if (!hasRun) {
+          try {
+            await migration.run(runner, this.env)
+            await Manager.markExists(runner, migration.name)
+          } catch (err) {
+            console.log(`Migration ${migration.name} failed with`, err.name, err.message)
+          }
         }
       }
+    } finally {
+      runner.release()
     }
   }
 

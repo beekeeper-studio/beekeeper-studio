@@ -326,7 +326,7 @@ export default {
             shortcut: this.ctrlOrCmd("r"),
           },
           {
-            name: "ReplaceAll",
+            name: "Replace All",
             slug: "replace_all",
             handler: () => {
               this.editor.execCommand("replaceAll");

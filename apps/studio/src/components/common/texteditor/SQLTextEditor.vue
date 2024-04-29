@@ -123,7 +123,7 @@ export default Vue.extend({
         {
           type: "divider",
         },
-        ...options.slice(pivot + 1),
+        ...options.slice(pivot),
       ];
 
       if (this.contextMenuOptions) {

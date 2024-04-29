@@ -14242,9 +14242,9 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@beekeeper-studio/tabulator#76c253a7437bcab5fcf67d601f09e67aea12f99e:
-  version "6.2.0-bks.3"
-  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/76c253a7437bcab5fcf67d601f09e67aea12f99e"
+tabulator-tables@beekeeper-studio/tabulator#32107a671f00847d888f89ae0640cd4cc655229d:
+  version "6.2.0-bks.5"
+  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/32107a671f00847d888f89ae0640cd4cc655229d"
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"
