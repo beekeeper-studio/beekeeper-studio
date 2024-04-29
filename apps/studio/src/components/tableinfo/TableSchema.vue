@@ -216,7 +216,8 @@ export default Vue.extend({
         allowEmpty: false,
         values: this.columnTypes,
         defaultValue: 'varchar(255)',
-        showListOnEmpty: true
+        listOnEmpty: true,
+        autocomplete: true,
       }
 
       const result = [
@@ -236,7 +237,7 @@ export default Vue.extend({
         {
           title: 'Type',
           field: 'dataType',
-          editor: 'autocomplete',
+          editor: 'list',
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn'),

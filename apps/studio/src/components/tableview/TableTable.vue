@@ -640,9 +640,10 @@ export default Vue.extend({
         }
 
         if (column.dataType && /^(bool|boolean)$/i.test(column.dataType)) {
-          const trueVal = this.dialectData.boolean?.true ?? true
-          const falseVal = this.dialectData.boolean?.false ?? false
-          const values = [falseVal, trueVal]
+          const values = [
+            { label: 'false', value: this.dialectData.boolean?.false ?? false },
+            { label: 'true', value: this.dialectData.boolean?.true ?? true },
+          ]
           if (column.nullable) values.push({ label: '(NULL)', value: null })
           result.editorParams['values'] = values
         }
@@ -1036,7 +1037,7 @@ export default Vue.extend({
           return 'textarea'
         case 'bool':
         case 'boolean':
-          return 'select'
+          return 'list'
         default: return ne
       }
     },
