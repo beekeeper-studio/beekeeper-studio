@@ -28,6 +28,7 @@ import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { UserSetting } from '@/common/appdb/models/user_setting'
+import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = RawLog.scope('store/index')
 
@@ -330,6 +331,7 @@ const store = new Vuex.Store<State>({
       if (context.state.username) {
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
+
         await server?.createConnection(config.defaultDatabase || undefined).connect()
         server.disconnect()
       } else {
@@ -368,10 +370,20 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
+        // create token cache for azure auth
+        if (config.azureAuthOptions.azureAuthEnabled && !config.azureAuthOptions.authId) {
+          console.log('creating cache')
+          let cache = new TokenCache();
+          cache = await cache.save();
+          console.log('saved cache: ', cache)
+          config.azureAuthOptions.authId = cache.id;
+        }
+        
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
+
         await connection.connect()
         connection.connectionType = config.connectionType;
 

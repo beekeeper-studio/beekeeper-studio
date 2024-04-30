@@ -1,4 +1,4 @@
-import { RedshiftOptions } from "../appdb/models/saved_connection"
+import { AzureAuthOptions, RedshiftOptions } from "../appdb/models/saved_connection"
 import { BigQueryOptions } from "../appdb/models/saved_connection"
 import { CassandraOptions } from "../appdb/models/saved_connection"
 
@@ -47,6 +47,7 @@ export interface ISimpleConnection {
   redshiftOptions?: RedshiftOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
+  azureAuthOptions?: AzureAuthOptions
 }
 
 export interface IConnection extends ISimpleConnection {

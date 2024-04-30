@@ -6,7 +6,7 @@ import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
 
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../types"
+import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -31,6 +31,7 @@ import {
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { AzureAuthService } from '../authentication/azure';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -69,14 +70,13 @@ const SQLServerContext = {
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
-  server: IDbConnectionServer
-  database: IDbConnectionDatabase
   defaultSchema: () => string
   version: SQLServerVersion
   dbConfig: any
   readOnlyMode: boolean
   logger: any
   pool: ConnectionPool;
+  authService: AzureAuthService;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
@@ -841,7 +841,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    this.dbConfig = this.configDatabase(this.server, this.database)
+    this.dbConfig = await this.configDatabase(this.server, this.database)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
 
     this.pool.on('error', (err) => {
@@ -854,6 +854,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async disconnect(): Promise<void> {
+    this.authService?.cancel();
     await this.pool.close();
 
     await super.disconnect();
@@ -957,7 +958,32 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<IDbConnectionServerConfig> {
+  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<any> { // changed to any for now, might need to make some changes
+    console.log(server.config)
+    if (server.config.azureAuthOptions.azureAuthEnabled) {
+      this.authService = new AzureAuthService();
+      await this.authService.init(server.config.azureAuthOptions.authId)
+
+      const token = await this.authService.acquireToken();
+
+      console.log('token', token);
+
+      console.log('server.config.host', server.config.host);
+      return {
+        server: server.config.host,
+        database: database.database,
+        authentication: {
+          type: 'azure-active-directory-access-token',
+          options: {
+            token: token
+          }
+        },
+        options: {
+          encrypt: true
+        }
+      };
+    }
+
     const config: any = {
       user: server.config.user,
       password: server.config.password,

@@ -52,6 +52,11 @@ export interface BigQueryOptions {
   devMode?: boolean
 }
 
+export interface AzureAuthOptions {
+  azureAuthEnabled?: boolean;
+  authId?: number;
+}
+
 export interface ConnectionOptions {
   cluster?: string
   connectionMethod?: string
@@ -231,8 +236,12 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({type: 'simple-json', nullable: false})
   cassandraOptions: CassandraOptions = {}
+
   @Column({ type: 'simple-json', nullable: false })
   bigQueryOptions: BigQueryOptions = {}
+
+  @Column({ type: 'simple-json', nullable: false})
+  azureAuthOptions: AzureAuthOptions = {}
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })

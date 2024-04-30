@@ -1,6 +1,6 @@
 <template>
   <div class="with-connection-type">
-    <common-server-inputs :config="config">
+    <common-server-inputs v-show="!azureAuthEnabled" :config="config">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
           SQL Server Options
@@ -41,8 +41,41 @@
         </div>
       </div>
     </common-server-inputs>
-    <common-advanced :config="config" />
-    <button @click.prevent="azure" >AZURE AUTH</button>
+    <common-advanced v-show="!azureAuthEnabled" :config="config" />
+    <!-- I hate this, I feel like the rest of the form should be hidden if this is active -->
+    <div class="advanced-connection-settings">
+      <h4 
+        class="advanced-heading flex"
+        :class="{enabled: azureAuthEnabled}"
+      >
+        <span class="expand">Azure SSO Authentication</span>
+        <x-switch
+          @click.prevent="toggleAzureAuth"
+          :toggled="azureAuthEnabled"
+        />
+      </h4>
+      <div 
+        class="advanced-body" 
+        v-show="azureAuthEnabled"
+      >
+        <div class="form-group">
+          <label for="Server">Server</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            v-model="config.host"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Database">Database</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            v-model="config.defaultDatabase"
+          >
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -51,15 +84,19 @@
   import CommonServerInputs from './CommonServerInputs'
   import CommonAdvanced from './CommonAdvanced'
   import { AzureAuthService } from '../../lib/db/authentication/azure'
+  import { TokenCache } from '@/common/appdb/models/token_cache';
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
     props: ['config'],
+    data() {
+      return {
+        azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled || false
+      }
+    },
     methods: {
-      async azure() {
-        const auth = new AzureAuthService();
-
-        await auth.auth();
+      async toggleAzureAuth() {
+        this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled = !this.azureAuthEnabled;
       }
     }
 

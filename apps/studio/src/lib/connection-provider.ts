@@ -45,6 +45,7 @@ export default {
       readOnlyMode: config.readOnlyMode,
       cassandraOptions: config.cassandraOptions,
       bigQueryOptions: config.bigQueryOptions,
+      azureAuthOptions: config.azureAuthOptions,
       runtimeExtensions: sqliteExtension ? [sqliteExtension] : []
     }
   },
