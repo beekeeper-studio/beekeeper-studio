@@ -196,21 +196,16 @@
       </modal>
     </portal>
 
-    <confirmation-modal
-      name="core-tabs-close-confirmation"
-      ref="closeConfirmation"
-    >
+    <confirmation-modal :id="confirmModalId">
       <template v-slot:title>
-        <div class="dialog-c-title">
-          Really close
-          <span
-            class="tab-like"
-            v-if="closingTab"
-          >
-            <tab-icon :tab="closingTab" /> {{ closingTab.title }}
-          </span>
-          ?
-        </div>
+        Really close
+        <span
+          class="tab-like"
+          v-if="closingTab"
+        >
+          <tab-icon :tab="closingTab" /> {{ closingTab.title }}
+        </span>
+        ?
       </template>
       <template v-slot:message>
         You will lose unsaved changes
@@ -285,6 +280,7 @@ export default Vue.extend({
         dbDuplicateTableParams: null,
         duplicateTableName: null,
         closingTab: null,
+        confirmModalId: 'core-tabs-close-confirmation',
       }
     },
     watch: {
@@ -847,7 +843,7 @@ export default Vue.extend({
     async close(tab: OpenTab, options?: CloseTabOptions) {
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
-        const confirmed = await this.$refs.closeConfirmation.confirm();
+        const confirmed = await this.$confirmById(this.confirmModalId);
         this.closingTab = null
         if (!confirmed) return
       }

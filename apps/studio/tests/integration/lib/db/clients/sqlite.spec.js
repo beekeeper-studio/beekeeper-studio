@@ -8,13 +8,18 @@ describe("Sqlite Tests", () => {
   let util
 
   beforeAll(async () => {
-    console.log("beforeAll")
     dbfile = tmp.fileSync()
 
     const config = {
       client: 'sqlite',
     }
-    util = new DBTestUtil(config, dbfile.name, { dialect: 'sqlite'})
+    util = new DBTestUtil(config, dbfile.name, {
+      dialect: 'sqlite',
+      skipRenameElementsTests: {
+        views: true,
+        schemas: true,
+      },
+    })
     util.extraTables = 1
     await util.setupdb()
 

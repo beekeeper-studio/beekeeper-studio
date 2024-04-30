@@ -47,7 +47,13 @@ describe("Oracle Tests", () => {
         connectionMethod: 'manual'
       }
     }
-    util = new DBTestUtil(config, "BEEKEEPER", { defaultSchema: 'BEEKEEPER', dialect: 'oracle' })
+    util = new DBTestUtil(config, "BEEKEEPER", {
+      defaultSchema: 'BEEKEEPER',
+      dialect: 'oracle',
+      skipRenameElementsTests: {
+        schemas: true,
+      },
+    })
     await util.setupdb()
 
   })

@@ -1,4 +1,5 @@
 import { AppEvent } from "@/common/AppEvent";
+import { DatabaseElement } from "@/lib/db/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { DialectData } from "@shared/lib/dialects/models";
 
@@ -36,7 +37,7 @@ export default {
         {
           name: "Rename",
           slug: 'rename',
-          handler: ({ item }) => this.trigger(AppEvent.renameEntity, { type: 'routine', item })
+          handler: ({ item }) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.ROUTINE, item })
         }
       ] as ContextOption[],
 
@@ -114,7 +115,18 @@ export default {
         {
           name: "Rename",
           slug: 'rename',
-          handler: ({ item }) => this.trigger(AppEvent.renameEntity, { type: item.entityType, item })
+          handler: ({ item }) => {
+            const mapper = {
+              table: DatabaseElement.TABLE,
+              view: DatabaseElement.VIEW,
+            }
+
+            if (typeof mapper[item.entityType] === 'undefined') {
+              throw new Error(`Unsupported entity type: ${item.entityType}`)
+            }
+
+            this.trigger(AppEvent.setDatabaseElementName, { type: mapper[item.entityType], item })
+          }
         },
         {
           name: "Drop",
@@ -157,7 +169,7 @@ export default {
         {
           name: "Rename",
           slug: 'rename',
-          handler: ({ item }) => this.trigger(AppEvent.renameEntity, { type: 'schema', item })
+          handler: ({ item }) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.SCHEMA, item })
         },
         {
           name: "Drop",

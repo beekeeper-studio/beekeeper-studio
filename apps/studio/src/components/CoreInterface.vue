@@ -38,7 +38,7 @@
       @close="quickSearchShown=false"
     />
     <ExportManager :connection="connection" />
-    <rename-entity-modal />
+    <rename-database-element-modal />
   </div>
 </template>
 
@@ -55,10 +55,10 @@
   import ProgressBar from './editor/ProgressBar.vue'
   import Vue from 'vue'
 import { SmartLocalStorage } from '@/common/LocalStorage'
-import RenameEntityModal from './common/modals/RenameEntityModal.vue'
+import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, RenameEntityModal },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, RenameDatabaseElementModal },
     props: ['connection'],
     data() {
       /* eslint-disable */

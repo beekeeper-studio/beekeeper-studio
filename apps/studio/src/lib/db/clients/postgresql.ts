@@ -926,6 +926,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result?.description
   }
 
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
+    elementName = this.wrapIdentifier(elementName)
+    newElementName = this.wrapIdentifier(newElementName)
+    schema = this.wrapIdentifier(schema)
+
+    const sql = `ALTER ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${elementName} RENAME TO ${newElementName}`
+
+    await this.driverExecuteSingle(sql)
+  }
+
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
     const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 

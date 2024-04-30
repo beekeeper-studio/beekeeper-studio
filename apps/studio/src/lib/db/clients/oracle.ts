@@ -568,6 +568,25 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     })
   }
 
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
+    if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
+      throw new Error('Only tables and views can be renamed')
+    }
+
+    elementName = this.wrapIdentifier(elementName)
+    newElementName = this.wrapIdentifier(newElementName)
+    schema = this.wrapIdentifier(schema)
+
+    let sql: string
+    if (typeOfElement === DatabaseElement.TABLE) {
+      sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName}`
+    } else {
+      sql = `RENAME ${elementName} TO ${newElementName}`
+    }
+
+    await this.driverExecuteSingle(sql)
+  }
+
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 

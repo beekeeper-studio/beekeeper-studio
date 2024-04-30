@@ -795,6 +795,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     });
   }
 
+  async setElementName(): Promise<void> {
+    throw new Error("Not supported.");
+  }
+
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,

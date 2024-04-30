@@ -8,7 +8,9 @@ export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
   "MATERIALIZED-VIEW" = 'MATERIALIZED VIEW',
-  DATABASE = 'DATABASE'
+  DATABASE = 'DATABASE',
+  SCHEMA = 'SCHEMA',
+  ROUTINE = 'ROUTINE',
 }
 
 export interface IDbConnectionDatabase {

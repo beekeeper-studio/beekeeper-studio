@@ -135,6 +135,7 @@ export interface DialectData {
     export?: {
       sql?: boolean
     }
+    schema?: boolean
   },
   notices?: {
     infoSchema?: string

@@ -30,8 +30,9 @@ export enum AppEvent {
   hideSchema = 'hideSchema',
   toggleHideEntity = 'toggleHideEntity',
   toggleHideSchema = 'toggleHideSchema',
-  deleteDatabaseElement = 'deleteDatabaseElement',
   exportTables = 'exportTables',
+  setDatabaseElementName = 'setDatabaseElementName',
+  deleteDatabaseElement = 'deleteDatabaseElement',
   dropDatabaseElement = 'dropDatabaseElement',
   duplicateDatabaseTable = 'duplicateDatabaseTable',
   backupDatabase = 'backupDatabase',
@@ -41,7 +42,8 @@ export enum AppEvent {
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
   dropzoneDrop = 'dropzoneDrop',
-  renameEntity = 'renameEntity',
+  createConfirmModal = 'createConfirmModal',
+  showConfirmModal = 'showConfirmModal',
 }
 
 export interface RootBinding {

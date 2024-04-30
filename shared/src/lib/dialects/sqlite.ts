@@ -36,6 +36,7 @@ export const SqliteData: DialectData = {
     return value;
   },
   disabledFeatures: {
+    schema: true,
     comments: true,
     alter: {
       alterColumn: true,

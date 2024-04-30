@@ -25,7 +25,12 @@ describe("MariaDB Tests", () => {
       user: 'root',
       password: 'test'
     }
-    util = new DBTestUtil(config, "test", { dialect: 'mysql'})
+    util = new DBTestUtil(config, "test", {
+      dialect: 'mysql',
+      skipRenameElementsTests: {
+        schemas: true,
+      },
+    })
     await util.setupdb()
   })
 

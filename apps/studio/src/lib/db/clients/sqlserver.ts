@@ -433,6 +433,21 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return totalRecords
   }
 
+  // TODO put this notice:
+  // Changing any part of an object name can break scripts and stored procedures. We recommend you don't use this statement to rename stored procedures, triggers, user-defined functions, or views; instead, drop the object and re-create it with the new name.
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
+    if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
+      throw new Error('Only tables and views can be renamed')
+    }
+
+    elementName = this.wrapValue(schema + '.' + elementName)
+    newElementName = this.wrapValue(newElementName)
+
+    const sql = `EXEC sp_rename ${elementName}, ${newElementName};`
+
+    await this.driverExecuteSingle(sql)
+  }
+
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
     await this.driverExecuteSingle(sql)
