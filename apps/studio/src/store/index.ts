@@ -535,6 +535,10 @@ const store = new Vuex.Store<State>({
       context.commit('addPinned', routine)
     },
     async removeUsedConfig(context, config) {
+      if (config.azureAuthOptions?.authId) {
+        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
+        cache.remove();
+      }
       await config.remove()
       context.commit('removeUsedConfig', config)
     },

@@ -42,7 +42,6 @@
       </div>
     </common-server-inputs>
     <common-advanced v-show="!azureAuthEnabled" :config="config" />
-    <!-- I hate this, I feel like the rest of the form should be hidden if this is active -->
     <div class="advanced-connection-settings">
       <h4 
         class="advanced-heading flex"

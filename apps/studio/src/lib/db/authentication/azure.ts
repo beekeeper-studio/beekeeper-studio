@@ -31,7 +31,6 @@ let localCache: TokenCache;
 
 const cachePlugin = {
   beforeCacheAccess: async (cacheContext: msal.TokenCacheContext): Promise<void> => {
-    // const cache = JSON.stringify(localCache.cache) // might need to stringify?
     cacheContext.tokenCache.deserialize(localCache.cache)
   },
   afterCacheAccess: async (cacheContext: msal.TokenCacheContext): Promise<void> => {
@@ -44,15 +43,15 @@ const cachePlugin = {
 
 // TODO (@day): refactor this shit lol
 export class AzureAuthService {
-  pca: msal.PublicClientApplication;
+  private pca: msal.PublicClientApplication;
+  private pollingTimeout = 60000;
+  private start: number = null;
 
   private cancelFulfillment = false;
-  private homeId: string;
-  // private cache: TokenCache;
 
   public async init(authId: number) {
     if (!authId) {
-      throw new Error("No TokenCache entry found in database"); // ?? do we need this ??
+      throw new Error("No TokenCache entry found in database");
     }
 
     localCache = await TokenCache.findOne(authId);
@@ -65,13 +64,13 @@ export class AzureAuthService {
        cachePlugin
      }
     };
+
     log.debug('Creating PCA');
     this.pca = new msal.PublicClientApplication(clientConfig);
   }
 
   async acquireToken(): Promise<string> {
     const refreshToken = await this.tryRefresh();
-    console.log('refresh token', refreshToken);
     if (refreshToken) {
       return refreshToken;
     }
@@ -90,10 +89,10 @@ export class AzureAuthService {
     log.debug('Getting auth code')
     shell.openExternal(authUrl);
 
+    this.start = Date.now();
     const result = await this.checkStatus(beekeeperCloudToken.url);
     if (!result || result?.data?.cloud_token?.status !== 'fulfilled') {
-      // TODO (@day): handle this case somehow. (not currently possible, checkStatus will go on forever till they get redirected)
-      throw new Error(`Something went terribly wrong and I don't want to think about this case right now`);
+      throw new Error(`Looks like you didn't sign in on your browser. Please try again.`);
     }
     await axios.put(beekeeperCloudToken.url, { status: 'claimed' });
 
@@ -128,7 +127,7 @@ export class AzureAuthService {
 
   private async tryRefresh(): Promise<string | null> {
     const tokenCache = this.pca.getTokenCache();
-    const account = await tokenCache.getAccountByHomeId(this.homeId);
+    const account = await tokenCache.getAccountByHomeId(localCache.homeId);
 
     if (!account) {
       return null;
@@ -145,7 +144,8 @@ export class AzureAuthService {
   
   // need a way to cancel this 
   private async checkStatus(url: string): Promise<Response> {
-    if (this.cancelFulfillment) {
+    const timedOut = Date.now() - this.start >= this.pollingTimeout;
+    if (this.cancelFulfillment || timedOut) {
       return null;
     }
     const result = await axios.get(url) as Response;
@@ -153,7 +153,6 @@ export class AzureAuthService {
       await wait(2000);
       return await this.checkStatus(url);
     } else {
-      console.log('FULFILLED or failed')
       return result;
     }
   }

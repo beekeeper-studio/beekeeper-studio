@@ -975,7 +975,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         authentication: {
           type: 'azure-active-directory-access-token',
           options: {
-            token: token
+            token: token,
+            connectTimeout: 20000
           }
         },
         options: {
