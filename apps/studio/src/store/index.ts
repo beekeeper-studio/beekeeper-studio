@@ -378,7 +378,7 @@ const store = new Vuex.Store<State>({
           console.log('saved cache: ', cache)
           config.azureAuthOptions.authId = cache.id;
         }
-        
+
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
