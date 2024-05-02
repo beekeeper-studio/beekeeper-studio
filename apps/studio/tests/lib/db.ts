@@ -163,6 +163,10 @@ export class DBTestUtil {
     this.personId = isOracle ? Number(people[0].id) : people[0].id
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
 
+    // See createTables for why this is commented out
+    // await this.knex("foo.bar").insert({ id: 1, name: "Dots are evil" });
+
+
     if (!this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
@@ -336,16 +340,22 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
+    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql']
 
-    if (this.dbType === 'mariadb') expect(defaultValues).toEqual([true,  true])
-    else if (this.dbType === 'mysql') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'tidb') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'postgresql') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'cockroachdb') expect(defaultValues).toEqual([true,  false])
+    if (trueFalseDBs.indexOf(this.dbType) !== -1) expect(defaultValues).toEqual([true,  false])
     else expect(defaultValues).toEqual([false, false])
 
     const groupColumns = columns.filter((row) => row.tableName.toLowerCase() === 'group_table')
     expect(groupColumns.length).toBe(2)
+  }
+
+
+  async testDotTable() {
+    // FIXME: Make this generic to all tables.
+    // see 'createTables' for why this is commented out
+    // const r = await this.connection.selectTop("foo.bar", 0, 10, [{field: 'id', dir: 'ASC'}], this.defaultSchema)
+    // const result = r.result.map((r: any) => r.name || r.NAME)
+    // expect(result).toMatchObject(['Dots are evil'])
   }
 
   /**
@@ -369,6 +379,7 @@ export class DBTestUtil {
     await this.knex("group_table").insert({select_col: "bar"})
     await this.knex("group_table").insert({select_col: "abc"})
 
+
     let r = await this.connection.selectTop("group_table", 0, 10, [{field: "select_col", dir: 'ASC'}], [], this.defaultSchema)
     let result = r.result.map((r: any) => r.select_col || r.SELECT_COL)
     expect(result).toMatchObject(["abc", "bar"])
@@ -388,6 +399,8 @@ export class DBTestUtil {
     r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(["pears"])
+
+    await this.testDotTable()
 
     await this.knex("group_table").where({select_col: "bar"}).delete()
     await this.knex("group_table").where({select_col: "abc"}).delete()
@@ -864,6 +877,66 @@ export class DBTestUtil {
     expect(fmt(multipleFiltersQuery)).toBe(fmt(expectedFiltersQueries[dbType]))
   }
 
+  async buildIsNullTests() {
+    const dbType = ['mariadb','tidb'].includes(this.dbType) ? 'mysql' : this.dbType
+    const fmt = (sql: string) => safeSqlFormat(sql, {
+      language: FormatterDialect(dbType === 'cockroachdb'
+          ? 'postgresql'
+          : this.dialect
+        )
+      })
+
+    const queryIsNull = await this.connection.selectTopSql(
+      'jobs',
+      0,
+      100,
+      [],
+      [{ field: 'hourly_rate', type: 'is' }],
+      ['sqlserver', 'oracle'].includes(dbType) ? null : 'public',
+      ['*']
+    );
+
+    const expectedQueriesIsNull = {
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
+      // mariadb: same as mysql
+      sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NULL",
+      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
+    }
+
+    expect(fmt(queryIsNull)).toBe(fmt(expectedQueriesIsNull[dbType]))
+
+    await expect(this.connection.executeQuery(queryIsNull)).resolves.not.toThrow();
+
+    const queryIsNotNull = await this.connection.selectTopSql(
+      'jobs',
+      0,
+      100,
+      [],
+      [{ field: 'hourly_rate', type: 'is not' }],
+      ['sqlserver', 'oracle'].includes(dbType) ? null : 'public',
+      ['*']
+    );
+
+    const expectedQueriesIsNotNull = {
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
+      // mariadb: same as mysql
+      sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NOT NULL",
+      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
+    }
+
+    expect(fmt(queryIsNotNull)).toBe(fmt(expectedQueriesIsNotNull[dbType]))
+
+    await expect(this.connection.executeQuery(queryIsNotNull)).resolves.not.toThrow();
+  }
+
   // lets start simple, it should resolve for all connection types
   async tablePropertiesTests() {
     await this.connection.getTableProperties('group_table', this.defaultSchema)
@@ -998,6 +1071,14 @@ export class DBTestUtil {
       table.string("state")
       table.string("country").notNullable()
     })
+
+    // FIXME: Knex doesn't support tables with dots in the name
+    // https://github.com/knex/knex/issues/2762
+    // Should be used in the dot table tests
+    // await this.knex.schema.createTable(knex.raw('`foo.bar`'), (table) => {
+    //   table.integer('id')
+    //   table.string('name')
+    // })
 
     await this.knex.schema.createTable('MixedCase', (table) => {
       primary(table)

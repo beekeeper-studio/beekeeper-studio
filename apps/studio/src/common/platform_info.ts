@@ -41,6 +41,7 @@ const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
 const oracleSupported = isMac && isArm ? false : true
 
+const resourcesPath = isDevEnv ? path.resolve('./extra_resources') : path.resolve(p.resourcesPath)
 let userDirectory =  testMode ? './tmp' : e.app.getPath("userData")
 const downloadsDirectory = testMode ? './tmp' : e.app.getPath('downloads')
 const homeDirectory = testMode ? './tmp' : e.app.getPath('home')
@@ -71,7 +72,7 @@ const platformInfo = {
   isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
   sshAuthSock: p.env.SSH_AUTH_SOCK,
   environment: p.env.NODE_ENV,
-  resourcesPath: p.resourcesPath,
+  resourcesPath,
   env: {
     development: isDevEnv,
     test: testMode,

@@ -11,7 +11,6 @@
 </template>
 
 <script type="text/javascript">
-  import { Tabulator, TabulatorFull} from 'tabulator-tables'
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
@@ -25,7 +24,8 @@
   import * as intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyRange, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
-  import { rowHeaderField } from '@/lib/table-grid/utils'
+  import { rowHeaderField } from '@/common/utils'
+  import { tabulatorForTableData } from '@/common/tabulator';
 
   export default {
     mixins: [Converter, Mutators],
@@ -35,7 +35,7 @@
         actualTableHeight: '100%',
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active'],
+    props: ['result', 'tableHeight', 'query', 'active', 'tab'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -58,7 +58,7 @@
       }
     },
     computed: {
-      ...mapState(['connection']),
+      ...mapState(['connection', 'usedConfig']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -123,47 +123,6 @@
           return result;
         })
 
-        const rowHeader = {
-          field: rowHeaderField,
-          resizable: false,
-          frozen: true,
-          headerSort: false,
-          editor: false,
-          htmlOutput: false,
-          print: false,
-          clipboard: false,
-          download: false,
-          minWidth: 38,
-          width: 38,
-          hozAlign: 'center',
-          formatter: 'rownum',
-          formatterParams: { relativeToPage: true },
-          contextMenu: (_e, cell) => {
-            return copyActionsMenu({
-              range: _.last(cell.getRanges()),
-              connection: this.connection,
-              table: 'mytable',
-              schema: this.connection.defaultSchema(),
-            })
-          },
-          headerContextMenu: () => {
-            const range = _.last(this.tabulator.getRanges())
-            return [
-              ...copyActionsMenu({
-                range,
-                connection: this.connection,
-                table: 'mytable',
-                schema: this.connection.defaultSchema(),
-              }),
-              { separator: true },
-              resizeAllColumnsToFitContent,
-              resizeAllColumnsToFixedWidth,
-            ]
-          },
-        }
-
-        columns.unshift(rowHeader)
-
         return columns
       },
       columnIdTitleMap() {
@@ -172,7 +131,17 @@
           result[column.field] = column.title
         })
         return result
-      }
+      },
+      tableId() {
+        // the id for a tabulator table
+        if (!this.usedConfig.id) return null;
+
+        const workspace = 'workspace-' + this.worskpaceId
+        const connection = 'connection-' + this.usedConfig.id
+        const table = 'table-' + this.result.tableName
+        const columns = 'columns-' + this.result.fields.reduce((str, field) => `${str},${field.name}`, '')
+        return `${workspace}.${connection}.${table}.${columns}`
+      },
     },
     beforeDestroy() {
       if (this.tabulator) {
@@ -187,18 +156,11 @@
         if (this.tabulator) {
           this.tabulator.destroy()
         }
-        this.tabulator = new TabulatorFull(this.$refs.tabulator, {
-          selectableRange: true,
-          selectableRangeColumns: true,
-          selectableRangeRows: true,
-          selectableRangeAutoFocus: false,
-          resizableColumnGuide: true,
+        this.tabulator = tabulatorForTableData(this.$refs.tabulator, {
+          persistenceID: this.tableId,
           data: this.tableData, //link data to table
-          reactiveData: true,
-          renderHorizontal: 'virtual',
           columns: this.tableColumns, //define table columns
           height: this.actualTableHeight,
-          nestedFieldSeparator: false,
           downloadConfig: {
             columnHeaders: true
           },
@@ -217,7 +179,7 @@
       },
       download(format) {
         let formatter = format !== 'md' ? format : (rows, options, setFileContents) => {
-          const values = rows.map(row => row.columns.map(col => col.value))
+          const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value))
           setFileContents(markdownTable(values), 'text/markdown')
         };
         // Fix Issue #1493 Lost column names in json query download
@@ -248,7 +210,12 @@
         if (format === 'md') {
           const mdContent = [
             Object.keys(result[0]),
-            ...result.map((row) => Object.values(row)),
+            ...result
+                .map((row) =>
+                  Object.values(row).map(v =>
+                    (typeof v === 'object') ? JSON.stringify(v) : v
+                  )
+                )
           ];
           this.$native.clipboard.writeText(markdownTable(mdContent))
         } else if (format === 'json') {

@@ -5,6 +5,7 @@
       <span class="badge">{{ orderedPins.length }}</span>
       <div class="actions">
         <sidebar-sort-buttons
+          v-if="initialized"
           v-model="sort"
           :sort-options="sortOptions"
           no-order="position"
@@ -71,7 +72,8 @@ export default Vue.extend({
     sortOptions: {
       position: 'Drag & Drop',
       entityName: 'Alphanumeric'
-    }
+    },
+    initialized: false,
   }),
   computed: {
     orderedPins: {
@@ -98,6 +100,7 @@ export default Vue.extend({
       this.$settings.get('pinSortOrder', 'asc')
     ])
     this.sort = { field, order }
+    this.initialized = true
   },
   methods: {
     refreshColumns(table) {

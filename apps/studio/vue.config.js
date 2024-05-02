@@ -16,7 +16,7 @@ const externals = ['better-sqlite3',
   'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'oracledb', '@electron/remote'
 ]
 module.exports = {
-  transpileDependencies: ['@aws-sdk/*'],
+  transpileDependencies: ['@aws-sdk/*', 'tabulator-tables'],
   pluginOptions: {
     electronBuilder: {
       nodeModulesPath: ['./node_modules', '../../node_modules'],
@@ -56,6 +56,10 @@ module.exports = {
         afterSign: "electron-builder-notarize",
         afterPack: "./build/afterPack.js",
         extraResources: [
+          {
+            from: './extra_resources/demo.db',
+            to: 'demo.db'
+          },
           {
             from: 'build/launcher-script.sh',
             to: 'launcher-script.sh'

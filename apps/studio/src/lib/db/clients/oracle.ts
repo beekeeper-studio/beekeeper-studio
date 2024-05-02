@@ -214,6 +214,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         if (item.type === 'in') {
           const valuesIn = item.value.map(v => D.escapeString(v, true))
           return `${D.wrapIdentifier(item.field)} IN (${valuesIn.join(',')})`
+        } else if (item.type.includes('is')) {
+          return `${D.wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
         return `${D.wrapIdentifier(item.field)} ${item.type} ${D.escapeString(item.value, true)}`
       })

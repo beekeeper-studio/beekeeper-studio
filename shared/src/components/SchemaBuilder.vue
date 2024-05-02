@@ -23,7 +23,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
-import { TabulatorFull, Tabulator } from 'tabulator-tables'
+import { TabulatorFull, Tabulator, CellComponent, RowComponent } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
@@ -94,7 +94,8 @@ export default Vue.extend({
         allowEmpty: false,
         values: columnTypes.map((d) => d.pretty),
         defaultValue: defaultColumnType || 'varchar(255)',
-        showListOnEmpty: true
+        listOnEmpty: true,
+        autocomplete: true,
       }
     },
     disabledFeatures() {
@@ -118,7 +119,7 @@ export default Vue.extend({
         {
           title: "Type",
           field: "dataType",
-          editor: "autocomplete",
+          editor: "list",
           editorParams: this.autoCompleteOptions,
           minWidth: 90,
           widthShrink: 1,
@@ -206,7 +207,7 @@ export default Vue.extend({
       this.builtColumns = data
       this.columnsModified = markModified
     },
-    removeRow(_e, cell: Tabulator.CellComponent) {
+    removeRow(_e, cell: CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
     },
     async addRow() {
@@ -215,7 +216,7 @@ export default Vue.extend({
       const columnName = `column_${num}`
       const defaultDataType = getDialectData(this.dialect).defaultColumnType || 'varchar(255)'
 
-      const row: Tabulator.RowComponent = await this.tabulator.addRow({ columnName, dataType: defaultDataType, nullable: true})
+      const row: RowComponent = await this.tabulator.addRow({ columnName, dataType: defaultDataType, nullable: true})
       const nameCell = row.getCell('columnName')
       if (nameCell){
         // don't know why we need this, but we do.

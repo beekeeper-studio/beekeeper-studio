@@ -118,9 +118,7 @@
 </style>
 
 <script lang="ts">
-import { TabulatorFull, Tabulator } from 'tabulator-tables'
-type CellComponent = Tabulator.CellComponent
-type RowComponent = Tabulator.RowComponent
+import { TabulatorFull, CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
 import { format } from 'sql-formatter'
 import _ from 'lodash'
@@ -218,7 +216,8 @@ export default Vue.extend({
         allowEmpty: false,
         values: this.columnTypes,
         defaultValue: 'varchar(255)',
-        showListOnEmpty: true
+        listOnEmpty: true,
+        autocomplete: true,
       }
 
       const result = [
@@ -238,7 +237,7 @@ export default Vue.extend({
         {
           title: 'Type',
           field: 'dataType',
-          editor: 'autocomplete',
+          editor: 'list',
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
