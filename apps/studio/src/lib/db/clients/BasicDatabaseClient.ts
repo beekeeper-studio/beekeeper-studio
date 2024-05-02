@@ -217,6 +217,8 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
+  abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+
   abstract setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;

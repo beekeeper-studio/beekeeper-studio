@@ -9,6 +9,12 @@
         <div class="dialog-c-title">
           Rename {{ elementType.toLowerCase() }}
         </div>
+        <div class="alert alert-warning">
+          <i class="material-icons">warning</i>
+          <span>
+            Be cautious when renaming database object, as it may disrupt related queries, functions, procedures, or other objects that reference it.
+          </span>
+        </div>
         <error-alert
           :error="errors"
           :title="`Failed to rename ${elementType.toLowerCase()}`"
@@ -26,14 +32,28 @@
         >
           Cancel
         </button>
-        <button
-          class="btn btn-primary"
-          type="button"
-          @click.prevent="rename"
-          :disabled="loading"
-        >
-          Confirm
-        </button>
+        <x-buttons :disabled="loading">
+          <x-button
+            class="btn btn-primary"
+            @click.prevent="rename"
+          >
+            Rename
+          </x-button>
+          <x-button
+            class="btn btn-primary"
+            menu
+          >
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu style="--align: end;">
+              <x-menuitem @click.prevent="rename">
+                <x-label>Rename</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="renameSql">
+                <x-label>Copy to SQL</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
+        </x-buttons>
       </div>
     </modal>
   </portal>
@@ -42,10 +62,12 @@
 <script lang="ts">
 import Vue from "vue";
 import { AppEvent } from '@/common/AppEvent';
-import { TableOrView, Routine } from "@/lib/db/models";
+import { TableOrView } from "@/lib/db/models";
 import { mapState } from 'vuex'
 import { DatabaseElement } from '@/lib/db/types'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { format } from 'sql-formatter';
+import { FormatterDialect } from '@shared/lib/dialects/models'
 
 export default Vue.extend({
   components: {
@@ -87,7 +109,7 @@ export default Vue.extend({
       this.$modal.hide(this.modalName)
     },
     async rename() {
-      if (!await this.$confirm(`Are you sure you want to rename the ${this.elementType.toLowerCase()}?`, "", { confirmLabel: "Rename" })) {
+      if (!await this.$confirm(`Are you sure you want to rename the ${this.elementType.toLowerCase()}?`, "", { confirmLabel: "Yes" })) {
         return
       }
 
@@ -107,6 +129,16 @@ export default Vue.extend({
       this.$store.dispatch('updateTables')
       this.$store.dispatch('updateRoutines')
     },
+    renameSql() {
+      try {
+        const sql = this.connection.setElementNameSql(this.elementName, this.elementNewName, this.elementType, this.elementSchema)
+        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        this.$root.$emit(AppEvent.newTab, formatted)
+        this.close()
+      } catch (e) {
+        this.errors = [e]
+      }
+    }
   },
   mounted() {
     this.registerHandlers(this.rootBindings)

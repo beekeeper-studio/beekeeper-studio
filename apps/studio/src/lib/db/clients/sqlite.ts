@@ -477,12 +477,21 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     throw new Error("Method not implemented.");
   }
 
-  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement): Promise<void> {
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement): string {
     if (typeOfElement !== DatabaseElement.TABLE) {
+      return ''
+    }
+
+    return `ALTER TABLE ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)};`
+  }
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement): Promise<void> {
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement)
+
+    if (!sql) {
       throw new Error(`Unsupported element type: ${typeOfElement}`);
     }
 
-    const sql = `ALTER TABLE ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)}`
     await this.driverExecuteSingle(sql);
   }
 

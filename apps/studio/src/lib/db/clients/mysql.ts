@@ -861,18 +861,31 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     });
   }
 
+  setElementNameSql(
+    elementName: string,
+    newElementName: string,
+    typeOfElement: DatabaseElement
+  ): string {
+    elementName = this.wrapIdentifier(elementName);
+    newElementName = this.wrapIdentifier(newElementName);
+
+    let sql = '';
+
+    if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
+      sql = `RENAME TABLE ${elementName} TO ${newElementName};`;
+    }
+
+    return sql
+  }
+
   async setElementName(
     elementName: string,
     newElementName: string,
     typeOfElement: DatabaseElement
   ): Promise<void> {
-    elementName = this.wrapIdentifier(elementName);
-    newElementName = this.wrapIdentifier(newElementName);
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement);
 
-    let sql: string;
-    if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
-      sql = `RENAME TABLE ${elementName} TO ${newElementName}`;
-    } else {
+    if (!sql) {
       throw new Error(`Unsupported element type: ${typeOfElement}`);
     }
 

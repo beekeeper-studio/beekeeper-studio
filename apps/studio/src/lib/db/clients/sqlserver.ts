@@ -433,17 +433,23 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return totalRecords
   }
 
-  // TODO put this notice:
-  // Changing any part of an object name can break scripts and stored procedures. We recommend you don't use this statement to rename stored procedures, triggers, user-defined functions, or views; instead, drop the object and re-create it with the new name.
-  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
     if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
+      return ''
     }
 
     elementName = this.wrapValue(schema + '.' + elementName)
     newElementName = this.wrapValue(newElementName)
 
-    const sql = `EXEC sp_rename ${elementName}, ${newElementName};`
+    return `EXEC sp_rename ${elementName}, ${newElementName};`
+  }
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
+
+    if (!sql) {
+      throw new Error(`Unsupported element type: ${typeOfElement}`);
+    }
 
     await this.driverExecuteSingle(sql)
   }

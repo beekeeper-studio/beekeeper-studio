@@ -139,17 +139,26 @@ export class RedshiftClient extends PostgresClient {
     await this.driverExecuteSingle(sql);
   }
 
-  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema) {
     elementName = this.wrapIdentifier(elementName)
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
 
-    let sql: string
+    let sql = ''
+
     if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
-      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName}`
+      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.SCHEMA) {
-      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName}`
-    } else {
+      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName};`
+    }
+
+    return sql
+  }
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
+
+    if (!sql) {
       throw new Error(`Unsupported database element type: ${typeOfElement}`)
     }
 

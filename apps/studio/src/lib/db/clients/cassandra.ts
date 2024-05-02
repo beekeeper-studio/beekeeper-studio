@@ -383,10 +383,12 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     throw new Error("Method not implemented.");
   }
 
-  // TODO UNTESTED
-  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement): Promise<void> {
-    const sql = `ALTER ${typeOfElement} ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)}`;
-    await this.driverExecuteSingle(sql);
+  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement): string {
+    return '';
+  }
+
+  async setElementName(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement): Promise<void> {
+    throw new Error("Unsupported.");
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {

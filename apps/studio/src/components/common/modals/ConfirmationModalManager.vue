@@ -66,7 +66,7 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.createConfirmModal, handler: this.createModal },
-        { event: AppEvent.showConfirmModal, handler: this.showModal },
+        { event: AppEvent.showConfirmModal, handler: this.showExistingModal },
         { event: MODAL_CLOSE_EVENT, handler: this.onModalClose },
       ]
     },
@@ -81,7 +81,7 @@ export default Vue.extend({
 
       this.modals.splice(idx, 1);
     },
-    async showModal(options: ModalOptions) {
+    async showExistingModal(options: ModalOptions) {
       const modal: ModalContext = {
         id: options.id,
         onConfirm: options.onConfirm,

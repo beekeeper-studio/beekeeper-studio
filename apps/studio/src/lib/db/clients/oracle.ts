@@ -568,20 +568,24 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     })
   }
 
-  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
     elementName = this.wrapIdentifier(elementName)
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
 
-    let sql: string
+    let sql = ''
+
     if (typeOfElement === DatabaseElement.TABLE) {
-      sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName}`
+      sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.VIEW) {
-      sql = `RENAME ${elementName} TO ${newElementName}`
-    } else {
-      throw new Error(`Unsupported element type: ${typeOfElement}`)
+      sql = `RENAME ${elementName} TO ${newElementName};`
     }
 
+    return sql
+  }
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     await this.driverExecuteSingle(sql)
   }
 
