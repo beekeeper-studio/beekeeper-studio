@@ -50,12 +50,7 @@ function testWith(tag, socket = false, readonly = false) {
         config.socketPathEnabled = true
         config.socketPath = path.join(temp, 'mysqld.sock')
       }
-      util = new DBTestUtil(config, "test", {
-        dialect: 'mysql',
-        renameElementsTests: {
-          skipSchemas: true,
-        }
-      })
+      util = new DBTestUtil(config, "test", { dialect: 'mysql' })
       await util.setupdb()
 
       const functionDDL = `

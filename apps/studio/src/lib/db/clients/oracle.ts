@@ -569,10 +569,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
-    if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
-      throw new Error('Only tables and views can be renamed')
-    }
-
     elementName = this.wrapIdentifier(elementName)
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
@@ -580,8 +576,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     let sql: string
     if (typeOfElement === DatabaseElement.TABLE) {
       sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName}`
-    } else {
+    } else if (typeOfElement === DatabaseElement.VIEW) {
       sql = `RENAME ${elementName} TO ${newElementName}`
+    } else {
+      throw new Error(`Unsupported element type: ${typeOfElement}`)
     }
 
     await this.driverExecuteSingle(sql)

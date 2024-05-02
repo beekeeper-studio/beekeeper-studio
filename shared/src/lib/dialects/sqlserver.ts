@@ -45,7 +45,8 @@ export const SqlServerData: DialectData = {
   usesOffsetPagination: true,
   disabledFeatures: {
     alter: {
-      multiStatement: true
+      multiStatement: true,
+      renameSchema: true,
     },
     informationSchema: {
       extra: true

@@ -437,7 +437,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   // Changing any part of an object name can break scripts and stored procedures. We recommend you don't use this statement to rename stored procedures, triggers, user-defined functions, or views; instead, drop the object and re-create it with the new name.
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
     if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
-      throw new Error('Only tables and views can be renamed')
+      throw new Error(`Unsupported element type: ${typeOfElement}`);
     }
 
     elementName = this.wrapValue(schema + '.' + elementName)

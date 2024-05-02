@@ -11,7 +11,7 @@
           :key="index"
           @click.stop="optionClicked(option, $event)"
           class="vue-simple-context-menu__item"
-          :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
+          :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
         >
           <span v-html="option.name" />
           <div class="expand" />

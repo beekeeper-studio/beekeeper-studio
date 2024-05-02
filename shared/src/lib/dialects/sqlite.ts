@@ -43,6 +43,8 @@ export const SqliteData: DialectData = {
       multiStatement: true,
       addConstraint: true,
       dropConstraint: true,
+      renameView: true,
+      renameSchema: true,
     },
     informationSchema: {
       extra: true

@@ -71,7 +71,7 @@ export default Vue.extend({
     },
   },
   methods: {
-    open(options: { type: DatabaseElement, item: TableOrView | Routine | string }) {
+    open(options: { type: DatabaseElement, item: TableOrView | string }) {
       this.loading = false
       this.errors = null
       this.elementType = options.type

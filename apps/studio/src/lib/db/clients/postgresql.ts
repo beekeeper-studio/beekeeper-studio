@@ -931,7 +931,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
 
-    const sql = `ALTER ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${elementName} RENAME TO ${newElementName}`
+    let sql: string
+    if (typeOfElement === DatabaseElement.TABLE) {
+      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName}`
+    } else if (typeOfElement === DatabaseElement.VIEW) {
+      sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName}`
+    } else if (typeOfElement === DatabaseElement.SCHEMA) {
+      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName}`
+    } else {
+      throw new Error(`Unsupported element type: ${typeOfElement}`)
+    }
 
     await this.driverExecuteSingle(sql)
   }

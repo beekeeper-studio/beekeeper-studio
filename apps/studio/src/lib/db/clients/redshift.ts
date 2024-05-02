@@ -1,7 +1,7 @@
 import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
-import { IDbConnectionServer } from "../types";
+import { DatabaseElement, IDbConnectionServer } from "../types";
 import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
@@ -137,6 +137,23 @@ export class RedshiftClient extends PostgresClient {
     const sql = `create database ${this.wrapIdentifier(databaseName)} encoding ${this.wrapIdentifier(charset)}`;
 
     await this.driverExecuteSingle(sql);
+  }
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
+    elementName = this.wrapIdentifier(elementName)
+    newElementName = this.wrapIdentifier(newElementName)
+    schema = this.wrapIdentifier(schema)
+
+    let sql: string
+    if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
+      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName}`
+    } else if (typeOfElement === DatabaseElement.SCHEMA) {
+      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName}`
+    } else {
+      throw new Error(`Unsupported database element type: ${typeOfElement}`)
+    }
+
+    await this.driverExecuteSingle(sql)
   }
 
   protected countQuery(_options: STQOptions, baseSQL: string): string {

@@ -63,7 +63,6 @@ describe("Firebird Tests", () => {
       knexConnectionOptions: {
         lowercase_keys: true,
       },
-      skipRenameElementsTests: true, // does not support renaming elements
     };
     const database = "/firebird/data/defaultdb.fdb";
 

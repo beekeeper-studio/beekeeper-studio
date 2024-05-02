@@ -23,12 +23,7 @@ describe("TiDB Tests", () => {
       user: 'root',
       password: ''
     }
-    util = new DBTestUtil(config, "test", {
-      dialect: 'mysql',
-      skipRenameElementsTests: {
-        schemas: true,
-      },
-    })
+    util = new DBTestUtil(config, "test", { dialect: 'mysql'})
     await util.setupdb()
   })
 

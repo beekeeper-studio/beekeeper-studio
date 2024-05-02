@@ -34,11 +34,6 @@ export default {
           class: isBQClass,
           handler: this.routineMenuClick
         },
-        {
-          name: "Rename",
-          slug: 'rename',
-          handler: ({ item }) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.ROUTINE, item })
-        }
       ] as ContextOption[],
 
     }
@@ -115,17 +110,20 @@ export default {
         {
           name: "Rename",
           slug: 'rename',
+          class: ({ item  }) => {
+            if (item.entityType === 'table' && dialect.disabledFeatures?.alter?.renameTable) {
+              return 'disabled'
+            }
+            if (item.entityType === 'view' && dialect.disabledFeatures?.alter?.renameView) {
+              return 'disabled'
+            }
+            return ''
+          },
           handler: ({ item }) => {
-            const mapper = {
-              table: DatabaseElement.TABLE,
-              view: DatabaseElement.VIEW,
-            }
-
-            if (typeof mapper[item.entityType] === 'undefined') {
-              throw new Error(`Unsupported entity type: ${item.entityType}`)
-            }
-
-            this.trigger(AppEvent.setDatabaseElementName, { type: mapper[item.entityType], item })
+            const type = item.entityType === 'table'
+              ? DatabaseElement.TABLE
+              : DatabaseElement.VIEW
+            this.trigger(AppEvent.setDatabaseElementName, { type, item })
           }
         },
         {
@@ -169,6 +167,7 @@ export default {
         {
           name: "Rename",
           slug: 'rename',
+          class: dialect.disabledFeatures?.alter?.renameSchema ? 'disabled' : '',
           handler: ({ item }) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.SCHEMA, item })
         },
         {

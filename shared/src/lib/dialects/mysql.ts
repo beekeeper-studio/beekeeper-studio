@@ -41,7 +41,8 @@ export const MysqlData: DialectData = {
   },
   disabledFeatures: {
     alter: {
-      multiStatement: true
+      multiStatement: true,
+      renameSchema: true,
     }
   },
   notices: {

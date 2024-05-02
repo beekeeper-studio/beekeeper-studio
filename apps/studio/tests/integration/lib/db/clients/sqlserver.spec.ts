@@ -52,13 +52,7 @@ function testWith(dockerTag: string, readonly: boolean) {
         trustServerCertificate: true,
         readOnlyMode: readonly
       } as IDbConnectionServerConfig
-      util = new DBTestUtil(config, "tempdb", {
-        defaultSchema: 'dbo',
-        dialect: 'sqlserver',
-        skipRenameElementsTests: {
-          schemas: true, // Renaming schemas is not supported
-        },
-      })
+      util = new DBTestUtil(config, "tempdb", { defaultSchema: 'dbo', dialect: 'sqlserver'})
       await util.setupdb()
 
       await util.knex.schema.raw("CREATE SCHEMA hello")

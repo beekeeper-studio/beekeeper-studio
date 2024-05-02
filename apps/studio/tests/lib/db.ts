@@ -64,11 +64,6 @@ export interface Options {
   /** Skip creation of table with generated columns and the tests */
   skipGeneratedColumns?: boolean
   knexConnectionOptions?: Record<string, any>
-  skipRenameElementsTests?: true | {
-    tables?: boolean
-    views?: boolean
-    schemas?: boolean
-  }
 }
 
 export class DBTestUtil {
@@ -618,9 +613,16 @@ export class DBTestUtil {
   }
 
   async renameElementsTests() {
-    if (this.options.skipRenameElementsTests === true) return
+    if (!this.data.disabledFeatures?.alter?.renameSchema) {
+      await this.knex.schema.dropSchemaIfExists("rename_schema")
+      await this.knex.schema.createSchema("rename_schema")
 
-    if (!this.options.skipRenameElementsTests?.tables) {
+      await this.connection.setElementName('rename_schema', 'renamed_schema', DatabaseElement.SCHEMA)
+
+      expect(await this.connection.listSchemas()).toContain('renamed_schema')
+    }
+
+    if (!this.data.disabledFeatures?.alter?.renameTable) {
       await this.knex.schema.dropTableIfExists("rename_table")
       await this.knex.schema.createTable("rename_table", (table) => {
         table.specificType("id", 'varchar(255)')
@@ -631,7 +633,7 @@ export class DBTestUtil {
       expect(await this.knex.schema.hasTable('renamed_table')).toBe(true)
     }
 
-    if (!this.options.skipRenameElementsTests?.views) {
+    if (!this.data.disabledFeatures?.alter?.renameView) {
       await this.knex.schema.dropViewIfExists("rename_view");
       await this.knex.schema.createView("rename_view", (view) => {
         view.columns(["id"])
@@ -642,15 +644,6 @@ export class DBTestUtil {
 
       const views = await this.connection.listViews()
       expect(views.find((view) => view.name === 'renamed_view')).toBeTruthy()
-    }
-
-    if (!this.options.skipRenameElementsTests?.schemas) {
-      await this.knex.schema.dropSchemaIfExists("rename_schema")
-      await this.knex.schema.createSchema("rename_schema")
-
-      await this.connection.setElementName('rename_schema', 'renamed_schema', DatabaseElement.SCHEMA, this.defaultSchema)
-
-      expect(await this.connection.listSchemas()).toContain('renamed_schema')
     }
   }
 

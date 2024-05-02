@@ -109,6 +109,9 @@ export interface DialectData {
       dropConstraint?: boolean
       everything?: boolean
       indexes?: boolean
+      renameSchema?: boolean
+      renameTable?: boolean
+      renameView?: boolean
     },
     triggers?: boolean,
     relations?: boolean,
