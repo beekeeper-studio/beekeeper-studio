@@ -430,7 +430,12 @@ const store = new Vuex.Store<State>({
         let connection = server.db(newDatabase)
         if (!connection) {
           connection = server.createConnection(newDatabase)
-          await connection.connect()
+          try {
+            await connection.connect()
+          } catch (e) {
+            server.destroyConnection(newDatabase);
+            throw new Error(`Could not connect to database: ${e.message}`)
+          }
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
