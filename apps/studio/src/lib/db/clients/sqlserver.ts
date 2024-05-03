@@ -959,39 +959,40 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<any> { // changed to any for now, might need to make some changes
+    const config: any = {
+      server: server.config.host,
+      database: database.database,
+      requestTimeout: Infinity,
+      appName: 'beekeeperstudio',
+      pool: {
+        max: 10
+      }
+    };
+
     if (server.config.azureAuthOptions?.azureAuthEnabled) {
       this.authService = new AzureAuthService();
       await this.authService.init(server.config.azureAuthOptions.authId)
 
       const token = await this.authService.acquireToken();
 
-      return {
-        server: server.config.host,
-        database: database.database,
-        authentication: {
-          type: 'azure-active-directory-access-token',
-          options: {
-            token,
-          }
-        },
+      config.authentication = {
+        type: 'azure-active-directory-access-token',
         options: {
-          encrypt: true
+          token,
         }
       };
+
+      config.options = {
+        encrypt: true
+      };
+
+      return config;
     }
 
-    const config: any = {
-      user: server.config.user,
-      password: server.config.password,
-      server: server.config.host,
-      database: database.database,
-      port: server.config.port,
-      requestTimeout: Infinity,
-      appName: 'beekeeperstudio',
-      pool: {
-        max: 10,
-      }
-    };
+    config.user = server.config.user;
+    config.password = server.config.password;
+    config.port = server.config.port;
+
     if (server.config.domain) {
       config.domain = server.config.domain
     }
