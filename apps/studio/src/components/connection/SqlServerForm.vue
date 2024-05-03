@@ -47,7 +47,15 @@
         class="advanced-heading flex"
         :class="{enabled: azureAuthEnabled}"
       >
-        <span class="expand">Azure SSO Authentication</span>
+        <span class="expand">
+          Azure SSO Authentication
+          <i
+            v-if="$config.isCommunity"
+            class="material-icons"
+          >
+            stars
+          </i>
+        </span>
         <x-switch
           @click.prevent="toggleAzureAuth"
           :toggled="azureAuthEnabled"
@@ -84,6 +92,8 @@
   import CommonAdvanced from './CommonAdvanced'
   import { AzureAuthService } from '../../lib/db/authentication/azure'
   import { TokenCache } from '@/common/appdb/models/token_cache';
+  import platformInfo from '@/common/platform_info'
+  import { AppEvent } from '@/common/AppEvent'
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
@@ -95,6 +105,10 @@
     },
     methods: {
       async toggleAzureAuth() {
+        if (platformInfo.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal);
+          return;
+        }
         this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled = !this.azureAuthEnabled;
       }
     }
