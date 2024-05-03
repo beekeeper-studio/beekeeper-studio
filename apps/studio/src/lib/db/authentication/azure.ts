@@ -1,6 +1,5 @@
 import * as msal from '@azure/msal-node';
 import axios, { AxiosResponse } from 'axios';
-// not sure about this
 import { shell } from '@electron/remote';
 import { wait } from '@shared/lib/wait';
 import rawLog from 'electron-log';
@@ -41,7 +40,6 @@ const cachePlugin = {
   }
 }
 
-// TODO (@day): refactor this shit lol
 export class AzureAuthService {
   private pca: msal.PublicClientApplication;
   private pollingTimeout = 60000;
@@ -100,24 +98,18 @@ export class AzureAuthService {
     const code = params['code'];
 
     if (code) {
-      try {
-        const tokenRequest = {
-          code: code,
-          scopes: ['https://database.windows.net/.default', 'offline_access'],
-          redirectUri: beekeeperCloudToken.fulfillment_url,
-          state: beekeeperCloudToken.id
-        };
+      const tokenRequest = {
+        code: code,
+        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        redirectUri: beekeeperCloudToken.fulfillment_url,
+        state: beekeeperCloudToken.id
+      };
 
-        const tokenResponse = await this.pca.acquireTokenByCode(tokenRequest)
+      const tokenResponse = await this.pca.acquireTokenByCode(tokenRequest)
 
-        localCache.homeId = tokenResponse.account.homeAccountId;
-        localCache.save();
-        return tokenResponse.accessToken;
-
-      } catch (e) {
-        console.error('ERROR: ', e.message);
-        throw e
-      }
+      localCache.homeId = tokenResponse.account.homeAccountId;
+      localCache.save();
+      return tokenResponse.accessToken;
     }
   }
 
@@ -142,7 +134,6 @@ export class AzureAuthService {
     return refreshTokenResponse ? refreshTokenResponse.accessToken : null;
   }
   
-  // need a way to cancel this 
   private async checkStatus(url: string): Promise<Response> {
     const timedOut = Date.now() - this.start >= this.pollingTimeout;
     if (this.cancelFulfillment || timedOut) {

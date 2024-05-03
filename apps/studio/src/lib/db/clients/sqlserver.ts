@@ -959,24 +959,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<any> { // changed to any for now, might need to make some changes
-    console.log(server.config)
-    if (server.config.azureAuthOptions.azureAuthEnabled) {
+    if (server.config.azureAuthOptions?.azureAuthEnabled) {
       this.authService = new AzureAuthService();
       await this.authService.init(server.config.azureAuthOptions.authId)
 
       const token = await this.authService.acquireToken();
 
-      console.log('token', token);
-
-      console.log('server.config.host', server.config.host);
       return {
         server: server.config.host,
         database: database.database,
         authentication: {
           type: 'azure-active-directory-access-token',
           options: {
-            token: token,
-            connectTimeout: 20000
+            token,
           }
         },
         options: {
