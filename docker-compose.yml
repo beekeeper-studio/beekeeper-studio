@@ -12,6 +12,7 @@ volumes:
   cassandra:
   bigquery:
   firebird:
+  tidb:
 
 services:
 
@@ -161,4 +162,9 @@ services:
       - ISC_PASSWORD=masterkey
       - EnableLegacyClientAuth=true
     command: sh -c 'chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /usr/local/firebird/docker-entrypoint.sh firebird;'
+  tidb:
+    image: pingcap/tidb:v7.5.1
+    restart: always
+    ports:
+      - 4000:4000
 
