@@ -573,14 +573,12 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
 
-    let sql: string
+    let sql = ''
 
     if (typeOfElement === DatabaseElement.TABLE) {
       sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.VIEW) {
       sql = `RENAME ${elementName} TO ${newElementName};`
-    } else {
-      throw new Error('Unsupported element type');
     }
 
     return sql

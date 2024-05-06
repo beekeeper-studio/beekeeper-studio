@@ -446,7 +446,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): string {
-    throw new Error('Unsupported');
+    return ''
   }
 
   dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {

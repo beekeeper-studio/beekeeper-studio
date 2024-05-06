@@ -435,7 +435,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
     if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
-      throw new Error('Unsupported element type');
+      return ''
     }
 
     elementName = this.wrapValue(schema + '.' + elementName)

@@ -931,7 +931,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
 
-    let sql: string
+    let sql = ''
 
     if (typeOfElement === DatabaseElement.TABLE) {
       sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName};`
@@ -939,8 +939,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.SCHEMA) {
       sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName};`
-    } else {
-      throw new Error('Unsupported element type');
     }
 
     return sql

@@ -479,7 +479,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement): string {
     if (typeOfElement !== DatabaseElement.TABLE) {
-      throw new Error('Unsupported element type');
+      return ''
     }
 
     return `ALTER TABLE ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)};`

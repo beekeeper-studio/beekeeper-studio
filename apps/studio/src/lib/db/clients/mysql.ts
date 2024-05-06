@@ -869,12 +869,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     elementName = this.wrapIdentifier(elementName);
     newElementName = this.wrapIdentifier(newElementName);
 
-    let sql: string;
+    let sql = ''
 
     if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
       sql = `RENAME TABLE ${elementName} TO ${newElementName};`;
-    } else {
-      throw new Error('Unsupported element type');
     }
 
     return sql

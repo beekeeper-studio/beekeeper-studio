@@ -796,7 +796,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   setElementNameSql(): string {
-    throw new Error('Unsupported');
+    return ''
   }
 
   async dropElement(
