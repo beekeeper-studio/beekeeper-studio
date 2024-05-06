@@ -812,7 +812,9 @@ export default Vue.extend({
       tab.titleScope = "all"
       const existing = this.tabItems.find((t) => t.matches(tab))
       if (existing) {
-        existing.setFilters(filters)
+        if (filters) {
+          existing.setFilters(filters)
+        }
         this.$store.dispatch('tabs/setActive', existing)
       } else {
         this.addTab(tab)

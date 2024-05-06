@@ -1,13 +1,18 @@
-import { Tabulator } from "tabulator-tables";
+import {
+  CellComponent,
+  ColumnComponent,
+  MenuObject,
+  RangeComponent,
+} from "tabulator-tables";
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData } from "@/common/utils";
+import { stringifyRangeData, rowHeaderField } from "@/common/utils";
 import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
-import { rowHeaderField } from "@/lib/table-grid/utils";
 import { escapeHtml } from "@shared/lib/tabulator";
+import store from "@/store";
 
-type ColumnMenuItem = Tabulator.MenuObject<Tabulator.ColumnComponent>;
+type ColumnMenuItem = MenuObject<ColumnComponent>;
 
 export const sortAscending: ColumnMenuItem = {
   label: createMenuItem("Sort ascending"),
@@ -97,14 +102,25 @@ export function createMenuItem(label: string, shortcut = "") {
 }
 
 export async function copyRange(options: {
-  range: Tabulator.RangeComponent;
+  range: RangeComponent;
+  type: "plain" | "tsv" | "json" | "markdown";
+}): Promise<void>;
+export async function copyRange(options: {
+  range: RangeComponent;
+  type: "sql";
+  connection: BasicDatabaseClient<any>;
+  table: string;
+  schema?: string;
+}): Promise<void>;
+export async function copyRange(options: {
+  range: RangeComponent;
   type: "plain" | "tsv" | "json" | "markdown" | "sql";
   connection?: BasicDatabaseClient<any>;
   table?: string;
   schema?: string;
 }) {
   let text = "";
-  const rangeData = options.range.getData();
+  const rangeData: any = options.range.getData();
   const stringifiedRangeData = stringifyRangeData(rangeData);
 
   switch (options.type) {
@@ -150,10 +166,10 @@ export async function copyRange(options: {
       break;
   }
   ElectronPlugin.clipboard.writeText(text);
-  options.range.getElement().classList.add("copied");
+  (options.range.getElement() as HTMLElement).classList.add("copied");
 }
 
-export function pasteRange(range: Tabulator.RangeComponent) {
+export function pasteRange(range: RangeComponent) {
   const text = ElectronPlugin.clipboard.readText();
   if (!text) return;
 
@@ -167,15 +183,14 @@ export function pasteRange(range: Tabulator.RangeComponent) {
     setCellValue(cell, text);
   } else {
     const table = range.getRows()[0].getTable();
-    const rows = table.modules.selectRange.getTableRows().slice(range.getTopEdge());
-    const columns = table.modules.selectRange
-      .getTableColumns()
+    const rows = table.getRows('active').slice(range.getTopEdge());
+    const columns = table.getColumns(false).filter((col) => col.isVisible())
       .slice(range.getLeftEdge());
-    const cells: Tabulator.CellComponent[][] = rows.map((row) => {
+    const cells: CellComponent[][] = rows.map((row) => {
       const arr = [];
       row.getCells().forEach((cell) => {
-        if (columns.includes(cell.column)) {
-          arr.push(cell.getComponent());
+        if (columns.includes(cell.getColumn())) {
+          arr.push(cell);
         }
       });
       return arr;
@@ -191,7 +206,7 @@ export function pasteRange(range: Tabulator.RangeComponent) {
   }
 }
 
-export function setCellValue(cell: Tabulator.CellComponent, value: string) {
+export function setCellValue(cell: CellComponent, value: string) {
   const editableFunc = cell.getColumn().getDefinition().editable;
   const editable =
     typeof editableFunc === "function" ? editableFunc(cell) : editableFunc;
@@ -199,12 +214,11 @@ export function setCellValue(cell: Tabulator.CellComponent, value: string) {
 }
 
 export function copyActionsMenu(options: {
-  range: Tabulator.RangeComponent;
-  connection: BasicDatabaseClient<any>;
-  table: string;
-  schema: string;
+  range: RangeComponent;
+  table?: string;
+  schema?: string;
 }) {
-  const { range, connection, table, schema } = options;
+  const { range, table, schema } = options;
   return [
     {
       label: createMenuItem("Copy", "Control+C"),
@@ -225,12 +239,18 @@ export function copyActionsMenu(options: {
     {
       label: createMenuItem("Copy as SQL"),
       action: () =>
-        copyRange({ range, type: "sql", connection, table, schema }),
+        copyRange({
+          range,
+          type: "sql",
+          connection: store.state.connection,
+          table,
+          schema,
+        }),
     },
   ];
 }
 
-export function pasteActionsMenu(range: Tabulator.RangeComponent) {
+export function pasteActionsMenu(range: RangeComponent) {
   return [
     {
       label: createMenuItem("Paste", "Control+V"),

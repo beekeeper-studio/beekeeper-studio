@@ -78,7 +78,7 @@
               </div>
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
-                <other-database-notice v-if="shouldUpsell" />
+                <upsell-content v-if="shouldUpsell" />
                 <postgres-form
                   v-else-if="config.connectionType === 'cockroachdb'"
                   :config="config"
@@ -211,7 +211,7 @@ import rawLog from 'electron-log'
 import { mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
-import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
+import UpsellContent from './connection/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
@@ -221,7 +221,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, BigQueryForm, FirebirdForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm },
 
   data() {
     return {
@@ -306,8 +306,8 @@ export default Vue.extend({
         this.$refs.sidebar.$refs.sidebar,
         this.$refs.content
       ]
-      const lastSavedSplitSizes = SmartLocalStorage.getItem("connInterfaceSplitSizes")
-      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [300, 500]
+      const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
+      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
 
       this.split = Split(components, {
         elementStyle: (_dimension, size) => ({
@@ -315,11 +315,11 @@ export default Vue.extend({
         }),
         sizes: splitSizes,
         gutterize: 8,
-        minSize: [300, 300],
+        minSize: [25, 75],
         expandToMin: true,
         onDragEnd: () => {
           const splitSizes = this.split.getSizes()
-          SmartLocalStorage.addItem("connInterfaceSplitSizes", splitSizes)
+          SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
         }
       } as Split.Options)
     })

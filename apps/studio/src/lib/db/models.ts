@@ -101,6 +101,7 @@ export interface ExtendedTableColumn extends SchemaItem {
   tableName: string
   hasDefault?: boolean
   generated?: boolean
+  array?: boolean
 }
 
 export interface PrimaryKeyColumn {
@@ -135,7 +136,7 @@ export interface OrderBy {
 export interface TableFilter {
   field: string;
   type: string;
-  value: string | string[];
+  value?: string | string[];
   op?: 'AND' | 'OR';
 }
 
@@ -183,6 +184,7 @@ export interface TableUpdate {
   // FIXME: Make this `dataType`, the same as we use for TableColumn
   dataset?: string
   columnType?: string;
+  columnObject?: ExtendedTableColumn
   value: any;
 }
 

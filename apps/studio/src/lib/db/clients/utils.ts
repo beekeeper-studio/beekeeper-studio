@@ -98,12 +98,14 @@ export function buildFilterString(filters: TableFilter[], columns = []) {
           : '?'
 
         return `${field} ${item.type.toUpperCase()} (${questionMarks})`
+      } else if (item.type.includes('is')) {
+        return `${field} ${item.type.toUpperCase()} NULL`
       }
       return `${field} ${item.type.toUpperCase()} ?`
     })
     filterString = "WHERE " + joinFilters(allFilters, filters)
 
-    filterParams = filters.flatMap((item) => {
+    filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
     })
   }
@@ -183,7 +185,7 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
     const insertColumns = Object.keys(item)
     insertColumns.forEach((ic) => {
       const matching = _.find(columns, (c) => c.columnName === ic)
-      if (matching && matching.dataType && matching.dataType.startsWith('bit(')) {
+      if (matching && matching.dataType && matching.dataType.startsWith('bit(') && !_.isNil(item[ic])) {
         if (matching.dataType === 'bit(1)') {
           item[ic] = bitConversionFunc(item[ic])
         } else {

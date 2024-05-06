@@ -27,7 +27,6 @@ function testWith(dockerTag, socket = false, readonly = false) {
     let util: DBTestUtil
 
     beforeAll(async () => {
-      const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
@@ -40,7 +39,6 @@ function testWith(dockerTag, socket = false, readonly = false) {
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
         .withStartupTimeout(dbtimeout)
         .start()
-      jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
         host: container.getHost(),
@@ -94,6 +92,14 @@ function testWith(dockerTag, socket = false, readonly = false) {
           public.moody_people (
             id serial NOT NULL,
             current_mood this_is_a_mood NULL DEFAULT 'sad'::this_is_a_mood
+          );
+      `)
+
+      await util.knex.raw(`
+        CREATE TABLE
+          public.extra_moody_people (
+            id serial NOT NULL,
+            current_moods this_is_a_mood[] NULL DEFAULT '{sad, happy}'
           );
       `)
 
@@ -161,6 +167,8 @@ function testWith(dockerTag, socket = false, readonly = false) {
 
 
     it("Should allow me to update rows with an empty array", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
       const updates = [
         {
           value: "[]",
@@ -169,6 +177,7 @@ function testWith(dockerTag, socket = false, readonly = false) {
             column: 'id', value: 1
           }],
           columnType: "_text",
+          columnObject: nameColumn,
           table: "witharrays"
         }
       ]
@@ -211,10 +220,13 @@ function testWith(dockerTag, socket = false, readonly = false) {
     })
 
     it("Should allow me to update rows with array types", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: ["x", "y", "z"],
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1}
         ],
@@ -242,10 +254,13 @@ function testWith(dockerTag, socket = false, readonly = false) {
 
 
     it("Should allow me to update rows with array types when passed as string", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: '["x", "y", "z"]',
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1 }
         ],
@@ -444,6 +459,20 @@ function testWith(dockerTag, socket = false, readonly = false) {
           dataType: 'float8(53)'
         }
       ])
+    })
+
+    it("should be able to define array column correctly", async () => {
+      const arrayTable = await util.connection.listTableColumns('witharrays');
+      const enumTable = await util.connection.listTableColumns('moody_people');
+      const enumArrayTable = await util.connection.listTableColumns('extra_moody_people');
+
+      const arrayColumn = arrayTable.find((col) => col.columnName === 'names')
+      const enumColumn = enumTable.find((col) => col.columnName === 'current_mood')
+      const enumArrayColumn = enumArrayTable.find((col) => col.columnName === 'current_moods')
+
+      expect(arrayColumn.array).toBeTruthy()
+      expect(enumColumn.array).toBeFalsy()
+      expect(enumArrayColumn.array).toBeTruthy()
     })
 
     describe("Common Tests", () => {

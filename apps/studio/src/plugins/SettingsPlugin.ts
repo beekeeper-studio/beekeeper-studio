@@ -34,6 +34,5 @@ export const SettingsPlugin = {
 export default {
   install(Vue) {
     Vue.prototype.$settings = SettingsPlugin
-    Vue.prototype.$settings = SettingsPlugin
   }
 }

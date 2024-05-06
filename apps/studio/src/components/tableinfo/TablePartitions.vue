@@ -89,9 +89,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import DataMutators from '../../mixins/data_mutators'
-import { TabulatorFull, Tabulator } from 'tabulator-tables'
-type RowComponent = Tabulator.RowComponent;
-type CellComponent = Tabulator.CellComponent;
+import { TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
 import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
 import StatusBar from '../common/StatusBar.vue'
