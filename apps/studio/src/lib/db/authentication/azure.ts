@@ -1,6 +1,5 @@
 import * as msal from '@azure/msal-node';
 import axios, { AxiosResponse } from 'axios';
-import { shell } from '@electron/remote';
 import { wait } from '@shared/lib/wait';
 import rawLog from 'electron-log';
 import { TokenCache } from '@/common/appdb/models/token_cache';
@@ -85,7 +84,7 @@ export class AzureAuthService {
     const authUrl = await this.pca.getAuthCodeUrl(authCodeUrlParams);
 
     log.debug('Getting auth code')
-    shell.openExternal(authUrl);
+    window.location.href = authUrl;
 
     this.start = Date.now();
     const result = await this.checkStatus(beekeeperCloudToken.url);
