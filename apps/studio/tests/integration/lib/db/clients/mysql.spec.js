@@ -293,6 +293,8 @@ function testWith(tag, socket = false, readonly = false) {
       })
 
       it("Should be able to create indexes with custom prefixes correctly", async () => {
+        if (readonly) return
+
         await util.connection.alterIndex({
           table: 'has_prefix_indexes',
           additions: [{
