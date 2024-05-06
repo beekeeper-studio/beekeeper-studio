@@ -434,7 +434,8 @@ export default Vue.extend({
         const sql = await this.connection.duplicateTableSql(tableName, this.duplicateTableName, schema)
         const formatted = safeFormat(sql, { language: FormatterDialect(this.dialect) })
 
-        const tab = new OpenTab('query')
+        const tab = new OpenTab()
+        tab.tabType = 'query'
         tab.unsavedQueryText = formatted
         tab.title = `Duplicating table: ${tableName}`
         tab.active = true
@@ -553,7 +554,8 @@ export default Vue.extend({
         tabName = queryTitle
       }
 
-        const result = new OpenTab('query')
+        const result = new OpenTab()
+        result.tabType = 'query'
         result.title = tabName,
         result.unsavedChanges = false
         result.unsavedQueryText = optionalText
@@ -783,13 +785,15 @@ export default Vue.extend({
       this.createQuery(stringResult);
     },
     openTableBuilder() {
-      const tab = new OpenTab('table-builder')
+      const tab = new OpenTab()
+      tab.tabType = 'table-builder'
       tab.title = "New Table"
       tab.unsavedChanges = true
       this.addTab(tab)
     },
     openTableProperties({ table }) {
-      const t = new OpenTab('table-properties')
+      const t = new OpenTab()
+      t.tabType = 'table-properties'
       t.tableName = table.name
       t.schemaName = table.schema
       t.title = table.name
@@ -798,7 +802,8 @@ export default Vue.extend({
       this.addTab(t)
     },
     openTable({ table, filters }) {
-      const tab = new OpenTab('table')
+      const tab = new OpenTab()
+      tab.tabType = 'table';
       tab.title = table.name
       tab.tableName = table.name
       tab.schemaName = table.schema
@@ -826,7 +831,8 @@ export default Vue.extend({
       else this.$store.dispatch('hideEntities/removeSchema', schema)
     },
     openSettings() {
-      const tab = new OpenTab('settings')
+      const tab = new OpenTab()
+      tab.tabType = 'settings';
       tab.title = "Settings"
       this.addTab(tab)
     },
@@ -932,7 +938,8 @@ export default Vue.extend({
       this.addTab(tab)
     },
     favoriteClick(item) {
-      const tab = new OpenTab('query')
+      const tab = new OpenTab()
+      tab.tabType = 'query'
       tab.title = item.title
       tab.queryId = item.id
       tab.unsavedChanges = false

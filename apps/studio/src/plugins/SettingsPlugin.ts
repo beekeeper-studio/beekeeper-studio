@@ -5,7 +5,7 @@ import { UserSetting } from "@/common/appdb/models/user_setting"
 export const SettingsPlugin = {
 
   async get(key: string, defaultValue?: any) {
-    const result = await UserSetting.findOne({key})
+    const result = await UserSetting.findOneBy({key})
     if (result) {
       return result.value
     }
@@ -13,7 +13,7 @@ export const SettingsPlugin = {
   },
 
   async set(key: string, value: string) {
-    const existing = await UserSetting.findOne({key})
+    const existing = await UserSetting.findOneBy({key})
     if (existing) {
       existing.userValue = value
       await existing.save()

@@ -101,7 +101,7 @@ export const HideEntityModule: Module<State, RootState> = {
       if (existing) return
 
       if (database && usedConfig) {
-        const schema = new HiddenSchema(item, database, usedConfig)
+        const schema = new HiddenSchema().withProps(item, database, usedConfig);
         if(usedConfig.id) await schema.save()
         context.commit('addSchema', schema)
       }

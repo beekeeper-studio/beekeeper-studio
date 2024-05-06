@@ -57,7 +57,7 @@ export const PinConnectionModule: Module<State, RootState> = {
         return;
       }
 
-      const newPin = new PinnedConnection(item);
+      const newPin = new PinnedConnection().withConnection(item);
       newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1;
       await newPin.save();
       context.commit('add', newPin);

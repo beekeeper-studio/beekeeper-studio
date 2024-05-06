@@ -6,8 +6,7 @@ import { DbConnectionBase } from './saved_connection'
 @Entity({ name: 'used_connection' })
 export class UsedConnection extends DbConnectionBase implements ISimpleConnection {
 
-  constructor(other: IConnection) {
-    super()
+  withConfig(other: IConnection): UsedConnection {
     if (other) {
       this.connectionType = other.connectionType
       this.defaultDatabase = other.defaultDatabase
@@ -37,6 +36,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.bigQueryOptions = other.bigQueryOptions
     }
 
+    return this;
   }
 
   @Column({type: 'int', nullable: true})

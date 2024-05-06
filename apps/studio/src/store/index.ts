@@ -396,7 +396,7 @@ const store = new Vuex.Store<State>({
       })
       log.debug("Found used config", lastUsedConnection)
       if (!lastUsedConnection) {
-        const usedConfig = new UsedConnection(config)
+        const usedConfig = new UsedConnection().withConfig(config);
         log.info("logging used connection", usedConfig, config)
         await usedConfig.save()
         context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
