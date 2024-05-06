@@ -796,11 +796,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   setElementNameSql(): string {
-    return '';
-  }
-
-  async setElementName(): Promise<void> {
-    throw new Error("Not supported.");
+    throw new Error('Unsupported');
   }
 
   async dropElement(

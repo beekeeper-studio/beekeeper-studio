@@ -479,20 +479,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement): string {
     if (typeOfElement !== DatabaseElement.TABLE) {
-      return ''
+      throw new Error('Unsupported element type');
     }
 
     return `ALTER TABLE ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)};`
-  }
-
-  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement): Promise<void> {
-    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement)
-
-    if (!sql) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
-    }
-
-    await this.driverExecuteSingle(sql);
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {

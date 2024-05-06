@@ -384,11 +384,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement): string {
-    return '';
-  }
-
-  async setElementName(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement): Promise<void> {
-    throw new Error("Unsupported.");
+    throw new Error('Unsupported');
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {

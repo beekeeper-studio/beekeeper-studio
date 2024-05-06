@@ -219,7 +219,13 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): string;
 
-  abstract setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
+    if (!sql) {
+      throw new Error(`Unsupported element type: ${typeOfElement}`);
+    }
+    await this.executeQuery(sql);
+  }
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 

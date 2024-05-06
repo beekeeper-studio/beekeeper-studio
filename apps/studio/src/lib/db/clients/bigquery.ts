@@ -446,11 +446,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): string {
-    return '';
-  }
-
-  setElementName(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Unsupported');
   }
 
   dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {

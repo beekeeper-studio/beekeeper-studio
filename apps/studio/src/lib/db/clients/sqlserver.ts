@@ -435,23 +435,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
     if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
-      return ''
+      throw new Error('Unsupported element type');
     }
 
     elementName = this.wrapValue(schema + '.' + elementName)
     newElementName = this.wrapValue(newElementName)
 
     return `EXEC sp_rename ${elementName}, ${newElementName};`
-  }
-
-  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): Promise<void> {
-    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
-
-    if (!sql) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
-    }
-
-    await this.driverExecuteSingle(sql)
   }
 
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
