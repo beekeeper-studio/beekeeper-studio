@@ -5,7 +5,7 @@ import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
-import { AlterTableSpec, Dialect, DialectData, FormatterDialect, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
+import { AlterTableSpec, Dialect, DialectData, FormatterDialect, Schema, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex, TableOrView } from '../../src/lib/db/models'
@@ -14,6 +14,8 @@ import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import { BasicTable } from '@/lib/data/table_templates'
+import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -147,6 +149,11 @@ export class DBTestUtil {
       result[key] = item
       return result
     })
+  }
+
+  /** Format the SQL with the correct dialect */
+  fmt(sql: string) {
+    return safeSqlFormat(sql, { language: FormatterDialect(this.dialect) })
   }
 
   async setupdb() {
@@ -770,15 +777,33 @@ export class DBTestUtil {
     expect(insertQuery).toBe(expectedQueries[this.dbType])
   }
 
+  async buildCreatePrimaryKeysAndAutoIncrementTests() {
+    const generator = new SqlGenerator(this.dialect, {
+      dbConfig: this.connection.server.config,
+      dbName: this.connection.database.database,
+    })
+    const schema: Schema = {
+      name: 'test_table',
+      columns: BasicTable.toSchema(this.dialect).columns,
+    }
+    const query = generator.buildSql(schema)
+    const expectedQueries = {
+      postgresql: `create table "test_table" ("id" serial not null, "created_at" timestamp not null default NOW(), constraint "test_table_pkey" primary key ("id"))`,
+      mysql: "create table `test_table` (`id` int unsigned not null auto_increment primary key, `created_at` timestamp not null default CURRENT_TIMESTAMP)",
+      tidb: "create table `test_table` (`id` int unsigned not null auto_increment primary key, `created_at` timestamp not null default CURRENT_TIMESTAMP)",
+      mariadb: "create table `test_table` (`id` int unsigned not null auto_increment primary key, `created_at` timestamp not null default CURRENT_TIMESTAMP)",
+      sqlite: "create table `test_table` (`id` integer not null primary key autoincrement, `created_at` datetime not null default CURRENT_TIMESTAMP)",
+      sqlserver: "CREATE TABLE [test_table] ([id] int identity(1,1) not null primary key, [created_at] datetime not null CONSTRAINT [test_table_created_at_default] DEFAULT SYSUTCDATETIME())",
+      cockroachdb: `create table "test_table" ("id" serial primary key, "created_at" varchar(255) not null)`,
+      firebird: `create table test_table (id integer not null primary key, created_at varchar(255) not null);alter table test_table add constraint test_table_pkey primary key (id)`,
+      oracle: `create table "test_table" ("id" integer not null primary key, "created_at" varchar(255) not null); DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE ('CREATE SEQUENCE "test_table_seq"'); SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = 'P'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = 'test_table';  execute immediate ('create or replace trigger "test_table_autoinc_trg"  BEFORE INSERT on "test_table"  for each row  declare  checking number := 1;  begin    if (:new."' || PK_NAME || '" is null) then      while checking >= 1 loop        select "test_table_seq".nextval into :new."' || PK_NAME || '" from dual;        select count("' || PK_NAME || '") into checking from "test_table"        where "' || PK_NAME || '" = :new."' || PK_NAME || '";      end loop;    end if;  end;'); END;`,
+    }
+
+    expect(this.fmt(query)).toBe(this.fmt(expectedQueries[this.dbType]))
+  }
+
   async buildSelectTopQueryTests() {
     const dbType = ['mariadb','tidb'].includes(this.dbType) ? 'mysql' : this.dbType
-    const fmt = (sql: string) => safeSqlFormat(sql, {
-      language: FormatterDialect(dbType === 'cockroachdb'
-          ? 'postgresql'
-          : this.dialect
-        )
-      })
-
     const query = await this.connection.selectTopSql(
       'jobs',
       0,
@@ -798,7 +823,7 @@ export class DBTestUtil {
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE job_name IN ('Programmer','Surgeon''s Assistant') ORDER BY hourly_rate ASC",
       oracle: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
     }
-    expect(fmt(query)) .toBe(fmt(expectedQueries[dbType]))
+    expect(this.fmt(query)) .toBe(this.fmt(expectedQueries[dbType]))
 
     const multipleFiltersQuery = await this.connection.selectTopSql(
       'jobs',
@@ -874,18 +899,11 @@ export class DBTestUtil {
           100 ROWS ONLY
       `
     }
-    expect(fmt(multipleFiltersQuery)).toBe(fmt(expectedFiltersQueries[dbType]))
+    expect(this.fmt(multipleFiltersQuery)).toBe(this.fmt(expectedFiltersQueries[dbType]))
   }
 
   async buildIsNullTests() {
     const dbType = ['mariadb','tidb'].includes(this.dbType) ? 'mysql' : this.dbType
-    const fmt = (sql: string) => safeSqlFormat(sql, {
-      language: FormatterDialect(dbType === 'cockroachdb'
-          ? 'postgresql'
-          : this.dialect
-        )
-      })
-
     const queryIsNull = await this.connection.selectTopSql(
       'jobs',
       0,
@@ -907,7 +925,7 @@ export class DBTestUtil {
       oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
     }
 
-    expect(fmt(queryIsNull)).toBe(fmt(expectedQueriesIsNull[dbType]))
+    expect(this.fmt(queryIsNull)).toBe(this.fmt(expectedQueriesIsNull[dbType]))
 
     await expect(this.connection.executeQuery(queryIsNull)).resolves.not.toThrow();
 
@@ -932,7 +950,7 @@ export class DBTestUtil {
       oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
     }
 
-    expect(fmt(queryIsNotNull)).toBe(fmt(expectedQueriesIsNotNull[dbType]))
+    expect(this.fmt(queryIsNotNull)).toBe(this.fmt(expectedQueriesIsNotNull[dbType]))
 
     await expect(this.connection.executeQuery(queryIsNotNull)).resolves.not.toThrow();
   }
