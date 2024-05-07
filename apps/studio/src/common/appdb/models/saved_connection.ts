@@ -9,6 +9,7 @@ import log from 'electron-log'
 import { EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { ConnectionType } from "@/lib/db/types"
+import { AzureAuthType } from "@/lib/db/authentication/azure"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 
@@ -54,6 +55,7 @@ export interface BigQueryOptions {
 
 export interface AzureAuthOptions {
   azureAuthEnabled?: boolean;
+  azureAuthType?: AzureAuthType;
   authId?: number;
 }
 

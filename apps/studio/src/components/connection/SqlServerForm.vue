@@ -66,6 +66,30 @@
         v-show="azureAuthEnabled"
       >
         <div class="form-group">
+          <label for="authType">Authentication Type</label>
+          <select 
+            name="authType" 
+            class="form-control custom-select"
+            v-model="config.azureAuthOptions.azureAuthType"
+            id="auth-select"
+          >
+            <option 
+              disabled 
+              hidden 
+              value="null"
+            >
+              Select an Authentication Type...
+            </option>
+            <option 
+              :key="`${t.value}-${t.name}`"
+              v-for="t in authTypes"
+              :value="t.value"
+            >
+              {{ t.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
           <label for="Server">Server</label>
           <input 
             type="text" 
@@ -90,7 +114,7 @@
 
   import CommonServerInputs from './CommonServerInputs'
   import CommonAdvanced from './CommonAdvanced'
-  import { AzureAuthService } from '../../lib/db/authentication/azure'
+  import { AzureAuthService, AzureAuthTypes } from '../../lib/db/authentication/azure'
   import { TokenCache } from '@/common/appdb/models/token_cache';
   import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
@@ -100,15 +124,17 @@
     props: ['config'],
     data() {
       return {
-        azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled || false
+        azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled || false,
+        authTypes: AzureAuthTypes
       }
     },
     methods: {
       async toggleAzureAuth() {
-        if (platformInfo.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal);
-          return;
-        }
+        //if (platformInfo.isCommunity) {
+        //  this.$root.$emit(AppEvent.upgradeModal);
+        //  return;
+        //}
+        console.log(this.config.azureAuthOptions)
         this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled = !this.azureAuthEnabled;
       }
     }

@@ -31,7 +31,7 @@ import {
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import { AzureAuthService } from '../authentication/azure';
+import { AuthOptions, AzureAuthService } from '../authentication/azure';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -973,14 +973,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       this.authService = new AzureAuthService();
       await this.authService.init(server.config.azureAuthOptions.authId)
 
-      const token = await this.authService.acquireToken();
+      const options: AuthOptions = {
+        password: server.config.password,
+        userName: server.config.user,
+      }
 
-      config.authentication = {
-        type: 'azure-active-directory-access-token',
-        options: {
-          token,
-        }
-      };
+      config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
 
       config.options = {
         encrypt: true
