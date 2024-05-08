@@ -52,13 +52,15 @@ export const TabModule: Module<State, RootState> = {
     },
     remove(state, tab: OpenTab) {
       state.tabs = _.without(state.tabs, tab)
-      state.lastClosedTabs.push(tab.duplicate())
+    },
+    addLastClosedTab(state, tab: OpenTab) {
+      state.lastClosedTabs.push(tab)
     },
     setActive(state, tab?: OpenTab) {
       state.active = tab
     },
-    popLastClosedTab(state){
-      state.lastClosedTabs.pop()
+    removeLastClosedTab(state, tab: OpenTab) {
+      state.lastClosedTabs = _.without(state.lastClosedTabs, tab)
     }
   },
   actions: {
@@ -85,11 +87,15 @@ export const TabModule: Module<State, RootState> = {
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
-      const lastClosedTab = context.state.lastClosedTabs[context.state.lastClosedTabs.length - 1]
-      if (lastClosedTab) {
-        await context.dispatch('add', lastClosedTab)
-        await context.dispatch('setActive', lastClosedTab)
-        context.commit('popLastClosedTab')
+      for (let i = context.state.lastClosedTabs.length - 1; i >= 0; i--) {
+        const tab = context.state.lastClosedTabs[i]
+        // Does this tab belong to the current connection?
+        if (tab.connectionId === context.rootState.usedConfig?.id) {
+          await context.dispatch('add', tab)
+          await context.dispatch('setActive', tab)
+          context.commit('removeLastClosedTab', tab)
+          break
+        }
       }
     },
     async add(context, item: OpenTab) {
@@ -100,6 +106,13 @@ export const TabModule: Module<State, RootState> = {
         item.connectionId = usedConfig.id
         await item.save()
       }
+
+      // Prevent multiple tabs per table
+      const existingTabInClosedTabs = context.state.lastClosedTabs.find((tab) => tab.matches(item))
+      if (existingTabInClosedTabs) {
+        context.commit('removeLastClosedTab', existingTabInClosedTabs)
+      }
+
       context.commit('add', item)
     },
     async reorder(context, items: OpenTab[]) {
@@ -110,7 +123,10 @@ export const TabModule: Module<State, RootState> = {
     },
     async remove(context, rawItems: OpenTab | OpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
-      items.forEach((i) => context.commit('remove', i))
+      items.forEach((tab) => {
+        context.commit('addLastClosedTab', tab.duplicate())
+        context.commit('remove', tab)
+      })
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
         await OpenTab.remove(items)
