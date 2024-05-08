@@ -52,17 +52,13 @@ export const TabModule: Module<State, RootState> = {
     },
     remove(state, tab: OpenTab) {
       state.tabs = _.without(state.tabs, tab)
-      state.lastClosedTabs.push(tab)
+      state.lastClosedTabs.push(tab.duplicate())
     },
     setActive(state, tab?: OpenTab) {
       state.active = tab
     },
-    async reopenLastClosedTab(state){
-      const lastClosedTab = state.lastClosedTabs.pop()
-      if(lastClosedTab){
-        state.tabs.push(lastClosedTab)
-        state.active = lastClosedTab
-      }
+    popLastClosedTab(state){
+      state.lastClosedTabs.pop()
     }
   },
   actions: {
@@ -89,7 +85,12 @@ export const TabModule: Module<State, RootState> = {
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
-      context.commit('reopenLastClosedTab')
+      const lastClosedTab = context.state.lastClosedTabs[context.state.lastClosedTabs.length - 1]
+      if (lastClosedTab) {
+        await context.dispatch('add', lastClosedTab)
+        await context.dispatch('setActive', lastClosedTab)
+        context.commit('popLastClosedTab')
+      }
     },
     async add(context, item: OpenTab) {
       const { usedConfig } = context.rootState
@@ -128,7 +129,7 @@ export const TabModule: Module<State, RootState> = {
     },
     async saveAll(context) {
       try {
-        await context.dispatch('save', context.state.tabs)  
+        await context.dispatch('save', context.state.tabs)
       } catch (ex) {
         console.error("tab/saveAll", ex)
       }
