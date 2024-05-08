@@ -1,11 +1,11 @@
 import {Knex} from 'knex'
 import knex from 'knex'
-import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
+import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
 import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
-import { AlterTableSpec, Dialect, DialectData, FormatterDialect, Schema, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
+import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex, TableOrView } from '../../src/lib/db/models'
@@ -73,7 +73,7 @@ export class DBTestUtil {
   public connection: BasicDatabaseClient<any>
   public extraTables = 0
   private options: Options
-  private dbType: string
+  private dbType: ConnectionType | 'generic'
 
   private dialect: Dialect
   public data: DialectData
@@ -152,7 +152,7 @@ export class DBTestUtil {
 
   /** Format the SQL with the correct dialect */
   fmt(sql: string) {
-    return safeSqlFormat(sql, { language: FormatterDialect(this.dialect) })
+    return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
   }
 
   async setupdb() {
@@ -540,7 +540,7 @@ export class DBTestUtil {
         {
           columnName: 'age',
           changeType: 'defaultValue',
-          newValue: '99'
+          newValue: "'99'"
         },
         {
           columnName: 'age',
@@ -570,13 +570,12 @@ export class DBTestUtil {
     // this is different in each database.
     const defaultValue = (s: any) => {
       if (s === null) return null
-      if (this.dialect === 'postgresql' && _.isNumber(s)) return s.toString()
-      if (this.dialect === 'postgresql') return `'${s.replaceAll("'", "''")}'::character varying`
-      if (this.dialect === 'oracle' && _.isNumber(s)) return s.toString()
-      if (this.dialect === 'oracle') return `'${s.replaceAll("'", "''")}'`
-      if (this.dialect === 'sqlserver' && _.isNumber(s)) return `((${s}))`
-      if (this.dialect === 'sqlserver') return `('${s.replaceAll("'", "''")}')`
-      if (this.dialect === 'firebird' && _.isString(s)) return `'${s.replaceAll("'", "''")}'`
+      if (this.dbType === 'cockroachdb' && _.isNumber(s)) return `'${s.toString().replaceAll("'", "''")}':::STRING`
+      if (this.dbType === 'cockroachdb') return `e'${s.replaceAll("'", "\\'")}':::STRING`
+      if (this.dialect === 'postgresql') return `'${s.toString().replaceAll("'", "''")}'::character varying`
+      if (this.dialect === 'oracle') return `'${s.toString().replaceAll("'", "''")}'`
+      if (this.dialect === 'sqlserver') return `('${s.toString().replaceAll("'", "''")}')`
+      if (this.dialect === 'firebird') return `'${s.toString().replaceAll("'", "''")}'`
       return s.toString()
     }
 
