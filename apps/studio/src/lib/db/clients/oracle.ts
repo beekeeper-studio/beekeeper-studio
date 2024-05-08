@@ -286,7 +286,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     editPartitions: false,
     backups: false,
     backDirFormat: false,
-    restore: false
+    restore: false,
+    indexNullsNotDistinct: false,
   });
 
   // TODO: implement

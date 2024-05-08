@@ -101,7 +101,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       editPartitions: hasPartitions,
       backups: true,
       backDirFormat: true,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: this.version.number >= 150_000,
     };
   }
 
@@ -405,6 +406,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         i.indexrelid as id,
         i.indisunique,
         i.indisprimary,
+        ${this.supportedFeatures().indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
         coalesce(a.attname,
                   (('{' || pg_get_expr(
                               i.indexprs,
@@ -445,13 +447,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           order: b.ascending ? 'ASC' : 'DESC'
         }
       })
+      const nullsNotDistinct = blob[0].indnullsnotdistinct
       const item: TableIndex = {
         table, schema,
         id,
         name: indexName,
         unique,
         primary,
-        columns
+        columns,
+        nullsNotDistinct,
       }
       return item
     })

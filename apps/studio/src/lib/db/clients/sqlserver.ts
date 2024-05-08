@@ -880,7 +880,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     }
   }
 

@@ -85,15 +85,16 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   supportedFeatures(): SupportedFeatures {
-    return { 
-      customRoutines: false, 
-      comments: true, 
-      properties: true, 
-      partitions: false, 
+    return {
+      customRoutines: false,
+      comments: true,
+      properties: true,
+      partitions: false,
       editPartitions: false,
-      backups: false, 
-      backDirFormat: false, 
-      restore: false 
+      backups: false,
+      backDirFormat: false,
+      restore: false,
+      indexNullsNotDistinct: false,
     }
   }
   versionString(): string {

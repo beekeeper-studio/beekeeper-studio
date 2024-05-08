@@ -190,13 +190,14 @@ export default Vue.extend({
       return (this.properties.indexes || []).map((i: TableIndex) => {
         return {
           ...i,
+          info: i.nullsNotDistinct ? 'NULLS NOT DISTINCT' : undefined,
           columns: i.columns.map((c) => `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`)
         }
       })
     },
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
-      return [
+      const result = [
         {title: 'Id', field: 'id', widthGrow: 0.5},
         {
           title:'Name',
@@ -217,6 +218,11 @@ export default Vue.extend({
           editor: vueEditor(CheckboxEditorVue),
         },
         {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
+        (
+          this.connection.supportedFeatures().indexNullsNotDistinct
+            ? { title: 'Info', field: 'info' }
+            : null
+        ),
         {
           title: 'Columns',
           field: 'columns',
@@ -230,6 +236,8 @@ export default Vue.extend({
         },
         trashButton(this.removeRow)
       ]
+
+      return result.filter((c) => c !== null)
     }
   },
   methods: {
