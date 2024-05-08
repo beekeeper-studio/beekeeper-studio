@@ -10,4 +10,5 @@ module.exports = {
     '^@/(.*)': resolve(__dirname, './src/$1')
   },
   setupFilesAfterEnv: [resolve(__dirname, './tests/setupTests.js')],
+  setupFiles: ['./jest.polyfills.js'],
 }

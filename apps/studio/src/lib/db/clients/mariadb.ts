@@ -1,4 +1,3 @@
-import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { MysqlClient } from "./mysql";
 
 export class MariaDBClient extends MysqlClient {
@@ -6,9 +5,7 @@ export class MariaDBClient extends MysqlClient {
     // adapted from https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/pull/998/files
     if (!defaultValue) return null;
 
-    if (defaultValue.toString().toLowerCase() === "'null'") {
-      return null;
-    }
+    if (defaultValue.toString().toLowerCase() === 'null') return null;
 
     if (
       defaultValue.startsWith("'") &&
@@ -24,13 +21,4 @@ export class MariaDBClient extends MysqlClient {
 
     return defaultValue;
   }
-}
-
-export default async function (
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-) {
-  const client = new MariaDBClient(server, database);
-  await client.connect();
-  return client;
 }

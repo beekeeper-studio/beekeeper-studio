@@ -51,6 +51,10 @@
     padding-left: 5px;
     color: darken($text-dark, 30%);
   }
+  i.material-icons.menu-icon   {
+    margin-right:0!important;
+    margin-left: 0.4rem;
+  }
 }
 .vue-simple-context-menu__divider, hr {
   min-height: 0;

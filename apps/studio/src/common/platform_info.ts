@@ -30,13 +30,18 @@ const testMode = p.env.TEST_MODE ? true : false
 const isDevEnv = !(e.app && e.app.isPackaged);
 const isWindows = platform === 'win32'
 const isMac = platform === 'darwin'
+const isArm = p.arch.startsWith('arm')
 const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
+const locale = e.app?.getLocale();
 let windowPrefersDarkMode = false
 if (isRenderer()) {
   windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
+const oracleSupported = isMac && isArm ? false : true
+
+const resourcesPath = isDevEnv ? path.resolve('./extra_resources') : path.resolve(p.resourcesPath)
 let userDirectory =  testMode ? './tmp' : e.app.getPath("userData")
 const downloadsDirectory = testMode ? './tmp' : e.app.getPath('downloads')
 const homeDirectory = testMode ? './tmp' : e.app.getPath('home')
@@ -56,8 +61,8 @@ function isWaylandMode() {
 }
 
 const platformInfo = {
+  isWindows, isMac, isArm, oracleSupported,
   parsedArgs,
-  isWindows, isMac,
   isLinux: !isWindows && !isMac,
   sessionType,
   isWayland: isWaylandMode(),
@@ -67,7 +72,7 @@ const platformInfo = {
   isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
   sshAuthSock: p.env.SSH_AUTH_SOCK,
   environment: p.env.NODE_ENV,
-  resourcesPath: p.resourcesPath,
+  resourcesPath,
   env: {
     development: isDevEnv,
     test: testMode,
@@ -85,8 +90,10 @@ const platformInfo = {
   updatesDisabled,
   appVersion: testMode ? 'test-mode' : e.app.getVersion(),
   cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
+  locale,
   isCommunity: true,
   isUltimate: false,
+
   // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
 }
 

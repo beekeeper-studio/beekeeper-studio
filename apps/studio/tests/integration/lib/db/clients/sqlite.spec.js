@@ -1,6 +1,6 @@
 import { DBTestUtil } from '../../../../lib/db'
 import tmp from 'tmp'
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests, runReadOnlyTests } from './all'
 
 describe("Sqlite Tests", () => {
   let dbfile;
@@ -8,6 +8,7 @@ describe("Sqlite Tests", () => {
   let util
 
   beforeAll(async () => {
+    console.log("beforeAll")
     dbfile = tmp.fileSync()
 
     const config = {
@@ -26,11 +27,19 @@ describe("Sqlite Tests", () => {
       { id: 2, flag: 0 },
       { id: 3, flag: 0 },
     ])
+    const dotTableCreator = "CREATE TABLE `foo.bar`(id integer, name varchar(255))"
+    const dotInsert = "INSERT INTO `foo.bar`(id, name) values(1, 'Dot McDot')"
+
+    await util.knex.schema.raw(dotTableCreator);
+    await util.knex.schema.raw(dotInsert);
   })
 
   afterAll(async () => {
     if (util.connection) {
       await util.connection.disconnect()
+    }
+    if (dbfile) {
+      dbfile.removeCallback();
     }
   })
 
@@ -55,6 +64,18 @@ describe("Sqlite Tests", () => {
       const q = await util.connection.query(trigger)
       await q.execute()
     }).not.toThrowError()
+  })
+
+  it("Should work properly with tables that have dots in them", async () => {
+    const keys = await util.connection.getPrimaryKeys("foo.bar")
+    expect(keys).toMatchObject([])
+    const r = await util.connection.selectTop("foo.bar", 0, 10, [{ field: 'id', dir: 'ASC' }])
+    const result = r.result.map((r) => r.name || r.NAME)
+    expect(result).toMatchObject(['Dot McDot'])
+    const tcRes = await util.connection.getTableCreateScript("foo.bar")
+    expect(tcRes).not.toBeNull()
+    // shouldn't error
+    await util.connection.getTableReferences("foo.bar")
   })
 
   it("Should apply changes to boolean values correctly", async () => {

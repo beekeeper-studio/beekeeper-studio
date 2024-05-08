@@ -12,6 +12,19 @@ export abstract class BeeCursor {
   }
 }
 
+export class NoOpCursor extends BeeCursor {
+  async start(): Promise<void> {
+    // yes
+  }
+  async read(): Promise<any[][]> {
+    return []
+  }
+  async cancel(): Promise<void> {
+    // yes
+  }
+
+}
+
 export interface StreamResults {
   columns: TableColumn[],
   totalRows: number,
@@ -86,6 +99,9 @@ export interface ExtendedTableColumn extends SchemaItem {
   ordinalPosition: number
   schemaName?: string
   tableName: string
+  hasDefault?: boolean
+  generated?: boolean
+  array?: boolean
 }
 
 export interface PrimaryKeyColumn {
@@ -120,7 +136,7 @@ export interface OrderBy {
 export interface TableFilter {
   field: string;
   type: string;
-  value: string | string[];
+  value?: string | string[];
   op?: 'AND' | 'OR';
 }
 
@@ -168,6 +184,7 @@ export interface TableUpdate {
   // FIXME: Make this `dataType`, the same as we use for TableColumn
   dataset?: string
   columnType?: string;
+  columnObject?: ExtendedTableColumn
   value: any;
 }
 
@@ -212,6 +229,10 @@ export interface SupportedFeatures {
   properties: boolean;
   partitions: boolean;
   editPartitions: boolean;
+  backups: boolean;
+  // Some databases support a directory backup format.
+  backDirFormat: boolean;
+  restore: boolean;
 }
 
 export interface FieldDescriptor {

@@ -107,7 +107,7 @@
   </div>
 </template>
 <script lang="ts">
-import { Tabulator, TabulatorFull } from 'tabulator-tables'
+import { Tabulator, TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
@@ -124,12 +124,12 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
 import { mapGetters } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
-import { escapeHtml } from '@/mixins/data_mutators'
+import { escapeHtml } from '@shared/lib/tabulator'
 
 interface State {
   tabulator: Tabulator
-  newRows: Tabulator.RowComponent[]
-  removedRows: Tabulator.RowComponent[],
+  newRows: RowComponent[]
+  removedRows: RowComponent[],
   loading: boolean,
   error: any | null
 }
@@ -221,7 +221,7 @@ export default Vue.extend({
           title: 'Columns',
           field: 'columns',
           editable,
-          editor: 'select',
+          editor: 'list',
           formatter: this.cellFormatter,
           editorParams: {
             multiselect: true,
@@ -246,7 +246,7 @@ export default Vue.extend({
       // ideally we could drop users into the first cell to make editing easier
       // but right now if it fails it breaks the whole table.
     },
-    async removeRow(_e: any, cell: Tabulator.CellComponent) {
+    async removeRow(_e: any, cell: CellComponent) {
       if (this.loading) return
       const row = cell.getRow()
       if (this.newRows.includes(row)) {
@@ -268,7 +268,7 @@ export default Vue.extend({
       this.clearChanges()
     },
     getPayload(): IndexAlterations {
-        const additions = this.newRows.map((row: Tabulator.RowComponent) => {
+        const additions = this.newRows.map((row: RowComponent) => {
           const data = row.getData()
           const columns = data.columns.map((c: string)=> {
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
@@ -282,7 +282,7 @@ export default Vue.extend({
           }
           return payload
         })
-      const drops = this.removedRows.map((row: Tabulator.RowComponent) => ({ name: row.getData()['name']}))
+      const drops = this.removedRows.map((row: RowComponent) => ({ name: row.getData()['name']}))
       return { additions, drops, table: this.table.name, schema: this.table.schema }
     },
     async submitApply() {

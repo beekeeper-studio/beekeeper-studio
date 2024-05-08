@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest, ubuntu-arm64, macos-13-xlarge]
+        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13-xlarge]
 
     steps:
       - name: Import GPG key
@@ -34,7 +34,7 @@ jobs:
         if: "startsWith(matrix.os, 'windows')"
 
       - name: Install azuresigntool
-        run: 'dotnet tool install --global AzureSignTool'
+        run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
         if: "startsWith(matrix.os, 'windows')"
 
       - name: Check out Git repository
@@ -46,6 +46,12 @@ jobs:
 
       - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '16.11.14'
+        if: "startsWith(matrix.os, 'windows')"
 
       - run: "gem install -N ./deb-s3-0.11.2.gem"
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
@@ -110,7 +116,7 @@ jobs:
 
 
       - name: Clean cache
-        run: yarn cache clean
+        run: yarn cache clean --all
 
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.
@@ -122,6 +128,8 @@ jobs:
           timeout_minutes: 20
           max_attempts: 3
           command: "yarn install --frozen-lockfile --network-timeout 100000"
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
@@ -164,9 +172,9 @@ jobs:
           mac_certs: ${{ secrets.mac_dev }}
           mac_certs_password: ${{ secrets.mac_dev_pw }}
         env:
-          API_KEY_ID: ${{ secrets.apple_key_id }}
-          API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
-          BT_TOKEN: "${{secrets.bintray_apikey}}"
+          APPLE_ID: ${{ secrets.apple_id }}
+          APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
+          APPLE_TEAM_ID: "7KK583U8H2"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHON_PATH' }}"

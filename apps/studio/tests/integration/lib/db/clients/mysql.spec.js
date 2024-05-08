@@ -4,16 +4,19 @@ import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import data_mutators from '../../../../../src/mixins/data_mutators';
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
+import { errorMessages } from '../../../../../src/lib/db/clients/utils'
+import { runCommonTests, runReadOnlyTests } from './all'
 
 const TEST_VERSIONS = [
   {version: '5.7'},
+  {version: '5.7', readonly: true},
+  { version: '8', socket: false, readonly: true},
   { version: '8', socket: false},
   { version: '8', socket: true }
 ]
 
 
-function testWith(tag, socket = false) {
+function testWith(tag, socket = false, readonly = false) {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
 
     let container;
@@ -39,7 +42,8 @@ function testWith(tag, socket = false) {
         host: container.getHost(),
         port: container.getMappedPort(3306),
         user: 'root',
-        password: 'test'
+        password: 'test',
+        readOnlyMode: readonly
       }
       if (socket) {
         config.host = 'somefakehost'
@@ -77,9 +81,15 @@ function testWith(tag, socket = false) {
         SELECT id, name, email, status FROM user limit 10;
         END
     `
+
+      const dotTableCreator = "CREATE TABLE `foo.bar`(id integer, name varchar(255))"
+      const dotInsert = "INSERT INTO `foo.bar`(id, name) values(1, 'Dot McDot')"
       await util.knex.schema.raw(functionDDL)
       await util.knex.schema.raw(routine1DDL)
       await util.knex.schema.raw(routine2DDL)
+      await util.knex.schema.raw("CREATE TABLE bittable(id int, bitcol bit NOT NULL)");
+      await util.knex.schema.raw(dotTableCreator);
+      await util.knex.schema.raw(dotInsert);
     })
 
     afterAll(async () => {
@@ -92,7 +102,25 @@ function testWith(tag, socket = false) {
     })
 
     describe("Common Tests", () => {
-      runCommonTests(() => util)
+      if (readonly) {
+        runReadOnlyTests(() => util)
+      } else {
+        runCommonTests(() => util, { dbReadOnlyMode: readonly })
+      }
+    })
+
+    it("Should work properly with tables that have dots in them", async () => {
+      const keys = await util.connection.getPrimaryKeys("foo.bar")
+      expect(keys).toMatchObject([])
+      const r = await util.connection.selectTop("foo.bar", 0, 10, [{field: 'id', dir: 'ASC'}])
+      const result = r.result.map((r) => r.name || r.NAME)
+      expect(result).toMatchObject(['Dot McDot'])
+      const tcRes = await util.connection.getTableCreateScript("foo.bar")
+      expect(tcRes).not.toBeNull()
+      // shouldn't error
+      await util.connection.getTableReferences("foo.bar")
+      const properties = await util.connection.getTableProperties("foo.bar")
+      expect(properties).not.toBeNull()
     })
 
     it("Should fetch routines correctly", async () => {
@@ -133,13 +161,17 @@ function testWith(tag, socket = false) {
           ]
         }
       ]
-      await util.connection.applyChanges({ inserts })
-      const data = await util.connection.selectTop('insertbits', 0, 10, [])
 
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ inserts })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await util.connection.applyChanges({ inserts })
+        const data = await util.connection.selectTop('insertbits', 0, 10, [])
 
-      expect(data.result.length).toBe(1)
-      const single = data_mutators.methods.bit1Mutator(data.result[0].onebit)
-      expect(single).toBe(1)
+        expect(data.result.length).toBe(1)
+        const single = data_mutators.methods.bit1Mutator(data.result[0].onebit)
+        expect(single).toBe(1)
+      }
     })
 
     it("Should update bit values properly", async () => {
@@ -172,16 +204,29 @@ function testWith(tag, socket = false) {
           ...basics
         }
       ]
-      const results = await util.connection.applyChanges({ updates: values })
-      expect(results.length).toBe(2)
-      const fixed = data_mutators.methods.bitMutator('mysql', results[1].thirtytwo)
-      expect(fixed).toBe("b'00000000000000000000010000000000'")
+
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates: values })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const results = await util.connection.applyChanges({ updates: values })
+        expect(results.length).toBe(2)
+        const fixed = data_mutators.methods.bitMutator('mysql', results[1].thirtytwo)
+        expect(fixed).toBe("b'00000000000000000000010000000000'")
+      }
+
     })
 
+
     it("should be able to create / alter unsigned columns", async () => {
+      if (util.connection.readOnlyMode) {
+        // skip this in read only mode
+        // TODO: make this appropriately fail if the connection is read only
+        return;
+      }
       await util.knex.schema.createTable("unsigned_integers", (table) => {
         table.integer("number").primary()
       })
+
       await util.connection.alterTable({
         table: "unsigned_integers",
         adds: [{ columnName: "tiny_number", dataType: "tinyint unsigned" }],
@@ -191,17 +236,51 @@ function testWith(tag, socket = false) {
           newValue: "int unsigned",
         }],
       })
-      expect(util.connection.applyChanges({
+      await expect(util.connection.applyChanges({
         inserts: [{
           table: 'unsigned_integers',
           data: [{ number: -1, tiny_number: -1 }],
         }]
       })).rejects.toThrowError()
     })
+
+    // Regression test for #1945 -> cloning with bit fields doesn't work
+    it("Should be able to insert with bit fields", async () => {
+      if (readonly) return;
+
+      const changes = {
+        inserts: [
+          {
+            table: 'bittable',
+            data: [
+              {
+                id: 1,
+                bitcol: 0
+              },
+              {
+                id: 2,
+                bitcol: true
+              }
+            ]
+          }
+        ]
+      };
+
+      await util.connection.applyChanges(changes);
+
+      const results = await util.knex.select().table('bittable');
+      expect(results.length).toBe(2);
+
+      const firstResult = { ...results[0] };
+      const secondResult = { ...results[1] };
+
+      expect(firstResult.bitcol[0]).toBe(0)
+      expect(secondResult.bitcol[0]).toBe(1)
+    })
   })
 
 
 }
 
-TEST_VERSIONS.forEach(({ version, socket }) => testWith(version, socket))
+TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
 

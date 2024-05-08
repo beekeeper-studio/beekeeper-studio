@@ -1,0 +1,85 @@
+
+.grouped-table-wrapper {
+  margin-top: 1rem;
+  position: relative;
+  height: 100%;
+  padding-right: 5%;
+  padding-left: 5%;
+
+  .tabulator {
+    border-radius: 10px;
+    .tabulator-header {
+      background: $grouped-tables-base;
+      padding-top: .25rem;
+      padding-bottom: .25rem;
+    }
+    .tabulator-tableholder > .tabulator-table {
+      .tabulator-row {
+        &.tabulator-selectable {
+          padding-top: .25rem;
+          padding-bottom: .25rem;
+          background: $theme-bg;
+          border-left: none;
+          border-right: none;
+          border-top: 1px solid rgba($grouped-tables-light, 0.85);
+          border-bottom: 1px solid rgba($grouped-tables-light, 0.85);
+        }
+        &.tabulator-group {
+          background: lighten($theme-bg, 2%);
+          padding-top: 0;
+          padding-bottom: 0;
+          color: $text-lighter;
+          border-left: none;
+          border-right: none;
+          border-top: 1px solid rgba($grouped-tables-light, 0.85);
+          border-bottom: 1px solid rgba($grouped-tables-light, 0.85);
+          display: flex;
+          align-items: center;
+          padding-left: 0;
+
+          .tabulator-group-toggle {
+            padding-left: 1.2rem !important;
+
+            .tabulator-arrow {
+              vertical-align: none;
+            }
+          }
+
+          span {
+            margin-left: 0;
+          }
+        }
+        &:last-child {
+          border-radius: 0 0 0 10px;
+        }
+      }
+
+    }
+  }
+}
+
+.grouped-table-wrapper .tabulator ::-webkit-scrollbar {
+  display: none;
+}
+
+.group-header {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-left: 2px solid rgba($grouped-tables-light, 0.85);
+}
+
+.grouped-table-wrapper .tabulator input[type="checkbox"] {
+  &:not(.select-group) {
+    // I hate this but :shrug:
+    margin-left: 31px;
+    margin-top: 0.5rem;
+  }
+  &:checked {
+    background: $theme-primary;
+  }
+
+}

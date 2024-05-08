@@ -3,6 +3,7 @@ import _ from 'lodash'
 import logRaw from 'electron-log'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
 import { joinFilters } from '@/common/utils'
+import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
 const log = logRaw.scope('db/util')
 
@@ -97,12 +98,14 @@ export function buildFilterString(filters: TableFilter[], columns = []) {
           : '?'
 
         return `${field} ${item.type.toUpperCase()} (${questionMarks})`
+      } else if (item.type.includes('is')) {
+        return `${field} ${item.type.toUpperCase()} NULL`
       }
       return `${field} ${item.type.toUpperCase()} ?`
     })
     filterString = "WHERE " + joinFilters(allFilters, filters)
 
-    filterParams = filters.flatMap((item) => {
+    filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
     })
   }
@@ -118,7 +121,7 @@ export function applyChangesSql(changes: TableChanges, knex: any): string {
     ...buildDeleteQueries(knex, changes.deletes || [])
   ].filter((i) => !!i && _.isString(i)).join(';')
 
-  if (queries.length) 
+  if (queries.length)
     return queries.endsWith(';') ? queries : `${queries};`
 }
 
@@ -182,12 +185,14 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
     const insertColumns = Object.keys(item)
     insertColumns.forEach((ic) => {
       const matching = _.find(columns, (c) => c.columnName === ic)
-      if (matching && matching.dataType && matching.dataType.startsWith('bit(')) {
+      if (matching && matching.dataType && matching.dataType.startsWith('bit(') && !_.isNil(item[ic])) {
         if (matching.dataType === 'bit(1)') {
           item[ic] = bitConversionFunc(item[ic])
         } else {
           item[ic] = parseInt(item[ic].split("'")[1], 2)
         }
+      } else if (matching && matching.dataType && matching.dataType.startsWith('bit') && _.isBoolean(item[ic])) {
+        item[ic] = item[ic] ? 1 : 0;
       }
 
       // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
@@ -211,10 +216,13 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
 }
 
 export function buildInsertQueries(knex, inserts) {
+  if (!inserts) return []
   return inserts.map(insert => buildInsertQuery(knex, insert))
 }
 
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {
+  if (!updates) return []
+
   return updates.map(update => {
     const where = {}
     const updateblob = {}
@@ -268,7 +276,9 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
+
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
+  if (!deletes) return []
   return deletes.map(deleteRow => {
     const where = {}
 
@@ -284,4 +294,12 @@ export function buildDeleteQueries(knex, deletes: TableDelete[]) {
       .delete()
       .toQuery()
   })
+}
+
+export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], readOnlyMode: boolean): boolean {
+  return (!readOnlyMode || readOnlyMode && identifiedQueries.every(f => ['LISTING', 'INFORMATION'].includes(f.executionType?.toUpperCase())))
+}
+
+export const errorMessages = {
+  readOnly: 'Write action(s) not allowed in Read-Only Mode.'
 }

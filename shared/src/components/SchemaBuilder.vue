@@ -23,7 +23,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
-import { TabulatorFull, Tabulator } from 'tabulator-tables'
+import { TabulatorFull, Tabulator, CellComponent, RowComponent } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
@@ -88,12 +88,14 @@ export default Vue.extend({
       return this.columnsModified
     },
     autoCompleteOptions() {
+      const { defaultColumnType, columnTypes } = getDialectData(this.dialect)
       return {
         freetext: true,
         allowEmpty: false,
-        values: getDialectData(this.dialect).columnTypes.map((d) => d.pretty),
-        defaultValue: 'varchar(255)',
-        showListOnEmpty: true
+        values: columnTypes.map((d) => d.pretty),
+        defaultValue: defaultColumnType || 'varchar(255)',
+        listOnEmpty: true,
+        autocomplete: true,
       }
     },
     disabledFeatures() {
@@ -117,12 +119,12 @@ export default Vue.extend({
         {
           title: "Type",
           field: "dataType",
-          editor: "autocomplete",
+          editor: "list",
           editorParams: this.autoCompleteOptions,
           minWidth: 90,
           widthShrink: 1,
         },
-        {
+        (this.disabledFeatures?.nullable) ? null :{
           title: 'Nullable',
           field: 'nullable',
           cssClass: "no-padding no-edit-highlight",
@@ -136,7 +138,7 @@ export default Vue.extend({
           maxWidth: 68,
           widthShrink: 1,
         },
-        {
+        (this.disabledFeatures?.defaultValue) ? null : {
           title: 'Default Value',
           field: 'defaultValue',
           editor: vueEditor(NullableInputEditor),
@@ -205,15 +207,16 @@ export default Vue.extend({
       this.builtColumns = data
       this.columnsModified = markModified
     },
-    removeRow(_e, cell: Tabulator.CellComponent) {
+    removeRow(_e, cell: CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
     },
     async addRow() {
 
       const num = this.tabulator.getData().length + 1
       const columnName = `column_${num}`
+      const defaultDataType = getDialectData(this.dialect).defaultColumnType || 'varchar(255)'
 
-      const row: Tabulator.RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
+      const row: RowComponent = await this.tabulator.addRow({ columnName, dataType: defaultDataType, nullable: true})
       const nameCell = row.getCell('columnName')
       if (nameCell){
         // don't know why we need this, but we do.

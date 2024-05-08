@@ -71,11 +71,12 @@ export default {
           }
         },
         {
-          name: "Import From CSV",
+          name: "Import from CSV",
           class: isBQClass,
           slug: 'import',
-          handler: () => {
-            this.$root.$emit(AppEvent.upgradeModal)
+          ultimate: true,
+          handler: ({ item }) => {
+            this.trigger(AppEvent.beginImport, { table: item })
           }
         },
         {

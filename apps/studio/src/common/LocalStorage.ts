@@ -1,8 +1,22 @@
 
 
 export const SmartLocalStorage = {
+  addItem(key:string, value:any): void{
+    localStorage.setItem(key, JSON.stringify(value))
+  },
+  getItem(key:string): any{
+    const value = localStorage.getItem(key)
+    return value
+  },
   removeItem(key: string): void {
     localStorage.removeItem(key)
+  },
+  setBool(key: string, value: boolean): void {
+    localStorage.setItem(key, JSON.stringify(value))
+  },
+  getBool(key: string): boolean {
+    const result = localStorage.getItem(key)
+    return result && result === "true"
   },
   getDate(key: string): Date | null {
     const item = localStorage.getItem(key)

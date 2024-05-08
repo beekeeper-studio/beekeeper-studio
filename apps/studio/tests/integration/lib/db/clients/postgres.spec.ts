@@ -1,29 +1,32 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
-import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { runCommonTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/client'
+import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
+import { runCommonTests, runReadOnlyTests } from './all'
+import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
+import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
 
 const TEST_VERSIONS = [
-  { version: '9.3', socket: false},
-  { version: '9.4', socket: false},
-  { version: 'latest', socket: false },
-  { version: 'latest', socket: true },
+  { version: '9.3', socket: false, readonly: false},
+  { version: '9.3', socket: false, readonly: true},
+  { version: '9.4', socket: false, readonly: false},
+  { version: '9.4', socket: false, readonly: true},
+  { version: 'latest', socket: true, readonly: false },
+  { version: 'latest', socket: false, readonly: true },
+  { version: 'latest', socket: false, readonly: false },
 ]
 
-function testWith(dockerTag, socket = false) {
-  describe(`Postgres [${dockerTag} - socket? ${socket}]`, () => {
+function testWith(dockerTag, socket = false, readonly = false) {
+  describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
     beforeAll(async () => {
-      const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
@@ -36,7 +39,6 @@ function testWith(dockerTag, socket = false) {
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
         .withStartupTimeout(dbtimeout)
         .start()
-      jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
         host: container.getHost(),
@@ -53,6 +55,7 @@ function testWith(dockerTag, socket = false) {
         domain: null,
         socketPath: null,
         socketPathEnabled: false,
+        readOnlyMode: readonly
       }
 
       if (socket) {
@@ -61,7 +64,17 @@ function testWith(dockerTag, socket = false) {
         config.socketPath = path.join(temp, "postgresql")
       }
 
-      util = new DBTestUtil(config, "banana", { dialect: 'postgresql', defaultSchema: 'public' })
+      const utilOptions: Options = {
+        dialect: 'postgresql',
+        defaultSchema: 'public',
+      }
+
+      if (dockerTag !== 'latest') {
+        // Generated columns was introduced in postgres 12
+        utilOptions.skipGeneratedColumns = true
+      }
+
+      util = new DBTestUtil(config, "banana", utilOptions)
       await util.setupdb()
 
       await util.knex.schema.createTable('witharrays', (table) => {
@@ -79,6 +92,14 @@ function testWith(dockerTag, socket = false) {
           public.moody_people (
             id serial NOT NULL,
             current_mood this_is_a_mood NULL DEFAULT 'sad'::this_is_a_mood
+          );
+      `)
+
+      await util.knex.raw(`
+        CREATE TABLE
+          public.extra_moody_people (
+            id serial NOT NULL,
+            current_moods this_is_a_mood[] NULL DEFAULT '{sad, happy}'
           );
       `)
 
@@ -123,17 +144,6 @@ function testWith(dockerTag, socket = false) {
           );
         `);
 
-      // NOTE (@day): this query doesn't run properly unless we use this
-      const query = util.connection.query(`
-          CREATE TABLE public.withquestionmark (
-            "approved?" boolean NULL DEFAULT false,
-            str_col character varying(255) NOT NULL,
-            another_str_col character varying(255) NOT NULL PRIMARY KEY
-          );
-        `);
-
-      await query.execute();
-
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -148,13 +158,17 @@ function testWith(dockerTag, socket = false) {
       if (util.connection) {
         await util.connection.disconnect()
       }
+
       if (container) {
         await container.stop()
       }
+
     })
 
 
     it("Should allow me to update rows with an empty array", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
       const updates = [
         {
           value: "[]",
@@ -163,14 +177,19 @@ function testWith(dockerTag, socket = false) {
             column: 'id', value: 1
           }],
           columnType: "_text",
+          columnObject: nameColumn,
           table: "witharrays"
         }
       ]
 
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
-      expect(result).toMatchObject([
-        { id: 1, names: [], normal: 'foo' }
-      ])
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: []})).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
+        expect(result).toMatchObject([
+          { id: 1, names: [], normal: 'foo' }
+        ])
+      }
     })
 
     it("Should be able to get a table create script without erroring", async() => {
@@ -188,17 +207,26 @@ function testWith(dockerTag, socket = false) {
         ]
       }
 
-      const result = await util.connection.applyChanges(
-        { updates: [], inserts: [newRow], deletes: []}
-      )
-      expect(result).not.toBeNull()
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges(
+          { updates: [], inserts: [newRow], deletes: []}
+        )).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges(
+          { updates: [], inserts: [newRow], deletes: []}
+        )
+        expect(result).not.toBeNull()
+      }
     })
 
     it("Should allow me to update rows with array types", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: ["x", "y", "z"],
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1}
         ],
@@ -215,16 +243,24 @@ function testWith(dockerTag, socket = false) {
         columnType: 'text',
       }
       ]
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
-      expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      }
+
     })
 
 
     it("Should allow me to update rows with array types when passed as string", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: '["x", "y", "z"]',
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1 }
         ],
@@ -241,8 +277,13 @@ function testWith(dockerTag, socket = false) {
         columnType: 'text',
       }
       ]
-      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
-      expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      }
     })
 
     // regression test for Bug #1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -283,7 +324,7 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
-      const tables = await util.connection.listTables({});
+      const tables = await util.connection.listTables({ schema: null});
       const schema1 = tables.filter((t) => t.schema == "schema1");
       const schema2 = tables.filter((t) => t.schema == "schema2");
 
@@ -294,7 +335,7 @@ function testWith(dockerTag, socket = false) {
     // regression test for Bug #1572 "Only schemas that show are now information_schema and pg_catalog"
     it("Numeric names should still be pulled back in queries", async () => {
       const tables = await util.connection.listTables({ schema: '1234' });
-      const columns = await util.connection.listTableColumns('banana', '5678', '1234');
+      const columns = await util.connection.listTableColumns('5678', '1234');
 
       expect(tables.length).toBe(1);
       expect(tables[0].name).toBe('5678');
@@ -370,6 +411,9 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for #1734
     it("should be able to insert to a table with a ? in a column name", async () => {
+      // We have enough coverage of read only mode.
+      if (util.connection.readOnlyMode) return;
+
       const data = {
         str_col: 'hello?',
         another_str_col: '???'
@@ -383,9 +427,18 @@ function testWith(dockerTag, socket = false) {
         ]
       }
 
-      const result = await util.connection.applyChanges(
-        { updates: [], inserts: [newRow], deletes: []}
-      )
+      const query = util.connection.query(`
+        CREATE TABLE IF NOT EXISTS public.withquestionmark (
+          "approved?" boolean NULL DEFAULT false,
+          str_col character varying(255) NOT NULL,
+          another_str_col character varying(255) NOT NULL PRIMARY KEY
+        );
+      `);
+
+      await query.execute();
+
+      const payload = { updates: [], inserts: [newRow], deletes: []}
+      const result = await util.connection.applyChanges(payload)
       expect(result).not.toBeNull()
     })
 
@@ -408,12 +461,30 @@ function testWith(dockerTag, socket = false) {
       ])
     })
 
+    it("should be able to define array column correctly", async () => {
+      const arrayTable = await util.connection.listTableColumns('witharrays');
+      const enumTable = await util.connection.listTableColumns('moody_people');
+      const enumArrayTable = await util.connection.listTableColumns('extra_moody_people');
+
+      const arrayColumn = arrayTable.find((col) => col.columnName === 'names')
+      const enumColumn = enumTable.find((col) => col.columnName === 'current_mood')
+      const enumArrayColumn = enumArrayTable.find((col) => col.columnName === 'current_moods')
+
+      expect(arrayColumn.array).toBeTruthy()
+      expect(enumColumn.array).toBeFalsy()
+      expect(enumArrayColumn.array).toBeTruthy()
+    })
+
     describe("Common Tests", () => {
-      runCommonTests(() => util)
+      if (readonly) {
+        runReadOnlyTests(() => util)
+      } else {
+        runCommonTests(() => util, { dbReadOnlyMode: readonly })
+      }
     })
 
 
   })
 }
 
-TEST_VERSIONS.forEach(({ version, socket }) => testWith(version, socket))
+TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))

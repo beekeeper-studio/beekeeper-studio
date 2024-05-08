@@ -14,6 +14,7 @@
         v-model="selectedDatabase"
         :options="availableDatabases"
         :components="{OpenIndicator}"
+        placeholder="Select a database..."
         class="dropdown-search"
       />
       <a
@@ -103,7 +104,9 @@
         }
       },
       selectedDatabase() {
-        this.$emit('databaseSelected', this.selectedDatabase)
+        if (this.selectedDatabase != this.currentDatabase) {
+          this.$emit('databaseSelected', this.selectedDatabase)
+        }
       }
     }
   }

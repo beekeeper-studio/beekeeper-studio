@@ -1,5 +1,5 @@
+import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { Export } from "@/lib/export";
-import { DBConnection } from '@/lib/db/client'
 import { TableFilter, TableOrView } from "../../db/models";
 import { ExportOptions } from "../models";
 
@@ -10,7 +10,7 @@ export class JsonLineExporter extends Export {
 
   constructor(
     filePath: string,
-    connection: DBConnection,
+    connection: BasicDatabaseClient<any>,
     table: TableOrView,
     query: string,
     queryName: string,

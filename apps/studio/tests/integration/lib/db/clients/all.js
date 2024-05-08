@@ -1,16 +1,69 @@
-export function runCommonTests(getUtil) {
+import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 
-  test("get database version should work", async() => {
-    await getUtil().databaseVersionTest()
+/**
+ * @typedef {import('../../../../lib/db').DBTestUtil} DBTestUtil
+ * @param {() => DBTestUtil} getUtil
+ **/
+export function runReadOnlyTests(getUtil) {
+  describe("Read Only Queries", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("list tables should work", async() => {
+      await getUtil().listTableTests()
+    })
   })
 
-  test("list tables should work", async() => {
-    await getUtil().listTableTests()
-  })
+  describe("Read Only Can't Write", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+      await prepareTestTableCompositePK(getUtil())
+    })
 
-  test("column tests", async() => {
-    await getUtil().tableColumnsTests()
+    test("Read Only Can't delete table", async () => {
+      await expect(getUtil().dropTableTests()).rejects.toThrow(errorMessages.readOnly)
+    })
+
+    test("Read Only truncate table", async () => {
+      await expect(getUtil().truncateTableTests()).rejects.toThrow(errorMessages.readOnly)
+    })
+
+    test("Attempt to insert data", async () => {
+      await expect(itShouldInsertGoodDataCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+    })
+
+    test("Get columns for the table in read only mode", async() => {
+      const table = 'test_inserts_composite_pk'
+      const columns = await getUtil().connection.listTableColumns(table)
+      expect(columns.length).toBeGreaterThan(0)
+    })
+
+    test("Attempt to apply all types of changes", async () => {
+      await expect(itShouldApplyAllTypesOfChangesCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+    })
   })
+}
+
+/** @param {() => DBTestUtil} getUtil */
+export function runCommonTests(getUtil, opts = {}) {
+  const {
+    readOnly = false,
+    dbReadOnlyMode = false
+  } = opts
+
+  describe("RO", () => {
+    test("get database version should work", async () => {
+      await getUtil().databaseVersionTest()
+    })
+
+    test("list tables should work", async() => {
+      await getUtil().listTableTests()
+    })
+
+    test("column tests", async() => {
+      await getUtil().tableColumnsTests()
+    })
 
   test("table view tests", async () => {
     await getUtil().tableViewTests()
@@ -23,44 +76,41 @@ export function runCommonTests(getUtil) {
     await getUtil().streamTests()
   })
 
-  test("query tests", async () => {
-    if (getUtil().dbType === 'sqlite') {
-      return
-    }
-    await getUtil().queryTests()
-  })
-
-  test("get insert query tests", async () => {
-    await getUtil().getInsertQueryTests()
-  })
-
-  test("column filter tests", async () => {
-    await getUtil().columnFilterTests()
-  })
-
-  test("table filter tests", async () => {
-    await getUtil().filterTests()
-  })
-
-  test("table triggers", async () => {
-    await getUtil().triggerTests()
-  })
-
-  test("primary key tests", async () => {
-    await getUtil().primaryKeyTests()
-  })
-
-  describe("Alter Table Tests", () => {
-    beforeEach(async() => {
-      await prepareTestTable(getUtil())
+    test("query tests", async () => {
+      if (dbReadOnlyMode) {
+        await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await getUtil().queryTests()
+      }
     })
 
-    test("should pass alter table tests", async () => {
-      await getUtil().alterTableTests()
+    test("column filter tests", async () => {
+      await getUtil().columnFilterTests()
     })
-    test("should alter indexes", async () => {
-      await getUtil().indexTests()
+
+    test("table filter tests", async () => {
+      await getUtil().filterTests()
     })
+
+
+    test("table triggers", async () => {
+      await getUtil().triggerTests()
+    })
+
+    test("primary key tests", async () => {
+      await getUtil().primaryKeyTests()
+    })
+
+    describe("Table Structure", () => {
+      test("should fetch table properties", async () => {
+        await getUtil().tablePropertiesTests()
+      })
+
+      test("should list generated columns", async () => {
+        await getUtil().generatedColumnsTests()
+      })
+    })
+
   })
 
   describe("Drop Table Tests", () => {
@@ -69,7 +119,11 @@ export function runCommonTests(getUtil) {
     })
 
     test("Should delete table", async () => {
-      await getUtil().dropTableTests()
+      if (dbReadOnlyMode) {
+        await expect(getUtil().dropTableTests()).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await getUtil().dropTableTests()
+      }
     })
 
     test("Bad input shouldn't delete table", async () => {
@@ -79,10 +133,17 @@ export function runCommonTests(getUtil) {
 
   describe("Create Database Tests", () => {
     test("Invalid database name", async () => {
+      if (getUtil().dbType === 'oracle') {
+        return
+      }
       await getUtil().badCreateDatabaseTests()
     })
 
     test("Should create database", async () => {
+      // oracle will throw a "ORA-01100: database already mounted" error if trying to create
+      if (getUtil().dbType === 'oracle') {
+        return
+      }
       await getUtil().createDatabaseTests()
     })
   })
@@ -95,11 +156,21 @@ export function runCommonTests(getUtil) {
     test("Should truncate table", async () => {
       // Firebird has no internal function to truncate a table
       if (getUtil().dbType === 'firebird') return
-      await getUtil().truncateTableTests()
+      if (dbReadOnlyMode) {
+        await expect(getUtil().truncateTableTests()).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await getUtil().truncateTableTests()
+      }
     })
 
     test("Bad input shouldn't allow table truncate", async () => {
-      await getUtil().badTruncateTableTests()
+      // Firebird has no internal function to truncate a table
+      if (getUtil().dbType === 'firebird') return
+      if (dbReadOnlyMode) {
+        await expect(getUtil().badTruncateTableTests()).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await getUtil().badTruncateTableTests()
+      }
     })
   })
 
@@ -127,31 +198,86 @@ export function runCommonTests(getUtil) {
     })
   })
 
-  describe("Table Structure", () => {
-    test("should fetch table properties", async() => {
-      await getUtil().tablePropertiesTests()
-    })
-  })
 
-  describe("Data modification", () => {
-    beforeEach(async () => {
-      await prepareTestTable(getUtil())
-    })
+  // press f for oracle.
+  const f = readOnly ? describe.skip : describe
+  // some of these tests have some funkiness going on inside the test itself where something is getting written and therefore more than likely
+  // blocked and it's causing a whole string of sadness, so x will mark the spot to not test.
+  const xTest = dbReadOnlyMode ? test.skip : test
 
-    test("should insert good data", async () => {
-      await itShouldInsertGoodData(getUtil())
+  f("RW", () => {
+
+    xTest("table view tests", async () => {
+      await getUtil().tableViewTests(dbReadOnlyMode)
     })
 
-    test("should not insert bad data", async () => {
-      await itShouldNotInsertBadData(getUtil())
+    test("get insert query tests", async () => {
+      await getUtil().getInsertQueryTests()
     })
 
-    test("should apply all types of changes", async () => {
-      await itShouldApplyAllTypesOfChanges(getUtil())
+
+    describe("Alter Table Tests", () => {
+      beforeEach(async () => {
+        await prepareTestTable(getUtil())
+      })
+
+      test('should pass add drop tests', async() => {
+        if (dbReadOnlyMode) {
+          await expect(getUtil().addDropTests()).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await getUtil().addDropTests()
+        }
+      })
+
+      test("should pass alter table tests", async () => {
+        if (dbReadOnlyMode) {
+          await expect(getUtil().alterTableTests()).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await getUtil().alterTableTests()
+        }
+      })
+      test("should alter indexes", async () => {
+        if (dbReadOnlyMode) {
+          await expect(getUtil().indexTests()).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await getUtil().indexTests()
+        }
+      })
     })
 
-    test("should not commit on change error", async () => {
-      await itShouldNotCommitOnChangeError(getUtil())
+
+    describe("Data modification", () => {
+      beforeEach(async () => {
+        await prepareTestTable(getUtil())
+      })
+
+      test("should insert good data", async () => {
+        if (dbReadOnlyMode) {
+          await expect(itShouldInsertGoodData(getUtil())).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await itShouldInsertGoodData(getUtil())
+        }
+      })
+
+      test("should not insert bad data", async () => {
+        await itShouldNotInsertBadData(getUtil())
+      })
+
+      test("should apply all types of changes", async () => {
+        if (dbReadOnlyMode) {
+          await expect(itShouldApplyAllTypesOfChanges(getUtil())).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await itShouldApplyAllTypesOfChanges(getUtil())
+        }
+      })
+
+      test("should not commit on change error", async () => {
+        if (dbReadOnlyMode) {
+          await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await itShouldNotCommitOnChangeError(getUtil())
+        }
+      })
     })
   })
 
@@ -161,7 +287,11 @@ export function runCommonTests(getUtil) {
     })
 
     test("should insert good data", async () => {
-      await itShouldInsertGoodDataCompositePK(getUtil())
+      if (dbReadOnlyMode) {
+        await expect(itShouldInsertGoodDataCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await itShouldInsertGoodDataCompositePK(getUtil())
+      }
     })
 
     test("should not insert bad data", async () => {
@@ -169,11 +299,19 @@ export function runCommonTests(getUtil) {
     })
 
     test("should apply all types of changes", async () => {
-      await itShouldApplyAllTypesOfChangesCompositePK(getUtil())
+      if (dbReadOnlyMode) {
+        await expect(itShouldApplyAllTypesOfChangesCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await itShouldApplyAllTypesOfChangesCompositePK(getUtil())
+      }
     })
 
     test("should not commit on change error", async () => {
-      await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
+      if (dbReadOnlyMode) {
+        await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
+      }
     })
   })
 
@@ -189,8 +327,11 @@ export function runCommonTests(getUtil) {
     test("Should generate scripts for top selection", async () => {
       await getUtil().buildSelectTopQueryTests()
     })
-  })
 
+    test("Is (not) null filter", async () => {
+      await getUtil().buildIsNullTests()
+    })
+  })
 }
 
 // test functions below

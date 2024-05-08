@@ -1,5 +1,5 @@
-import type { ConnectionType } from "@/common/interfaces/IConnection";
 import CodeMirror from 'codemirror'
+import { ConnectionType } from '../db/types';
 
 export interface LanguageData {
   isValid: (raw: string) => boolean;
@@ -147,6 +147,12 @@ export function resolveLanguage(lang: Language): CodeMirrorLanguage {
         // @ts-expect-error TODO not fully typed
         hint: CodeMirror.hint.sql,
       };
+    case "tidb":
+      return {
+        mode: "text/x-mysql",
+        // @ts-expect-error TODO not fully typed
+        hint: CodeMirror.hint.sql,
+      };
     case "postgresql":
     case "redshift":
     case "cockroachdb":
@@ -157,7 +163,10 @@ export function resolveLanguage(lang: Language): CodeMirrorLanguage {
       };
     case "sqlserver":
       return {
-        mode: "text/x-mssql",
+        // Fix #1985 by using text/x-sql instead of text/x-mssql.
+        // For some reason, text/x-mssql messes up the editor.getToken()
+        // function which is used for autocomplete.
+        mode: "text/x-sql",
         // @ts-expect-error TODO not fully typed
         hint: CodeMirror.hint.sql,
       };
@@ -173,6 +182,8 @@ export function resolveLanguage(lang: Language): CodeMirrorLanguage {
         // @ts-expect-error TODO not fully typed
         hint: CodeMirror.hint.sql,
       };
+    case "oracle":
+    case "firebird":
     case "bigquery":
     case "sql":
       return {

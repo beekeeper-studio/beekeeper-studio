@@ -115,6 +115,7 @@
                 name="Filter Type"
                 class="form-control"
                 v-model="filter.type"
+                @change="clearInput(filter)"
               >
                 <option
                   v-for="(v, k) in filterTypes"
@@ -131,6 +132,10 @@
                   class="form-control filter-value"
                   type="text"
                   v-model="filter.value"
+                  :disabled="isNullFilter(filter)"
+                  :title="isNullFilter(filter) ? 
+                    'You cannot provide a comparison value when checking for NULL or NOT NULL' : 
+                    ''"
                   :placeholder="
                     filter.type === 'in'
                       ? `Enter values separated by comma, eg: foo,bar`
@@ -138,6 +143,7 @@
                   "
                 >
                 <button
+                  v-if="!isNullFilter(filter)"
                   type="button"
                   class="clear btn-link"
                   @click.prevent="filter.value = ''"
@@ -163,6 +169,15 @@
           </div>
           <div class="filter-add-apply">
             <div class="row fixed">
+              <button
+                v-if="filters.length > 1"
+                class="btn btn-flat btn-fab remove-filter"
+                type="button"
+                title="Remove filter"
+                @click="removeFilter(-1)"
+              >
+                <i class="material-icons">remove</i>
+              </button>
               <div class="btn-wrap add-filter">
                 <button
                   class="btn btn-flat btn-fab"
@@ -214,7 +229,7 @@
 import Vue from "vue";
 import { TableFilter } from "@/lib/db/models";
 import { joinFilters, normalizeFilters } from "@/common/utils";
-import { mapGetters } from "vuex";
+import { mapGetters, mapState } from "vuex";
 import platformInfo from "@/common/platform_info";
 import { AppEvent } from "@/common/AppEvent";
 
@@ -222,7 +237,7 @@ const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
-  props: ["columns", "initialFilters"],
+  props: ["columns", "reactiveFilters"],
   data() {
     return {
       filterTypes: {
@@ -234,15 +249,10 @@ export default Vue.extend({
         "greater than": ">",
         "greater than or equal": ">=",
         in: "in",
+        "is null": "is",
+        "is not null": "is not"
       },
-      filters: this.initialFilters ?? [
-        {
-          op: "AND",
-          field: this.columns[0]?.columnName,
-          type: "=",
-          value: "",
-        },
-      ],
+      filters: this.reactiveFilters,
       filterRaw: "",
       filterMode: BUILDER,
       RAW,
@@ -251,6 +261,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(["dialectData"]),
+    ...mapState(['connection']),
     additionalFilters() {
       const [_, ...additional] = this.filters;
       return additional;
@@ -259,9 +270,20 @@ export default Vue.extend({
       return {
         [this.ctrlOrCmd('f')]: this.focusOnInput,
       }
-    }
+    },
+    externalFilters() {
+      return this.reactiveFilters;
+    },
   },
   methods: {
+    clearInput(filter: any) {
+      if (filter.type.includes('is')) {
+        filter.value = null
+      }
+    },
+    isNullFilter(filter) {
+      return filter.type.includes('is')
+    },
     focusOnInput() {
       if (this.filterMode === RAW) this.$refs.valueInput.focus();
       else this.$refs.multipleFilters.querySelector('.filter-value')?.focus();
@@ -272,13 +294,22 @@ export default Vue.extend({
 
       // Populate raw filter query with existing filter if raw filter is empty
       if (filterMode === RAW && filters.length && !this.filterRaw) {
-        const allFilters = filters.map(
-          (filter) =>
-            `${filter.field} ${filter.type} ${this.dialectData.escapeString(
-              filter.value,
-              true
-            )}`
-        );
+        const allFilters = filters.map((filter) => {
+          let where;
+          if (filter.type == 'is') {
+            where = this.connection.knex
+              .whereNull(filter.field);
+          } else if (filter.type == 'is not') {
+            where = this.connection.knex
+              .whereNotNull(filter.field);
+          } else {
+            where = this.connection.knex
+              .where(filter.field, filter.type, filter.value);
+          }
+          return where.toString()
+            .split("where")[1]
+            .trim();
+        });
         const filterString = joinFilters(allFilters, filters);
         this.filterRaw = filterString;
       }
@@ -334,6 +365,13 @@ export default Vue.extend({
     },
     filterRaw() {
       if (this.filterRaw === "") this.submit();
+    },
+    externalFilters() {
+      if (platformInfo.isCommunity) {
+        this.filters = this.externalFilters?.slice(0, 2) || [];
+      } else {
+        this.filters = this.externalFilters || [];
+      }
     },
   },
 });

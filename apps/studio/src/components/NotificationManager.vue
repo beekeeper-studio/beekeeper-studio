@@ -7,6 +7,7 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
 import Vue from 'vue'
 import Noty from 'noty'
 import { AppEvent } from '@/common/AppEvent'
+import platformInfo from '@/common/platform_info'
 
 export default Vue.extend({
   data: () => {
@@ -26,14 +27,16 @@ export default Vue.extend({
     }
   },
   mounted() {
-    const today = new Date()
-    const upgradeSuggested = SmartLocalStorage.getDate('ultimate-upsell')
-    const lastWeek = new Date(today.getTime() - (28 * 24 * 60 * 60 * 1000))
-    if (!upgradeSuggested || upgradeSuggested < lastWeek) {
-      setTimeout(() => {
-        this.upsellNotification.show()
-        SmartLocalStorage.setDate('ultimate-upsell', today)
-      }, (1000 * 60 * 5)) // 5 minutes
+    if (platformInfo.isCommunity) {
+      const today = new Date()
+      const upgradeSuggested = SmartLocalStorage.getDate('ultimate-upsell')
+      const lastWeek = new Date(today.getTime() - (28 * 24 * 60 * 60 * 1000))
+      if (!upgradeSuggested || upgradeSuggested < lastWeek) {
+        setTimeout(() => {
+          this.upsellNotification.show()
+          SmartLocalStorage.setDate('ultimate-upsell', today)
+        }, (1000 * 60 * 5)) // 5 minutes
+      }
     }
   }
 })

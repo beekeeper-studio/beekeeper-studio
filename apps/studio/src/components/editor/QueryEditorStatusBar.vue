@@ -34,7 +34,7 @@
         <div
           class="statusbar-item row-counts"
           v-if="rowCount > 0"
-          :title="`${rowCount} Records${result?.truncated ? ' (Truncated)' : ''}`"
+          v-tooltip="`${rowCount} Records${result?.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
         >
           <i class="material-icons">list_alt</i>
           <span class="num-rows">{{ rowCount }}</span>
@@ -65,7 +65,7 @@
       <span class="expand" />
       <span class="empty">No Data</span>
     </template>
-    <div class="flex-right">
+    <div class="flex flex-right statusbar-right-actions">
       <x-button
         class="btn btn-flat btn-icon end"
         :disabled="results.length === 0"
@@ -119,6 +119,31 @@
             @click.prevent="copyToClipboardMarkdown"
           >
             <x-label>Copy to Clipboard (Markdown)</x-label>
+          </x-menuitem>
+        </x-menu>
+      </x-button>
+      <x-button
+        class="actions-btn btn btn-flat settings-btn"
+        menu
+      >
+        <i class="material-icons">settings</i>
+        <i class="material-icons">arrow_drop_down</i>
+        <x-menu>
+          <x-menuitem disabled>
+            <x-label>Editor keymap</x-label>
+          </x-menuitem>
+          <x-menuitem
+            :key="t.value"
+            v-for="t in keymapTypes"
+            @click.prevent="userKeymap = t.value"
+          >
+            <x-label class="flex-between">
+              {{ t.name }}
+              <span
+                class="material-icons"
+                v-if="t.value === userKeymap"
+              >done</span>
+            </x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
@@ -182,6 +207,21 @@ export default {
   },
   computed: {
     ...mapState('settings', ['settings']),
+    userKeymap: {
+      get() {
+        const value = this.settings?.keymap?.value;
+        return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+      },
+      set(value) {
+        if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+        this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
+          this.initialize();
+        });
+      }
+    },
+    keymapTypes() {
+      return this.$config.defaults.keymapTypes
+    },
     hasUsedDropdown: {
       get() {
         const s = this.settings.hideResultsDropdown

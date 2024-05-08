@@ -1,6 +1,7 @@
 <template>
   <div
     class="query-editor"
+    ref="container"
     v-hotkey="keymap"
   >
     <div
@@ -33,6 +34,7 @@
       <sql-text-editor
         v-model="unsavedText"
         v-bind.sync="editor"
+        :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
@@ -41,29 +43,7 @@
       />
       <span class="expand" />
       <div class="toolbar text-right">
-        <div class="actions btn-group">
-          <x-button
-            class="btn btn-flat btn-small"
-            menu
-          >
-            <i class="material-icons">settings</i>
-            <x-menu>
-              <x-menuitem
-                :key="t.value"
-                v-for="t in keymapTypes"
-                @click.prevent="userKeymap = t.value"
-              >
-                <x-label class="keymap-label">
-                  <span
-                    class="material-icons"
-                    v-if="t.value === userKeymap"
-                  >done</span>
-                  {{ t.name }}
-                </x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </div>
+        <div class="editor-help expand" />
         <div class="expand" />
         <div
           class="actions btn-group"
@@ -115,6 +95,7 @@
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
+                <hr>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
@@ -155,6 +136,7 @@
         :table-height="tableHeight"
         :result="result"
         :query="query"
+        :tab="tab"
       />
       <div
         class="message"
@@ -320,17 +302,6 @@
 <script lang="ts">
 
   import _ from 'lodash'
-  import CodeMirror from 'codemirror'
-  import 'codemirror/addon/comment/comment'
-  import 'codemirror/keymap/vim.js'
-  import 'codemirror/addon/dialog/dialog'
-  import 'codemirror/addon/search/search'
-  import 'codemirror/addon/search/jump-to-line'
-  import 'codemirror/addon/scroll/annotatescrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar.css'
-  import 'codemirror/addon/search/searchcursor'
-
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
@@ -370,11 +341,13 @@
         runningCount: 1,
         runningType: 'all queries',
         selectedResult: 0,
+        unsavedText: editorDefault,
+        forcedTextEditorValue: editorDefault,
         editor: {
           height: 100,
           selection: null,
           readOnly: false,
-          focus: true,
+          focus: false,
           cursorIndex: 0,
           initialized: false,
         },
@@ -394,7 +367,8 @@
         originalText: "",
         initialized: false,
         blankQuery: new FavoriteQuery(),
-        dryRun: false
+        dryRun: false,
+        containerResizeObserver: null,
       }
     },
     computed: {
@@ -433,14 +407,6 @@
       showDryRun() {
         return this.dialect == 'bigquery'
       },
-      unsavedText: {
-        get () {
-          return this.tab.unsavedQueryText || editorDefault
-        },
-        set(value) {
-          this.tab.unsavedQueryText = value
-        },
-      },
       identifyDialect() {
         // dialect for sql-query-identifier
         const mappings = {
@@ -450,6 +416,7 @@
           'postgresql': 'psql',
           'mysql': 'mysql',
           'mariadb': 'mysql',
+          'tidb': 'mysql',
           'redshift': 'psql',
         }
         return mappings[this.connectionType] || 'generic'
@@ -634,6 +601,7 @@
         if (this.shouldInitialize) this.initialize()
       },
       unsavedText() {
+        this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
       remoteDeleted() {
@@ -649,12 +617,18 @@
         this.tab.unsavedChanges = this.unsavedChanges
       },
       async active() {
-        if(this.active && this.editor.initialized) {
-          // FIXME this doesn't work. Something triggers the blur event from
-          // codemirror right after doing this.
-          await this.$nextTick()
-          this.editor.focus = this.active
-        } else {
+        if (!this.editor.initialized) {
+          this.editor.focus = false
+          return
+        }
+
+        // HACK: we couldn't focus the editor immediately each time the tab is
+        // clicked because something steals the focus. So we defer focusing
+        // the editor at the end of the call stack with timeout, and
+        // this.$nextTick doesn't work in this case.
+        setTimeout(() => this.editor.focus = this.active, 0);
+
+        if (!this.active) {
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
@@ -876,6 +850,7 @@
       },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+        this.tab.isRunning = true
         this.running = true
         this.error = null
         this.queryForExecution = rawQuery
@@ -883,7 +858,7 @@
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect })
+          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -914,7 +889,7 @@
           // @ts-ignore
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
-          results.forEach(result => {
+          results.forEach((result, idx) => {
             result.rowCount = result.rowCount || 0
 
             // TODO (matthew): remove truncation logic somewhere sensible
@@ -923,6 +898,13 @@
               result.rows = _.take(result.rows, this.$config.maxResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
+            }
+
+            const identifiedTables = identification[idx]?.tables || []
+            if (identifiedTables.length > 0) {
+              result.tableName = identifiedTables[0]
+            } else {
+              result.tableName = "mytable"
             }
           })
           this.results = Object.freeze(results);
@@ -948,15 +930,18 @@
           }
         } finally {
           this.running = false
+          this.tab.isRunning = false
         }
       },
       initializeQueries() {
         if (!this.tab.unsavedChanges && this.query?.text) {
           this.unsavedText = null
         }
-        if (this.query?.text) {
-          this.originalText = this.query.text
-          if (!this.unsavedText) this.unsavedText = this.query.text
+        const originalText = this.query?.text || this.tab.unsavedQueryText
+        if (originalText) {
+          this.originalText = originalText
+          this.unsavedText = originalText
+          this.forcedTextEditorValue = originalText
         }
       },
       fakeRemoteChange() {
@@ -972,11 +957,17 @@
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()
+
+      this.containerResizeObserver = new ResizeObserver(() => {
+        this.updateEditorHeight()
+      })
+      this.containerResizeObserver.observe(this.$refs.container)
     },
     beforeDestroy() {
       if(this.split) {
         this.split.destroy()
       }
+      this.containerResizeObserver.disconnect()
     },
   }
 </script>

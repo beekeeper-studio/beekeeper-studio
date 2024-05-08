@@ -4,6 +4,7 @@ on:
   pull_request:
     paths-ignore:
       - apps/sqltools/**
+      - docs/**
 
 jobs:
   build:
@@ -11,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-11, ubuntu-20.04, windows-latest]
+        os: [ubuntu-20.04]
 
     steps:
       - name: Check out Git repository
@@ -22,22 +23,62 @@ jobs:
         with:
           node-version: 16
 
+      - name: Install python 3.8 (not Mac)
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+        if: "!startsWith(matrix.os, 'macos')"
+
+      - name: Install python 3.8 (mac)
+        if: "startsWith(matrix.os, 'macos')"
+        run: |
+          # Install Python 3.8
+          brew install python@3.8
+          # Add Python 3.8 to PATH
+          echo "/usr/local/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
+          export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
+          export PYTHON_PATH="/usr/local/opt/python@3.8/libexec/bin/python3"
+
+      - name: Verify Python Version
+        if: "startsWith(matrix.os, 'windows')"
+        run: |
+          $PYTHON_VERSION = python --version | Out-String
+          Write-Output "Installed Python version: $PYTHON_VERSION"
+          if (-not $PYTHON_VERSION.StartsWith("Python 3.8")) {
+            Write-Output "Error: Python version does not start with 3.8"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Verify Python Version
+        if: "!startsWith(matrix.os, 'windows')"
+        run: |
+          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
+          echo "Installed Python version: $PYTHON_VERSION"
+          if [[ ! $PYTHON_VERSION == 3.8* ]]; then
+            echo "Error: Python version does not start with 3.8"
+            exit 1
+          fi
+
+
       - name: Clean cache
         run: yarn cache clean
 
       - name: Check dependencies
         run: "yarn install --frozen-lockfile --network-timeout 100000"
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
 
       - name: Cleanup artifacts
-        if: matrix.os != 'windows-latest'
+        if: "!startsWith(matrix.os, 'windows')"
         run: |
           npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
 
       - name: Cleanup artifacts Win
-        if: matrix.os == 'windows-latest'
+        if: "startsWith(matrix.os, 'windows')"
         continue-on-error: true
         run: |
           npx rimraf "apps\studio\dist_electron\!(*.exe)"

@@ -26,7 +26,8 @@
 @mixin btn {
   display: inline-flex;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
+  font-family: inherit;
   line-height: $input-height;
   height: $input-height;
   font-weight: 700;
@@ -116,4 +117,12 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+@mixin small-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 550px;
+  // max-height: -webkit-fill-available;
 }

@@ -39,6 +39,7 @@ Beekeeper Studio se puede conectar con las siguientes bases de datos:
 - SQLite
 - MySQL
 - MariaDB
+- TiDB
 - Postgres
 - CockroachDB
 - SQL Server

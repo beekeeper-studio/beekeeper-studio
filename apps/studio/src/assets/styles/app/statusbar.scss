@@ -11,7 +11,7 @@ $button-height:     $statusbar-height * 0.72;
   line-height: $statusbar-height;
   font-size: 0.8rem;
   padding: 0 $gutter-h;
-  overflow: hidden;
+  // overflow: hidden;
 
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {
@@ -146,6 +146,16 @@ $button-height:     $statusbar-height * 0.72;
       background: rgba($statusbar-text, 0.35);
       box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
       color: $statusbar-text-default;
+      &.deactivated {
+        background-color: darken(rgba($statusbar-text, 0.35), 10%);
+        cursor: not-allowed;
+      }
+    }
+
+    &.btn-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-btween;
     }
   }
 
@@ -211,6 +221,9 @@ $button-height:     $statusbar-height * 0.72;
       font-size: 14px;
       overflow: visible;
       line-height: 1.1;
+    }
+    .btn-primary .badge {
+      color: inherit;
     }
   }
 

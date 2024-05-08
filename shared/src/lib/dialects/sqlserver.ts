@@ -29,17 +29,20 @@ export interface DefaultConstraint {
 const UNWRAPPER = /^"(.*)"$/
 
 export const SqlServerData: DialectData = {
+  defaultSchema: 'dbo',
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],
   wrapIdentifier: (value) =>   _.isString(value) ?
     (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
   editorFriendlyIdentifier: (s) => s,
   wrapLiteral: defaultWrapLiteral,
+  requireDataset: false,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
   escapeString: defaultEscapeString,
+  usesOffsetPagination: true,
   disabledFeatures: {
     alter: {
       multiStatement: true

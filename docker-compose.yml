@@ -8,10 +8,37 @@ volumes:
   psql13:
   mariadb:
   cockroachdb:
+  oracle18:
+  cassandra:
   bigquery:
   firebird:
 
 services:
+
+  oracle18:
+    image: gvenzl/oracle-xe:18
+    environment:
+      ORACLE_PASSWORD: example
+      ORACLE_DATABASE: sakila
+      APP_USER: beekeeper
+      APP_USER_PASSWORD: example
+    volumes:
+      - oracle18:/opt/oracle/oradata
+      - ./dev/docker_oracle_init:/docker-entrypoint-initdb.d
+    ports:
+      - 1521:1521
+
+  psql15:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql13:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5434:5432
 
   psql13:
     image: postgres:13
@@ -103,6 +130,18 @@ services:
     ports:
       - 26257:26257
     command: start-single-node --insecure
+  cassandra:
+    image: cassandra:latest
+    entrypoint: ["/docker-entrypoint.initdb.d/entry.sh"]
+    ports:
+      - 9042:9042
+    volumes:
+      - cassandra:/var/lib/cassandra
+      - ./dev/docker_cassandra_init:/docker-entrypoint.initdb.d
+# use keyspace; describe tables; # get all the tables for a specific keyspace
+# select * from system_schema.keyspaces; # gets all keyspaces
+# https://www.folkstalk.com/2022/09/get-all-keyspaces-in-cassandra-with-code-examples.html
+# Create keyspace https://www.tutorialspoint.com/cassandra/cassandra_create_keyspace.htm
   bigquery:
     image: ghcr.io/goccy/bigquery-emulator:latest
     volumes:
