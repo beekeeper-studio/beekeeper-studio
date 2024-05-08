@@ -6,12 +6,13 @@ import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
-import { EncryptTransformer } from '../transformers/Transformers'
+import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { ConnectionType } from "@/lib/db/types"
 import { AzureAuthType } from "@/lib/db/authentication/azure"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
+const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
@@ -57,6 +58,9 @@ export interface AzureAuthOptions {
   azureAuthEnabled?: boolean;
   azureAuthType?: AzureAuthType;
   authId?: number;
+  tenantId?: string;
+  clientSecret?: string;
+  msiEndpoint?: string;
 }
 
 export interface ConnectionOptions {
@@ -242,7 +246,7 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false })
   bigQueryOptions: BigQueryOptions = {}
 
-  @Column({ type: 'simple-json', nullable: false})
+  @Column({ type: 'simple-json', nullable: false, transformer: [azureEncrypt]})
   azureAuthOptions: AzureAuthOptions = {}
 
   // this is only for SQL Server.

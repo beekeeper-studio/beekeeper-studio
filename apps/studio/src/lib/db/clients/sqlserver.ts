@@ -976,7 +976,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       const options: AuthOptions = {
         password: server.config.password,
         userName: server.config.user,
-      }
+        tenantId: server.config.azureAuthOptions.tenantId,
+        clientSecret: server.config.azureAuthOptions.clientSecret,
+        msiEndpoint: server.config.azureAuthOptions.msiEndpoint
+      };
 
       config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
 

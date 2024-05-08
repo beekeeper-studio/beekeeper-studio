@@ -89,20 +89,68 @@
             </option>
           </select>
         </div>
+        <!-- TODO (@day): restyle this (username/password on the same line etc) -->
         <div class="form-group">
-          <label for="Server">Server</label>
+          <label for="server">Server</label>
           <input 
+            name="server"
             type="text" 
             class="form-control" 
             v-model="config.host"
           >
         </div>
         <div class="form-group">
-          <label for="Database">Database</label>
+          <label for="database">Database</label>
           <input 
+            name="database"
             type="text" 
             class="form-control" 
             v-model="config.defaultDatabase"
+          >
+        </div>
+        <div class="form-group" v-show="showUser">
+          <label for="user">User</label>
+          <input 
+            name="user"
+            type="text" 
+            class="form-control" 
+            v-model="config.username"
+          >
+        </div>
+        <div class="form-group" v-show="showPassword">
+          <label for="password">Password</label>
+          <input 
+            name="password"
+            type="text" 
+            class="form-control" 
+            v-model="config.password"
+          >
+        </div>
+        <div class="form-group" v-show="showTenantId">
+          <label for="tenantId">Tenant ID</label>
+          <input 
+            name="tenantId"
+            type="text" 
+            class="form-control" 
+            v-model="config.azureAuthOptions.tenantId"
+          >
+        </div>
+        <div class="form-group" v-show="showClientSecret">
+          <label for="clientSecret">Client Secret</label>
+          <input 
+            name="clientSecret"
+            type="text" 
+            class="form-control" 
+            v-model="config.clientSecret"
+          >
+        </div>
+        <div class="form-group" v-show="showMsiEndpoint">
+          <label for="msiEndpoint">MSI Endpoint</label>
+          <input 
+            name="msiEndpoint"
+            type="text" 
+            class="form-control" 
+            v-model="config.msiEndpoint"
           >
         </div>
       </div>
@@ -114,7 +162,7 @@
 
   import CommonServerInputs from './CommonServerInputs'
   import CommonAdvanced from './CommonAdvanced'
-  import { AzureAuthService, AzureAuthTypes } from '../../lib/db/authentication/azure'
+  import { AzureAuthService, AzureAuthTypes, AzureAuthType } from '../../lib/db/authentication/azure'
   import { TokenCache } from '@/common/appdb/models/token_cache';
   import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
@@ -128,13 +176,30 @@
         authTypes: AzureAuthTypes
       }
     },
+    computed: {
+      showUser() {
+        return [AzureAuthType.Password].includes(this.config.azureAuthOptions.azureAuthType)
+      },
+      showPassword() {
+        return [AzureAuthType.Password].includes(this.config.azureAuthOptions.azureAuthType)
+      },
+      showTenantId() {
+        return [AzureAuthType.Password, AzureAuthType.ServicePrincipalSecret]
+          .includes(this.config.azureAuthOptions.azureAuthType)
+      },
+      showClientSecret() {
+        return [AzureAuthType.ServicePrincipalSecret].includes(this.config.azureAuthOptions.azureAuthType)
+      },
+      showMsiEndpoint() {
+        return [AzureAuthType.MSIVM].includes(this.config.azureAuthOptions.azureAuthType)
+      },
+    },
     methods: {
       async toggleAzureAuth() {
-        if (platformInfo.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal);
-          return;
-        }
-        console.log(this.config.azureAuthOptions)
+        //if (platformInfo.isCommunity) {
+        //  this.$root.$emit(AppEvent.upgradeModal);
+        //  return;
+        //}
         this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled = !this.azureAuthEnabled;
       }
     }
