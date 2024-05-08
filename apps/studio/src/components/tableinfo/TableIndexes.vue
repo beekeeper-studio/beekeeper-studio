@@ -121,10 +121,11 @@ import rawLog from 'electron-log'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import { TableIndex } from '@/lib/db/models'
+import { TableIndex, IndexedColumn } from '@/lib/db/models'
 import { mapGetters } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
+import { parseIndexColumn as mysqlParseIndexColumn } from '@/lib/db/clients/mysql'
 
 interface State {
   tabulator: Tabulator
@@ -190,7 +191,13 @@ export default Vue.extend({
       return (this.properties.indexes || []).map((i: TableIndex) => {
         return {
           ...i,
-          columns: i.columns.map((c) => `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`)
+          columns: i.columns.map((c: IndexedColumn) => {
+            // In mysql, we can specify the prefix length
+            if (this.connection.connectionBaseType === 'mysql' && !_.isNil(c.prefix)) {
+              return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
+            }
+            return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
+          })
         }
       })
     },
@@ -226,6 +233,9 @@ export default Vue.extend({
           editorParams: {
             multiselect: true,
             values: this.indexColumnOptions,
+            autocomplete: true,
+            listOnEmpty: true,
+            freetext: true,
           }
         },
         trashButton(this.removeRow)
@@ -270,7 +280,16 @@ export default Vue.extend({
     getPayload(): IndexAlterations {
         const additions = this.newRows.map((row: RowComponent) => {
           const data = row.getData()
-          const columns = data.columns.map((c: string)=> {
+          let dataColumns: string[]
+          try {
+            dataColumns = JSON.parse(data.columns)
+          } catch (e) {
+            dataColumns = [data.columns]
+          }
+          const columns = dataColumns.map((c: string)=> {
+            if (this.connection.connectionBaseType === 'mysql') {
+              return mysqlParseIndexColumn(c)
+            }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')
             return { name, order }

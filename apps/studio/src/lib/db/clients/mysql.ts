@@ -191,6 +191,24 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
   });
 }
 
+export function parseIndexColumn(str: string): IndexedColumn {
+  str = str.trim()
+
+  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
+  const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
+
+  let name: string = nameAndPrefix
+  let prefix: string | null = null
+
+  const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
+  if (prefixMatch) {
+    prefix = prefixMatch[1]
+    name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
+  }
+
+  return { name, order, prefix }
+}
+
 function parseRowQueryResult(
   data: any,
   rawFields: any[],
@@ -244,6 +262,8 @@ function filterDatabase(
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
+  connectionBaseType = 'mysql' as const;
+
   versionInfo: {
     versionString: string;
     version: number;
@@ -352,6 +372,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       const columns: IndexedColumn[] = grouped[key].map((r) => ({
         name: r.Column_name,
         order: r.Collation === "A" ? "ASC" : "DESC",
+        prefix: r.Sub_part, // Also called index prefix length.
       }));
 
       return {

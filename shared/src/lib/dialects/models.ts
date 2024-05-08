@@ -237,14 +237,15 @@ export interface AlterPartitionsSpec {
 export interface IndexColumn {
   name: string
   order: 'ASC' | 'DESC'
+  prefix?: number | null // MySQL Only
 }
 
 export interface CreateIndexSpec {
   name?: string
   columns: IndexColumn[]
   unique: boolean
-  // Set order for entire index. Used in firebird.
-  order?: 'ASC' | 'DESC'
+  order?: 'ASC' | 'DESC' // Set order for entire index. Used in firebird.
+  prefix?: number | null // MySQL Only
 }
 
 export interface DropIndexSpec {
