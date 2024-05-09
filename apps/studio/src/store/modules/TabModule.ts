@@ -56,9 +56,10 @@ export const TabModule: Module<State, RootState> = {
         state.lastClosedTabs = _.without(state.lastClosedTabs, existingTabInClosedTabs)
       }
     },
-    remove(state, tab: OpenTab) {
-      state.tabs = _.without(state.tabs, tab)
-      state.lastClosedTabs.push(tab.duplicate())
+    remove(state, tabs: OpenTab | OpenTab[]) {
+      if (!_.isArray(tabs)) tabs = [tabs]
+      state.tabs = _.without(state.tabs, ...tabs)
+      state.lastClosedTabs.push(...tabs.map((tab) => tab.duplicate()))
     },
     setActive(state, tab?: OpenTab) {
       state.active = tab
@@ -84,22 +85,27 @@ export const TabModule: Module<State, RootState> = {
     },
     async unload(context) {
       await OpenTab.remove(context.state.tabs)
-      context.commit('set', [])
+      context.commit('remove', context.state.tabs)
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
+      // Walk through array in reverse to check if it belongs to the current connection
       for (let i = context.state.lastClosedTabs.length - 1; i >= 0; i--) {
         const tab = context.state.lastClosedTabs[i]
         // Does this tab belong to the current connection?
         if (tab.connectionId === context.rootState.usedConfig?.id && tab.workspaceId === context.rootState.workspaceId) {
-          await context.dispatch('add', tab)
+          await context.dispatch('add', { item: tab })
           await context.dispatch('setActive', tab)
           break
         }
       }
     },
-    async add(context, item: OpenTab) {
+    async add(context, options: { item: OpenTab, endOfPosition?: boolean }) {
       const { usedConfig } = context.rootState
+      const { item, endOfPosition } = options
+      if (endOfPosition) {
+        item.position = (context.getters.sortedTabs.reverse()[0]?.position || 0) + 1
+      }
       if (usedConfig?.id) {
         log.info("saving tab", item)
         item.workspaceId = context.rootState.workspaceId

@@ -517,7 +517,7 @@ export default Vue.extend({
     },
     async addTab(item: OpenTab) {
 
-      await this.$store.dispatch('tabs/add', item)
+      await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
       await this.setActiveTab(item)
     },
     async reopenLastClosedTab() {
