@@ -87,7 +87,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     shell.openExternal("https://docs.beekeeperstudio.io/")
   }
 
-  checkForUpdates(menuItem: Electron.MenuItem, win: Electron.BrowserWindow): void {
+  checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {
     autoUpdater.checkForUpdates()
   }
 

@@ -1,0 +1,40 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "files": ["src/background.ts"],
+  "vueCompilerOptions": {
+    "target": 2.7
+  },
+  "compilerOptions": {
+    "target": "es2020",
+    "allowJs": true,
+    "module": "esnext",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "types": [
+      "webpack-env",
+      "jest"
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@shared/*": ["../../shared/src/*"]
+    },
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ]
+  },
+  "include": [
+    "src/**/*.d.ts",
+    "../../shared/src/**/*.d.ts",
+  ],
+  "exclude": [
+    "node_modules", "dist", "dist_electron"
+  ],
+  "sourceMapPathOverrides": {
+    "src/*": "${webRoot}/apps/studio/src/*"
+  }
+}
