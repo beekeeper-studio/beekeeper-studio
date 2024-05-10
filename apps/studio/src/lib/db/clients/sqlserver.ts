@@ -128,48 +128,24 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
     const clause = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ''
     const sql = `
-      SELECT
-        table_schema as "table_schema",
-        table_name as "table_name",
-        column_name as "column_name",
-        ordinal_position as "ordinal_position",
-        column_default as "column_default",
-        ic.is_nullable as "is_nullable",
-        CASE
-          WHEN sc.definition is not null THEN 'YES'
-          ELSE 'NO'
-        END as "is_generated",
-        CASE
-          WHEN character_maximum_length is not null AND data_type != 'text'
-              THEN data_type + '(' + CAST(character_maximum_length AS VARCHAR(16)) + ')'
-          WHEN numeric_precision is not null
-              THEN data_type + '(' + CAST(numeric_precision AS VARCHAR(16)) + ')'
-          WHEN datetime_precision is not null AND data_type != 'date'
-              THEN data_type + '(' + CAST(datetime_precision AS VARCHAR(16)) + ')'
-          ELSE data_type
-        END as "data_type"
-      FROM INFORMATION_SCHEMA.COLUMNS ic
-      LEFT JOIN sys.computed_columns sc ON
-        OBJECT_ID(QUOTENAME(ic.TABLE_SCHEMA) + '.' + QUOTENAME(ic.TABLE_NAME)) = sc.object_id AND
-        ic.COLUMN_NAME = sc.name
-      ${clause}
-      ORDER BY table_schema, table_name, ordinal_position
-    `
+SELECT
+  table_schema as "table_schema",
+  table_name as "table_name",
+  column_name as "column_name",
+  ordinal_position as "ordinal_position"
+FROM INFORMATION_SCHEMA.COLUMNS ic
+${clause}
+ORDER BY table_schema, table_name, ordinal_position
 
     const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => ({
-      schemaName: row.table_schema,
-      tableName: row.table_name,
-      columnName: row.column_name,
-      dataType: row.data_type,
-      ordinalPosition: Number(row.ordinal_position),
-      hasDefault: !_.isNil(row.column_default),
-      nullable: row.is_nullable === 'YES',
-      defaultValue: row.column_default,
-      generated: row.is_generated === 'YES',
-    }))
-  }
+return data.recordset.map((row) => ({
+  schemaName: row.table_schema,
+  tableName: row.table_name,
+  columnName: row.column_name,
+  ordinalPosition: Number(row.ordinal_position)
+}));
 
   versionString(): string {
     return this.version.versionString.split(" \n\t")[0]

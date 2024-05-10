@@ -397,12 +397,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       SELECT
         table_name AS 'table_name',
         column_name AS 'column_name',
-        column_type AS 'data_type',
-        is_nullable AS 'is_nullable',
-        column_default as 'column_default',
-        ordinal_position as 'ordinal_position',
-        COLUMN_COMMENT as 'column_comment',
-        extra as 'extra'
+        ordinal_position as 'ordinal_position'
       FROM information_schema.columns
       WHERE table_schema = database()
       ${clause}
@@ -419,14 +414,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return data.map((row) => ({
       tableName: row.table_name,
       columnName: row.column_name,
-      dataType: row.data_type,
-      ordinalPosition: Number(row.ordinal_position),
-      nullable: row.is_nullable === "YES",
-      defaultValue: this.resolveDefault(row.column_default),
-      extra: _.isEmpty(row.extra) ? null : row.extra,
-      hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
-      comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
-      generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
+      ordinalPosition: Number(row.ordinal_position)
     }));
   }
 
@@ -1346,5 +1334,3 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 }
 
 export const testOnly = {
-  parseFields,
-};
