@@ -321,11 +321,11 @@ export default Vue.extend({
         const key = keys[c.columnName]
         return {
           primary: !!key || null,
-          ...c
+          ...c,
+          comment: c.comment
         }
       })
     },
-  },
   methods: {
     customColumnCssClass(feature: string) {
       return this.isEditable(feature) ? 'editable' : 'read-only'
@@ -525,4 +525,3 @@ export default Vue.extend({
   },
 })
 </script>
-
