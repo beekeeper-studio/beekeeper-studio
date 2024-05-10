@@ -57,6 +57,8 @@ type SqliteResult = {
 const SD = SqliteData;
 
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
+  connectionBaseType = 'sqlite' as const;
+
   version: SqliteResult;
   databasePath: string;
 

@@ -257,5 +257,10 @@
       font-size: 0.85rem;
       margin-right: 0.14rem;
     }
+
+    .primary:hover {
+      background-color: $theme-primary;
+      color: #000000;
+    }
   }
 }

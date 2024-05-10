@@ -215,9 +215,12 @@ export default {
           }
           setKeybindingsFromVimrc(codeMirrorVimInstance);
 
-          // Doing this instaed of defineRegister allows us to reset the register while the application is running
-          // which causes errors with defineRegister
-          codeMirrorVimInstance.getRegisterController().registers['*'] = new Register(this.$native.clipboard);
+          // cm throws if this is already defined, we don't need to handle that case
+          try {
+            codeMirrorVimInstance.defineRegister('*', new Register(this.$native.clipboard))
+          } catch(e) {
+            // nothing
+          }
         }
       }
 

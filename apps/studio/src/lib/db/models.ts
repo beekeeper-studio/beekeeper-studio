@@ -47,6 +47,7 @@ export interface TableOrView extends DatabaseEntity {
 export interface IndexedColumn {
   name: string
   order: 'ASC' | 'DESC'
+  prefix?: string | null // MySQL only feature
 }
 
 export interface TableIndex {
