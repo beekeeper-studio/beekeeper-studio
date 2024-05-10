@@ -5,6 +5,7 @@
 ./data/
 node_modules/
 dist/
+nubuild/
 site/
 tmp/
 temp/

@@ -147,7 +147,9 @@ export default Vue.extend({
 })
 </script>
 <style lang="scss" scoped>
-  @import '@shared/assets/styles/_variables';
+  // @import '@shared/assets/styles/_variables';
+
+  @import '../../assets/styles/_variables';
 
   div {
     position: relative;

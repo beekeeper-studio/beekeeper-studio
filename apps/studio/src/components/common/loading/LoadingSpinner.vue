@@ -6,7 +6,7 @@
     <div />
     <div />
     <div />
-  </div>	
+  </div>
 </template>
 
 <script lang="ts">
@@ -22,7 +22,9 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-@import '@shared/assets/styles/_variables';
+// @import '@shared/assets/styles/_variables';
+
+@import '../../../assets/styles/_variables';
 
 .spinner {
   display: inline-block;

@@ -6,6 +6,7 @@
   },
   "compilerOptions": {
     "target": "es2018",
+    "allowJs": true,
     "module": "esnext",
     "outDir": "dist",
     "baseUrl": ".",
