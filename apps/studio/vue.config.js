@@ -216,7 +216,8 @@ module.exports = {
     resolve: {
       alias: {
         "@shared": path.resolve(__dirname, '../../shared/src')
-      }
+      },
+      extensions: ['.js', '.json', '.vue']
     },
     module: {
       rules: [

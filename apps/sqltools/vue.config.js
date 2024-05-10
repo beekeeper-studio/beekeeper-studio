@@ -8,7 +8,8 @@ module.exports = {
     resolve: {
       alias: {
         "@shared": path.resolve(__dirname, '../../shared/src')
-      }
+      },
+      extensions: ['.js', '.json', '.vue']
     },
     externals: {
       // Possible drivers for knex - we'll ignore them
