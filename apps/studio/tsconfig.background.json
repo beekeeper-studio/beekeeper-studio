@@ -1,13 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "files": ["src/background.ts"],
-  "vueCompilerOptions": {
-    "target": 2.7
-  },
   "compilerOptions": {
+
     "target": "es2020",
     "allowJs": true,
     "module": "esnext",
+    // "rootDir": "src",
     "outDir": "dist",
     "baseUrl": ".",
     "types": [
@@ -34,7 +33,4 @@
   "exclude": [
     "node_modules", "dist", "dist_electron"
   ],
-  "sourceMapPathOverrides": {
-    "src/*": "${webRoot}/apps/studio/src/*"
-  }
 }
