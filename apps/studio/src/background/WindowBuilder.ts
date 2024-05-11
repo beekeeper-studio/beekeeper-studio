@@ -2,11 +2,11 @@ import _ from 'lodash'
 import path from 'path'
 import { BrowserWindow, Rectangle } from "electron"
 import electron from 'electron'
-import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
+import url from 'url'
 
 
 // eslint-disable-next-line
@@ -48,15 +48,19 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        nodeIntegration: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
+        nodeIntegration: true,
         contextIsolation: false,
         spellcheck: false
       },
       icon: getIcon()
     })
 
-    const runningInWebpack = !!process.env.WEBPACK_DEV_SERVER_URL
-    let appUrl = process.env.WEBPACK_DEV_SERVER_URL || 'app://./index.html'
+    const startUrl = url.format({
+      pathname: path.join(__dirname, '../../../../../renderer/src/index.html'), // Adjust if your file is in a subdirectory within the asar
+      protocol: 'file:',
+      slashes: true
+  });
+    let appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     if (platformInfo.isWayland) {
@@ -68,9 +72,6 @@ class BeekeeperWindow {
     appUrl = query ? `${appUrl}?${query}` : appUrl
     remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
-    if (!runningInWebpack) {
-      createProtocol('app')
-    }
     this.win.loadURL(appUrl)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
       this.win.webContents.openDevTools()

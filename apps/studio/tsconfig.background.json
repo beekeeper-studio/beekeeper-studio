@@ -16,6 +16,8 @@
     "removeComments": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "plugins": [
+    ],
     "paths": {
       "@/*": ["src/*"],
       "@shared/*": ["../../shared/src/*"]
