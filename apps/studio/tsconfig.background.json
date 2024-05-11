@@ -1,0 +1,34 @@
+{
+  "files": ["src/background.ts"],
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    // "strict": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "strictPropertyInitialization": false,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "removeComments": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@shared/*": ["../../shared/src/*"]
+    },
+    "lib": [
+      "esnext",
+      "dom"
+    ]
+  },
+  "exclude": [
+    "node_modules", "../../node_modules", "dist", "dist_electron"
+  ],
+  "include": [
+    "src/typings/global.d.ts"
+  ]
+}
