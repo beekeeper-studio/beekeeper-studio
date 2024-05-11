@@ -50,7 +50,8 @@ class BeekeeperWindow {
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
-        spellcheck: false
+        spellcheck: false,
+        sandbox: false,
       },
       icon: getIcon()
     })

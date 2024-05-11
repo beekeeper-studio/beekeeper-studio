@@ -19,7 +19,7 @@ const npmExternals = [
         'better-sqlite3',
         'sequelize', 'typeorm', 'reflect-metadata',
         'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb',
-        'oracledb', '@electron/remote'
+        'oracledb', '@electron/remote', "@google-cloud/bigquery"
 ]
 
 // https://vitejs.dev/config/
@@ -36,8 +36,11 @@ export default defineConfig({
     outDir: 'dist/renderer', // Output directory for the renderer process
     emptyOutDir: true, // Clears the directory before building
     rollupOptions: {
-      external: [...nodeExternals, ...npmExternals],
-      input: './src/index.html' // Entry point for the renderer process
+      external: ['electron', ...nodeExternals, ...npmExternals],
+      input: './src/index.html', // Entry point for the renderer process
+      output: {
+        format: 'cjs'
+      },
     }
   },
   server: {
