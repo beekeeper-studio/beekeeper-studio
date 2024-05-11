@@ -47,8 +47,8 @@
 
 <script>
 
-  import CommonServerInputs from './CommonServerInputs'
-  import CommonAdvanced from './CommonAdvanced'
+  import CommonServerInputs from './CommonServerInputs.vue'
+  import CommonAdvanced from './CommonAdvanced.vue'
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },

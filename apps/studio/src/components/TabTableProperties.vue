@@ -130,7 +130,7 @@
 
 <script>
 import {Tabulator} from 'tabulator-tables'
-import Statusbar from './common/StatusBar'
+import Statusbar from './common/StatusBar.vue'
 import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'

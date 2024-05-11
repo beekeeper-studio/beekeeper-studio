@@ -103,7 +103,7 @@
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex'
-import SaveConnectionForm from '../../connection/SaveConnectionForm'
+import SaveConnectionForm from '../../connection/SaveConnectionForm.vue'
 export default {
   components: {
     SaveConnectionForm

@@ -199,8 +199,8 @@
   </toggle-form-area>
 </template>
 <script>
-  import FilePicker from '@/components/common/form/FilePicker'
-  import ExternalLink from '@/components/common/ExternalLink'
+  import FilePicker from '@/components/common/form/FilePicker.vue'
+  import ExternalLink from '@/components/common/ExternalLink.vue'
 
   import { join as pathJoin } from 'path'
 import platformInfo from '@/common/platform_info'

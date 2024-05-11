@@ -46,11 +46,11 @@
 
 <script>
   import _ from 'lodash'
-  import GlobalSidebar from './GlobalSidebar'
-  import TableList from './core/TableList'
-  import HistoryList from './core/HistoryList'
-  import FavoriteList from './core/FavoriteList'
-  import DatabaseDropdown from './core/DatabaseDropdown'
+  import GlobalSidebar from './GlobalSidebar.vue'
+  import TableList from './core/TableList.vue'
+  import HistoryList from './core/HistoryList.vue'
+  import FavoriteList from './core/FavoriteList.vue'
+  import DatabaseDropdown from './core/DatabaseDropdown.vue'
 
   import { mapState } from 'vuex'
   import rawLog from 'electron-log'

@@ -27,7 +27,7 @@
 </template>
 
 <script>
-  import FilePicker from '@/components/common/form/FilePicker'
+  import FilePicker from '@/components/common/form/FilePicker.vue'
   export default {
     props: ['config'],
     components: {

@@ -4,7 +4,7 @@
     "target": "es2020",
     "module": "commonjs",
     "moduleResolution": "node",
-    "outDir": "./dist",
+    "outDir": "./dist/main",
     "experimentalDecorators": true,
     "esModuleInterop": true,
     // "strict": true,

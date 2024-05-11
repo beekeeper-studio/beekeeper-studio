@@ -57,7 +57,7 @@
   import { ipcRenderer } from 'electron'
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
-  import AddDatabaseForm from "@/components/connection/AddDatabaseForm"
+  import AddDatabaseForm from "@/components/connection/AddDatabaseForm.vue"
   import { mapActions, mapState } from 'vuex'
 
   export default {

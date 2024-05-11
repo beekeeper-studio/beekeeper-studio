@@ -168,7 +168,7 @@ import dateFormat from 'dateformat'
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
-import FilePicker from '../common/form/FilePicker'
+import FilePicker from '../common/form/FilePicker.vue'
 import platformInfo from '../../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
 const log = rawlog.scope('export/export-modal')

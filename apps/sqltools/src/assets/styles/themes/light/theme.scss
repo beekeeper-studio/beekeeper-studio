@@ -1,4 +1,4 @@
-@import "~codemirror/theme/xq-light";
+@import "codemirror/theme/xq-light";
 @import "./app/vendor/codemirror";
 
 
@@ -177,7 +177,7 @@ select {
 
 
 .tabulator-row {
-  &.inserted, 
+  &.inserted,
   &.inserted:hover {
     background: $row-add;
   }
