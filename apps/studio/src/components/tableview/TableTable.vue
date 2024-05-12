@@ -732,6 +732,10 @@ export default Vue.extend({
           this.tableFilters = this.tab.getFilters()
           this.triggerFilter(this.tableFilters)
         }
+        // $nextTick doesn't work here
+        setTimeout(() => {
+          this.tabulator.modules.selectRange.restoreFocus()
+        })
       } else {
         this.tabulator.blockRedraw()
       }
