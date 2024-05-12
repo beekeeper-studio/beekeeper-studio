@@ -3,6 +3,7 @@
     <modal
       class="vue-dialog beekeeper-modal confirmation-modal"
       :name="id"
+      @opened="opened"
       @before-close="beforeClose"
     >
       <div class="dialog-content">
@@ -19,6 +20,8 @@
         <button
           class="btn btn-flat"
           type="button"
+          ref="cancelBtn"
+          autofocus
           @click.prevent="cancel"
         >
           <slot name="cancel-label">
@@ -29,7 +32,6 @@
           class="btn btn-primary"
           type="button"
           @click.prevent="confirm"
-          autofocus
         >
           <slot name="confirm-label">
             Confirm
@@ -47,6 +49,9 @@ import { MODAL_CLOSE_EVENT, ModalCloseEventData } from "@/components/common/moda
 export default Vue.extend({
   props: ['id'],
   methods: {
+    opened() {
+      this.$refs.cancelBtn.focus()
+    },
     beforeClose(e: { params?: boolean }) {
       const event: ModalCloseEventData = {
         modalId: this.id,
