@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
@@ -90,6 +91,7 @@ export interface DialectData {
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   unwrapIdentifier: (s: string) => string
+  textEditorMode: CodeMirror.EditorConfiguration['mode']
   defaultSchema?: string
   usesOffsetPagination: boolean
   requireDataset?: boolean,

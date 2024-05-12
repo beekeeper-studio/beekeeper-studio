@@ -60,6 +60,7 @@ export const CassandraData: DialectData = {
   },
   usesOffsetPagination: false,
   requireDataset: false,
+  textEditorMode: "text/x-cassandra",
   disabledFeatures: {
     defaultValue: true,
     alter: {

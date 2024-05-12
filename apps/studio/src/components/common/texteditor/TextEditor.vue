@@ -31,14 +31,13 @@ import "codemirror/addon/merge/merge";
 import CodeMirror from "codemirror";
 
 import { EditorMarker } from "@/lib/editor/utils";
-import { resolveLanguage } from "@/lib/editor/languageData";
 import { setKeybindingsFromVimrc, applyConfig, Register } from "@/lib/editor/vim";
 
 export default {
   props: [
     "value",
-    "lang",
-    "langType",
+    "mode",
+    "hint",
     "keybindings",
     "vimConfig",
     "lineWrapping",
@@ -80,16 +79,17 @@ export default {
     forcedValue() {
       this.editor.setValue(this.forcedValue);
     },
-    lang() {
-      const { mode, hint } = resolveLanguage(this.lang);
-      this.editor.setOption("mode", mode);
-      this.editor.setOption("hint", hint);
-    },
     userKeymap() {
       this.initialize();
     },
     vimConfig() {
       this.initialize();
+    },
+    mode() {
+      this.editor.setOption("mode", this.mode);
+    },
+    hint() {
+      this.editor.setOption("hint", this.hint);
     },
     hintOptions() {
       this.editor.setOption("hintOptions", this.hintOptions);
@@ -132,11 +132,8 @@ export default {
     initialize() {
       this.destroyEditor();
 
-      const { mode, hint } = resolveLanguage(this.lang, this.langType);
-
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         lineNumbers: true,
-        mode,
         tabSize: 2,
         theme: "monokai",
         extraKeys: {
@@ -150,7 +147,8 @@ export default {
         options: {
           closeOnBlur: false,
         },
-        hint,
+        mode: this.mode,
+        hint: this.hint,
         hintOptions: this.hintOptions,
         keyMap: this.userKeymap,
         getColumns: this.columnsGetter,
