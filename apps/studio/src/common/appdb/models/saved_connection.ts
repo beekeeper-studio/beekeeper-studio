@@ -57,7 +57,6 @@ export interface BigQueryOptions {
 export interface AzureAuthOptions {
   azureAuthEnabled?: boolean;
   azureAuthType?: AzureAuthType;
-  authId?: number;
   tenantId?: string;
   clientSecret?: string;
   msiEndpoint?: string;
@@ -248,6 +247,9 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'simple-json', nullable: false, transformer: [azureEncrypt]})
   azureAuthOptions: AzureAuthOptions = {}
+
+  @Column({ type: 'integer', nullable: true})
+  authId: Nullable<number> = null
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })

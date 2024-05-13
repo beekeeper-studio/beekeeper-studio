@@ -371,12 +371,10 @@ const store = new Vuex.Store<State>({
     async connect(context, config: IConnection) {
       if (context.state.username) {
         // create token cache for azure auth
-        if (config.azureAuthOptions.azureAuthEnabled && !config.azureAuthOptions.authId) {
-          console.log('creating cache')
+        if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
           let cache = new TokenCache();
           cache = await cache.save();
-          console.log('saved cache: ', cache)
-          config.azureAuthOptions.authId = cache.id;
+          config.authId = cache.id;
         }
 
         const settings = await UserSetting.all()

@@ -971,7 +971,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     if (server.config.azureAuthOptions?.azureAuthEnabled) {
       this.authService = new AzureAuthService();
-      await this.authService.init(server.config.azureAuthOptions.authId)
+      await this.authService.init(server.config.authId)
 
       const options: AuthOptions = {
         password: server.config.password,

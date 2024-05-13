@@ -48,6 +48,7 @@ export interface ISimpleConnection {
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
   azureAuthOptions?: AzureAuthOptions
+  authId?: number
 }
 
 export interface IConnection extends ISimpleConnection {

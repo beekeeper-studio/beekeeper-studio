@@ -17,6 +17,9 @@ export default {
   licenseCheckInterval: 1000 * 60 * 60, // once per hour
   errorNoticeTimeout: 60 * 1000, // 1 minute
   tableListItemHeight: 22.8, // in pixels
+  // for azure auth
+  pollingTimeout: 60 * 1000, // 1 minute
+  clientId: 'da931511-74dc-4f3d-ae50-5436c6407572'
 }
 
 

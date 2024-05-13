@@ -57,6 +57,7 @@ export interface IDbConnectionServerConfig {
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
   azureAuthOptions?: AzureAuthOptions
+  authId?: number
   runtimeExtensions?: string[]
 }
 

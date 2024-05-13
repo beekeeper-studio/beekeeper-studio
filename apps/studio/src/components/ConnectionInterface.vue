@@ -427,12 +427,10 @@ export default Vue.extend({
           throw new Error("Name is required")
         }
         // create token cache for azure auth
-        if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.azureAuthOptions.authId) {
-          console.log('creating cache')
+        if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.authId) {
           let cache = new TokenCache();
           cache = await cache.save();
-          console.log('saved cache: ', cache)
-          this.config.azureAuthOptions.authId = cache.id;
+          this.config.authId = cache.id;
         }
 
         await this.$store.dispatch('data/connections/save', this.config)

@@ -13,7 +13,9 @@ export default {
         )
       `,
       `ALTER TABLE saved_connection ADD COLUMN azureAuthOptions TEXT NOT NULL DEFAULT '{}'`,
+      `ALTER TABLE saved_connection ADD COLUMN authId INTEGER NULL`,
       `ALTER TABLE used_connection ADD COLUMN azureAuthOptions TEXT NOT NULL DEFAULT '{}'`
+      `ALTER TABLE used_connection ADD COLUMN authId INTEGER NULL`,
     ];
     for (let i = 0; i < queries.length; i++) {
       const query = queries[i];

@@ -3,6 +3,7 @@ import axios, { AxiosResponse } from 'axios';
 import { wait } from '@shared/lib/wait';
 import rawLog from 'electron-log';
 import { TokenCache } from '@/common/appdb/models/token_cache';
+import globals from '@/common/globals';
 
 const log = rawLog.scope('auth/azure');
 
@@ -78,9 +79,7 @@ const cachePlugin = {
 
 export class AzureAuthService {
   private pca: msal.PublicClientApplication;
-  private pollingTimeout = 60000;
   private start: number = null;
-  private clientId = 'da931511-74dc-4f3d-ae50-5436c6407572';
 
   private cancelFulfillment = false;
 
@@ -93,7 +92,7 @@ export class AzureAuthService {
 
     const clientConfig = {
      auth: {
-       clientId: this.clientId
+       clientId: globals.clientId
      },
      cache: {
        cachePlugin
@@ -124,7 +123,7 @@ export class AzureAuthService {
     return {
       type: 'azure-active-directory-service-principal-secret',
       options: {
-        clientId: this.clientId,
+        clientId: globals.clientId,
         clientSecret: options.clientSecret,
         tenantId: options.tenantId
       }
@@ -135,7 +134,7 @@ export class AzureAuthService {
     return {
       type: 'azure-active-directory-msi-vm',
       options: {
-        clientId: this.clientId,
+        clientId: globals.clientId,
         msiEndpoint: options.msiEndpoint
       }
     }
@@ -147,7 +146,7 @@ export class AzureAuthService {
       options: {
         userName: options.userName,
         password: options.password,
-        clientId: this.clientId,
+        clientId: globals.clientId,
         tenantId: options.tenantId
       }
     }
@@ -157,7 +156,7 @@ export class AzureAuthService {
     return {
       type: 'azure-active-directory-default',
       options: {
-        clientId: this.clientId
+        clientId: globals.clientId
       }
     }
   }
@@ -244,7 +243,7 @@ export class AzureAuthService {
   }
   
   private async checkStatus(url: string): Promise<Response> {
-    const timedOut = Date.now() - this.start >= this.pollingTimeout;
+    const timedOut = Date.now() - this.start >= globals.pollingTimeout;
     if (this.cancelFulfillment || timedOut) {
       return null;
     }
