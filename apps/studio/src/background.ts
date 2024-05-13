@@ -1,4 +1,5 @@
 'use strict'
+import 'module-alias/register';
 import * as fs from 'fs'
 import { app, protocol } from 'electron'
 import log from 'electron-log'
@@ -29,6 +30,7 @@ function initUserDirectory(d: string) {
   }
 }
 
+
 const transports = [log.transports.console, log.transports.file]
 if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
   transports.forEach(t => t.level = 'silly')
@@ -38,9 +40,21 @@ if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
 
 const isDevelopment = platformInfo.isDevelopment
 
+try {
+  if (platformInfo.isDevelopment) {
+    log.info("Dev mode so enabling electron-reloader")
+    // @ts-ignore
+    // eslint-disable-next-line
+    require('electron-reloader')(module);
+  }
+} catch {
+  log.debug("not dev mode, not enabling electron-reloader")
+  // do nothing
+}
+
 
 initUserDirectory(platformInfo.userDirectory)
-log.info("initializing user ORM connection")
+log.info("initializing user ORM connection!")
 const ormConnection = new Connection(platformInfo.appDbPath, false)
 log.debug("ELECTRON BOOTING")
 log.debug("####################################")

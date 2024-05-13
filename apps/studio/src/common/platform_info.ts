@@ -76,7 +76,7 @@ const platformInfo = {
   env: {
     development: isDevEnv,
     test: testMode,
-    production: !isDevEnv && !testMode && !p.env.WEBPACK_DEV_SERVER_URL
+    production: !isDevEnv && !testMode
   },
   debugEnabled: !!p.env.DEBUG,
   DEBUG: p.env.DEBUG,

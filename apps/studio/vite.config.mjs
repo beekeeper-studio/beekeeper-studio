@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue2';
 import path from 'path'
+import commonjs from 'vite-plugin-commonjs'
 
 // To move to Electron 19+ we need to stop using node libraries
 // in the renderer.
@@ -17,15 +18,18 @@ const nodeExternals = [
 // There are mote too (eg pg), these are just the native ones
 const npmExternals = [
         'better-sqlite3',
-        'sequelize', 'typeorm', 'reflect-metadata',
+        'sequelize', 'reflect-metadata',
         'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb',
         'oracledb', '@electron/remote', "@google-cloud/bigquery"
 ]
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), commonjs()],
   base: './', // Set the base URL for the app
+  optimizeDeps: {
+    exclude: [...npmExternals]
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -44,7 +48,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000, // Development server port
+    port: 3003, // Development server port
     // open: './src/index.html'
   }
 });

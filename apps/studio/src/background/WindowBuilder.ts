@@ -60,8 +60,11 @@ class BeekeeperWindow {
       pathname: path.join(__dirname, '../../../../../renderer/src/index.html'), // Adjust if your file is in a subdirectory within the asar
       protocol: 'file:',
       slashes: true
-  });
-    let appUrl = startUrl
+    });
+
+    const devUrl = 'http://localhost:3003/src/index.html'
+
+    let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     if (platformInfo.isWayland) {
@@ -146,7 +149,7 @@ class BeekeeperWindow {
   }
 
   initializeCallbacks() {
-    if (process.env.WEBPACK_DEV_SERVER_URL && platformInfo.isWindows) {
+    if (platformInfo.isDevelopment && platformInfo.isWindows) {
       // this.win?.webContents.on('did-finish-load', this.finishLoadListener.bind(this))
     }
     this.win?.on('closed', () => {

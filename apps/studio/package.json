@@ -11,15 +11,18 @@
   "scripts": {
     "build:background": "tsc --build tsconfig.background.json && tsc-alias -p tsconfig.background.json",
     "build:renderer": "vite build",
-    "serve": "vue-cli-service serve",
+    "build": "concurrently -c green,blue -n background,renderer 'yarn build:background' 'yarn build:renderer'",
     "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
     "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
     "lint": "vue-cli-service lint",
-    "electron:build": "vue-cli-service electron:build",
-    "electron:serve": "vue-cli-service electron:serve --host localhost --ozone-platform-hint=auto",
+    "electron:build": "yarn build && yarn electron-builder",
+    "electron:serve": "yarn build:background && concurrently -c red,blue,green -n electron,renderer,background 'yarn dev:electron' 'yarn dev:renderer' 'yarn dev:main'",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
-    "test:integration": "../../bin/integration-tests.sh"
+    "test:integration": "../../bin/integration-tests.sh",
+    "dev:electron": "yarn electron .",
+    "dev:renderer": "vite serve",
+    "dev:main": "nodemon --watch src --ext 'js,mjs,ts' --exec 'tsc --build tsconfig.background.json --incremental && tsc-alias -p tsconfig.background.json'"
   },
   "main": "dist/main/apps/studio/src/background.js",
   "dependencies": {
@@ -56,6 +59,7 @@
     "marked": "^4.0.10",
     "material-icons": "^1.13.3",
     "mkdirp": "^1.0.4",
+    "module-alias": "^2.2.3",
     "mssql": "^8.0.2",
     "mysql2": "^2.3.3",
     "node-firebird": "^1.1.8",
@@ -125,19 +129,23 @@
     "@typescript-eslint/parser": "^4.18.0",
     "@vitejs/plugin-vue2": "^2.3.1",
     "babel-eslint": "^10.0.1",
+    "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "electron": "18.3.15",
     "electron-builder": "23.0.2",
     "electron-builder-notarize": "1.5.1",
+    "electron-reloader": "^1.2.3",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "node-abi": "^3.34.0",
     "node-gyp": "^10.1.0",
+    "nodemon": "^3.1.0",
     "sass": "^1.77.1",
     "testcontainers": "~8.9.0",
     "tsc-alias": "^1.8.9",
     "typescript": "~4.1.5",
-    "vite": "4.5.3"
+    "vite": "4.5.3",
+    "vite-plugin-commonjs": "^0.10.1"
   },
   "eslintConfig": {
     "ignorePatterns": [
