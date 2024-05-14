@@ -69,7 +69,7 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-  @import '@/assets/styles/app/_variables';
+  @import '../../assets/styles/app/_variables';
 
   .alert.error-alert {
     display: flex;

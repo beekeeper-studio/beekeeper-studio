@@ -21,7 +21,7 @@
   import Papa from 'papaparse'
   import { mapState } from 'vuex'
   import { markdownTable } from 'markdown-table'
-  import * as intervalParse from 'postgres-interval'
+  import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyRange, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'

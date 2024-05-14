@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import esbuild from 'esbuild';
 import vuePlugin from 'esbuild-vue'
+import {sassPlugin} from 'esbuild-sass-plugin'
 const isWatching = process.argv[2] === 'watch';
 
 const externals = ['better-sqlite3', 'sqlite3',
@@ -26,9 +27,9 @@ const externals = ['better-sqlite3', 'sqlite3',
     entryPoints: ['src/background.ts', 'src/main.ts'],
     outdir: 'dist',
     publicPath: '.',
-    external: [...externals, '*.woff', '*.woff2'],
+    external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
     bundle: true,
-    plugins: [vuePlugin()]
+    plugins: [sassPlugin(), vuePlugin()]
   }
 
 

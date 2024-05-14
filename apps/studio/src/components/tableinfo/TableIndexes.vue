@@ -114,8 +114,8 @@ import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter
 import StatusBar from '../common/StatusBar.vue'
 import Vue from 'vue'
 import _ from 'lodash'
-import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
-import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
+import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue';
 import { CreateIndexSpec, FormatterDialect, IndexAlterations } from '@shared/lib/dialects/models'
 import rawLog from 'electron-log'
 import { format } from 'sql-formatter'

@@ -4,7 +4,7 @@
     class="tabletable tabcontent flex-col"
     :class="{'view-only': !editable}"
   >
-    <EditorModal
+    <editor-modal
       ref="editorModal"
       @save="onSaveEditorModal"
     />
