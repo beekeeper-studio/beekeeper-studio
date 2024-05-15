@@ -332,6 +332,12 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().buildIsNullTests()
     })
   })
+
+  describe("SQLGenerator", () => {
+    test("should generate scripts for creating a primary key with autoincrement", async () => {
+      await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
+    })
+  })
 }
 
 // test functions below
