@@ -48,6 +48,7 @@
         </x-button>
         <!-- Info -->
         <table-length
+          v-if="!minimalMode"
           :table="table"
           :connection="connection"
         />
@@ -56,7 +57,7 @@
           tabindex="0"
           role="button"
           class="statusbar-item hoverable"
-          v-if="lastUpdatedText && !error"
+          v-if="lastUpdatedText && !error && !minimalMode"
           :title="'Updated' + ' ' + lastUpdatedText"
         >
           <i class="material-icons">update</i>
@@ -73,7 +74,10 @@
       </div>
 
       <!-- Pagination -->
-      <div class="tabulator-paginator">
+      <div
+        v-if="!minimalMode"
+        class="tabulator-paginator"
+      >
         <div class="flex-center flex-middle flex">
           <a
             v-if="(this.page > 1)"
