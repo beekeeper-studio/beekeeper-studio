@@ -9,22 +9,22 @@
     "url": "https://beekeeperstudio.io"
   },
   "scripts": {
-    "build:background": "tsc --build tsconfig.background.json && tsc-alias -p tsconfig.background.json",
-    "build:renderer": "vite build",
+    "build:background": "./esbuild.mjs",
+    "build:renderer": "vue-cli-service build src/main.ts",
     "build": "concurrently -c green,blue -n background,renderer 'yarn build:background' 'yarn build:renderer'",
     "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
     "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
     "lint": "vue-cli-service lint",
     "electron:build": "yarn build && yarn electron-builder",
-    "electron:serve": "yarn build:background && concurrently -c red,blue,green -n electron,renderer,background 'yarn dev:electron' 'yarn dev:renderer' 'yarn dev:main'",
+    "electron:serve": "cross-env NODE_ENV=development yarn build:background && concurrently -c blue,green,red -n renderer,background,electron 'yarn dev:renderer' 'yarn dev:main' 'yarn dev:electron'",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
     "dev:electron": "yarn electron .",
-    "dev:renderer": "vite serve",
-    "dev:main": "nodemon --watch src --ext 'js,mjs,ts' --exec 'tsc --build tsconfig.background.json --incremental && tsc-alias -p tsconfig.background.json'"
+    "dev:renderer": "vue-cli-service serve src/main.ts --port 3003",
+    "dev:main": "./esbuild.mjs watch"
   },
-  "main": "dist/main/apps/studio/src/background.js",
+  "main": "dist/main/background.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@electron/remote": "^2.0.9",
@@ -128,6 +128,12 @@
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
     "@vitejs/plugin-vue2": "^2.3.1",
+    "@vue/cli": "~4.5.19",
+    "@vue/cli-plugin-babel": "~4.5.15",
+    "@vue/cli-plugin-eslint": "~4.5.15",
+    "@vue/cli-plugin-typescript": "~4.5.15",
+    "@vue/cli-plugin-unit-jest": "~4.5.15",
+    "@vue/cli-service": "~4.5.15",
     "babel-eslint": "^10.0.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
@@ -135,6 +141,7 @@
     "electron-builder": "23.0.2",
     "electron-builder-notarize": "1.5.1",
     "electron-reloader": "^1.2.3",
+    "esbuild": "^0.21.2",
     "esbuild-sass-plugin": "^3.2.0",
     "esbuild-vue": "^1.2.2",
     "eslint": "^6.7.2",
@@ -144,11 +151,11 @@
     "nodemon": "^3.1.0",
     "postcss-import-alias-resolver": "^0.1.1",
     "sass": "^1.77.1",
+    "sass-loader": "^10.1.1",
     "testcontainers": "~8.9.0",
     "tsc-alias": "^1.8.9",
     "typescript": "~4.1.5",
-    "vite": "4.5.3",
-    "vite-plugin-commonjs": "^0.10.1"
+    "vue-template-compiler": "^2.6.11"
   },
   "eslintConfig": {
     "ignorePatterns": [

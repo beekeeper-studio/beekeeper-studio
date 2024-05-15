@@ -271,7 +271,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import pluralize from 'pluralize'
-import { ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
+import { ColumnComponent, CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'

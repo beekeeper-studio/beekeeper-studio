@@ -7,7 +7,7 @@ const isWatching = process.argv[2] === 'watch';
 const externals = ['better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
         'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'mysql',
-        'oracledb', '@electron/remote', "@google-cloud/bigquery",
+        'oracledb', 'electron', "@google-cloud/bigquery",
         'pg-query-stream'
 
       ]
@@ -24,12 +24,12 @@ const externals = ['better-sqlite3', 'sqlite3',
   const args = {
     platform: 'node',
     minify: !isWatching,
-    entryPoints: ['src/background.ts', 'src/main.ts'],
-    outdir: 'dist',
+    entryPoints: ['src/background.ts'],
+    outdir: 'dist/main',
     publicPath: '.',
-    external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
+    external: [...externals],
     bundle: true,
-    plugins: [sassPlugin(), vuePlugin()]
+    plugins: []
   }
 
 

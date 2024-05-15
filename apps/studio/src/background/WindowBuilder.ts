@@ -7,6 +7,7 @@ import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
 import url from 'url'
+import { createProtocol } from './AppProtocol'
 
 
 // eslint-disable-next-line
@@ -57,13 +58,20 @@ class BeekeeperWindow {
     })
 
     const startUrl = url.format({
-      pathname: path.join(__dirname, '../../../../../renderer/src/index.html'), // Adjust if your file is in a subdirectory within the asar
-      protocol: 'file:',
+      pathname: "./index.html",
+      // pathname: path.join(__dirname, '../../../../../renderer/src/index.html'), // Adjust if your file is in a subdirectory within the asar
+      protocol: 'app:',
       slashes: true
     });
 
-    const devUrl = 'http://localhost:3003/src/index.html'
 
+    const devUrl = 'http://localhost:3003/index.html'
+
+    if (platformInfo.isDevelopment) {
+      // do nothing
+    } else {
+      createProtocol('app')
+    }
     let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
@@ -80,6 +88,9 @@ class BeekeeperWindow {
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
       this.win.webContents.openDevTools()
     }
+
+    // FIXME turn this off
+    this.win.webContents.openDevTools()
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
@@ -133,6 +144,7 @@ class BeekeeperWindow {
       }
       if (winPosition.width <= area.width ||
         winPosition.height <= area.height) {
+
         options.width = winPosition.width
         options.height = winPosition.height
       }

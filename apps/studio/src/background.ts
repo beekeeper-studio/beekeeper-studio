@@ -165,7 +165,6 @@ app.on('open-file', async (event, file) => {
 app.on('open-url', async (event, url) => {
   event.preventDefault();
   const settings = await initBasics()
-
   await buildWindow(settings, { url })
 });
 

@@ -133,8 +133,8 @@
                   type="text"
                   v-model="filter.value"
                   :disabled="isNullFilter(filter)"
-                  :title="isNullFilter(filter) ? 
-                    'You cannot provide a comparison value when checking for NULL or NOT NULL' : 
+                  :title="isNullFilter(filter) ?
+                    'You cannot provide a comparison value when checking for NULL or NOT NULL' :
                     ''"
                   :placeholder="
                     filter.type === 'in'
@@ -204,7 +204,7 @@
           </div>
           <div
             class="btn-wrap"
-            v-for="(filter, index) in additionalFilters"
+            v-for="(_filter, index) in additionalFilters"
             :key="index"
           >
             <button
@@ -227,6 +227,7 @@
 
 <script lang="ts">
 import Vue from "vue";
+import _ from 'lodash'
 import { TableFilter } from "@/lib/db/models";
 import { joinFilters, normalizeFilters } from "@/common/utils";
 import { mapGetters, mapState } from "vuex";
