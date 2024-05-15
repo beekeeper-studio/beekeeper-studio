@@ -30,8 +30,8 @@
               Select a language
             </option>
             <option
-              v-for="(lang, idx) in languages"
-              :key="idx"
+              v-for="lang in languages"
+              :key="lang.name"
               :value="lang.name"
             >
               {{ lang.label }}
@@ -64,7 +64,7 @@
         <div class="editor-container">
           <text-editor
             v-model="content"
-            :lang="languageName"
+            :mode="language.editorMode"
             :line-wrapping="wrapText"
             :height="editorHeight"
             @interface="editorInterface = $event"
@@ -135,7 +135,7 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
-import { Languages, LanguageData, TextLanguage, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
+import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../../lib/editor/languageData'
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
@@ -172,7 +172,7 @@ export default Vue.extend({
       return Languages
     },
     language() {
-      return getLanguageByName(this.languageName) || TextLanguage
+      return Languages.find((lang) => lang.name === this.languageName);
     },
   },
 
