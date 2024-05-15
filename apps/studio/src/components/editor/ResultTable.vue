@@ -35,7 +35,7 @@
         actualTableHeight: '100%',
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active', 'tab'],
+    props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -55,7 +55,12 @@
       },
       tableHeight() {
         this.tabulator.setHeight(this.actualTableHeight)
-      }
+      },
+      focus() {
+        if (!this.focus) return
+        this.tabulator.rowManager.getElement().focus()
+        this.scrollToRangeIfOutOfView()
+      },
     },
     computed: {
       ...mapState(['connection', 'usedConfig']),
@@ -239,6 +244,38 @@
           return dateA - dateB;
         } catch {
           return 0;
+        }
+      },
+      scrollToRangeIfOutOfView() {
+        // FIXME This is a copy of how auto scroll works in tabulator
+        // SelectRange. We need to make the API available from tabulator
+        // instead of copying it here.
+        // e.g. this.tabulator.scrollToRangeIfOutOfView
+        const range = this.tabulator.getRanges().pop()
+        const rangeBounds = range.getBounds()
+        const row = rangeBounds.end.row
+        const column = rangeBounds.end.column
+        const rowRect = row.getElement().getBoundingClientRect();
+        const columnRect = column.getElement().getBoundingClientRect();
+        const rowManagerRect = this.tabulator.rowManager.getElement().getBoundingClientRect();
+        const columnManagerRect = this.tabulator.columnManager.getElement().getBoundingClientRect();
+
+        if(!(rowRect.top >= rowManagerRect.top && rowRect.bottom <= rowManagerRect.bottom)){
+          if(row.getElement().parentNode && column.getElement().parentNode){
+            // Use faster autoScroll when the elements are on the DOM
+            this.tabulator.modules.selectRange.autoScroll(range, row.getElement(), column.getElement());
+          }else{
+            row.getComponent().scrollTo(undefined, false);
+          }
+        }
+
+        if(!(columnRect.left >= columnManagerRect.left + this.rowHeaderWidth && columnRect.right <= columnManagerRect.right)){
+          if(row.getElement().parentNode && column.getElement().parentNode){
+            // Use faster autoScroll when the elements are on the DOM
+            this.tabulator.modules.selectRange.autoScroll(range, row.getElement(), column.getElement());
+          }else{
+            column.getComponent().scrollTo(undefined, false);
+          }
         }
       }
     }

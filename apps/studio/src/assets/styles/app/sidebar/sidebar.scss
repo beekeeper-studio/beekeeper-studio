@@ -62,6 +62,12 @@
         padding: 0 $gutter-w;
       }
     }
+
+    #tab-tables {
+      .table-list, .list-group {
+        padding-left: 0.3rem;
+      }
+    }
   }
 
   // Empty
@@ -85,7 +91,7 @@
     height: $input-height;
     min-height: $input-height;
     padding: 0 $gutter-h 0 0;
-    margin-top: ($gutter-w * 0.75);
+    margin-top: ($gutter-w * 0.25);
     margin-bottom: $gutter-h;
     background: rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
@@ -247,6 +253,7 @@
     align-items: center;
     margin-left: auto;
     gap: $gutter-h;
+    letter-spacing: normal;
     & button {
       font-size: inherit;
       line-height: inherit;
@@ -255,6 +262,9 @@
       background-color: transparent;
       display: flex;
       cursor: pointer;
+    }
+    x-button {
+      height: auto;
     }
     & > * {
       visibility: hidden;
@@ -269,6 +279,9 @@
         color: $text-dark;
       }
     }
+  }
+  x-menuitem .menu-icon {
+    padding-left: 0.4rem;
   }
 }
 .list-body {

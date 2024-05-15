@@ -36,6 +36,7 @@ import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
 import demoSetup from './20240421_seed_with_demo_data'
 import tokenCache from './20240430_add_token_cache'
+import minimalMode from './20240514_user_settings_minimal_mode'
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
@@ -59,7 +60,7 @@ const realMigrations = [
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   firebirdConnection, exportPath, UserSettingsWindowPosition,
-  demoSetup, tokenCache
+  demoSetup, minimalMode, tokenCache
 
 ]
 

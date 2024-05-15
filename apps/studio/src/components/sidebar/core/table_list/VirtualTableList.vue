@@ -179,6 +179,11 @@ export default Vue.extend({
       const items: Item[] = this.items;
 
       for (const item of items) {
+        // Skip rendering routines in minimal mode
+        if (this.$store.getters.minimalMode && item.type === 'routine') {
+          continue;
+        }
+
         if (!item.hidden && !item.parent.hidden && item.parent.expanded) {
           displayItems.push(item);
 
@@ -297,6 +302,7 @@ export default Vue.extend({
     ...mapGetters({
       defaultSchema: "defaultSchema",
       schemaTables: "schemaTables",
+      minimalMode: "minimalMode",
       hiddenEntities: "hideEntities/databaseEntities",
       hiddenSchemas: "hideEntities/databaseSchemas",
     }),
@@ -305,6 +311,9 @@ export default Vue.extend({
   watch: {
     schemaTables() {
       this.generateItems();
+      this.generateDisplayItems();
+    },
+    minimalMode() {
       this.generateDisplayItems();
     },
   },
