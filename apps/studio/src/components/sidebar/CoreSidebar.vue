@@ -88,6 +88,13 @@
       ...mapState(['tables', 'connection', 'database']),
       ...mapGetters(['minimalMode']),
     },
+    watch: {
+      minimalMode() {
+        if (this.minimalMode) {
+          this.activeItem = 'tables'
+        }
+      },
+    },
     methods: {
       tabClasses(item) {
         return {

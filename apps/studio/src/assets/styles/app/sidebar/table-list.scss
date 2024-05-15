@@ -50,6 +50,9 @@
     padding-top: $gutter-w;
     padding-bottom: $gutter-w;
   }
+  &.pinned .list-item-btn .actions {
+    margin-right: 0.3rem;
+  }
 }
 
 .hidden-indicator {
