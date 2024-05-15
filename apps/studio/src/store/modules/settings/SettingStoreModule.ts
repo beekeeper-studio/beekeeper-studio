@@ -67,7 +67,10 @@ const SettingStoreModule: Module<State, any> = {
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'
       return state.settings.sortOrder.value
-    }
+    },
+    minimalMode(state) {
+      return state.settings.minimalMode.value
+    },
   }
 }
 

@@ -56,4 +56,5 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   exportTables = () => send('exportTables')
   checkForUpdates = () => send('checkForUpdates')
   importSqlFiles = () => send('importSqlFiles')
+  toggleMinimalMode = () => send('toggleMinimalMode')
 }
