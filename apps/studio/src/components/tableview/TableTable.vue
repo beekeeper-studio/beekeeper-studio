@@ -295,7 +295,7 @@ import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent } from '@/lib/menu/tableMenu';
+import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 
 const log = rawLog.scope('TableTable')
@@ -351,7 +351,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
-    ...mapGetters(['dialectData', 'dialect']),
+    ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
     isEmpty() {
       return _.isEmpty(this.data);
     },
@@ -759,7 +759,12 @@ export default Vue.extend({
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
-    }
+    },
+    minimalMode() {
+      if (this.tabulator) {
+        resizeAllColumnsToFitContentAction(this.tabulator)
+      }
+    },
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
@@ -807,7 +812,7 @@ export default Vue.extend({
       return `
         <span class="title">
           ${escapeHtml(columnName)}
-          <span class="badge">${dataType}</span>
+          <span class="badge column-data-type">${dataType}</span>
         </span>`
     },
     maybeScrollAndSetWidths() {
