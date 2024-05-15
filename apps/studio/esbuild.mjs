@@ -4,7 +4,7 @@ import vuePlugin from 'esbuild-vue'
 import {sassPlugin} from 'esbuild-sass-plugin'
 const isWatching = process.argv[2] === 'watch';
 
-const externals = ['better-sqlite3', 'sqlite3',
+const externals = ['electron', 'better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
         'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'mysql',
         'oracledb', '@electron/remote', "@google-cloud/bigquery",

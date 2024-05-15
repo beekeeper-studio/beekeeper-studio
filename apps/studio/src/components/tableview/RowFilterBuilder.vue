@@ -78,7 +78,7 @@
             <button
               class="btn btn-flat btn-fab op-filter"
               type="button"
-              :disabled="dialectData.disabledFeatures?.filterWithOR"
+              :disabled="dialectData.disabledFeatures && dialectData.disabledFeatures.filterWithOR"
               @click.stop="filter.op = filter.op === 'AND' ? 'OR' : 'AND'"
               title="Toggle Filter AND / OR"
             >
@@ -133,8 +133,8 @@
                   type="text"
                   v-model="filter.value"
                   :disabled="isNullFilter(filter)"
-                  :title="isNullFilter(filter) ? 
-                    'You cannot provide a comparison value when checking for NULL or NOT NULL' : 
+                  :title="isNullFilter(filter) ?
+                    'You cannot provide a comparison value when checking for NULL or NOT NULL' :
                     ''"
                   :placeholder="
                     filter.type === 'in'

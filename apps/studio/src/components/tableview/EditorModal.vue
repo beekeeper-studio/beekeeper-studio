@@ -49,7 +49,7 @@
                 @click.prevent="format"
                 v-show="!language.noBeautify"
               >
-                <x-label>Format {{ language?.label }}</x-label>
+                <x-label>Format {{ language && language.label }}</x-label>
               </x-menuitem>
               <x-menuitem @click.prevent="minify">
                 <x-label>Minify text</x-label>
@@ -261,7 +261,7 @@ export default Vue.extend({
 
 
 <style lang="scss" scoped>
-@import '@shared/assets/styles/_variables';
+@import '../../../../../shared/src/assets/styles/_variables';
 
 div.vue-dialog div.dialog-content {
   padding: 0;

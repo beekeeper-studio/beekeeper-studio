@@ -24,7 +24,7 @@
     "dev:renderer": "vite serve",
     "dev:main": "nodemon --watch src --ext 'js,mjs,ts' --exec 'tsc --build tsconfig.background.json --incremental && tsc-alias -p tsconfig.background.json'"
   },
-  "main": "dist/main/apps/studio/src/background.js",
+  "main": "dist/background.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@electron/remote": "^2.0.9",

@@ -63,11 +63,11 @@
     >
       <span
         class="sub-item"
-        v-if="!loadingColumns && !table.columns?.length"
+        v-if="!loadingColumns && !(table.columns || table.columns.length)"
       >
         No Columns
       </span>
-      <template v-else-if="table.columns?.length > 0">
+      <template v-else-if="table.columns && table.columns.length > 0">
         <span
           :key="c.columnName"
           v-for="(c, i) in table.columns"
