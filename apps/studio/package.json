@@ -47,6 +47,7 @@
     "electron-log": "^4.2.2",
     "electron-updater": "^4.6.5",
     "electron-util": "^0.14.1",
+    "esbuild-plugin-copy": "^2.1.1",
     "flexsearch": "beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d",
     "humanize-duration": "^3.23.1",
     "indent-string": "^4.0.0",
@@ -136,6 +137,7 @@
     "electron-builder-notarize": "1.5.1",
     "electron-reloader": "^1.2.3",
     "electronmon": "^2.0.3",
+    "esbuild": "^0.21.2",
     "esbuild-node-externals": "^1.13.1",
     "esbuild-sass-plugin": "^3.2.0",
     "esbuild-vue": "^1.2.2",
@@ -144,13 +146,14 @@
     "node-abi": "^3.34.0",
     "node-gyp": "^10.1.0",
     "nodemon": "^3.1.0",
+    "postcss": "^8.4.38",
+    "postcss-copy-assets": "^0.3.1",
     "postcss-import-alias-resolver": "^0.1.1",
     "sass": "^1.77.1",
+    "sass-embedded": "^1.77.1",
     "testcontainers": "~8.9.0",
     "tsc-alias": "^1.8.9",
-    "typescript": "~4.1.5",
-    "vite": "4.5.3",
-    "vite-plugin-commonjs": "^0.10.1"
+    "typescript": "~4.1.5"
   },
   "eslintConfig": {
     "ignorePatterns": [
