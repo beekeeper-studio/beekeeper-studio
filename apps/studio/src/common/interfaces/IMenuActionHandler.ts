@@ -36,4 +36,5 @@ export interface IMenuActionHandler {
   upgradeModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }

@@ -189,6 +189,9 @@ const store = new Vuex.Store<State>({
       }
       return []
     },
+    minimalMode(_state, getters) {
+      return getters['settings/minimalMode']
+    },
     versionString(state) {
       return state.server.versionString();
     }
