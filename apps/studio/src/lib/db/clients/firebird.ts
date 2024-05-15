@@ -1021,7 +1021,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 

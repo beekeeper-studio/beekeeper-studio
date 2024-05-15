@@ -87,7 +87,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       editPartitions: false,
       backups: true,
       backDirFormat: false,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: false,
     };
   }
 

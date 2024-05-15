@@ -17,7 +17,8 @@ export class CockroachClient extends PostgresClient {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 
