@@ -15,15 +15,8 @@ const externals = ['better-sqlite3', 'sqlite3',
 
       ]
 
-// const makeAllPackagesExternalPlugin = {
-//   name: 'make-all-packages-external',
-//   setup(build) {
-//     let filter = /^[^./]|^\.[^./]|^\.\.[^/]/ // Must not start with "/" or "./" or "../"
-//     build.onResolve({ filter }, args => ({ path: args.path, external: true }))
-//   },
-// }
 
-
+  // FIXME: Move from Sass to regular CSS (remove sassplugin)
   const args = {
     platform: 'node',
     minify: !isWatching,
