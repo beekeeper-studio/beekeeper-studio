@@ -40,19 +40,6 @@ if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
 
 const isDevelopment = platformInfo.isDevelopment
 
-try {
-  if (platformInfo.isDevelopment) {
-    log.info("Dev mode so enabling electron-reloader")
-    // @ts-ignore
-    // eslint-disable-next-line
-    require('electron-reloader')(module);
-  }
-} catch {
-  log.debug("not dev mode, not enabling electron-reloader")
-  // do nothing
-}
-
-
 initUserDirectory(platformInfo.userDirectory)
 log.info("initializing user ORM connection!")
 const ormConnection = new Connection(platformInfo.appDbPath, false)

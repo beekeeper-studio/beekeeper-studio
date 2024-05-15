@@ -157,6 +157,7 @@ class BeekeeperWindow {
       this.win = null
     })
 
+
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
     this.win.on('move', windowMoveResizeListener)

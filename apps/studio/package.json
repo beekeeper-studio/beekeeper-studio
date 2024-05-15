@@ -9,20 +9,17 @@
     "url": "https://beekeeperstudio.io"
   },
   "scripts": {
-    "build:background": "tsc --build tsconfig.background.json && tsc-alias -p tsconfig.background.json",
-    "build:renderer": "vite build",
-    "build": "concurrently -c green,blue -n background,renderer 'yarn build:background' 'yarn build:renderer'",
+    "build": "./esbuild.mjs",
     "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
     "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
     "lint": "vue-cli-service lint",
     "electron:build": "yarn build && yarn electron-builder",
-    "electron:serve": "yarn build:background && concurrently -c red,blue,green -n electron,renderer,background 'yarn dev:electron' 'yarn dev:renderer' 'yarn dev:main'",
+    "electron:serve": "concurrently -c blue,green -n esbuild,electron 'yarn dev:build' 'yarn dev:electron'",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
-    "dev:electron": "yarn electron .",
-    "dev:renderer": "vite serve",
-    "dev:main": "nodemon --watch src --ext 'js,mjs,ts' --exec 'tsc --build tsconfig.background.json --incremental && tsc-alias -p tsconfig.background.json'"
+    "dev:electron": "yarn electronmon .",
+    "dev:build": "./esbuild.mjs watch"
   },
   "main": "dist/background.js",
   "dependencies": {
@@ -135,7 +132,6 @@
     "electron": "18.3.15",
     "electron-builder": "23.0.2",
     "electron-builder-notarize": "1.5.1",
-    "electron-reloader": "^1.2.3",
     "electronmon": "^2.0.3",
     "esbuild": "^0.21.2",
     "esbuild-node-externals": "^1.13.1",

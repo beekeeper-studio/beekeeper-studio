@@ -5,7 +5,12 @@ import {sassPlugin} from 'esbuild-sass-plugin'
 import { copy } from 'esbuild-plugin-copy';
 import postcss from 'postcss'
 import copyAssets from 'postcss-copy-assets';
+import { spawn } from 'child_process'
 const isWatching = process.argv[2] === 'watch';
+
+
+
+
 
 const externals = ['better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
@@ -15,17 +20,28 @@ const externals = ['better-sqlite3', 'sqlite3',
 
       ]
 
+let electron = null
+
+const electronmonPlugin = {
+  name: 'example',
+  setup(build) {
+    build.onEnd(async (result) => {
+      if (electron) {
+        process.kill(electron.pid, 'SIGINT')
+      }
+        electron = spawn('yarn', ['electron', '.'], { stdio: 'inherit'})
+    })
+  },
+}
 
   // FIXME: Move from Sass to regular CSS (remove sassplugin)
   const args = {
     platform: 'node',
-    minify: !isWatching,
     entryPoints: ['src/background.ts', 'src/main.ts'],
     outdir: 'dist',
     publicPath: '.',
-    sourcemap: true,
-    external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
     bundle: true,
+    external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
     plugins: [
       sassPlugin({
         async transform(source, resolveDir, filePath) {
@@ -55,9 +71,17 @@ const externals = ['better-sqlite3', 'sqlite3',
 
 
   if(isWatching) {
-    const context = await esbuild.context(args)
+    const context = await esbuild.context({
+      ...args,
+      sourcemap: true,
+      minify: false,
+      plugins: [...args.plugins, electronmonPlugin]
+    })
     await context.watch()
   } else {
-    await esbuild.build(args)
+    await esbuild.build({
+      ...args,
+      minify: true,
+    })
   }
 // launch electron
