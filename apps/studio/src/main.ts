@@ -4,7 +4,7 @@ import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import 'xel/xel'
-import { TabulatorFull as Tabulator } from 'tabulator-tables'
+import { Tabulator } from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
 import App from './App.vue'
@@ -34,7 +34,7 @@ import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
-import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+// import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 
 (async () => {
 
@@ -76,10 +76,10 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
-    Tabulator.defaultOptions.layout = "fitDataFill";
-    Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
-    Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule]);
+    // Tabulator.defaultOptions.layout = "fitDataFill";
+    // Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
+    // Tabulator.defaultOptions.headerSortClickElement = 'icon';
+    // Tabulator.registerModule([HeaderSortTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
