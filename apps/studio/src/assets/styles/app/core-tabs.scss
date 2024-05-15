@@ -554,3 +554,9 @@
     opacity: 0.5;
   }
 }
+
+.beekeeper-studio-minimal-mode {
+  .core-tabs .nav-tabs .nav-link.active {
+    font-weight: inherit;
+  }
+}
