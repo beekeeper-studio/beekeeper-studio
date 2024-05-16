@@ -23,6 +23,27 @@ const externals = ['better-sqlite3', 'sqlite3',
 
 let electron = null
 
+const tabulatorPlugin = {
+  name: 'tabulator-tables resolver',
+  setup(build) {
+    build.onResolve({ filter: /^tabulator-tables$/ }, async (args) => {
+      const result = await build.resolve('../../node_modules/tabulator-tables/dist/js/tabulator_esm.js', {
+        kind: 'import-statement',
+        resolveDir: path.dirname(args.path),
+      })
+
+      if (result.errors.length > 0) {
+        return { errors: result.errors }
+      }
+
+      return {
+        path: result.path
+      }
+    });
+  },
+}
+
+
 const electronMainPlugin = {
   name: "electron-main-process-restarter",
   setup(build) {
@@ -77,6 +98,7 @@ const electronRendererPlugin = {
     ...commonArgs,
     entryPoints: ['src/main.ts'],
     plugins: [
+      tabulatorPlugin,
       electronRendererPlugin,
       vuePlugin(),
       copy({
@@ -85,6 +107,22 @@ const electronRendererPlugin = {
           from: ['../../node_modules/material-icons/**/*.woff*'],
           to: ['./dist/material-icons']
         },
+          {
+            from: './src/assets/logo.svg',
+            to: 'dist/assets/'
+          },
+        {
+          from: './src/assets/fonts/**/*',
+          to: 'dist/fonts'
+        },
+          {
+            from: './src/assets/icons/**/*',
+            to: 'dist/icons'
+          },
+          {
+            from: './src/assets/images/**/*',
+            to: 'dist/images'
+          },
         {
           from: ['./src/index.html'],
           to: './dist/'
@@ -92,7 +130,11 @@ const electronRendererPlugin = {
         {
           from: '../../node_modules/typeface-roboto/**/*.woff*',
           to: './dist/'
-        }
+        },
+      {
+            from: '../../node_modules/xel/**/*.svg',
+            to: './dist/node_modules/xel'
+          },
         ]
 
       }),
