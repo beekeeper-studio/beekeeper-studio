@@ -62,7 +62,7 @@ async function initBasics() {
   initialized = true
   await ormConnection.connect()
   console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
-  log.info("running migrations")
+  log.info("running migrations!!")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
@@ -168,5 +168,21 @@ if (isDevelopment) {
     process.on('SIGTERM', () => {
       app.quit()
     })
+
+    // This doesn't fully reload the app, just restart it,
+    // so not suitable for development restarts
+    process.on('SIGUSR1', () => {
+      // log.info("SIGUSR1 =====> Restarting app")
+      // app.relaunch()
+      // app.quit()
+    })
+
+
+
+    process.on('SIGUSR2', () => {
+      log.info("SIGUSR2 =====> Reloading webcontents")
+      getActiveWindows().forEach((w) => w.webContents.reload())
+    })
   }
 }
+
