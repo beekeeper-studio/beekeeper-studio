@@ -56,13 +56,10 @@ class BeekeeperWindow {
       icon: getIcon()
     })
 
-    const startUrl = url.format({
-      pathname: path.join(__dirname, './index.html'), // Adjust if your file is in a subdirectory within the asar
-      protocol: 'file:',
-      slashes: true
-    });
 
-    const devUrl = 'http://localhost:3003/src/index.html'
+
+    const startUrl = 'app://./index.html'
+
 
     // let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     let appUrl = startUrl

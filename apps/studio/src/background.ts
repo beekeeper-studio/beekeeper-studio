@@ -23,6 +23,8 @@ import { buildWindow, getActiveWindows } from './background/WindowBuilder'
 import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
+import { ProtocolBuilder } from './background/lib/electron/ProtocolBuilder';
+
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -58,6 +60,8 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 let initialized = false
 
 async function initBasics() {
+  // this creates the app:// protocol we use for loading assets
+  ProtocolBuilder.createAppProtocol()
   if (initialized) return settings
   initialized = true
   await ormConnection.connect()
