@@ -213,9 +213,7 @@ export function checkEmptyFilters(filters: TableFilter[]): boolean {
   if (filters.length === 1) {
     return _.isEmpty(filters[0].value)
   }
-  if (filters.length > 1) {
-    return false
-  }
+  return false
 }
 
 /** Useful for identifying an entity item in table list */
