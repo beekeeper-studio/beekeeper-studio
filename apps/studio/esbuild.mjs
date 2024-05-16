@@ -31,7 +31,7 @@ const electronMainPlugin = {
     build.onEnd(() => {
       console.log("ESBUILD: Built Main ✅")
       if (electron) {
-        process.kill(electron.pid, 'SIGTERM')
+        process.kill(electron.pid, 'SIGINT')
       }
       // start electron again
       electron = spawn(path.join('../../node_modules/electron/dist/electron'), ['.'], { stdio: 'inherit' })
