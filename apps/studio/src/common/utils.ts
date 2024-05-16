@@ -213,7 +213,7 @@ export function checkEmptyFilters(filters: TableFilter[]): boolean {
   if (filters.length === 1) {
     return _.isEmpty(filters[0].value)
   }
-  return false
+  return filters.every(filter => _.isEmpty(filter.value));
 }
 
 /** Useful for identifying an entity item in table list */
