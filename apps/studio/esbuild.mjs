@@ -91,7 +91,16 @@ const electronRendererPlugin = {
   const mainArgs = {
     ...commonArgs,
     entryPoints: ['src/background.ts'],
-    plugins: [electronMainPlugin]
+    plugins: [electronMainPlugin,
+    copy({
+      resolveFrom: 'cwd',
+      assets: [
+        {
+          from: ['./src/index.html'],
+          to: './dist/'
+        },
+      ]
+    })]
   }
 
   const rendererArgs = {
@@ -123,10 +132,6 @@ const electronRendererPlugin = {
             from: './src/assets/images/**/*',
             to: 'dist/images'
           },
-        {
-          from: ['./src/index.html'],
-          to: './dist/'
-        },
         {
           from: '../../node_modules/typeface-roboto/**/*.woff*',
           to: './dist/'

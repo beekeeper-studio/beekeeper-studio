@@ -15,7 +15,7 @@ export const ProtocolBuilder = {
         // our app runs from dist/, regardless of whether this is inside of the
         // app.asar file, but we want to not allow loading of content from outside of
         // the dist directory
-        const normalizedPath = path.normalize(path.join(__dirname, pathName)).replace(/^(\.\.(\/|\\|$))+/, '')
+        const normalizedPath = path.normalize(path.join(__dirname, pathName))
 
         readFile(normalizedPath, (error, data) => {
           if (error) {

@@ -57,7 +57,6 @@ class BeekeeperWindow {
     })
 
 
-
     const startUrl = 'app://./index.html'
 
 
