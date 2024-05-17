@@ -12,7 +12,7 @@
     "serve": "vue-cli-service serve",
     "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
     "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
-    "test:e2e": "yarn playwright test e2e/*",
+    "test:e2e": "xvfb-maybe yarn playwright test e2e/*",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve --host localhost --ozone-platform-hint=auto",
@@ -144,7 +144,8 @@
     "testcontainers": "~8.9.0",
     "typescript": "~4.1.5",
     "vue-cli-plugin-electron-builder": "~2.1.1",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.11",
+    "xvfb-maybe": "^0.2.1"
   },
   "eslintConfig": {
     "ignorePatterns": [
