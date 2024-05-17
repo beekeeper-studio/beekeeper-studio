@@ -53,7 +53,7 @@
               v-if="config"
             >
               <div class="form-group">
-                <label for="connectionType">Connection Type</label>
+                <label for="connection-select">Connection Type</label>
                 <select
                   name="connectionType"
                   class="form-control custom-select"

@@ -19,6 +19,7 @@
     "electron:serve": "yarn bks:dev",
     "docs:serve": "yarn workspace beekeeper-studio docs:serve",
     "web:serve": "yarn sqltools:dev",
+    "test:e2e": "yarn workspace beekeeper-studio test:e2e",
     "test:integration": "yarn workspace beekeeper-studio test:integration",
     "test:unit": "yarn workspace beekeeper-studio test:unit",
     "test:ci": "yarn workspace beekeeper-studio test:ci",

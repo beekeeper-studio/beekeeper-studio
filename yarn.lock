@@ -1907,6 +1907,45 @@
   resolved "https://registry.yarnpkg.com/@eslint-community/regexpp/-/regexpp-4.5.1.tgz#cdd35dce4fa1a89a4fd42b1599eb35b3af408884"
   integrity sha512-Z5ba73P98O1KUYCCJTUeVpja9RcGoMdncZ6T49FCUl2lN38JtCJ+3WgIDBv0AuY4WChU5PmtJmOCTlN6FZTFKQ==
 
+"@esm2cjs/human-signals@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/human-signals/-/human-signals-3.0.1.tgz#87c205899668d3f6c370eb82a7e9b896e2a1efbc"
+  integrity sha512-QZme4eF/PwTpeSbMB4AaWGQ4VSygzE30jI+Oas1NPTtZQAgcHwWVDOQpIW8FUmtzn5Q+2cS7AjnTzbtqtc5P6g==
+
+"@esm2cjs/is-stream@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/is-stream/-/is-stream-3.0.0.tgz#868e24882efdd35cfd6f139332abde30e7b3a946"
+  integrity sha512-qcBscHlJpZFOD5nnmMHkzOrq2xyvsp9fbVreQLS8x2LOs8N3CrNi3fqvFY0GVJR+YSOHscwhG9T5t4Ck7R7QGw==
+
+"@esm2cjs/mimic-fn@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/mimic-fn/-/mimic-fn-4.0.0.tgz#7ac5185e4902638b7ed68f6e2f4f2e4bd14532bb"
+  integrity sha512-LIIAjcpjLr4rcbYmRQ+eRu55Upy/MMB78seIlwqbnyiA+cTa1/pxWnJ1NHJQrw6tx2wMQmlYoJj+wf16NjWH6Q==
+
+"@esm2cjs/npm-run-path@^5.1.1-cjs.0":
+  version "5.1.1-cjs.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/npm-run-path/-/npm-run-path-5.1.1-cjs.0.tgz#bbd9531acee450168f68a535f3df4ff6fff2ee1e"
+  integrity sha512-CWeAIyE8iNSCgP2ItPE8iPgS+lACqgH+MuFRaWOIl2T7hnHqPFfhAJJ/LcLJJ/RMIxNMeenjFMwc91HW7NWr1A==
+  dependencies:
+    "@esm2cjs/path-key" "^4.0.0"
+
+"@esm2cjs/onetime@^6.0.1-cjs.0":
+  version "6.0.1-cjs.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/onetime/-/onetime-6.0.1-cjs.0.tgz#24ed91716f4e1e7daebc416f26357be08b4f8050"
+  integrity sha512-MkZMZSxrSC/6yUuAw6Azc56XOgwHQQIsNDlO/zgFmOcycJBhRwRuc/gdYUUOFNZIh7y+f0JSIxkNdJPFvJ5W0w==
+  dependencies:
+    "@esm2cjs/mimic-fn" "^4.0.0"
+
+"@esm2cjs/path-key@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/path-key/-/path-key-4.0.0.tgz#4c406fe897f9bb880d8619751ce72395867eb9e2"
+  integrity sha512-fKzZ3uIIP4j+7WfyG0MEkomGHL0hUXWCx1kY2Zct3GTdl4pyY+3k5lCUxjgdDa2Ld1BCjMNorXnRHiBP6jW6CQ==
+
+"@esm2cjs/strip-final-newline@^3.0.1-cjs.0":
+  version "3.0.1-cjs.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/strip-final-newline/-/strip-final-newline-3.0.1-cjs.0.tgz#79a891eaa0414e4898fc2dc8220583ab7bd4bb0a"
+  integrity sha512-o41riCGPiOEStayoikBCAqwa6igbv9L9rP+k5UCfQ24EJD/wGrdDs/KTNwkHG5JzDK3T60D5dMkWkLKEPy8gjA==
+
 "@gar/promisify@^1.0.1":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@gar/promisify/-/promisify-1.1.3.tgz#555193ab2e3bb3b6adc3d551c9c030d9e860daf6"
@@ -2327,6 +2366,13 @@
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
+
+"@playwright/test@^1.44.0":
+  version "1.44.0"
+  resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.44.0.tgz#ac7a764b5ee6a80558bdc0fcbc525fcb81f83465"
+  integrity sha512-rNX5lbNidamSUorBhB4XZ9SQTjAqfe5M+p37Z8ic0jPFBMo5iCtQz1kRWkEMg+rYOKSlVycpQmpqjSFq7LXOfg==
+  dependencies:
+    playwright "1.44.0"
 
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
@@ -7091,6 +7137,21 @@ execa@^5.0.0:
     signal-exit "^3.0.3"
     strip-final-newline "^2.0.0"
 
+"execa@npm:@esm2cjs/execa":
+  version "6.1.1-cjs.1"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/execa/-/execa-6.1.1-cjs.1.tgz#e6bdede1ce4a89cfbfe8b2d6f687b674b4149f38"
+  integrity sha512-FHxfnmuDIjY1VS/BLzDkL8EkbcFvi8s6x1nYQ1Nyu0An0n88EJcGhDBcRWLFwt3C3nT7xwI+MwHRH1TZcAFW2w==
+  dependencies:
+    "@esm2cjs/human-signals" "^3.0.1"
+    "@esm2cjs/is-stream" "^3.0.0"
+    "@esm2cjs/npm-run-path" "^5.1.1-cjs.0"
+    "@esm2cjs/onetime" "^6.0.1-cjs.0"
+    "@esm2cjs/strip-final-newline" "^3.0.1-cjs.0"
+    cross-spawn "^7.0.3"
+    get-stream "^6.0.1"
+    merge-stream "^2.0.0"
+    signal-exit "^3.0.7"
+
 exit-on-epipe@~1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/exit-on-epipe/-/exit-on-epipe-1.0.1.tgz#0bdd92e87d5285d267daa8171d0eb06159689692"
@@ -7676,6 +7737,11 @@ fs.realpath@^1.0.0:
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
 
+fsevents@2.3.2, fsevents@~2.3.2:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
+  integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
+
 fsevents@^1.2.7:
   version "1.2.13"
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-1.2.13.tgz#f325cb0455592428bcf11b383370ef70e3bfcc38"
@@ -7683,11 +7749,6 @@ fsevents@^1.2.7:
   dependencies:
     bindings "^1.5.0"
     nan "^2.12.1"
-
-fsevents@~2.3.2:
-  version "2.3.2"
-  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
-  integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
 
 function-bind@^1.1.1:
   version "1.1.1"
@@ -11825,6 +11886,20 @@ pkg-dir@^4.1.0:
   dependencies:
     find-up "^4.0.0"
 
+playwright-core@1.44.0:
+  version "1.44.0"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.44.0.tgz#316c4f0bca0551ffb88b6eb1c97bc0d2d861b0d5"
+  integrity sha512-ZTbkNpFfYcGWohvTTl+xewITm7EOuqIqex0c7dNZ+aXsbrLj0qI8XlGKfPpipjm0Wny/4Lt4CJsWJk1stVS5qQ==
+
+playwright@1.44.0:
+  version "1.44.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.44.0.tgz#22894e9b69087f6beb639249323d80fe2b5087ff"
+  integrity sha512-F9b3GUCLQ3Nffrfb6dunPOkE5Mh68tR7zN32L4jCk4FjQamgesGay7/dAAe1WaMEGV04DkdJfcJzjoCKygUaRQ==
+  dependencies:
+    playwright-core "1.44.0"
+  optionalDependencies:
+    fsevents "2.3.2"
+
 plist@^3.0.1:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/plist/-/plist-3.1.0.tgz#797a516a93e62f5bde55e0b9cc9c967f860893c9"
@@ -13429,7 +13504,7 @@ sigmund@^1.0.1:
   resolved "https://registry.yarnpkg.com/sigmund/-/sigmund-1.0.1.tgz#3ff21f198cad2175f9f3b781853fd94d0d19b590"
   integrity sha512-fCvEXfh6NWpm+YSuY2bpXb/VIihqWA6hLsgboC+0nl71Q7N7o2eaCW8mJa/NLvQhs6jpd3VZV4UiUQlV6+lc8g==
 
-signal-exit@^3.0.0, signal-exit@^3.0.2, signal-exit@^3.0.3:
+signal-exit@^3.0.0, signal-exit@^3.0.2, signal-exit@^3.0.3, signal-exit@^3.0.7:
   version "3.0.7"
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.7.tgz#a9a1767f8af84155114eaabd73f99273c8f59ad9"
   integrity sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==
