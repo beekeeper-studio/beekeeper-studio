@@ -1,6 +1,6 @@
 'use strict'
 import * as fs from 'fs'
-import { app, protocol } from 'electron'
+import { app, protocol, dialog } from 'electron'
 import log from 'electron-log'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
@@ -139,6 +139,21 @@ app.on('ready', async () => {
     }
   }
 })
+
+// Show exit confirmation modal before quitting
+app.on("before-quit", (event) => {
+  const choice = dialog.showMessageBoxSync(null, {
+    type: "question",
+    buttons: ["Exit", "Cancel"],
+    message: "Really close application?\nYou lose all unsaved changes",
+  });
+
+  if (choice === 0) {
+    app.exit();
+  } else {
+    event.preventDefault();
+  }
+});
 
 // Open a connection from a file (e.g. ./sqlite.db)
 app.on('open-file', async (event, file) => {
