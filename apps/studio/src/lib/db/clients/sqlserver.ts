@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import { ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
+import { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -470,7 +470,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     throw new Error("Method not implemented.");
   }
 
-  // should figure out how to not require this because it's being a butt
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
     this.logger().info('RUNNING', q, options);
 
@@ -849,6 +848,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     this.pool = await new ConnectionPool(this.dbConfig).connect();
 
     this.pool.on('error', (err) => {
+      if (err instanceof ConnectionError) {
+        log.log('IS INSTANCE OF')
+      }
       log.error("Pool event: connection error:", err.name, err.message);
     });
 

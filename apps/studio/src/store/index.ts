@@ -60,6 +60,7 @@ export interface State {
   workspaceId: number,
   storeInitialized: boolean,
   windowTitle: string,
+  connError: string
 }
 
 Vue.use(Vuex)
@@ -102,6 +103,7 @@ const store = new Vuex.Store<State>({
     workspaceId: LocalWorkspace.id,
     storeInitialized: false,
     windowTitle: 'Beekeeper Studio',
+    connError: null
   },
 
   getters: {
@@ -195,7 +197,7 @@ const store = new Vuex.Store<State>({
     },
     versionString(state) {
       return state.server.versionString();
-    }
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -325,10 +327,12 @@ const store = new Vuex.Store<State>({
     },
     updateWindowTitle(state, title: string) {
       state.windowTitle = title
+    },
+    setConnError(state, err: string) {
+      state.connError = err;
     }
   },
   actions: {
-
     async test(context, config: SavedConnection) {
       // TODO (matthew): fix this mess.
       if (context.state.username) {
@@ -384,6 +388,9 @@ const store = new Vuex.Store<State>({
         const server = ConnectionProvider.for(config, context.state.username, settings)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
+        connection.connectionHandler = (msg: string) => {
+          context.commit('setConnError', msg);
+        };
 
         await connection.connect()
         connection.connectionType = config.connectionType;
@@ -396,6 +403,11 @@ const store = new Vuex.Store<State>({
         context.dispatch('updateWindowTitle', config)
       } else {
         throw "No username provided"
+      }
+    },
+    async reconnect(context) {
+      if (context.state.connection) {
+        await context.state.connection.connect();
       }
     },
     async recordUsedConfig(context, config: IConnection) {

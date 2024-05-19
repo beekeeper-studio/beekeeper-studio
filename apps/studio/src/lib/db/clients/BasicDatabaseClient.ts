@@ -26,7 +26,6 @@ export interface QueryLogOptions {
     error?: string
 }
 
-
 // this provides the ability to get the current tab information, plus provides
 // a way to log the data to a table in the app sqlite.
 // this is a useful design if BKS ever gains a web version.
@@ -58,6 +57,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   db: string;
   connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
+  connErrHandler: (msg: string) => void = null;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -66,6 +66,10 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
+  }
+
+  set connectionHandler(fn: (msg: string) => void) {
+    this.connErrHandler = fn;
   }
 
   abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
@@ -254,10 +258,28 @@ export abstract class BasicDatabaseClient<RawResultType> {
   // structure to allow logging of all queries to a query log
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
+  private async checkIsConnected(): Promise<boolean> {
+    try {
+      await this.rawExecuteQuery('SELECT 1', {});
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
+    }
+
+    if (!await this.checkIsConnected()) {
+      try {
+        await this.connect();
+      } catch (_e) {
+        // may need better error message
+        this.connErrHandler('It seems we have lost the connection to the database.');
+      }
     }
 
     const logOptions: QueryLogOptions = { options, status: 'completed'}
@@ -281,6 +303,15 @@ export abstract class BasicDatabaseClient<RawResultType> {
       throw new Error(errorMessages.readOnly);
     }
 
+    if (!await this.checkIsConnected()) {
+      try {
+        await this.connect();
+      } catch (_e) {
+        // may need better error message
+        this.connErrHandler('It seems we have lost the connection to the database.');
+      }
+    }
+    
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
