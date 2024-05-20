@@ -4,6 +4,7 @@
       :name="modalName"
       class="beekeeper-modal vue-dialog editor-dialog"
       @opened="onOpen"
+      @before-close="onBeforeClose"
     >
       <!-- Trap the key events so it doesn't conflict with the parent elements -->
       <div
@@ -225,8 +226,14 @@ export default Vue.extend({
 
     async onOpen() {
       await this.$nextTick();
+      this.$refs.editorContainer.style.height = undefined
       this.editorFocus = true
       this.$nextTick(this.resizeHeightToFitContent)
+    },
+    async onBeforeClose() {
+      // Hack: keep the modal height as it was before.
+      this.$refs.editorContainer.style.height = this.$refs.editorContainer.offsetHeight + 'px'
+      this.editorFocus = false
     },
     resizeHeightToFitContent() {
       const wrapperEl = this.$refs.editorContainer.querySelector('.CodeMirror')
