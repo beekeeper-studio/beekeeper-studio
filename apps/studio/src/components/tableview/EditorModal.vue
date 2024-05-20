@@ -61,13 +61,17 @@
           </x-button>
         </div>
 
-        <div class="editor-container">
+        <div
+          class="editor-container"
+          ref="editorContainer"
+        >
           <text-editor
             v-model="content"
             :mode="language.editorMode"
             :line-wrapping="wrapText"
             :height="editorHeight"
-            @interface="editorInterface = $event"
+            :focus="editorFocus"
+            @focus="editorFocus = $event"
           />
         </div>
       </div>
@@ -148,7 +152,7 @@ export default Vue.extend({
   name: "CellEditorModal",
   data() {
     return {
-      editorInterface: {},
+      editorFocus: false,
       editorHeight: 100,
       error: "",
       languageName: "text",
@@ -221,11 +225,11 @@ export default Vue.extend({
 
     async onOpen() {
       await this.$nextTick();
-      this.editorInterface.focus()
+      this.editorFocus = true
       this.$nextTick(this.resizeHeightToFitContent)
     },
     resizeHeightToFitContent() {
-      const wrapperEl = this.editorInterface.getWrapperElement()
+      const wrapperEl = this.$refs.editorContainer.querySelector('.CodeMirror')
       const wrapperStyle = window.getComputedStyle(wrapperEl)
 
       const minHeight = parseInt(wrapperStyle.minHeight)
