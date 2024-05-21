@@ -14,7 +14,7 @@
     "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
     "lint": "eslint",
     "electron:build": "yarn build && yarn electron-builder",
-    "electron:serve": "./esbuild.mjs watch",
+    "electron:serve": "concurrently vue,esbuild 'vue-devtools' './esbuild.mjs watch'",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh"
@@ -124,6 +124,7 @@
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
     "@vitejs/plugin-vue2": "^2.3.1",
+    "@vue/devtools": "^7.2.1",
     "babel-eslint": "^10.0.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",

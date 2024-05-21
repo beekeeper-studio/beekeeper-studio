@@ -2,6 +2,9 @@ import { protocol } from 'electron'
 import * as path from 'path'
 import { readFile } from 'fs'
 import { URL } from 'url'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('ProtocolBuilder')
 
 export const ProtocolBuilder = {
 
@@ -19,10 +22,10 @@ export const ProtocolBuilder = {
 
         readFile(normalizedPath, (error, data) => {
           if (error) {
-            console.error(
-              `Failed to read ${pathName} on 'app' protocol`,
-              error
-            )
+            // log.warn(
+            //   `Failed to read ${pathName} on 'app' protocol`,
+            //   error
+            // )
           }
           const extension = path.extname(pathName).toLowerCase()
           let mimeType = ''

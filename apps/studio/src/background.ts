@@ -5,7 +5,6 @@ import { app, protocol } from 'electron'
 import log from 'electron-log'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
@@ -121,13 +120,7 @@ app.on('ready', async () => {
     console.log("Dev mode detected, disabling CORS")
     app.commandLine.appendSwitch('disable-web-security');
     app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
-    // Install Vue Devtools
-    try {
-      console.log("installing vue devtools")
-      await installExtension(VUEJS_DEVTOOLS)
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
+
   }
 
   // this gets positional arguments

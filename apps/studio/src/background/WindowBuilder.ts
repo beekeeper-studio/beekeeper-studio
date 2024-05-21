@@ -7,6 +7,7 @@ import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
 import url from 'url'
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
 
 // eslint-disable-next-line
@@ -27,6 +28,7 @@ function getIcon() {
 class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
+  private appUrl: string
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
@@ -56,31 +58,23 @@ class BeekeeperWindow {
       icon: getIcon()
     })
 
-
     const startUrl = 'app://./index.html'
-
-
     // let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
-    let appUrl = startUrl
+    const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     if (platformInfo.isWayland) {
       queryObj.runningWayland = true
     }
-
     const query = querystring.stringify(queryObj)
 
-    appUrl = query ? `${appUrl}?${query}` : appUrl
+    this.appUrl = query ? `${appUrl}?${query}` : appUrl
     remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
-    this.win.loadURL(appUrl)
-    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
-      this.win.webContents.openDevTools()
-    }
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
-      if (url === appUrl) return // this is good
+      if (url === this.appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
       const u = new URL(url)
@@ -89,7 +83,7 @@ class BeekeeperWindow {
     })
 
     this.win.webContents.setWindowOpenHandler(({ url }) => {
-      if (url === appUrl){
+      if (url === this.appUrl){
         return {
           action: 'allow'
         }
@@ -104,6 +98,31 @@ class BeekeeperWindow {
         e.preventDefault()
       }
     })
+
+    this.initialize()
+      .then(() => log.debug("initialize finished"))
+      .catch((ex) => log.error("INITIALIZE ERROR", ex)  )
+  }
+
+  private async initialize() {
+    // Install Vue Devtools
+    try {
+      log.debug("installing vue devtools")
+      installExtension({
+          id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
+          electron: '>=1.2.1'
+      })
+      log.debug("devtools loaded", name)
+    } catch (e) {
+      log.error('devtools failed to install:', e.toString())
+    }
+
+    await this.win.loadURL(this.appUrl)
+    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+      this.win.webContents.openDevTools()
+    }
+
+
   }
 
   private getWindowPosition(settings: IGroupedUserSettings) {

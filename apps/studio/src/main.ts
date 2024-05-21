@@ -92,6 +92,7 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
     // (window as any).SQLHint = SQLHint;
     (window as any).XLSX = xlsx;
     Vue.config.devtools = platformInfo.isDevelopment;
+    // @ts-ignore
     window.platformInfo = platformInfo
     Vue.mixin(AppEventMixin)
     Vue.mixin({
