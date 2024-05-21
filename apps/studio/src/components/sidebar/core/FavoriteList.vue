@@ -109,6 +109,7 @@
       >
         <div
           class="dialog-content"
+          v-kbd-trap="true"
           v-if="renameMe"
         >
           <div class="dialog-c-title">

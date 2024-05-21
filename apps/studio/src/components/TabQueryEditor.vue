@@ -197,6 +197,7 @@
         :scrollable="true"
       >
         <form
+          v-kbd-trap="true"
           v-if="query"
           @submit.prevent="saveQuery"
         >
@@ -252,7 +253,10 @@
         height="auto"
         :scrollable="true"
       >
-        <form @submit.prevent="submitQuery(queryForExecution, true)">
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="submitQuery(queryForExecution, true)"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">
               Provide parameter values
