@@ -141,7 +141,7 @@
             name="clientSecret"
             type="text" 
             class="form-control" 
-            v-model="config.clientSecret"
+            v-model="config.azureAuthOptions.clientSecret"
           >
         </div>
         <div class="form-group" v-show="showMsiEndpoint">
@@ -150,7 +150,7 @@
             name="msiEndpoint"
             type="text" 
             class="form-control" 
-            v-model="config.msiEndpoint"
+            v-model="config.azureAuthOptions.msiEndpoint"
           >
         </div>
       </div>

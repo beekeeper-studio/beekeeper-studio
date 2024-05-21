@@ -17,9 +17,11 @@ export enum AzureAuthType {
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [
-  { name: 'Password', value: AzureAuthType.Password },
+  // Can't have 2FA, kinda redundant now
+  // { name: 'Password', value: AzureAuthType.Password },
   { name: 'Access Token', value: AzureAuthType.AccessToken },
-  { name: 'MSI VM', value: AzureAuthType.MSIVM },
+  // This may be reactivated when we move to client server architecture
+  // { name: 'MSI VM', value: AzureAuthType.MSIVM },
   { name: 'Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
 ];
 
