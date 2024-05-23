@@ -130,6 +130,7 @@
               <div class="filter-wrap">
                 <input
                   class="form-control filter-value"
+                  :class="{ 'disabled-input': isNullFilter(filter) }"
                   type="text"
                   v-model="filter.value"
                   :disabled="isNullFilter(filter)"
