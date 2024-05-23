@@ -347,6 +347,9 @@ export default Vue.extend({
       initialized: false,
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
+
+      /** This is true when we switch to minimal mode while TableTable is not active */
+      enabledMinimalModeWhileInactive: false,
     };
   },
   computed: {
@@ -732,6 +735,12 @@ export default Vue.extend({
           this.tableFilters = this.tab.getFilters()
           this.triggerFilter(this.tableFilters)
         }
+
+        if (this.enabledMinimalModeWhileInactive) {
+          this.enabledMinimalModeWhileInactive = false
+          resizeAllColumnsToFitContentAction(this.tabulator)
+        }
+
         // $nextTick doesn't work here
         setTimeout(() => {
           this.tabulator.modules.selectRange.restoreFocus()
@@ -765,8 +774,15 @@ export default Vue.extend({
       this.tab.unsavedChanges = this.pendingChangesCount > 0
     },
     minimalMode() {
-      if (this.tabulator) {
+      // Auto resize the columns when the tab is active (not hidden in the DOM)
+      // so tabulator can do it correctly.
+      if (this.tabulator && this.active) {
         resizeAllColumnsToFitContentAction(this.tabulator)
+      }
+
+      // If the tab is not active, we can auto resize later when it's active
+      if (!this.active) {
+        this.enabledMinimalModeWhileInactive = this.minimalMode
       }
     },
   },
