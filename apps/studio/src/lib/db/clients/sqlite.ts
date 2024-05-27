@@ -417,7 +417,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     const sql = `pragma table_xinfo('${SD.escapeString(table)}')`
-    const { data } = await this.driverExecuteSingle(sql);
+    const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
     const found = data.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
     return found.map((r) => ({
