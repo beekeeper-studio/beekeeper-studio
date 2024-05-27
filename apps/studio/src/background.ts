@@ -31,6 +31,48 @@ function initUserDirectory(d: string) {
   }
 }
 
+let serverProcess: Electron.UtilityProcess
+let rendPort: electron.MessagePortMain;
+
+function createBackgroundProcess() {
+    if (serverProcess) {
+      return;
+    }
+
+    const args = {
+      isPackage: `${electron.app.isPackaged}`,
+      locale: electron.app.getLocale(),
+      userDir: electron.app.getPath('userData'),
+      downloadDir: electron.app.getPath('downloads'),
+      homeDir: electron.app.getPath('home'),
+      shouldUseDarkColors: `${electron.nativeTheme.shouldUseDarkColors}`,
+      version: electron.app.getVersion()
+    }
+
+    serverProcess = electron.utilityProcess.fork(
+      __dirname + '/utility.js', 
+      [], 
+      {
+        env: { ...process.env, ...args },
+        stdio: ['ignore', 'pipe', 'pipe']
+      }
+    );
+
+    const utilLog = log.scope('UTILITY')
+
+    serverProcess.stdout.on('data', (chunk) => {
+      utilLog.log(chunk.toString())
+    })
+
+    serverProcess.stderr.on('data', (chunk) => {
+      utilLog.error(chunk.toString())
+    })
+
+    const { port1, port2 } = new electron.MessageChannelMain();
+    serverProcess.postMessage(null, [port1])
+    rendPort = port2;
+}
+
 
 const transports = [log.transports.console, log.transports.file]
 if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
@@ -106,6 +148,8 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   if (!hasVisibleWindows) {
     if (!settings) throw "No settings initialized!"
     buildWindow(settings)
+
+    createBackgroundProcess()
   }
 })
 
@@ -134,8 +178,18 @@ app.on('ready', async () => {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
       await buildWindow(settings)
+      createBackgroundProcess()
     }
   }
+
+  // I hate this
+  // TODO (@day): this needs to be done in a more stable manner cause what the fuck
+  setTimeout(() => {
+    getActiveWindows().forEach((w) => {
+      log.info('SENDING PORT TO RENDERER')
+      w.webContents.postMessage('port', null, [rendPort]);
+    })
+  }, 3000)
 })
 
 // Open a connection from a file (e.g. ./sqlite.db)

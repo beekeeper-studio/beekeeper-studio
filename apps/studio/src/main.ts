@@ -35,6 +35,7 @@ import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+import { UtilityConnection } from './lib/UtilityConnection'
 
 (async () => {
 
@@ -123,6 +124,12 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
         },
 
       }
+    })
+
+    ipcRenderer.on('port', (event) => {
+      log.log('we actually received a port in renderer!!')
+      Vue.prototype.$server = new UtilityConnection(event.ports[0]);
+      log.log('here it is', Vue.prototype.$server)
     })
 
     Vue.config.productionTip = false

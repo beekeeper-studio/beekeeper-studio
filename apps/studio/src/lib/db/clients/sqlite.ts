@@ -171,6 +171,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       }
     })
     const final = _.flatMap(results, (item, _idx) => this.dataToColumns(item.result.data, item.tableName))
+
+    log.info('FINAL: ', final)
     return final
   }
 

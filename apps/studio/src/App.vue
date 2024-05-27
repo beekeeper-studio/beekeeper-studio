@@ -3,6 +3,7 @@
     <div class="beekeeper-studio-wrapper">
       <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
       <template v-if="storeInitialized">
+        <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
         <connection-interface v-if="!connection" />
         <core-interface
           @databaseSelected="databaseSelected"

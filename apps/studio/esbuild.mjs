@@ -77,6 +77,22 @@ const electronRendererPlugin = {
   },
 }
 
+const electronUtilityPlugin = {
+  name: "electron-utility-process-restarter",
+  setup(build) {
+    if (!isWatching) return
+    build.onStart(() => console.log("ESBUILD: Building Utility 🏗"))
+    build.onEnd(() => {
+      console.log("ESBUILD: Built Utility ✅")
+      if (electron) {
+        process.kill(electron.pid, 'SIGINT')
+      }
+      // start electron again
+      electron = spawn(path.join('../../node_modules/electron/dist/electron'), ['.'], { stdio: 'inherit' })
+
+    })
+  }
+}
 
   const commonArgs = {
     platform: 'node',
@@ -103,6 +119,12 @@ const electronRendererPlugin = {
     })]
   }
 
+  const utilityArgs = {
+    ...commonArgs,
+    entryPoints: ['src/utility.ts'],
+    plugins: [electronUtilityPlugin]
+  }
+
   const rendererArgs = {
     ...commonArgs,
     entryPoints: ['src/main.ts'],
@@ -112,18 +134,19 @@ const electronRendererPlugin = {
       vuePlugin(),
       copy({
         resolveFrom: "cwd",
-        assets: [{
-          from: ['../../node_modules/material-icons/**/*.woff*'],
-          to: ['./dist/material-icons']
-        },
+        assets: [
+          {
+            from: ['../../node_modules/material-icons/**/*.woff*'],
+            to: ['./dist/material-icons']
+          },
           {
             from: './src/assets/logo.svg',
             to: 'dist/assets/'
           },
-        {
-          from: './src/assets/fonts/**/*',
-          to: 'dist/fonts'
-        },
+          {
+            from: './src/assets/fonts/**/*',
+            to: 'dist/fonts'
+          },
           {
             from: './src/assets/icons/**/*',
             to: 'dist/icons'
@@ -132,16 +155,15 @@ const electronRendererPlugin = {
             from: './src/assets/images/**/*',
             to: 'dist/images'
           },
-        {
-          from: '../../node_modules/typeface-roboto/**/*.woff*',
-          to: './dist/'
-        },
-      {
+          {
+            from: '../../node_modules/typeface-roboto/**/*.woff*',
+            to: './dist/'
+          },
+          {
             from: '../../node_modules/xel/**/*.svg',
             to: './dist/node_modules/xel'
           },
         ]
-
       }),
       sassPlugin({
         async transform(source, resolveDir, filePath) {
@@ -154,15 +176,17 @@ const electronRendererPlugin = {
   }
 
 
-
   if(isWatching) {
     const main = await esbuild.context(mainArgs)
     const renderer = await esbuild.context(rendererArgs)
-    Promise.all([main.watch(), renderer.watch()])
+    const utility = await esbuild.context(utilityArgs)
+    Promise.all([main.watch(), renderer.watch(), utility.watch()])
   } else {
     Promise.all([
       esbuild.build(mainArgs),
-      esbuild.build(rendererArgs)
+      esbuild.build(preloadArgs),
+      esbuild.build(rendererArgs),
+      esbuild.build(utilityArgs)
     ])
   }
 // launch electron
