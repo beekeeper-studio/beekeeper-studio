@@ -16,7 +16,6 @@
       >
         <database-dropdown
           @databaseSelected="databaseSelected"
-          :connection="connection"
         />
         <table-list />
       </div>
@@ -84,7 +83,7 @@
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },
-      ...mapState(['tables', 'connection', 'database']),
+      ...mapState(['tables', 'database']),
     },
     methods: {
       tabClasses(item) {

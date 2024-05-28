@@ -14,7 +14,7 @@
 <script lang="ts">
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['table', 'connection'],
+  props: ['table'],
   data: () => ({
     totalRecords: null,
     fetchingTotalRecords: false,
@@ -35,7 +35,7 @@ export default Vue.extend({
       this.fetchingTotalRecords = true
       try {
         this.error = null
-        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema)
+        this.totalRecords = await this.$server.send('conn/getTableLength', { table: this.table.name, schema: this.table.schema });
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0

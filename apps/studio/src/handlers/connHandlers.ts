@@ -1,5 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
+import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 
@@ -36,7 +36,7 @@ export interface ConnectionHandlers {
   'conn/getTableReferences': ({table, schema}: {table: string, schema?: string}) => Promise<string[]>,
   'conn/getTableKeys': ({table, schema}: {table: string, schema?: string}) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({table, schema}: {table: string, schema?: string}) => Promise<TablePartition[]>,
-  'conn/query': ({queryText, options}: {queryText: string, options?: any}) => Promise<CancelableQuery>,
+  'conn/query': ({queryText, options}: {queryText: string, options?: any}) => Promise<string>,
   'conn/executeQuery': ({queryText, options}: {queryText: string, options: any}) => Promise<NgQueryResult[]>,
   'conn/listDatabases': ({filter}: {filter?: DatabaseFilterOptions}) => Promise<string[]>,
   'conn/getTableProperties': ({table, schema}: {table: string, schema?: string}) => Promise<TableProperties | null>,

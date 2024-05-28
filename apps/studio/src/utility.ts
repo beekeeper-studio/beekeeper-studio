@@ -7,9 +7,10 @@ import ConnectionProvider from './lib/connection-provider'; import platformInfo 
 import { Handlers } from './handlers/handlers';
 import { IDbConnectionPublicServer } from './lib/db/server';
 import { BasicDatabaseClient } from './lib/db/clients/BasicDatabaseClient';
-import { DatabaseFilterOptions, FilterOptions, OrderBy, SchemaFilterOptions, TableChanges, TableFilter, TableInsert } from './lib/db/models';
+import { CancelableQuery, DatabaseFilterOptions, FilterOptions, OrderBy, SchemaFilterOptions, TableChanges, TableFilter, TableInsert } from './lib/db/models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { DatabaseElement } from './lib/db/types';
+import { uuidv4 } from './lib/uuid';
 
 const log = rawLog.scope('UtilityProcess');
 
@@ -29,6 +30,7 @@ class State {
   connection: BasicDatabaseClient<any> = null;
   database: string = null;
   username: string = null;
+  queries: Map<string, CancelableQuery> = new Map();
 }
 
 const state = new State();
@@ -41,7 +43,8 @@ export let handlers = {} as unknown as Handlers;
 const errorMessages = {
   noUsername: 'No username provided',
   noDatabase: 'No database connection found',
-  noServer: 'No server found'
+  noServer: 'No server found',
+  noQuery: 'Query not found'
 }
 
 // wtf typescript, this is so fucking ugly
@@ -182,7 +185,10 @@ handlers['conn/listTablePartitions'] = async function({ table, schema }: { table
 // that we return to the renderer, then they can call query/execute and query/cancel with the id
 handlers['conn/query'] = async function({ queryText, options }: { queryText: string, options?: any }) {
   checkConnection();
-  return state.connection.query(queryText, options);
+  const query = state.connection.query(queryText, options);
+  const id = uuidv4();
+  state.queries.set(id, query);
+  return id;
 }
 
 handlers['conn/executeQuery'] = async function({ queryText, options }: { queryText: string, options?: any}) {
@@ -358,6 +364,32 @@ handlers['conn/duplicateTableSql'] = async function({ tableName, duplicateTableN
 handlers['conn/getInsertQuery'] = async function({ tableInsert }: { tableInsert: TableInsert }) {
   checkConnection();
   return await state.connection.getInsertQuery(tableInsert)
+}
+
+
+
+handlers['query/execute'] = async function({ queryId }: { queryId: string }) { 
+  checkConnection();
+  const query = state.queries.get(queryId);
+  if (!query) {
+    throw new Error(errorMessages.noQuery);
+  }
+
+  const result = await query.execute();
+  // not totally sure on this
+  state.queries.delete(queryId);
+  return result;
+}
+
+handlers['query/cancel'] = async function({ queryId }: { queryId: string }) {
+  checkConnection();
+  const query = state.queries.get(queryId);
+  if (!query) {
+    throw new Error(errorMessages.noQuery);
+  }
+
+  await query.cancel();
+  state.queries.delete(queryId);
 }
 
 

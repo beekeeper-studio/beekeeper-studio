@@ -2,7 +2,7 @@
   <div class="fixed">
     <div class="data-select-wrap">
       <p
-        v-if="this.connection.connectionType === 'sqlite'"
+        v-if="this.connectionType === 'sqlite'"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,7 +18,7 @@
         class="dropdown-search"
       />
       <a
-        v-if="this.connection.connectionType !== 'sqlite'"
+        v-if="this.connectionType !== 'sqlite'"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -42,7 +42,6 @@
       >
         <div class="dialog-content">
           <add-database-form
-            :connection="connection"
             @databaseCreated="databaseCreated"
             @cancel="$modal.hide('config-add-database')"
           />
@@ -61,7 +60,7 @@
   import { mapActions, mapState } from 'vuex'
 
   export default {
-    props: [ 'connection' ],
+    props: [ ],
     data() {
       return {
         selectedDatabase: null,
@@ -76,12 +75,13 @@
     },
     methods: {
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
+      ...mapState({ connectionType: 'connectionType' }),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        if (this.connection.connectionType.match(/sqlite|firebird/)) {
+        if (this.connectionType.match(/sqlite|firebird/)) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
-          const url = this.connection.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
+          const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
           return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()

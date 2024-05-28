@@ -28,7 +28,6 @@
           v-if="p.entityType !== 'routine'"
           :table="p.entity"
           :pinned="true"
-          :connection="connection"
           :draggable="sort.field === 'position'"
           :container="$refs.pinContainer"
           :force-expand="allExpanded"
@@ -42,7 +41,6 @@
           :container="$refs.pinContainer"
           :draggable="sort.field === 'position'"
           :routine="p.entity"
-          :connection="connection"
           :pinned="true"
           :force-expand="allExpanded"
           :force-collapse="allCollapsed"
@@ -65,7 +63,7 @@ export default Vue.extend({
   components: { RoutineListItem, Draggable, TableListItem, SidebarSortButtons },
   mixins: [TableListContextMenus],
   props: [
-    'allExpanded', 'allCollapsed', 'connection'
+    'allExpanded', 'allCollapsed'
   ],
   data: () => ({
     sort: { field: 'position', order: 'asc' },

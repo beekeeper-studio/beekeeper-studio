@@ -11,6 +11,8 @@ import { stringifyRangeData, rowHeaderField } from "@/common/utils";
 import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
 import { escapeHtml } from "@shared/lib/tabulator";
 import store from "@/store";
+// ?? not sure about this but :shrug: 
+import Vue from 'vue';
 
 type ColumnMenuItem = MenuObject<ColumnComponent>;
 
@@ -108,14 +110,12 @@ export async function copyRange(options: {
 export async function copyRange(options: {
   range: RangeComponent;
   type: "sql";
-  connection: BasicDatabaseClient<any>;
   table: string;
   schema?: string;
 }): Promise<void>;
 export async function copyRange(options: {
   range: RangeComponent;
   type: "plain" | "tsv" | "json" | "markdown" | "sql";
-  connection?: BasicDatabaseClient<any>;
   table?: string;
   schema?: string;
 }) {
@@ -158,11 +158,11 @@ export async function copyRange(options: {
       break;
     }
     case "sql":
-      text = await options.connection.getInsertQuery({
+      text = await Vue.prototype.$server.send('conn/getInsertQuery', { 
         table: options.table,
         schema: options.schema,
-        data: rangeData,
-      });
+        data: rangeData
+      })
       break;
   }
   ElectronPlugin.clipboard.writeText(text);
@@ -242,7 +242,6 @@ export function copyActionsMenu(options: {
         copyRange({
           range,
           type: "sql",
-          connection: store.state.connection,
           table,
           schema,
         }),

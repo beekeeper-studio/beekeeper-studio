@@ -352,6 +352,7 @@
           initialized: false,
         },
         runningQuery: null,
+        runningQueryId: null,
         error: null,
         errorMarker: null,
         saveError: null,
@@ -373,7 +374,7 @@
     },
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
-      ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
+      ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
@@ -504,9 +505,6 @@
         result[this.ctrlOrCmd('i')] = this.submitQueryToFile
         result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
         return result
-      },
-      connectionType() {
-        return this.connection.connectionType;
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -730,11 +728,11 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       async cancelQuery() {
-        if(this.running && this.runningQuery) {
+        if(this.running && this.runningQueryId) {
           this.running = false
           this.info = 'Query Execution Cancelled'
-          await this.runningQuery.cancel()
-          this.runningQuery = null
+          await this.$server.send('query/cancel', { queryId: this.runningQueryId });
+          this.runningQueryId = null
         }
       },
       download(format) {
@@ -873,9 +871,9 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = this.connection.query(query, { dryRun: this.dryRun })
+          this.runningQueryId = await this.$server.send('conn/query', { queryText: query, options: { dryRun: this.dryRun }});
           const queryStartTime = new Date()
-          const results = await this.runningQuery.execute()
+          const results = await this.$server.send('query/execute', { queryId: this.runningQueryId });
           const queryEndTime = new Date()
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
@@ -915,7 +913,7 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
+          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'

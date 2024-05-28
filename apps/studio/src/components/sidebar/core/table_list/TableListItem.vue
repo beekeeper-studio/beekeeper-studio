@@ -140,7 +140,7 @@ import { AppEvent } from '../../../../common/AppEvent'
 import { uuidv4 } from '../../../../lib/uuid'
 import TableIcon from '@/components/common/TableIcon.vue'
 export default {
-  props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned", "draggable"],
+  props: ["table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned", "draggable"],
   components: { TableIcon },
   mounted() {
     this.showColumns = !!this.table.showColumns

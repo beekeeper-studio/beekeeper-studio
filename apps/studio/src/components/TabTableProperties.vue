@@ -63,7 +63,6 @@
               <template v-if="properties">
                 <table-length
                   :table="table"
-                  :connection="connection"
                 />
                 <span
                   class="statusbar-item"
@@ -219,7 +218,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -237,7 +236,6 @@ export default {
       // TODO (day): when we support more dbs, this will need to be an array of all the possible types.
       // Postgres table type for a partitioned table.
       const partitionTableType = 'p';
-      const supportedFeatures = this.connection.supportedFeatures();
       return this.rawPills.filter((p) => {
 
         if (!this.properties) {
@@ -246,13 +244,13 @@ export default {
           }
         }
 
-        if (p.needsProperties && !supportedFeatures.properties) {
+        if (p.needsProperties && !this.supportedFeatures.properties) {
           return false
         }
 
-        if (p.needsPartitions && (!supportedFeatures.partitions ||
-          ((!supportedFeatures.editPartitions && !this.properties.partitions?.length) ||
-          (supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
+        if (p.needsPartitions && (!this.supportedFeatures.partitions ||
+          ((!this.supportedFeatures.editPartitions && !this.properties.partitions?.length) ||
+          (this.supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
         if(p.tableOnly) {
@@ -282,7 +280,7 @@ export default {
     async fetchTotalRecords() {
       this.fetchingTotalRecords = true
       try {
-        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema)
+        this.totalRecords = await this.$server.send('conn/getTableLength', { table: this.table.name, schema: this.table.schema });
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0
@@ -304,10 +302,10 @@ export default {
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
         console.log("getting primary keys")
-        this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
+        this.primaryKeys = await this.$server.send('conn/getPrimaryKeys', { table: this.table.name, schema: this.table.schema });
         if (this.table.entityType === 'table') {
           console.log("calling getTableProperties")
-          this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
+          this.properties = await this.$server.send('conn/getTableProperties', { table: this.table.name, schema: this.table.schema });
         }
         this.loading = false
       } catch (ex) {

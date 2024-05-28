@@ -18,7 +18,6 @@
         <core-sidebar
           @databaseSelected="databaseSelected"
           @toggleSidebar="toggleSidebar"
-          :connection="connection"
           :sidebar-shown="sidebarShown"
         />
         <statusbar>

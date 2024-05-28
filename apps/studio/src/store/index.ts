@@ -9,7 +9,7 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { Routine, TableOrView } from "../lib/db/models"
+import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
@@ -43,6 +43,9 @@ export interface State {
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
   connection: Nullable<BasicDatabaseClient<any>>,
+  connected: boolean,
+  connectionType: Nullable<string>,
+  supportedFeatures: Nullable<SupportedFeatures>,
   database: Nullable<string>,
   databaseList: string[],
   tables: TableOrView[],
@@ -80,6 +83,8 @@ const store = new Vuex.Store<State>({
     usedConfigs: [],
     server: null,
     connection: null,
+    connected: false,
+    connectionType: null,
     database: null,
     databaseList: [],
     tables: [],
@@ -239,6 +244,8 @@ const store = new Vuex.Store<State>({
     clearConnection(state) {
       state.usedConfig = null
       state.connection = null
+      state.connected = false
+      state.supportedFeatures = null
       state.server = null
       state.database = null
       state.databaseList = []
@@ -324,6 +331,15 @@ const store = new Vuex.Store<State>({
     },
     defaultSchema(state, defaultSchema: string) {
       state.defaultSchema = defaultSchema;
+    },
+    connectionType(state, connectionType: string) {
+      state.connectionType = connectionType;
+    },
+    connected(state, connected: boolean) {
+      state.connected = connected;
+    },
+    supportedFeatures(state, features: SupportedFeatures) {
+      state.supportedFeatures = features;
     }
   },
   actions: {
@@ -365,7 +381,11 @@ const store = new Vuex.Store<State>({
       if (context.state.username) {
         await Vue.prototype.$server.send('conn/create', { config, osUser: context.state.username })
         const defaultSchema = await Vue.prototype.$server.send('conn/defaultSchema');
+        const supportedFeatures = await Vue.prototype.$server.send('conn/supportedFeatures');
         context.commit('defaultSchema', defaultSchema);
+        context.commit('connectionType', config.connectionType);
+        context.commit('connected', true);
+        context.commit('supportedFeatures', supportedFeatures);
 
 
         const settings = await UserSetting.all()

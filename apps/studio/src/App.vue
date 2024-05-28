@@ -4,7 +4,7 @@
       <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
       <template v-if="storeInitialized">
         <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
-        <connection-interface v-if="!connection" />
+        <connection-interface v-if="!connected" />
         <core-interface
           @databaseSelected="databaseSelected"
           v-else
@@ -63,7 +63,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['storeInitialized', 'connection', 'database']),
+    ...mapState(['storeInitialized', 'connection', 'database', 'connected']),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'

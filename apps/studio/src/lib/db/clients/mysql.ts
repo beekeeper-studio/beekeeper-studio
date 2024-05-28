@@ -31,7 +31,7 @@ import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
-import { AlterTableSpec, TableKey } from "@shared/lib/dialects/models";
+import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
 import {
   CancelableQuery,
@@ -191,7 +191,7 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
   });
 }
 
-export function parseIndexColumn(str: string): IndexedColumn {
+export function parseIndexColumn(str: string): IndexColumn {
   str = str.trim()
 
   const order = str.endsWith('DESC') ? 'DESC' : 'ASC'

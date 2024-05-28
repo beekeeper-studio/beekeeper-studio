@@ -49,7 +49,6 @@
         <!-- Info -->
         <table-length
           :table="table"
-          :connection="connection"
         />
         <a
           @click="refreshTable"
@@ -309,7 +308,7 @@ function createTableFilter(field: string) {
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "active", 'tab', 'table'],
+  props: ["active", 'tab', 'table'],
   data() {
     return {
       filters: [],
@@ -350,13 +349,13 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType']),
     ...mapGetters(['dialectData', 'dialect']),
     isEmpty() {
       return _.isEmpty(this.data);
     },
     isCassandra() {
-      return this.connection?.connectionType === 'cassandra'
+      return this.connectionType === 'cassandra'
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -493,7 +492,6 @@ export default Vue.extend({
             { separator: true },
             ...copyActionsMenu({
               range,
-              connection: this.connection,
               table: this.table.name,
               schema: this.table.schema,
             }),
@@ -508,7 +506,7 @@ export default Vue.extend({
             keyDatas.forEach(keyData => {
               menu.push({
                 label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
-                action: (e, cell) => this.fkClick(keyData, cell)
+                action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
           }
@@ -518,7 +516,7 @@ export default Vue.extend({
       }
 
       const columnMenu = (_e, column: ColumnComponent) => {
-        const range = _.last(column.getRanges())
+        const range = _.last((column as any).getRanges()) as RangeComponent;
         let hideColumnLabel = `Hide ${column.getDefinition().title}`
 
         if (hideColumnLabel.length > 33) {
@@ -530,7 +528,6 @@ export default Vue.extend({
           { separator: true },
           ...copyActionsMenu({
             range,
-            connection: this.connection,
             table: this.table.name,
             schema: this.table.schema,
           }),
@@ -602,7 +599,7 @@ export default Vue.extend({
             dataType: column.dataType,
             generated: column.generated,
           },
-          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
+          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
           dataType: column.dataType,
           minWidth: globals.minColumnWidth,
           width: columnWidth,
@@ -844,8 +841,8 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
-      const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
+      this.rawTableKeys = await this.$server.send('conn/getTableKeys', { table: this.table.name, schema: this.table.schema });
+      const rawPrimaryKeys = await this.$server.send('conn/getPrimaryKeys', { table: this.table.name, schema: this.table.schema });
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
       this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
@@ -1254,7 +1251,7 @@ export default Vue.extend({
           updates: this.pendingChanges.updates,
           deletes: this.pendingChanges.deletes
         }
-        const sql = this.connection.applyChangesSql(changes)
+        const sql = await this.$server.send('conn/applyChangesSql', { changes });
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
@@ -1293,7 +1290,7 @@ export default Vue.extend({
             deletes: this.pendingChanges.deletes
           }
 
-          const result = await this.connection.applyChanges(payload)
+          const result = await this.$server.send('conn/applyChanges', { changes: payload });
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
@@ -1380,15 +1377,15 @@ export default Vue.extend({
         this.page = page;
       }
 
-      this.connection.selectTopSql(
-        this.table.name,
+      this.$server.send('conn/selectTopSql', {
+        table: this.table.name,
         offset,
         limit,
         orderBy,
-        this.filters,
-        this.table.schema,
+        filters: this.filters,
+        schema: this.table.schema,
         selects
-      ).then((query: string) => {
+      }).then((query: string) => {
         const language = FormatterDialect(this.dialect);
         const formatted = safeSqlFormat(query, { language });
         this.$root.$emit(AppEvent.newTab, formatted);
@@ -1396,7 +1393,7 @@ export default Vue.extend({
         log.error("Error opening query tab:", e);
         this.$noty.error("Unable to open query tab. See dev console for details.");
       });
-    },
+   },
     showColumnFilterModal() {
       this.$modal.show(this.columnFilterModalName)
     },
@@ -1447,17 +1444,28 @@ export default Vue.extend({
 
             // lets just make column selection a front-end only thing
             const selects = ['*']
-            const response = await this.connection.selectTop(
-              this.table.name,
+            const response = await this.$server.send('conn/selectTop', {
+              table: this.table.name,
               offset,
-              this.limit,
+              limit: this.limit,
               orderBy,
               filters,
-              this.table.schema,
-              selects,
-              // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
-              { allowFilter: this.isCassandra }
-            );
+              schema: this.table.schema,
+              selects
+            })
+
+            // then fuck is this??
+            //const response = await this.connection.selectTop(
+            //  this.table.name,
+            //  offset,
+            //  this.limit,
+            //  orderBy,
+            //  filters,
+            //  this.table.schema,
+            //  selects,
+            //  // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
+            //  { allowFilter: this.isCassandra }
+            //);
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
