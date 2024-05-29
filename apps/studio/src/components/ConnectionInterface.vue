@@ -122,6 +122,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <lib-sql-form
+                  v-else-if="config.connectionType === 'libsql'"
+                  :config="config"
+                  :testing="testing"
+                />
 
 
                 <!-- TEST AND CONNECT -->
@@ -202,6 +207,7 @@ import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
+import LibSQLForm from './connection/LibSQLForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import _ from 'lodash'
@@ -221,7 +227,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm },
 
   data() {
     return {

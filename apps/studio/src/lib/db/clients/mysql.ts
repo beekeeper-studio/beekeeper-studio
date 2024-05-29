@@ -865,17 +865,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return true;
   }
 
-  async truncateElement(
-    elementName: string,
-    typeOfElement: DatabaseElement,
-    _schema?: string
-  ): Promise<void> {
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
+    return `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`;
+  }
+
+  async truncateElement(elementName: string, typeOfElement: DatabaseElement): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      const sql = `
-        TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)}
-          ${this.wrapIdentifier(elementName)}
-      `;
-      await this.driverExecuteSingle(sql, { connection });
+      await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement), { connection });
     });
   }
 

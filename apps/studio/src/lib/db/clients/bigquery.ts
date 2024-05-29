@@ -452,8 +452,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     throw new Error("Method not implemented.");
   }
 
-  truncateElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    throw new Error("Method not implemented.");
+  truncateElementSql(): string {
+    return ''
   }
 
   duplicateTable(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<void> {

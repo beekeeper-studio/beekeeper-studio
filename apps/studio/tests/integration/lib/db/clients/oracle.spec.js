@@ -47,7 +47,12 @@ describe("Oracle Tests", () => {
         connectionMethod: 'manual'
       }
     }
-    util = new DBTestUtil(config, "BEEKEEPER", { defaultSchema: 'BEEKEEPER', dialect: 'oracle' })
+    util = new DBTestUtil(config, "BEEKEEPER", {
+      defaultSchema: "BEEKEEPER",
+      dialect: "oracle",
+      // oracle will throw a "ORA-01100: database already mounted" error if trying to create
+      skipCreateDatabase: true,
+    });
     await util.setupdb()
 
   })

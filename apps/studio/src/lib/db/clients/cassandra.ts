@@ -392,10 +392,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     await this.driverExecuteSingle(sql);
   }
 
-  async truncateElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    const sql = `TRUNCATE ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
-
-    await this.driverExecuteSingle(sql);
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, _schema?: string): string {
+    return `TRUNCATE ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
   }
 
   async truncateAllTables(_schema?: string): Promise<void> {

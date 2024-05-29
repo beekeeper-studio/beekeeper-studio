@@ -220,7 +220,15 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 
-  abstract truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+  abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+
+  async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    const sql = this.truncateElementSql(elementName, typeOfElement, schema);
+    if (!sql) {
+      throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
+    }
+    await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement, schema));
+  }
 
   abstract truncateAllTables(schema?: string): void;
   // ****************************************************************************
