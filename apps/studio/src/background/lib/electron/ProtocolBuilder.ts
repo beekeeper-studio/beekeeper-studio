@@ -1,10 +1,14 @@
 import { protocol } from 'electron'
 import * as path from 'path'
 import { readFile } from 'fs'
+import * as fs from 'fs'
 import { URL } from 'url'
 import rawLog from 'electron-log'
+import platformInfo from '@/common/platform_info'
 
 const log = rawLog.scope('ProtocolBuilder')
+
+
 
 export const ProtocolBuilder = {
 
@@ -15,19 +19,31 @@ export const ProtocolBuilder = {
         let pathName = new URL(request.url).pathname
         pathName = decodeURI(pathName) // Needed in case URL contains spaces
 
+        const emptySourceMap = JSON.stringify({
+          version: 3,
+          file: request.url,
+          sources: [],
+          names: [],
+          mappings: ''
+        });
+
+
         // our app runs from dist/, regardless of whether this is inside of the
         // app.asar file, but we want to not allow loading of content from outside of
         // the dist directory
-        const normalizedPath = path.normalize(path.join(__dirname, pathName))
+        let normalizedPath = path.normalize(path.join(__dirname, pathName))
+        const extension = path.extname(pathName).toLowerCase()
+        if (extension === '.map' && platformInfo.isDevelopment) {
+          // we want to check the directory and resolve it
+          if (!fs.existsSync(normalizedPath)) {
+            // probably some weird path like:
+            // app://./home/rathboma/Projects/beekeeper-studio/studio/node_modules/@google-cloud/bigquery/build/src/rowQueue.js.map
+            normalizedPath = pathName
+          }
+        }
 
         readFile(normalizedPath, (error, data) => {
-          if (error) {
-            // log.warn(
-            //   `Failed to read ${pathName} on 'app' protocol`,
-            //   error
-            // )
-          }
-          const extension = path.extname(pathName).toLowerCase()
+
           let mimeType = ''
 
           if (extension === '.js') {
@@ -42,6 +58,8 @@ export const ProtocolBuilder = {
             mimeType = 'application/json'
           } else if (extension === '.wasm') {
             mimeType = 'application/wasm'
+          } else if (extension === '.map') {
+            mimeType = 'application/json'
           }
 
           respond({ mimeType, data })
