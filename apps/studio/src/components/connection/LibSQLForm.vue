@@ -58,15 +58,6 @@
         <snap-external-warning />
       </div>
     </div>
-    <!-- <div class="host-port-user-password"> -->
-    <!--   <div class="row gutter"> -->
-    <!--     <div class="col form-group"> -->
-    <!--       <label for="Database" required>Database File</label> -->
-    <!--       <file-picker v-model="config.defaultDatabase" /> -->
-    <!--       <snap-external-warning /> -->
-    <!--     </div> -->
-    <!--   </div> -->
-    <!-- </div> -->
   </div>
 </template>
 

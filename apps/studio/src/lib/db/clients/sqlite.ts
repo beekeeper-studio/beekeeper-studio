@@ -8,31 +8,16 @@ import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, Ex
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { ClientError, joinQueries } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
-import knexlib from 'knex';
-import { makeEscape } from 'knex/lib/util/string';
-import { makeString } from '@/common/utils';
 import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
 import _ from 'lodash';
 import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
+import { createSQLiteKnex } from "./sqlite/utils";
 const log = rawLog.scope('sqlite');
 
-const knex = knexlib({
-  client: 'better-sqlite3',
-  // silence the "sqlite does not support inserting default values" warnings on every insert
-  useNullAsDefault: true,
-})
-
-// HACK (day): this is to prevent the 'str.replace is not a function' error that seems to happen with all changes.
-knex.client = Object.assign(knex.client, {
-  _escapeBinding: makeEscape({
-    escapeString(str) { str = makeString(str)
-      return str ? `'${str.replace(/'/g, "''")}'` : ''
-    }
-  })
-})
+const knex = createSQLiteKnex();
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',

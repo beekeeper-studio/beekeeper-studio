@@ -2,14 +2,15 @@ import _ from "lodash";
 import rawLog from "electron-log";
 import { SqliteClient, SqliteResult } from "./sqlite";
 import Client_Libsql from "@libsql/knex-libsql";
-import knexlib from "knex";
 import { BasicDatabaseClient } from "./BasicDatabaseClient";
 import Database from "libsql";
 import { LibSQLCursor } from "./libsql/LibSQLCursor";
 import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { SqliteCursor } from "./sqlite/SqliteCursor";
+import { createSQLiteKnex } from "./sqlite/utils";
 
 const log = rawLog.scope("libsql");
+const knex = createSQLiteKnex(Client_Libsql);
 
 /**
  * FIXME: This class doesn't support returning query data as arrays so
@@ -21,21 +22,20 @@ const log = rawLog.scope("libsql");
  */
 export class LibSQLClient extends SqliteClient {
   private isRemote: boolean;
-  private url: string;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);
+
+    this.knex = knex;
 
     const databasePath = this.databasePath?.trim() || ":memory:";
     const url = this.libsqlOptions.url?.trim() || ":memory:";
 
     if (this.libsqlOptions.mode === "file") {
       this.isRemote = false;
-      this.url = `file:${databasePath}`;
       this.databasePath = databasePath;
     } else {
       this.isRemote = url !== ":memory:" && !url.startsWith("file:");
-      this.url = url;
       // If file path, remove the prefix so SqliteClient can handle it.
       this.databasePath = url.replace(/^file:|^:memory:$/, "");
     }
@@ -44,19 +44,7 @@ export class LibSQLClient extends SqliteClient {
   // TODO can we support ssh to work with libsql: and wss: protocol?
   async connect(): Promise<void> {
     await BasicDatabaseClient.prototype.connect.call(this);
-
-    const knex = knexlib({
-      client: Client_Libsql,
-      connection: {
-        filename: this.useAuthToken
-          ? `${this.url}?authToken=${this.libsqlOptions.authToken}`
-          : this.url,
-      },
-    });
-    this.knex = knex;
-
     log.debug("connected");
-
     const version = await this.driverExecuteSingle(
       "SELECT sqlite_version() as version"
     );
