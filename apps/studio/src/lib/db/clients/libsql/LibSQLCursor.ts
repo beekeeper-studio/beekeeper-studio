@@ -1,8 +1,9 @@
 import { SqliteCursor } from "../sqlite/SqliteCursor";
 import Database from "libsql";
 
-interface LibSQLCursorOptions {
-  isRemote: boolean
+export interface LibSQLCursorOptions {
+  isRemote?: boolean
+  authToken?: string
 }
 
 export class LibSQLCursor extends SqliteCursor {
@@ -13,19 +14,21 @@ export class LibSQLCursor extends SqliteCursor {
     query: string,
     params: string[],
     chunkSize: number,
-    options: LibSQLCursorOptions
+    options: LibSQLCursorOptions = {}
   ) {
     super(databaseName, query, params, chunkSize, options);
   }
 
   protected _createConnection(path: string) {
     // @ts-expect-error not fully typed
-    this.database = new Database(path);
+    this.database = new Database(path, {
+      // @ts-expect-error not fully typed
+      authToken: this.options.authToken,
+    });
   }
 
   // FIXME remove this method if resolved https://github.com/tursodatabase/libsql-js/issues/116
   protected _prepareStatement(query: string) {
-    console.log(this.options);
     this.statement = this.database.prepare(query);
     if (!this.options.isRemote) {
       this.statement.raw(true);

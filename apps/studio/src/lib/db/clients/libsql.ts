@@ -4,7 +4,7 @@ import { SqliteClient, SqliteResult } from "./sqlite";
 import Client_Libsql from "@libsql/knex-libsql";
 import { BasicDatabaseClient } from "./BasicDatabaseClient";
 import Database from "libsql";
-import { LibSQLCursor } from "./libsql/LibSQLCursor";
+import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
 import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
@@ -97,7 +97,11 @@ export class LibSQLClient extends SqliteClient {
   protected createCursor(
     ...args: ConstructorParameters<typeof SqliteCursor>
   ): LibSQLCursor {
-    args[4] = { isRemote: this.isRemote };
+    const options: LibSQLCursorOptions = {
+      isRemote: this.isRemote,
+      authToken: this.useAuthToken ? this.libsqlOptions.authToken : undefined,
+    };
+    args[4] = options;
     return new LibSQLCursor(...args);
   }
 
