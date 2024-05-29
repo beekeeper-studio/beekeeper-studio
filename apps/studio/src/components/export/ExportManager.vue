@@ -28,7 +28,6 @@ import ExportModal from './ExportModal.vue'
 import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
 import { ExportProgress, ExportStatus } from '../../lib/export/models'
 import globals from '@/common/globals'
-import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 
 interface ExportTriggerOptions {
   table?: TableOrView,

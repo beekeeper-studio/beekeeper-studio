@@ -38,7 +38,6 @@ import {
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
-  IndexedColumn,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -198,11 +197,11 @@ export function parseIndexColumn(str: string): IndexColumn {
   const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
 
   let name: string = nameAndPrefix
-  let prefix: string | null = null
+  let prefix: number | null = null
 
   const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
   if (prefixMatch) {
-    prefix = prefixMatch[1]
+    prefix = Number(prefixMatch[1])
     name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
   }
 
@@ -369,7 +368,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return Object.keys(grouped).map((key, idx) => {
       const row = grouped[key][0];
 
-      const columns: IndexedColumn[] = grouped[key].map((r) => ({
+      const columns: IndexColumn[] = grouped[key].map((r) => ({
         name: r.Column_name,
         order: r.Collation === "A" ? "ASC" : "DESC",
         prefix: r.Sub_part, // Also called index prefix length.

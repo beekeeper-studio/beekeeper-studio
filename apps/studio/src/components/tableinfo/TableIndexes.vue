@@ -116,18 +116,19 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue';
-import { CreateIndexSpec, FormatterDialect, IndexAlterations } from '@shared/lib/dialects/models'
+import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
 import rawLog from 'electron-log'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import { TableIndex, IndexedColumn } from '@/lib/db/models'
-import { mapGetters } from 'vuex'
+import { TableIndex } from '@/lib/db/models'
+import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/lib/db/clients/mysql'
 
 interface State {
+  mysqlTypes: string[]
   tabulator: Tabulator
   newRows: RowComponent[]
   removedRows: RowComponent[],
@@ -141,9 +142,10 @@ export default Vue.extend({
     ErrorAlert,
   },
   mixins: [data_mutators],
-  props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
+  props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
+      mysqlTypes: ['mysql', 'mariadb', 'tidb'],
       tabulator: null,
       newRows: [],
       removedRows: [],
@@ -158,6 +160,7 @@ export default Vue.extend({
     }
   },
   computed: {
+    ...mapState(['connectionType']),
     ...mapGetters(['dialect', 'dialectData']),
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
@@ -191,9 +194,9 @@ export default Vue.extend({
       return (this.properties.indexes || []).map((i: TableIndex) => {
         return {
           ...i,
-          columns: i.columns.map((c: IndexedColumn) => {
+          columns: i.columns.map((c: IndexColumn) => {
             // In mysql, we can specify the prefix length
-            if (this.connection.connectionBaseType === 'mysql' && !_.isNil(c.prefix)) {
+            if (this.mysqlTypes(this.connectionType) && !_.isNil(c.prefix)) {
               return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
             }
             return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
@@ -287,12 +290,12 @@ export default Vue.extend({
             dataColumns = [data.columns]
           }
           const columns = dataColumns.map((c: string)=> {
-            if (this.connection.connectionBaseType === 'mysql') {
+            if (this.mysqlTypes.includes(this.connectionType)) {
               return mysqlParseIndexColumn(c)
             }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')
-            return { name, order }
+            return { name, order } as IndexColumn
           })
           const payload: CreateIndexSpec = {
             unique: data.unique,
@@ -311,7 +314,7 @@ export default Vue.extend({
         this.error = null
         const payload = this.getPayload()
 
-        await this.connection.alterIndex(payload)
+        await this.$server.send('conn/alterIndex', { changes: payload });
         this.$noty.success("Indexes Updated")
         this.$emit('actionCompleted')
         this.clearChanges()
@@ -324,9 +327,9 @@ export default Vue.extend({
       }
 
     },
-    submitSql() {
+    async submitSql() {
       const payload = this.getPayload()
-      const sql = this.connection.alterIndexSql(payload)
+      const sql = await this.$server.send('conn/alterIndexSql', { changes: payload });
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

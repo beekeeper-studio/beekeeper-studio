@@ -98,6 +98,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import { AppEvent } from '@/common/AppEvent';
 import { FormatterDialect } from '@shared/lib/dialects/models';
 import { format } from 'sql-formatter';
+import { mapState } from 'vuex';
 
 export default Vue.extend({
 	components: {
@@ -105,7 +106,7 @@ export default Vue.extend({
     ErrorAlert
   },
   mixins: [DataMutators],
-  props: ['table', 'connection', 'tabID', 'active', 'tabState', 'properties'],
+  props: ['table', 'tabID', 'active', 'tabState', 'properties'],
   data() {
     return {
       tabulator: null,
@@ -124,6 +125,7 @@ export default Vue.extend({
     ...TabulatorStateWatchers
   },
   computed: {
+    ...mapState(['supportedFeatures']),
     hotkeys() {
       if (!this.active) return {};
       const result = {};
@@ -175,7 +177,7 @@ export default Vue.extend({
       });
     },
     editable() {
-      return this.connection.supportedFeatures().editPartitions;
+      return this.supportedFeatures.editPartitions;
     }
   },
   methods: {
@@ -268,7 +270,7 @@ export default Vue.extend({
       try {
         this.error = null;
         const changes = this.collectChanges();
-        await this.connection.alterPartition(changes);
+        await this.$server.send('conn/alterPartition', { changes });
 
         await this.$store.dispatch('updateTables');
         await this.refreshPartitions();
@@ -283,7 +285,7 @@ export default Vue.extend({
       try {
         this.error = null;
         const changes = this.collectChanges();
-        const sql = await this.connection.alterPartitionSql(changes);
+        const sql = await this.$server.send('conn/alterPartitionSql', { changes });
         const formatted = format(sql, { language: FormatterDialect(this.dialect)});
         this.$root.$emit(AppEvent.newTab, formatted);
       } catch(ex) {

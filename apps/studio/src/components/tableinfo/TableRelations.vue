@@ -117,7 +117,7 @@ const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 
 export default Vue.extend({
-  props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
+  props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
     ErrorAlert
@@ -350,7 +350,7 @@ export default Vue.extend({
         this.loading = true
         this.error = null
         const payload = this.getPayload()
-        await this.connection.alterRelation(payload)
+        await this.$server.send('conn/alterRelation', { changes: payload });
         this.$noty.success("Relations Updated")
         this.$emit('actionCompleted')
         this.newRows = []
@@ -364,9 +364,9 @@ export default Vue.extend({
       }
 
     },
-    submitSql() {
+    async submitSql() {
       const payload = this.getPayload()
-      const sql = this.connection.alterRelationSql(payload)
+      const sql = this.$server.send('conn/alterRelationSql', { changes: payload });
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

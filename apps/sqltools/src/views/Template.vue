@@ -58,7 +58,6 @@ import Vue from 'vue'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import DialectPicker from '@/components/DialectPicker.vue'
 import { format } from 'sql-formatter'
-import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import HighlightedCode from '@/components/HighlightedCode.vue'
 import { FormatterDialect } from '@shared/lib/dialects/models'
 
@@ -89,14 +88,12 @@ export default Vue.extend({
   },
   data() {
     return {
-      generator: null,
       template: null,
       sql: null
     }
   },
   watch: {
     dialect() {
-      this.generator.dialect = this.dialect
       this.genSql()
     }
   },
@@ -104,15 +101,11 @@ export default Vue.extend({
     ...mapState(['dialect'])
   },
   methods: {
-    genSql() {
-      const unformatted = this.generator.buildSql(this.template.toSchema(this.dialect))
+    async genSql() {
+      const unformatted = await this.$server.send('generator/build', { schema: this.template.toSchema(this.dialect) });
       this.sql = format(unformatted, { language: FormatterDialect(this.dialect)})
     },
     setTemplate(id: string) {
-      this.generator = new SqlGenerator(this.dialect, {
-        dbConfig: this.connection.server.config,
-        dbName: this.connection.database.database
-      })
       const t = templates.find((t) => t.id === id)
       if (t) {
         this.template = t

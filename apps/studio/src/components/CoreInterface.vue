@@ -29,7 +29,7 @@
         class="page-content flex-col"
         id="page-content"
       >
-        <core-tabs :connection="connection" />
+        <core-tabs />
       </div>
     </div>
     <quick-search

@@ -43,7 +43,6 @@
           :primary-keys="primaryKeys"
           :tab-state="pill"
           :properties="properties"
-          :connection="connection"
           :active="pill.id === activePill && active"
           v-show="pill.id === activePill"
           v-for="(pill) in pills"
@@ -144,7 +143,7 @@ import rawLog from 'electron-log'
 
 const log = rawLog.scope('TabTableProperties')
 export default {
-  props: ["connection", "tabId", "active", "tab", "table"],
+  props: ["tabId", "active", "tab", "table"],
   components: { Statusbar, TableLength },
   data() {
     return {

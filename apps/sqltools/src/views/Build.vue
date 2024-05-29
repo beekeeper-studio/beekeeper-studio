@@ -98,7 +98,6 @@ import { UserTemplate as users } from '../lib/templates/user'
 import { DialectTitles, FormatterDialect, Schema, SchemaItem } from '@shared/lib/dialects/models'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import { format } from 'sql-formatter'
-import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import DialectPicker from '@/components/DialectPicker.vue'
 import templates from '@/lib/templates';
 import HighlightedCode from '@/components/HighlightedCode.vue';
@@ -108,7 +107,6 @@ interface Data {
   template: Template
   schema: Schema
   sql?: string,
-  generator: SqlGenerator
   schemaChanges: number
   defaultName: string
 }
@@ -152,13 +150,11 @@ export default Vue.extend ({
         columns: null
       },
       sql: undefined,
-      generator: undefined,
       schemaChanges: 0
     }
   },
   watch: {
     dialect() {
-      this.generator.dialect = this.dialect
       this.schemaChanges = 0
       this.schema.columns = this.templateSchema.columns
     },
@@ -201,8 +197,9 @@ export default Vue.extend ({
     }
   },
   methods: {
-    generateSql: _.debounce(function() {
-      this.sql = this.generator.buildSql(this.schema)
+    // TODO (@day): does this actually work?
+    generateSql: _.debounce(async function() {
+      this.sql = await this.$server.send('generator/build', { schema: this.schema });
     }, 300),
     initialize(id?: string) {
       this.template = id ? templates.find((t) => t.id === id) : users
@@ -215,12 +212,6 @@ export default Vue.extend ({
       this.schemaChanges += 1
     }
   },
-  mounted() {
-      this.generator = new SqlGenerator(this.dialect, {
-        dbConfig: this.connection.server.config,
-        dbName: this.connection.database.database
-      })
-  }
 })
 </script>
 

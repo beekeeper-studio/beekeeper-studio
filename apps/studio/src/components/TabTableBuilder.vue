@@ -87,14 +87,12 @@ import { SchemaItem, Schema, FormatterDialect } from '@shared/lib/dialects/model
 import StatusBar from '@/components/common/StatusBar.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
-import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { BasicTable } from '@/lib/data/table_templates'
 import _ from 'lodash';
 import ErrorAlert from './common/ErrorAlert.vue';
 interface Data {
   initialColumns: SchemaItem[]
   tableName: string | null,
-  generator?: SqlGenerator,
   columns: SchemaItem[],
   error?: Error,
   running: boolean
@@ -107,7 +105,7 @@ export default Vue.extend({
     StatusBar,
     ErrorAlert,
   },
-  props: ['connection', 'tabId', 'active'],
+  props: ['tabId', 'active'],
   data(): Data {
     return {
       running: false,
@@ -115,7 +113,6 @@ export default Vue.extend({
       tableName: 'untitled_table',
       initialColumns: [
       ],
-      generator: undefined,
       columns: [],
       tableSchema: undefined,
       errorSql: undefined
@@ -123,7 +120,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect']),
-    ...mapState(['tables']),
+    ...mapState(['tables', 'defaultSchema', 'usedConfig']),
     hotkeys() {
       if (!this.active) {
         return {}
@@ -134,10 +131,6 @@ export default Vue.extend({
       results[this.ctrlOrCmd('shift+s')] = this.sql.bind(this)
       results[this.ctrlOrCmd('n')] = () => this.$refs.sb.addRow()
       return results
-    },
-    defaultSchema() {
-      return this.connection.defaultSchema ?
-        this.connection.defaultSchema() : undefined
     },
     fixedSchema(): string | undefined {
       if (_.isNil(this.tableSchema) || _.isEmpty(this.tableSchema)) {
@@ -164,12 +157,12 @@ export default Vue.extend({
     },
     async create() {
       this.error = undefined
-      const sql = this.generator.buildSql(this.schema);
+      const sql = await this.$server.send('generator/build', { schema: this.schema });
 
       try {
         this.running = true
-        const running = this.connection.query(sql)
-        await running.execute()
+        const runningId = await this.$server.send('conn/query', { queryText: sql });
+        await this.$server.send('query/execute', { queryId: runningId });
         this.success = true
         this.$noty.success(`${this.simpleTableName} created`)
         await this.$store.dispatch('updateTables');
@@ -192,9 +185,9 @@ export default Vue.extend({
         this.running = false
       }
     },
-    sql() {
+    async sql() {
       this.error = undefined
-      const sql = (this.generator as SqlGenerator).buildSql(this.schema)
+      const sql = await this.$server.send('generator/build', { schema: this.schema });
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       if (sql) {
         this.$root.$emit(AppEvent.newTab, formatted)
@@ -207,10 +200,6 @@ export default Vue.extend({
   beforeMount() {
     const schema = BasicTable.toSchema(this.dialect)
     this.initialColumns = schema.columns
-    this.generator = new SqlGenerator(this.dialect, {
-      dbConfig: this.connection.server.config,
-      dbName: this.connection.database.database
-    })
   },
 })
 </script>

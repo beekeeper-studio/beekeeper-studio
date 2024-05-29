@@ -182,14 +182,13 @@ app.on('ready', async () => {
     }
   }
 
-  // I hate this
-  // TODO (@day): this needs to be done in a more stable manner cause what the fuck
-  setTimeout(() => {
-    getActiveWindows().forEach((w) => {
-      log.info('SENDING PORT TO RENDERER')
-      w.webContents.postMessage('port', null, [rendPort]);
-    })
-  }, 3000)
+})
+
+ipcMain.on('ready', (_event) => {
+  getActiveWindows().forEach((w) => {
+    log.info('SENDING PORT TO RENDERER')
+    w.webContents.postMessage('port', null, [rendPort]);
+  })
 })
 
 // Open a connection from a file (e.g. ./sqlite.db)

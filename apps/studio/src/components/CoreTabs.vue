@@ -86,7 +86,6 @@
               :active="activeTab === tab"
               :tab="tab"
               :tab-id="tab.id"
-              :connection="connection"
               :table="slotProps.table"
             />
           </template>
@@ -96,7 +95,6 @@
           :active="activeTab === tab"
           :tab="tab"
           :tab-id="tab.id"
-          :connection="connection"
         />
       </div>
     </div>
@@ -253,7 +251,7 @@ import { safeSqlFormat as safeFormat } from '@/common/utils';
 import pluralize from 'pluralize'
 
 export default Vue.extend({
-  props: ['connection'],
+  props: [],
   components: {
     Statusbar,
     QueryEditor,
