@@ -9,9 +9,9 @@ export default {
     {
       name: "[DEV] Docker LibSQL",
       connectionType: 'libsql',
+      defaultDatabase: "http://localhost:8081",
       libsqlOptions: {
         mode: "url",
-        url: "http://localhost:8081",
       },
     },
   ],

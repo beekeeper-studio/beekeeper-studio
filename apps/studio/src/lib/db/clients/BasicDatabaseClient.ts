@@ -252,6 +252,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string;
   // ****************************************************************************
 
+  /** Sync a database file to remote database. This is a LibSQL specific feature. */
+  syncDatabase(): void {
+    throw new Error("Not implemented");
+  }
+
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
     return buildInsertQuery(this.knex, tableInsert, columns);

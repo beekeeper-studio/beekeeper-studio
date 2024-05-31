@@ -29,7 +29,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       if (options.mode === "file") {
         dbfile = tmp.fileSync();
         dbPath = dbfile.name;
-        config.libsqlOptions.mode = 'file';
       } else {
         container = await new GenericContainer(
           "ghcr.io/tursodatabase/libsql-server:latest"
@@ -40,8 +39,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           .start();
         const host = container.getHost();
         const port = container.getMappedPort(8080);
-        config.libsqlOptions.url = `http://${host}:${port}`;
-        config.libsqlOptions.mode = 'url';
+        dbPath = `http://${host}:${port}`;
         // creating database on remote server is not supported
         utilOptions.skipCreateDatabase = true;
       }

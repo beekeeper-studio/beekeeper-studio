@@ -2,7 +2,7 @@
   <div class="fixed">
     <div class="data-select-wrap">
       <p
-        v-if="this.connection.connectionType === 'sqlite'"
+        v-if="this.connection.dialect === 'sqlite'"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,7 +18,7 @@
         class="dropdown-search"
       />
       <a
-        v-if="this.connection.connectionType !== 'sqlite'"
+        v-if="this.connection.dialect !== 'sqlite'"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -78,10 +78,10 @@
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        if (this.connection.connectionType.match(/sqlite|firebird/)) {
+        if (this.connection.dialect.match(/sqlite|firebird/)) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
-          const url = this.connection.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
+          const url = this.connection.dialect === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
           return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()

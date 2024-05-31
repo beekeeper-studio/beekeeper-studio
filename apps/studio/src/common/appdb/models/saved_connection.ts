@@ -55,10 +55,9 @@ export interface BigQueryOptions {
 
 export interface LibSQLOptions {
   mode: 'url' | 'file';
-  url?: string;
   authToken?: string;
-  syncUrl?: string; // TODO test this
-  syncPeriod?: number; // TODO test this
+  syncUrl?: string;
+  syncPeriod?: number;
 }
 
 export interface ConnectionOptions {

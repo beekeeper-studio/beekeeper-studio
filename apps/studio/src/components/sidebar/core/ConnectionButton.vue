@@ -29,6 +29,14 @@
             <i class="material-icons">save</i>Save Connection
           </x-label>
         </x-menuitem>
+        <x-menuitem
+          v-if="connection.connectionType === 'libsql' && connection.server.config.libsqlOptions.syncUrl"
+          @click.prevent="$store.dispatch('syncDatabase')"
+        >
+          <x-label>
+            <i class="material-icons">sync</i>Sync Database
+          </x-label>
+        </x-menuitem>
       </x-menu>
     </x-button>
 
@@ -114,7 +122,7 @@ export default {
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig'}),
+      ...mapState({'config': 'usedConfig', 'connection': 'connection'}),
       ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'versionString': 'versionString'}),
       connectionName() {
         return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'

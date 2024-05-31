@@ -22,37 +22,57 @@ const knex = createSQLiteKnex(Client_Libsql);
  */
 export class LibSQLClient extends SqliteClient {
   private isRemote: boolean;
+  /** Use this connection when we need to sync to remote database */
+  private connection: Database.Database;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);
 
     this.knex = knex;
 
-    const databasePath = this.databasePath?.trim() || ":memory:";
-    const url = this.libsqlOptions.url?.trim() || ":memory:";
+    this.databasePath = this.databasePath?.trim().replace(/^file:/, "");
 
-    if (this.libsqlOptions.mode === "file") {
+    if (!this.databasePath) {
       this.isRemote = false;
-      this.databasePath = databasePath;
+      this.databasePath = ":memory:";
     } else {
-      this.isRemote = url !== ":memory:" && !url.startsWith("file:");
-      // If file path, remove the prefix so SqliteClient can handle it.
-      this.databasePath = url.replace(/^file:|^:memory:$/, "");
+      this.isRemote = /^libsql:|^http:|^https:|^ws:|^wss:/.test(
+        this.databasePath
+      );
+    }
+
+    // Syncing is only supported with local files. there'd be a weird panic
+    // we're using other target, so better prevent it here.
+    if (
+      this.libsqlOptions.syncUrl &&
+      /^:memory:$|libsql:|^http:|^https:|^ws:|^wss:/.test(this.databasePath)
+    ) {
+      throw new Error("Sync URL can only be used with local files");
     }
   }
 
-  // TODO can we support ssh to work with libsql: and wss: protocol?
   async connect(): Promise<void> {
     await BasicDatabaseClient.prototype.connect.call(this);
+
+    if (this.libsqlOptions.syncUrl) {
+      this.connection = this.acquireConnection();
+      // TODO should we sync when we connect?
+      // this.connection.sync();
+    }
+
     log.debug("connected");
     const version = await this.driverExecuteSingle(
       "SELECT sqlite_version() as version"
     );
+
     this.version = version;
   }
 
   async disconnect(): Promise<void> {
     await BasicDatabaseClient.prototype.disconnect.call(this);
+    if (this.connection) {
+      this.connection.close();
+    }
   }
 
   versionString(): string {
@@ -66,15 +86,23 @@ export class LibSQLClient extends SqliteClient {
     return `Delete from ${this.dialectData.wrapIdentifier(elementName)};`;
   }
 
+  syncDatabase() {
+    if (this.connection) {
+      return this.connection.sync();
+    }
+  }
+
   protected async rawExecuteQuery(
     q: string,
-    options = {}
+    options: { connection?: Database.Database } = {}
   ): Promise<SqliteResult | SqliteResult[]> {
+    const connection = options.connection || this.connection;
+    const ownOptions = { ...options, connection };
     if (this.isRemote) {
       // FIXME disable arrayMode for now as stmt.raw() doesn't work for remote connection
-      return super.rawExecuteQuery(q, { ...options, arrayMode: false });
+      return super.rawExecuteQuery(q, { ...ownOptions, arrayMode: false });
     }
-    return super.rawExecuteQuery(q, options);
+    return super.rawExecuteQuery(q, ownOptions);
   }
 
   // @ts-expect-error not fully typed
@@ -82,6 +110,10 @@ export class LibSQLClient extends SqliteClient {
     return new Database(this.databasePath, {
       // @ts-expect-error not fully typed
       authToken: this.useAuthToken ? this.libsqlOptions.authToken : undefined,
+      syncUrl: this.libsqlOptions.syncUrl,
+      syncPeriod: this.libsqlOptions.syncPeriod
+        ? Number(this.libsqlOptions.syncPeriod)
+        : undefined,
     });
   }
 

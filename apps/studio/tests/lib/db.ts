@@ -112,9 +112,9 @@ export class DBTestUtil {
         }
       })
     } else if (config.client === 'libsql') {
-      const url = config.libsqlOptions.mode === 'file'
+      const url = !/^:memory:$|^libsql:|^http:|^https:|^ws:|^wss:/.test(database)
         ? `file:${database}`
-        : config.libsqlOptions.url
+        : database
       this.knex = knex({
         client: Client_Libsql as any,
         connection: { filename: url },
