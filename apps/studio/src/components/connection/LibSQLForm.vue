@@ -48,38 +48,6 @@
           name="auth-token"
         />
       </div>
-      <toggle-form-area title="Replica">
-        <div class="form-group col">
-          <label for="sync-url" required>Sync URL</label>
-          <input
-            id="sync-url"
-            class="form-control"
-            v-model="config.libsqlOptions.syncUrl"
-            type="text"
-            name="syncUrl"
-          />
-        </div>
-        <div class="form-group col">
-          <label for="auth-token" required>Authentication Token</label>
-          <textarea
-            id="auth-token"
-            class="form-control"
-            v-model="config.libsqlOptions.authToken"
-            type="text"
-            name="auth-token"
-          />
-        </div>
-        <div class="form-group col">
-          <label for="sync-period" required>Sync Period <span class="hint">(optional, in seconds)</span></label>
-          <input
-            id="sync-period"
-            class="form-control"
-            v-model="config.libsqlOptions.syncPeriod"
-            type="number"
-            name="syncPeriod"
-          />
-        </div>
-      </toggle-form-area>
     </template>
     <template v-if="config.libsqlOptions.mode === 'file'">
       <div class="form-group col">
@@ -91,6 +59,38 @@
         <snap-external-warning />
       </div>
     </template>
+    <toggle-form-area title="Replica">
+      <div class="form-group col">
+        <label for="sync-url" required>Sync URL</label>
+        <input
+          id="sync-url"
+          class="form-control"
+          v-model="config.libsqlOptions.syncUrl"
+          type="text"
+          name="syncUrl"
+        />
+      </div>
+      <div class="form-group col">
+        <label for="auth-token" required>Authentication Token</label>
+        <textarea
+          id="auth-token"
+          class="form-control"
+          v-model="config.libsqlOptions.authToken"
+          type="text"
+          name="auth-token"
+        />
+      </div>
+      <div class="form-group col">
+        <label for="sync-period" required>Sync Period <span class="hint">(optional, in seconds)</span></label>
+        <input
+          id="sync-period"
+          class="form-control"
+          v-model="config.libsqlOptions.syncPeriod"
+          type="number"
+          name="syncPeriod"
+        />
+      </div>
+    </toggle-form-area>
   </div>
 </template>
 
