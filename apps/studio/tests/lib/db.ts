@@ -914,7 +914,7 @@ export class DBTestUtil {
       100,
       [],
       [{ field: 'hourly_rate', type: 'is' }],
-      'public',
+      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
       ['*']
     );
 
@@ -938,7 +938,7 @@ export class DBTestUtil {
       100,
       [],
       [{ field: 'hourly_rate', type: 'is not' }],
-      'public',
+      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
       ['*']
     );
 
