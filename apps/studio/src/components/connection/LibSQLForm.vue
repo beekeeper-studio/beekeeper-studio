@@ -9,8 +9,12 @@
     <div class="form-group col">
       <label for="connection-mode">Connection Mode</label>
       <select id="connection-mode" v-model="config.libsqlOptions.mode">
-        <option value="url">URL</option>
-        <option value="file">File</option>
+        <option value="url">
+          URL
+        </option>
+        <option value="file">
+          File
+        </option>
       </select>
     </div>
     <template v-if="config.libsqlOptions.mode === 'url'">
@@ -36,7 +40,7 @@
           v-model="config.defaultDatabase"
           type="text"
           name="url"
-        />
+        >
       </div>
       <div class="form-group col">
         <label for="auth-token" required>Authentication Token</label>
@@ -68,7 +72,7 @@
           v-model="config.libsqlOptions.syncUrl"
           type="text"
           name="syncUrl"
-        />
+        >
       </div>
       <div class="form-group col">
         <label for="auth-token" required>Authentication Token</label>
@@ -88,7 +92,7 @@
           v-model="config.libsqlOptions.syncPeriod"
           type="number"
           name="syncPeriod"
-        />
+        >
       </div>
     </toggle-form-area>
   </div>
