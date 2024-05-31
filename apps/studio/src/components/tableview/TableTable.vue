@@ -13,7 +13,7 @@
     </template>
     <template v-else>
       <row-filter-builder
-        v-if="table.columns?.length && !minimalMode"
+        v-if="table.columns?.length"
         :columns="table.columns"
         :reactive-filters="tableFilters"
         @input="handleRowFilterBuilderInput"
@@ -295,7 +295,7 @@ import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { normalizeFilters, safeSqlFormat } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
@@ -305,10 +305,6 @@ import { tabulatorForTableData } from "@/common/tabulator";
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
-
-function createTableFilter(field: string) {
-  return { op: "AND", field, type: "=", value: "" }
-}
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
@@ -351,6 +347,9 @@ export default Vue.extend({
       initialized: false,
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
+
+      /** This is true when we switch to minimal mode while TableTable is not active */
+      enabledMinimalModeWhileInactive: false,
     };
   },
   computed: {
@@ -737,6 +736,12 @@ export default Vue.extend({
           this.tableFilters = this.tab.getFilters()
           this.triggerFilter(this.tableFilters)
         }
+
+        if (this.enabledMinimalModeWhileInactive) {
+          this.enabledMinimalModeWhileInactive = false
+          resizeAllColumnsToFitContentAction(this.tabulator)
+        }
+
         // $nextTick doesn't work here
         setTimeout(() => {
           this.tabulator.modules.selectRange.restoreFocus()
@@ -770,8 +775,15 @@ export default Vue.extend({
       this.tab.unsavedChanges = this.pendingChangesCount > 0
     },
     minimalMode() {
-      if (this.tabulator) {
+      // Auto resize the columns when the tab is active (not hidden in the DOM)
+      // so tabulator can do it correctly.
+      if (this.tabulator && this.active) {
         resizeAllColumnsToFitContentAction(this.tabulator)
+      }
+
+      // If the tab is not active, we can auto resize later when it's active
+      if (!this.active) {
+        this.enabledMinimalModeWhileInactive = this.minimalMode
       }
     },
   },
