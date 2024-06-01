@@ -1,15 +1,19 @@
 import { uuidv4 } from "./uuid";
 import rawLog from 'electron-log';
+import _ from 'lodash';
 
 const log = rawLog.scope('UtilConnection');
 
+type Listener = (input: any) => void;
 
 export class UtilityConnection {
-  replyHandlers: Map<string, { resolve: any, reject: any }> = new Map();
+  private replyHandlers: Map<string, { resolve: any, reject: any }> = new Map();
+  private listeners: Array<{type: string, id: string, listener: Listener}> = new Array();
 
   constructor(private port: MessagePort) {
     port.onmessage = (msg) => {
       const { data: msgData } = msg;
+      log.info('RECEIVED MESSAGE: ', msgData.type, msgData)
 
       if (msgData.type === 'error') {
         // handle errors
@@ -31,6 +35,11 @@ export class UtilityConnection {
 
           handler.resolve(data);
         }
+      } else if (_.some(this.listeners, ({type}) => msgData.type === type)) {
+        const { listener, type, id } = this.listeners.find(({type}) => msgData.type === type);
+        log.info('HANDLING REQUEST WITH LISTENER (type, id): ', type, id);
+        const { input } = msgData;
+        listener(input);
       }
     }
   }
@@ -45,4 +54,17 @@ export class UtilityConnection {
       this.port.postMessage({id, name: handlerName, args: args ?? {}});
     })
   }
+
+  public addListener(type: string, listener: Listener): string {
+    const id = uuidv4();
+    this.listeners.push({ type, id, listener });
+    log.info('ADDED LISTENER: ', type, id);
+
+    return id;
+  }
+
+  public removeListener(id: string) {
+    this.listeners = _.reject(this.listeners, { 'id': id });
+  }
+  
 }

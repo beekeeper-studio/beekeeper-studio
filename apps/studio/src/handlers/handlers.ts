@@ -1,9 +1,11 @@
-import { ConnectionHandlers } from "./connHandlers";
-import { GeneratorHandlers } from "./generatorHandlers";
-import { QueryHandlers } from "./queryHandlers";
+import { IConnectionHandlers } from "./connHandlers";
+import { IExportHandlers } from "./exportHandlers";
+import { IGeneratorHandlers } from "./generatorHandlers";
+import { IQueryHandlers } from "./queryHandlers";
 
 export interface Handlers extends
-  ConnectionHandlers,
-  QueryHandlers,
-  GeneratorHandlers
+  IConnectionHandlers,
+  IQueryHandlers,
+  IGeneratorHandlers,
+  IExportHandlers
    {};
