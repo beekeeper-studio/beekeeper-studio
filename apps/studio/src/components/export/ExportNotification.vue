@@ -14,7 +14,7 @@ export default {
     // TODO (@day): this should be queried from the process based on the id that's received in the prop
     return {
       percentComplete: 0,
-      status: null,
+      exportName: null,
       notification: new Noty({
         // NOTE (@day): not sure this actually works lol
         text: `Exporting '${this.exportName}'`,
@@ -30,9 +30,6 @@ export default {
     }
   },
   computed: {
-    async exportName() {
-      return await this.$server.send('export/name', { id: this.exportId });
-    },
     notificationText() {
       // CoPilot suggested the comment below, and it was right af lol
       // this is a hack to get the countExported to update
@@ -53,7 +50,10 @@ export default {
       const exportName = await this.$server.send('export/name', { id: this.exportId });
       this.$noty.error(`${exportName} export aborted`);
     },
-    updateProgress(progress) {
+    async updateExportName() {
+      this.exportName = await this.$server.send('export/name', { id: this.exportId });
+    },
+    async updateProgress(progress) {
       // not quite sure why this hackiness (and only this hackiness) finally made it work but i'll take it
       this.countExported = progress.countExported
       this.percentComplete = progress.percentComplete ? progress.percentComplete : progress.countExported
@@ -69,16 +69,14 @@ export default {
     },
   },
   async mounted() {
-    this.status = await this.$server.send('export/status', { id: this.exportId });
-    console.log('STATUS: ', this.status)
-    if (this.status === ExportStatus.Exporting ) {
-      //this.exporter.onProgress(this.updateProgress)
+    const status = await this.$server.send('export/status', { id: this.exportId });
+    this.exportName = await this.$server.send('export/name', { id: this.exportId });
+    if (status === ExportStatus.Exporting ) {
       this.$server.addListener(`onExportProgress/${this.exportId}`, this.updateProgress.bind(this));
       this.notification.show();
     }
   },
   beforeDestroy() {
-    //this.exporter.offProgress(this.updateProgress)
     this.$server.removeListener(`onExportProgress/${this.exportId}`);
     this.notification.close();
   },
