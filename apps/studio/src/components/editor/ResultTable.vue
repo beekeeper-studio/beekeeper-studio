@@ -58,7 +58,7 @@
       }
     },
     computed: {
-      ...mapState(['connection', 'usedConfig']),
+      ...mapState(['usedConfig', 'defaultSchema', 'connectionType']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -76,9 +76,8 @@
         const cellMenu = (_e, cell) => {
           return copyActionsMenu({
             range: _.last(cell.getRanges()),
-            connection: this.connection,
             table: this.result.tableName,
-            schema: this.connection.defaultSchema(),
+            schema: this.defaultSchema,
           })
         }
 
@@ -86,9 +85,8 @@
           return [
             ...copyActionsMenu({
               range: _.last(column.getRanges()),
-              connection: this.connection,
               table: 'mytable',
-              schema: this.connection.defaultSchema(),
+              schema: this.defaultSchema,
             }),
             { separator: true },
             ...commonColumnMenu,
@@ -106,7 +104,7 @@
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
             width: columnWidth,
-            mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
+            mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: this.cellTooltip,

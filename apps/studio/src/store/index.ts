@@ -6,7 +6,6 @@ import { ipcRenderer } from 'electron'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
-import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -26,8 +25,6 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
-import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
-import { UserSetting } from '@/common/appdb/models/user_setting'
 
 const log = RawLog.scope('store/index')
 
@@ -42,7 +39,6 @@ export interface State {
   usedConfig: Nullable<IConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
-  connection: Nullable<BasicDatabaseClient<any>>,
   connected: boolean,
   connectionType: Nullable<string>,
   supportedFeatures: Nullable<SupportedFeatures>,
@@ -62,7 +58,8 @@ export interface State {
   workspaceId: number,
   storeInitialized: boolean,
   windowTitle: string,
-  defaultSchema: string
+  defaultSchema: string,
+  versionString: string
 }
 
 Vue.use(Vuex)
@@ -82,9 +79,9 @@ const store = new Vuex.Store<State>({
     usedConfig: null,
     usedConfigs: [],
     server: null,
-    connection: null,
     connected: false,
     connectionType: null,
+    supportedFeatures: null,
     database: null,
     databaseList: [],
     tables: [],
@@ -194,9 +191,6 @@ const store = new Vuex.Store<State>({
       }
       return []
     },
-    versionString(state) {
-      return state.server.versionString();
-    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -235,15 +229,13 @@ const store = new Vuex.Store<State>({
     setUsername(state, name) {
       state.username = name
     },
-    newConnection(state, payload) {
-      state.server = payload.server
-      state.usedConfig = payload.config
-      state.connection = payload.connection
-      state.database = payload.config.defaultDatabase
+    newConnection(state, config: IConnection) {
+      state.usedConfig = config
+      state.database = config.defaultDatabase
     },
+    // this shouldn't be used at all
     clearConnection(state) {
       state.usedConfig = null
-      state.connection = null
       state.connected = false
       state.supportedFeatures = null
       state.server = null
@@ -259,8 +251,8 @@ const store = new Vuex.Store<State>({
         showPartitions: false
       }
     },
-    updateConnection(state, {connection, database}) {
-      state.connection = connection
+    updateConnection(state, {database}) {
+      // state.connection = connection
       state.database = database
     },
     databaseList(state, dbs: string[]) {
@@ -340,6 +332,9 @@ const store = new Vuex.Store<State>({
     },
     supportedFeatures(state, features: SupportedFeatures) {
       state.supportedFeatures = features;
+    },
+    versionString(state, versionString: string) {
+      state.versionString = versionString;
     }
   },
   actions: {
@@ -382,23 +377,17 @@ const store = new Vuex.Store<State>({
         await Vue.prototype.$server.send('conn/create', { config, osUser: context.state.username })
         const defaultSchema = await Vue.prototype.$server.send('conn/defaultSchema');
         const supportedFeatures = await Vue.prototype.$server.send('conn/supportedFeatures');
+        const versionString = await Vue.prototype.$server.send('conn/versionString');
         context.commit('defaultSchema', defaultSchema);
         context.commit('connectionType', config.connectionType);
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
+        context.commit('versionString', versionString);
+        context.commit('newConnection', config)
 
-
-        const settings = await UserSetting.all()
-        const server = ConnectionProvider.for(config, context.state.username, settings)
-        // TODO: (geovannimp) Check case connection is been created with undefined as key
-        const connection = server.createConnection(config.defaultDatabase || undefined)
-        await connection.connect()
-        connection.connectionType = config.connectionType;
-
-        context.commit('newConnection', {config: config, server, connection})
-        await context.dispatch('updateDatabaseList') // TODO (@day): needs to be a utility call
-        await context.dispatch('updateTables') // TODO (@day): needs to be a utility call (at least in part, not sure about the formatting shit)
-        await context.dispatch('updateRoutines') // TODO (@day): needs to be a utility call
+        await context.dispatch('updateDatabaseList')
+        await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines')
         context.dispatch('recordUsedConfig', config) // TODO (@day): needs to be a utility call (actually maybe just make this part of the conn/create handler??)
         context.dispatch('updateWindowTitle', config)
       } else {

@@ -8,7 +8,6 @@
         <core-interface
           @databaseSelected="databaseSelected"
           v-else
-          :connection="connection"
         />
         <auto-updater />
         <state-manager />
@@ -63,7 +62,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['storeInitialized', 'connection', 'database', 'connected']),
+    ...mapState(['storeInitialized', 'database', 'connected']),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'

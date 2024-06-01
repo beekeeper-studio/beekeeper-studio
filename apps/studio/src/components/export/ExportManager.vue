@@ -37,7 +37,7 @@ interface ExportTriggerOptions {
 
 export default Vue.extend({
   components: { ExportModal, ExportNotification },
-  props: ['connection'],
+  props: [],
   data() {
     return {
       // these are like 'pending Export'
