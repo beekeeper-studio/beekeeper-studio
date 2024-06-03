@@ -531,7 +531,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       }
       &.generated-column:before {
         $font-size: 13px;
-        content: 'edit_off';
+        content: 'bolt';
         font-family: 'Material Icons';
         font-size: $font-size;
         color: rgba($theme-base, 0.35);
@@ -904,4 +904,13 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 .tabulator-tooltip {
   background-color: #292A2D;
   color: lightgray;
+}
+
+.beekeeper-studio-minimal-mode .tabulator-header {
+  font-weight: inherit;
+
+  .tabulator-col .tabulator-col-content .tabulator-col-title .title >
+  .column-data-type {
+    display: none;
+  }
 }

@@ -144,12 +144,14 @@ function buildFilterString(filters: TableFilter[], columns = []) {
           : "?";
 
         return `${field} ${item.type.toUpperCase()} (${questionMarks})`;
+      } else if (item.type.includes('is')) {
+        return `${field} ${item.type.toUpperCase()} NULL`;
       }
       return `${field} ${item.type.toUpperCase()} ?`;
     });
     filterString = "WHERE " + joinFilters(allFilters, filters);
 
-    filterParams = filters.flatMap((item) => {
+    filterParams = filters.filter((filter) => !!filter.value).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value];
     });
   }
@@ -207,6 +209,8 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
+  connectionBaseType = 'firebird' as const;
+
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
@@ -368,6 +372,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           defaultValue,
           nullable,
           primaryKey,
+          hasDefault: !_.isNil(defaultValue),
         };
       })
     );
@@ -626,40 +631,46 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     return {
       execute: async () => {
-        connection = await Connection.attach(this.firebirdOptions);
+        connection = await this.pool.getConnection()
 
-        const results = await this.driverExecuteMultiple(queryText, {
-          rowAsArray: true,
-          connection,
-        });
-
-        connection.release();
-
-        return results.map(({ rows, meta }) => {
-          const fields = meta.map((field, idx) => ({
-            id: `c${idx}`,
-            name: field.alias || field.field,
-            // TODO add dataType prop
-          }));
-
-          rows = rows.map((row: Record<string, any>) => {
-            const transformedRow = {};
-            Object.keys(row).forEach((key, idx) => {
-              let val = row[key];
-              if (TRIM_END_CHAR && meta[idx].type === 452) {
-                // SQLVarText or CHAR
-                val = val.trimEnd();
-              }
-              transformedRow[`c${idx}`] = val;
-            });
-            return transformedRow;
+        try {
+          const results = await this.driverExecuteMultiple(queryText, {
+            rowAsArray: true,
+            connection,
           });
+          return results.map(({ rows, meta }) => {
+            const fields = meta.map((field, idx) => ({
+              id: `c${idx}`,
+              name: field.alias || field.field,
+              // TODO add dataType prop
+            }));
 
-          return { fields, rows };
-        });
+            rows = rows.map((row: Record<string, any>) => {
+              const transformedRow = {};
+              Object.keys(row).forEach((key, idx) => {
+                let val = row[key];
+                if (TRIM_END_CHAR && meta[idx].type === 452) {
+                  // SQLVarText or CHAR
+                  val = val.trimEnd();
+                }
+                transformedRow[`c${idx}`] = val;
+              });
+              return transformedRow;
+            });
+
+            return { fields, rows };
+          });
+        } finally {
+          await connection.release();
+        }
+
       },
       cancel: async () => {
-        connection?.release();
+        try {
+          await connection?.release();
+        } catch (ex) {
+          log.warn("Unable to release connection", ex.message)
+        }
       },
     };
   }
@@ -850,18 +861,15 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           await transaction.query(command);
         }
       }
-
       await transaction.commit();
+      return results;
     } catch (ex) {
       log.error("query exception: ", ex);
       await transaction.rollback();
-      await connection.release();
       throw ex;
+    } finally {
+      await connection.release()
     }
-
-    await connection.release();
-
-    return results;
   }
 
   applyChangesSql(changes: TableChanges): string {
@@ -882,31 +890,30 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     cli: Connection | Transaction,
     updates: TableUpdate[]
   ): Promise<TableUpdateResult[]> {
-    const commands = updates.map((update) => {
-      const params = [
+    const results = [];
+
+    for (const update of updates) {
+      const updateParams = [
         _.isBoolean(update.value) ? _.toInteger(update.value) : update.value,
       ];
+
       const whereList = [];
+      const whereParams = [];
       update.primaryKeys.forEach(({ column, value }) => {
         whereList.push(`${FirebirdData.wrapIdentifier(column)} = ?`);
-        params.push(value);
+        whereParams.push(value);
       });
 
       const where = whereList.join(" AND ");
 
-      return {
-        query: `
-          UPDATE ${update.table} SET ${update.column} = ?
-          WHERE ${where} RETURNING *
-        `,
-        params: params,
-      };
-    });
+      const updateQuery = `
+        UPDATE ${update.table} SET ${update.column} = ?
+        WHERE ${where}
+      `;
+      const selectQuery = `SELECT * FROM ${update.table} WHERE ${where}`;
 
-    const results = [];
-    for (let index = 0; index < commands.length; index++) {
-      const blob = commands[index];
-      const result = await cli.query(blob.query, blob.params);
+      await cli.query(updateQuery, [updateParams, ...whereParams]);
+      const result = await cli.query(selectQuery, whereParams);
       results.push(result.rows[0]);
     }
 
@@ -1014,7 +1021,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -1211,8 +1219,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     } catch (ex) {
       log.error("importData", sql, ex);
       await transaction.rollback();
-      await connection.release();
       throw ex;
+    } finally {
+      await connection.release()
     }
   }
 

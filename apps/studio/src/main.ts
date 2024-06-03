@@ -77,14 +77,8 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
     Tabulator.defaultOptions.layout = "fitDataFill";
-    // @ts-expect-error default options not fully typed
-    Tabulator.defaultOptions.menuContainer = ".beekeeper-studio-wrapper";
-    // @ts-expect-error default options not fully typed
+    Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    // @ts-expect-error default options not fully typed
-    Tabulator.defaultOptions.resizeColumnsMode = 'guide';
-    // @ts-expect-error default options not fully typed
-    Tabulator.defaultOptions.resizeColumnsHandles = 'header-only';
     Tabulator.registerModule([HeaderSortTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath

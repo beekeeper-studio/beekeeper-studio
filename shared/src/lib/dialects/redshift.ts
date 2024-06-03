@@ -31,6 +31,7 @@ export const RedshiftData: DialectData = {
   usesOffsetPagination: true,
   requireDataset: false,
   unwrapIdentifier: (s) => s,
+  textEditorMode: "text/x-pgsql",
   disabledFeatures: {
     alter: {
       multiStatement: true

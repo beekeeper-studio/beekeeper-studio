@@ -16,18 +16,19 @@ const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: true},
   { version: '9.4', socket: false, readonly: false},
   { version: '9.4', socket: false, readonly: true},
-  { version: 'latest', socket: false, readonly: false },
-  { version: 'latest', socket: false, readonly: true },
   { version: 'latest', socket: true, readonly: false },
-]
+  { version: 'latest', socket: false, readonly: true },
+  { version: 'latest', socket: false, readonly: false },
+] as const
 
-function testWith(dockerTag, socket = false, readonly = false) {
+type TestVersion = typeof TEST_VERSIONS[number]['version']
+
+function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
   describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
     beforeAll(async () => {
-      const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
@@ -40,7 +41,6 @@ function testWith(dockerTag, socket = false, readonly = false) {
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
         .withStartupTimeout(dbtimeout)
         .start()
-      jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
         host: container.getHost(),
@@ -94,6 +94,14 @@ function testWith(dockerTag, socket = false, readonly = false) {
           public.moody_people (
             id serial NOT NULL,
             current_mood this_is_a_mood NULL DEFAULT 'sad'::this_is_a_mood
+          );
+      `)
+
+      await util.knex.raw(`
+        CREATE TABLE
+          public.extra_moody_people (
+            id serial NOT NULL,
+            current_moods this_is_a_mood[] NULL DEFAULT '{sad, happy}'
           );
       `)
 
@@ -156,10 +164,13 @@ function testWith(dockerTag, socket = false, readonly = false) {
       if (container) {
         await container.stop()
       }
+
     })
 
 
     it("Should allow me to update rows with an empty array", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
       const updates = [
         {
           value: "[]",
@@ -168,6 +179,7 @@ function testWith(dockerTag, socket = false, readonly = false) {
             column: 'id', value: 1
           }],
           columnType: "_text",
+          columnObject: nameColumn,
           table: "witharrays"
         }
       ]
@@ -210,10 +222,13 @@ function testWith(dockerTag, socket = false, readonly = false) {
     })
 
     it("Should allow me to update rows with array types", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: ["x", "y", "z"],
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1}
         ],
@@ -241,10 +256,13 @@ function testWith(dockerTag, socket = false, readonly = false) {
 
 
     it("Should allow me to update rows with array types when passed as string", async () => {
+      const columns = await util.connection.listTableColumns("witharrays")
+      const nameColumn = columns.find((c) => c.columnName === "names")
 
       const updates = [{
         value: '["x", "y", "z"]',
         column: "names",
+        columnObject: nameColumn,
         primaryKeys: [
           { column: 'id', value: 1 }
         ],
@@ -444,6 +462,30 @@ function testWith(dockerTag, socket = false, readonly = false) {
         }
       ])
     })
+
+    it("should be able to define array column correctly", async () => {
+      const arrayTable = await util.connection.listTableColumns('witharrays');
+      const enumTable = await util.connection.listTableColumns('moody_people');
+      const enumArrayTable = await util.connection.listTableColumns('extra_moody_people');
+
+      const arrayColumn = arrayTable.find((col) => col.columnName === 'names')
+      const enumColumn = enumTable.find((col) => col.columnName === 'current_mood')
+      const enumArrayColumn = enumArrayTable.find((col) => col.columnName === 'current_moods')
+
+      expect(arrayColumn.array).toBeTruthy()
+      expect(enumColumn.array).toBeFalsy()
+      expect(enumArrayColumn.array).toBeTruthy()
+    })
+
+    if (dockerTag === 'latest') {
+      it("should list indexes with info", async () => {
+        await util.knex.schema.createTable('has_indexes_2', (table) => {
+          table.specificType("text", "varchar(255) UNIQUE NULLS NOT DISTINCT")
+        })
+        const indexes = await util.connection.listTableIndexes('has_indexes_2')
+        expect(indexes[0].nullsNotDistinct).toBeTruthy()
+      })
+    }
 
     describe("Common Tests", () => {
       if (readonly) {

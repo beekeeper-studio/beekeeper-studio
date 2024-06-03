@@ -69,8 +69,10 @@ export default Vue.extend({
   },
   methods: {
     showModal(message) {
-      this.message = message
-      this.$modal.show('upgrade-modal')
+      if (this.$config.isCommunity) {
+        this.message = message
+        this.$modal.show('upgrade-modal')
+      }
     }
   },
   mounted() {

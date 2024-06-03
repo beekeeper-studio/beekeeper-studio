@@ -216,6 +216,8 @@
         You will lose unsaved changes
       </template>
     </confirmation-modal>
+
+    <sql-files-import-modal @submit="importSqlFiles" />
   </div>
 </template>
 
@@ -247,6 +249,7 @@ import { readWebFile, getLastExportPath } from '@/common/utils'
 import { readFileSync, writeFileSync } from 'fs'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
+import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import pluralize from 'pluralize'
@@ -266,6 +269,7 @@ export default Vue.extend({
     TabIcon,
     PendingChangesButton,
     ConfirmationModal,
+    SqlFilesImportModal,
     },
     data() {
       return {
@@ -343,8 +347,8 @@ export default Vue.extend({
         { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
         { event: AppEvent.duplicateDatabaseTable, handler: this.duplicateDatabaseTable },
         { event: AppEvent.dropzoneDrop, handler: this.handleDropzoneDrop },
-        { event: AppEvent.promptQueryImportFromComputer, handler: this.handlePromptQueryImportFromComputer },
         { event: AppEvent.promptQueryExport, handler: this.handlePromptQueryExport },
+        { event: AppEvent.beginImport, handler: this.beginImport },
       ]
     },
     lastTab() {
@@ -585,6 +589,9 @@ export default Vue.extend({
 
       this.$modal.show(this.modalName)
     },
+    beginImport() {
+      this.showUpgradeModal()
+    },
     duplicateDatabaseTable({ item: dbActionParams, action: dbAction }) {
       this.dbElement = dbActionParams.name
       this.dbAction = dbAction
@@ -672,18 +679,7 @@ export default Vue.extend({
 
       noty.close()
     },
-    async handlePromptQueryImportFromComputer() {
-      const paths: string[] | undefined = this.$native.dialog.showOpenDialogSync({
-        title: "Import Queries",
-        properties: ['openFile', 'multiSelections'],
-        filters: [
-          { name: 'SQL', extensions: ['sql'] }
-        ]
-      })
-
-      // do nothing if canceled
-      if (!paths) return;
-
+    async importSqlFiles(paths: string[]) {
       const files = paths.map((path) => ({
         path,
         name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
@@ -803,7 +799,9 @@ export default Vue.extend({
       tab.titleScope = "all"
       const existing = this.tabItems.find((t) => t.matches(tab))
       if (existing) {
-        existing.setFilters(filters)
+        if (filters) {
+          existing.setFilters(filters)
+        }
         this.$store.dispatch('tabs/setActive', existing)
       } else {
         this.addTab(tab)

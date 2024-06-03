@@ -1,6 +1,7 @@
 import _ from 'lodash'
+import CodeMirror from 'codemirror'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'firebird', 'duckdb'] as const
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'duckdb'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -17,6 +18,8 @@ export function dialectFor(s: string): Dialect | null {
     case 'cockroachdb':
       return 'postgresql'
     case 'mariadb':
+      return 'mysql'
+    case 'tidb':
       return 'mysql'
     case 'mssql':
       return 'sqlserver'
@@ -90,6 +93,7 @@ export interface DialectData {
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   unwrapIdentifier: (s: string) => string
+  textEditorMode: CodeMirror.EditorConfiguration['mode']
   defaultSchema?: string
   usesOffsetPagination: boolean
   requireDataset?: boolean,
@@ -237,14 +241,15 @@ export interface AlterPartitionsSpec {
 export interface IndexColumn {
   name: string
   order: 'ASC' | 'DESC'
+  prefix?: number | null // MySQL Only
 }
 
 export interface CreateIndexSpec {
   name?: string
   columns: IndexColumn[]
   unique: boolean
-  // Set order for entire index. Used in firebird.
-  order?: 'ASC' | 'DESC'
+  order?: 'ASC' | 'DESC' // Set order for entire index. Used in firebird.
+  prefix?: number | null // MySQL Only
 }
 
 export interface DropIndexSpec {

@@ -56,13 +56,17 @@ export const Mutators = {
     return value
   },
   /**
-   * Stringify bit(1) data for use in UIs and JSON.
+   * Convert bit(1) data to a number for use in UIs and JSON.
    * Typically Bit1 data is like a true/false flag.
    * @param  {any} value
    * @returns JsonFriendly
    */
   bit1Mutator(value: any): JsonFriendly {
     if (!value) return 0
+
+    // No need to convert if it's number
+    if (_.isNumber(value)) return value
+
     return Number(value[0])
   },
 
@@ -76,7 +80,12 @@ export const Mutators = {
     // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead
     // of futzing around in here too much? The goal is to keep the true/false as showing
 
+    if (!value) return value
+
     if (dialect && dialect === 'sqlserver') return value
+
+    // No need to convert if it's string
+    if (_.isString(value)) return value
 
     const result = []
     for (let index = 0; index < value.length; index++) {

@@ -61,9 +61,14 @@ export class SqlGenerator {
       schema.columns.forEach((column: SchemaItem) => {
         // TODO: autoincrement makes cassandra just roll over and die Need to remove it from the default values.
         // Other than that, was creating tables pretty ok I think
-        const col = column.dataType === 'autoincrement' ?
-          table.increments(column.columnName) :
-          table.specificType(column.columnName, column.dataType)
+        let col: Knex.ColumnBuilder;
+        if (column.dataType.match(/autoincrement/i) && this.dialect === 'postgresql') {
+          col = table.specificType(column.columnName, 'serial')
+        } else if (column.dataType.match(/autoincrement/i)) {
+          col = table.increments(column.columnName)
+        } else {
+          col = table.specificType(column.columnName, column.dataType)
+        }
 
         if (column.defaultValue) col.defaultTo(this.knex.raw(column.defaultValue))
         if (column.unsigned) col.unsigned()
@@ -86,7 +91,10 @@ export class SqlGenerator {
 // Private below here plz
 
   private getPrimaries(c): boolean {
-    if (this.isNativeKnex) {
+    // Prevent making primary key and autoincrement from one another for
+    // BigQuery and Cassandra. There's no auto increment functionality for a
+    // PK in those DBs.
+    if (this.dialect === 'bigquery' || this.dialect === 'cassandra') {
       return c.primaryKey && c.dataType !== 'autoincrement'
     }
 

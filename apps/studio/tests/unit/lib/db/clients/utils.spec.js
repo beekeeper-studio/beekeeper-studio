@@ -74,7 +74,7 @@ describe("buildSelectTopQuery", () => {
     testCases.forEach(testCase => {
       const expected = testCase.result
       const result = buildSelectTopQuery(...testCase.params)
-      
+
       expect(result.params).toStrictEqual(expected.params)
       expect(trimQuery(result.countQuery)).toEqual(expected.countQuery)
       expect(trimQuery(result.query)).toEqual(expected.query)

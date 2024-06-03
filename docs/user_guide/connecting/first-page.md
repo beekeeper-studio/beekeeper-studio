@@ -17,10 +17,11 @@ Beekeeper Studio currently supports the following database types:
 - Amazon Redshift
 - CockroachDB
 - MariaDB
+- TiDB
 - Oracle Database
 - Cassandra
 - Google BigQuery
-
+- Firebird
 
 ![Image Alt Tag](../../assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen

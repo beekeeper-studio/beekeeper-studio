@@ -4,6 +4,7 @@
       :name="modalName"
       class="beekeeper-modal vue-dialog editor-dialog"
       @opened="onOpen"
+      @before-close="onBeforeClose"
     >
       <!-- Trap the key events so it doesn't conflict with the parent elements -->
       <div
@@ -30,8 +31,8 @@
               Select a language
             </option>
             <option
-              v-for="(lang, idx) in languages"
-              :key="idx"
+              v-for="lang in languages"
+              :key="lang.name"
               :value="lang.name"
             >
               {{ lang.label }}
@@ -61,13 +62,17 @@
           </x-button>
         </div>
 
-        <div class="editor-container">
+        <div
+          class="editor-container"
+          ref="editorContainer"
+        >
           <text-editor
             v-model="content"
-            :lang="languageName"
+            :mode="language.editorMode"
             :line-wrapping="wrapText"
             :height="editorHeight"
-            @interface="editorInterface = $event"
+            :focus="editorFocus"
+            @focus="editorFocus = $event"
           />
         </div>
       </div>
@@ -135,7 +140,7 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
-import { Languages, LanguageData, TextLanguage, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
+import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../../lib/editor/languageData'
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
@@ -148,7 +153,7 @@ export default Vue.extend({
   name: "CellEditorModal",
   data() {
     return {
-      editorInterface: {},
+      editorFocus: false,
       editorHeight: 100,
       error: "",
       languageName: "text",
@@ -172,7 +177,7 @@ export default Vue.extend({
       return Languages
     },
     language() {
-      return getLanguageByName(this.languageName) || TextLanguage
+      return Languages.find((lang) => lang.name === this.languageName);
     },
   },
 
@@ -221,11 +226,17 @@ export default Vue.extend({
 
     async onOpen() {
       await this.$nextTick();
-      this.editorInterface.focus()
+      this.$refs.editorContainer.style.height = undefined
+      this.editorFocus = true
       this.$nextTick(this.resizeHeightToFitContent)
     },
+    async onBeforeClose() {
+      // Hack: keep the modal height as it was before.
+      this.$refs.editorContainer.style.height = this.$refs.editorContainer.offsetHeight + 'px'
+      this.editorFocus = false
+    },
     resizeHeightToFitContent() {
-      const wrapperEl = this.editorInterface.getWrapperElement()
+      const wrapperEl = this.$refs.editorContainer.querySelector('.CodeMirror')
       const wrapperStyle = window.getComputedStyle(wrapperEl)
 
       const minHeight = parseInt(wrapperStyle.minHeight)

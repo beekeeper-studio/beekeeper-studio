@@ -149,9 +149,18 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'tidb',
+    name: 'TiDB',
+    defaultPort: 4000,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+    ],
+  },
+  {
     key: 'duckdb',
     name: 'DuckDB',
     defaultDatabase: ':memory:',
     disabledFeatures: [],
-  }
+  },
 ];

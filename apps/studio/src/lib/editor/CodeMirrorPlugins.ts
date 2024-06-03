@@ -5,10 +5,9 @@ export function autoquoteHandler(
   instance: CodeMirror.Editor,
   changeObj: CodeMirror.EditorChangeCancellable
 ) {
-  if (!instance.getOption("mode").includes("pgsql")) return;
+  const mode = instance.getOption("mode")
+  if (typeof mode === 'string' &&  !mode.includes("pgsql")) return;
 
-  // eslint-disable-next-line
-  // @ts-ignore
   const { to, from, origin, text } = changeObj;
 
   // eslint-disable-next-line
@@ -40,6 +39,7 @@ function findSqlQueryIdentifierDialect(connectionType: string) {
     postgresql: "psql",
     mysql: "mysql",
     mariadb: "mysql",
+    tidb: "mysql",
     redshift: "psql",
   };
   return mappings[connectionType] || "generic";

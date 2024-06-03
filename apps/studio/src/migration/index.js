@@ -34,8 +34,14 @@ import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
 import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
+import demoSetup from './20240421_seed_with_demo_data'
+import minimalMode from './20240514_user_settings_minimal_mode'
 import ultimate from './ultimate/index'
+
+import UserSettingsWindowPosition from './20240303_user_settings_window_position'
+
 import rawLog from "electron-log";
+
 
 const logger = rawLog.scope('migrations');
 
@@ -46,13 +52,14 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom,
+  a, b, c, d, ...ultimate, domains, createSettings, addZoom,
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
 
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
-  firebirdConnection, exportPath,
+  firebirdConnection, exportPath, UserSettingsWindowPosition,
+  demoSetup, minimalMode,
 
 ]
 
@@ -65,7 +72,7 @@ const devMigrations = [
   dev1, dev2, dev3
 ]
 
-const migrations = [...realMigrations, ...ultimate, ...fixtures, ...devMigrations]
+const migrations = [...realMigrations, ...fixtures, ...devMigrations]
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",
@@ -88,23 +95,44 @@ export default class {
     this.env = env
   }
 
+  async isFreshInstall() {
+
+    const runner = this.connection.connection.createQueryRunner()
+
+    try {
+      const sql = `SELECT name FROM sqlite_master WHERE type='table' AND name='bk_migrations';`
+      const runPreviously = await runner.query(sql)
+      return runPreviously.length === 0
+    } finally {
+      runner.release()
+    }
+  }
+
   async run() {
     console.log("running migrations")
     const runner = this.connection.connection.createQueryRunner()
-    await runner.query(setupSQL)
-    for(let i = 0; i < migrations.length; i++) {
-      const migration = migrations[i]
-      logger.debug(`Checking migration ${migration.name}`)
-      if(migration.env && migration.env !== this.env) {
-        // env defined, and does not match
-        logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
-        continue
+    try {
+      await runner.query(setupSQL)
+      for(let i = 0; i < migrations.length; i++) {
+        const migration = migrations[i]
+        logger.debug(`Checking migration ${migration.name}`)
+        if(migration.env && migration.env !== this.env) {
+          // env defined, and does not match
+          logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
+          continue
+        }
+        const hasRun = await Manager.checkExists(runner, migration.name)
+        if (!hasRun) {
+          try {
+            await migration.run(runner, this.env)
+            await Manager.markExists(runner, migration.name)
+          } catch (err) {
+            console.log(`Migration ${migration.name} failed with`, err.name, err.message)
+          }
+        }
       }
-      const hasRun = await Manager.checkExists(runner, migration.name)
-      if (!hasRun) {
-        await migration.run(runner, this.env)
-        await Manager.markExists(runner, migration.name)
-      }
+    } finally {
+      runner.release()
     }
   }
 

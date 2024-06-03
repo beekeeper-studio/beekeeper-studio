@@ -17,7 +17,8 @@ export default class extends DefaultMenu {
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
-        this.menuItems.sidebarToggle
+        this.menuItems.sidebarToggle,
+        this.menuItems.minimalModeToggle,
       ]
     }
     if (!platformInfo.isMac)
@@ -49,10 +50,20 @@ export default class extends DefaultMenu {
         this.menuItems.newWindow,
         this.menuItems.newTab,
         this.menuItems.closeTab,
+        this.menuItems.importSqlFiles,
         this.menuItems.quickSearch,
         this.menuItems.disconnect,
         this.menuItems.quit
       ]
+    }
+
+    const windowMenu: Electron.MenuItemConstructorOptions[] = []
+    console.log("Menu style", this.settings.menuStyle)
+    if ((platformInfo.isMac || this.settings.menuStyle?.stringValue === 'native') && !platformInfo.isWayland) {
+      windowMenu.push({
+        label: 'Window',
+        role: 'windowMenu'
+      })
     }
 
     return [
@@ -78,6 +89,7 @@ export default class extends DefaultMenu {
           this.menuItems.upgradeModal("Restore a Backup")
         ]
       },
+      ...windowMenu,
       {
         label: "Help",
         submenu: [

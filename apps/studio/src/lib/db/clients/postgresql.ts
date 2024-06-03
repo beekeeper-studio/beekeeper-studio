@@ -14,7 +14,7 @@ import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchem
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
-import { HasPool, VersionInfo, HasConnection } from './postgresql/types'
+import { HasPool, VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
 import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
@@ -26,9 +26,6 @@ import { defaultCreateScript, postgres10CreateScript } from './postgresql/script
 
 const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
-function isConnection(x: any): x is HasConnection {
-  return x.connection !== undefined
-}
 
 const log = logRaw.scope('postgresql')
 const logger = () => log
@@ -71,12 +68,13 @@ const postgresContext = {
 };
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult> {
+  connectionBaseType = 'postgresql' as const;
+
   version: VersionInfo;
   conn: HasPool;
-  runWithConnection: HasConnection;
   _defaultSchema: string;
   dataTypes: any;
-  
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
     this.dialect = 'psql';
@@ -85,6 +83,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   versionString(): string {
     return this.version.version.split(" on ")[0];
+  }
+
+  defaultSchema(): string | null {
+    return this._defaultSchema;
   }
 
   getBuilder(table: string, schema: string = this._defaultSchema): ChangeBuilderBase {
@@ -101,7 +103,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       editPartitions: hasPartitions,
       backups: true,
       backDirFormat: true,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: this.version.number >= 150_000,
     };
   }
 
@@ -111,12 +114,26 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       return;
     }
     await super.connect();
- 
+
     const dbConfig = await this.configDatabase(this.server, this.database);
 
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };
+
+    this.conn.pool.on('acquire', (_client) => {
+      log.debug('Pool event: connection acquired')
+    })
+
+    this.conn.pool.on('error', (err, _client) => {
+      log.error("Pool event: connection error:", err.name, err.message)
+    })
+
+    // @ts-ignore
+    this.conn.pool.on('release', (err, client) => {
+      log.debug('Pool event: connection released')
+    })
+
 
     logger().debug('connected');
     this._defaultSchema = await this.getSchema();
@@ -126,9 +143,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
-    this.conn.pool.end();
-
     await super.disconnect();
+    this.conn.pool.end();
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -323,7 +339,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN datetime_precision is not null AND udt_name != 'date' THEN
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
-        END as data_type
+        END as data_type,
+        CASE
+          WHEN data_type = 'ARRAY' THEN 'YES'
+          ELSE 'NO'
+        END as is_array
       FROM information_schema.columns
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position
@@ -339,7 +359,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default,
       ordinalPosition: Number(row.ordinal_position),
+      hasDefault: !_.isNil(row.column_default),
       generated: row.is_generated === 'ALWAYS' || row.is_generated === 'YES',
+      array: row.is_array === 'YES',
     }));
   }
 
@@ -386,6 +408,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         i.indexrelid as id,
         i.indisunique,
         i.indisprimary,
+        ${this.supportedFeatures().indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
         coalesce(a.attname,
                   (('{' || pg_get_expr(
                               i.indexprs,
@@ -426,13 +449,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           order: b.ascending ? 'ASC' : 'DESC'
         }
       })
+      const nullsNotDistinct = blob[0].indnullsnotdistinct
       const item: TableIndex = {
         table, schema,
         id,
         name: indexName,
         unique,
         primary,
-        columns
+        columns,
+        nullsNotDistinct,
       }
       return item
     })
@@ -633,32 +658,20 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
-    await this.cacheConnection();
-    
-    await this.driverExecuteSingle('BEGIN')
-    log.debug("Applying changes", changes)
-    try {
+    await this.runWithTransaction(async (connection) => {
+      log.debug("Applying changes", changes)
       if (changes.inserts) {
-        await this.insertRows(changes.inserts);
+        await this.insertRows(changes.inserts, connection);
       }
 
       if (changes.updates) {
-        results = await this.updateValues(changes.updates)
+        results = await this.updateValues(changes.updates, connection)
       }
 
       if (changes.deletes) {
-        await this.deleteRows(changes.deletes)
+        await this.deleteRows(changes.deletes, connection)
       }
-
-      await this.driverExecuteSingle('COMMIT')
-    } catch (ex) {
-      log.error("query exception: ", ex)
-      await this.driverExecuteSingle('ROLLBACK');
-      this.releaseCachedConnection();
-      throw ex
-    }
-
-    this.releaseCachedConnection();
+    })
     return results
   }
 
@@ -976,7 +989,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     throw new Error('Method not implemented.');
   }
 
-  
+
   alterPartitionSql(payload: AlterPartitionsSpec): string {
     const { table } = payload;
     const builder = new PostgresqlChangeBuilder(table);
@@ -1028,21 +1041,46 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return joinQueries(queries);
   }
 
-  protected async rawExecuteQuery(q: string, options: any): Promise<QueryResult | QueryResult[]> {
-    let release = true;
-    let connection: PoolClient;
-    if (this.runWithConnection) {
-      release = false;
-      connection = this.runWithConnection.connection;
-    } else {
-      connection = isConnection(this.conn) ? this.conn.connection : await this.conn.pool.connect();
-    }
 
-    const value =  await this.runQuery(connection, q, options)
-    if (release) {
-      connection.release();
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
+
+    // This means connection.release will be called elsewhere
+    if (options.connection) {
+      return await this.runQuery(options.connection, q, options)
+    } else {
+      // the simple case where we manage the connection ourselves
+      return await this.runWithConnection(async (connection) => {
+        return await this.runQuery(connection, q, options)
+      })
     }
-    return value;
+  }
+
+  // this will manage the connection for you, but won't call rollback
+  // on an error, for that use `runWithTransaction`
+  private async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
+    const connection = await this.conn.pool.connect()
+    try {
+      return await child(connection)
+    } finally {
+      connection.release()
+    }
+  }
+
+  // this will run your SQL wrapped in a transaction, making sure to manage the connection pool
+  // properly
+  private async runWithTransaction<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
+    return await this.runWithConnection(async (connection) => {
+      await this.runQuery(connection, 'BEGIN', {})
+      try {
+        const result = await child(connection)
+        await this.runQuery(connection, 'COMMIT', {})
+        return result
+      } catch (ex) {
+        log.warn("Pool connection - rolling back ", ex.message)
+        await this.runQuery(connection, 'ROLLBACK', {})
+        throw ex
+      }
+    })
   }
 
   // ************************************************************************************
@@ -1102,6 +1140,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           })
           paramIdx += values.length
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
+        } else if (item.type.includes('is')) {
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
         const value = options.inlineParams
           ? knex.raw('?', [item.value]).toQuery()
@@ -1111,7 +1151,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
 
-      params = filters.flatMap((item) => {
+      params = filters.filter((item) => !!item.value).flatMap((item) => {
         return _.isArray(item.value) ? item.value : [item.value]
       })
     }
@@ -1182,6 +1222,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
+
     };
 
     return this.configurePool(config, server, null);
@@ -1262,22 +1303,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result
   }
 
-  // ************************************************************************************
-  // PRIVATE HELPER FUNCTIONS
-  // NOTE (@day): some of this may need to be protected so redshift and cockroach have access to them
-  // ************************************************************************************
-
-  private async cacheConnection() {
-    this.runWithConnection = {
-      connection: await this.conn.pool.connect()
-    };
-  }
-
-  private releaseCachedConnection() {
-    this.runWithConnection.connection.release();
-    this.runWithConnection = null;
-  }
-
   private async runQuery(connection: PoolClient, query: string, options: any): Promise<QueryResult | QueryResult[]> {
     const args = {
       text: query,
@@ -1303,11 +1328,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     });
   }
 
-  private async insertRows(rawInserts: TableInsert[]) {
+  private async insertRows(rawInserts: TableInsert[], connection: PoolClient) {
     const columnsList = await Promise.all(rawInserts.map((insert) => {
       return this.listTableColumns(insert.table, insert.schema);
     }));
-
     const fixedInserts = rawInserts.map((insert, idx) => {
       const result = { ...insert};
       const columns = columnsList[idx];
@@ -1316,35 +1340,34 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           const column = columns.find((c) => c.columnName === key);
           // fix: we used to serialize arrays before this, now we pass them as
           // json arrays properly
-          return this.normalizeValue(value, column.dataType);
+          return this.normalizeValue(value, column);
         })
       })
       return result;
     })
 
-    await this.driverExecuteSingle(buildInsertQueries(this.knex, fixedInserts).join(";"));
+    await this.driverExecuteSingle(buildInsertQueries(this.knex, fixedInserts).join(";"), { connection });
 
     return true;
   }
 
-  private async updateValues(rawUpdates: TableUpdate[]): Promise<TableUpdateResult[]> {
+  private async updateValues(rawUpdates: TableUpdate[], connection): Promise<TableUpdateResult[]> {
     const updates = rawUpdates.map((update) => {
       const result = { ...update };
-      result.value = this.normalizeValue(update.value, update.columnType);
+      result.value = this.normalizeValue(update.value, update.columnObject);
       return result;
     })
     log.info("applying updates", updates);
     let results: TableUpdateResult[] = [];
-    await this.driverExecuteSingle(buildUpdateQueries(this.knex, updates).join(";"));
-    // NOTE (@day): this could be a weird issue, we shall see
-    const data = await this.driverExecuteSingle(buildSelectQueriesFromUpdates(this.knex, updates).join(";"));
+    await this.driverExecuteSingle(buildUpdateQueries(this.knex, updates).join(";"), { connection });
+    const data = await this.driverExecuteSingle(buildSelectQueriesFromUpdates(this.knex, updates).join(";"), { connection });
     results = [data.rows[0]];
 
     return results;
   }
 
-  private async deleteRows(deletes: TableDelete[]) {
-    await this.driverExecuteSingle(buildDeleteQueries(this.knex, deletes).join(";"));
+  private async deleteRows(deletes: TableDelete[], connection) {
+    await this.driverExecuteSingle(buildDeleteQueries(this.knex, deletes).join(";"), { connection });
 
     return true
   }
@@ -1430,10 +1453,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
   // if a type is BYTEA, decodes BASE64 URL encoded to hex
-  private normalizeValue(value: string, columnType: string) {
-    if (columnType?.startsWith('_') && _.isString(value)) {
+  private normalizeValue(value: string, column?: ExtendedTableColumn) {
+    if (column?.array && _.isString(value)) {
       return JSON.parse(value)
-    } else if (columnType === 'bytea' && value) {
+    } else if (column?.dataType === 'bytea' && value) {
       return '\\x' + base64.decode(value, 'hex')
     }
     return value

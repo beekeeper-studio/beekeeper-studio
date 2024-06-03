@@ -174,8 +174,19 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.exportTables)
   }
 
-  upgradeModal = (_menuItem: Electron.MenuItem, _win: ElectronWindow) => {
-    // Nothing to upgrade to lol
-    return;
+  upgradeModal = (_menuItem: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.upgradeModal);
+  }
+
+  importSqlFiles = (_menuItem: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.promptSqlFilesImport);
+  }
+
+  toggleMinimalMode = async (): Promise<void> => {
+    this.settings.minimalMode.value = !this.settings.minimalMode.value
+    await this.settings.minimalMode.save()
+    getActiveWindows().forEach( window => {
+      window.send(AppEvent.settingsChanged)
+    })
   }
 }

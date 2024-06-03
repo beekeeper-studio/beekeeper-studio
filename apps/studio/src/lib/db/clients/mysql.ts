@@ -60,6 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+import { uuidv4 } from "@/lib/uuid";
 
 type ResultType = {
   data: any[];
@@ -190,6 +191,24 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
   });
 }
 
+export function parseIndexColumn(str: string): IndexedColumn {
+  str = str.trim()
+
+  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
+  const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
+
+  let name: string = nameAndPrefix
+  let prefix: string | null = null
+
+  const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
+  if (prefixMatch) {
+    prefix = prefixMatch[1]
+    name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
+  }
+
+  return { name, order, prefix }
+}
+
 function parseRowQueryResult(
   data: any,
   rawFields: any[],
@@ -243,6 +262,8 @@ function filterDatabase(
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
+  connectionBaseType = 'mysql' as const;
+
   versionInfo: {
     versionString: string;
     version: number;
@@ -251,8 +272,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     pool: mysql.Pool;
   };
 
+  clientId: string
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context, server, database);
+    this.clientId = uuidv4();
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
@@ -267,6 +291,15 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     this.conn = {
       pool: mysql.createPool(dbConfig),
     };
+
+    this.conn.pool.on('acquire', (connection) => {
+      log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
+    });
+
+    this.conn.pool.on('release', (connection) => {
+      log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
+    });
+
 
     this.versionInfo = await this.getVersion();
   }
@@ -327,11 +360,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
-    const sql = "SHOW INDEX FROM ??";
+    const sql = `SHOW INDEX FROM ${this.wrapIdentifier(table)}`;
 
-    const params = [table];
-
-    const { data } = await this.driverExecuteSingle(sql, { params });
+    const { data } = await this.driverExecuteSingle(sql);
 
     const grouped = _.groupBy(data, "Key_name");
 
@@ -341,6 +372,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       const columns: IndexedColumn[] = grouped[key].map((r) => ({
         name: r.Column_name,
         order: r.Collation === "A" ? "ASC" : "DESC",
+        prefix: r.Sub_part, // Also called index prefix length.
       }));
 
       return {
@@ -392,6 +424,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       nullable: row.is_nullable === "YES",
       defaultValue: this.resolveDefault(row.column_default),
       extra: _.isEmpty(row.extra) ? null : row.extra,
+      hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
       generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
     }));
@@ -496,9 +529,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<PrimaryKeyColumn[]> {
     logger().debug("finding primary keys for", this.db, table);
-    const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`;
-    const params = [table];
-    const { data } = await this.driverExecuteSingle(sql, { params });
+    const sql = `SHOW KEYS FROM ${this.wrapIdentifier(table)} WHERE Key_name = 'PRIMARY'`;
+    const { data } = await this.driverExecuteSingle(sql);
 
     if (!data || data.length === 0) return [];
 
@@ -600,7 +632,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const queries = buildSelectTopQuery(table, 1, 1, [], []);
     let title = "total";
     if (isTable) {
-      queries.countQuery = `show table status like '${table}'`;
+      queries.countQuery = `show table status like '${MysqlData.wrapLiteral(table)}'`;
       title = "Rows";
     }
     const { countQuery, params } = queries;
@@ -1027,9 +1059,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       : this.runWithConnection(runQuery);
   }
 
-  async runWithConnection<T>(
-    run: (connection: mysql.PoolConnection) => Promise<T>
-  ): Promise<T> {
+  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     const { pool } = this.conn;
     let rejected = false;
     return new Promise((resolve, reject) => {
@@ -1040,7 +1070,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
       };
 
-      pool.getConnection(async (errPool, connection) => {
+      pool.getConnection((errPool, connection) => {
         if (errPool) {
           rejectErr(errPool);
           return;
@@ -1050,22 +1080,16 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           // it will be handled later in the next query execution
           logger().error("Connection fatal error %j", error);
         });
-
-        try {
-          resolve(await run(connection));
-        } catch (err) {
-          rejectErr(err);
-        } finally {
-          connection.release();
-        }
+        run(connection)
+          .then((res) => resolve(res))
+          .catch((ex) => rejectErr(ex))
+          .finally(() => connection.release())
       });
     });
   }
 
-  async runWithTransaction(
-    func: (connection: mysql.PoolConnection) => Promise<any>
-  ): Promise<void> {
-    await this.runWithConnection(async (connection) => {
+  async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
+    return await this.runWithConnection(async (connection) => {
       try {
         await this.driverExecuteSingle("START TRANSACTION");
         const result = await func(connection);
@@ -1073,7 +1097,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         return result;
       } catch (ex) {
         await this.driverExecuteSingle("ROLLBACK");
-        console.error(ex);
+        log.error(ex)
         throw ex;
       }
     });
@@ -1105,7 +1129,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       editPartitions: false,
       backups: true,
       backDirFormat: false,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -1156,7 +1181,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const sql = `SHOW CREATE TABLE ${table}`;
+    const sql = `SHOW CREATE TABLE ${this.wrapIdentifier(table)}`;
 
     const { data } = await this.driverExecuteSingle(sql);
 
@@ -1164,7 +1189,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
-    const sql = `SHOW CREATE VIEW ${view}`;
+    const sql = `SHOW CREATE VIEW ${this.wrapIdentifier(view)}`;
 
     const { data } = await this.driverExecuteSingle(sql);
 
@@ -1176,7 +1201,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     type: string,
     _schema?: string
   ): Promise<string[]> {
-    const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
+    const sql = `SHOW CREATE ${type.toUpperCase()} ${this.wrapIdentifier(routine)}`;
     const { data } = await this.driverExecuteSingle(sql);
     const result = data.map((row) => {
       const upperCaseIndexedRow = Object.keys(row).reduce(
@@ -1286,6 +1311,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const sql = "SELECT database() AS 'schema'";
     const { data } = await this.driverExecuteSingle(sql, { connection });
     return data[0].schema;
+  }
+
+  hasDefaultValue(defaultValue: string|null, extraValue: string|null): boolean {
+    return !_.isNil(defaultValue) || !_.isNil(extraValue) && ['auto_increment', 'default_generated'].includes(extraValue.toLowerCase())
   }
 
   resolveDefault(defaultValue: string) {

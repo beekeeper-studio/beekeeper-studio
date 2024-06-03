@@ -17,7 +17,8 @@ export class CockroachClient extends PostgresClient {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -132,7 +133,7 @@ export class CockroachClient extends PostgresClient {
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
       // not in the typings, but works.
-      // @ts-expect-error Fix Typings
+      // @ts-ignore
       options: optionsString
     };
 

@@ -1,6 +1,7 @@
 <template>
   <div
     class="query-editor"
+    ref="container"
     v-hotkey="keymap"
   >
     <div
@@ -33,6 +34,9 @@
       <sql-text-editor
         v-model="unsavedText"
         v-bind.sync="editor"
+        :focus="focusElement === 'text-editor'"
+        @update:focus="updateTextEditorFocus"
+        :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
@@ -129,11 +133,13 @@
       />
       <result-table
         ref="table"
-        v-else-if="rowCount > 0"
+        v-else-if="showResultTable"
+        :focus="focusElement === 'table'"
         :active="active"
         :table-height="tableHeight"
         :result="result"
         :query="query"
+        :tab="tab"
       />
       <div
         class="message"
@@ -299,17 +305,6 @@
 <script lang="ts">
 
   import _ from 'lodash'
-  import CodeMirror from 'codemirror'
-  import 'codemirror/addon/comment/comment'
-  import 'codemirror/keymap/vim.js'
-  import 'codemirror/addon/dialog/dialog'
-  import 'codemirror/addon/search/search'
-  import 'codemirror/addon/search/jump-to-line'
-  import 'codemirror/addon/scroll/annotatescrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar.css'
-  import 'codemirror/addon/search/searchcursor'
-
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
@@ -349,6 +344,8 @@
         runningCount: 1,
         runningType: 'all queries',
         selectedResult: 0,
+        unsavedText: editorDefault,
+        forcedTextEditorValue: editorDefault,
         editor: {
           height: 100,
           selection: null,
@@ -373,7 +370,9 @@
         originalText: "",
         initialized: false,
         blankQuery: new FavoriteQuery(),
-        dryRun: false
+        dryRun: false,
+        containerResizeObserver: null,
+        focusElement: 'text-editor',
       }
     },
     computed: {
@@ -412,14 +411,6 @@
       showDryRun() {
         return this.dialect == 'bigquery'
       },
-      unsavedText: {
-        get () {
-          return this.tab.unsavedQueryText || editorDefault
-        },
-        set(value) {
-          this.tab.unsavedQueryText = value
-        },
-      },
       identifyDialect() {
         // dialect for sql-query-identifier
         const mappings = {
@@ -429,6 +420,7 @@
           'postgresql': 'psql',
           'mysql': 'mysql',
           'mariadb': 'mysql',
+          'tidb': 'mysql',
           'redshift': 'psql',
         }
         return mappings[this.connectionType] || 'generic'
@@ -512,6 +504,7 @@
       keymap() {
         if (!this.active) return {}
         const result = {}
+        result[this.ctrlOrCmd('`')] = this.switchPaneFocus.bind(this)
         result[this.ctrlOrCmd('l')] = this.selectEditor
         result[this.ctrlOrCmd('i')] = this.submitQueryToFile
         result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
@@ -560,7 +553,7 @@
           "Ctrl+I": this.submitQueryToFile,
           "Cmd+I": this.submitQueryToFile,
           "Shift+Ctrl+I": this.submitCurrentQueryToFile,
-          "Shift+Cmd+I": this.submitCurrentQueryToFile
+          "Shift+Cmd+I": this.submitCurrentQueryToFile,
         }
 
         if(this.userKeymap === "vim") {
@@ -596,6 +589,9 @@
         if (this.errorMarker) markers.push(this.errorMarker)
         return markers
       },
+      showResultTable() {
+        return this.rowCount > 0
+      },
     },
     watch: {
       error() {
@@ -613,6 +609,7 @@
         if (this.shouldInitialize) this.initialize()
       },
       unsavedText() {
+        this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
       remoteDeleted() {
@@ -948,9 +945,11 @@
         if (!this.tab.unsavedChanges && this.query?.text) {
           this.unsavedText = null
         }
-        if (this.query?.text) {
-          this.originalText = this.query.text
-          if (!this.unsavedText) this.unsavedText = this.query.text
+        const originalText = this.query?.text || this.tab.unsavedQueryText
+        if (originalText) {
+          this.originalText = originalText
+          this.unsavedText = originalText
+          this.forcedTextEditorValue = originalText
         }
       },
       fakeRemoteChange() {
@@ -962,15 +961,35 @@
         if(this.query.id) {
           this.close()
         }
-      }
+      },
+      updateTextEditorFocus(focused: boolean) {
+        this.switchPaneFocus(undefined, focused ? 'text-editor' : 'table')
+      },
+      switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
+        if (!this.showResultTable) {
+          this.focusElement = 'text-editor'
+        } else if (target) {
+          this.focusElement = target
+        } else {
+          this.focusElement = this.focusElement === 'text-editor'
+            ? 'table'
+            : 'text-editor'
+        }
+      },
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()
+
+      this.containerResizeObserver = new ResizeObserver(() => {
+        this.updateEditorHeight()
+      })
+      this.containerResizeObserver.observe(this.$refs.container)
     },
     beforeDestroy() {
       if(this.split) {
         this.split.destroy()
       }
+      this.containerResizeObserver.disconnect()
     },
   }
 </script>

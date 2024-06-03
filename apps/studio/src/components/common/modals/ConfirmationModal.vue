@@ -4,6 +4,7 @@
       class="vue-dialog beekeeper-modal confirmation-modal"
       :name="name"
       @before-open="beforeOpen"
+      @opened="opened"
       @before-close="beforeClose"
     >
       <div class="dialog-content">
@@ -22,6 +23,8 @@
           class="btn btn-flat"
           type="button"
           @click.prevent="cancel"
+          autofocus
+          ref="cancelBtn"
         >
           Cancel
         </button>
@@ -29,7 +32,6 @@
           class="btn btn-primary"
           type="button"
           @click.prevent="onClickConfirm"
-          autofocus
         >
           Confirm
         </button>
@@ -61,6 +63,9 @@ export default Vue.extend({
       this.titleHtml = event.params?.title || DEFAULT_TITLE;
       this.messageHtml = event.params?.message || DEFAULT_MESSAGE;
     },
+    opened() {
+      this.$refs.cancelBtn.focus()
+    },
     onClickConfirm() {
       this.$modal.hide(this.name, { confirmed: true });
     },
@@ -68,7 +73,7 @@ export default Vue.extend({
       this.$modal.hide(this.name, { confirmed: false });
     },
     beforeClose(event: any) {
-      if (event.params.confirmed) this.onConfirm?.();
+      if (event.params?.confirmed) this.onConfirm?.();
       else this.onCancel?.();
     },
     confirm(title?: string, message?: string) {

@@ -56,6 +56,8 @@ type CassandraVersion = {
 };
 
 export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
+  connectionBaseType = 'cassandra' as const;
+
   client: cassandra.Client;
   versionInfo: CassandraVersion;
 
@@ -85,15 +87,16 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   supportedFeatures(): SupportedFeatures {
-    return { 
-      customRoutines: false, 
-      comments: true, 
-      properties: true, 
-      partitions: false, 
+    return {
+      customRoutines: false,
+      comments: true,
+      properties: true,
+      partitions: false,
       editPartitions: false,
-      // backups: false, 
-      // backDirFormat: false, 
-      // restore: false 
+      backups: false,
+      backDirFormat: false,
+      restore: false,
+      indexNullsNotDistinct: false,
     }
   }
   versionString(): string {
@@ -260,7 +263,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       this.driverExecuteSingle(propsSql, { params: [ table ] }),
       this.getTableKeys(table)
     ]);
-    this.client.execute
 
     const { rows, length,  } = tableInfo
     const { description } = rows[0]
@@ -580,8 +582,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     }
   }
 
-  private parseFields(fields, row) {
-    return fields.map((field, idx) => {
+  private parseFields(fields, _row) {
+    return fields.map((field) => {
       field.dataType = dataTypesToMatchTypeCode[field?.type?.code] || 'user-defined'
       field.id = field.name
       return field

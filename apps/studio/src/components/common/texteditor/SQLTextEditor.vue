@@ -3,12 +3,13 @@
     v-bind="$attrs"
     :value="value"
     @input="$emit('input', $event)"
-    :lang="connectionType || 'sql'"
+    :hint="hint"
+    :mode="dialectData.textEditorMode"
     :extra-keybindings="keybindings"
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
-    :forced-value="forcedValue"
+    :forced-value="dataForcedValue"
     :plugins="plugins"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
@@ -20,22 +21,29 @@
 <script lang="ts">
 import Vue from "vue";
 import TextEditor from "./TextEditor.vue";
-import { mapState } from "vuex";
+import { mapState, mapGetters } from "vuex";
 import { plugins } from "@/lib/editor/utils";
 import { format } from "sql-formatter";
 import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
+import CodeMirror from "codemirror";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions"],
+  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions", "forcedValue"],
   data() {
     return {
-      forcedValue: this.value,
+      dataForcedValue: this.value,
     };
   },
   computed: {
+    ...mapGetters(['defaultSchema', 'dialectData']),
     ...mapState(["tables"]),
+    hint() {
+      // @ts-expect-error not fully typed
+      return CodeMirror.hint.sql;
+    },
     hintOptions() {
+      // We do this so we can order the autocomplete options
       const firstTables = {};
       const secondTables = {};
       const thirdTables = {};
@@ -81,10 +89,15 @@ export default Vue.extend({
       ];
     },
   },
+  watch: {
+    async forcedValue() {
+      await this.setEditorValue(this.forcedValue);
+    },
+  },
   methods: {
     async formatSql() {
       const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.lang)),
+        language: FormatterDialect(dialectFor(this.connectionType)),
       });
       await this.setEditorValue(formatted);
     },
@@ -116,7 +129,7 @@ export default Vue.extend({
         {
           type: "divider",
         },
-        ...options.slice(pivot + 1),
+        ...options.slice(pivot),
       ];
 
       if (this.contextMenuOptions) {
@@ -126,9 +139,9 @@ export default Vue.extend({
       return newOptions;
     },
     async setEditorValue(value: string) {
-      this.forcedValue = this.value;
+      this.dataForcedValue = this.value;
       await this.$nextTick();
-      this.forcedValue = value;
+      this.dataForcedValue = value;
     },
   },
 });

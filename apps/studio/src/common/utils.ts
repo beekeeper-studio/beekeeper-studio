@@ -125,18 +125,20 @@ export function resolveHomePathToAbsolute(filename: string): string {
   return path.join(homedir(), filename.substring(2));
 }
 
+export async function waitPromise(time: number) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
 
 
 export function createCancelablePromise(error: CustomError, timeIdle = 100): any {
   let canceled = false;
   let discarded = false;
 
-  const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
 
   return {
     async wait() {
       while (!canceled && !discarded) {
-        await wait(timeIdle);
+        await waitPromise(timeIdle);
       }
 
       if (canceled) {
@@ -182,16 +184,36 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
 export function normalizeFilters(filters: TableFilter[]) {
   const normalized: TableFilter[] = [];
   for (const filter of filters as TableFilter[]) {
-    if (!(filter.type && filter.field && filter.value)) continue;
+    if (!(filter.type && filter.field && (filter.value || filter.type.includes('is')))) continue;
     if (filter.type === "in") {
       const value = (filter.value as string).split(/\s*,\s*/);
       normalized.push({ ...filter, value });
     } else {
       normalized.push(filter);
+
+      if (filter.type.includes('is')) {
+        continue;
+      }
     }
     filter.value = filter.value.toString();
   }
   return normalized;
+}
+
+/** Create an object for filter used in Row Filter Builder */
+export function createTableFilter(field: string): TableFilter {
+  return { op: "AND", field, type: "=", value: "" }
+}
+
+/** Check if an array of filters is considered empty */
+export function checkEmptyFilters(filters: TableFilter[]): boolean {
+  if (filters.length === 0) {
+    return true
+  }
+  if (filters.length === 1) {
+    return _.isEmpty(filters[0].value)
+  }
+  return filters.every(filter => _.isEmpty(filter.value));
 }
 
 /** Useful for identifying an entity item in table list */
@@ -238,4 +260,12 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
   }
 
   return transformedRangeData;
+}
+
+export const rowHeaderField = '--row-header--bks';
+
+export function isBksInternalColumn(field: string) {
+  return field.endsWith('--bks')
+    || field.startsWith('__beekeeper_internal')
+    || field === rowHeaderField;
 }

@@ -31,13 +31,13 @@ import "codemirror/addon/merge/merge";
 import CodeMirror from "codemirror";
 
 import { EditorMarker } from "@/lib/editor/utils";
-import { resolveLanguage } from "@/lib/editor/languageData";
-import { setKeybindingsFromVimrc, applyConfig } from "@/lib/editor/vim";
+import { setKeybindingsFromVimrc, applyConfig, Register } from "@/lib/editor/vim";
 
 export default {
   props: [
     "value",
-    "lang",
+    "mode",
+    "hint",
     "keybindings",
     "vimConfig",
     "lineWrapping",
@@ -57,7 +57,7 @@ export default {
   ],
   data() {
     return {
-      editor: null,
+      editor: null
     };
   },
   computed: {
@@ -79,16 +79,17 @@ export default {
     forcedValue() {
       this.editor.setValue(this.forcedValue);
     },
-    lang() {
-      const { mode, hint } = resolveLanguage(this.lang);
-      this.editor.setOption("mode", mode);
-      this.editor.setOption("hint", hint);
-    },
     userKeymap() {
       this.initialize();
     },
     vimConfig() {
       this.initialize();
+    },
+    mode() {
+      this.editor.setOption("mode", this.mode);
+    },
+    hint() {
+      this.editor.setOption("hint", this.hint);
     },
     hintOptions() {
       this.editor.setOption("hintOptions", this.hintOptions);
@@ -104,7 +105,7 @@ export default {
       this.editor.setOption("lineWrapping", this.lineWrapping);
     },
     async focus() {
-      if (this.focus) {
+      if (this.focus && this.editor) {
         this.editor.focus();
         await this.$nextTick();
         // this fixes the editor not showing because it doesn't think it's dom element is in view.
@@ -131,11 +132,8 @@ export default {
     initialize() {
       this.destroyEditor();
 
-      const { mode, hint } = resolveLanguage(this.lang);
-
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         lineNumbers: true,
-        mode,
         tabSize: 2,
         theme: "monokai",
         extraKeys: {
@@ -149,7 +147,8 @@ export default {
         options: {
           closeOnBlur: false,
         },
-        hint,
+        mode: this.mode,
+        hint: this.hint,
         hintOptions: this.hintOptions,
         keyMap: this.userKeymap,
         getColumns: this.columnsGetter,
@@ -214,6 +213,13 @@ export default {
             applyConfig(codeMirrorVimInstance, this.vimConfig);
           }
           setKeybindingsFromVimrc(codeMirrorVimInstance);
+
+          // cm throws if this is already defined, we don't need to handle that case
+          try {
+            codeMirrorVimInstance.defineRegister('*', new Register(this.$native.clipboard))
+          } catch(e) {
+            // nothing
+          }
         }
       }
 
@@ -322,7 +328,7 @@ export default {
             shortcut: this.ctrlOrCmd("r"),
           },
           {
-            name: "ReplaceAll",
+            name: "Replace All",
             slug: "replace_all",
             handler: () => {
               this.editor.execCommand("replaceAll");

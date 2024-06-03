@@ -12,16 +12,16 @@
                 title="Import queries"
               >
                 <i class="material-icons">save_alt</i>
-                <x-menu>
+                <x-menu style="--align: end;">
                   <x-menuitem @click.prevent="importFromComputer">
-                    <x-label>Import from local computer</x-label>
+                    <x-label>Import .sql files</x-label>
                   </x-menuitem>
-                  <x-menuitem
-                    @click.prevent="importFromLocal"
-                    :disabled="!isCloud"
-                  >
-                    <x-label>Import from workspace</x-label>
-                    <i class="material-icons menu-icon">stars</i>
+                  <x-menuitem @click.prevent="importFromLocal">
+                    <x-label>Import from local workspace</x-label>
+                    <i
+                      v-if="$config.isCommunity"
+                      class="material-icons menu-icon"
+                    >stars</i>
                   </x-menuitem>
                 </x-menu>
               </x-button>
@@ -190,10 +190,14 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         this.$root.$emit(AppEvent.promptQueryExport, query)
       },
       importFromLocal() {
+        if (!this.isCloud) {
+          this.$root.$emit(AppEvent.upgradeModal)
+          return
+        }
         this.$root.$emit(AppEvent.promptQueryImport)
       },
       importFromComputer() {
-        this.$root.$emit(AppEvent.promptQueryImportFromComputer)
+        this.$root.$emit(AppEvent.promptSqlFilesImport)
       },
       maybeUnselect(e) {
         if (!this.selected) return

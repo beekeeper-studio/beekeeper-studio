@@ -18,6 +18,7 @@ export function runReadOnlyTests(getUtil) {
   describe("Read Only Can't Write", () => {
     beforeEach(async() => {
       await prepareTestTable(getUtil())
+      await prepareTestTableCompositePK(getUtil())
     })
 
     test("Read Only Can't delete table", async () => {
@@ -30,6 +31,12 @@ export function runReadOnlyTests(getUtil) {
 
     test("Attempt to insert data", async () => {
       await expect(itShouldInsertGoodDataCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+    })
+
+    test("Get columns for the table in read only mode", async() => {
+      const table = 'test_inserts_composite_pk'
+      const columns = await getUtil().connection.listTableColumns(table)
+      expect(columns.length).toBeGreaterThan(0)
     })
 
     test("Attempt to apply all types of changes", async () => {
@@ -320,8 +327,17 @@ export function runCommonTests(getUtil, opts = {}) {
     test("Should generate scripts for top selection", async () => {
       await getUtil().buildSelectTopQueryTests()
     })
+
+    test("Is (not) null filter", async () => {
+      await getUtil().buildIsNullTests()
+    })
   })
 
+  describe("SQLGenerator", () => {
+    test("should generate scripts for creating a primary key with autoincrement", async () => {
+      await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
+    })
+  })
 }
 
 // test functions below

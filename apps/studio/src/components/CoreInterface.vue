@@ -53,6 +53,8 @@
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import Vue from 'vue'
+  import { SmartLocalStorage } from '@/common/LocalStorage'
+  import { mapGetters } from 'vuex'
 
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
@@ -74,6 +76,7 @@
       /* eslint-enable */
     },
     computed: {
+      ...mapGetters(['minimalMode']),
       keymap() {
         const results = {}
         results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
@@ -90,17 +93,29 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
+          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
+          const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
+
           this.split = Split(this.splitElements, {
             elementStyle: (_dimension, size) => ({
                 'flex-basis': `calc(${size}%)`,
             }),
-            sizes: [25,75],
-            minSize: 280,
+            sizes: splitSizes,
+            minSize: [25, 75],
             expandToMin: true,
             gutterSize: 5,
+            onDragEnd: () => {
+              const splitSizes = this.split.getSizes()
+              SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
+            }
           })
         })
-      }
+      },
+      minimalMode() {
+        if (this.minimalMode) {
+          this.sidebarShown = true
+        }
+      },
     },
     mounted() {
       this.$store.dispatch('pins/loadPins')
@@ -128,7 +143,12 @@
         this.$emit('databaseSelected', database)
       },
       toggleSidebar() {
-        this.sidebarShown = !this.sidebarShown
+        if (this.minimalMode) {
+          // Always show sidebar (table list) in minimal mode
+          this.sidebarShown = true
+        } else {
+          this.sidebarShown = !this.sidebarShown
+        }
       },
     }
   })
