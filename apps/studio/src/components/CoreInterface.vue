@@ -38,7 +38,7 @@
       @close="quickSearchShown=false"
     />
     <ExportManager :connection="connection" />
-    <lost-connection-modal></lost-connection-modal>
+    <lost-connection-modal />
   </div>
 </template>
 
