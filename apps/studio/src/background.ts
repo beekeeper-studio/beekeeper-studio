@@ -65,6 +65,7 @@ async function initBasics() {
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
+
   log.debug("getting settings")
   settings = await UserSetting.all()
 

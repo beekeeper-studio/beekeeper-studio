@@ -53,7 +53,8 @@
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import Vue from 'vue'
-import { SmartLocalStorage } from '@/common/LocalStorage'
+  import { SmartLocalStorage } from '@/common/LocalStorage'
+  import { mapGetters } from 'vuex'
 
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
@@ -75,6 +76,7 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
       /* eslint-enable */
     },
     computed: {
+      ...mapGetters(['minimalMode']),
       keymap() {
         const results = {}
         results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
@@ -91,7 +93,7 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const lastSavedSplitSizes = SmartLocalStorage.getItem("coreInterfaceSplitSizes")
+          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
           const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
 
           this.split = Split(this.splitElements, {
@@ -99,16 +101,21 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
                 'flex-basis': `calc(${size}%)`,
             }),
             sizes: splitSizes,
-            minSize: 280,
+            minSize: [25, 75],
             expandToMin: true,
             gutterSize: 5,
             onDragEnd: () => {
               const splitSizes = this.split.getSizes()
-              SmartLocalStorage.addItem("coreInterfaceSplitSizes", splitSizes)
+              SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
             }
           })
         })
-      }
+      },
+      minimalMode() {
+        if (this.minimalMode) {
+          this.sidebarShown = true
+        }
+      },
     },
     mounted() {
       this.$store.dispatch('pins/loadPins')
@@ -136,7 +143,12 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
         this.$emit('databaseSelected', database)
       },
       toggleSidebar() {
-        this.sidebarShown = !this.sidebarShown
+        if (this.minimalMode) {
+          // Always show sidebar (table list) in minimal mode
+          this.sidebarShown = true
+        } else {
+          this.sidebarShown = !this.sidebarShown
+        }
       },
     }
   })

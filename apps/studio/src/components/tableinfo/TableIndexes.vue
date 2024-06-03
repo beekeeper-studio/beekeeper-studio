@@ -121,10 +121,11 @@ import rawLog from 'electron-log'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import { TableIndex } from '@/lib/db/models'
+import { TableIndex, IndexedColumn } from '@/lib/db/models'
 import { mapGetters } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
+import { parseIndexColumn as mysqlParseIndexColumn } from '@/lib/db/clients/mysql'
 
 interface State {
   tabulator: Tabulator
@@ -190,13 +191,20 @@ export default Vue.extend({
       return (this.properties.indexes || []).map((i: TableIndex) => {
         return {
           ...i,
-          columns: i.columns.map((c) => `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`)
+          info: i.nullsNotDistinct ? 'NULLS NOT DISTINCT' : undefined,
+          columns: i.columns.map((c: IndexedColumn) => {
+            // In mysql, we can specify the prefix length
+            if (this.connection.connectionBaseType === 'mysql' && !_.isNil(c.prefix)) {
+              return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
+            }
+            return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
+          })
         }
       })
     },
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
-      return [
+      const result = [
         {title: 'Id', field: 'id', widthGrow: 0.5},
         {
           title:'Name',
@@ -217,19 +225,29 @@ export default Vue.extend({
           editor: vueEditor(CheckboxEditorVue),
         },
         {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
+        (
+          this.connection.supportedFeatures().indexNullsNotDistinct
+            ? { title: 'Info', field: 'info' }
+            : null
+        ),
         {
           title: 'Columns',
           field: 'columns',
           editable,
-          editor: 'select',
+          editor: 'list',
           formatter: this.cellFormatter,
           editorParams: {
             multiselect: true,
             values: this.indexColumnOptions,
+            autocomplete: true,
+            listOnEmpty: true,
+            freetext: true,
           }
         },
         trashButton(this.removeRow)
       ]
+
+      return result.filter((c) => c !== null)
     }
   },
   methods: {
@@ -270,7 +288,16 @@ export default Vue.extend({
     getPayload(): IndexAlterations {
         const additions = this.newRows.map((row: RowComponent) => {
           const data = row.getData()
-          const columns = data.columns.map((c: string)=> {
+          let dataColumns: string[]
+          try {
+            dataColumns = JSON.parse(data.columns)
+          } catch (e) {
+            dataColumns = [data.columns]
+          }
+          const columns = dataColumns.map((c: string)=> {
+            if (this.connection.connectionBaseType === 'mysql') {
+              return mysqlParseIndexColumn(c)
+            }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')
             return { name, order }

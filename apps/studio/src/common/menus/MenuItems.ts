@@ -137,6 +137,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.closeTab,
       registerAccelerator: false
     },
+    importSqlFiles: {
+      id: 'import-sql-files',
+      label: "Import SQL Files",
+      accelerator: "CommandOrControl+I",
+      click: actionHandler.importSqlFiles,
+      showWhenConnected: true,
+    },
     quickSearch: {
       id: 'go-to',
       label: "Quick Search",
@@ -198,6 +205,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           checked: settings.theme.value === 'dark'
         }
       ]
-    }
+    },
+    minimalModeToggle: {
+      id: "minimal-mode-toggle",
+      label: "Toggle Minimal Mode",
+      click: actionHandler.toggleMinimalMode,
+    },
   }
 }
