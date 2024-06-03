@@ -63,9 +63,12 @@
             </x-button>
           </div>
 
+          <!-- Prevent tabbing into the next element, caused by v-kbd-trap -->
           <div
             ref="editorContainer"
             class="editor-container"
+            @keydown="$event.key === 'Tab' && $event.stopPropagation()"
+            @keyup="$event.key === 'Tab' && $event.stopPropagation()"
           >
             <text-editor
               v-model="content"
