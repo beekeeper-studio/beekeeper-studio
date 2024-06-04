@@ -796,7 +796,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   setElementNameSql(): string {
-    return ''
+    // Firebird doesn't support renaming tables or any database elements we
+    // support. https://www.firebirdfaq.org/faq363/
+    return '';
   }
 
   async dropElement(

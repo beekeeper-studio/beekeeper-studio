@@ -37,7 +37,7 @@
             class="btn btn-primary"
             @click.prevent="rename"
           >
-            Rename
+            Apply
           </x-button>
           <x-button
             class="btn btn-primary"
@@ -46,7 +46,7 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu style="--align: end;">
               <x-menuitem @click.prevent="rename">
-                <x-label>Rename</x-label>
+                <x-label>Apply</x-label>
               </x-menuitem>
               <x-menuitem @click.prevent="renameSql">
                 <x-label>Copy to SQL</x-label>
