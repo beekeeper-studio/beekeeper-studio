@@ -209,6 +209,8 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
+  connectionBaseType = 'firebird' as const;
+
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
@@ -1025,7 +1027,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 

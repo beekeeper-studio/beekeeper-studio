@@ -56,6 +56,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
+  connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {

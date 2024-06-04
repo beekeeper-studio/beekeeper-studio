@@ -91,7 +91,10 @@ export class SqlGenerator {
 // Private below here plz
 
   private getPrimaries(c): boolean {
-    if (this.isNativeKnex) {
+    // Prevent making primary key and autoincrement from one another for
+    // BigQuery and Cassandra. There's no auto increment functionality for a
+    // PK in those DBs.
+    if (this.dialect === 'bigquery' || this.dialect === 'cassandra') {
       return c.primaryKey && c.dataType !== 'autoincrement'
     }
 

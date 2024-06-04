@@ -905,3 +905,12 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   background-color: #292A2D;
   color: lightgray;
 }
+
+.beekeeper-studio-minimal-mode .tabulator-header {
+  font-weight: inherit;
+
+  .tabulator-col .tabulator-col-content .tabulator-col-title .title >
+  .column-data-type {
+    display: none;
+  }
+}

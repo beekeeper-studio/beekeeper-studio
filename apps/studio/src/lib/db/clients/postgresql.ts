@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -17,7 +17,7 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, IndexColumn, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -68,6 +68,8 @@ const postgresContext = {
 };
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult> {
+  connectionBaseType = 'postgresql' as const;
+
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
@@ -101,7 +103,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       editPartitions: hasPartitions,
       backups: true,
       backDirFormat: true,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: this.version.number >= 150_000,
     };
   }
 
@@ -405,6 +408,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         i.indexrelid as id,
         i.indisunique,
         i.indisprimary,
+        ${this.supportedFeatures().indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
         coalesce(a.attname,
                   (('{' || pg_get_expr(
                               i.indexprs,
@@ -439,19 +443,21 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       const unique = blob[0].indisunique
       const id = blob[0].id
       const primary = blob[0].indisprimary
-      const columns: IndexedColumn[] = _.sortBy(blob, 'index_order').map((b) => {
+      const columns: IndexColumn[] = _.sortBy(blob, 'index_order').map((b) => {
         return {
           name: b.index_column,
           order: b.ascending ? 'ASC' : 'DESC'
         }
       })
+      const nullsNotDistinct = blob[0].indnullsnotdistinct
       const item: TableIndex = {
         table, schema,
         id,
         name: indexName,
         unique,
         primary,
-        columns
+        columns,
+        nullsNotDistinct,
       }
       return item
     })

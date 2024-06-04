@@ -1,6 +1,9 @@
 <template>
   <div class="style-wrapper">
-    <div class="beekeeper-studio-wrapper">
+    <div
+      class="beekeeper-studio-wrapper"
+      :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
+    >
       <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
       <template v-if="storeInitialized">
         <connection-interface v-if="!connection" />

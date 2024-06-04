@@ -57,6 +57,8 @@ type SqliteResult = {
 const SD = SqliteData;
 
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
+  connectionBaseType = 'sqlite' as const;
+
   version: SqliteResult;
   databasePath: string;
 
@@ -85,7 +87,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       editPartitions: false,
       backups: true,
       backDirFormat: false,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -144,7 +147,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     if (table) {
       const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
 
-      const { data } = await this.driverExecuteSingle(sql);
+      const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
       return this.dataToColumns(data, table);
     }
 
@@ -161,7 +164,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     })
 
     const query = everything.map((e) => e.sql).join(";")
-    const allResults = await this.driverExecuteMultiple(query);
+    const allResults = await this.driverExecuteMultiple(query, { overrideReadonly: true });
     const results = allResults.map((r, i) => {
       return {
         result: r,
@@ -414,7 +417,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     const sql = `pragma table_xinfo('${SD.escapeString(table)}')`
-    const { data } = await this.driverExecuteSingle(sql);
+    const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
     const found = data.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
     return found.map((r) => ({

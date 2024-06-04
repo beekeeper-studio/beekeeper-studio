@@ -43,6 +43,12 @@ export const SqlServerData: DialectData = {
   },
   escapeString: defaultEscapeString,
   usesOffsetPagination: true,
+  /**
+   * Fix #1985 by using text/x-sql instead of text/x-mssql.
+   * For some reason, text/x-mssql messes up the editor.getToken()
+   * function which is used for autocomplete.
+   **/
+  textEditorMode: "text/x-sql",
   disabledFeatures: {
     alter: {
       multiStatement: true,

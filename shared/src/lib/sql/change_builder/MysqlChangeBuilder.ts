@@ -1,6 +1,6 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { MysqlData } from "@shared/lib/dialects/mysql";
-import { Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
+import { CreateIndexSpec, Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from 'lodash'
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
@@ -25,6 +25,24 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     if (defaultValue.startsWith("'")) return this.wrapLiteral(defaultValue)
     // string, not quoted.
     return this.escapeString(defaultValue.toString(), true);
+  }
+
+  singleIndex(spec: CreateIndexSpec): string {
+    const unique = spec.unique ? 'UNIQUE' : ''
+    const name = spec.name ? this.dialectData.wrapIdentifier(spec.name) : ''
+    const table = this.tableName
+    if (!spec.columns?.length) {
+      throw new Error("Indexes require at least one column")
+    }
+    const columns = spec.columns?.map((c) => {
+      if (!_.isNil(c.prefix)) {
+        return `${this.dialectData.wrapIdentifier(c.name)} (${c.prefix}) ${c.order}`
+      }
+      return `${this.dialectData.wrapIdentifier(c.name)} ${c.order}`
+    })
+    return `
+      CREATE ${unique} INDEX ${name} on ${table}(${columns})
+    `
   }
 
   dropRelations(names: string[]): string | null {

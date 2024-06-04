@@ -69,6 +69,8 @@ const SQLServerContext = {
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
+  connectionBaseType = 'sqlserver' as const;
+
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => string
@@ -891,7 +893,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     }
   }
 

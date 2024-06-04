@@ -39,6 +39,7 @@ export const MysqlData: DialectData = {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
+  textEditorMode: "text/x-mysql",
   disabledFeatures: {
     alter: {
       multiStatement: true,

@@ -31,14 +31,13 @@ import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
-import { AlterTableSpec, TableKey } from "@shared/lib/dialects/models";
+import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
-  IndexedColumn,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -191,6 +190,24 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
   });
 }
 
+export function parseIndexColumn(str: string): IndexColumn {
+  str = str.trim()
+
+  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
+  const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
+
+  let name: string = nameAndPrefix
+  let prefix: number | null = null
+
+  const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
+  if (prefixMatch) {
+    prefix = Number(prefixMatch[1]) 
+    name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
+  }
+
+  return { name, order, prefix }
+}
+
 function parseRowQueryResult(
   data: any,
   rawFields: any[],
@@ -244,6 +261,8 @@ function filterDatabase(
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
+  connectionBaseType = 'mysql' as const;
+
   versionInfo: {
     versionString: string;
     version: number;
@@ -340,20 +359,19 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
-    const sql = "SHOW INDEX FROM ??";
+    const sql = `SHOW INDEX FROM ${this.wrapIdentifier(table)}`;
 
-    const params = [table];
-
-    const { data } = await this.driverExecuteSingle(sql, { params });
+    const { data } = await this.driverExecuteSingle(sql);
 
     const grouped = _.groupBy(data, "Key_name");
 
     return Object.keys(grouped).map((key, idx) => {
       const row = grouped[key][0];
 
-      const columns: IndexedColumn[] = grouped[key].map((r) => ({
+      const columns: IndexColumn[] = grouped[key].map((r) => ({
         name: r.Column_name,
         order: r.Collation === "A" ? "ASC" : "DESC",
+        prefix: r.Sub_part, // Also called index prefix length.
       }));
 
       return {
@@ -510,9 +528,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<PrimaryKeyColumn[]> {
     logger().debug("finding primary keys for", this.db, table);
-    const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`;
-    const params = [table];
-    const { data } = await this.driverExecuteSingle(sql, { params });
+    const sql = `SHOW KEYS FROM ${this.wrapIdentifier(table)} WHERE Key_name = 'PRIMARY'`;
+    const { data } = await this.driverExecuteSingle(sql);
 
     if (!data || data.length === 0) return [];
 
@@ -1128,7 +1145,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       editPartitions: false,
       backups: true,
       backDirFormat: false,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -1179,7 +1197,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const sql = `SHOW CREATE TABLE ${table}`;
+    const sql = `SHOW CREATE TABLE ${this.wrapIdentifier(table)}`;
 
     const { data } = await this.driverExecuteSingle(sql);
 
@@ -1187,7 +1205,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
-    const sql = `SHOW CREATE VIEW ${view}`;
+    const sql = `SHOW CREATE VIEW ${this.wrapIdentifier(view)}`;
 
     const { data } = await this.driverExecuteSingle(sql);
 
@@ -1199,7 +1217,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     type: string,
     _schema?: string
   ): Promise<string[]> {
-    const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
+    const sql = `SHOW CREATE ${type.toUpperCase()} ${this.wrapIdentifier(routine)}`;
     const { data } = await this.driverExecuteSingle(sql);
     const result = data.map((row) => {
       const upperCaseIndexedRow = Object.keys(row).reduce(

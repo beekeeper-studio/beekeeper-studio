@@ -48,6 +48,7 @@ export const OracleData: DialectData = {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
+  textEditorMode: "text/x-sql",
   disabledFeatures: {
      export: {
       sql: true

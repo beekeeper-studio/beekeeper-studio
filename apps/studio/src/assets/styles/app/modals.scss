@@ -37,7 +37,7 @@
     }
   }
 
-  &.confirmation-modal {
+  &.confirmation-modal, &.sql-files-import-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;
@@ -54,6 +54,20 @@
       padding-bottom: 1.5rem;
       display: flex;
       gap: 0.5rem;
+
+      & > .btn:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  &.sql-files-import-modal {
+    .message {
+      line-height: 1.5;
+    }
+
+    .file-picker-wrapper {
+      margin-top: 1rem;
     }
   }
 }
