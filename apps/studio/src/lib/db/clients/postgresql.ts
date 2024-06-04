@@ -932,6 +932,24 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result?.description
   }
 
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): string {
+    elementName = this.wrapIdentifier(elementName)
+    newElementName = this.wrapIdentifier(newElementName)
+    schema = this.wrapIdentifier(schema)
+
+    let sql = ''
+
+    if (typeOfElement === DatabaseElement.TABLE) {
+      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName};`
+    } else if (typeOfElement === DatabaseElement.VIEW) {
+      sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName};`
+    } else if (typeOfElement === DatabaseElement.SCHEMA) {
+      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName};`
+    }
+
+    return sql
+  }
+
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
     const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 

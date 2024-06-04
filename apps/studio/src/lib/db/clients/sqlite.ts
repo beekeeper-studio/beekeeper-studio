@@ -480,6 +480,14 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     throw new Error("Method not implemented.");
   }
 
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement): string {
+    if (typeOfElement !== DatabaseElement.TABLE) {
+      return ''
+    }
+
+    return `ALTER TABLE ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)};`
+  }
+
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     const sql = `DROP ${SD.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`
 

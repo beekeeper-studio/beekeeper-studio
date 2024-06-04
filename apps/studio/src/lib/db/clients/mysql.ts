@@ -878,6 +878,23 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     });
   }
 
+  setElementNameSql(
+    elementName: string,
+    newElementName: string,
+    typeOfElement: DatabaseElement
+  ): string {
+    elementName = this.wrapIdentifier(elementName);
+    newElementName = this.wrapIdentifier(newElementName);
+
+    let sql = ''
+
+    if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
+      sql = `RENAME TABLE ${elementName} TO ${newElementName};`;
+    }
+
+    return sql
+  }
+
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,

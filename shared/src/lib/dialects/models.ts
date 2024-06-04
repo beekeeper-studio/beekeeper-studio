@@ -111,6 +111,9 @@ export interface DialectData {
       dropConstraint?: boolean
       everything?: boolean
       indexes?: boolean
+      renameSchema?: boolean
+      renameTable?: boolean
+      renameView?: boolean
     },
     triggers?: boolean,
     relations?: boolean,
@@ -137,6 +140,7 @@ export interface DialectData {
     export?: {
       sql?: boolean
     }
+    schema?: boolean
   },
   notices?: {
     infoSchema?: string

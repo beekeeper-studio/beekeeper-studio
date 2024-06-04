@@ -448,6 +448,10 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     throw new Error("Method not implemented.");
   }
 
+  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): string {
+    return ''
+  }
+
   dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
