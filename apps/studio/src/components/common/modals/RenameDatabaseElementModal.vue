@@ -3,57 +3,59 @@
     <modal
       class="vue-dialog beekeeper-modal"
       :name="modalName"
-      @opened="$refs.nameInput.focus()"
+      @opened="opened"
     >
-      <div class="dialog-content">
-        <div class="dialog-c-title">
-          Rename {{ elementType.toLowerCase() }}
+      <div v-kbd-trap="true">
+        <div class="dialog-content">
+          <div class="dialog-c-title">
+            Rename {{ elementType.toLowerCase() }}
+          </div>
+          <div class="alert alert-warning">
+            <i class="material-icons">warning</i>
+            <span>
+              Be cautious when renaming database object, as it may disrupt related queries, functions, procedures, or other objects that reference it.
+            </span>
+          </div>
+          <error-alert
+            :error="errors"
+            :title="`Failed to rename ${elementType.toLowerCase()}`"
+          />
+          <div class="form-group">
+            <label for="element-name">Name</label>
+            <input id="element-name" name="name" v-model="elementNewName" type="text" ref="nameInput">
+          </div>
         </div>
-        <div class="alert alert-warning">
-          <i class="material-icons">warning</i>
-          <span>
-            Be cautious when renaming database object, as it may disrupt related queries, functions, procedures, or other objects that reference it.
-          </span>
-        </div>
-        <error-alert
-          :error="errors"
-          :title="`Failed to rename ${elementType.toLowerCase()}`"
-        />
-        <div class="form-group">
-          <label for="element-name">Name</label>
-          <input id="element-name" name="name" v-model="elementNewName" type="text" ref="nameInput">
-        </div>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button
-          class="btn btn-flat"
-          type="button"
-          @click.prevent="close"
-        >
-          Cancel
-        </button>
-        <x-buttons :disabled="loading">
-          <x-button
-            class="btn btn-primary"
-            @click.prevent="rename"
+        <div class="vue-dialog-buttons">
+          <button
+            class="btn btn-flat"
+            type="button"
+            @click.prevent="close"
           >
-            Apply
-          </x-button>
-          <x-button
-            class="btn btn-primary"
-            menu
-          >
-            <i class="material-icons">arrow_drop_down</i>
-            <x-menu style="--align: end;">
-              <x-menuitem @click.prevent="rename">
-                <x-label>Apply</x-label>
-              </x-menuitem>
-              <x-menuitem @click.prevent="renameSql">
-                <x-label>Copy to SQL</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </x-buttons>
+            Cancel
+          </button>
+          <x-buttons :disabled="loading">
+            <x-button
+              class="btn btn-primary"
+              @click.prevent="rename"
+            >
+              Apply
+            </x-button>
+            <x-button
+              class="btn btn-primary"
+              menu
+            >
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu style="--align: end;">
+                <x-menuitem @click.prevent="rename">
+                  <x-label>Apply</x-label>
+                </x-menuitem>
+                <x-menuitem @click.prevent="renameSql">
+                  <x-label>Copy to SQL</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
+        </div>
       </div>
     </modal>
   </portal>
@@ -104,6 +106,10 @@ export default Vue.extend({
       }
       this.elementNewName = this.elementName
       this.$modal.show(this.modalName)
+    },
+    async opened() {
+      await this.$nextTick()
+      this.$refs.nameInput.focus()
     },
     close() {
       this.$modal.hide(this.modalName)
