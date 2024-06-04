@@ -66,11 +66,11 @@ export class UserSetting extends ApplicationEntity {
   }
 
   static async get(key: string) {
-    return await UserSetting.findOne({key})
+    return await UserSetting.findOneBy({ key })
   }
 
   static async set(key: string, value: string): Promise<void> {
-    let existing = await UserSetting.findOne({ key });
+    let existing = await UserSetting.findOneBy({ key });
     if (!existing) {
       existing = new UserSetting()
       existing.key = key

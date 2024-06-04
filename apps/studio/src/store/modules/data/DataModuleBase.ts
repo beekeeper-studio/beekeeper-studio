@@ -169,7 +169,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     },
 
     async reload(context, id: number) {
-      const item = await cls.findOne(id)
+      const item = await cls.findOneBy(id)
       if (item) {
         context.commit('upsert', item)
         return item.id

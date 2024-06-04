@@ -4,14 +4,15 @@ import { ApplicationEntity } from "./application_entity";
 
 @Entity({ name: 'hidden_schemas'})
 export class HiddenSchema extends ApplicationEntity {
-  constructor(name: string, db: string, saved: IConnection) {
-    super()
+  withProps(name: string, db: string, saved: IConnection): HiddenSchema {
     this.name = name
     if (db) this.databaseName = db
     if (saved) {
       this.connectionId = saved.id
       this.workspaceId = saved.workspaceId
     }
+
+    return this;
   }
 
   matches(schemaName: string, database?: string): boolean {
