@@ -24,6 +24,7 @@
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@electron/remote": "^2.0.9",
+    "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "axios": "^1.6.0",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",

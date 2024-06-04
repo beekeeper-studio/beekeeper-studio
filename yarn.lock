@@ -2362,6 +2362,11 @@
     mkdirp "^1.0.4"
     rimraf "^3.0.2"
 
+"@pdanpdan/vue-keyboard-trap@^1.0.19":
+  version "1.0.19"
+  resolved "https://registry.yarnpkg.com/@pdanpdan/vue-keyboard-trap/-/vue-keyboard-trap-1.0.19.tgz#c9022c90eb522ca4ba8221d933377b3329641d17"
+  integrity sha512-NO8tYXa0NyJ+SRnzAw5Rl0VpYCkU5xlqJxP6uztVTKjchERGSnshQyolskz8iOYSqJWu5yWjTsEevD/3Oa4N0g==
+
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"

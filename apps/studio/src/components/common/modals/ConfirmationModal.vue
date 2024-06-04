@@ -7,34 +7,36 @@
       @opened="opened"
       @before-close="beforeClose"
     >
-      <div class="dialog-content">
-        <slot name="title">
-          <div
-            class="dialog-c-title"
-            v-html="titleHtml"
-          />
-        </slot>
-        <slot name="message">
-          <div v-html="messageHtml" />
-        </slot>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button
-          class="btn btn-flat"
-          type="button"
-          @click.prevent="cancel"
-          autofocus
-          ref="cancelBtn"
-        >
-          Cancel
-        </button>
-        <button
-          class="btn btn-primary"
-          type="button"
-          @click.prevent="onClickConfirm"
-        >
-          Confirm
-        </button>
+      <div v-kbd-trap="true">
+        <div class="dialog-content">
+          <slot name="title">
+            <div
+              class="dialog-c-title"
+              v-html="titleHtml"
+            />
+          </slot>
+          <slot name="message">
+            <div v-html="messageHtml" />
+          </slot>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button
+            class="btn btn-flat"
+            type="button"
+            @click.prevent="cancel"
+            autofocus
+            ref="cancelBtn"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            @click.prevent="onClickConfirm"
+          >
+            Confirm
+          </button>
+        </div>
       </div>
     </modal>
   </portal>
