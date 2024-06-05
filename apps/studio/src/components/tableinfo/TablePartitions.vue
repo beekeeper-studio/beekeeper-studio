@@ -96,8 +96,6 @@ import StatusBar from '../common/StatusBar.vue'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { AppEvent } from '@/common/AppEvent';
-import { FormatterDialect } from '@shared/lib/dialects/models';
-import { format } from 'sql-formatter';
 
 export default Vue.extend({
 	components: {
@@ -284,7 +282,7 @@ export default Vue.extend({
         this.error = null;
         const changes = this.collectChanges();
         const sql = await this.connection.alterPartitionSql(changes);
-        const formatted = format(sql, { language: FormatterDialect(this.dialect)});
+        const formatted = this.$formatQuery(sql);
         this.$root.$emit(AppEvent.newTab, formatted);
       } catch(ex) {
         this.error = ex;

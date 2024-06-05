@@ -3,7 +3,8 @@ import Vue from 'vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import path from 'path'
-import { isBksInternalColumn } from "@/common/utils"
+import { isBksInternalColumn, safeSqlFormat } from "@/common/utils"
+import { FormatterDialect } from "@shared/lib/dialects/models"
 
 export interface ContextOption {
   name: string,
@@ -103,11 +104,18 @@ export const BeekeeperPlugin = {
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin
 
+function formatQuery(query: string): string {
+  return safeSqlFormat(query, {
+    language: FormatterDialect(this.$store.getters.dialect),
+  })
+}
 
 export default {
   install(Vue) {
     Vue.prototype.$app = BeekeeperPlugin
     Vue.prototype.$bks = BeekeeperPlugin
+
+    Vue.prototype.$formatQuery = formatQuery
 
     Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {

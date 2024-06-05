@@ -68,8 +68,6 @@ import { TableOrView } from "@/lib/db/models";
 import { mapState } from 'vuex'
 import { DatabaseElement } from '@/lib/db/types'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { format } from 'sql-formatter';
-import { FormatterDialect } from '@shared/lib/dialects/models'
 
 export default Vue.extend({
   components: {
@@ -138,7 +136,7 @@ export default Vue.extend({
     renameSql() {
       try {
         const sql = this.connection.setElementNameSql(this.elementName, this.elementNewName, this.elementType, this.elementSchema)
-        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = this.$formatQuery(sql)
         this.$root.$emit(AppEvent.newTab, formatted)
         this.close()
       } catch (e) {

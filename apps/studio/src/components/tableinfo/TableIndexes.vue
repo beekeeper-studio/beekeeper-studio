@@ -116,9 +116,8 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
+import { CreateIndexSpec, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
 import rawLog from 'electron-log'
-import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
@@ -158,7 +157,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapGetters(['dialect', 'dialectData']),
+    ...mapGetters(['dialectData']),
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
     },
@@ -335,7 +334,7 @@ export default Vue.extend({
     submitSql() {
       const payload = this.getPayload()
       const sql = this.connection.alterIndexSql(payload)
-      const formatted = format(sql, { language: FormatterDialect(this.dialect)})
+      const formatted = this.$formatQuery(sql)
       this.$root.$emit(AppEvent.newTab, formatted)
     },
 

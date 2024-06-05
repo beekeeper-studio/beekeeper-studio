@@ -109,7 +109,6 @@ import { mapGetters, mapState } from 'vuex'
 import { CreateRelationSpec, Dialect, DialectTitles, FormatterDialect, RelationAlterations } from '@shared/lib/dialects/models'
 import { TableColumn, TableOrView } from '@/lib/db/models'
 import _ from 'lodash'
-import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
 import ErrorAlert from '../common/ErrorAlert.vue'
@@ -367,7 +366,7 @@ export default Vue.extend({
     submitSql() {
       const payload = this.getPayload()
       const sql = this.connection.alterRelationSql(payload)
-      const formatted = format(sql, { language: FormatterDialect(this.dialect)})
+      const formatted = this.$formatQuery(sql)
       this.$root.$emit(AppEvent.newTab, formatted)
     },
     submitUndo() {

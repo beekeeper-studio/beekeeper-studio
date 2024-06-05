@@ -23,8 +23,6 @@ import Vue from "vue";
 import TextEditor from "./TextEditor.vue";
 import { mapState, mapGetters } from "vuex";
 import { plugins } from "@/lib/editor/utils";
-import { format } from "sql-formatter";
-import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
 import CodeMirror from "codemirror";
 
 export default Vue.extend({
@@ -96,9 +94,7 @@ export default Vue.extend({
   },
   methods: {
     async formatSql() {
-      const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.connectionType)),
-      });
+      const formatted = this.$formatQuery(this.value);
       await this.setEditorValue(formatted);
     },
     async columnsGetter(tableName: string) {

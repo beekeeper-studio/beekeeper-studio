@@ -235,7 +235,6 @@ import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import { FormatterDialect } from '@shared/lib/dialects/models';
 import Vue from 'vue';
 import { OpenTab } from '@/common/appdb/models/OpenTab';
 import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
@@ -250,8 +249,6 @@ import { readFileSync, writeFileSync } from 'fs'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
-
-import { safeSqlFormat as safeFormat } from '@/common/utils';
 import pluralize from 'pluralize'
 
 export default Vue.extend({
@@ -304,7 +301,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
-    ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
+    ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -436,7 +433,7 @@ export default Vue.extend({
 
       try {
         const sql = await this.connection.duplicateTableSql(tableName, this.duplicateTableName, schema)
-        const formatted = safeFormat(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = this.$formatQuery(sql)
 
         const tab = new OpenTab('query')
         tab.unsavedQueryText = formatted
@@ -578,7 +575,7 @@ export default Vue.extend({
       }
       try {
         const result = await this.connection[method](table.name, table.schema)
-        const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
+        const stringResult = this.$formatQuery(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       } catch (ex) {
         this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
@@ -776,7 +773,7 @@ export default Vue.extend({
     },
     async loadRoutineCreate(routine) {
       const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
-      const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
+      const stringResult = this.$formatQuery(_.isArray(result) ? result[0] : result)
       this.createQuery(stringResult);
     },
     openTableBuilder() {

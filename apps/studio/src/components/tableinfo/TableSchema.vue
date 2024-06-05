@@ -120,7 +120,6 @@
 <script lang="ts">
 import { TabulatorFull, CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
-import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
@@ -132,7 +131,7 @@ import { mapGetters, mapState } from 'vuex'
 import { getDialectData } from '@shared/lib/dialects'
 import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
-import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
+import { AlterTableSpec } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import rawLog from 'electron-log'
 import { escapeHtml } from '@shared/lib/tabulator'
@@ -414,7 +413,7 @@ export default Vue.extend({
         this.error = null
         const changes = this.collectChanges()
         const sql = await this.connection.alterTableSql(changes)
-        const formatted = format(sql, { language: FormatterDialect(this.dialect)})
+        const formatted = this.$formatQuery(sql)
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch (ex) {
         this.error = ex
