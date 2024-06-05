@@ -242,6 +242,14 @@ export function runCommonTests(getUtil, opts = {}) {
           await getUtil().indexTests()
         }
       })
+
+      test("should rename database elements", async () => {
+        if (dbReadOnlyMode) {
+          await expect(getUtil().renameElementsTests()).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await getUtil().renameElementsTests()
+        }
+      })
     })
 
 

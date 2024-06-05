@@ -48,7 +48,10 @@
         height="auto"
         :scrollable="true"
       >
-        <div class="dialog-content">
+        <div
+          class="dialog-content"
+          v-kbd-trap="true"
+        >
           <div
             v-if="errors"
             class="alert alert-danger"
@@ -82,8 +85,12 @@
         name="running-exports-modal"
         height="auto"
         :scrollable="true"
+        @opened="$refs.cancel.focus()"
       >
-        <form @submit.prevent="disconnect(true)">
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="disconnect(true)"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">
               Confirm Disconnect
@@ -94,6 +101,7 @@
             <button
               class="btn btn-flat"
               type="button"
+              ref="cancel"
               @click.prevent="$modal.hide('running-exports-modal')"
             >
               Cancel

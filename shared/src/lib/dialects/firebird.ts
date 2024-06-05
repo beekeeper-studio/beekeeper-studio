@@ -42,6 +42,9 @@ export const FirebirdData: DialectData = {
     collations: true,
     alter: {
       multiStatement: true,
+      renameSchema: true,
+      renameTable: true,
+      renameView: true,
     }
   },
   notices: {},

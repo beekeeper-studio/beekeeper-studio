@@ -647,6 +647,41 @@ export class DBTestUtil {
 
   }
 
+  async renameElementsTests() {
+    if (!this.data.disabledFeatures?.alter?.renameSchema) {
+      await this.knex.schema.dropSchemaIfExists("rename_schema")
+      await this.knex.schema.createSchema("rename_schema")
+
+      await this.connection.setElementName('rename_schema', 'renamed_schema', DatabaseElement.SCHEMA)
+
+      expect(await this.connection.listSchemas()).toContain('renamed_schema')
+    }
+
+    if (!this.data.disabledFeatures?.alter?.renameTable) {
+      await this.knex.schema.dropTableIfExists("rename_table")
+      await this.knex.schema.createTable("rename_table", (table) => {
+        table.specificType("id", 'varchar(255)')
+      })
+
+      await this.connection.setElementName('rename_table', 'renamed_table', DatabaseElement.TABLE, this.defaultSchema)
+
+      expect(await this.knex.schema.hasTable('renamed_table')).toBe(true)
+    }
+
+    if (!this.data.disabledFeatures?.alter?.renameView) {
+      await this.knex.schema.dropViewIfExists("rename_view");
+      await this.knex.schema.createView("rename_view", (view) => {
+        view.columns(["id"])
+        view.as(this.knex("renamed_table").select("id"))
+      })
+
+      await this.connection.setElementName('rename_view', 'renamed_view', DatabaseElement.VIEW, this.defaultSchema)
+
+      const views = await this.connection.listViews()
+      expect(views.find((view) => view.name === 'renamed_view')).toBeTruthy()
+    }
+  }
+
   async filterTests() {
     // filter test - builder
 

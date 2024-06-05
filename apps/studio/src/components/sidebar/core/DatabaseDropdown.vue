@@ -42,7 +42,11 @@
         height="auto"
         :scrollable="true"
       >
-        <div class="dialog-content">
+        <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+        <div
+          class="dialog-content"
+          v-kbd-trap="true"
+        >
           <add-database-form
             :connection="connection"
             @databaseCreated="databaseCreated"

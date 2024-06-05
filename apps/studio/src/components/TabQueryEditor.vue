@@ -197,6 +197,7 @@
         :scrollable="true"
       >
         <form
+          v-kbd-trap="true"
           v-if="query"
           @submit.prevent="saveQuery"
         >
@@ -252,7 +253,10 @@
         height="auto"
         :scrollable="true"
       >
-        <form @submit.prevent="submitQuery(queryForExecution, true)">
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="submitQuery(queryForExecution, true)"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">
               Provide parameter values
@@ -923,7 +927,7 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
+          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'
