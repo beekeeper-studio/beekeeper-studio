@@ -2,7 +2,7 @@ import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import type { RedshiftOptions, BigQueryOptions, CassandraOptions, AzureAuthOptions, LibSQLOptions } from '@/common/appdb/models/saved_connection';
 import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb';
+export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
 
 export enum DatabaseElement {
   TABLE = 'TABLE',

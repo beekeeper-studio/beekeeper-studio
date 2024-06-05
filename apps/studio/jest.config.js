@@ -3,6 +3,7 @@ const path = require('path')
 const { resolve } = require('path')
 /* eslint-enable */
 
+/** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   preset: '@vue/cli-plugin-unit-jest/presets/typescript-and-babel',
   moduleNameMapper: {
