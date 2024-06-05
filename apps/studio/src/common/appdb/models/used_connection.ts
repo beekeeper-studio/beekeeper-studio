@@ -36,6 +36,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.socketPathEnabled = other.socketPathEnabled
       this.bigQueryOptions = other.bigQueryOptions
       this.azureAuthOptions = other.azureAuthOptions
+      this.libsqlOptions = other.libsqlOptions
     }
 
   }

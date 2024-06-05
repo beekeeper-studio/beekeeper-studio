@@ -47,6 +47,7 @@ export default {
       bigQueryOptions: config.bigQueryOptions,
       azureAuthOptions: config.azureAuthOptions,
       authId: config.authId,
+      libsqlOptions: config.libsqlOptions,
       runtimeExtensions: sqliteExtension ? [sqliteExtension] : []
     }
   },

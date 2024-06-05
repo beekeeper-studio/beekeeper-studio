@@ -437,6 +437,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return totalRecords
   }
 
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
+    if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
+      return ''
+    }
+
+    elementName = this.wrapValue(schema + '.' + elementName)
+    newElementName = this.wrapValue(newElementName)
+
+    return `EXEC sp_rename ${elementName}, ${newElementName};`
+  }
+
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
     await this.driverExecuteSingle(sql)
@@ -504,9 +515,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.driverExecuteSingle(truncateAll);
   }
 
-  async truncateElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
-    const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
-    await this.driverExecuteSingle(sql)
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
+    return `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema = 'dbo') {

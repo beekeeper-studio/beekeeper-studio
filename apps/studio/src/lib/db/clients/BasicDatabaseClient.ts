@@ -222,9 +222,27 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
+  abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
+    if (!sql) {
+      throw new Error(`Unsupported element type: ${typeOfElement}`);
+    }
+    await this.executeQuery(sql);
+  }
+
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 
-  abstract truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+  abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+
+  async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    const sql = this.truncateElementSql(elementName, typeOfElement, schema);
+    if (!sql) {
+      throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
+    }
+    await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement, schema));
+  }
 
   abstract truncateAllTables(schema?: string): void;
   // ****************************************************************************
@@ -247,6 +265,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string;
   // ****************************************************************************
+
+  /** Sync a database file to remote database. This is a LibSQL specific feature. */
+  async syncDatabase(): Promise<void> {
+    throw new Error("Not implemented");
+  }
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);

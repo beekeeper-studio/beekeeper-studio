@@ -864,18 +864,31 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return true;
   }
 
-  async truncateElement(
-    elementName: string,
-    typeOfElement: DatabaseElement,
-    _schema?: string
-  ): Promise<void> {
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
+    return `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`;
+  }
+
+  async truncateElement(elementName: string, typeOfElement: DatabaseElement): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      const sql = `
-        TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)}
-          ${this.wrapIdentifier(elementName)}
-      `;
-      await this.driverExecuteSingle(sql, { connection });
+      await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement), { connection });
     });
+  }
+
+  setElementNameSql(
+    elementName: string,
+    newElementName: string,
+    typeOfElement: DatabaseElement
+  ): string {
+    elementName = this.wrapIdentifier(elementName);
+    newElementName = this.wrapIdentifier(newElementName);
+
+    let sql = ''
+
+    if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
+      sql = `RENAME TABLE ${elementName} TO ${newElementName};`;
+    }
+
+    return sql
   }
 
   async dropElement(

@@ -66,22 +66,25 @@
         name="diff-modal"
         class="beekeeper-modal vue-dialog diff-modal"
       >
-        <div class="dialog-content">
-          <div class="dialog-c-title">
-            Merge Preview
+        <div v-kbd-trap="true">
+          <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+          <div class="dialog-content">
+            <div class="dialog-c-title">
+              Merge Preview
+            </div>
+            <diff-viewer
+              v-if="diff"
+              :diff="diff"
+            />
           </div>
-          <diff-viewer
-            v-if="diff"
-            :diff="diff"
-          />
-        </div>
-        <div class="vue-dialog-buttons">
-          <button
-            class="btn btn-flat"
-            @click.prevent="$modal.hide('diff-modal')"
-          >
-            Close
-          </button>
+          <div class="vue-dialog-buttons">
+            <button
+              class="btn btn-flat"
+              @click.prevent="$modal.hide('diff-modal')"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </modal>
     </portal>

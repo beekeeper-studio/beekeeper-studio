@@ -39,6 +39,7 @@
     />
     <ExportManager :connection="connection" />
     <lost-connection-modal />
+    <rename-database-element-modal />
   </div>
 </template>
 
@@ -56,10 +57,11 @@
   import LostConnectionModal from './LostConnectionModal.vue'
   import Vue from 'vue'
   import { SmartLocalStorage } from '@/common/LocalStorage'
+  import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
   import { mapGetters } from 'vuex'
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal },
     props: ['connection'],
     data() {
       /* eslint-disable */
