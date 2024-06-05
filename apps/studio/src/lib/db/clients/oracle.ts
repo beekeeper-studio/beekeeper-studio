@@ -72,7 +72,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   async checkIsConnected(): Promise<boolean> {
     try {
-      await this.rawExecuteQuery('SELECT 1 FROM ALL_INDEXES FETCH FIRST 1 ROWS ONLY', {});
+      await this.rawExecuteQuery('SELECT 1 FROM DUAL', {});
       return true;
     } catch (_e) {
       return false;
