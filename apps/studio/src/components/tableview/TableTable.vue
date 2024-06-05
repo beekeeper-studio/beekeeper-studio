@@ -685,11 +685,7 @@ export default Vue.extend({
       // because it can slow down some databases.
       // However - some databases require an 'order by' for limit, so needs some
       // integration tests first.
-      if (!this.table?.columns?.length) {
-        return [];
-      }
-
-      return [{ column: this.table.columns[0].columnName, dir: "asc" }];
+      return [];
     },
     shouldInitialize() {
       return this.tablesInitialLoaded && this.active && !this.initialized
