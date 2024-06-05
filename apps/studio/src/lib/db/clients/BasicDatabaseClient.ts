@@ -258,7 +258,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   // structure to allow logging of all queries to a query log
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
-  private async checkIsConnected(): Promise<boolean> {
+  protected async checkIsConnected(): Promise<boolean> {
     try {
       await this.rawExecuteQuery('SELECT 1', {});
       return true;

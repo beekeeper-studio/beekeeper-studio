@@ -226,11 +226,18 @@ export class AzureAuthService {
       return null;
     }
 
-    const refreshTokenResponse = await this.pca.acquireTokenSilent({
-      account: account,
-      scopes: ['https://database.windows.net/.default', 'offline_access'],
-      forceRefresh: true
-    });
+    let refreshTokenResponse: msal.AuthenticationResult;
+
+    try {
+      refreshTokenResponse = await this.pca.acquireTokenSilent({
+        account: account,
+        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        forceRefresh: true
+      });
+    } catch {
+      log.info('refresh failed');
+      return null;
+    }
 
     if (refreshTokenResponse) {
       return {
