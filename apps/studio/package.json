@@ -24,6 +24,7 @@
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@electron/remote": "^2.0.9",
+    "@libsql/knex-libsql": "^0.1.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "axios": "^1.6.0",
     "axios-retry": "^3.2.4",
@@ -48,6 +49,7 @@
     "jquery": "^3.5.0",
     "knex": "^2.4.1",
     "knex-firebird-dialect": "1.4.6",
+    "libsql": "^0.3.18",
     "lodash": "^4.17.21",
     "markdown-table": "^3.0.2",
     "marked": "^4.0.10",
@@ -168,6 +170,7 @@
     "watchpack": "1.6.1",
     "node-pre-gyp": "0.12.0",
     "nan": "2.17.0",
-    "cpu-features": "../../.yarn/packages/empty-package"
+    "cpu-features": "../../.yarn/packages/empty-package",
+    "sqlite3": "5.1.6"
   }
 }
