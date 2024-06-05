@@ -18,6 +18,7 @@ export const ConnectionTypes = [
   { name: 'MariaDB', value: 'mariadb' },
   { name: 'Postgres', value: 'postgresql' },
   { name: 'SQLite', value: 'sqlite' },
+  { name: 'LibSQL', value: 'libsql' },
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
@@ -50,6 +51,13 @@ export interface BigQueryOptions {
   keyFilename?: string;
   projectId?: string;
   devMode?: boolean
+}
+
+export interface LibSQLOptions {
+  mode: 'url' | 'file';
+  authToken?: string;
+  syncUrl?: string;
+  syncPeriod?: number;
 }
 
 export interface ConnectionOptions {
@@ -231,8 +239,12 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({type: 'simple-json', nullable: false})
   cassandraOptions: CassandraOptions = {}
+
   @Column({ type: 'simple-json', nullable: false })
   bigQueryOptions: BigQueryOptions = {}
+
+  @Column({ type: 'simple-json', nullable: false })
+  libsqlOptions: LibSQLOptions = { mode: 'url' }
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })

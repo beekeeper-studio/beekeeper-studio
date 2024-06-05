@@ -815,12 +815,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return [this.database.database];
   }
 
-  async truncateElement(
-    _elementName: string,
-    _typeOfElement: DatabaseElement,
-    _schema?: string
-  ): Promise<void> {
-    // TODO There is no internal function to truncate a table
+  // TODO There is no internal function to truncate a table
+  truncateElementSql() {
+    return ''
   }
 
   async duplicateTable(

@@ -29,6 +29,15 @@
             <i class="material-icons">save</i>Save Connection
           </x-label>
         </x-menuitem>
+        <!-- FIXME: Let's not use connection.connectionType -->
+        <x-menuitem
+          v-if="connection.connectionType === 'libsql' && connection.server.config.libsqlOptions.syncUrl"
+          @click.prevent="syncDatabase"
+        >
+          <x-label>
+            <i class="material-icons">sync</i>Sync Database
+          </x-label>
+        </x-menuitem>
       </x-menu>
     </x-button>
 
@@ -112,6 +121,10 @@
 <script>
 import { mapState, mapGetters } from 'vuex'
 import SaveConnectionForm from '../../connection/SaveConnectionForm'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('app.vue')
+
 export default {
   components: {
     SaveConnectionForm
@@ -122,7 +135,7 @@ export default {
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig'}),
+      ...mapState({'config': 'usedConfig', 'connection': 'connection'}),
       ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'versionString': 'versionString'}),
       connectionName() {
         return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
@@ -154,6 +167,15 @@ export default {
         this.$modal.show('running-exports-modal')
       } else {
         this.$store.dispatch('disconnect')
+      }
+    },
+    async syncDatabase() {
+      try {
+        await this.$store.dispatch('syncDatabase')
+        this.$noty.success("Database Synced")
+      } catch (error) {
+        log.error(error)
+        this.$noty.error(error.message)
       }
     }
   }

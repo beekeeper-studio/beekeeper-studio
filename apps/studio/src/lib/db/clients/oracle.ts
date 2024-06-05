@@ -592,10 +592,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  async truncateElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
-    const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
-
-    await this.driverExecuteSingle(sql)
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema = 'public'): string {
+    return `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema: string): Promise<void> {

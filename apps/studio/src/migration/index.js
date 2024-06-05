@@ -8,6 +8,8 @@ import addSc from './20200707-add-sc-to-used-connections'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
 import dev3 from './dev-3'
+import dev4 from './dev-4'
+import dev5 from './dev-5'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -32,10 +34,10 @@ import readOnlyMode from './20221103_add_read_only'
 import connectionPins from './20230308_create_connection_pins'
 import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
-import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
 import demoSetup from './20240421_seed_with_demo_data'
 import minimalMode from './20240514_user_settings_minimal_mode'
+import libsqlOptions from './20240528_add_libsql_options'
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
@@ -58,8 +60,8 @@ const realMigrations = [
 
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
-  firebirdConnection, exportPath, UserSettingsWindowPosition,
-  demoSetup, minimalMode,
+  exportPath, UserSettingsWindowPosition,
+  demoSetup, minimalMode, libsqlOptions,
 
 ]
 
@@ -69,7 +71,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3
+  dev1, dev2, dev3, dev4, dev5,
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]
