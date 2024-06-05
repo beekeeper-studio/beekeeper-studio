@@ -1,6 +1,7 @@
 <template>
   <div class="fixed">
     <div class="data-select-wrap">
+      <!-- FIXME: move this comparison to the DialectData -->
       <p
         v-if="this.connection.dialect === 'sqlite'"
         class="sqlite-db-name"
@@ -17,6 +18,7 @@
         placeholder="Select a database..."
         class="dropdown-search"
       />
+      <!-- FIXME: move this comparison to the DialectData -->
       <a
         v-if="this.connection.dialect !== 'sqlite'"
         class="refresh"
@@ -78,6 +80,7 @@
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
+        // FIXME: move this comparison to the DialectData
         if (this.connection.dialect.match(/sqlite|firebird/)) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()

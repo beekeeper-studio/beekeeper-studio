@@ -63,7 +63,11 @@
         <snap-external-warning />
       </div>
     </template>
-    <toggle-form-area title="Replica">
+    <toggle-form-area title="Embedded Replica">
+      <div class="alert alert-info">
+        <i class="material-icons-outlined">info</i>
+        <span>Make sure your local file has been used for replica or it's a non existing file.</span>
+      </div>
       <div class="form-group col">
         <label for="sync-url" required>Sync URL</label>
         <input

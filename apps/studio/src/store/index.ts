@@ -415,7 +415,7 @@ const store = new Vuex.Store<State>({
       context.dispatch('updateWindowTitle', null)
     },
     async syncDatabase(context) {
-      context.state.connection.syncDatabase();
+      await context.state.connection.syncDatabase();
     },
     async changeDatabase(context, newDatabase: string) {
       log.info("Pool changing database to", newDatabase)

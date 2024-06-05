@@ -86,9 +86,9 @@ export class LibSQLClient extends SqliteClient {
     return `Delete from ${this.dialectData.wrapIdentifier(elementName)};`;
   }
 
-  syncDatabase() {
+  async syncDatabase() {
     if (this.connection) {
-      return this.connection.sync();
+      this.connection.sync();
     }
   }
 

@@ -3,16 +3,27 @@ import { runCommonTests, runReadOnlyTests } from "./all";
 import { GenericContainer, StartedTestContainer } from "testcontainers";
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import tmp from "tmp";
+import path from "path";
+import fs from "fs";
+import { LibSQLClient } from "@/lib/db/clients/libsql";
+import { createServer } from "@/lib/db";
 
 const TEST_VERSIONS = [
   { mode: "file", readOnly: false },
   { mode: "file", readOnly: true },
   { mode: "remote", readOnly: true },
   { mode: "remote", readOnly: false },
+  { mode: "replica", readOnly: false },
+  { mode: "replica", readOnly: true },
 ] as const;
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
   describe(`LibSQL [${options.mode} - read-only mode? ${options.readOnly}]`, () => {
+    if (options.mode === "replica") {
+      testReplica(options.readOnly);
+      return;
+    }
+
     let dbfile: any;
     let container: StartedTestContainer;
     let util: DBTestUtil;
@@ -71,10 +82,10 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await util.connection.disconnect();
       }
       if (dbfile) {
-        dbfile.removeCallback();
+        await dbfile.removeCallback();
       }
       if (container) {
-        container.stop();
+        await container.stop();
       }
     });
 
@@ -241,6 +252,87 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       };
     }
   });
+}
+
+function testReplica(readOnly = false) {
+  let replicaDir: any;
+  let container: StartedTestContainer;
+  let remoteClient: LibSQLClient;
+  let replicaClient: LibSQLClient;
+
+  beforeAll(async () => {
+    replicaDir = tmp.dirSync();
+
+    container = await new GenericContainer(
+      "ghcr.io/tursodatabase/libsql-server:latest"
+    )
+      .withName(`libsql-replica-target`)
+      .withExposedPorts(8080)
+      .withStartupTimeout(dbtimeout)
+      .start();
+
+    const host = container.getHost();
+    const port = container.getMappedPort(8080);
+    const remoteUrl = `http://${host}:${port}`;
+    const config = {
+      client: "libsql",
+      readOnlyMode: readOnly,
+      libsqlOptions: {},
+    } as IDbConnectionServerConfig;
+
+    remoteClient = createServer(config).createConnection(
+      remoteUrl
+    ) as LibSQLClient;
+    replicaClient = createServer({
+      ...config,
+      libsqlOptions: {
+        mode: "url",
+        syncUrl: remoteUrl,
+      },
+    }).createConnection(path.join(replicaDir.name, "test.db")) as LibSQLClient;
+
+    await remoteClient.connect();
+    await replicaClient.connect();
+  });
+
+  afterAll(async () => {
+    await remoteClient.disconnect();
+    await replicaClient.disconnect();
+    await container.stop();
+    // @ts-expect-error not-fully-typed
+    fs.rmSync(replicaDir.name, { recursive: true, force: true });
+  });
+
+  it("should sync with remote server", async () => {
+    if (readOnly) {
+      expect(syncTests()).rejects.toThrowError();
+    } else {
+      await syncTests();
+    }
+  });
+
+  async function syncTests() {
+    let remoteTables = await remoteClient.listTables();
+    let replicaTables = await replicaClient.listTables();
+
+    expect(replicaTables).toEqual(remoteTables);
+
+    await remoteClient.executeQuery("CREATE TABLE test (id integer)");
+    await replicaClient.syncDatabase();
+
+    remoteTables = await remoteClient.listTables();
+    replicaTables = await replicaClient.listTables();
+
+    expect(replicaTables).toEqual(remoteTables);
+
+    await replicaClient.executeQuery("INSERT INTO test VALUES (1)");
+    await replicaClient.syncDatabase();
+
+    const remoteData = await remoteClient.selectTop("test", 0, 1, [], []);
+    const replicaData = await replicaClient.selectTop("test", 0, 1, [], []);
+
+    expect(replicaData).toEqual(remoteData);
+  }
 }
 
 TEST_VERSIONS.forEach(testWith);

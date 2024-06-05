@@ -253,7 +253,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   // ****************************************************************************
 
   /** Sync a database file to remote database. This is a LibSQL specific feature. */
-  syncDatabase(): void {
+  async syncDatabase(): Promise<void> {
     throw new Error("Not implemented");
   }
 

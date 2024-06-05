@@ -7404,9 +7404,9 @@ electron-to-chromium@^1.4.202:
   integrity sha512-FLs6R4FQE+1JHM0hh3sfdxnYjKvJpHZyhQDjc2qFq/xFvmmRt/TATNToZhrcGUFzpF2XjeiuozrA8lI0PZmYYw==
 
 electron-to-chromium@^1.4.668:
-  version "1.4.788"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.788.tgz#a3545959d5cfa0a266d3e551386c040be34e7e06"
-  integrity sha512-ubp5+Ev/VV8KuRoWnfP2QF2Bg+O2ZFdb49DiiNbz2VmgkIqrnyYaqIOqj8A6K/3p1xV0QcU5hBQ1+BmB6ot1OA==
+  version "1.4.789"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.789.tgz#fec941cb753ee139da562a5a8ff31fc3e828b411"
+  integrity sha512-0VbyiaXoT++Fi2vHGo2ThOeS6X3vgRCWrjPeO2FeIAWL6ItiSJ9BqlH8LfCXe3X1IdcG+S0iLoNaxQWhfZoGzQ==
 
 electron-updater@^4.6.5:
   version "4.6.5"
@@ -15173,7 +15173,7 @@ sql-query-identifier@^2.7.0:
   resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.7.0.tgz#e05de066df91d93388f5f088245f16c13290022d"
   integrity sha512-MTDRfn0kUv+9ELnt9wt/FATi03Wq1j3YvhE5Up8ToE5Afk5zzBgVHPuIu1bVhqNqfF0aeIPl3vEzZ60H1yv0ag==
 
-sqlite3@5.1.6, sqlite3@^5.1.5:
+sqlite3@^5.1.5:
   version "5.1.6"
   resolved "https://registry.yarnpkg.com/sqlite3/-/sqlite3-5.1.6.tgz#1d4fbc90fe4fbd51e952e0a90fd8f6c2b9098e97"
   integrity sha512-olYkWoKFVNSSSQNvxVUfjiVbz3YtBwTJj+mfV5zpHmqW3sELx2Cf4QCdirMelhM5Zh+KDVaKgQHqCxrqiWHybw==
