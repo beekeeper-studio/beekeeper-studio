@@ -4,18 +4,23 @@
       class="vue-dialog beekeeper-modal upgrade-modal"
       name="upgrade-modal"
       height="auto"
+      @opened="$refs.learnMore.focus()"
     >
-      <div class="dialog-content">
+      <div
+        class="dialog-content"
+        v-kbd-trap="true"
+      >
         <h3 class="dialog-c-title has-icon">
           <i class="material-icons">stars</i> <span>Upgrade To Premium</span>
         </h3>
 
-        <span class="close-btn btn btn-fab">
-          <i
-            class="material-icons"
-            @click.prevent="$modal.hide('upgrade-modal')"
-          >clear</i>
-        </span>
+        <a
+          class="close-btn btn btn-fab"
+          href="#"
+          @click.prevent="$modal.hide('upgrade-modal')"
+        >
+          <i class="material-icons">clear</i>
+        </a>
         <div class="checkbox-wrapper">
           <!-- <p class="text-muted">This feature is not included in the Community Edition. Please upgrade the app to continue.</p> -->
           <p class="text-muted">
@@ -46,6 +51,7 @@
         </div>
         <div class="vue-dialog-buttons">
           <a
+            ref="learnMore"
             href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
             class="btn btn-flat"
           >Learn more</a>

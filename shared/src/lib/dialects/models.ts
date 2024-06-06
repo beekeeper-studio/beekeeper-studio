@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
@@ -17,9 +18,10 @@ export function dialectFor(s: string): Dialect | null {
     case 'cockroachdb':
       return 'postgresql'
     case 'mariadb':
-      return 'mysql'
     case 'tidb':
       return 'mysql'
+    case 'libsql':
+      return 'sqlite'
     case 'mssql':
       return 'sqlserver'
     default:
@@ -40,7 +42,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   oracle: "Oracle Database",
 }
 
-export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
 export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
@@ -90,6 +92,7 @@ export interface DialectData {
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   unwrapIdentifier: (s: string) => string
+  textEditorMode: CodeMirror.EditorConfiguration['mode']
   defaultSchema?: string
   usesOffsetPagination: boolean
   requireDataset?: boolean,
@@ -109,6 +112,9 @@ export interface DialectData {
       dropConstraint?: boolean
       everything?: boolean
       indexes?: boolean
+      renameSchema?: boolean
+      renameTable?: boolean
+      renameView?: boolean
     },
     triggers?: boolean,
     relations?: boolean,
@@ -135,6 +141,7 @@ export interface DialectData {
     export?: {
       sql?: boolean
     }
+    schema?: boolean
   },
   notices?: {
     infoSchema?: string
@@ -237,14 +244,15 @@ export interface AlterPartitionsSpec {
 export interface IndexColumn {
   name: string
   order: 'ASC' | 'DESC'
+  prefix?: number | null // MySQL Only
 }
 
 export interface CreateIndexSpec {
   name?: string
   columns: IndexColumn[]
   unique: boolean
-  // Set order for entire index. Used in firebird.
-  order?: 'ASC' | 'DESC'
+  order?: 'ASC' | 'DESC' // Set order for entire index. Used in firebird.
+  prefix?: number | null // MySQL Only
 }
 
 export interface DropIndexSpec {

@@ -8,31 +8,16 @@ import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, Ex
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { ClientError, joinQueries } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
-import knexlib from 'knex';
-import { makeEscape } from 'knex/lib/util/string';
-import { makeString } from '@/common/utils';
 import { identify } from "sql-query-identifier";
-import { Statement } from "sql-query-identifier/lib/defines";
+import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
 import _ from 'lodash';
 import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
+import { createSQLiteKnex } from "./sqlite/utils";
 const log = rawLog.scope('sqlite');
 
-const knex = knexlib({
-  client: 'better-sqlite3',
-  // silence the "sqlite does not support inserting default values" warnings on every insert
-  useNullAsDefault: true,
-})
-
-// HACK (day): this is to prevent the 'str.replace is not a function' error that seems to happen with all changes.
-knex.client = Object.assign(knex.client, {
-  _escapeBinding: makeEscape({
-    escapeString(str) { str = makeString(str)
-      return str ? `'${str.replace(/'/g, "''")}'` : ''
-    }
-  })
-})
+const knex = createSQLiteKnex();
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
@@ -47,7 +32,7 @@ const sqliteContext = {
   }
 }
 
-type SqliteResult = {
+export type SqliteResult = {
   data: any,
   columns: Database.ColumnDefinition[],
   statement: Statement,
@@ -57,8 +42,11 @@ type SqliteResult = {
 const SD = SqliteData;
 
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
+  connectionBaseType = 'sqlite' as const;
+
   version: SqliteResult;
   databasePath: string;
+  dialectData = SD;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, sqliteContext, server, database);
@@ -85,7 +73,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       editPartitions: false,
       backups: true,
       backDirFormat: false,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -144,7 +133,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     if (table) {
       const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
 
-      const { data } = await this.driverExecuteSingle(sql);
+      const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
       return this.dataToColumns(data, table);
     }
 
@@ -161,7 +150,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     })
 
     const query = everything.map((e) => e.sql).join(";")
-    const allResults = await this.driverExecuteMultiple(query);
+    const allResults = await this.driverExecuteMultiple(query, { overrideReadonly: true });
     const results = allResults.map((r, i) => {
       return {
         result: r,
@@ -186,11 +175,11 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
-    const sql = `PRAGMA INDEX_LIST('${SD.escapeString(table)}')`;
+    const sql = `PRAGMA index_list('${SD.escapeString(table)}')`;
 
     const { data } = await this.driverExecuteSingle(sql);
 
-    const allSQL = data.map((row) => `PRAGMA INDEX_XINFO('${SD.escapeString(row.name)}')`).join(";");
+    const allSQL = data.map((row) => `PRAGMA index_xinfo('${SD.escapeString(row.name)}')`).join(";");
     const infos = await this.driverExecuteMultiple(allSQL);
 
     const indexColumns = infos.map((result) => {
@@ -236,7 +225,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       execute: (async (): Promise<QueryResult> => {
         try {
-          queryConnection = new Database(this.databasePath);
+          queryConnection = this.acquireConnection();
 
           const result = await this.executeQuery(queryText, { connection: queryConnection, arrayMode: true });
           return result;
@@ -251,6 +240,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
           }
 
           throw err;
+        } finally {
+          if (queryConnection) {
+            queryConnection.close();
+          }
         }
       }).bind(this),
       async cancel() {
@@ -310,8 +303,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
 
-    const connection = new Database(this.databasePath);
-    const cli = { connection };
+    const cli = { connection: this.acquireConnection() };
     await this.driverExecuteSingle('BEGIN', cli);
 
     try {
@@ -332,6 +324,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       log.error("query exception: ", ex);
       await this.driverExecuteSingle('ROLLBACK', cli);
       throw ex;
+    } finally {
+      cli.connection.close();
     }
 
     return results;
@@ -414,7 +408,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     const sql = `pragma table_xinfo('${SD.escapeString(table)}')`
-    const { data } = await this.driverExecuteSingle(sql);
+    const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
     const found = data.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
     return found.map((r) => ({
@@ -454,7 +448,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: rowCount,
       columns,
-      cursor: new SqliteCursor(this.databasePath, query, params, chunkSize)
+      cursor: this.createCursor(this.databasePath, query, params, chunkSize)
     }
   }
 
@@ -462,7 +456,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: undefined,
       columns: undefined,
-      cursor: new SqliteCursor(this.databasePath, query, [], chunkSize)
+      cursor: this.createCursor(this.databasePath, query, [], chunkSize)
     };
   }
 
@@ -477,16 +471,22 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     throw new Error("Method not implemented.");
   }
 
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement): string {
+    if (typeOfElement !== DatabaseElement.TABLE) {
+      return ''
+    }
+
+    return `ALTER TABLE ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)};`
+  }
+
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     const sql = `DROP ${SD.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql);
   }
 
-  async truncateElement(elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    const sql = `Delete from ${SD.wrapIdentifier(elementName)}; vacuum;`
-
-    await this.driverExecuteSingle(sql);
+  truncateElementSql(elementName: string, _typeOfElement: DatabaseElement, _schema?: string): string {
+    return `Delete from ${SD.wrapIdentifier(elementName)}; vacuum;`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, _schema?: string): Promise<void> {
@@ -519,8 +519,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     const dbPath = path.join(...fileLocation, `${databaseName}.db`);
 
-    const db = new Database(dbPath)
-    db.close()
+    this._createDatabase(dbPath);
   }
 
   createDatabaseSQL(): string {
@@ -549,7 +548,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     const results = [];
 
-    const connection = options.connection ? options.connection : new Database(this.databasePath);
+    const connection = options.connection ? options.connection : this.acquireConnection();
+    const acquiredNewConnection = options.connection ? false : true;
     // Fix (part 1 of 2) Issue #1399 - int64s not displaying properly
     // Binds ALL better-sqlite3 integer columns as BigInts by default
     // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
@@ -566,8 +566,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         let runResult: Database.RunResult | undefined;
         let rows: any[] = [];
         let columns: Database.ColumnDefinition[] = [];
+        const reader = this.checkReader(query, statement);
 
-        if (statement.reader) {
+        if (reader) {
           if (arrayMode) {
             statement.raw();
           }
@@ -578,18 +579,42 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         }
 
         results.push({
-          data: statement.reader ? rows : runResult,
+          data: reader ? rows : runResult,
           columns,
           statement: query,
-          changes: statement.reader ? 0 : runResult.changes
+          changes: reader ? 0 : runResult.changes
         });
       } catch (error) {
         log.error(error);
+        if (acquiredNewConnection) {
+          connection.close();
+        }
         throw error;
       }
     }
 
+    if (acquiredNewConnection) {
+      connection.close();
+    }
+
     return options.multiple ? results : results[0];
+  }
+
+  protected acquireConnection(): Database.Database {
+    return new Database(this.databasePath);
+  }
+
+  protected checkReader(_queryIdentifyResult: IdentifyResult, statement: Database.Statement): boolean {
+    return statement.reader;
+  }
+
+  protected createCursor(...args: ConstructorParameters<typeof SqliteCursor>): SqliteCursor {
+    return new SqliteCursor(...args);
+  }
+
+  protected _createDatabase(path: string) {
+    const db = new Database(path)
+    db.close()
   }
 
   private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {

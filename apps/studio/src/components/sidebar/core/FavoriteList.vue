@@ -12,14 +12,11 @@
                 title="Import queries"
               >
                 <i class="material-icons">save_alt</i>
-                <x-menu>
+                <x-menu style="--align: end;">
                   <x-menuitem @click.prevent="importFromComputer">
                     <x-label>Import .sql files</x-label>
                   </x-menuitem>
-                  <x-menuitem
-                    @click.prevent="importFromLocal"
-                    :disabled="!isCloud"
-                  >
+                  <x-menuitem @click.prevent="importFromLocal">
                     <x-label>Import from local workspace</x-label>
                     <i
                       v-if="$config.isCommunity"
@@ -133,6 +130,7 @@
       >
         <div
           class="dialog-content"
+          v-kbd-trap="true"
           v-if="renameMe"
         >
           <div class="dialog-c-title">
@@ -227,7 +225,11 @@ export default {
       this.$root.$emit(AppEvent.promptQueryExport, query)
     },
     importFromLocal() {
-      this.$root.$emit(AppEvent.promptQueryImport)
+      if (!this.isCloud) {
+          this.$root.$emit(AppEvent.upgradeModal)
+          return
+        }
+        this.$root.$emit(AppEvent.promptQueryImport)
     },
     importFromComputer() {
       this.$root.$emit(AppEvent.promptQueryImportFromComputer)
@@ -269,6 +271,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-</style>

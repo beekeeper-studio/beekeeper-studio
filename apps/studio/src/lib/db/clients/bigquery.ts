@@ -35,6 +35,8 @@ const bigqueryContext = {
 }
 
 export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
+  connectionBaseType = 'bigquery' as const;
+
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   client: bq.BigQuery;
@@ -61,7 +63,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false 
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -445,12 +448,16 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     throw new Error("Method not implemented.");
   }
 
+  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): string {
+    return ''
+  }
+
   dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  truncateElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    throw new Error("Method not implemented.");
+  truncateElementSql(): string {
+    return ''
   }
 
   duplicateTable(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<void> {

@@ -6,11 +6,13 @@ import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
-import { EncryptTransformer } from '../transformers/Transformers'
+import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { ConnectionType } from "@/lib/db/types"
+import { AzureAuthType } from "@/lib/db/authentication/azure"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
+const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
@@ -18,6 +20,7 @@ export const ConnectionTypes = [
   { name: 'MariaDB', value: 'mariadb' },
   { name: 'Postgres', value: 'postgresql' },
   { name: 'SQLite', value: 'sqlite' },
+  { name: 'LibSQL', value: 'libsql' },
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
@@ -50,6 +53,20 @@ export interface BigQueryOptions {
   keyFilename?: string;
   projectId?: string;
   devMode?: boolean
+}
+
+export interface AzureAuthOptions {
+  azureAuthEnabled?: boolean;
+  azureAuthType?: AzureAuthType;
+  tenantId?: string;
+  clientSecret?: string;
+  msiEndpoint?: string;
+}
+export interface LibSQLOptions {
+  mode: 'url' | 'file';
+  authToken?: string;
+  syncUrl?: string;
+  syncPeriod?: number;
 }
 
 export interface ConnectionOptions {
@@ -231,8 +248,18 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({type: 'simple-json', nullable: false})
   cassandraOptions: CassandraOptions = {}
+
   @Column({ type: 'simple-json', nullable: false })
   bigQueryOptions: BigQueryOptions = {}
+
+  @Column({ type: 'simple-json', nullable: false, transformer: [azureEncrypt]})
+  azureAuthOptions: AzureAuthOptions = {}
+
+  @Column({ type: 'integer', nullable: true})
+  authId: Nullable<number> = null
+
+  @Column({ type: 'simple-json', nullable: false })
+  libsqlOptions: LibSQLOptions = { mode: 'url' }
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })

@@ -33,6 +33,7 @@ export const FirebirdData: DialectData = {
   wrapLiteral: Firebird.escape,
   unwrapIdentifier: defaultWrapLiteral,
   requireDataset: false,
+  textEditorMode: "text/x-sql",
   disabledFeatures: {
     backup: true,
     truncateElement: true,
@@ -41,6 +42,9 @@ export const FirebirdData: DialectData = {
     collations: true,
     alter: {
       multiStatement: true,
+      renameSchema: true,
+      renameTable: true,
+      renameView: true,
     }
   },
   notices: {},

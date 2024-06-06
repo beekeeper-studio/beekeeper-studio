@@ -1,6 +1,7 @@
 <template>
   <div class="sidebar-wrap row">
     <global-sidebar
+      v-if="!minimalMode"
       @selected="click"
       v-on="$listeners"
       :active-item="activeItem"
@@ -52,7 +53,7 @@
   import FavoriteList from './core/FavoriteList'
   import DatabaseDropdown from './core/DatabaseDropdown'
 
-  import { mapState } from 'vuex'
+  import { mapState, mapGetters } from 'vuex'
   import rawLog from 'electron-log'
 
   const log = rawLog.scope('core-sidebar')
@@ -85,6 +86,14 @@
         return _.concat(startsWithFilter, containsFilter)
       },
       ...mapState(['tables', 'connection', 'database']),
+      ...mapGetters(['minimalMode']),
+    },
+    watch: {
+      minimalMode() {
+        if (this.minimalMode) {
+          this.activeItem = 'tables'
+        }
+      },
     },
     methods: {
       tabClasses(item) {
@@ -101,7 +110,9 @@
       },
       async databaseSelected(db) {
         log.info("Pool database selected", db)
-        this.$store.dispatch('changeDatabase', db)
+        this.$store.dispatch('changeDatabase', db).catch((e) => {
+          this.$noty.error(e.message);
+        })
         this.allExpanded = false
       },
       async disconnect() {

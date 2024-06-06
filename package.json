@@ -19,6 +19,7 @@
     "electron:serve": "yarn bks:dev",
     "docs:serve": "yarn workspace beekeeper-studio docs:serve",
     "web:serve": "yarn sqltools:dev",
+    "test:e2e": "yarn workspace beekeeper-studio test:e2e",
     "test:integration": "yarn workspace beekeeper-studio test:integration",
     "test:unit": "yarn workspace beekeeper-studio test:unit",
     "test:ci": "yarn workspace beekeeper-studio test:ci",
@@ -29,6 +30,7 @@
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
     "@vue/eslint-config-typescript": "^11.0.2",
+    "@vue/vue2-jest": "^29.2.6",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "log-timestamp": "latest",
@@ -39,7 +41,10 @@
     "nan": "2.17.0",
     "node-abi": "^3.34.0",
     "cpu-features": "./.yarn/packages/empty-package",
-    "electron-builder": "23.0.2"
+    "electron-builder": "23.0.2",
+    "jest": "27.1.0",
+    "ts-jest": "27.1.0",
+    "babel-jest": "27.5.1"
   },
   "volta": {
     "node": "16.19.1",
