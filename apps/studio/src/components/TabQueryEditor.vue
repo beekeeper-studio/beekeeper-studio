@@ -161,7 +161,7 @@
         v-else-if="info"
       >
         <div class="alert alert-info">
-          <i class="material-icon-outlined">info</i>
+          <i class="material-icons-outlined">info</i>
           <span>{{ info }}</span>
         </div>
       </div>
