@@ -390,7 +390,6 @@ const store = new Vuex.Store<State>({
             conn.save();
           }
         }
-        console.log(`HERE's THE CONFIG: `, config)
 
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
