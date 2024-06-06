@@ -196,10 +196,10 @@
     },
     methods: {
       async toggleAzureAuth() {
-        //if (platformInfo.isCommunity) {
-        //  this.$root.$emit(AppEvent.upgradeModal);
-        //  return;
-        //}
+        if (platformInfo.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal);
+          return;
+        }
         this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled = !this.azureAuthEnabled;
       }
     }
