@@ -227,7 +227,7 @@ module.exports = {
           resolve: {
             aliasFields: ['main']
           }
-        }
+        },
       ]
     }
 

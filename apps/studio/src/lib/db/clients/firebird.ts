@@ -224,6 +224,15 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
+  async checkIsConnected(): Promise<boolean> {
+    try {
+      await this.rawExecuteQuery('SELECT 1 FROM RDB$DATABASE');
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
   versionString(): string {
     return this.version;
   }

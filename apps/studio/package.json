@@ -23,6 +23,7 @@
   "main": "background.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
+    "@azure/msal-node": "1.18.4",
     "@electron/remote": "^2.0.9",
     "@libsql/knex-libsql": "^0.1.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
