@@ -382,7 +382,15 @@ const store = new Vuex.Store<State>({
           let cache = new TokenCache();
           cache = await cache.save();
           config.authId = cache.id;
+          // need to single out saved connections here (this may change when used connections are fixed)
+          if (config.id) {
+            // we do this so any temp configs that the user did aren't saved, just the id
+            const conn = await SavedConnection.findOne(config.id);
+            conn.authId = cache.id;
+            conn.save();
+          }
         }
+        console.log(`HERE's THE CONFIG: `, config)
 
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
