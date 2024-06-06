@@ -296,15 +296,6 @@ export abstract class BasicDatabaseClient<RawResultType> {
       throw new Error(errorMessages.readOnly);
     }
 
-    // if (!await this.checkIsConnected()) {
-    //   try {
-    //     await this.connect();
-    //   } catch (_e) {
-    //     // may need better error message
-    //     this.connErrHandler('It seems we have lost the connection to the database.');
-    //   }
-    // }
-
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
@@ -312,6 +303,18 @@ export abstract class BasicDatabaseClient<RawResultType> {
         const result = await this.rawExecuteQuery(q, options) as RawResultType
         return _.isArray(result) ? result[0] : result
     } catch (ex) {
+        // if (!await this.checkIsConnected()) {
+        //   try {
+        //     await this.connect();
+        //   } catch (_e) {
+        //     // may need better error message
+        //     this.connErrHandler('It seems we have lost the connection to the database.');
+        //     return;
+        //   }
+        //   const result = await this.rawExecuteQuery(q, options) as RawResultType;
+        //   return _.isArray(result) ? result[0] : result
+        // }
+
         logOptions.status = 'failed'
         logOptions.error = ex.message
         throw ex;
@@ -325,15 +328,6 @@ export abstract class BasicDatabaseClient<RawResultType> {
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
-
-    if (!await this.checkIsConnected()) {
-      try {
-        await this.connect();
-      } catch (_e) {
-        // may need better error message
-        this.connErrHandler('It seems we have lost the connection to the database.');
-      }
-    }
     
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
@@ -342,6 +336,17 @@ export abstract class BasicDatabaseClient<RawResultType> {
       const result = await this.rawExecuteQuery(q, options) as RawResultType[]
       return result
     } catch (ex) {
+      // if (!await this.checkIsConnected()) {
+      //   try {
+      //     await this.connect();
+      //   } catch (_e) {
+      //     // may need better error message
+      //     this.connErrHandler('It seems we have lost the connection to the database.');
+      //     return;
+      //   }
+      //   const result = await this.rawExecuteQuery(q, options) as RawResultType;
+      //   return _.isArray(result) ? result[0] : result
+      // }
       logOptions.status = 'failed'
       logOptions.error = ex.message
       throw ex;
