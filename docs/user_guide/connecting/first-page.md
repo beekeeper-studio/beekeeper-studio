@@ -1,27 +1,44 @@
 ---
-title: Overview
+title: Connecting To A Database
 summary: "How to start using Beekeeper Studio with your database of choice."
 old_url: "https://docs.beekeeperstudio.io/docs/first-page"
 ---
 
 The connection screen allows you to enter connection information for your database.
 
-## Supported Database Types
+## Beekeeper Studio Supported Databases
 
 Beekeeper Studio currently supports the following database types:
 
-- PostgreSQL
-- MySQL
-- SQLite
-- SQL Server (2005 onwards works)
-- Amazon Redshift
-- CockroachDB
-- MariaDB
-- TiDB
-- Oracle Database
-- Cassandra
-- Google BigQuery
-- Firebird
+| Database                                                 | Support                              | Community               | Ultimate                | Beekeeper Docs                             |
+| :------------------------------------------------------- | :----------------------------------- | :---------------------- | :---------------------- | :----------------------------------------- |
+| [PostgreSQL](https://postgresql.org)                     | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/postgresql)  |
+| [MySQL](https://www.mysql.com/)                          | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/mysql)       |
+| [Firebird](https://firebirdsql.org/)                     | :material-beta: Beta Support         | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/firebird)    |
+| [SQLite](https://sqlite.org)                             | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/sqlite)      |
+| [SQL Server](https://www.microsoft.com/en-us/sql-server) | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/sqlserver)   |
+| [Amazon Redshift](https://aws.amazon.com/redshift/)      | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/redshift)    |
+| [CockroachDB](https://www.cockroachlabs.com/)            | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/cockroachdb) |
+| [MariaDB](https://mariadb.org/)                          | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/mariadb)     |
+| [TiDB](https://pingcap.com/products/tidb/)               | :material-check-circle: Full Support | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/tidb)        |
+| [Google BigQuery](https://cloud.google.com/bigquery)     | :material-beta: Beta Support         | :material-check-circle: | :material-check-circle: | [Docs](/user_guide/connecting/bigquery)    |
+| [Oracle Database](https://www.oracle.com/database/)      | :material-check-circle: Full Support |                         | :material-check-circle: | [Docs](/user_guide/connecting/oracle)      |
+| [Cassandra](http://cassandra.apache.org/)                | :material-check-circle: Full Support |                         | :material-check-circle: | [Docs](/user_guide/connecting/cassandra)   |
+| [Firebird](https://firebirdsql.org/)                     | :material-beta: Beta Support         |                         | :material-check-circle: | [Docs](/user_guide/connecting/firebird)    |
+| [Snowflake](https://www.snowflake.com/)                  | :material-clock-outline: Coming Soon |                         | :material-check-circle: | [Docs](/user_guide/connecting/snowflake)   |
+| [Clickhouse](https://clickhouse.tech/)                   | :material-clock-outline: Coming Soon |                         | :material-check-circle: | [Docs](/user_guide/connecting/clickhouse)  |
+| [LibSQL](https://libsql.org/)                            | :material-beta: Beta Support         |                         | :material-check-circle: | [Docs](/user_guide/connecting/libsql)      |
+| [DuckDB](https://duckdb.org/)                            | :material-beta: Beta Support         |                         | :material-check-circle: | [Docs](/user_guide/connecting/duckdb)      |
+| [Trino](https://trino.io/)                           | :material-clock-outline: Coming Soon |                         | :material-check-circle: | [Docs](/user_guide/connecting/presto)      |
+| [Presto](https://prestodb.io/)                           | :material-clock-outline: Coming Soon |                         | :material-check-circle: | [Docs](/user_guide/connecting/presto)      |
+| [MongoDB](https://www.mongodb.com/)                      | :material-clock-outline: Coming in V5 |                         | :material-check-circle: | [Docs](/user_guide/connecting/mongodb)     |
+
+- add surrealdb
+
+
+*[Full Support]: Fully supported by the Beekeeper Studio team and verified as working.
+*[Beta Support]: Fully supported by the Beekeeper Studio team, verified as working, but there may be small bugs here and there.
+*[Coming Soon]: We're working on it! Check back soon for updates.
 
 ![Image Alt Tag](../../assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen
@@ -51,14 +68,14 @@ There are three ways to connect to a database with SSL
 
 Here's a table of how the various `sslmode` flags from command line clients map to Beekeeper:
 
-| sslmode | Turn on SSL? | rejectUnauthorized |
-|------|-----|-----|
-| disable |	no | 	n/a |
-| allow |	no | 	n/a |
-| prefer |	no | 	n/a |
-| require |	yes | 	false |
-| verify-ca |	yes | 	false |
-| verify-full |	yes | 	true |
+| sslmode     | Turn on SSL? | rejectUnauthorized |
+| ----------- | ------------ | ------------------ |
+| disable     | no           | n/a                |
+| allow       | no           | n/a                |
+| prefer      | no           | n/a                |
+| require     | yes          | false              |
+| verify-ca   | yes          | false              |
+| verify-full | yes          | true               |
 
 You can provide your own custom certificate files if needed.
 
