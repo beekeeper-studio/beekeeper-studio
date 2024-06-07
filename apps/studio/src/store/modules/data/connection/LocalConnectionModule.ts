@@ -10,11 +10,36 @@ export const LocalConnectionModule: DataStore<SavedConnection, State> = {
     items: [],
     loading: false,
     error: null,
-    pollError: null
+    pollError: null,
+    filter: undefined
   },
   mutations: mutationsFor<SavedConnection>({
-
+    connectionFilter(state: DataState<SavedConnection>, str: string) {
+      state.filter = str;
+    }
   }),
-  actions: localActionsFor<SavedConnection>(SavedConnection, {})
+  actions: localActionsFor<SavedConnection>(SavedConnection, {
+    setConnectionFilter: _.debounce(function (context, filter) {
+      context.commit('connectionFilter', filter);
+    }, 500)
+  }),
+  getters: {
+    filteredConnections(state) {
+      if (!state.filter) {
+        return state.items;
+      }
+
+      const startsWithFilter = _(state.items)
+        .filter((item) => _.startsWith(item.name.toLowerCase(), state.filter))
+        .value();
+
+      const containsFilter = _(state.items)
+        .difference(startsWithFilter)
+        .filter((item) => item.name.toLowerCase().includes(state.filter.toLowerCase()))
+        .value();
+
+      return _.concat(startsWithFilter, containsFilter);
+    }
+  }
 
 }

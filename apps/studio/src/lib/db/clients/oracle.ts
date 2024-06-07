@@ -70,6 +70,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return new OracleChangeBuilder(table, schema)
   }
 
+  async checkIsConnected(): Promise<boolean> {
+    try {
+      await this.rawExecuteQuery('SELECT 1 FROM DUAL', {});
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
   // Create Database
 
   // AL32UTF8 is Oracle's name for the UTF-8 encoding of the Unicode standard. The Unicode standard is the universal character set that supports most of the currently spoken languages of the world. The use of the Unicode standard is indispensable for any multilingual technology, including database processing.

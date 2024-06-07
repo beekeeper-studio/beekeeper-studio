@@ -34,8 +34,10 @@ import readOnlyMode from './20221103_add_read_only'
 import connectionPins from './20230308_create_connection_pins'
 import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
+import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
 import demoSetup from './20240421_seed_with_demo_data'
+import tokenCache from './20240430_add_token_cache'
 import minimalMode from './20240514_user_settings_minimal_mode'
 import libsqlOptions from './20240528_add_libsql_options'
 import ultimate from './ultimate/index'
@@ -60,8 +62,8 @@ const realMigrations = [
 
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
-  exportPath, UserSettingsWindowPosition,
-  demoSetup, minimalMode, libsqlOptions,
+  firebirdConnection, exportPath, UserSettingsWindowPosition,
+  demoSetup, minimalMode, tokenCache, libsqlOptions,
 
 ]
 
