@@ -31,6 +31,7 @@ import {
   StreamResults,
   TableColumn,
   Routine,
+  ImportScriptFunctions,
 } from "../models";
 import {
   BasicDatabaseClient,
@@ -1237,15 +1238,35 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const queries = [];
-    if (isTruncate) {
-      return null;
-      // TODO: there is no internal method to truncate re: @azmy
-    }
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name } = table
+    let connection
+    let transaction
 
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'));
-    return joinQueries(queries);
+    return {
+      step0: async(): Promise<any|null> => {
+        connection = await this.pool.getConnection()
+        transaction = await connection.transaction()
+      },
+      beginCommand: (_executeOptions: any): any => null,
+      truncateCommand: (): Promise<any> => transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`),
+      lineReadCommand: (sqlString: string[]): Promise<any> => {
+        // firebird doesn't do multiple commands at once so you have to split it up
+        try {
+          const theStrings = sqlString.map(sql => transaction.query(`${sql};`))
+          return Promise.all(theStrings)
+        } catch(err) {
+          throw new Error(err)
+        }
+      },
+      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
+      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback(),
+      finalCommand: (_executeOptions: any): Promise<any> => connection.release()
+    }
+  }
+
+  getImportSQL(importedData: TableInsert[]): string[] {
+    return buildInsertQueries(this.knex, importedData)
   }
 
 }
