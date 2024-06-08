@@ -43,7 +43,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildUpdateQueries, joinQueries } from "./utils";
+import { buildDeleteQueries, buildUpdateQueries } from "./utils";
 import {
   Pool,
   Connection,

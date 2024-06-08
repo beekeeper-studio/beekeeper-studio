@@ -17,9 +17,7 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError,
-  joinQueries,
-  buildInsertQueries,
+  ClientError
 } from "./utils";
 import {
   IDbConnectionDatabase,

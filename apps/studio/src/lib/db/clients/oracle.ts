@@ -32,8 +32,7 @@ import {
   buildUpdateQueries,
   withClosable,
   buildDeleteQueries,
-  applyChangesSql,
-  joinQueries
+  applyChangesSql
 } from './utils';
 import rawLog from 'electron-log'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
