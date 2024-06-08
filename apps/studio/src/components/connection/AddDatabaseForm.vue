@@ -73,6 +73,8 @@
 </template>
 
 <script>
+  import { mapState } from 'vuex';
+
   export default {
     props: [],
     data() {
@@ -85,20 +87,23 @@
         error: null
       }
     },
+    computed: {
+      ...mapState(['connection'])
+    },
     async mounted(){
-      this.charsets = await this.$util.listCharsets();
-      this.selectedCharset = await this.$util.getDefaultCharset();
+      this.charsets = await this.connection.listCharsets();
+      this.selectedCharset = await this.connection.getDefaultCharset();
       await this.updateCollations()
     },
     methods: {
       async updateCollations() {
         if (this.$store.getters.dialectData.disabledFeatures?.collations) return
-        this.collations = await this.$util.listCollations(this.selectedCharset);
+        this.collations = await this.connection.listCollations(this.selectedCharset);
         this.selectedCollation = this.collations[0]
       },
       async save() {
         try {
-          await this.$util.createDatabase(this.databaseName, this.selectedCharset, this.selectedCollation);
+          await this.connection.createDatabase(this.databaseName, this.selectedCharset, this.selectedCollation);
           this.$noty.success('The database was created')
           this.$emit('databaseCreated', this.databaseName)
         } catch (err) {

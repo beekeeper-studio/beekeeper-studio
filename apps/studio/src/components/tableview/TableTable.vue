@@ -349,7 +349,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect']),
     isEmpty() {
       return _.isEmpty(this.data);
@@ -841,8 +841,8 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.rawTableKeys = await this.$util.getTableKeys(this.table.name, this.table.schema);
-      const rawPrimaryKeys = await this.$util.getPrimaryKeys(this.table.name, this.table.schema);
+      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
+      const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
       this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
@@ -1251,7 +1251,7 @@ export default Vue.extend({
           updates: this.pendingChanges.updates,
           deletes: this.pendingChanges.deletes
         }
-        const sql = await this.$util.applyChangesSql(changes);
+        const sql = await this.connection.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
@@ -1290,7 +1290,7 @@ export default Vue.extend({
             deletes: this.pendingChanges.deletes
           }
 
-          const result = await this.$util.applyChanges(payload);
+          const result = await this.connection.applyChanges(payload);
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
@@ -1377,7 +1377,7 @@ export default Vue.extend({
         this.page = page;
       }
 
-      this.$util.selectTopSql(
+      this.connection.selectTopSql(
         this.table.name,
         offset,
         limit,
@@ -1444,7 +1444,7 @@ export default Vue.extend({
 
             // lets just make column selection a front-end only thing
             const selects = ['*']
-            const response = await this.$util.selectTop(
+            const response = await this.connection.selectTop(
               this.table.name,
               offset,
               this.limit,

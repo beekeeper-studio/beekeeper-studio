@@ -8,9 +8,7 @@ import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData, rowHeaderField } from "@/common/utils";
-import { BasicDatabaseClient } from "../db/clients/BasicDatabaseClient";
 import { escapeHtml } from "@shared/lib/tabulator";
-import store from "@/store";
 // ?? not sure about this but :shrug: 
 import Vue from 'vue';
 
@@ -158,7 +156,7 @@ export async function copyRange(options: {
       break;
     }
     case "sql":
-      text = await Vue.prototype.$util.getInsertQuery(options.table, options.schema, rangeData);
+      text = await Vue.prototype.$util.send('conn/getInsertQuery', { tableInsert: { table: options.table, schema: options.schema, data: rangeData }})
       break;
   }
   ElectronPlugin.clipboard.writeText(text);

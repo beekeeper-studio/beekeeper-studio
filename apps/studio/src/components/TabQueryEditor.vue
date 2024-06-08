@@ -373,7 +373,7 @@
     },
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
-      ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized']),
+      ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
@@ -870,7 +870,7 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.$util.query(query, { dryRun: this.dryRun });
+          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
           const queryStartTime = new Date()
           const results = await this.runningQurey.execute();
           const queryEndTime = new Date()

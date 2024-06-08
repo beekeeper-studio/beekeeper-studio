@@ -132,7 +132,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['tables']),
+    ...mapState(['tables', 'connection']),
     ...mapGetters(['schemas', 'dialect', 'schemaTables', 'dialectData']),
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything
@@ -350,7 +350,7 @@ export default Vue.extend({
         this.loading = true
         this.error = null
         const payload = this.getPayload()
-        await this.$util.alterRelation(payload);
+        await this.connection.alterRelation(payload);
         this.$noty.success("Relations Updated")
         this.$emit('actionCompleted')
         this.newRows = []
@@ -366,7 +366,7 @@ export default Vue.extend({
     },
     async submitSql() {
       const payload = this.getPayload()
-      const sql = await this.$util.alterRelationSql(payload);
+      const sql = await this.connection.alterRelationSql(payload);
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

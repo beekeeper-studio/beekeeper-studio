@@ -160,7 +160,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['connectionType']),
+    ...mapState(['connectionType', 'connection']),
     ...mapGetters(['dialect', 'dialectData']),
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
@@ -314,7 +314,7 @@ export default Vue.extend({
         this.error = null
         const payload = this.getPayload()
 
-        await this.$util.alterIndex(payload);
+        await this.connection.alterIndex(payload)
         this.$noty.success("Indexes Updated")
         this.$emit('actionCompleted')
         this.clearChanges()
@@ -329,7 +329,7 @@ export default Vue.extend({
     },
     async submitSql() {
       const payload = this.getPayload()
-      const sql = await this.$util.alterIndexSql(payload)
+      const sql = await this.connection.alterIndexSql(payload)
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

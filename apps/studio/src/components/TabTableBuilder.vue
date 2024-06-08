@@ -121,7 +121,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect']),
-    ...mapState(['tables', 'defaultSchema', 'usedConfig']),
+    ...mapState(['tables', 'defaultSchema', 'usedConfig', 'connection']),
     hotkeys() {
       if (!this.active) {
         return {}
@@ -162,7 +162,7 @@ export default Vue.extend({
 
       try {
         this.running = true
-        const runningQuery: CancelableQuery = await this.$util.query(sql);
+        const runningQuery: CancelableQuery = await this.connection.query(sql);
         await runningQuery.execute();
         this.success = true
         this.$noty.success(`${this.simpleTableName} created`)
