@@ -340,7 +340,7 @@ const store = new Vuex.Store<State>({
   actions: {
 
     async test(context, config: SavedConnection) {
-      await Vue.prototype.$server.send('conn/test', { config, osUser: context.state.username });
+      await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },
 
     async fetchUsername(context) {
@@ -374,10 +374,10 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
-        await Vue.prototype.$server.send('conn/create', { config, osUser: context.state.username })
-        const defaultSchema = await Vue.prototype.$server.send('conn/defaultSchema');
-        const supportedFeatures = await Vue.prototype.$server.send('conn/supportedFeatures');
-        const versionString = await Vue.prototype.$server.send('conn/versionString');
+        await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
+        const defaultSchema = await Vue.prototype.$util.defaultSchema();
+        const supportedFeatures = await Vue.prototype.$util.supportedFeatures();
+        const versionString = await Vue.prototype.$util.versionString();
         context.commit('defaultSchema', defaultSchema);
         context.commit('connectionType', config.connectionType);
         context.commit('connected', true);
@@ -421,7 +421,7 @@ const store = new Vuex.Store<State>({
       context.dispatch('updateWindowTitle', null)
     },
     async changeDatabase(context, newDatabase: string) {
-      await Vue.prototype.$server.send('conn/changeDatabase', { newDatabase });
+      await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase });
       log.info("Pool changing database to", newDatabase)
       if (context.state.server) {
         const server = context.state.server
@@ -445,8 +445,8 @@ const store = new Vuex.Store<State>({
         //        show it for all tables.
         context.commit("columnsLoading", "Loading columns...")
         const columns = (table.entityType === 'materialized-view' ?
-            await Vue.prototype.$server.send('conn/listMaterializedViewColumns', { table: table.name, schema: table.schema }) : 
-            await Vue.prototype.$server.send('conn/listTableColumns', {table: table.name, schema: table.schema})) ;
+            await Vue.prototype.$util.listMaterializedViewColumns(table.name, table.schema) :
+            await Vue.prototype.$util.listTableColumns(table.name, table.schema));
 
         const updated = _.xorWith(table.columns, columns, _.isEqual)
         log.debug('Should I update table columns?', updated)
@@ -458,7 +458,7 @@ const store = new Vuex.Store<State>({
       }
     },
     async updateDatabaseList(context) {
-      const databaseList = await Vue.prototype.$server.send('conn/listDatabases');
+      const databaseList = await Vue.prototype.$util.listDatabases();
       context.commit('databaseList', databaseList)
     },
     async updateTables(context) {
@@ -469,16 +469,16 @@ const store = new Vuex.Store<State>({
       try {
         const schema = null
         context.commit("tablesLoading", "Loading tables...")
-        const onlyTables = await Vue.prototype.$server.send('conn/listTables', { schema })
+        const onlyTables = await Vue.prototype.$util.listTables(schema);
         onlyTables.forEach((t) => {
           t.entityType = 'table'
         })
-        const views = await Vue.prototype.$server.send('conn/listViews', { schema })
+        const views = await Vue.prototype.$util.listViews(schema);
         views.forEach((v) => {
           v.entityType = 'view'
         })
 
-        const materialized = await Vue.prototype.$server.send('conn/listMaterializedViews', { schema })
+        const materialized = await Vue.prototype.$util.listMaterializedViews(schema);
         materialized.forEach(v => v.entityType = 'materialized-view')
         const tables = onlyTables.concat(views).concat(materialized)
 
@@ -490,8 +490,8 @@ const store = new Vuex.Store<State>({
           const match = context.state.tables.find((st) => tablesMatch(st, table))
           if (match?.columns?.length > 0) {
             table.columns = (table.entityType === 'materialized-view' ?
-              await Vue.prototype.$server?.send('conn/listMaterializedViewColumns', { table: table.name, schema: table.schema}) :
-              await Vue.prototype.$server?.send('conn/listTableColumns', {table: table.name, schema: table.schema})) || []
+              await Vue.prototype.$util?.listMaterializedViewColumns(table.name, table.schema) :
+              await Vue.prototype.$util?.listTableColumns(table.name, table.schema)) || []
           }
         }
         context.commit("tablesLoading", `Loading ${tables.length} tables`)
@@ -502,7 +502,7 @@ const store = new Vuex.Store<State>({
       }
     },
     async updateRoutines(context) {
-      const routines: Routine[] = await Vue.prototype.$server.send('conn/listRoutines', { schema: null })
+      const routines: Routine[] = await Vue.prototype.$util.listRoutines(null);
       routines.forEach((r) => r.entityType = 'routine')
       context.commit('routines', routines)
     },

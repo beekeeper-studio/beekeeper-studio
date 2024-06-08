@@ -199,7 +199,7 @@ export default Vue.extend ({
   methods: {
     // TODO (@day): does this actually work?
     generateSql: _.debounce(async function() {
-      this.sql = await this.$server.send('generator/build', { schema: this.schema });
+      this.sql = await this.$util.send('generator/build', { schema: this.schema });
     }, 300),
     initialize(id?: string) {
       this.template = id ? templates.find((t) => t.id === id) : users

@@ -158,11 +158,7 @@ export async function copyRange(options: {
       break;
     }
     case "sql":
-      text = await Vue.prototype.$server.send('conn/getInsertQuery', { 
-        table: options.table,
-        schema: options.schema,
-        data: rangeData
-      })
+      text = await Vue.prototype.$util.getInsertQuery(options.table, options.schema, rangeData);
       break;
   }
   ElectronPlugin.clipboard.writeText(text);

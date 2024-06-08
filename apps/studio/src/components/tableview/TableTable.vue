@@ -841,8 +841,8 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.rawTableKeys = await this.$server.send('conn/getTableKeys', { table: this.table.name, schema: this.table.schema });
-      const rawPrimaryKeys = await this.$server.send('conn/getPrimaryKeys', { table: this.table.name, schema: this.table.schema });
+      this.rawTableKeys = await this.$util.getTableKeys(this.table.name, this.table.schema);
+      const rawPrimaryKeys = await this.$util.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
       this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
@@ -1251,7 +1251,7 @@ export default Vue.extend({
           updates: this.pendingChanges.updates,
           deletes: this.pendingChanges.deletes
         }
-        const sql = await this.$server.send('conn/applyChangesSql', { changes });
+        const sql = await this.$util.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
@@ -1290,7 +1290,7 @@ export default Vue.extend({
             deletes: this.pendingChanges.deletes
           }
 
-          const result = await this.$server.send('conn/applyChanges', { changes: payload });
+          const result = await this.$util.applyChanges(payload);
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
@@ -1377,15 +1377,15 @@ export default Vue.extend({
         this.page = page;
       }
 
-      this.$server.send('conn/selectTopSql', {
-        table: this.table.name,
+      this.$util.selectTopSql(
+        this.table.name,
         offset,
         limit,
         orderBy,
-        filters: this.filters,
-        schema: this.table.schema,
+        this.filters,
+        this.table.schema,
         selects
-      }).then((query: string) => {
+      ).then((query: string) => {
         const language = FormatterDialect(this.dialect);
         const formatted = safeSqlFormat(query, { language });
         this.$root.$emit(AppEvent.newTab, formatted);
@@ -1444,17 +1444,18 @@ export default Vue.extend({
 
             // lets just make column selection a front-end only thing
             const selects = ['*']
-            const response = await this.$server.send('conn/selectTop', {
-              table: this.table.name,
+            const response = await this.$util.selectTop(
+              this.table.name,
               offset,
-              limit: this.limit,
+              this.limit,
               orderBy,
               filters,
-              schema: this.table.schema,
+              this.table.schema,
               selects
-            })
+            );
 
-            // then fuck is this??
+            // TODO(@day): it has come to my attention that the below comment does not properly explain my confusion, where is this allowFilter business coming from and WHY
+            // the fuck is this??
             //const response = await this.connection.selectTop(
             //  this.table.name,
             //  offset,

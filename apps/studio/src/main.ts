@@ -128,8 +128,8 @@ import { UtilityConnection } from './lib/UtilityConnection'
 
     ipcRenderer.on('port', (event) => {
       log.log('we actually received a port in renderer!!')
-      Vue.prototype.$server = new UtilityConnection(event.ports[0]);
-      log.log('here it is', Vue.prototype.$server)
+      Vue.prototype.$util = new UtilityConnection(event.ports[0]);
+      log.log('here it is', Vue.prototype.$util)
     })
 
     Vue.config.productionTip = false

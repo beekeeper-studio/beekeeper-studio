@@ -396,7 +396,7 @@ export default Vue.extend({
       try {
         this.error = null
         const changes = this.collectChanges()
-        await this.$server.send('conn/alterTable', { changes });
+        await this.$util.alterTable(changes);
 
         this.clearChanges()
         await this.$store.dispatch('updateTableColumns', this.table)
@@ -413,7 +413,7 @@ export default Vue.extend({
       try {
         this.error = null
         const changes = this.collectChanges()
-        const sql = await this.$server.send('conn/alterTableSql', { changes })
+        const sql = await this.$util.alterTableSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect)})
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch (ex) {

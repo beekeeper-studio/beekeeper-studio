@@ -391,7 +391,7 @@ export default Vue.extend({
       this.$nextTick(async () => {
         try {
           if (this.dbAction.toLowerCase() === 'drop') {
-            await this.$server.send('conn/dropElement', { elementName: dbName, typeOfElement: entityType?.toUpperCase(), schema });
+            await this.$util.dropElement(dbName, entityType?.toUpperCase(), schema);
             // timeout is more about aesthetics so it doesn't refresh the table right away.
 
               setTimeout(() => {
@@ -401,7 +401,7 @@ export default Vue.extend({
             }
 
           if (this.dbAction.toLowerCase() === 'truncate') {
-            await this.$server.send('conn/truncateElement', { elementName: dbName, typeOfElement: entityType?.toUpperCase(), schema });
+            await this.$util.truncateElement(dbName, entityType?.toUpperCase(), schema);
           }
 
           this.$noty.success(`${this.dbAction} completed successfully`)
@@ -430,7 +430,7 @@ export default Vue.extend({
       }
 
       try {
-        const sql = await this.$server.send('conn/duplicateTableSql', { tableName, duplicateTableName: this.duplicateTableName, schema });
+        const sql = await this.$util.duplicateTableSql(tableName, this.duplicateTableName, schema);
         const formatted = safeFormat(sql, { language: FormatterDialect(this.dialect) })
 
         const tab = new OpenTab('query')
@@ -475,7 +475,7 @@ export default Vue.extend({
             return
           }
 
-          await this.$server.send('conn/duplicateTable', { tableName, duplicateTableName: this.duplicateTableName, schema });
+          await this.$util.duplicateTable(tableName, this.duplicateTableName, schema);
 
           // timeout is more about aesthetics so it doesn't refresh the table right away.
           setTimeout(() => {
@@ -568,7 +568,7 @@ export default Vue.extend({
         return
       }
       try {
-        const result = await this.$server.send(`conn/${method}`, { table: table.name, schema: table.schema });
+        const result = await this.$util[method](table.name, table.schema);
         const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       } catch (ex) {
@@ -766,7 +766,7 @@ export default Vue.extend({
       }
     },
     async loadRoutineCreate(routine) {
-      const result = await this.$server.send('conn/getRoutineCreateScript', { routine: routine.name, type: routine.type, schema: routine.schema });
+      const result = await this.$util.getRoutineCreateScript(routine.name, routine.type, routine.schema);
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
     },

@@ -45,13 +45,13 @@ export default {
       if (!this.exportId) {
         return;
       }
-      await this.$server.send('export/cancel', { id: this.exportId });
+      await this.$util.send('export/cancel', { id: this.exportId });
       this.notification.close();
-      const exportName = await this.$server.send('export/name', { id: this.exportId });
+      const exportName = await this.$util.send('export/name', { id: this.exportId });
       this.$noty.error(`${exportName} export aborted`);
     },
     async updateExportName() {
-      this.exportName = await this.$server.send('export/name', { id: this.exportId });
+      this.exportName = await this.$util.send('export/name', { id: this.exportId });
     },
     async updateProgress(progress) {
       // not quite sure why this hackiness (and only this hackiness) finally made it work but i'll take it
@@ -69,15 +69,15 @@ export default {
     },
   },
   async mounted() {
-    const status = await this.$server.send('export/status', { id: this.exportId });
-    this.exportName = await this.$server.send('export/name', { id: this.exportId });
+    const status = await this.$util.send('export/status', { id: this.exportId });
+    this.exportName = await this.$util.send('export/name', { id: this.exportId });
     if (status === ExportStatus.Exporting ) {
-      this.$server.addListener(`onExportProgress/${this.exportId}`, this.updateProgress.bind(this));
+      this.$util.addListener(`onExportProgress/${this.exportId}`, this.updateProgress.bind(this));
       this.notification.show();
     }
   },
   beforeDestroy() {
-    this.$server.removeListener(`onExportProgress/${this.exportId}`);
+    this.$util.removeListener(`onExportProgress/${this.exportId}`);
     this.notification.close();
   },
 };

@@ -279,7 +279,7 @@ export default {
     async fetchTotalRecords() {
       this.fetchingTotalRecords = true
       try {
-        this.totalRecords = await this.$server.send('conn/getTableLength', { table: this.table.name, schema: this.table.schema });
+        this.totalRecords = await this.$util.getTableLength(this.table.name, this.table.schema);
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0
@@ -301,10 +301,10 @@ export default {
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
         console.log("getting primary keys")
-        this.primaryKeys = await this.$server.send('conn/getPrimaryKeys', { table: this.table.name, schema: this.table.schema });
+        this.primaryKeys = await this.$util.getPrimaryKeys(this.table.name, this.table.schema);
         if (this.table.entityType === 'table') {
           console.log("calling getTableProperties")
-          this.properties = await this.$server.send('conn/getTableProperties', { table: this.table.name, schema: this.table.schema });
+          this.properties = await this.$util.getTableProperties(this.table.name, this.table.schema);
         }
         this.loading = false
       } catch (ex) {

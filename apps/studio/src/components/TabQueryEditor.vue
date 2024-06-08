@@ -352,7 +352,6 @@
           initialized: false,
         },
         runningQuery: null,
-        runningQueryId: null,
         error: null,
         errorMarker: null,
         saveError: null,
@@ -728,11 +727,11 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       async cancelQuery() {
-        if(this.running && this.runningQueryId) {
+        if(this.running && this.runningQuery) {
           this.running = false
           this.info = 'Query Execution Cancelled'
-          await this.$server.send('query/cancel', { queryId: this.runningQueryId });
-          this.runningQueryId = null
+          await this.runningQuery.cancel();
+          this.runningQuery = null;
         }
       },
       download(format) {
@@ -871,9 +870,9 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQueryId = await this.$server.send('conn/query', { queryText: query, options: { dryRun: this.dryRun }});
+          this.runningQuery = await this.$util.query(query, { dryRun: this.dryRun });
           const queryStartTime = new Date()
-          const results = await this.$server.send('query/execute', { queryId: this.runningQueryId });
+          const results = await this.runningQurey.execute();
           const queryEndTime = new Date()
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435

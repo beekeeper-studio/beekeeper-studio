@@ -270,7 +270,7 @@ export default Vue.extend({
       try {
         this.error = null;
         const changes = this.collectChanges();
-        await this.$server.send('conn/alterPartition', { changes });
+        await this.$util.alterPartition(changes);
 
         await this.$store.dispatch('updateTables');
         await this.refreshPartitions();
@@ -285,7 +285,7 @@ export default Vue.extend({
       try {
         this.error = null;
         const changes = this.collectChanges();
-        const sql = await this.$server.send('conn/alterPartitionSql', { changes });
+        const sql = await this.$util.alterPartitionSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect)});
         this.$root.$emit(AppEvent.newTab, formatted);
       } catch(ex) {

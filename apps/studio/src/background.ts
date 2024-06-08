@@ -1,6 +1,7 @@
 'use strict'
 import 'module-alias/register';
 import * as fs from 'fs'
+import path from 'path'
 import { app, protocol } from 'electron'
 import log from 'electron-log'
 import * as electron from 'electron'
@@ -31,11 +32,11 @@ function initUserDirectory(d: string) {
   }
 }
 
-let serverProcess: Electron.UtilityProcess
+let utilityProcess: Electron.UtilityProcess
 let rendPort: electron.MessagePortMain;
 
-function createBackgroundProcess() {
-    if (serverProcess) {
+function createUtilityProcess() {
+    if (utilityProcess) {
       return;
     }
 
@@ -49,8 +50,8 @@ function createBackgroundProcess() {
       version: electron.app.getVersion()
     }
 
-    serverProcess = electron.utilityProcess.fork(
-      __dirname + '/utility.js', 
+    utilityProcess = electron.utilityProcess.fork(
+      path.join(__dirname, 'utility.js'), 
       [], 
       {
         env: { ...process.env, ...args },
@@ -60,16 +61,16 @@ function createBackgroundProcess() {
 
     const utilLog = log.scope('UTILITY')
 
-    serverProcess.stdout.on('data', (chunk) => {
+    utilityProcess.stdout.on('data', (chunk) => {
       utilLog.log(chunk.toString())
     })
 
-    serverProcess.stderr.on('data', (chunk) => {
+    utilityProcess.stderr.on('data', (chunk) => {
       utilLog.error(chunk.toString())
     })
 
     const { port1, port2 } = new electron.MessageChannelMain();
-    serverProcess.postMessage(null, [port1])
+    utilityProcess.postMessage(null, [port1])
     rendPort = port2;
 }
 
@@ -149,7 +150,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
     if (!settings) throw "No settings initialized!"
     buildWindow(settings)
 
-    createBackgroundProcess()
+    createUtilityProcess()
   }
 })
 
@@ -178,7 +179,7 @@ app.on('ready', async () => {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
       await buildWindow(settings)
-      createBackgroundProcess()
+      createUtilityProcess()
     }
   }
 

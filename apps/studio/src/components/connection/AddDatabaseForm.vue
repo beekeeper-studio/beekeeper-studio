@@ -86,19 +86,19 @@
       }
     },
     async mounted(){
-      this.charsets = await this.$server.send('conn/listCharsets');
-      this.selectedCharset = await this.$server.send('conn/getDefaultCharset');
+      this.charsets = await this.$util.listCharsets();
+      this.selectedCharset = await this.$util.getDefaultCharset();
       await this.updateCollations()
     },
     methods: {
       async updateCollations() {
         if (this.$store.getters.dialectData.disabledFeatures?.collations) return
-        this.collations = await this.$server.send('conn/listCollations', { charset: this.selectedCharset });
+        this.collations = await this.$util.listCollations(this.selectedCharset);
         this.selectedCollation = this.collations[0]
       },
       async save() {
         try {
-          await this.$server.send('conn/createDatabase', { databaseName: this.databaseName, charset: this.selectedCharset, collation: this.selectedCollation })
+          await this.$util.createDatabase(this.databaseName, this.selectedCharset, this.selectedCollation);
           this.$noty.success('The database was created')
           this.$emit('databaseCreated', this.databaseName)
         } catch (err) {

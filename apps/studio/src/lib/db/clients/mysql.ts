@@ -1119,7 +1119,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return new MySqlChangeBuilder(table, []);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,
       comments: true,

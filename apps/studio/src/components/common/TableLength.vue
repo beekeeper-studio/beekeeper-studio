@@ -35,7 +35,7 @@ export default Vue.extend({
       this.fetchingTotalRecords = true
       try {
         this.error = null
-        this.totalRecords = await this.$server.send('conn/getTableLength', { table: this.table.name, schema: this.table.schema });
+        this.totalRecords = await this.$util.getTableLength(this.table.name, this.table.schema);
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0

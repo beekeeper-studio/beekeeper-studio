@@ -102,7 +102,7 @@ export default Vue.extend({
   },
   methods: {
     async genSql() {
-      const unformatted = await this.$server.send('generator/build', { schema: this.template.toSchema(this.dialect) });
+      const unformatted = await this.$util.send('generator/build', { schema: this.template.toSchema(this.dialect) });
       this.sql = format(unformatted, { language: FormatterDialect(this.dialect)})
     },
     setTemplate(id: string) {

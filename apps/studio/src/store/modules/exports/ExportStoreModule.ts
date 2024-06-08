@@ -14,11 +14,11 @@ const ExportStoreModule: Module<State, any> = {
   }),
   actions: {
     async removeInactive(context): Promise<void> {
-      const filtered = await Vue.prototype.$server.send('export/removeInactive')
+      const filtered = await Vue.prototype.$util.send('export/removeInactive')
       context.commit('setExports', filtered);
     },
     async removeExport(context, id): Promise<void> {
-      await Vue.prototype.$server.send('export/remove', {id});
+      await Vue.prototype.$util.send('export/remove', {id});
       context.commit('removeExport', id);
     }
   },

@@ -90,6 +90,7 @@ import { AppEvent } from '@/common/AppEvent'
 import { BasicTable } from '@/lib/data/table_templates'
 import _ from 'lodash';
 import ErrorAlert from './common/ErrorAlert.vue';
+import { CancelableQuery } from '@/lib/db/models';
 interface Data {
   initialColumns: SchemaItem[]
   tableName: string | null,
@@ -157,12 +158,12 @@ export default Vue.extend({
     },
     async create() {
       this.error = undefined
-      const sql = await this.$server.send('generator/build', { schema: this.schema });
+      const sql = await this.$util.send('generator/build', { schema: this.schema });
 
       try {
         this.running = true
-        const runningId = await this.$server.send('conn/query', { queryText: sql });
-        await this.$server.send('query/execute', { queryId: runningId });
+        const runningQuery: CancelableQuery = await this.$util.query(sql);
+        await runningQuery.execute();
         this.success = true
         this.$noty.success(`${this.simpleTableName} created`)
         await this.$store.dispatch('updateTables');
@@ -187,7 +188,7 @@ export default Vue.extend({
     },
     async sql() {
       this.error = undefined
-      const sql = await this.$server.send('generator/build', { schema: this.schema });
+      const sql = await this.$util.send('generator/build', { schema: this.schema });
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       if (sql) {
         this.$root.$emit(AppEvent.newTab, formatted)

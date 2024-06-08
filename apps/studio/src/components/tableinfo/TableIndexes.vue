@@ -314,7 +314,7 @@ export default Vue.extend({
         this.error = null
         const payload = this.getPayload()
 
-        await this.$server.send('conn/alterIndex', { changes: payload });
+        await this.$util.alterIndex(payload);
         this.$noty.success("Indexes Updated")
         this.$emit('actionCompleted')
         this.clearChanges()
@@ -329,7 +329,7 @@ export default Vue.extend({
     },
     async submitSql() {
       const payload = this.getPayload()
-      const sql = await this.$server.send('conn/alterIndexSql', { changes: payload });
+      const sql = await this.$util.alterIndexSql(payload)
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

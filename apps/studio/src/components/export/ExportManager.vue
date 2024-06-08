@@ -58,16 +58,16 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-      const id = await this.$server.send('export/add', {options});
+      const id = await this.$util.send('export/add', {options});
       this.addExport(id);
 
       const exportName = options.table ? options.table.name : options.queryName;
 
-      await this.$server.send('export/start', {id});
-      const status = await this.$server.send('export/status', {id});
+      await this.$util.send('export/start', {id});
+      const status = await this.$util.send('export/status', {id});
 
       if (status == ExportStatus.Error) {
-        const error = this.$server.send('export/error', {id});
+        const error = this.$util.send('export/error', {id});
         const error_notice = this.$noty.error(`Export of ${exportName} failed: ${error}`, {
           buttons: [
             Noty.button('Close', "btn btn-primary", () => {
