@@ -1,4 +1,5 @@
 import { AppEvent } from "@/common/AppEvent";
+import { DatabaseElement } from "@/lib/db/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { DialectData } from "@shared/lib/dialects/models";
 
@@ -33,8 +34,6 @@ export default {
           class: isBQClass,
           handler: this.routineMenuClick
         },
-
-
       ] as ContextOption[],
 
     }
@@ -109,6 +108,25 @@ export default {
           }
         },
         {
+          name: "Rename",
+          slug: 'rename',
+          class: ({ item  }) => {
+            if (item.entityType === 'table' && dialect.disabledFeatures?.alter?.renameTable) {
+              return 'disabled'
+            }
+            if (item.entityType === 'view' && dialect.disabledFeatures?.alter?.renameView) {
+              return 'disabled'
+            }
+            return ''
+          },
+          handler: ({ item }) => {
+            const type = item.entityType === 'table'
+              ? DatabaseElement.TABLE
+              : DatabaseElement.VIEW
+            this.trigger(AppEvent.setDatabaseElementName, { type, item })
+          }
+        },
+        {
           name: "Drop",
           slug: 'sql-drop',
           class: isBQClass,
@@ -144,6 +162,13 @@ export default {
           handler: ({ item }) => {
             this.trigger(AppEvent.toggleHideSchema, item, true)
           },
+        },
+        { type: 'divider' },
+        {
+          name: "Rename",
+          slug: 'rename',
+          class: dialect.disabledFeatures?.alter?.renameSchema ? 'disabled' : '',
+          handler: ({ item }) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.SCHEMA, item })
         },
         {
           name: "Drop",

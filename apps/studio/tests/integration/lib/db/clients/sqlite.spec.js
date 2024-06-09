@@ -8,7 +8,7 @@ const TEST_VERSIONS = [
 ]
 
 function testWith(options) {
-  describe("Sqlite Tests", () => {
+  describe(`SQLite [read-only mode? ${options.readOnly}]`, () => {
     let dbfile;
     /** @type {DBTestUtil} */
     let util

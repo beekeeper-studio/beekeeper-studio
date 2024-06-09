@@ -8,120 +8,125 @@
     >
       <!-- Trap the key events so it doesn't conflict with the parent elements -->
       <div
-        class="dialog-content"
-        tabindex="0"
+        v-kbd-trap="true"
+        @click.stop
         @keydown.stop
         @keyup.stop="handleKeyUp"
         @keypress.stop
       >
-        <div class="top">
-          <div class="dialog-c-title">
-            Editing as
-          </div>
+        <div class="dialog-content">
+          <div class="top">
+            <div class="dialog-c-title">
+              Editing as
+            </div>
 
-          <select
-            class="form-control language-select"
-            v-model="languageName"
-          >
-            <option
-              disabled
-              value=""
-              v-if="!languageName"
+            <select
+              class="form-control language-select"
+              v-model="languageName"
             >
-              Select a language
-            </option>
-            <option
-              v-for="lang in languages"
-              :key="lang.name"
-              :value="lang.name"
-            >
-              {{ lang.label }}
-            </option>
-          </select>
-
-          <x-button
-            class="btn btn-flat"
-            title="Actions"
-          >
-            <i class="material-icons">settings</i>
-            <i class="material-icons">arrow_drop_down</i>
-            <x-menu style="--align: end">
-              <x-menuitem
-                @click.prevent="format"
-                v-show="!language.noBeautify"
+              <option
+                disabled
+                value=""
+                v-if="!languageName"
               >
-                <x-label>Format {{ language?.label }}</x-label>
-              </x-menuitem>
-              <x-menuitem @click.prevent="minify">
-                <x-label>Minify text</x-label>
-              </x-menuitem>
-              <x-menuitem @click.prevent="toggleWrapText">
-                <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </div>
+                Select a language
+              </option>
+              <option
+                v-for="lang in languages"
+                :key="lang.name"
+                :value="lang.name"
+              >
+                {{ lang.label }}
+              </option>
+            </select>
 
-        <div
-          class="editor-container"
-          ref="editorContainer"
-        >
-          <text-editor
-            v-model="content"
-            :mode="language.editorMode"
-            :line-wrapping="wrapText"
-            :height="editorHeight"
-            :focus="editorFocus"
-            @focus="editorFocus = $event"
-          />
-        </div>
-      </div>
-      <div class="bottom">
-        <span
-          class="error-message"
-          v-show="error"
-        >{{ error }}</span>
-
-        <div class="vue-dialog-buttons">
-          <span class="expand" />
-          <button
-            @click.prevent="$modal.hide(modalName)"
-            class="btn btn-sm btn-flat"
-          >
-            Cancel
-          </button>
-          <button
-            class="btn btn-sm btn-flat"
-            @click.prevent="copy"
-          >
-            Copy
-          </button>
-          <x-button
-            v-if="language.noMinify"
-            class="btn btn-primary btn-sm"
-            @click.prevent="save"
-          >
-            <x-label>Apply</x-label>
-          </x-button>
-          <x-buttons v-else>
             <x-button
-              class="btn btn-primary btn-small"
-              @click.prevent="saveAndMinify"
+              class="btn btn-flat"
+              title="Actions"
             >
-              <x-label>Minify & Apply</x-label>
-            </x-button>
-            <x-button
-              class="btn btn-primary btn-small"
-              menu
-            >
+              <i class="material-icons">settings</i>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu style="--align: end">
-                <x-menuitem @click.prevent="save">
-                  <x-label>Apply (no minify)</x-label>
+                <x-menuitem
+                  @click.prevent="format"
+                  v-show="!language.noBeautify"
+                >
+                  <x-label>Format {{ language?.label }}</x-label>
+                </x-menuitem>
+                <x-menuitem @click.prevent="minify">
+                  <x-label>Minify text</x-label>
+                </x-menuitem>
+                <x-menuitem @click.prevent="toggleWrapText">
+                  <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
-          </x-buttons>
+          </div>
+
+          <!-- Prevent tabbing into the next element, caused by v-kbd-trap -->
+          <div
+            ref="editorContainer"
+            class="editor-container"
+            @keydown="$event.key === 'Tab' && $event.stopPropagation()"
+            @keyup="$event.key === 'Tab' && $event.stopPropagation()"
+          >
+            <text-editor
+              v-model="content"
+              :mode="language.editorMode"
+              :line-wrapping="wrapText"
+              :height="editorHeight"
+              :focus="editorFocus"
+              @focus="editorFocus = $event"
+            />
+          </div>
+        </div>
+        <div class="bottom">
+          <span
+            class="error-message"
+            v-show="error"
+          >{{ error }}</span>
+
+          <div class="vue-dialog-buttons">
+            <span class="expand" />
+            <button
+              @click.prevent="$modal.hide(modalName)"
+              class="btn btn-sm btn-flat"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-sm btn-flat"
+              @click.prevent="copy"
+            >
+              Copy
+            </button>
+            <x-button
+              v-if="language.noMinify"
+              class="btn btn-primary btn-sm"
+              @click.prevent="save"
+            >
+              <x-label>Apply</x-label>
+            </x-button>
+            <x-buttons v-else>
+              <x-button
+                class="btn btn-primary btn-small"
+                @click.prevent="saveAndMinify"
+              >
+                <x-label>Minify & Apply</x-label>
+              </x-button>
+              <x-button
+                class="btn btn-primary btn-small"
+                menu
+              >
+                <i class="material-icons">arrow_drop_down</i>
+                <x-menu style="--align: end">
+                  <x-menuitem @click.prevent="save">
+                    <x-label>Apply (no minify)</x-label>
+                  </x-menuitem>
+                </x-menu>
+              </x-button>
+            </x-buttons>
+          </div>
         </div>
       </div>
     </modal>

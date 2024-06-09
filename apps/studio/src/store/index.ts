@@ -28,6 +28,7 @@ import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { UserSetting } from '@/common/appdb/models/user_setting'
+import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = RawLog.scope('store/index')
 
@@ -59,6 +60,7 @@ export interface State {
   workspaceId: number,
   storeInitialized: boolean,
   windowTitle: string,
+  connError: string
 }
 
 Vue.use(Vuex)
@@ -101,6 +103,7 @@ const store = new Vuex.Store<State>({
     workspaceId: LocalWorkspace.id,
     storeInitialized: false,
     windowTitle: 'Beekeeper Studio',
+    connError: null
   },
 
   getters: {
@@ -194,7 +197,7 @@ const store = new Vuex.Store<State>({
     },
     versionString(state) {
       return state.server.versionString();
-    }
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -324,15 +327,18 @@ const store = new Vuex.Store<State>({
     },
     updateWindowTitle(state, title: string) {
       state.windowTitle = title
+    },
+    setConnError(state, err: string) {
+      state.connError = err;
     }
   },
   actions: {
-
     async test(context, config: SavedConnection) {
       // TODO (matthew): fix this mess.
       if (context.state.username) {
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
+
         await server?.createConnection(config.defaultDatabase || undefined).connect()
         server.disconnect()
       } else {
@@ -371,10 +377,28 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
+        // create token cache for azure auth
+        if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+          let cache = new TokenCache();
+          cache = await cache.save();
+          config.authId = cache.id;
+          // need to single out saved connections here (this may change when used connections are fixed)
+          if (config.id) {
+            // we do this so any temp configs that the user did aren't saved, just the id
+            const conn = await SavedConnection.findOne(config.id);
+            conn.authId = cache.id;
+            conn.save();
+          }
+        }
+
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
+        connection.connectionHandler = (msg: string) => {
+          context.commit('setConnError', msg);
+        };
+
         await connection.connect()
         connection.connectionType = config.connectionType;
 
@@ -386,6 +410,11 @@ const store = new Vuex.Store<State>({
         context.dispatch('updateWindowTitle', config)
       } else {
         throw "No username provided"
+      }
+    },
+    async reconnect(context) {
+      if (context.state.connection) {
+        await context.state.connection.connect();
       }
     },
     async recordUsedConfig(context, config: IConnection) {
@@ -414,6 +443,9 @@ const store = new Vuex.Store<State>({
       context.commit('clearConnection')
       context.dispatch('updateWindowTitle', null)
     },
+    async syncDatabase(context) {
+      await context.state.connection.syncDatabase();
+    },
     async changeDatabase(context, newDatabase: string) {
       log.info("Pool changing database to", newDatabase)
       if (context.state.server) {
@@ -421,7 +453,12 @@ const store = new Vuex.Store<State>({
         let connection = server.db(newDatabase)
         if (!connection) {
           connection = server.createConnection(newDatabase)
-          await connection.connect()
+          try {
+            await connection.connect()
+          } catch (e) {
+            server.destroyConnection(newDatabase);
+            throw new Error(`Could not connect to database: ${e.message}`)
+          }
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
@@ -526,6 +563,10 @@ const store = new Vuex.Store<State>({
       context.commit('addPinned', routine)
     },
     async removeUsedConfig(context, config) {
+      if (config.azureAuthOptions?.authId) {
+        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
+        cache.remove();
+      }
       await config.remove()
       context.commit('removeUsedConfig', config)
     },

@@ -13,7 +13,8 @@ if (  process.env.PI_BUILD ) {
 }
 const externals = ['better-sqlite3',
   'sequelize', 'typeorm', 'reflect-metadata',
-  'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'oracledb', '@electron/remote'
+  'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'oracledb', '@electron/remote',
+  'libsql',
 ]
 module.exports = {
   transpileDependencies: ['@aws-sdk/*', 'tabulator-tables'],
@@ -206,6 +207,7 @@ module.exports = {
       'mysql': 'mysql',
       'oracle': 'oracle',
       'strong-oracle': 'strong-oracle',
+      '@libsql/sqlite3': 'commonjs @libsql/sqlite3',
       // 'oracledb': 'oracledb',
     //   // 'pg': 'pg',
     //   // 'pg-query-stream': 'pg-query-stream'
@@ -225,7 +227,7 @@ module.exports = {
           resolve: {
             aliasFields: ['main']
           }
-        }
+        },
       ]
     }
 

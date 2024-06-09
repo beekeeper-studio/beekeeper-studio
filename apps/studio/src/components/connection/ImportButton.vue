@@ -3,6 +3,7 @@
     <a
       class="btn btn-link btn-small"
       @click.prevent="$modal.show('import-modal')"
+      href="#"
     ><slot /></a>
     <portal to="modals">
       <modal
@@ -12,7 +13,10 @@
         :scrollable="true"
         @opened="$refs.importInput.select()"
       >
-        <form @submit.prevent="importFromUrl">
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="importFromUrl"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">
               Import from URL

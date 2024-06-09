@@ -26,7 +26,6 @@ export interface QueryLogOptions {
     error?: string
 }
 
-
 // this provides the ability to get the current tab information, plus provides
 // a way to log the data to a table in the app sqlite.
 // this is a useful design if BKS ever gains a web version.
@@ -58,6 +57,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   db: string;
   connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
+  connErrHandler: (msg: string) => void = null;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -66,6 +66,10 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
+  }
+
+  set connectionHandler(fn: (msg: string) => void) {
+    this.connErrHandler = fn;
   }
 
   abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
@@ -218,9 +222,27 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
+  abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
+    if (!sql) {
+      throw new Error(`Unsupported element type: ${typeOfElement}`);
+    }
+    await this.executeQuery(sql);
+  }
+
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 
-  abstract truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+  abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+
+  async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    const sql = this.truncateElementSql(elementName, typeOfElement, schema);
+    if (!sql) {
+      throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
+    }
+    await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement, schema));
+  }
 
   abstract truncateAllTables(schema?: string): void;
   // ****************************************************************************
@@ -244,6 +266,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string;
   // ****************************************************************************
 
+  /** Sync a database file to remote database. This is a LibSQL specific feature. */
+  async syncDatabase(): Promise<void> {
+    throw new Error("Not implemented");
+  }
+
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
     return buildInsertQuery(this.knex, tableInsert, columns);
@@ -253,6 +280,15 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   // structure to allow logging of all queries to a query log
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
+
+  protected async checkIsConnected(): Promise<boolean> {
+    try {
+      await this.rawExecuteQuery('SELECT 1', {});
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
@@ -267,6 +303,18 @@ export abstract class BasicDatabaseClient<RawResultType> {
         const result = await this.rawExecuteQuery(q, options) as RawResultType
         return _.isArray(result) ? result[0] : result
     } catch (ex) {
+        // if (!await this.checkIsConnected()) {
+        //   try {
+        //     await this.connect();
+        //   } catch (_e) {
+        //     // may need better error message
+        //     this.connErrHandler('It seems we have lost the connection to the database.');
+        //     return;
+        //   }
+        //   const result = await this.rawExecuteQuery(q, options) as RawResultType;
+        //   return _.isArray(result) ? result[0] : result
+        // }
+
         logOptions.status = 'failed'
         logOptions.error = ex.message
         throw ex;
@@ -280,7 +328,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
-
+    
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
@@ -288,6 +336,17 @@ export abstract class BasicDatabaseClient<RawResultType> {
       const result = await this.rawExecuteQuery(q, options) as RawResultType[]
       return result
     } catch (ex) {
+      // if (!await this.checkIsConnected()) {
+      //   try {
+      //     await this.connect();
+      //   } catch (_e) {
+      //     // may need better error message
+      //     this.connErrHandler('It seems we have lost the connection to the database.');
+      //     return;
+      //   }
+      //   const result = await this.rawExecuteQuery(q, options) as RawResultType;
+      //   return _.isArray(result) ? result[0] : result
+      // }
       logOptions.status = 'failed'
       logOptions.error = ex.message
       throw ex;

@@ -3,13 +3,13 @@ import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
 
 describe("TiDB Tests", () => {
+  jest.setTimeout(dbtimeout)
 
   let container;
   let util
 
   beforeAll(async () => {
     const timeoutDefault = 5000
-    jest.setTimeout(dbtimeout)
     container = await new GenericContainer("pingcap/tidb")
       .withName("tidb")
       .withExposedPorts(4000)

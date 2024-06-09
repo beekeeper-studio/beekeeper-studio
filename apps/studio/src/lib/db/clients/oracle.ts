@@ -70,6 +70,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return new OracleChangeBuilder(table, schema)
   }
 
+  async checkIsConnected(): Promise<boolean> {
+    try {
+      await this.rawExecuteQuery('SELECT 1 FROM DUAL', {});
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
   // Create Database
 
   // AL32UTF8 is Oracle's name for the UTF-8 encoding of the Unicode standard. The Unicode standard is the universal character set that supports most of the currently spoken languages of the world. The use of the Unicode standard is indispensable for any multilingual technology, including database processing.
@@ -570,16 +579,30 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     })
   }
 
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
+    elementName = this.wrapIdentifier(elementName)
+    newElementName = this.wrapIdentifier(newElementName)
+    schema = this.wrapIdentifier(schema)
+
+    let sql = ''
+
+    if (typeOfElement === DatabaseElement.TABLE) {
+      sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName};`
+    } else if (typeOfElement === DatabaseElement.VIEW) {
+      sql = `RENAME ${elementName} TO ${newElementName};`
+    }
+
+    return sql
+  }
+
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
 
-  async truncateElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
-    const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
-
-    await this.driverExecuteSingle(sql)
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema = 'public'): string {
+    return `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema: string): Promise<void> {
