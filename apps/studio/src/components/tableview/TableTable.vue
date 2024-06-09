@@ -411,7 +411,7 @@ export default Vue.extend({
       //   const focusingTable = this.tabulator.element.contains(document.activeElement)
       //   if (!focusingTable) this.page--
       // }
-      result['alt+m'] = this.openEditorMenuByShortcut.bind(this)
+      result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
@@ -983,6 +983,9 @@ export default Vue.extend({
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       if (this.isEditorMenuDisabled(cell)) return
+      // FIXME maybe we can avoid calling child methods directly like this? 
+      // it should be done by calling an event using this.$modal.show(modalName) 
+      // or this.$trigger(AppEvent.something) if possible
       this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
     },
     openEditorMenu(cell: CellComponent) {
