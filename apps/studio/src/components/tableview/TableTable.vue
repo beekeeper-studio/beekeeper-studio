@@ -413,6 +413,7 @@ export default Vue.extend({
       //   const focusingTable = this.tabulator.element.contains(document.activeElement)
       //   if (!focusingTable) this.page--
       // }
+      result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
@@ -976,14 +977,23 @@ export default Vue.extend({
         disabled: areAllCellsPrimarykey || !this.editable,
       }
     },
+    isEditorMenuDisabled (cell: CellComponent) {
+      if (this.isPrimaryKey(cell.getField())) return true
+      return !this.editable && !this.insertionCellCheck(cell)
+    },
+    openEditorMenuByShortcut() {
+      const range: RangeComponent = _.last(this.tabulator.getRanges())
+      const cell = range.getCells().flat()[0];
+      if (this.isEditorMenuDisabled(cell)) return
+      // FIXME maybe we can avoid calling child methods directly like this? 
+      // it should be done by calling an event using this.$modal.show(modalName) 
+      // or this.$trigger(AppEvent.something) if possible
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+    },
     openEditorMenu(cell: CellComponent) {
-      const disabled = (cell: CellComponent) => {
-        if (this.isPrimaryKey(cell.getField())) return true
-        return !this.editable && !this.insertionCellCheck(cell)
-      }
       return {
-        label: createMenuItem("Edit in modal"),
-        disabled,
+        label: createMenuItem("Edit in modal", "Shift + Enter"),
+        disabled: this.isEditorMenuDisabled(cell),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
           this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
