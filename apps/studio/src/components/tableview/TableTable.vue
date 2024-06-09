@@ -992,7 +992,7 @@ export default Vue.extend({
     },
     openEditorMenu(cell: CellComponent) {
       return {
-        label: createMenuItem("Edit in modal", "Alt + M"),
+        label: createMenuItem("Edit in modal", "Shift + Enter"),
         disabled: this.isEditorMenuDisabled(cell),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
