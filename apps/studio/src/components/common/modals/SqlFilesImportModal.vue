@@ -1,10 +1,10 @@
 <template>
   <modal
-    class="vue-dialog beekeeper-modal sql-files-import-modal"
+    class="vue-dialog beekeeper-modal v2-modal"
     :name="modalName"
   >
     <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
-    <div v-kbd-focus="true">
+    <div v-kbd-trap="true">
       <div class="dialog-content">
         <div class="dialog-c-title">
           Import SQL Files

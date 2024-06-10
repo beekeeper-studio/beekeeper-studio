@@ -44,6 +44,7 @@ export enum AppEvent {
   dropzoneDrop = 'dropzoneDrop',
   createConfirmModal = 'createConfirmModal',
   showConfirmModal = 'showConfirmModal',
+  showSuperFormatterModal = 'showSuperFormatterModal',
 }
 
 export interface RootBinding {

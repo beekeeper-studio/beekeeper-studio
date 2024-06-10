@@ -38,6 +38,7 @@ import exportPath from './20240122_add_default_export_path'
 import demoSetup from './20240421_seed_with_demo_data'
 import minimalMode from './20240514_user_settings_minimal_mode'
 import libsqlOptions from './20240528_add_libsql_options'
+import createFormatQueryPresets from './20240606_create_query_format_presets_table'
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
@@ -61,7 +62,7 @@ const realMigrations = [
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   exportPath, UserSettingsWindowPosition,
-  demoSetup, minimalMode, libsqlOptions,
+  demoSetup, minimalMode, libsqlOptions, createFormatQueryPresets,
 
 ]
 

@@ -17,7 +17,8 @@
       "@/*": [
         "./src/*"
       ],
-      "@shared/*": ["../../shared/src/*"]
+      "@shared/*": ["../../shared/src/*"],
+      "sql-formatter": ["node_modules/sql-formatter/dist/index.d.ts"]
     },
     "lib": [
       "esnext",

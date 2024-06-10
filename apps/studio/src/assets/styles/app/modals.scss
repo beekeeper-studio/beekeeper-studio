@@ -37,13 +37,15 @@
     }
   }
 
-  &.confirmation-modal, &.sql-files-import-modal {
+  &.v2-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;
     }
     .dialog-content {
       padding: 1.5rem 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
     }
     .dialog-c-title {
       padding-bottom: 1.25rem;
@@ -68,6 +70,85 @@
 
     .file-picker-wrapper {
       margin-top: 1rem;
+    }
+  }
+
+  &.super-formatter-modal {
+    .v--modal {
+      min-width: 46rem;
+      height: 49rem !important;
+
+      & > div {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+    }
+    .main-content {
+      display: flex;
+      flex: 1 1 auto;
+      height: 0;
+    }
+    .settings-container {
+      min-width: 18rem;
+      padding-right: 1rem;
+      color: $text;
+
+      // Enabling overflow-y: scroll would enable overflow-x: hidden as well.
+      // To fix this, we'll add padding and negative margin to account for the
+      // hidden elements. What are hidden? ripple effects, show up when
+      // navigating with keyboard.
+      overflow-y: scroll;
+      padding-left: 0.8rem;
+      margin-left: -0.8rem;
+
+      label {
+        font-weight: 600;
+      }
+    }
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1.5rem;
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        & > *:not(input):not(select) {
+          padding: 0;
+        }
+        & > * {
+          margin: 0;
+        }
+        .description {
+          font-size: 0.85rem;
+          line-height: 1.5;
+        }
+      }
+    }
+    .text-editor-container {
+      min-width: 21rem;
+    }
+    .save-group {
+      display: flex;
+      flex-grow: 1;
+
+      label {
+        color: $text;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        padding-right: 0.4rem;
+      }
+      input {
+        width: 9rem;
+      }
+    }
+    .xs-input {
+      width: 5rem;
     }
   }
 }

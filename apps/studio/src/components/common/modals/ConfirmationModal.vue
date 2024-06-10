@@ -1,7 +1,7 @@
 <template>
   <portal to="modals">
     <modal
-      class="vue-dialog beekeeper-modal confirmation-modal"
+      class="vue-dialog beekeeper-modal v2-modal"
       :name="id"
       @opened="opened"
       @before-close="beforeClose"

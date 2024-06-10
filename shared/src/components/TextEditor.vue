@@ -30,8 +30,7 @@ import "@/lib/editor/CodeMirrorDefinitions";
 import "codemirror/addon/merge/merge";
 import CodeMirror from "codemirror";
 
-import { EditorMarker } from "@/lib/editor/utils";
-import { setKeybindingsFromVimrc, applyConfig, Register } from "@/lib/editor/vim";
+import { EditorMarker } from "../lib/textEditor";
 
 export default {
   props: [
@@ -55,6 +54,7 @@ export default {
     "forcedValue",
     "plugins",
     "preventDestroy",
+    "isMac",
   ],
   data() {
     return {
@@ -62,16 +62,16 @@ export default {
     };
   },
   computed: {
-    keymapTypes() {
-      return this.$config.defaults.keymapTypes;
-    },
-    userKeymap() {
-      const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap?.value;
-      return value && this.keymapTypes.map((k) => k.value).includes(value)
-        ? value
-        : "default";
-    },
+    // keymapTypes() {
+    //   return this.$config.defaults.keymapTypes;
+    // },
+    // userKeymap() {
+    //   const settings = this.$store.state.settings?.settings;
+    //   const value = settings?.keymap?.value;
+    //   return value && this.keymapTypes.map((k) => k.value).includes(value)
+    //     ? value
+    //     : "default";
+    // },
     hasSelectedText() {
       return this.editorInitialized ? !!this.editor.getSelection() : false;
     },
@@ -80,9 +80,9 @@ export default {
     forcedValue() {
       this.editor.setValue(this.forcedValue);
     },
-    userKeymap() {
-      this.initialize();
-    },
+    // userKeymap() {
+    //   this.initialize();
+    // },
     vimConfig() {
       this.initialize();
     },
@@ -151,7 +151,7 @@ export default {
         mode: this.mode,
         hint: this.hint,
         hintOptions: this.hintOptions,
-        keyMap: this.userKeymap,
+        // keyMap: this.userKeymap,
         getColumns: this.columnsGetter,
       });
 
@@ -208,25 +208,26 @@ export default {
 
       cmEl.addEventListener("contextmenu", this.showContextMenu);
 
-      if (this.userKeymap === "vim") {
-        const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
-
-        if (!codeMirrorVimInstance) {
-          console.error("Could not find code mirror vim instance");
-        } else {
-          if (this.vimConfig) {
-            applyConfig(codeMirrorVimInstance, this.vimConfig);
-          }
-          setKeybindingsFromVimrc(codeMirrorVimInstance);
-
-          // cm throws if this is already defined, we don't need to handle that case
-          try {
-            codeMirrorVimInstance.defineRegister('*', new Register(this.$native.clipboard))
-          } catch(e) {
-            // nothing
-          }
-        }
-      }
+      // TODO Maybe move this to plugin?
+      // if (this.userKeymap === "vim") {
+      //   const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
+      //
+      //   if (!codeMirrorVimInstance) {
+      //     console.error("Could not find code mirror vim instance");
+      //   } else {
+      //     if (this.vimConfig) {
+      //       applyConfig(codeMirrorVimInstance, this.vimConfig);
+      //     }
+      //     setKeybindingsFromVimrc(codeMirrorVimInstance);
+      //
+      //     // cm throws if this is already defined, we don't need to handle that case
+      //     try {
+      //       codeMirrorVimInstance.defineRegister('*', new Register(this.$native.clipboard))
+      //     } catch(e) {
+      //       // nothing
+      //     }
+      //   }
+      // }
 
       if (this.plugins) {
         this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
@@ -360,6 +361,10 @@ export default {
           options: customOptions,
         });
       }
+    },
+    cmCtrlOrCmd(key: string) {
+      if (this.isMac) return `Cmd-${key}`
+      return `Ctrl-${key}`
     },
   },
   mounted() {

@@ -7,7 +7,7 @@ import mkdirp from 'mkdirp';
 import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
 import platformInfo from './platform_info';
-import { format } from 'sql-formatter';
+import { format } from 'sql-formatter/dist/index';
 import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 
