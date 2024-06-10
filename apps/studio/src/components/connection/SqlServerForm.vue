@@ -1,5 +1,13 @@
 <template>
   <div class="with-connection-type">
+    <div class="form-group col">
+      <label for="authenticationType">Authentication Method</label>
+      <!-- need to take the value -->
+      <select name="" v-model="azureAuthEnabled" id="">
+        <option :value="false">Username & Password</option>
+        <option :value="true">Azure SSO</option>
+      </select>
+    </div>
     <common-server-inputs v-show="!azureAuthEnabled" :config="config">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
@@ -42,28 +50,9 @@
       </div>
     </common-server-inputs>
     <common-advanced v-show="!azureAuthEnabled" :config="config" />
-    <div class="advanced-connection-settings">
-      <h4 
-        class="advanced-heading flex"
-        :class="{enabled: azureAuthEnabled}"
-      >
-        <span class="expand">
-          Azure SSO Authentication
-          <i
-            v-if="$config.isCommunity"
-            class="material-icons"
-          >
-            stars
-          </i>
-        </span>
-        <x-switch
-          @click.prevent="toggleAzureAuth"
-          :toggled="azureAuthEnabled"
-        />
-      </h4>
+    <div v-show="azureAuthEnabled" class="advanced-connection-settings">
       <div 
         class="advanced-body" 
-        v-show="azureAuthEnabled"
       >
         <div class="form-group">
           <label for="authType">Authentication Type</label>
@@ -194,15 +183,20 @@
         return [AzureAuthType.MSIVM].includes(this.config.azureAuthOptions.azureAuthType)
       },
     },
-    methods: {
-      async toggleAzureAuth() {
-        if (platformInfo.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal);
-          return;
-        }
-        this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled = !this.azureAuthEnabled;
-      }
-    }
+    watch: {
+      azureAuthEnabled(value) {
+        if (value) {
+          //if (platformInfo.isCommunity) {
+          //  this.$root.$emit(AppEvent.upgradeModal);
+          //  this.azureAuthEnabled = false;
+          //  return;
+          //}
 
+          this.config.azureAuthOptions.azureAuthEnabled = true;
+        } else {
+          this.config.azureAuthOptions.azureAuthEnabled = false;
+        }
+      }
+    },
   }
 </script>
