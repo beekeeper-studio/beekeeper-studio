@@ -3,9 +3,10 @@
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
-      <select name="" v-model="azureAuthEnabled" id="">
-        <option :value="false">Username & Password</option>
-        <option :value="true">Azure SSO</option>
+      <select name="" @change="authType_onChange" id="">
+        <option :value="undefined">Username / Password</option>
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
+        </option>
       </select>
     </div>
     <common-server-inputs v-show="!azureAuthEnabled" :config="config">
@@ -54,31 +55,6 @@
       <div 
         class="advanced-body" 
       >
-        <div class="form-group">
-          <label for="authType">Authentication Type</label>
-          <select 
-            name="authType" 
-            class="form-control custom-select"
-            v-model="config.azureAuthOptions.azureAuthType"
-            id="auth-select"
-          >
-            <option 
-              disabled 
-              hidden 
-              value="null"
-            >
-              Select an Authentication Type...
-            </option>
-            <option 
-              :key="`${t.value}-${t.name}`"
-              v-for="t in authTypes"
-              :value="t.value"
-            >
-              {{ t.name }}
-            </option>
-          </select>
-        </div>
-        <!-- TODO (@day): restyle this (username/password on the same line etc) -->
         <div class="form-group">
           <label for="server">Server</label>
           <input 
@@ -148,7 +124,6 @@
 </template>
 
 <script>
-
   import CommonServerInputs from './CommonServerInputs'
   import CommonAdvanced from './CommonAdvanced'
   import { AzureAuthService, AzureAuthTypes, AzureAuthType } from '../../lib/db/authentication/azure'
@@ -162,41 +137,48 @@
     data() {
       return {
         azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled || false,
+        authType: AzureAuthType,
         authTypes: AzureAuthTypes
       }
     },
     computed: {
       showUser() {
-        return [AzureAuthType.Password].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.Password].includes(this.authType)
       },
       showPassword() {
-        return [AzureAuthType.Password].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.Password].includes(this.authType)
       },
       showTenantId() {
         return [AzureAuthType.Password, AzureAuthType.ServicePrincipalSecret]
-          .includes(this.config.azureAuthOptions.azureAuthType)
+          .includes(this.authType)
       },
       showClientSecret() {
-        return [AzureAuthType.ServicePrincipalSecret].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.ServicePrincipalSecret].includes(this.authType)
       },
       showMsiEndpoint() {
-        return [AzureAuthType.MSIVM].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.MSIVM].includes(this.authType)
       },
     },
-    watch: {
-      azureAuthEnabled(value) {
-        if (value) {
-          if (platformInfo.isCommunity) {
-            this.$root.$emit(AppEvent.upgradeModal);
-            this.azureAuthEnabled = false;
-            return;
-          }
+    methods: {
+      authType_onChange(event) {
+        const value = event.target.value;
 
+        if (platformInfo.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal);
+          this.azureAuthEnabled = false;
+
+          return;
+        }
+        if (value) {
+          this.azureAuthEnabled = true;
           this.config.azureAuthOptions.azureAuthEnabled = true;
+          this.config.azureAuthOptions.azureAuthType = this.authType = Number(value);
         } else {
+          this.config.azureAuthOptions.azureAuthType = this.authType = undefined;
+          this.azureAuthEnabled = false;
           this.config.azureAuthOptions.azureAuthEnabled = false;
         }
       }
-    },
+    }
   }
 </script>
