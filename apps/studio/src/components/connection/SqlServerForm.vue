@@ -186,11 +186,11 @@
     watch: {
       azureAuthEnabled(value) {
         if (value) {
-          //if (platformInfo.isCommunity) {
-          //  this.$root.$emit(AppEvent.upgradeModal);
-          //  this.azureAuthEnabled = false;
-          //  return;
-          //}
+          if (platformInfo.isCommunity) {
+            this.$root.$emit(AppEvent.upgradeModal);
+            this.azureAuthEnabled = false;
+            return;
+          }
 
           this.config.azureAuthOptions.azureAuthEnabled = true;
         } else {
