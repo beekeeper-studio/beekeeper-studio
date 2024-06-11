@@ -1196,6 +1196,11 @@ export class DBTestUtil {
       table.string("name")
     })
 
+    await this.knex.schema.createTable('import_table', (t) => {
+      t.string('name'),
+      t.string('hat')
+    })
+
     if (!this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",

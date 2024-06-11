@@ -1232,21 +1232,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   createDatabaseSQL(): string {
     throw new Error("Method not implemented.");
   }
-  async importData(sql: string): Promise<any> {
-    const connection = await this.pool.getConnection();
-    const transaction = await connection.transaction();
-    try {
-      await transaction.query(sql);
-
-      await transaction.commit();
-    } catch (ex) {
-      log.error("importData", sql, ex);
-      await transaction.rollback();
-      throw ex;
-    } finally {
-      await connection.release()
-    }
-  }
 
   getImportScripts(table: TableOrView): ImportScriptFunctions {
     const { name } = table
