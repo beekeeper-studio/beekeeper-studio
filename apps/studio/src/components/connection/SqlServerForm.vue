@@ -1,5 +1,14 @@
 <template>
   <div class="with-connection-type">
+    <div class="form-group col">
+      <label for="authenticationType">Authentication Method</label>
+      <!-- need to take the value -->
+      <select name="" @change="authType_onChange" id="">
+        <option :value="undefined">Username / Password</option>
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
+        </option>
+      </select>
+    </div>
     <common-server-inputs v-show="!azureAuthEnabled" :config="config">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
@@ -42,54 +51,10 @@
       </div>
     </common-server-inputs>
     <common-advanced v-show="!azureAuthEnabled" :config="config" />
-    <div class="advanced-connection-settings">
-      <h4 
-        class="advanced-heading flex"
-        :class="{enabled: azureAuthEnabled}"
-      >
-        <span class="expand">
-          Azure SSO Authentication
-          <i
-            v-if="$config.isCommunity"
-            class="material-icons"
-          >
-            stars
-          </i>
-        </span>
-        <x-switch
-          @click.prevent="toggleAzureAuth"
-          :toggled="azureAuthEnabled"
-        />
-      </h4>
+    <div v-show="azureAuthEnabled" class="advanced-connection-settings">
       <div 
         class="advanced-body" 
-        v-show="azureAuthEnabled"
       >
-        <div class="form-group">
-          <label for="authType">Authentication Type</label>
-          <select 
-            name="authType" 
-            class="form-control custom-select"
-            v-model="config.azureAuthOptions.azureAuthType"
-            id="auth-select"
-          >
-            <option 
-              disabled 
-              hidden 
-              value="null"
-            >
-              Select an Authentication Type...
-            </option>
-            <option 
-              :key="`${t.value}-${t.name}`"
-              v-for="t in authTypes"
-              :value="t.value"
-            >
-              {{ t.name }}
-            </option>
-          </select>
-        </div>
-        <!-- TODO (@day): restyle this (username/password on the same line etc) -->
         <div class="form-group">
           <label for="server">Server</label>
           <input 
@@ -159,7 +124,6 @@
 </template>
 
 <script>
-
   import CommonServerInputs from './CommonServerInputs'
   import CommonAdvanced from './CommonAdvanced'
   import { AzureAuthService, AzureAuthTypes, AzureAuthType } from '../../lib/db/authentication/azure'
@@ -173,36 +137,48 @@
     data() {
       return {
         azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled || false,
+        authType: AzureAuthType,
         authTypes: AzureAuthTypes
       }
     },
     computed: {
       showUser() {
-        return [AzureAuthType.Password].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.Password].includes(this.authType)
       },
       showPassword() {
-        return [AzureAuthType.Password].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.Password].includes(this.authType)
       },
       showTenantId() {
         return [AzureAuthType.Password, AzureAuthType.ServicePrincipalSecret]
-          .includes(this.config.azureAuthOptions.azureAuthType)
+          .includes(this.authType)
       },
       showClientSecret() {
-        return [AzureAuthType.ServicePrincipalSecret].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.ServicePrincipalSecret].includes(this.authType)
       },
       showMsiEndpoint() {
-        return [AzureAuthType.MSIVM].includes(this.config.azureAuthOptions.azureAuthType)
+        return [AzureAuthType.MSIVM].includes(this.authType)
       },
     },
     methods: {
-      async toggleAzureAuth() {
+      authType_onChange(event) {
+        const value = event.target.value;
+
         if (platformInfo.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal);
+          this.azureAuthEnabled = false;
+
           return;
         }
-        this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled = !this.azureAuthEnabled;
+        if (value) {
+          this.azureAuthEnabled = true;
+          this.config.azureAuthOptions.azureAuthEnabled = true;
+          this.config.azureAuthOptions.azureAuthType = this.authType = Number(value);
+        } else {
+          this.config.azureAuthOptions.azureAuthType = this.authType = undefined;
+          this.azureAuthEnabled = false;
+          this.config.azureAuthOptions.azureAuthEnabled = false;
+        }
       }
     }
-
   }
 </script>
