@@ -835,15 +835,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     let request
 
     return {
+      step0: async() => {
+        request = new sql.Request(transaction)
+      },
       beginCommand: (_executeOptions: any): Promise<any> => transaction.begin(),
-      truncateCommand: (executeOptions: any): Promise<any> => {
-        if (request === undefined) request = new sql.Request(transaction)
-        return request.query(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions)
-      },
-      lineReadCommand: (sqlString: string, executeOptions: any): Promise<any> => {
-        if (request === undefined) request = new sql.Request(transaction)
-        return request.query(sqlString, executeOptions)
-      },
+      truncateCommand: (executeOptions: any): Promise<any> => request.query(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
+      lineReadCommand: (sqlString: string, executeOptions: any): Promise<any> => request.query(sqlString, executeOptions),
       commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
       rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback()
     }
