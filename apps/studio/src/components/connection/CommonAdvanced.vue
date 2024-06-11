@@ -48,7 +48,7 @@
             Keepalive Interval <i
               class="material-icons"
               style="padding-left: 0.25rem"
-              v-tooltip="'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)'"
+              v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
             >help_outlined</i>
           </label>
           <input

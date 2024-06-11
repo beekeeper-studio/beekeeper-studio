@@ -51,12 +51,20 @@
       </div>
     </common-server-inputs>
     <common-advanced v-show="!azureAuthEnabled" :config="config" />
-    <div v-show="azureAuthEnabled" class="advanced-connection-settings">
+    <div v-show="azureAuthEnabled" class="host-port-user-password">
       <div 
-        class="advanced-body" 
+        class="form-group col" 
       >
         <div class="form-group">
-          <label for="server">Server</label>
+          <label for="server">
+            Server <i 
+              class="material-icons"
+              style="padding-left: 0.25rem"
+              v-tooltip="{ 
+                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>', 
+                html: true }"
+            >help_outlined</i>
+        </label>
           <input 
             name="server"
             type="text" 
@@ -92,7 +100,15 @@
           >
         </div>
         <div class="form-group" v-show="showTenantId">
-          <label for="tenantId">Tenant ID</label>
+          <label for="tenantId">            
+            Tenant ID <i 
+              class="material-icons"
+              style="padding-left: 0.25rem"
+              v-tooltip="{
+                content: 'This can be found in the <code>\'Microsoft Entra ID\'</code> section of Azure, <br/> in the Overview labelled <code>\'Tenant ID\'</code>',
+                html: true }"
+            >help_outlined</i>
+          </label>
           <input 
             name="tenantId"
             type="text" 
@@ -163,12 +179,12 @@
       authType_onChange(event) {
         const value = event.target.value;
 
-        if (platformInfo.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal);
-          this.azureAuthEnabled = false;
+        //if (platformInfo.isCommunity) {
+        //  this.$root.$emit(AppEvent.upgradeModal);
+        //  this.azureAuthEnabled = false;
 
-          return;
-        }
+        //  return;
+        //}
         if (value) {
           this.azureAuthEnabled = true;
           this.config.azureAuthOptions.azureAuthEnabled = true;
