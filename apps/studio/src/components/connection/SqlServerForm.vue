@@ -179,12 +179,12 @@
       authType_onChange(event) {
         const value = event.target.value;
 
-        //if (platformInfo.isCommunity) {
-        //  this.$root.$emit(AppEvent.upgradeModal);
-        //  this.azureAuthEnabled = false;
+        if (platformInfo.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal);
+          this.azureAuthEnabled = false;
 
-        //  return;
-        //}
+          return;
+        }
         if (value) {
           this.azureAuthEnabled = true;
           this.config.azureAuthOptions.azureAuthEnabled = true;
