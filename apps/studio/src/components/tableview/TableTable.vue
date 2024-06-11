@@ -932,7 +932,9 @@ export default Vue.extend({
           scrollToEnd: false,
           scrollToStart: false,
           scrollPageUp: false,
-          scrollPageDown: false
+          scrollPageDown: false,
+          navLeft: true,
+          navRight: true,
         },
       });
       this.tabulator.on('cellEdited', this.cellEdited)
