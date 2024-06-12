@@ -11,6 +11,8 @@ import knex from "knex";
 import Client_Libsql from "@libsql/knex-libsql";
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
 
+const timeoutDefault = 5000
+
 const TEST_VERSIONS = [
   { mode: "memory", readOnly: false },
   { mode: "file", readOnly: false },
@@ -23,6 +25,8 @@ const TEST_VERSIONS = [
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
   describe(`LibSQL [${options.mode} - read-only mode? ${options.readOnly}]`, () => {
+    jest.setTimeout(dbtimeout)
+
     if (options.mode === "replica") {
       testReplica(options.readOnly);
       return;
@@ -57,6 +61,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           .withExposedPorts(8080)
           .withStartupTimeout(dbtimeout)
           .start();
+        jest.setTimeout(timeoutDefault)
         const host = container.getHost();
         const port = container.getMappedPort(8080);
         dbPath = `http://${host}:${port}`;
@@ -301,6 +306,7 @@ function testReplica(readOnly = false) {
       .withExposedPorts(8080)
       .withStartupTimeout(dbtimeout)
       .start();
+    jest.setTimeout(timeoutDefault)
 
     const host = container.getHost();
     const port = container.getMappedPort(8080);
