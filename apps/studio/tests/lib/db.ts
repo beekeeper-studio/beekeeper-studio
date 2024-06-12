@@ -106,6 +106,13 @@ export class DBTestUtil {
     this.options = options
     if (options.knex) {
       this.knex = options.knex
+    } else if (config.client === 'sqlite') {
+      this.knex = knex({
+        client: "better-sqlite3",
+        connection: {
+          filename: database
+        }
+      })
     } else if (config.client === 'oracle') {
       this.knex = knex({
         client: 'oracledb',
