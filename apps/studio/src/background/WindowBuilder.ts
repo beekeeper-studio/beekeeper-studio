@@ -195,6 +195,10 @@ class BeekeeperWindow {
     this.reloaded = true
   }
 
+  onClose(listener: (event: electron.Event) => void) {
+    this.win?.on('close', listener);
+  }
+
   get active() {
     return !!this.win
   }

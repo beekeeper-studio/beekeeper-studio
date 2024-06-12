@@ -29,6 +29,10 @@ export function newState(id: string): void {
   states.set(id, new State());
 }
 
+export function removeState(id: string): void {
+  states.delete(id);
+}
+
 export const errorMessages = {
   noUsername: 'No username provided',
   noGenerator: 'No sql generator found',

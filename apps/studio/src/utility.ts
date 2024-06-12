@@ -6,7 +6,7 @@ import { ConnHandlers } from './handlers/connHandlers';
 import { ExportHandlers } from './handlers/exportHandlers';
 import { GeneratorHandlers } from './handlers/generatorHandlers';
 import { Handlers } from './handlers/handlers';
-import { newState, state } from './handlers/handlerState';
+import { newState, removeState, state } from './handlers/handlerState';
 import { QueryHandlers } from './handlers/queryHandlers';
 
 const log = rawLog.scope('UtilityProcess');
@@ -28,9 +28,21 @@ export let handlers: Handlers = {
 }; 
 
 process.parentPort.on('message', ({ data, ports }) => {
-  if (ports && ports.length > 0) {
-    log.info('RECEIVED PORT: ', ports[0]);
-    init(data.sId, ports[0]);
+  const { type, sId } = data;
+  switch (type) {
+    case 'init':
+      if (ports && ports.length > 0) {
+        log.info('RECEIVED PORT: ', ports[0]);
+        init(sId, ports[0]);
+      }
+      break;
+    case 'close':
+      log.info('REMOVING STATE FOR: ', sId);
+      state(sId).port.close();
+      removeState(sId);
+      break;
+    default:
+      log.error('UNRECOGNIZED MESSAGE TYPE RECEIVED FROM MAIN PROCESS');
   }
 })
 

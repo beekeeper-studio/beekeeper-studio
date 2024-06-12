@@ -199,8 +199,11 @@ ipcMain.on('ready', (_event) => {
       const { port1, port2 } = new electron.MessageChannelMain();
       const sId = uuidv4();
       log.info('SENDING PORT TO RENDERER: ', sId)
-      utilityProcess.postMessage({ sId }, [port1]);
+      utilityProcess.postMessage({ type: 'init', sId }, [port1]);
       w.webContents.postMessage('port', { sId }, [port2]);
+      w.onClose((_event: electron.Event) => {
+        utilityProcess.postMessage({ type: 'close', sId })
+      })
       newWindows = _.without(newWindows, w.winId);
     }
   })

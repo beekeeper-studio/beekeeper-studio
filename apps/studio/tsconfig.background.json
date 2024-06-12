@@ -7,7 +7,6 @@
     "outDir": "./dist/main",
     "experimentalDecorators": true,
     "esModuleInterop": true,
-    // "strict": true,
     "noImplicitAny": false,
     "resolveJsonModule": true,
     "strictPropertyInitialization": false,
