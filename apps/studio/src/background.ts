@@ -39,38 +39,48 @@ let utilityProcess: Electron.UtilityProcess
 let newWindows: number[] = new Array();
 
 function createUtilityProcess() {
-    if (utilityProcess) {
-      return;
+  if (utilityProcess) {
+    return;
+  }
+
+  const args = {
+    isPackage: `${electron.app.isPackaged}`,
+    locale: electron.app.getLocale(),
+    userDir: electron.app.getPath('userData'),
+    downloadDir: electron.app.getPath('downloads'),
+    homeDir: electron.app.getPath('home'),
+    shouldUseDarkColors: `${electron.nativeTheme.shouldUseDarkColors}`,
+    version: electron.app.getVersion()
+  }
+
+  utilityProcess = electron.utilityProcess.fork(
+    path.join(__dirname, 'utility.js'), 
+    [], 
+    {
+      env: { ...process.env, ...args },
+      stdio: ['ignore', 'pipe', 'pipe']
     }
+  );
 
-    const args = {
-      isPackage: `${electron.app.isPackaged}`,
-      locale: electron.app.getLocale(),
-      userDir: electron.app.getPath('userData'),
-      downloadDir: electron.app.getPath('downloads'),
-      homeDir: electron.app.getPath('home'),
-      shouldUseDarkColors: `${electron.nativeTheme.shouldUseDarkColors}`,
-      version: electron.app.getVersion()
+  const utilLog = log.scope('UTILITY')
+
+  utilityProcess.stdout.on('data', (chunk) => {
+    utilLog.log(chunk.toString())
+  })
+
+  utilityProcess.stderr.on('data', (chunk) => {
+    utilLog.error(chunk.toString())
+  })
+
+  utilityProcess.on('exit', (code) => {
+    // if non zero exit code
+    if (code) {
+      utilityProcess = null;
+      createUtilityProcess();
+
+      createAndSendPorts(false);
     }
-
-    utilityProcess = electron.utilityProcess.fork(
-      path.join(__dirname, 'utility.js'), 
-      [], 
-      {
-        env: { ...process.env, ...args },
-        stdio: ['ignore', 'pipe', 'pipe']
-      }
-    );
-
-    const utilLog = log.scope('UTILITY')
-
-    utilityProcess.stdout.on('data', (chunk) => {
-      utilLog.log(chunk.toString())
-    })
-
-    utilityProcess.stderr.on('data', (chunk) => {
-      utilLog.error(chunk.toString())
-    })
+  })
 }
 
 
@@ -193,9 +203,9 @@ app.on('ready', async () => {
 
 })
 
-ipcMain.on('ready', (_event) => {
+function createAndSendPorts(filter: boolean) {
   getActiveWindows().forEach((w) => {
-    if (newWindows.some((id) => id === w.winId)) {
+    if (!filter || newWindows.includes(w.winId)) {
       const { port1, port2 } = new electron.MessageChannelMain();
       const sId = uuidv4();
       log.info('SENDING PORT TO RENDERER: ', sId)
@@ -204,9 +214,15 @@ ipcMain.on('ready', (_event) => {
       w.onClose((_event: electron.Event) => {
         utilityProcess.postMessage({ type: 'close', sId })
       })
-      newWindows = _.without(newWindows, w.winId);
+      if (filter) {
+        newWindows = _.without(newWindows, w.winId);
+      }
     }
   })
+}
+
+ipcMain.on('ready', (_event) => {
+  createAndSendPorts(true);
 })
 
 // Open a connection from a file (e.g. ./sqlite.db)
