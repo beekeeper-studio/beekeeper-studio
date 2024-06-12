@@ -3,31 +3,31 @@ import { checkConnection, errorMessages, state } from "./handlerState";
 
 
 export interface IQueryHandlers {
-  'query/execute': ({ queryId }: { queryId: string }) => Promise<QueryResult>,
-  'query/cancel': ({ queryId }: { queryId: string }) => Promise<void>
+  'query/execute': ({ queryId, sId }: { queryId: string, sId: string }) => Promise<QueryResult>,
+  'query/cancel': ({ queryId, sId }: { queryId: string, sId: string }) => Promise<void>
 }
 
 export const QueryHandlers: IQueryHandlers = {
-  'query/execute': async function({ queryId }: { queryId: string }) { 
-    checkConnection();
-    const query = state.queries.get(queryId);
+  'query/execute': async function({ queryId, sId }: { queryId: string, sId: string }) { 
+    checkConnection(sId);
+    const query = state(sId).queries.get(queryId);
     if (!query) {
       throw new Error(errorMessages.noQuery);
     }
 
     const result = await query.execute();
     // not totally sure on this
-    state.queries.delete(queryId);
+    state(sId).queries.delete(queryId);
     return result;
   },
-  'query/cancel': async function({ queryId }: { queryId: string }) {
-    checkConnection();
-    const query = state.queries.get(queryId);
+  'query/cancel': async function({ queryId, sId }: { queryId: string, sId: string }) {
+    checkConnection(sId);
+    const query = state(sId).queries.get(queryId);
     if (!query) {
       throw new Error(errorMessages.noQuery);
     }
 
     await query.cancel();
-    state.queries.delete(queryId);
+    state(sId).queries.delete(queryId);
   }
 }

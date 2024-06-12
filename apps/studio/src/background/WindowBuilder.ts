@@ -160,6 +160,10 @@ class BeekeeperWindow {
     return this.win ? this.win.webContents : null
   }
 
+  get winId() {
+    return this.win ? this.win.id : null;
+  }
+
   send(channel: string, ...args: any[]) {
     this.win?.webContents.send(channel, ...args)
   }

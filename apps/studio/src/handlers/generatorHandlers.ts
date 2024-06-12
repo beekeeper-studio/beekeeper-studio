@@ -1,17 +1,16 @@
 import { Schema } from "@shared/lib/dialects/models";
 import { errorMessages, state } from "./handlerState";
 
-
 export interface IGeneratorHandlers {
-  'generator/build': ({ schema }: { schema: Schema }) => Promise<string>
+  'generator/build': ({ schema, sId }: { schema: Schema, sId: string }) => Promise<string>
 }
 
 export const GeneratorHandlers = {
-  'generator/build': async function({ schema }: { schema: Schema }) {
-    if (!state.generator) {
+  'generator/build': async function({ schema, sId }: { schema: Schema, sId: string }) {
+    if (!state(sId).generator) {
       throw new Error(errorMessages.noGenerator);
     }
 
-    return state.generator.buildSql(schema);
+    return state(sId).generator.buildSql(schema);
   }
 }

@@ -10,95 +10,95 @@ import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
-  'conn/create': ({config, osUser}: {config: IConnection, osUser: string}) => Promise<void>,
-  'conn/test': ({ config, osUser }: {config: IConnection, osUser: string}) => Promise<void>,
-  'conn/changeDatabase': ({newDatabase}: {newDatabase: string}) => Promise<void>,
-  'conn/clearConnection': () => Promise<void>,
+  'conn/create': ({ config, osUser, sId }: {config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
+  'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
 
   // DB Metadata ****************************************************************
-  'conn/supportedFeatures': () => Promise<SupportedFeatures>,
-  'conn/versionString': () => Promise<string>,
-  'conn/defaultSchema': () => Promise<string | null>,
-  'conn/listCharsets': () => Promise<string[]>,
-  'conn/getDefaultCharset': () => Promise<string>,
-  'conn/listCollations': ({charset}: {charset: string}) => Promise<string[]>,
+  'conn/supportedFeatures': ({ sId }: { sId: string}) => Promise<SupportedFeatures>,
+  'conn/versionString': ({ sId }: { sId: string}) => Promise<string>,
+  'conn/defaultSchema': ({ sId }: { sId: string}) => Promise<string | null>,
+  'conn/listCharsets': ({ sId }: { sId: string}) => Promise<string[]>,
+  'conn/getDefaultCharset': ({ sId }: { sId: string}) => Promise<string>,
+  'conn/listCollations': ({ charset, sId }: { charset: string, sId: string }) => Promise<string[]>,
 
   
   // Connection *****************************************************************
-  'conn/connect': () => Promise<void>,
-  'conn/disconnect': () => Promise<void>,
+  'conn/connect': ({ sId }: { sId: string}) => Promise<void>,
+  'conn/disconnect': ({ sId }: { sId: string}) => Promise<void>,
 
   
   // List schema information ****************************************************
-  'conn/listTables': ({filter}: {filter?: FilterOptions}) => Promise<TableOrView[]>,
-  'conn/listViews': ({filter}: {filter?: FilterOptions}) => Promise<TableOrView[]>,
-  'conn/listRoutines': ({filter}: {filter?: FilterOptions}) => Promise<Routine[]>,
-  'conn/listMaterializedViewColumns': ({table, schema}: {table: string, schema?: string}) => Promise<TableColumn[]>,
-  'conn/listTableColumns': ({table, schema}: {table: string, schema?: string}) => Promise<ExtendedTableColumn[]>,
-  'conn/listTableTriggers': ({table, schema}: {table: string, schema?: string}) => Promise<TableTrigger[]>,
-  'conn/listTableIndexes': ({table, schema}: {table: string, schema?: string}) => Promise<TableIndex[]>,
-  'conn/listSchemas': ({filter}: {filter?: SchemaFilterOptions}) => Promise<string[]>,
-  'conn/getTableReferences': ({table, schema}: {table: string, schema?: string}) => Promise<string[]>,
-  'conn/getTableKeys': ({table, schema}: {table: string, schema?: string}) => Promise<TableKey[]>,
-  'conn/listTablePartitions': ({table, schema}: {table: string, schema?: string}) => Promise<TablePartition[]>,
-  'conn/query': ({queryText, options}: {queryText: string, options?: any}) => Promise<string>,
-  'conn/executeQuery': ({queryText, options}: {queryText: string, options: any}) => Promise<NgQueryResult[]>,
-  'conn/listDatabases': ({filter}: {filter?: DatabaseFilterOptions}) => Promise<string[]>,
-  'conn/getTableProperties': ({table, schema}: {table: string, schema?: string}) => Promise<TableProperties | null>,
-  'conn/getQuerySelectTop': ({table, limit, schema}: {table: string, limit: number, schema?: string}) => Promise<string>,
-  'conn/listMaterializedViews': ({filter}: {filter?: FilterOptions}) => Promise<TableOrView[]>,
-  'conn/getPrimaryKey': ({table, schema}: {table: string, schema?: string}) => Promise<string | null>,
-  'conn/getPrimaryKeys': ({table, schema}: {table: string, schema?: string}) => Promise<PrimaryKeyColumn[]>,
+  'conn/listTables': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
+  'conn/listViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
+  'conn/listRoutines': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<Routine[]>,
+  'conn/listMaterializedViewColumns': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableColumn[]>,
+  'conn/listTableColumns': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<ExtendedTableColumn[]>,
+  'conn/listTableTriggers': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableTrigger[]>,
+  'conn/listTableIndexes': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableIndex[]>,
+  'conn/listSchemas': ({ filter, sId }: { filter?: SchemaFilterOptions, sId: string }) => Promise<string[]>,
+  'conn/getTableReferences': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
+  'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
+  'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
+  'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
+  'conn/listDatabases': ({ filter, sId }: { filter?: DatabaseFilterOptions, sId: string }) => Promise<string[]>,
+  'conn/getTableProperties': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableProperties | null>,
+  'conn/getQuerySelectTop': ({ table, limit, schema, sId }: { table: string, limit: number, schema?: string, sId: string }) => Promise<string>,
+  'conn/listMaterializedViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
+  'conn/getPrimaryKey': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string | null>,
+  'conn/getPrimaryKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<PrimaryKeyColumn[]>,
 
 
   // Create Structure ***********************************************************
-  'conn/createDatabase': ({databaseName, charset, collation}: {databaseName: string, charset: string, collation: string}) => Promise<void>,
-  'conn/createDatabaseSQL': () => Promise<string>,
-  'conn/getTableCreateScript': ({table, schema}: {table: string, schema?: string}) => Promise<string>,
-  'conn/getViewCreateScript': ({view, schema}: {view: string, schema?: string}) => Promise<string[]>,
-  'conn/getMaterializedViewCreateScript': ({view, schema}: {view: string, schema?: string}) => Promise<string[]>,
-  'conn/getRoutineCreateScript': ({routine, type, schema}: {routine: string, type: string, schema?: string}) => Promise<string[]>,
+  'conn/createDatabase': ({ databaseName, charset, collation, sId }: { databaseName: string, charset: string, collation: string, sId: string }) => Promise<void>,
+  'conn/createDatabaseSQL': ({ sId }: { sId: string }) => Promise<string>,
+  'conn/getTableCreateScript': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string>,
+  'conn/getViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/getMaterializedViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/getRoutineCreateScript': ({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) => Promise<string[]>,
 
 
   // Make Changes ***************************************************************
-  'conn/alterTableSql': ({change}: {change: AlterTableSpec}) => Promise<string>,
-  'conn/alterTable': ({change}: {change: AlterTableSpec}) => Promise<void>,
-  'conn/alterIndexSql': ({changes}: {changes: IndexAlterations}) => Promise<string | null>,
-  'conn/alterIndex': ({changes}: {changes: IndexAlterations}) => Promise<void>,
-  'conn/alterRelationSql': ({changes}: {changes: RelationAlterations}) => Promise<string | null>,
-  'conn/alterRelation': ({changes}: {changes: RelationAlterations}) => Promise<void>,
-  'conn/alterPartitionSql': ({changes}: {changes: AlterPartitionsSpec}) => Promise<string | null>,
-  'conn/alterPartition': ({changes}: {changes: AlterPartitionsSpec}) => Promise<void>,
-  'conn/applyChangesSql': ({changes}: {changes: TableChanges}) => Promise<string>,
-  'conn/applyChanges': ({changes}: {changes: TableChanges}) => Promise<TableUpdateResult[]>,
-  'conn/setTableDescription': ({table, description, schema}: {table: string, description: string, schema?: string}) => Promise<string>,
-  'conn/dropElement': ({elementName, typeOfElement, schema}: {elementName: string, typeOfElement: DatabaseElement, schema?: string}) => Promise<void>,
-  'conn/truncateElement': ({elementName, typeOfElement, schema}: {elementName: string, typeOfElement: DatabaseElement, schema?: string}) => Promise<void>,
-  'conn/truncateAllTables': ({schema}: {schema?: string}) => Promise<void>,
+  'conn/alterTableSql': ({ change, sId }: { change: AlterTableSpec, sId: string }) => Promise<string>,
+  'conn/alterTable': ({ change, sId }: { change: AlterTableSpec, sId: string }) => Promise<void>,
+  'conn/alterIndexSql': ({ changes, sId }: { changes: IndexAlterations, sId: string }) => Promise<string | null>,
+  'conn/alterIndex': ({ changes, sId }: { changes: IndexAlterations, sId: string }) => Promise<void>,
+  'conn/alterRelationSql': ({ changes, sId }: { changes: RelationAlterations, sId: string }) => Promise<string | null>,
+  'conn/alterRelation': ({ changes, sId }: { changes: RelationAlterations, sId: string }) => Promise<void>,
+  'conn/alterPartitionSql': ({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) => Promise<string | null>,
+  'conn/alterPartition': ({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) => Promise<void>,
+  'conn/applyChangesSql': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<string>,
+  'conn/applyChanges': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<TableUpdateResult[]>,
+  'conn/setTableDescription': ({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) => Promise<string>,
+  'conn/dropElement': ({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
+  'conn/truncateElement': ({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
+  'conn/truncateAllTables': ({ schema, sId }: { schema?: string, sId: string }) => Promise<void>,
 
 
   // For TableTable *************************************************************
-  'conn/getTableLength': ({table, schema}: {table: string, schema?: string}) => Promise<number>,
-  'conn/selectTop': ({table, offset, limit, orderBy, filters, schema, selects}: {table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]}) => Promise<TableResult>,
-  'conn/selectTopSql': ({table, offset, limit, orderBy, filters, schema, selects}: {table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]}) => Promise<string>,
-  'conn/selectTopStream': ({table, orderBy, filters, chunkSize, schema}: {table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string}) => Promise<StreamResults>,
+  'conn/getTableLength': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<number>,
+  'conn/selectTop': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<TableResult>,
+  'conn/selectTopSql': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<string>,
+  'conn/selectTopStream': ({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) => Promise<StreamResults>,
 
 
   // For Export *****************************************************************
-  'conn/queryStream': ({query, chunkSize}: {query: string, chunkSize: number}) => Promise<StreamResults>,
+  'conn/queryStream': ({ query, chunkSize, sId }: { query: string, chunkSize: number, sId: string }) => Promise<StreamResults>,
 
 
   // Duplicate Table ************************************************************
-  'conn/duplicateTable': ({tableName, duplicateTableName, schema}: {tableName: string, duplicateTableName: string, schema?: string}) => Promise<void>,
-  'conn/duplicateTableSql': ({tableName, duplicateTableName, schema}: {tableName: string, duplicateTableName: string, schema?: string}) => Promise<string>,
+  'conn/duplicateTable': ({ tableName, duplicateTableName, schema, sId }: { tableName: string, duplicateTableName: string, schema?: string, sId: string }) => Promise<void>,
+  'conn/duplicateTableSql': ({ tableName, duplicateTableName, schema, sId }: { tableName: string, duplicateTableName: string, schema?: string, sId: string }) => Promise<string>,
 
 
-  'conn/getInsertQuery': ({tableInsert}: {tableInsert: TableInsert}) => Promise<string>,
+  'conn/getInsertQuery': ({ tableInsert, sId }: { tableInsert: TableInsert, sId: string }) => Promise<string>,
 }
 
 export const ConnHandlers: IConnectionHandlers = {
   // wtf typescript, this is so fucking ugly
-  'conn/create': async function({ config, osUser }: { config: IConnection, osUser: string}) {
+  'conn/create': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string}) {
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
     }
@@ -110,11 +110,11 @@ export const ConnHandlers: IConnectionHandlers = {
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
 
-    state.server = server;
-    state.usedConfig = config;
-    state.connection = connection;
-    state.database = config.defaultDatabase;
-    state.generator = new SqlGenerator(dialectFor(config.connectionType), {
+    state(sId).server = server;
+    state(sId).usedConfig = config;
+    state(sId).connection = connection;
+    state(sId).database = config.defaultDatabase;
+    state(sId).generator = new SqlGenerator(dialectFor(config.connectionType), {
       dbConfig: connection.server.config,
       dbName: connection.database.database
     });
@@ -132,27 +132,27 @@ export const ConnHandlers: IConnectionHandlers = {
     server.disconnect();
   },
 
-  'conn/changeDatabase': async function({ newDatabase }: { newDatabase: string }) {
-    if (!state.server) {
+  'conn/changeDatabase': async function({ newDatabase, sId }: { newDatabase: string, sId: string }) {
+    if (!state(sId).server) {
       throw new Error(errorMessages.noServer);
     }
 
-    let connection = state.server.db(newDatabase);
+    let connection = state(sId).server.db(newDatabase);
     if (!connection) {
-      connection = state.server.createConnection(newDatabase);
+      connection = state(sId).server.createConnection(newDatabase);
       await connection.connect();
     }
 
-    state.connection = connection;
-    state.database = newDatabase;
+    state(sId).connection = connection;
+    state(sId).database = newDatabase;
   },
 
-  'conn/clearConnection': async function() {
-    state.connection = null;
-    state.server = null;
-    state.usedConfig = null;
-    state.database = null;
-    state.generator = null;
+  'conn/clearConnection': async function({ sId }: { sId: string}) {
+    state(sId).connection = null;
+    state(sId).server = null;
+    state(sId).usedConfig = null;
+    state(sId).database = null;
+    state(sId).generator = null;
   },
 
   // can only be used when the function doesn't have any arguments :sad:
@@ -162,249 +162,249 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/listCharsets': getDriverHandler('listCharsets'),
   'conn/getDefaultCharset': getDriverHandler('getDefaultCharset'),
 
-  'conn/listCollations': async function({ charset }: { charset: string }) {
-    checkConnection();
-    return await state.connection.listCollations(charset);
+  'conn/listCollations': async function({ charset, sId }: { charset: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listCollations(charset);
   },
 
   'conn/connect': getDriverHandler('connect'),
   'conn/disconnect': getDriverHandler('disconnect'),
 
-  'conn/listTables': async function({ filter }: { filter?: FilterOptions }) {
-    checkConnection();
-    return await state.connection.listTables(filter);
+  'conn/listTables': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listTables(filter);
   },
 
-  'conn/listViews': async function({ filter }: { filter?: FilterOptions }) {
-    checkConnection();
-    return await state.connection.listViews(filter);
+  'conn/listViews': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listViews(filter);
   },
 
-  'conn/listRoutines': async function({ filter }: { filter?: FilterOptions }) {
-    checkConnection();
-    return await state.connection.listRoutines(filter);
+  'conn/listRoutines': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listRoutines(filter);
   },
 
-  'conn/listMaterializedViewColumns': async function({ table, schema }: { table: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.listMaterializedViewColumns(table, schema);
+  'conn/listMaterializedViewColumns': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listMaterializedViewColumns(table, schema);
   },
 
-  'conn/listTableColumns': async function({ table, schema}: { table: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.listTableColumns(table, schema);
+  'conn/listTableColumns': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listTableColumns(table, schema);
   },
 
-  'conn/listTableTriggers': async function({ table, schema }: { table: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.listTableTriggers(table, schema);
+  'conn/listTableTriggers': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listTableTriggers(table, schema);
   },
 
-  'conn/listTableIndexes': async function({ table, schema }: { table: string, schema?: string}) {
-    checkConnection();  
-    return await state.connection.listTableIndexes(table, schema);
+  'conn/listTableIndexes': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);  
+    return await state(sId).connection.listTableIndexes(table, schema);
   },
 
-  'conn/listSchemas': async function({ filter }: { filter?: SchemaFilterOptions }) {
-    checkConnection();
-    return await state.connection.listSchemas(filter);
+  'conn/listSchemas': async function({ filter, sId }: { filter?: SchemaFilterOptions, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listSchemas(filter);
   },
 
-  'conn/getTableReferences': async function({ table, schema }: { table: string, schema?: string }) {
-      checkConnection();
-     return await state.connection.getTableReferences(table, schema);
+  'conn/getTableReferences': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+      checkConnection(sId);
+     return await state(sId).connection.getTableReferences(table, schema);
   },
 
-  'conn/getTableKeys': async function({ table, schema }: { table: string, schema?: string}) {
-    checkConnection();
-    return await state.connection.getTableKeys(table, schema);
+  'conn/getTableKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getTableKeys(table, schema);
   },
 
-  'conn/listTablePartitions': async function({ table, schema }: { table: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.listTablePartitions(table, schema);
+  'conn/listTablePartitions': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listTablePartitions(table, schema);
   },
 
-  'conn/query': async function({ queryText, options }: { queryText: string, options?: any }) {
-    checkConnection();
-    const query = await state.connection.query(queryText, options);
+  'conn/query': async function({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) {
+    checkConnection(sId);
+    const query = await state(sId).connection.query(queryText, options);
     const id = uuidv4();
-    state.queries.set(id, query);
+    state(sId).queries.set(id, query);
     return id;
   },
 
-  'conn/executeQuery': async function({ queryText, options }: { queryText: string, options?: any}) {
-    checkConnection();
-    return await state.connection.executeQuery(queryText, options);
+  'conn/executeQuery': async function({ queryText, options, sId }: { queryText: string, options?: any, sId: string}) {
+    checkConnection(sId);
+    return await state(sId).connection.executeQuery(queryText, options);
   },
 
-  'conn/listDatabases': async function({ filter }: { filter?: DatabaseFilterOptions }) {
-    checkConnection();
-    return await state.connection.listDatabases(filter);
+  'conn/listDatabases': async function({ filter, sId }: { filter?: DatabaseFilterOptions, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listDatabases(filter);
   },
 
-  'conn/getTableProperties': async function({ table, schema }: { table: string, schema?: string}) {
-    checkConnection();
-    return await state.connection.getTableProperties(table, schema);
+  'conn/getTableProperties': async function({ table, schema, sId }: { table: string, schema?: string, sId: string}) {
+    checkConnection(sId);
+    return await state(sId).connection.getTableProperties(table, schema);
   },
 
-  'conn/getQuerySelectTop': async function({ table, limit, schema }: { table: string, limit: number, schema?: string }) {
-    checkConnection();
-    return state.connection.getQuerySelectTop(table, limit, schema);
+  'conn/getQuerySelectTop': async function({ table, limit, schema, sId }: { table: string, limit: number, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.getQuerySelectTop(table, limit, schema);
   },
 
-  'conn/listMaterializedViews': async function({ filter }: { filter?: FilterOptions }) {
-    checkConnection();
-    return await state.connection.listMaterializedViews(filter);
+  'conn/listMaterializedViews': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listMaterializedViews(filter);
   },
 
-  'conn/getPrimaryKey': async function({ table, schema }: { table: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.getPrimaryKey(table, schema);
+  'conn/getPrimaryKey': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getPrimaryKey(table, schema);
   },
 
-  'conn/getPrimaryKeys': async function({ table, schema }: { table: string, schema?: string}) {
-    checkConnection();
-    return await state.connection.getPrimaryKeys(table, schema);
+  'conn/getPrimaryKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getPrimaryKeys(table, schema);
   },
 
-  'conn/createDatabase': async function({ databaseName, charset, collation }: { databaseName: string, charset: string, collation: string }) {
-    checkConnection();
-    return await state.connection.createDatabase(databaseName, charset, collation);
+  'conn/createDatabase': async function({ databaseName, charset, collation, sId }: { databaseName: string, charset: string, collation: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.createDatabase(databaseName, charset, collation);
   },
 
-  'conn/createDatabaseSQL': async function() {
-    checkConnection();
-    return state.connection.createDatabaseSQL();
+  'conn/createDatabaseSQL': async function({ sId }: { sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.createDatabaseSQL();
   },
 
-  'conn/getTableCreateScript': async function({ table, schema }: { table: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.getTableCreateScript(table, schema);
+  'conn/getTableCreateScript': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getTableCreateScript(table, schema);
   },
 
-  'conn/getViewCreateScript': async function({ view, schema}: { view: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.getViewCreateScript(view, schema);
+  'conn/getViewCreateScript': async function({ view, schema, sId }: { view: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getViewCreateScript(view, schema);
   },
 
-  'conn/getMaterializedViewCreateScript': async function({ view, schema }: { view: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.getMaterializedViewCreateScript(view, schema);
+  'conn/getMaterializedViewCreateScript': async function({ view, schema, sId }: { view: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getMaterializedViewCreateScript(view, schema);
   },
 
-  'conn/getRoutineCreateScript': async function({ routine, type, schema }: { routine: string, type: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.getRoutineCreateScript(routine, type, schema);
+  'conn/getRoutineCreateScript': async function({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getRoutineCreateScript(routine, type, schema);
   },
 
-  'conn/alterTableSql': async function({ change }: { change: AlterTableSpec }) {
-    checkConnection();
-    return await state.connection.alterTableSql(change);
+  'conn/alterTableSql': async function({ change, sId }: { change: AlterTableSpec, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.alterTableSql(change);
   },
 
-  'conn/alterTable': async function({ change }: { change: AlterTableSpec }) {
-    checkConnection();
-    return await state.connection.alterTable(change);
+  'conn/alterTable': async function({ change, sId }: { change: AlterTableSpec, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.alterTable(change);
   },
 
-  'conn/alterIndexSql': async function({ changes }: { changes: IndexAlterations }) {
-    checkConnection();
-    return state.connection.alterIndexSql(changes);
+  'conn/alterIndexSql': async function({ changes, sId }: { changes: IndexAlterations, sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.alterIndexSql(changes);
   },
 
-  'conn/alterIndex': async function({ changes }: { changes: IndexAlterations }) {
-    checkConnection();
-    return await state.connection.alterIndex(changes);
+  'conn/alterIndex': async function({ changes, sId }: { changes: IndexAlterations, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.alterIndex(changes);
   },
 
-  'conn/alterRelationSql': async function ({ changes }: { changes: RelationAlterations }) {
-    checkConnection();
-    return state.connection.alterRelationSql(changes);
+  'conn/alterRelationSql': async function ({ changes, sId }: { changes: RelationAlterations, sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.alterRelationSql(changes);
   },
 
-  'conn/alterRelation': async function({ changes }: { changes: RelationAlterations }) {
-    checkConnection();
-    return await state.connection.alterRelation(changes);
+  'conn/alterRelation': async function({ changes, sId }: { changes: RelationAlterations, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.alterRelation(changes);
   },
 
-  'conn/alterPartitionSql': async function({ changes }: { changes: AlterPartitionsSpec}){
-    checkConnection();
-    return state.connection.alterPartitionSql(changes);
+  'conn/alterPartitionSql': async function({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }){
+    checkConnection(sId);
+    return state(sId).connection.alterPartitionSql(changes);
   },
 
-  'conn/alterPartition': async function({ changes }: { changes: AlterPartitionsSpec }) {
-    checkConnection();
-    return await state.connection.alterPartition(changes);
+  'conn/alterPartition': async function({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.alterPartition(changes);
   },
 
-  'conn/applyChangesSql': async function({ changes }: { changes: TableChanges }) {
-    checkConnection();
-    return state.connection.applyChangesSql(changes);
+  'conn/applyChangesSql': async function({ changes, sId }: { changes: TableChanges, sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.applyChangesSql(changes);
   },
 
-  'conn/applyChanges': async function({ changes }: { changes: TableChanges }) {
-    checkConnection();
-    return await state.connection.applyChanges(changes);
+  'conn/applyChanges': async function({ changes, sId }: { changes: TableChanges, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.applyChanges(changes);
   },
 
-  'conn/setTableDescription': async function({ table, description, schema }: { table: string, description: string, schema?: string }) {
-     checkConnection();
-     return await state.connection.setTableDescription(table, description, schema);
+  'conn/setTableDescription': async function({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) {
+     checkConnection(sId);
+     return await state(sId).connection.setTableDescription(table, description, schema);
   },
 
-  'conn/dropElement': async function({ elementName, typeOfElement, schema }: { elementName: string, typeOfElement: DatabaseElement, schema?: string }) {
-    checkConnection();
-    return await state.connection.dropElement(elementName, typeOfElement, schema);
+  'conn/dropElement': async function({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.dropElement(elementName, typeOfElement, schema);
   },
 
-  'conn/truncateElement': async function({ elementName, typeOfElement, schema }: {elementName: string, typeOfElement: DatabaseElement, schema?: string }) {
-    checkConnection();
-    return await state.connection.truncateElement(elementName, typeOfElement, schema);
+  'conn/truncateElement': async function({ elementName, typeOfElement, schema, sId }: {elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.truncateElement(elementName, typeOfElement, schema);
   },
 
-  'conn/truncateAllTables': async function({ schema }: { schema?: string }) {
-    checkConnection();
-    return state.connection.truncateAllTables(schema);
+  'conn/truncateAllTables': async function({ schema, sId }: { schema?: string, sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.truncateAllTables(schema);
   },
 
-  'conn/getTableLength': async function({ table, schema }: { table: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.getTableLength(table, schema);
+  'conn/getTableLength': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getTableLength(table, schema);
   },
 
-  'conn/selectTop': async function({ table, offset, limit, orderBy, filters, schema, selects }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[] }) {
-    checkConnection();
-    return await state.connection.selectTop(table, offset, limit, orderBy, filters, schema, selects);
+  'conn/selectTop': async function({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.selectTop(table, offset, limit, orderBy, filters, schema, selects);
   },
 
-  'conn/selectTopSql': async function({ table, offset, limit, orderBy, filters, schema, selects }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[] }) {
-    checkConnection();
-    return await state.connection.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
+  'conn/selectTopSql': async function({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
   },
 
-  'conn/selectTopStream': async function({ table, orderBy, filters, chunkSize, schema }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string }) {
-    checkConnection();
-    return await state.connection.selectTopStream(table, orderBy, filters, chunkSize, schema);
+  'conn/selectTopStream': async function({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.selectTopStream(table, orderBy, filters, chunkSize, schema);
   },
 
-  'conn/queryStream': async function({ query, chunkSize }: { query: string, chunkSize: number }) {
-    checkConnection();
-    return await state.connection.queryStream(query, chunkSize);
+  'conn/queryStream': async function({ query, chunkSize, sId }: { query: string, chunkSize: number, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.queryStream(query, chunkSize);
   },
 
-  'conn/duplicateTable': async function({ tableName, duplicateTableName, schema }: { tableName: string, duplicateTableName: string, schema?: string }) {
-    checkConnection();
-    return await state.connection.duplicateTable(tableName, duplicateTableName, schema);
+  'conn/duplicateTable': async function({ tableName, duplicateTableName, schema, sId }: { tableName: string, duplicateTableName: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.duplicateTable(tableName, duplicateTableName, schema);
   },
 
-  'conn/duplicateTableSql': async function({ tableName, duplicateTableName, schema }: { tableName: string, duplicateTableName: string, schema?: string }) {
-    checkConnection();
-    return state.connection.duplicateTableSql(tableName, duplicateTableName, schema);
+  'conn/duplicateTableSql': async function({ tableName, duplicateTableName, schema, sId }: { tableName: string, duplicateTableName: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.duplicateTableSql(tableName, duplicateTableName, schema);
   },
 
-  'conn/getInsertQuery': async function({ tableInsert }: { tableInsert: TableInsert }) {
-    checkConnection();
-    return await state.connection.getInsertQuery(tableInsert)
+  'conn/getInsertQuery': async function({ tableInsert, sId }: { tableInsert: TableInsert, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getInsertQuery(tableInsert)
   }
 }

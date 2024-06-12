@@ -10,7 +10,7 @@ export class UtilityConnection {
   private replyHandlers: Map<string, { resolve: any, reject: any }> = new Map();
   private listeners: Array<{type: string, id: string, listener: Listener}> = new Array();
 
-  constructor(private port: MessagePort) {
+  constructor(private port: MessagePort, private sId: string) {
     port.onmessage = (msg) => {
       const { data: msgData } = msg;
       log.info('RECEIVED MESSAGE: ', msgData.type, msgData)
@@ -46,6 +46,7 @@ export class UtilityConnection {
 
   public async send(handlerName: string, args: any): Promise<any> {
     return new Promise<any>((resolve, reject) => {
+      args = { sId: this.sId, ...args };
       const id = uuidv4();
       log.info('SENDING REQUEST FOR NAME, ID: ', handlerName, id)
 

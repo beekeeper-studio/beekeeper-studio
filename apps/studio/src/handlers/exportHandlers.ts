@@ -29,8 +29,8 @@ const ExportClassPicker = {
   'jsonl': JsonLineExporter
 }
 
-function getExporter(id: string): Export {
-  const exporter = state.exports.get(id);
+function getExporter(id: string, sId: string): Export {
+  const exporter = state(sId).exports.get(id);
 
   if (!exporter) {
     throw new Error(errorMessages.noExport);
@@ -40,22 +40,22 @@ function getExporter(id: string): Export {
 }
 
 export interface IExportHandlers {
-  'export/add': ({ options }: { options: StartExportOptions}) => Promise<string>,
-  'export/remove': ({ id }: { id: string }) => Promise<void>,
-  'export/removeInactive': () => Promise<string[]>,
-  'export/status': ({ id }: { id: string }) => Promise<ExportStatus>,
-  'export/error': ({ id }: { id: string }) => Promise<Error>,
-  'export/name': ({ id }: { id: string }) => Promise<string>,
-  'export/start': ({ id }: { id: string }) => Promise<void>,
-  'export/cancel': ({ id }: { id: string }) => Promise<void>
+  'export/add': ({ options, sId }: { options: StartExportOptions, sId: string }) => Promise<string>,
+  'export/remove': ({ id, sId }: { id: string, sId: string }) => Promise<void>,
+  'export/removeInactive': ({ sId }: { sId: string }) => Promise<string[]>,
+  'export/status': ({ id, sId }: { id: string, sId: string }) => Promise<ExportStatus>,
+  'export/error': ({ id, sId }: { id: string, sId: string }) => Promise<Error>,
+  'export/name': ({ id, sId }: { id: string, sId: string }) => Promise<string>,
+  'export/start': ({ id, sId }: { id: string, sId: string }) => Promise<void>,
+  'export/cancel': ({ id, sId }: { id: string, sId: string }) => Promise<void>
 }
 
 export const ExportHandlers: IExportHandlers = {
-  'export/add': async function({ options }: { options: StartExportOptions }) {
-    checkConnection();
+  'export/add': async function({ options, sId }: { options: StartExportOptions, sId: string }) {
+    checkConnection(sId);
     const exporter = new ExportClassPicker[options.exporter](
       options.filePath,
-      state.connection,
+      state(sId).connection,
       options.table,
       options.query,
       options.queryName,
@@ -65,44 +65,42 @@ export const ExportHandlers: IExportHandlers = {
     );
     // maybe just use the id from the export??
     const id = uuidv4();
-    state.exports.set(id, exporter);
+    state(sId).exports.set(id, exporter);
 
     return id;
   },
 
-  'export/remove': async function({ id }: { id: string }) {
-    state.exports.delete(id);
+  'export/remove': async function({ id, sId }: { id: string, sId: string }) {
+    state(sId).exports.delete(id);
   },
 
-  'export/removeInactive': async function() {
-    state.exports = new Map([...state.exports.entries()].filter(([_key, exp]) => exp.status === ExportStatus.Exporting));
-    return [...state.exports.keys()];
+  'export/removeInactive': async function({ sId }: { sId: string}) {
+    state(sId).exports = new Map([...state(sId).exports.entries()].filter(([_key, exp]) => exp.status === ExportStatus.Exporting));
+    return [...state(sId).exports.keys()];
   },
 
-  'export/status': async function({ id }: { id: string }) {
-    const exporter = getExporter(id);
+  'export/status': async function({ id, sId }: { id: string, sId: string }) {
+    const exporter = getExporter(id, sId);
     return exporter.status;
   },
 
-  'export/error': async function({ id }: { id: string }) {
-    const exporter = getExporter(id);
+  'export/error': async function({ id, sId }: { id: string, sId: string }) {
+    const exporter = getExporter(id, sId);
     return exporter.error;
   },
 
-  'export/name': async function({ id }: { id: string }) {
-    const exporter = getExporter(id);
+  'export/name': async function({ id, sId }: { id: string, sId: string }) {
+    const exporter = getExporter(id, sId);
 
     return exporter.table ? exporter.table.name : exporter.queryName;
   },
 
-  'export/start': async function({ id }: { id: string }) {
-    const exporter = getExporter(id);
-
-    // TODO (@day): need to add on progress, send message back to renderer with progress info?
+  'export/start': async function({ id, sId }: { id: string, sId: string }) {
+    const exporter = getExporter(id, sId);
 
     exporter.onProgress((progress) => {
       log.info('onProgress proc')
-      state.port.postMessage({
+      state(sId).port.postMessage({
         type: `onExportProgress/${id}`,
         input: progress
       })
@@ -111,8 +109,8 @@ export const ExportHandlers: IExportHandlers = {
     await exporter.exportToFile()
   },
 
-  'export/cancel': async function({ id }: { id: string }) {
-    const exporter = getExporter(id);
+  'export/cancel': async function({ id, sId }: { id: string, sId: string }) {
+    const exporter = getExporter(id, sId);
 
     return exporter.abort();
   }

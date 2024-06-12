@@ -6,6 +6,7 @@ import { app, protocol } from 'electron'
 import log from 'electron-log'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
+import _ from 'lodash'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
@@ -24,6 +25,7 @@ import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
 import { ProtocolBuilder } from './background/lib/electron/ProtocolBuilder';
+import { uuidv4 } from './lib/uuid';
 
 
 function initUserDirectory(d: string) {
@@ -33,7 +35,8 @@ function initUserDirectory(d: string) {
 }
 
 let utilityProcess: Electron.UtilityProcess
-let rendPort: electron.MessagePortMain;
+// don't need this
+let newWindows: number[] = new Array();
 
 function createUtilityProcess() {
     if (utilityProcess) {
@@ -68,10 +71,6 @@ function createUtilityProcess() {
     utilityProcess.stderr.on('data', (chunk) => {
       utilLog.error(chunk.toString())
     })
-
-    const { port1, port2 } = new electron.MessageChannelMain();
-    utilityProcess.postMessage(null, [port1])
-    rendPort = port2;
 }
 
 
@@ -150,8 +149,16 @@ app.on('activate', async (_event, hasVisibleWindows) => {
     if (!settings) throw "No settings initialized!"
     buildWindow(settings)
 
+    // NOTE (@day): we should only be calling this once. make a decision
     createUtilityProcess()
   }
+})
+
+// for sending ports to new windows
+app.on('browser-window-created', (event: electron.Event, window: electron.BrowserWindow) => {
+  log.log('window created!!!', event, window);
+
+  newWindows.push(window.id);
 })
 
 // This method will be called when Electron has finished
@@ -179,6 +186,7 @@ app.on('ready', async () => {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
       await buildWindow(settings)
+      // NOTE (@day): we should only be calling this once. make a decision
       createUtilityProcess()
     }
   }
@@ -187,8 +195,14 @@ app.on('ready', async () => {
 
 ipcMain.on('ready', (_event) => {
   getActiveWindows().forEach((w) => {
-    log.info('SENDING PORT TO RENDERER')
-    w.webContents.postMessage('port', null, [rendPort]);
+    if (newWindows.some((id) => id === w.winId)) {
+      const { port1, port2 } = new electron.MessageChannelMain();
+      const sId = uuidv4();
+      log.info('SENDING PORT TO RENDERER: ', sId)
+      utilityProcess.postMessage({ sId }, [port1]);
+      w.webContents.postMessage('port', { sId }, [port2]);
+      newWindows = _.without(newWindows, w.winId);
+    }
   })
 })
 

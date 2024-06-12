@@ -18,13 +18,10 @@ class State {
   exports: Map<string, Export> = new Map();
 }
 
-// TODO (@day): remove this
-export const state = new State();
-
-export const states = new Map<string, State>();
+const states = new Map<string, State>();
 
 // I kinda hate this tbh. modifying could be scary
-export function state_new(id: string): State {
+export function state(id: string): State {
   return states.get(id);
 }
 
@@ -42,13 +39,13 @@ export const errorMessages = {
 };
 
 export function getDriverHandler(name: string) {
-  return async function(): Promise<any> {
-    return await state.connection[name]();
+  return async function({sId }: { sId: string }): Promise<any> {
+    return await state(sId).connection[name]();
   }
 }
 
-export function checkConnection() {
-  if (!state.connection) {
+export function checkConnection(sId: string) {
+  if (!state(sId).connection) {
     throw new Error(errorMessages.noDatabase);
   }
 }
