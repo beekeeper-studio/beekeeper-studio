@@ -7,8 +7,14 @@ import path from "path";
 import fs from "fs";
 import { LibSQLClient } from "@/lib/db/clients/libsql";
 import { createServer } from "@/lib/db";
+import knex from "knex";
+import Client_Libsql from "@libsql/knex-libsql";
+import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
+
+const timeoutDefault = 5000
 
 const TEST_VERSIONS = [
+  { mode: "memory", readOnly: false },
   { mode: "file", readOnly: false },
   { mode: "file", readOnly: true },
   { mode: "remote", readOnly: true },
@@ -19,6 +25,8 @@ const TEST_VERSIONS = [
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
   describe(`LibSQL [${options.mode} - read-only mode? ${options.readOnly}]`, () => {
+    jest.setTimeout(dbtimeout)
+
     if (options.mode === "replica") {
       testReplica(options.readOnly);
       return;
@@ -30,6 +38,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
 
     beforeAll(async () => {
       let dbPath: string;
+      let knexFilename: string;
       const utilOptions: Options = { dialect: "sqlite" };
       const config = {
         client: "libsql",
@@ -40,6 +49,10 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       if (options.mode === "file") {
         dbfile = tmp.fileSync();
         dbPath = dbfile.name;
+        knexFilename = `file:${dbPath}`;
+      } else if (options.mode === "memory") {
+        dbPath = ":memory:";
+        knexFilename = ":memory:";
       } else {
         container = await new GenericContainer(
           "ghcr.io/tursodatabase/libsql-server:latest"
@@ -48,12 +61,27 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           .withExposedPorts(8080)
           .withStartupTimeout(dbtimeout)
           .start();
+        jest.setTimeout(timeoutDefault)
         const host = container.getHost();
         const port = container.getMappedPort(8080);
         dbPath = `http://${host}:${port}`;
+        knexFilename = dbPath;
         // creating database on remote server is not supported
         utilOptions.skipCreateDatabase = true;
       }
+
+      utilOptions.knex = knex({
+        client:
+          options.mode !== "memory"
+            ? (Client_Libsql as any)
+            : class extends Client_BetterSQLite3 {
+                async acquireRawConnection() {
+                  // @ts-expect-error not fully typed
+                  return util.connection._rawConnection;
+                }
+              },
+        connection: { filename: knexFilename },
+      });
 
       util = new DBTestUtil(config, dbPath, utilOptions);
       util.extraTables = 1;
@@ -136,16 +164,24 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       });
 
       it("Should apply changes to boolean values correctly", async () => {
+        function n(value) {
+          if (options.mode === "memory") {
+            return BigInt(value);
+          } else {
+            return value;
+          }
+        }
+
         const updates = [
-          { id: 1, expect: false, toBe: 0 },
-          { id: 2, expect: true, toBe: 1 },
-          { id: 3, expect: null, toBe: null },
+          { id: n(1), expect: false, toBe: n(0) },
+          { id: n(2), expect: true, toBe: n(1) },
+          { id: n(3), expect: null, toBe: null },
         ];
 
         const inserts = [
-          { id: 4, expect: false, toBe: 0 },
-          { id: 5, expect: true, toBe: 1 },
-          { id: 6, expect: null, toBe: null },
+          { id: n(4), expect: false, toBe: n(0) },
+          { id: n(5), expect: true, toBe: n(1) },
+          { id: n(6), expect: null, toBe: null },
         ];
 
         await expect(
@@ -270,6 +306,7 @@ function testReplica(readOnly = false) {
       .withExposedPorts(8080)
       .withStartupTimeout(dbtimeout)
       .start();
+    jest.setTimeout(timeoutDefault)
 
     const host = container.getHost();
     const port = container.getMappedPort(8080);
