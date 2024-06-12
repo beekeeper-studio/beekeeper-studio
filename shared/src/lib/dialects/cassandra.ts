@@ -60,11 +60,15 @@ export const CassandraData: DialectData = {
   },
   usesOffsetPagination: false,
   requireDataset: false,
+  textEditorMode: "text/x-cassandra",
   disabledFeatures: {
     defaultValue: true,
     alter: {
       alterColumn: true,
-      multiStatement: true
+      multiStatement: true,
+      renameSchema: true,
+      renameTable: true,
+      renameView: true,
     },
     triggers: true,
     relations: true,

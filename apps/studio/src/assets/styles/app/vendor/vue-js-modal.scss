@@ -213,7 +213,7 @@
      font-size: 0.8rem;
    }
   }
-  .btn {
+  :not(x-buttons) .btn, x-buttons {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }
