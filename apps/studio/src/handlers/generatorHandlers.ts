@@ -6,13 +6,12 @@ export interface IGeneratorHandlers {
   'generator/build': ({ schema }: { schema: Schema }) => Promise<string>
 }
 
-export let generatorHandlers = {} as unknown as IGeneratorHandlers;
+export const GeneratorHandlers = {
+  'generator/build': async function({ schema }: { schema: Schema }) {
+    if (!state.generator) {
+      throw new Error(errorMessages.noGenerator);
+    }
 
-
-generatorHandlers['generator/build'] = async function({ schema }: { schema: Schema }) {
-  if (!state.generator) {
-    throw new Error(errorMessages.noGenerator);
+    return state.generator.buildSql(schema);
   }
-
-  return state.generator.buildSql(schema);
 }

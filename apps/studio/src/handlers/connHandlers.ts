@@ -12,7 +12,7 @@ export interface IConnectionHandlers {
   // Connection management from the store **************************************
   'conn/create': ({config, osUser}: {config: IConnection, osUser: string}) => Promise<void>,
   'conn/test': ({ config, osUser }: {config: IConnection, osUser: string}) => Promise<void>,
-  'conn/changeDatbase': ({newDatabase}: {newDatabase: string}) => Promise<void>,
+  'conn/changeDatabase': ({newDatabase}: {newDatabase: string}) => Promise<void>,
   'conn/clearConnection': () => Promise<void>,
 
   // DB Metadata ****************************************************************
@@ -96,315 +96,315 @@ export interface IConnectionHandlers {
   'conn/getInsertQuery': ({tableInsert}: {tableInsert: TableInsert}) => Promise<string>,
 }
 
+export const ConnHandlers: IConnectionHandlers = {
+  // wtf typescript, this is so fucking ugly
+  'conn/create': async function({ config, osUser }: { config: IConnection, osUser: string}) {
+    if (!osUser) {
+      throw new Error(errorMessages.noUsername);
+    }
 
-export const connHandlers = {} as unknown as IConnectionHandlers;
-
-// wtf typescript, this is so fucking ugly
-connHandlers['conn/create'] = async function({ config, osUser }: { config: IConnection, osUser: string}) {
-  if (!osUser) {
-    throw new Error(errorMessages.noUsername);
-  }
-
-  const settings = await UserSetting.all();
-  const server = ConnectionProvider.for(config, osUser, settings);
-  const connection = server.createConnection(config.defaultDatabase || undefined);
-  await connection.connect();
-  // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
-  connection.connectionType = config.connectionType ?? (config as any)._connectionType;
-
-  state.server = server;
-  state.usedConfig = config;
-  state.connection = connection;
-  state.database = config.defaultDatabase;
-  state.generator = new SqlGenerator(dialectFor(config.connectionType), {
-    dbConfig: connection.server.config,
-    dbName: connection.database.database
-  });
-}
-
-connHandlers['conn/test'] = async function({ config, osUser }: { config: IConnection, osUser: string }) {
-  // TODO (matthew): fix this mess.
-  if (!osUser) {
-    throw new Error(errorMessages.noUsername);
-  }
-
-  const settings = await UserSetting.all();
-  const server = ConnectionProvider.for(config, osUser, settings);
-  await server?.createConnection(config.defaultDatabase || undefined).connect();
-  server.disconnect();
-}
-
-connHandlers['conn/changeDatabase'] = async function({ newDatabase }: { newDatabase: string }) {
-  if (!state.server) {
-    throw new Error(errorMessages.noServer);
-  }
-
-  let connection = state.server.db(newDatabase);
-  if (!connection) {
-    connection = state.server.createConnection(newDatabase);
+    const settings = await UserSetting.all();
+    const server = ConnectionProvider.for(config, osUser, settings);
+    const connection = server.createConnection(config.defaultDatabase || undefined);
     await connection.connect();
-  }
+    // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
+    connection.connectionType = config.connectionType ?? (config as any)._connectionType;
 
-  state.connection = connection;
-  state.database = newDatabase;
-}
+    state.server = server;
+    state.usedConfig = config;
+    state.connection = connection;
+    state.database = config.defaultDatabase;
+    state.generator = new SqlGenerator(dialectFor(config.connectionType), {
+      dbConfig: connection.server.config,
+      dbName: connection.database.database
+    });
+  },
 
-connHandlers['conn/clearConnection'] = async function() {
-  state.connection = null;
-  state.server = null;
-  state.usedConfig = null;
-  state.database = null;
-  state.generator = null;
-}
+  'conn/test': async function({ config, osUser }: { config: IConnection, osUser: string }) {
+    // TODO (matthew): fix this mess.
+    if (!osUser) {
+      throw new Error(errorMessages.noUsername);
+    }
 
-// can only be used when the function doesn't have any arguments :sad:
-connHandlers['conn/supportedFeatures'] = getDriverHandler('supportedFeatures');
-connHandlers['conn/versionString'] = getDriverHandler('versionString');
-connHandlers['conn/defaultSchema'] = getDriverHandler('defaultSchema');
-connHandlers['conn/listCharsets'] = getDriverHandler('listCharsets');
-connHandlers['conn/getDefaultCharset'] = getDriverHandler('getDefaultCharset');
-// TODO (@day): this needs to change lol
-connHandlers['conn/listCollations'] = getDriverHandler('listCollations');
+    const settings = await UserSetting.all();
+    const server = ConnectionProvider.for(config, osUser, settings);
+    await server?.createConnection(config.defaultDatabase || undefined).connect();
+    server.disconnect();
+  },
 
-connHandlers['conn/connect'] = getDriverHandler('connect');
-connHandlers['conn/disconnect'] = getDriverHandler('disconnect');
+  'conn/changeDatabase': async function({ newDatabase }: { newDatabase: string }) {
+    if (!state.server) {
+      throw new Error(errorMessages.noServer);
+    }
 
-connHandlers['conn/listTables'] = async function({ filter }: { filter?: FilterOptions }) {
-  checkConnection();
-  return await state.connection.listTables(filter);
-}
+    let connection = state.server.db(newDatabase);
+    if (!connection) {
+      connection = state.server.createConnection(newDatabase);
+      await connection.connect();
+    }
 
-connHandlers['conn/listViews'] = async function({ filter }: { filter?: FilterOptions }) {
-  checkConnection();
-  return await state.connection.listViews(filter);
-}
+    state.connection = connection;
+    state.database = newDatabase;
+  },
 
-connHandlers['conn/listRoutines'] = async function({ filter }: { filter?: FilterOptions }) {
-  checkConnection();
-  return await state.connection.listRoutines(filter);
-}
+  'conn/clearConnection': async function() {
+    state.connection = null;
+    state.server = null;
+    state.usedConfig = null;
+    state.database = null;
+    state.generator = null;
+  },
 
-connHandlers['conn/listMaterializedViewColumns'] = async function({ table, schema }: { table: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.listMaterializedViewColumns(table, schema);
-}
+  // can only be used when the function doesn't have any arguments :sad:
+  'conn/supportedFeatures': getDriverHandler('supportedFeatures'),
+  'conn/versionString': getDriverHandler('versionString'),
+  'conn/defaultSchema': getDriverHandler('defaultSchema'),
+  'conn/listCharsets': getDriverHandler('listCharsets'),
+  'conn/getDefaultCharset': getDriverHandler('getDefaultCharset'),
 
-connHandlers['conn/listTableColumns'] = async function({ table, schema}: { table: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.listTableColumns(table, schema);
-}
-
-connHandlers['conn/listTableTriggers'] = async function({ table, schema }: { table: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.listTableTriggers(table, schema);
-}
-
-connHandlers['conn/listTableIndexes'] = async function({ table, schema }: { table: string, schema?: string}) {
-  checkConnection();  
-  return await state.connection.listTableIndexes(table, schema);
-}
-
-connHandlers['conn/listSchemas'] = async function({ filter }: { filter?: SchemaFilterOptions }) {
-  checkConnection();
-  return await state.connection.listSchemas(filter);
-}
-
-connHandlers['conn/getTableReferences'] = async function({ table, schema }: { table: string, schema?: string }) {
+  'conn/listCollations': async function({ charset }: { charset: string }) {
     checkConnection();
-   return await state.connection.getTableReferences(table, schema);
-}
+    return await state.connection.listCollations(charset);
+  },
 
-connHandlers['conn/getTableKeys'] = async function({ table, schema }: { table: string, schema?: string}) {
-  checkConnection();
-  return await state.connection.getTableKeys(table, schema);
-}
+  'conn/connect': getDriverHandler('connect'),
+  'conn/disconnect': getDriverHandler('disconnect'),
 
-connHandlers['conn/listTablePartitions'] = async function({ table, schema }: { table: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.listTablePartitions(table, schema);
-}
+  'conn/listTables': async function({ filter }: { filter?: FilterOptions }) {
+    checkConnection();
+    return await state.connection.listTables(filter);
+  },
 
-// TODO (@day): this probably doesn't work lol, may need to have queries store in a map/array with ids for each query
-// that we return to the renderer, then they can call query/execute and query/cancel with the id
-connHandlers['conn/query'] = async function({ queryText, options }: { queryText: string, options?: any }) {
-  checkConnection();
-  const query = state.connection.query(queryText, options);
-  const id = uuidv4();
-  state.queries.set(id, query);
-  return id;
-}
+  'conn/listViews': async function({ filter }: { filter?: FilterOptions }) {
+    checkConnection();
+    return await state.connection.listViews(filter);
+  },
 
-connHandlers['conn/executeQuery'] = async function({ queryText, options }: { queryText: string, options?: any}) {
-  checkConnection();
-  return await state.connection.executeQuery(queryText, options);
-}
+  'conn/listRoutines': async function({ filter }: { filter?: FilterOptions }) {
+    checkConnection();
+    return await state.connection.listRoutines(filter);
+  },
 
-connHandlers['conn/listDatabases'] = async function({ filter }: { filter?: DatabaseFilterOptions }) {
-  checkConnection();
-  return await state.connection.listDatabases(filter);
-}
+  'conn/listMaterializedViewColumns': async function({ table, schema }: { table: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.listMaterializedViewColumns(table, schema);
+  },
 
-connHandlers['conn/getTableProperties'] = async function({ table, schema }: { table: string, schema?: string}) {
-  checkConnection();
-  return await state.connection.getTableProperties(table, schema);
-}
+  'conn/listTableColumns': async function({ table, schema}: { table: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.listTableColumns(table, schema);
+  },
 
-connHandlers['conn/getQuerySelectTop'] = async function({ table, limit, schema }: { table: string, limit: number, schema?: string }) {
-  checkConnection();
-  return state.connection.getQuerySelectTop(table, limit, schema);
-}
+  'conn/listTableTriggers': async function({ table, schema }: { table: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.listTableTriggers(table, schema);
+  },
 
-connHandlers['conn/listMaterializedViews'] = async function({ filter }: { filter?: FilterOptions }) {
-  checkConnection();
-  return await state.connection.listMaterializedViews(filter);
-}
+  'conn/listTableIndexes': async function({ table, schema }: { table: string, schema?: string}) {
+    checkConnection();  
+    return await state.connection.listTableIndexes(table, schema);
+  },
 
-connHandlers['conn/getPrimaryKey'] = async function({ table, schema }: { table: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.getPrimaryKey(table, schema);
-}
+  'conn/listSchemas': async function({ filter }: { filter?: SchemaFilterOptions }) {
+    checkConnection();
+    return await state.connection.listSchemas(filter);
+  },
 
-connHandlers['conn/getPrimaryKeys'] = async function({ table, schema }: { table: string, schema?: string}) {
-  checkConnection();
-  return await state.connection.getPrimaryKeys(table, schema);
-}
+  'conn/getTableReferences': async function({ table, schema }: { table: string, schema?: string }) {
+      checkConnection();
+     return await state.connection.getTableReferences(table, schema);
+  },
 
-connHandlers['conn/createDatabase'] = async function({ databaseName, charset, collation }: { databaseName: string, charset: string, collation: string }) {
-  checkConnection();
-  return await state.connection.createDatabase(databaseName, charset, collation);
-}
+  'conn/getTableKeys': async function({ table, schema }: { table: string, schema?: string}) {
+    checkConnection();
+    return await state.connection.getTableKeys(table, schema);
+  },
 
-connHandlers['conn/createDatabaseSQL'] = async function() {
-  checkConnection();
-  return state.connection.createDatabaseSQL();
-}
+  'conn/listTablePartitions': async function({ table, schema }: { table: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.listTablePartitions(table, schema);
+  },
 
-connHandlers['conn/getTableCreateScript'] = async function({ table, schema }: { table: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.getTableCreateScript(table, schema);
-}
+  'conn/query': async function({ queryText, options }: { queryText: string, options?: any }) {
+    checkConnection();
+    const query = await state.connection.query(queryText, options);
+    const id = uuidv4();
+    state.queries.set(id, query);
+    return id;
+  },
 
-connHandlers['conn/getViewCreateScript'] = async function({ view, schema}: { view: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.getViewCreateScript(view, schema);
-}
+  'conn/executeQuery': async function({ queryText, options }: { queryText: string, options?: any}) {
+    checkConnection();
+    return await state.connection.executeQuery(queryText, options);
+  },
 
-connHandlers['conn/getMaterializedViewCreateScript'] = async function({ view, schema }: { view: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.getMaterializedViewCreateScript(view, schema);
-}
+  'conn/listDatabases': async function({ filter }: { filter?: DatabaseFilterOptions }) {
+    checkConnection();
+    return await state.connection.listDatabases(filter);
+  },
 
-connHandlers['conn/getRoutineCreateScript'] = async function({ routine, type, schema }: { routine: string, type: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.getRoutineCreateScript(routine, type, schema);
-}
+  'conn/getTableProperties': async function({ table, schema }: { table: string, schema?: string}) {
+    checkConnection();
+    return await state.connection.getTableProperties(table, schema);
+  },
 
-connHandlers['conn/alterTableSql'] = async function({ change }: { change: AlterTableSpec }) {
-  checkConnection();
-  return await state.connection.alterTableSql(change);
-}
+  'conn/getQuerySelectTop': async function({ table, limit, schema }: { table: string, limit: number, schema?: string }) {
+    checkConnection();
+    return state.connection.getQuerySelectTop(table, limit, schema);
+  },
 
-connHandlers['conn/alterTable'] = async function({ change }: { change: AlterTableSpec }) {
-  checkConnection();
-  return await state.connection.alterTable(change);
-}
+  'conn/listMaterializedViews': async function({ filter }: { filter?: FilterOptions }) {
+    checkConnection();
+    return await state.connection.listMaterializedViews(filter);
+  },
 
-connHandlers['conn/alterIndexSql'] = async function({ changes }: { changes: IndexAlterations }) {
-  checkConnection();
-  return state.connection.alterIndexSql(changes);
-}
+  'conn/getPrimaryKey': async function({ table, schema }: { table: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.getPrimaryKey(table, schema);
+  },
 
-connHandlers['conn/alterIndex'] = async function({ changes }: { changes: IndexAlterations }) {
-  checkConnection();
-  return await state.connection.alterIndex(changes);
-}
+  'conn/getPrimaryKeys': async function({ table, schema }: { table: string, schema?: string}) {
+    checkConnection();
+    return await state.connection.getPrimaryKeys(table, schema);
+  },
 
-connHandlers['conn/alterRelationSql'] = async function ({ changes }: { changes: RelationAlterations }) {
-  checkConnection();
-  return state.connection.alterRelationSql(changes);
-}
+  'conn/createDatabase': async function({ databaseName, charset, collation }: { databaseName: string, charset: string, collation: string }) {
+    checkConnection();
+    return await state.connection.createDatabase(databaseName, charset, collation);
+  },
 
-connHandlers['conn/alterRelation'] = async function({ changes }: { changes: RelationAlterations }) {
-  checkConnection();
-  return await state.connection.alterRelation(changes);
-}
+  'conn/createDatabaseSQL': async function() {
+    checkConnection();
+    return state.connection.createDatabaseSQL();
+  },
 
-connHandlers['conn/alterPartitionSql'] = async function({ changes }: { changes: AlterPartitionsSpec}){
-  checkConnection();
-  return state.connection.alterPartitionSql(changes);
-}
+  'conn/getTableCreateScript': async function({ table, schema }: { table: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.getTableCreateScript(table, schema);
+  },
 
-connHandlers['conn/alterPartition'] = async function({ changes }: { changes: AlterPartitionsSpec }) {
-  checkConnection();
-  return await state.connection.alterPartition(changes);
-}
+  'conn/getViewCreateScript': async function({ view, schema}: { view: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.getViewCreateScript(view, schema);
+  },
 
-connHandlers['conn/applyChangesSql'] = async function({ changes }: { changes: TableChanges }) {
-  checkConnection();
-  return state.connection.applyChangesSql(changes);
-}
+  'conn/getMaterializedViewCreateScript': async function({ view, schema }: { view: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.getMaterializedViewCreateScript(view, schema);
+  },
 
-connHandlers['conn/applyChanges'] = async function({ changes }: { changes: TableChanges }) {
-  checkConnection();
-  return await state.connection.applyChanges(changes);
-}
+  'conn/getRoutineCreateScript': async function({ routine, type, schema }: { routine: string, type: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.getRoutineCreateScript(routine, type, schema);
+  },
 
-connHandlers['conn/setTableDescription'] = async function({ table, description, schema }: { table: string, description: string, schema?: string }) {
-   checkConnection();
-   return await state.connection.setTableDescription(table, description, schema);
-}
+  'conn/alterTableSql': async function({ change }: { change: AlterTableSpec }) {
+    checkConnection();
+    return await state.connection.alterTableSql(change);
+  },
 
-connHandlers['conn/dropElement'] = async function({ elementName, typeOfElement, schema }: { elementName: string, typeOfElement: DatabaseElement, schema?: string }) {
-  checkConnection();
-  return await state.connection.dropElement(elementName, typeOfElement, schema);
-}
+  'conn/alterTable': async function({ change }: { change: AlterTableSpec }) {
+    checkConnection();
+    return await state.connection.alterTable(change);
+  },
 
-connHandlers['conn/truncateElement'] = async function({ elementName, typeOfElement, schema }: {elementName: string, typeOfElement: DatabaseElement, schema?: string }) {
-  checkConnection();
-  return await state.connection.truncateElement(elementName, typeOfElement, schema);
-}
+  'conn/alterIndexSql': async function({ changes }: { changes: IndexAlterations }) {
+    checkConnection();
+    return state.connection.alterIndexSql(changes);
+  },
 
-connHandlers['conn/truncateAllTables'] = async function({ schema }: { schema?: string }) {
-  checkConnection();
-  return state.connection.truncateAllTables(schema);
-}
+  'conn/alterIndex': async function({ changes }: { changes: IndexAlterations }) {
+    checkConnection();
+    return await state.connection.alterIndex(changes);
+  },
 
-connHandlers['conn/getTableLength'] = async function({ table, schema }: { table: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.getTableLength(table, schema);
-}
+  'conn/alterRelationSql': async function ({ changes }: { changes: RelationAlterations }) {
+    checkConnection();
+    return state.connection.alterRelationSql(changes);
+  },
 
-connHandlers['conn/selectTop'] = async function({ table, offset, limit, orderBy, filters, schema, selects }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[] }) {
-  checkConnection();
-  return await state.connection.selectTop(table, offset, limit, orderBy, filters, schema, selects);
-}
+  'conn/alterRelation': async function({ changes }: { changes: RelationAlterations }) {
+    checkConnection();
+    return await state.connection.alterRelation(changes);
+  },
 
-connHandlers['conn/selectTopSql'] = async function({ table, offset, limit, orderBy, filters, schema, selects }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[] }) {
-  checkConnection();
-  return await state.connection.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
-}
+  'conn/alterPartitionSql': async function({ changes }: { changes: AlterPartitionsSpec}){
+    checkConnection();
+    return state.connection.alterPartitionSql(changes);
+  },
 
-connHandlers['conn/selectTopStream'] = async function({ table, orderBy, filters, chunkSize, schema }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string }) {
-  checkConnection();
-  return await state.connection.selectTopStream(table, orderBy, filters, chunkSize, schema);
-}
+  'conn/alterPartition': async function({ changes }: { changes: AlterPartitionsSpec }) {
+    checkConnection();
+    return await state.connection.alterPartition(changes);
+  },
 
-connHandlers['conn/queryStream'] = async function({ query, chunkSize }: { query: string, chunkSize: number }) {
-  checkConnection();
-  return await state.connection.queryStream(query, chunkSize);
-}
+  'conn/applyChangesSql': async function({ changes }: { changes: TableChanges }) {
+    checkConnection();
+    return state.connection.applyChangesSql(changes);
+  },
 
-connHandlers['conn/duplicateTable'] = async function({ tableName, duplicateTableName, schema }: { tableName: string, duplicateTableName: string, schema?: string }) {
-  checkConnection();
-  return await state.connection.duplicateTable(tableName, duplicateTableName, schema);
-}
+  'conn/applyChanges': async function({ changes }: { changes: TableChanges }) {
+    checkConnection();
+    return await state.connection.applyChanges(changes);
+  },
 
-connHandlers['conn/duplicateTableSql'] = async function({ tableName, duplicateTableName, schema }: { tableName: string, duplicateTableName: string, schema?: string }) {
-  checkConnection();
-  return state.connection.duplicateTableSql(tableName, duplicateTableName, schema);
-}
+  'conn/setTableDescription': async function({ table, description, schema }: { table: string, description: string, schema?: string }) {
+     checkConnection();
+     return await state.connection.setTableDescription(table, description, schema);
+  },
 
-connHandlers['conn/getInsertQuery'] = async function({ tableInsert }: { tableInsert: TableInsert }) {
-  checkConnection();
-  return await state.connection.getInsertQuery(tableInsert)
+  'conn/dropElement': async function({ elementName, typeOfElement, schema }: { elementName: string, typeOfElement: DatabaseElement, schema?: string }) {
+    checkConnection();
+    return await state.connection.dropElement(elementName, typeOfElement, schema);
+  },
+
+  'conn/truncateElement': async function({ elementName, typeOfElement, schema }: {elementName: string, typeOfElement: DatabaseElement, schema?: string }) {
+    checkConnection();
+    return await state.connection.truncateElement(elementName, typeOfElement, schema);
+  },
+
+  'conn/truncateAllTables': async function({ schema }: { schema?: string }) {
+    checkConnection();
+    return state.connection.truncateAllTables(schema);
+  },
+
+  'conn/getTableLength': async function({ table, schema }: { table: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.getTableLength(table, schema);
+  },
+
+  'conn/selectTop': async function({ table, offset, limit, orderBy, filters, schema, selects }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[] }) {
+    checkConnection();
+    return await state.connection.selectTop(table, offset, limit, orderBy, filters, schema, selects);
+  },
+
+  'conn/selectTopSql': async function({ table, offset, limit, orderBy, filters, schema, selects }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[] }) {
+    checkConnection();
+    return await state.connection.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
+  },
+
+  'conn/selectTopStream': async function({ table, orderBy, filters, chunkSize, schema }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string }) {
+    checkConnection();
+    return await state.connection.selectTopStream(table, orderBy, filters, chunkSize, schema);
+  },
+
+  'conn/queryStream': async function({ query, chunkSize }: { query: string, chunkSize: number }) {
+    checkConnection();
+    return await state.connection.queryStream(query, chunkSize);
+  },
+
+  'conn/duplicateTable': async function({ tableName, duplicateTableName, schema }: { tableName: string, duplicateTableName: string, schema?: string }) {
+    checkConnection();
+    return await state.connection.duplicateTable(tableName, duplicateTableName, schema);
+  },
+
+  'conn/duplicateTableSql': async function({ tableName, duplicateTableName, schema }: { tableName: string, duplicateTableName: string, schema?: string }) {
+    checkConnection();
+    return state.connection.duplicateTableSql(tableName, duplicateTableName, schema);
+  },
+
+  'conn/getInsertQuery': async function({ tableInsert }: { tableInsert: TableInsert }) {
+    checkConnection();
+    return await state.connection.getInsertQuery(tableInsert)
+  }
 }

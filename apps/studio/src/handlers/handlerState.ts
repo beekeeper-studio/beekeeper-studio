@@ -18,7 +18,19 @@ class State {
   exports: Map<string, Export> = new Map();
 }
 
+// TODO (@day): remove this
 export const state = new State();
+
+export const states = new Map<string, State>();
+
+// I kinda hate this tbh. modifying could be scary
+export function state_new(id: string): State {
+  return states.get(id);
+}
+
+export function newState(id: string): void {
+  states.set(id, new State());
+}
 
 export const errorMessages = {
   noUsername: 'No username provided',

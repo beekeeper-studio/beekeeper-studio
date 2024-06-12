@@ -1,12 +1,12 @@
 import rawLog from 'electron-log'
 import ORMConnection from './common/appdb/Connection'
 import platformInfo from './common/platform_info';
-import { connHandlers } from './handlers/connHandlers';
-import { exportHandlers } from './handlers/exportHandlers';
-import { generatorHandlers } from './handlers/generatorHandlers';
+import { ConnHandlers } from './handlers/connHandlers';
+import { ExportHandlers } from './handlers/exportHandlers';
+import { GeneratorHandlers } from './handlers/generatorHandlers';
 import { Handlers } from './handlers/handlers';
 import { state } from './handlers/handlerState';
-import { queryHandlers } from './handlers/queryHandlers';
+import { QueryHandlers } from './handlers/queryHandlers';
 
 const log = rawLog.scope('UtilityProcess');
 
@@ -20,10 +20,10 @@ interface Reply {
 }
 
 export let handlers: Handlers = {
-  ...connHandlers,
-  ...queryHandlers,
-  ...generatorHandlers,
-  ...exportHandlers
+  ...ConnHandlers,
+  ...QueryHandlers,
+  ...GeneratorHandlers,
+  ...ExportHandlers
 }; 
 
 process.parentPort.on('message', ({ ports }) => {

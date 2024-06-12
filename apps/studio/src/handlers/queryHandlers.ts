@@ -7,29 +7,27 @@ export interface IQueryHandlers {
   'query/cancel': ({ queryId }: { queryId: string }) => Promise<void>
 }
 
-export let queryHandlers = {} as unknown as IQueryHandlers;
+export const QueryHandlers: IQueryHandlers = {
+  'query/execute': async function({ queryId }: { queryId: string }) { 
+    checkConnection();
+    const query = state.queries.get(queryId);
+    if (!query) {
+      throw new Error(errorMessages.noQuery);
+    }
 
+    const result = await query.execute();
+    // not totally sure on this
+    state.queries.delete(queryId);
+    return result;
+  },
+  'query/cancel': async function({ queryId }: { queryId: string }) {
+    checkConnection();
+    const query = state.queries.get(queryId);
+    if (!query) {
+      throw new Error(errorMessages.noQuery);
+    }
 
-queryHandlers['query/execute'] = async function({ queryId }: { queryId: string }) { 
-  checkConnection();
-  const query = state.queries.get(queryId);
-  if (!query) {
-    throw new Error(errorMessages.noQuery);
+    await query.cancel();
+    state.queries.delete(queryId);
   }
-
-  const result = await query.execute();
-  // not totally sure on this
-  state.queries.delete(queryId);
-  return result;
-}
-
-queryHandlers['query/cancel'] = async function({ queryId }: { queryId: string }) {
-  checkConnection();
-  const query = state.queries.get(queryId);
-  if (!query) {
-    throw new Error(errorMessages.noQuery);
-  }
-
-  await query.cancel();
-  state.queries.delete(queryId);
 }
