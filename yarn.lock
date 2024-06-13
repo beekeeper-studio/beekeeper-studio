@@ -2310,6 +2310,45 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.21.5.tgz#acad351d582d157bb145535db2a6ff53dd514b5c"
   integrity sha512-tQd/1efJuzPC6rCFwEvLtci/xNFcTZknmXs98FYDfGE4wP9ClFV98nyKrzJKVPMhdDnjzLhdUyMX4PsQAPjwIw==
 
+"@esm2cjs/human-signals@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/human-signals/-/human-signals-3.0.1.tgz#87c205899668d3f6c370eb82a7e9b896e2a1efbc"
+  integrity sha512-QZme4eF/PwTpeSbMB4AaWGQ4VSygzE30jI+Oas1NPTtZQAgcHwWVDOQpIW8FUmtzn5Q+2cS7AjnTzbtqtc5P6g==
+
+"@esm2cjs/is-stream@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/is-stream/-/is-stream-3.0.0.tgz#868e24882efdd35cfd6f139332abde30e7b3a946"
+  integrity sha512-qcBscHlJpZFOD5nnmMHkzOrq2xyvsp9fbVreQLS8x2LOs8N3CrNi3fqvFY0GVJR+YSOHscwhG9T5t4Ck7R7QGw==
+
+"@esm2cjs/mimic-fn@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/mimic-fn/-/mimic-fn-4.0.0.tgz#7ac5185e4902638b7ed68f6e2f4f2e4bd14532bb"
+  integrity sha512-LIIAjcpjLr4rcbYmRQ+eRu55Upy/MMB78seIlwqbnyiA+cTa1/pxWnJ1NHJQrw6tx2wMQmlYoJj+wf16NjWH6Q==
+
+"@esm2cjs/npm-run-path@^5.1.1-cjs.0":
+  version "5.1.1-cjs.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/npm-run-path/-/npm-run-path-5.1.1-cjs.0.tgz#bbd9531acee450168f68a535f3df4ff6fff2ee1e"
+  integrity sha512-CWeAIyE8iNSCgP2ItPE8iPgS+lACqgH+MuFRaWOIl2T7hnHqPFfhAJJ/LcLJJ/RMIxNMeenjFMwc91HW7NWr1A==
+  dependencies:
+    "@esm2cjs/path-key" "^4.0.0"
+
+"@esm2cjs/onetime@^6.0.1-cjs.0":
+  version "6.0.1-cjs.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/onetime/-/onetime-6.0.1-cjs.0.tgz#24ed91716f4e1e7daebc416f26357be08b4f8050"
+  integrity sha512-MkZMZSxrSC/6yUuAw6Azc56XOgwHQQIsNDlO/zgFmOcycJBhRwRuc/gdYUUOFNZIh7y+f0JSIxkNdJPFvJ5W0w==
+  dependencies:
+    "@esm2cjs/mimic-fn" "^4.0.0"
+
+"@esm2cjs/path-key@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/path-key/-/path-key-4.0.0.tgz#4c406fe897f9bb880d8619751ce72395867eb9e2"
+  integrity sha512-fKzZ3uIIP4j+7WfyG0MEkomGHL0hUXWCx1kY2Zct3GTdl4pyY+3k5lCUxjgdDa2Ld1BCjMNorXnRHiBP6jW6CQ==
+
+"@esm2cjs/strip-final-newline@^3.0.1-cjs.0":
+  version "3.0.1-cjs.0"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/strip-final-newline/-/strip-final-newline-3.0.1-cjs.0.tgz#79a891eaa0414e4898fc2dc8220583ab7bd4bb0a"
+  integrity sha512-o41riCGPiOEStayoikBCAqwa6igbv9L9rP+k5UCfQ24EJD/wGrdDs/KTNwkHG5JzDK3T60D5dMkWkLKEPy8gjA==
+
 "@gar/promisify@^1.0.1":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@gar/promisify/-/promisify-1.1.3.tgz#555193ab2e3bb3b6adc3d551c9c030d9e860daf6"
@@ -8450,6 +8489,21 @@ execa@^8.0.1:
     onetime "^6.0.0"
     signal-exit "^4.1.0"
     strip-final-newline "^3.0.0"
+
+"execa@npm:@esm2cjs/execa":
+  version "6.1.1-cjs.1"
+  resolved "https://registry.yarnpkg.com/@esm2cjs/execa/-/execa-6.1.1-cjs.1.tgz#e6bdede1ce4a89cfbfe8b2d6f687b674b4149f38"
+  integrity sha512-FHxfnmuDIjY1VS/BLzDkL8EkbcFvi8s6x1nYQ1Nyu0An0n88EJcGhDBcRWLFwt3C3nT7xwI+MwHRH1TZcAFW2w==
+  dependencies:
+    "@esm2cjs/human-signals" "^3.0.1"
+    "@esm2cjs/is-stream" "^3.0.0"
+    "@esm2cjs/npm-run-path" "^5.1.1-cjs.0"
+    "@esm2cjs/onetime" "^6.0.1-cjs.0"
+    "@esm2cjs/strip-final-newline" "^3.0.1-cjs.0"
+    cross-spawn "^7.0.3"
+    get-stream "^6.0.1"
+    merge-stream "^2.0.0"
+    signal-exit "^3.0.7"
 
 exit-on-epipe@~1.0.1:
   version "1.0.1"
