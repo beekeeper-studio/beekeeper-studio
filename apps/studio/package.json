@@ -15,7 +15,7 @@
     "test:e2e": "xvfb-maybe yarn playwright test e2e/*",
     "lint": "eslint",
     "electron:build": "yarn build && yarn electron-builder",
-    "electron:serve": "concurrently vue,esbuild 'vue-devtools' './esbuild.mjs watch'",
+    "electron:serve": "./esbuild.mjs watch",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh"
