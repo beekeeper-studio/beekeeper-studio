@@ -164,6 +164,32 @@ export class DBTestUtil {
     })
   }
 
+  buildImportData(tableName, schemaName) {
+    const data = [
+      {
+        'name': 'biff',
+        'hat': 'beret'
+      },
+      {
+        'name': 'spud',
+        'hat': 'fez'
+      },
+      {
+        'name': 'chuck',
+        'hat': 'barretina'
+      },
+      {
+        'name': 'lou',
+        'hat': 'tricorne'
+      }
+    ]
+    return data.map(d => ({
+      table: tableName,
+      schema: schemaName,
+      data: [d]
+    }))
+  }
+
   /** Format the SQL with the correct dialect */
   fmt(sql: string) {
     return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
