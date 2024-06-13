@@ -24,8 +24,12 @@ if [[ -f $XDG_CONFIG_HOME/bks-flags.conf ]]; then
 fi
 
 
+
 if [ ! -f "$CLONE" ]; then
-  exec "$SCRIPT_DIR/beekeeper-studio-bin" $USER_FLAGS "$@"
+  # FIX https://github.com/beekeeper-studio/beekeeper-studio/issues/2239
+  # Newer Debian & ubuntu boxes don't use this setting anymore, but use apparmor instead
+  # So the default action needs to be to run with --no-sandbox.
+  exec "$SCRIPT_DIR/beekeeper-studio-bin" "--no-sandbox" $USER_FLAGS "$@"
 else
   UNPRIVILEGED_USERNS_ENABLED=$(cat "$CLONE" 2>/dev/null)
   if [[ $UNPRIVILEGED_USERNS_ENABLED == 0 ]]; then

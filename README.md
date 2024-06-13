@@ -17,7 +17,7 @@ We publish binaries for MacOS, Windows, and Linux.
 
 1. **Beekeeper Studio** - The full version of Beekeeper Studio with all features. Buying Beekeeper Studio is also the best way to support the community edition. [Download link](https://beekeeperstudio.io/get)
 
-2. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source. [Download Link]((https://beekeeperstudio.io/get-community)
+2. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source. [Download Link](https://beekeeperstudio.io/get-community)
 
 
 👉 [Compare Beekeeper Studio Editions](https://beekeeperstudio.io/get)

@@ -52,6 +52,7 @@ export interface TableIndex {
   columns: IndexColumn[]
   unique: boolean
   primary: boolean
+  nullsNotDistinct?: boolean // for postgres 15 and above https://www.postgresql.org/about/featurematrix/detail/392/
 }
 
 export interface TableTrigger {
@@ -228,6 +229,7 @@ export interface SupportedFeatures {
   // Some databases support a directory backup format.
   backDirFormat: boolean;
   restore: boolean;
+  indexNullsNotDistinct: boolean; // for postgres 15 and above
 }
 
 export interface FieldDescriptor {

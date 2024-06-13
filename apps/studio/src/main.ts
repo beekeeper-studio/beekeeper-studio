@@ -36,6 +36,7 @@ import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 import { UtilityConnection } from './lib/UtilityConnection'
+import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 
 (async () => {
 
@@ -149,6 +150,7 @@ import { UtilityConnection } from './lib/UtilityConnection'
       theme: 'mint',
       closeWith: ['button', 'click'],
     })
+    Vue.use(VueKeyboardTrapDirectivePlugin)
 
     const app = new Vue({
       render: h => h(App),

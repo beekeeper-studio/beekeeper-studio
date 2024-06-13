@@ -3,6 +3,7 @@
     class="input-group"
   >
     <input
+      :id="inputId"
       type="text"
       class="form-control clickable"
       placeholder="No file selected"
@@ -68,6 +69,10 @@ export default {
     buttonText: {
       type: String,
       default: "Choose File"
+    },
+    inputId: {
+      type: String,
+      default: "file-picker"
     }
   },
   computed: {

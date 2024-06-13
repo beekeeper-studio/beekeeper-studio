@@ -205,6 +205,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           checked: settings.theme.value === 'dark'
         }
       ]
-    }
+    },
+    minimalModeToggle: {
+      id: "minimal-mode-toggle",
+      label: "Toggle Minimal Mode",
+      click: actionHandler.toggleMinimalMode,
+    },
   }
 }

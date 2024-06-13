@@ -1,6 +1,7 @@
 <template>
   <div class="fixed">
     <div class="data-select-wrap">
+      <!-- FIXME: move this comparison to the DialectData -->
       <p
         v-if="this.connectionType === 'sqlite'"
         class="sqlite-db-name"
@@ -17,6 +18,7 @@
         placeholder="Select a database..."
         class="dropdown-search"
       />
+      <!-- FIXME: move this comparison to the DialectData -->
       <a
         v-if="this.connectionType !== 'sqlite'"
         class="refresh"
@@ -40,7 +42,11 @@
         height="auto"
         :scrollable="true"
       >
-        <div class="dialog-content">
+        <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+        <div
+          class="dialog-content"
+          v-kbd-trap="true"
+        >
           <add-database-form
             @databaseCreated="databaseCreated"
             @cancel="$modal.hide('config-add-database')"
@@ -78,6 +84,7 @@
       ...mapState({ connectionType: 'connectionType' }),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
+        // FIXME: move this comparison to the DialectData
         if (this.connectionType.match(/sqlite|firebird/)) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()

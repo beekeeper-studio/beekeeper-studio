@@ -3,6 +3,7 @@ import {
   ColumnComponent,
   MenuObject,
   RangeComponent,
+  Tabulator,
 } from "tabulator-tables";
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
@@ -50,21 +51,7 @@ export const resizeAllColumnsToMatch: ColumnMenuItem = {
 
 export const resizeAllColumnsToFitContent: ColumnMenuItem = {
   label: createMenuItem("Resize all columns to fit content"),
-  action: (_, column) => {
-    try {
-      column.getTable().blockRedraw();
-      const columns = column.getTable().getColumns();
-      columns.forEach((col) => {
-        if (col.getField() !== rowHeaderField) {
-          col.setWidth(true);
-        }
-      });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      column.getTable().restoreRedraw();
-    }
-  },
+  action: (_, column) => resizeAllColumnsToFitContentAction(column.getTable()),
 };
 
 export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
@@ -85,6 +72,21 @@ export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
     }
   },
 };
+
+export function resizeAllColumnsToFitContentAction(table: Tabulator) {
+  try {
+    const columns = table.getColumns();
+    columns.forEach((col) => {
+      if (col.getField() !== rowHeaderField) {
+        col.setWidth(true);
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  } finally {
+    table.restoreRedraw();
+  }
+}
 
 export const commonColumnMenu = [
   sortAscending,

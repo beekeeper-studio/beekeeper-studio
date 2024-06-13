@@ -6,6 +6,7 @@ import { ipcRenderer } from 'electron'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
+import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -26,6 +27,7 @@ import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/ElectronUtilityConnectionClient'
+import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = RawLog.scope('store/index')
 
@@ -61,7 +63,8 @@ export interface State {
   storeInitialized: boolean,
   windowTitle: string,
   defaultSchema: string,
-  versionString: string
+  versionString: string,
+  connError: string
 }
 
 Vue.use(Vuex)
@@ -108,7 +111,8 @@ const store = new Vuex.Store<State>({
     storeInitialized: false,
     windowTitle: 'Beekeeper Studio',
     defaultSchema: null,
-    versionString: null
+    versionString: null,
+    connError: null
   },
 
   getters: {
@@ -194,6 +198,13 @@ const store = new Vuex.Store<State>({
         return _.uniq(state.tables.map((t) => t.schema));
       }
       return []
+    },
+    minimalMode(_state, getters) {
+      return getters['settings/minimalMode']
+    },
+    // TODO (@day): this may need to be removed
+    versionString(state) {
+      return state.server.versionString();
     },
   },
   mutations: {
@@ -339,10 +350,12 @@ const store = new Vuex.Store<State>({
     },
     versionString(state, versionString: string) {
       state.versionString = versionString;
+    },
+    setConnError(state, err: string) {
+      state.connError = err;
     }
   },
   actions: {
-
     async test(context, config: SavedConnection) {
       await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },
@@ -378,6 +391,20 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
+        // create token cache for azure auth
+        // TODO (@day): move this to util
+        if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+          let cache = new TokenCache();
+          cache = await cache.save();
+          config.authId = cache.id;
+          // need to single out saved connections here (this may change when used connections are fixed)
+          if (config.id) {
+            // we do this so any temp configs that the user did aren't saved, just the id
+            const conn = await SavedConnection.findOne(config.id);
+            conn.authId = cache.id;
+            conn.save();
+          }
+        }
         await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
@@ -389,6 +416,7 @@ const store = new Vuex.Store<State>({
         context.commit('versionString', versionString);
         context.commit('newConnection', config)
 
+        context.commit('newConnection', {config: config, server, connection})
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
@@ -396,6 +424,11 @@ const store = new Vuex.Store<State>({
         context.dispatch('updateWindowTitle', config)
       } else {
         throw "No username provided"
+      }
+    },
+    async reconnect(context) {
+      if (context.state.connection) {
+        await context.state.connection.connect();
       }
     },
     async recordUsedConfig(context, config: IConnection) {
@@ -424,15 +457,25 @@ const store = new Vuex.Store<State>({
       context.commit('clearConnection')
       context.dispatch('updateWindowTitle', null)
     },
+    async syncDatabase(context) {
+      // TODO (@day): this needs to be a util call
+      await context.state.connection.syncDatabase();
+    },
     async changeDatabase(context, newDatabase: string) {
       await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase });
       log.info("Pool changing database to", newDatabase)
+      // TODO (@day): move this?!?!?!?
       if (context.state.server) {
         const server = context.state.server
         let connection = server.db(newDatabase)
         if (!connection) {
           connection = server.createConnection(newDatabase)
-          await connection.connect()
+          try {
+            await connection.connect()
+          } catch (e) {
+            server.destroyConnection(newDatabase);
+            throw new Error(`Could not connect to database: ${e.message}`)
+          }
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
@@ -530,6 +573,10 @@ const store = new Vuex.Store<State>({
       context.commit('addPinned', routine)
     },
     async removeUsedConfig(context, config) {
+      if (config.azureAuthOptions?.authId) {
+        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
+        cache.remove();
+      }
       await config.remove()
       context.commit('removeUsedConfig', config)
     },

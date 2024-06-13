@@ -1,16 +1,17 @@
 import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import type { RedshiftOptions, BigQueryOptions, CassandraOptions } from '@/common/appdb/models/saved_connection';
+import type { RedshiftOptions, BigQueryOptions, CassandraOptions, AzureAuthOptions, LibSQLOptions } from '@/common/appdb/models/saved_connection';
 import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb';
+export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
 
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
   "MATERIALIZED-VIEW" = 'MATERIALIZED VIEW',
-  DATABASE = 'DATABASE'
+  DATABASE = 'DATABASE',
+  SCHEMA = 'SCHEMA'
 }
 
 export interface IDbConnectionDatabase {
@@ -58,6 +59,9 @@ export interface IDbConnectionServerConfig {
   redshiftOptions?: RedshiftOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
+  azureAuthOptions?: AzureAuthOptions
+  authId?: number
+  libsqlOptions?: LibSQLOptions
   runtimeExtensions?: string[]
 }
 

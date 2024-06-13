@@ -3,51 +3,55 @@
     class="vue-dialog beekeeper-modal sql-files-import-modal"
     :name="modalName"
   >
-    <div class="dialog-content">
-      <div class="dialog-c-title">
-        Import SQL Files
+    <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+    <div v-kbd-focus="true">
+      <div class="dialog-content">
+        <div class="dialog-c-title">
+          Import SQL Files
+        </div>
+        <a
+          class="close-btn btn btn-fab"
+          href="#"
+          @click.prevent="close"
+        >
+          <i class="material-icons">clear</i>
+        </a>
+        <div class="message">
+          This will make a copy of your .sql files and add them to your Beekeeper
+          Studio saved queries. Any changes to the original .sql files will not be
+          reflected in Beekeeper Studio.
+        </div>
+        <div class="file-picker-wrapper">
+          <file-picker
+            v-model="files"
+            multiple
+            button-text="Choose Files"
+            :options="{
+              filters: [
+                { name: 'SQL files (*.sql)', extensions: ['sql'] },
+                { name: 'All files', extensions: ['*'] },
+              ],
+            }"
+          />
+        </div>
       </div>
-      <span class="close-btn btn btn-fab">
-        <i
-          class="material-icons"
+      <div class="vue-dialog-buttons">
+        <button
+          class="btn btn-flat"
+          type="button"
           @click="close"
-        >clear</i>
-      </span>
-      <div class="message">
-        This will make a copy of your .sql files and add them to your Beekeeper
-        Studio saved queries. Any changes to the original .sql files will not be
-        reflected in Beekeeper Studio.
+        >
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          :disabled="files.length === 0"
+          @click="submit"
+        >
+          Import
+        </button>
       </div>
-      <div class="file-picker-wrapper">
-        <file-picker
-          v-model="files"
-          multiple
-          button-text="Choose Files"
-          :options="{
-            filters: [
-              { name: 'SQL files (*.sql)', extensions: ['sql'] },
-              { name: 'All files', extensions: ['*'] },
-            ],
-          }"
-        />
-      </div>
-    </div>
-    <div class="vue-dialog-buttons">
-      <button
-        class="btn btn-flat"
-        type="button"
-        @click="close"
-      >
-        Cancel
-      </button>
-      <button
-        class="btn btn-primary"
-        type="button"
-        :disabled="files.length === 0"
-        @click="submit"
-      >
-        Import
-      </button>
     </div>
   </modal>
 </template>

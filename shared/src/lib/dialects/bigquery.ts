@@ -16,6 +16,7 @@ export const BigQueryData: DialectData = {
   wrapLiteral: defaultWrapLiteral,
   requireDataset: true,
   unwrapIdentifier: (s) => s,
+  textEditorMode: "text/x-sql",
   disabledFeatures: {
     indexes: true,
     constraints: {

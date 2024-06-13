@@ -24,7 +24,9 @@
           Collaboration tools for your team like cloud storage
         </li>
       </ul>
-      <p class="bottom">Test it out at no cost for 14 days.</p>
+      <p class="bottom">
+        Test it out at no cost for 14 days.
+      </p>
     </div>
     <div class="actions">
       <a

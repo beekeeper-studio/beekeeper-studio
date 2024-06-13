@@ -114,8 +114,8 @@ import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter
 import StatusBar from '../common/StatusBar.vue'
 import Vue from 'vue'
 import _ from 'lodash'
-import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
-import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue';
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
 import rawLog from 'electron-log'
 import { format } from 'sql-formatter'
@@ -194,6 +194,7 @@ export default Vue.extend({
       return (this.properties.indexes || []).map((i: TableIndex) => {
         return {
           ...i,
+          info: i.nullsNotDistinct ? 'NULLS NOT DISTINCT' : undefined,
           columns: i.columns.map((c: IndexColumn) => {
             // In mysql, we can specify the prefix length
             if (this.mysqlTypes(this.connectionType) && !_.isNil(c.prefix)) {
@@ -206,7 +207,7 @@ export default Vue.extend({
     },
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
-      return [
+      const result = [
         {title: 'Id', field: 'id', widthGrow: 0.5},
         {
           title:'Name',
@@ -227,6 +228,12 @@ export default Vue.extend({
           editor: vueEditor(CheckboxEditorVue),
         },
         {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
+        // TODO (@day): fix
+        (
+          this.connection.supportedFeatures().indexNullsNotDistinct
+            ? { title: 'Info', field: 'info' }
+            : null
+        ),
         {
           title: 'Columns',
           field: 'columns',
@@ -243,6 +250,8 @@ export default Vue.extend({
         },
         trashButton(this.removeRow)
       ]
+
+      return result.filter((c) => c !== null)
     }
   },
   methods: {
