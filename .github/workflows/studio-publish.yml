@@ -70,7 +70,9 @@ jobs:
       fail-fast: false
       matrix:
         # macos-13 is Intel, macos-14 is arm (obviously)
-        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
+        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+        # os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
+        os: [macos-13, macos-14 ]
 
     steps:
       - name: Import GPG key
@@ -294,6 +296,7 @@ jobs:
     needs: [release, create_draft_release]
     runs-on: ubuntu-latest
     steps:
+      - run: npm install js-yaml
       - name: Download mac arch yml files
         id: get_files
         uses: actions/github-script@v7
@@ -347,7 +350,8 @@ jobs:
         uses: actions/github-script@7
         with:
           script: |
-            const fs = require('fs')
+            const fs = require('fs');
+            const yaml = require('js-yaml');
             const files = ${{ steps.get_files.outputs.files }};
             const intel = files[0]
             const arm = files[1]
