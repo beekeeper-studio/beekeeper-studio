@@ -2,7 +2,7 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
-// import { ipcRenderer } from 'electron'
+import electron from 'electron';
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
@@ -379,7 +379,7 @@ const store = new Vuex.Store<State>({
         : 'Beekeeper Studio'
 
       context.commit('updateWindowTitle', title)
-      // ipcRenderer.send('setWindowTitle', title)
+      electron.ipcRenderer.send('setWindowTitle', title)
     },
 
     async saveConnection(context, config: IConnection) {

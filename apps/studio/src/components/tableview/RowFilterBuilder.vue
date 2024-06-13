@@ -241,6 +241,7 @@ import { joinFilters, normalizeFilters, createTableFilter, checkEmptyFilters } f
 import { mapGetters, mapState } from "vuex";
 import platformInfo from "@/common/platform_info";
 import { AppEvent } from "@/common/AppEvent";
+import _ from 'lodash';
 
 const BUILDER = "builder";
 const RAW = "raw";
