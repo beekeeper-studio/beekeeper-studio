@@ -27,7 +27,7 @@ jobs:
             const tagName = process.env.TAG_NAME;
             const [owner, repo] = process.env.REPO.split('/');
 
-            const releases = await github.repos.listReleases({
+            const releases = await github.rest.repos.listReleases({
               owner,
               repo
             });
@@ -44,7 +44,7 @@ jobs:
               uploadUrl = draftRelease.upload_url;
               assetsUrl = draftRelease.assets_url;
             } else {
-              const newRelease = await github.repos.createRelease({
+              const newRelease = await github.rest.repos.createRelease({
                 owner,
                 repo,
                 tag_name: tagName,
