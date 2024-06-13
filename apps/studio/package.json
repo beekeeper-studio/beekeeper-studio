@@ -144,6 +144,7 @@
     "esbuild-vue": "^1.2.2",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
+    "execa": "npm:@esm2cjs/execa",
     "node-abi": "^3.34.0",
     "node-gyp": "^10.1.0",
     "nodemon": "^3.1.0",
