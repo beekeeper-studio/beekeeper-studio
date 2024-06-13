@@ -1,8 +1,9 @@
 <template>
   <div class="fixed">
     <div class="data-select-wrap">
+      <!-- FIXME: move this comparison to the DialectData -->
       <p
-        v-if="this.connection.connectionType === 'sqlite'"
+        v-if="this.connection.dialect === 'sqlite'"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -17,8 +18,9 @@
         placeholder="Select a database..."
         class="dropdown-search"
       />
+      <!-- FIXME: move this comparison to the DialectData -->
       <a
-        v-if="this.connection.connectionType !== 'sqlite'"
+        v-if="this.connection.dialect !== 'sqlite'"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -40,7 +42,11 @@
         height="auto"
         :scrollable="true"
       >
-        <div class="dialog-content">
+        <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+        <div
+          class="dialog-content"
+          v-kbd-trap="true"
+        >
           <add-database-form
             :connection="connection"
             @databaseCreated="databaseCreated"
@@ -78,10 +84,11 @@
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        if (this.connection.connectionType.match(/sqlite|firebird/)) {
+        // FIXME: move this comparison to the DialectData
+        if (this.connection.dialect.match(/sqlite|firebird/)) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
-          const url = this.connection.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
+          const url = this.connection.dialect === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
           return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()

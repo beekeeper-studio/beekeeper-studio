@@ -1,26 +1,51 @@
-import { DBTestUtil } from '../../../../lib/db'
-import tmp from 'tmp'
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests, runReadOnlyTests } from './all'
+import { DBTestUtil } from "../../../../lib/db";
+import tmp from "tmp";
+import { runCommonTests, runReadOnlyTests } from "./all";
+import knex from "knex";
+import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3";
 
 const TEST_VERSIONS = [
-  { readOnly: false },
-  { readOnly: true },
-]
+  { mode: "memory", readOnly: false },
+  { mode: "file", readOnly: false },
+  { mode: "file", readOnly: true },
+];
 
 function testWith(options) {
-  describe("Sqlite Tests", () => {
+  describe(`SQLite [read-only mode? ${options.readOnly}]`, () => {
     let dbfile;
     /** @type {DBTestUtil} */
     let util
 
     beforeAll(async () => {
-      dbfile = tmp.fileSync()
+      let dbName;
+      if (options.mode === "file") {
+        dbfile = tmp.fileSync();
+        dbName = dbfile.name;
+      } else {
+        dbName = "";
+      }
 
       const config = {
         client: 'sqlite',
         readOnlyMode: options.readOnly,
       }
-      util = new DBTestUtil(config, dbfile.name, { dialect: 'sqlite'})
+      util = new DBTestUtil(config, dbName, {
+        dialect: "sqlite",
+        knex: knex({
+          client: options.mode !== "memory"
+            ? "better-sqlite3"
+            : class extends Client_BetterSQLite3 {
+              acquireRawConnection() {
+                // We want to use the same connection when opening
+                // in-memory database
+                return util.connection._rawConnection
+              }
+            },
+          connection: {
+            filename: dbName,
+          },
+        }),
+      })
       util.extraTables = 1
       await util.setupdb()
 
@@ -90,16 +115,23 @@ function testWith(options) {
       })
 
       it("Should apply changes to boolean values correctly", async () => {
+        function n(value) {
+          if (options.mode === 'memory') {
+            return BigInt(value)
+          } else {
+            return value
+          }
+        }
         const updates = [
-          { id: 1, expect: false, toBe: 0 },
-          { id: 2, expect: true, toBe: 1 },
-          { id: 3, expect: null, toBe: null },
+          { id: n(1), expect: false, toBe: n(0) },
+          { id: n(2), expect: true, toBe: n(1) },
+          { id: n(3), expect: null, toBe: null },
         ]
 
         const inserts = [
-          { id: 4, expect: false, toBe: 0 },
-          { id: 5, expect: true, toBe: 1 },
-          { id: 6, expect: null, toBe: null },
+          { id: n(4), expect: false, toBe: n(0) },
+          { id: n(5), expect: true, toBe: n(1) },
+          { id: n(6), expect: null, toBe: null },
         ]
 
         await expect(util.connection.applyChanges({

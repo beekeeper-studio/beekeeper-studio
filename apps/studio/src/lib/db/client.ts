@@ -1,5 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team, 2020 Beekeeper Studio team
-import { IDbConnectionDatabase, IDbConnectionServer } from "./types"
+import { ConnectionType, IDbConnectionDatabase, IDbConnectionServer } from "./types"
 import { MysqlClient } from './clients/mysql';
 import { PostgresClient } from './clients/postgresql';
 import { SQLServerClient } from './clients/sqlserver';
@@ -12,9 +12,10 @@ import { BigQueryClient } from './clients/bigquery';
 import { FirebirdClient } from './clients/firebird';
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
+import { LibSQLClient } from "./clients/libsql";
 import { DuckDBClient } from "./clients/duckdb";
 
-const clients = new Map<string, any>([
+const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
   ['postgresql', PostgresClient],
   ['sqlserver', SQLServerClient],
@@ -26,7 +27,8 @@ const clients = new Map<string, any>([
   ['bigquery', BigQueryClient],
   ['firebird', FirebirdClient],
   ['oracle', OracleClient],
-  ['cassandra', CassandraClient]
+  ['cassandra', CassandraClient],
+  ['libsql', LibSQLClient],
   ['duckdb', DuckDBClient],
 ], );
 

@@ -25,11 +25,12 @@ type TestVersion = typeof TEST_VERSIONS[number]['version']
 
 function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
   describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
+    jest.setTimeout(dbtimeout)
+
     let container: StartedTestContainer;
     let util: DBTestUtil
 
     beforeAll(async () => {
-      jest.setTimeout(dbtimeout)
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
 

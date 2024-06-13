@@ -3,7 +3,6 @@ import Vue from 'vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import path from 'path'
-import { uuidv4 } from "@/lib/uuid"
 import { isBksInternalColumn } from "@/common/utils"
 
 export interface ContextOption {
@@ -53,7 +52,7 @@ export const BeekeeperPlugin = {
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
-    if (config.connectionType === 'sqlite') {
+    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
       return config.defaultDatabase || "./unknown.db"
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
@@ -73,7 +72,7 @@ export const BeekeeperPlugin = {
     if (config.socketPathEnabled) return config.socketPath;
 
     let connectionString = `${config.host}:${config.port}`;
-    if (config.connectionType === 'sqlite') {
+    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
       return path.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
@@ -110,15 +109,29 @@ export default {
     Vue.prototype.$app = BeekeeperPlugin
     Vue.prototype.$bks = BeekeeperPlugin
 
-    Vue.prototype.$confirmModalName = uuidv4()
-    Vue.prototype.$confirm = function(title?: string, message?: string): Promise<boolean> {
+    Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         try {
-          this.$modal.show(Vue.prototype.$confirmModalName, {
+          this.trigger(AppEvent.createConfirmModal, {
             title,
             message,
-            onCancel: () => resolve(false),
             onConfirm: () => resolve(true),
+            onCancel: () => resolve(false),
+            ...options,
+          })
+        } catch (e) {
+          reject(e)
+        }
+      })
+    }
+
+    Vue.prototype.$confirmById = function(id: string): Promise<boolean> {
+      return new Promise<boolean>((resolve, reject) => {
+        try {
+          this.trigger(AppEvent.showConfirmModal, {
+            id,
+            onConfirm: () => resolve(true),
+            onCancel: () => resolve(false),
           })
         } catch (e) {
           reject(e)

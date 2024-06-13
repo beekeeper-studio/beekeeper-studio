@@ -52,6 +52,8 @@
       padding-left: 1.5rem;
       padding-right: 1.5rem;
       padding-bottom: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
 
       & > .btn:last-child {
         margin-right: 0;

@@ -18,9 +18,10 @@ export function dialectFor(s: string): Dialect | null {
     case 'cockroachdb':
       return 'postgresql'
     case 'mariadb':
-      return 'mysql'
     case 'tidb':
       return 'mysql'
+    case 'libsql':
+      return 'sqlite'
     case 'mssql':
       return 'sqlserver'
     default:
@@ -42,7 +43,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   duckdb: "DuckDB",
 }
 
-export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
 export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
@@ -113,6 +114,9 @@ export interface DialectData {
       dropConstraint?: boolean
       everything?: boolean
       indexes?: boolean
+      renameSchema?: boolean
+      renameTable?: boolean
+      renameView?: boolean
     },
     triggers?: boolean,
     relations?: boolean,
@@ -139,6 +143,7 @@ export interface DialectData {
     export?: {
       sql?: boolean
     }
+    schema?: boolean
   },
   notices?: {
     infoSchema?: string
