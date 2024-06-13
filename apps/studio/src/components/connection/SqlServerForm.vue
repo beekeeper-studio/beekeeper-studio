@@ -3,8 +3,8 @@
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
-      <select name="" @change="authType_onChange" id="">
-        <option :value="undefined">Username / Password</option>
+      <select name="" v-model="authType" id="">
+        <option value="default">Username / Password</option>
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
         </option>
       </select>
@@ -52,56 +52,56 @@
     </common-server-inputs>
     <common-advanced v-show="!azureAuthEnabled" :config="config" />
     <div v-show="azureAuthEnabled" class="host-port-user-password">
-      <div 
-        class="form-group col" 
+      <div
+        class="form-group col"
       >
         <div class="form-group">
           <label for="server">
-            Server <i 
+            Server <i
               class="material-icons"
               style="padding-left: 0.25rem"
-              v-tooltip="{ 
-                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>', 
+              v-tooltip="{
+                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
                 html: true }"
             >help_outlined</i>
-        </label>
-          <input 
+          </label>
+          <input
             name="server"
-            type="text" 
-            class="form-control" 
+            type="text"
+            class="form-control"
             v-model="config.host"
           >
         </div>
         <div class="form-group">
           <label for="database">Database</label>
-          <input 
+          <input
             name="database"
-            type="text" 
-            class="form-control" 
+            type="text"
+            class="form-control"
             v-model="config.defaultDatabase"
           >
         </div>
         <div class="form-group" v-show="showUser">
           <label for="user">User</label>
-          <input 
+          <input
             name="user"
-            type="text" 
-            class="form-control" 
+            type="text"
+            class="form-control"
             v-model="config.username"
           >
         </div>
         <div class="form-group" v-show="showPassword">
           <label for="password">Password</label>
-          <input 
+          <input
             name="password"
-            type="text" 
-            class="form-control" 
+            type="text"
+            class="form-control"
             v-model="config.password"
           >
         </div>
         <div class="form-group" v-show="showTenantId">
-          <label for="tenantId">            
-            Tenant ID <i 
+          <label for="tenantId">
+            Tenant ID <i
               class="material-icons"
               style="padding-left: 0.25rem"
               v-tooltip="{
@@ -109,28 +109,28 @@
                 html: true }"
             >help_outlined</i>
           </label>
-          <input 
+          <input
             name="tenantId"
-            type="text" 
-            class="form-control" 
+            type="text"
+            class="form-control"
             v-model="config.azureAuthOptions.tenantId"
           >
         </div>
         <div class="form-group" v-show="showClientSecret">
           <label for="clientSecret">Client Secret</label>
-          <input 
+          <input
             name="clientSecret"
-            type="text" 
-            class="form-control" 
+            type="text"
+            class="form-control"
             v-model="config.azureAuthOptions.clientSecret"
           >
         </div>
         <div class="form-group" v-show="showMsiEndpoint">
           <label for="msiEndpoint">MSI Endpoint</label>
-          <input 
+          <input
             name="msiEndpoint"
-            type="text" 
-            class="form-control" 
+            type="text"
+            class="form-control"
             v-model="config.azureAuthOptions.msiEndpoint"
           >
         </div>
@@ -150,11 +150,36 @@
   export default {
     components: { CommonServerInputs, CommonAdvanced },
     props: ['config'],
+    mounted() {
+      this.authType = this.config?.azureAuthOptions?.azureAuthType || 'default'
+      this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+    },
     data() {
       return {
-        azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled || false,
-        authType: AzureAuthType,
+        azureAuthEnabled: false,
+        authType: 'default',
         authTypes: AzureAuthTypes
+      }
+    },
+    watch: {
+      authType() {
+        if (this.authType === 'default') {
+          // this is good
+          this.azureAuthEnabled = false
+          this.config.azureAuthOptions.azureAuthType = undefined
+        } else {
+          if (platformInfo.isCommunity) {
+            // we want to display a modal
+            this.$root.$emit(AppEvent.upgradeModal);
+            this.authType = 'default'
+          } else {
+            this.azureAuthEnabled = true
+            this.config.azureAuthOptions.azureAuthType = this.authType
+          }
+        }
+      },
+      azureAuthEnabled() {
+        this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
       }
     },
     computed: {
@@ -176,25 +201,6 @@
       },
     },
     methods: {
-      authType_onChange(event) {
-        const value = event.target.value;
-
-        if (platformInfo.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal);
-          this.azureAuthEnabled = false;
-
-          return;
-        }
-        if (value) {
-          this.azureAuthEnabled = true;
-          this.config.azureAuthOptions.azureAuthEnabled = true;
-          this.config.azureAuthOptions.azureAuthType = this.authType = Number(value);
-        } else {
-          this.config.azureAuthOptions.azureAuthType = this.authType = undefined;
-          this.azureAuthEnabled = false;
-          this.config.azureAuthOptions.azureAuthEnabled = false;
-        }
-      }
     }
   }
 </script>
