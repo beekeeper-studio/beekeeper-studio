@@ -55,7 +55,7 @@ jobs:
               });
               core.info(`Draft release created with tag ${tagName}: ${newRelease.data.html_url}`);
               uploadUrl = newRelease.data.upload_url;
-              assetsUrl = draftRelease.assets_url;
+              assetsUrl = newRelease.data.assets_url;
             }
 
             core.setOutput('upload_url', uploadUrl);
