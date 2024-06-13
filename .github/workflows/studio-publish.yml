@@ -80,45 +80,45 @@ jobs:
         uses: crazy-max/ghaction-import-gpg@v3
         with:
           gpg-private-key: ${{ secrets.gpg_key }}
-        if: "startsWith(matrix.os, 'ubuntu')"
+        if: startsWith(matrix.os, 'ubuntu')
 
       - name: Install dotnet
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '6.0.x'
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
 
       - name: Check out Git repository
         uses: actions/checkout@v1
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7
-        if: "startsWith(matrix.os, 'ubuntu-20.04')"
+        if: startsWith(matrix.os, 'ubuntu-20.04')
 
       - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: "startsWith(matrix.os, 'ubuntu-20.04')"
+        if: startsWith(matrix.os, 'ubuntu-20.04')
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
           vs-version: '16.11.14'
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
 
       - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: "startsWith(matrix.os, 'ubuntu-20.04')"
+        if: startsWith(matrix.os, 'ubuntu-20.04')
 
       - name: "Install python 3.8 (NOT Mac, NOT Ubuntu-arm)"
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
-        if: "!startsWith(matrix.os, 'macos') && (matrix.os != 'ubuntu-arm64')"
+        if: ${{!startsWith(matrix.os, 'macos') && (matrix.os != 'ubuntu-arm64')}}
 
       - name: Install python 3.8 (mac)
-        if: "startsWith(matrix.os, 'macos')"
+        if: startsWith(matrix.os, 'macos')
         run: |
           # Install Python 3.8
           brew install python@3.8
@@ -126,9 +126,12 @@ jobs:
           echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
           export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
           export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
+          echo "/usr/local/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
+          export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
+          export PYTHON_PATH="/usr/local/opt/python@3.8/libexec/bin/python3"
 
       - name: Verify Python Version
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
         run: |
           $PYTHON_VERSION = python --version | Out-String
           Write-Output "Installed Python version: $PYTHON_VERSION"
@@ -139,7 +142,7 @@ jobs:
         shell: powershell
 
       - name: Verify Python Version
-        if: "!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')"
+        if: ${{!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')}}
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
@@ -187,7 +190,7 @@ jobs:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Remove dist directory
-        if: "!startsWith(matrix.os, 'windows')"
+        if: ${{!startsWith(matrix.os, 'windows')}}
         run: rm -rf ./apps/studio/dist_electron
       - name: Remove dist directory windows
         if: startsWith(matrix.os, 'windows')
@@ -209,7 +212,7 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: host
 
       - name: Build and Publish
-        if: "!startsWith(matrix.os, 'ubuntu-arm64')"
+        if: ${{!startsWith(matrix.os, 'ubuntu-arm64')}}
         uses: samuelmeuli/action-electron-builder@v1
         with:
           package_root: apps/studio
@@ -259,7 +262,7 @@ jobs:
           DISTRIBUTION: ${{secrets.cloudfront_distribution}}
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Cleanup artifacts
-        if: "!startsWith(matrix.os, 'windows')"
+        if: ${{!startsWith(matrix.os, 'windows')}}
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os, 'windows')
