@@ -2,11 +2,10 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
-import { ipcRenderer } from 'electron'
+// import { ipcRenderer } from 'electron'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
-import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -380,7 +379,7 @@ const store = new Vuex.Store<State>({
         : 'Beekeeper Studio'
 
       context.commit('updateWindowTitle', title)
-      ipcRenderer.send('setWindowTitle', title)
+      // ipcRenderer.send('setWindowTitle', title)
     },
 
     async saveConnection(context, config: IConnection) {
@@ -391,20 +390,6 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
-        // create token cache for azure auth
-        // TODO (@day): move this to util
-        if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
-          let cache = new TokenCache();
-          cache = await cache.save();
-          config.authId = cache.id;
-          // need to single out saved connections here (this may change when used connections are fixed)
-          if (config.id) {
-            // we do this so any temp configs that the user did aren't saved, just the id
-            const conn = await SavedConnection.findOne(config.id);
-            conn.authId = cache.id;
-            conn.save();
-          }
-        }
         await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
@@ -416,7 +401,7 @@ const store = new Vuex.Store<State>({
         context.commit('versionString', versionString);
         context.commit('newConnection', config)
 
-        context.commit('newConnection', {config: config, server, connection})
+        context.commit('newConnection', config)
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
@@ -457,31 +442,17 @@ const store = new Vuex.Store<State>({
       context.commit('clearConnection')
       context.dispatch('updateWindowTitle', null)
     },
-    async syncDatabase(context) {
+    async syncDatabase(_context) {
       // TODO (@day): this needs to be a util call
-      await context.state.connection.syncDatabase();
+      // await context.state.connection.syncDatabase();
     },
     async changeDatabase(context, newDatabase: string) {
-      await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase });
       log.info("Pool changing database to", newDatabase)
-      // TODO (@day): move this?!?!?!?
-      if (context.state.server) {
-        const server = context.state.server
-        let connection = server.db(newDatabase)
-        if (!connection) {
-          connection = server.createConnection(newDatabase)
-          try {
-            await connection.connect()
-          } catch (e) {
-            server.destroyConnection(newDatabase);
-            throw new Error(`Could not connect to database: ${e.message}`)
-          }
-        }
-        context.commit('updateConnection', {connection, database: newDatabase})
-        await context.dispatch('updateTables')
-        await context.dispatch('updateDatabaseList')
-        await context.dispatch('updateRoutines')
-      }
+      await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase });
+      context.commit('updateConnection', {database: newDatabase})
+      await context.dispatch('updateTables')
+      await context.dispatch('updateDatabaseList')
+      await context.dispatch('updateRoutines')
     },
 
     async updateTableColumns(context, table: TableOrView) {

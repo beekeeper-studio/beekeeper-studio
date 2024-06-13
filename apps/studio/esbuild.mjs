@@ -184,7 +184,6 @@ const electronUtilityPlugin = {
   } else {
     Promise.all([
       esbuild.build(mainArgs),
-      esbuild.build(preloadArgs),
       esbuild.build(rendererArgs),
       esbuild.build(utilityArgs)
     ])

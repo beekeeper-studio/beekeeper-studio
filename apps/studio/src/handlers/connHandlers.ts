@@ -7,6 +7,8 @@ import { checkConnection, errorMessages, getDriverHandler, state } from "./handl
 import ConnectionProvider from '../lib/connection-provider'; 
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
+import { TokenCache } from "@/common/appdb/models/token_cache";
+import { SavedConnection } from "@/common/appdb/models/saved_connection";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -103,6 +105,19 @@ export const ConnHandlers: IConnectionHandlers = {
       throw new Error(errorMessages.noUsername);
     }
 
+    if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+      let cache = new TokenCache();
+      cache = await cache.save();
+      config.authId = cache.id;
+      // need to single out saved connections here (this may change when used connections are fixed)
+      if (config.id) {
+        // we do this so any temp configs that the user did aren't saved, just the id
+        const conn = await SavedConnection.findOne(config.id);
+        conn.authId = cache.id;
+        conn.save();
+      }
+    }
+
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
     const connection = server.createConnection(config.defaultDatabase || undefined);
@@ -140,7 +155,12 @@ export const ConnHandlers: IConnectionHandlers = {
     let connection = state(sId).server.db(newDatabase);
     if (!connection) {
       connection = state(sId).server.createConnection(newDatabase);
-      await connection.connect();
+      try {
+        await connection.connect();
+      } catch (e) {
+        state(sId).server.destroyConnection(newDatabase);
+        throw new Error(`Could not connect to database: ${e.message}`);
+      }
     }
 
     state(sId).connection = connection;
