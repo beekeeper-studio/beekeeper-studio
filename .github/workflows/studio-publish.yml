@@ -9,15 +9,68 @@ on:
 
 jobs:
 
+  create_draft_release:
+    runs-on: "ubuntu-20.04"
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      assets_url: ${{ steps.create_release.outputs.assets_url }}
+    steps:
+      - name: Create or check draft release
+        id: create_release
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          REPO: "beekeeper-studio/beekeeper-studio" # change this for ultimate
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tagName = process.env.TAG_NAME;
+            const [owner, repo] = process.env.REPO.split('/');
+
+            const releases = await github.repos.listReleases({
+              owner,
+              repo
+            });
+
+            let uploadUrl;
+            let assetsUrl;
+
+            const draftRelease = releases.data.find(
+              release => release.tag_name === tagName && release.draft
+            );
+
+            if (draftRelease) {
+              core.info(`Draft release with tag ${tagName} already exists.`);
+              uploadUrl = draftRelease.upload_url;
+              assetsUrl = draftRelease.assets_url;
+            } else {
+              const newRelease = await github.repos.createRelease({
+                owner,
+                repo,
+                tag_name: tagName,
+                name: `Release ${tagName}`,
+                body: 'Description of the release',
+                draft: true,
+                prerelease: false,
+              });
+              core.info(`Draft release created with tag ${tagName}: ${newRelease.data.html_url}`);
+              uploadUrl = newRelease.data.upload_url;
+              assetsUrl = draftRelease.assets_url;
+            }
+
+            core.setOutput('upload_url', uploadUrl);
+            core.setOutput('assets_url', assetsUrl);
   release:
     runs-on: ${{ matrix.os }}
+    needs: create_draft_release
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13-xlarge]
+        # macos-13 is Intel, macos-14 is arm (obviously)
+        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
 
     steps:
       - name: Import GPG key
@@ -162,7 +215,6 @@ jobs:
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
           skip_build: true
-          args: ${{ startsWith(matrix.os, 'macos') && '--arm64 --x64' || '' }}
           use_vue_cli: true
           max_attempts: 2
 
@@ -179,6 +231,7 @@ jobs:
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHONPATH' }}"
+
 
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
@@ -215,3 +268,165 @@ jobs:
         with:
           name: ${{ matrix.os }}
           path: apps/studio/dist_electron
+
+
+      # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
+      # together to create one cohesive update file.
+      # Note that this works differently to linux, which has a linux-latest.yml and a linux-latest-arm.yml, oy.
+      - name: Check architecture
+        id: mac_arch
+        if: startsWith(matrix.os, 'mac')
+        run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+
+      - name: Upload YML files (platform dependant)
+        id: upload-latest-mac-variations-yml
+        if: startsWith(matrix.os, 'mac')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{needs.create_draft_release.outputs.upload_url}} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./apps/studio/dist_electron/latest-mac.yml
+          asset_name: "latest-mac-${{steps.mac_arch.outputs.arch}}.yml"
+          asset_content_type: application/octet-stream
+
+  post-release:
+    needs: [release, create_draft_release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download mac arch yml files
+        id: get_files
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const releaseAssetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}';
+            const { data: assets } = await github.request(releaseAssetsUrl, {
+              headers: {
+                authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
+                accept: 'application/vnd.github.v3+json',
+              },
+            });
+
+            const assets.filter((asset) => asset.name.startsWith('latest-mac-'))
+
+            if (!assets.length) {
+              core.setFailed('Required assets not found in the release.');
+              return;
+            }
+
+            const downloadAsset = async (asset) => {
+              const filePath = `./${asset.name}`
+              const response = await github.request({
+                method: 'GET',
+                url: asset.url,
+                headers: {
+                  authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
+                  accept: 'application/octet-stream',
+                },
+                responseType: 'stream',
+              });
+
+              const writer = require('fs').createWriteStream(filePath);
+              response.data.pipe(writer);
+
+              return new Promise((resolve, reject) => {
+                writer.on('finish', resolve);
+                writer.on('error', reject);
+              });
+            };
+            await promise.all(assets.map((asset) => {
+              downloadAsset(asset)
+            }))
+
+            const names = JSON.stringify(assets.map((a) => a.name))
+            core.setOutput('files', names)
+
+            core.info('Assets downloaded successfully.');
+      - name: Merge yml files
+        uses: actions/github-script@7
+        with:
+          script: |
+            const fs = require('fs')
+            const files = ${{ steps.get_files.outputs.files }};
+            const intel = files[0]
+            const arm = files[1]
+            const mergeFiles = (intel, arm) => {
+              const intelObject = yaml.load(intel);
+              const armObject = yaml.load(arm);
+
+              const mergedObject = {
+                ...intelObject,
+              };
+
+              mergedObject.files = [
+                ...intelObject.files,
+                ...armObject.files,
+              ];
+
+              const dumpOptions = {
+                // avoids moving the sha512 checksum into its own line
+                lineWidth: -1,
+              };
+
+              const mergedString = yaml.dump(mergedObject, dumpOptions);
+              return mergedString;
+            }
+            const merge = mergeFiles(intel, arm)
+            fs.writeFileSync('latest-mac.yml', merge)
+      - name: Upload fixed file
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // upload latest-mac.yml to the upload_url and overwrite any existing version
+            const fs = require('fs')
+            const uploadUrl = `${{ needs.create_draft_release.outputs.upload_url }}`
+            const filePath = 'latest-mac.yml'
+            const assetName = 'latest-mac.yml';
+
+            async function findAssetIdByName(assets, name) {
+              for (const asset of assets) {
+                if (asset.name === name) {
+                  return asset.id;
+                }
+              }
+              return null;
+            }
+
+            // Get the existing assets for the release
+            const { data: assets } = await github.rest.repos.listReleaseAssets({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+            });
+
+            // Check if the asset already exists and delete it if necessary
+            const assetId = await findAssetIdByName(assets, assetName);
+            if (assetId) {
+              await github.rest.repos.deleteReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                asset_id: assetId,
+              });
+              console.log(`Deleted existing asset: ${assetName}`);
+            }
+
+
+            const response = await github.rest.repos.uploadReleaseAsset({
+              url: uploadUrl,
+              headers: {
+                authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
+                'content-type': 'application/octet-stream',
+                'content-length': fs.statSync(filePath).size,
+              },
+              name: assetName,
+              label: 'latest-mac.yml',
+              data: fs.createReadStream(filePath),
+            });
+
+            if (response.status === 201) {
+              core.info('File uploaded successfully');
+            } else {
+              core.error('Failed to upload file', response);
+              process.exit(1)
+            }
