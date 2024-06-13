@@ -263,17 +263,16 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os, 'windows')}}
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml)"
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os, 'windows')
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe)"
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
         continue-on-error: true
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: ${{ matrix.os }}
           path: apps/studio/dist_electron
-
 
       # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
       # together to create one cohesive update file.
