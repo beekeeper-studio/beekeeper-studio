@@ -4,24 +4,27 @@
       <p class="intro">
         <i class="material-icons">stars</i>
         <span>
-          Unlock this connection type along with these exclusive features with
-          the Ultimate (paid) version of Beekeeper Studio:
+          Ultimate edition upgrade required. Upgrade to get:
         </span>
       </p>
       <ul>
-        <li>
+        <li class="flex flex-row">
           <span class="bullet">🚀</span>
-          More app features like unlimited table filters, magic formatting, and
-          more!
+          <span>
+            More app features like unlimited table filters, more connection types, import/export, and
+            more!
+          </span>
         </li>
-        <li>
+        <li class="flex flex-row">
           <span class="bullet">🌟</span>
-          Extended support so you can talk to a real person when you have a
-          problem
+          <span>Extended support so you can talk to a real person when you have a
+            problem.</span>
         </li>
-        <li>
+        <li class="flex flex-row">
           <span class="bullet">🤝</span>
-          Collaboration tools for your team like cloud storage
+          <span>
+            Cloud storage and team collaboration tools.
+          </span>
         </li>
       </ul>
       <p class="bottom">
@@ -29,16 +32,11 @@
       </p>
     </div>
     <div class="actions">
-      <a
-        href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-        class="btn btn-flat secondary"
-      >
+      <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+        class="btn btn-flat secondary">
         Learn More
       </a>
-      <a
-        href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-        class="btn btn-primary"
-      >
+      <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition" class="btn btn-primary">
         <i class="material-icons">download</i>
         Download the Ultimate Edition
       </a>
