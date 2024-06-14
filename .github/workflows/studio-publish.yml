@@ -335,6 +335,8 @@ jobs:
             fs.writeFileSync('latest-mac.yml', merge, 'utf8');
       - name: Upload fixed latest-mac.yml
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
           asset_path: './latest-mac.yml'
