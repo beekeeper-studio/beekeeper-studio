@@ -293,8 +293,6 @@ jobs:
     needs: [release, create_draft_release]
     runs-on: ubuntu-latest
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v1
       - run: npm install -g js-yaml
       - name: Download mac arch yml files
         id: get_files
