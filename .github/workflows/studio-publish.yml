@@ -172,11 +172,8 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu-arm64')
         continue-on-error: true
 
-
       - name: Clean cache
         run: yarn cache clean --all
-
-      - run: rm -rf node_modules
 
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.
