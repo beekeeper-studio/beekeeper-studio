@@ -25,7 +25,7 @@
         </li>
       </ul>
       <p class="bottom">
-        Test it out at no cost for 14 days.
+        Download for free - 14 day free trial (no credit card or sign up required)
       </p>
     </div>
     <div class="actions">
@@ -33,14 +33,14 @@
         href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
         class="btn btn-flat secondary"
       >
-        Learn more
+        Learn More
       </a>
       <a
         href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-        class="btn btn-primary primary"
+        class="btn btn-primary"
       >
-        <i class="material-icons">stars</i>
-        Upgrade
+        <i class="material-icons">download</i>
+        Download the Ultimate Edition
       </a>
     </div>
   </div>
