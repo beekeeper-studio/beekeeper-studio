@@ -286,7 +286,7 @@ jobs:
         with:
           script: |
             const fs = require('fs')
-            const content = fs.readFileSync('apps/studio/dist_electron/latest-mac.yml')
+            const content = fs.readFileSync('apps/studio/dist_electron/latest-mac.yml', 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
   post-release:
     needs: [release, create_draft_release]
@@ -332,7 +332,7 @@ jobs:
             };
 
             const merge = mergeFiles();
-            fs.writeFileSync('latest-mac.yml', merge);
+            fs.writeFileSync('latest-mac.yml', merge, 'utf8');
       - name: Upload fixed latest-mac.yml
         uses: actions/upload-release-asset@v1
         with:
