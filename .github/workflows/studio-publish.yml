@@ -231,7 +231,7 @@ jobs:
         # and can continue.
       - name: Delete latest-mac.yml
         if: startsWith(matrix.os, 'mac')
-        uses: actions/github-script@7
+        uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
         with:
@@ -343,7 +343,7 @@ jobs:
 
             core.info('Assets downloaded successfully.');
       - name: Merge yml files
-        uses: actions/github-script@7
+        uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
