@@ -303,9 +303,9 @@ jobs:
             const releaseAssetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}';
             const { data: assets } = await github.request(releaseAssetsUrl);
 
-            const assets.filter((asset) => asset.name.startsWith('latest-mac-'))
+            const filteredAssets = assets.filter((asset) => asset.name.startsWith('latest-mac-'))
 
-            if (!assets.length) {
+            if (!filteredAssets.length) {
               core.setFailed('Required assets not found in the release.');
               return;
             }
@@ -330,11 +330,11 @@ jobs:
                 writer.on('error', reject);
               });
             };
-            await promise.all(assets.map((asset) => {
+            await promise.all(filteredAssets.map((asset) => {
               downloadAsset(asset)
             }))
 
-            const names = JSON.stringify(assets.map((a) => a.name))
+            const names = JSON.stringify(filteredAssets.map((a) => a.name))
             core.setOutput('files', names)
 
             core.info('Assets downloaded successfully.');
