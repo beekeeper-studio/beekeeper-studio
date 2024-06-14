@@ -6,7 +6,8 @@ on:
       - "v*"
     paths-ignore:
       - "apps/sqltools/**"
-
+env:
+  RELEASE_REPO: beekeeper-studio/beekeeper-studio
 jobs:
 
   create_draft_release:
@@ -14,6 +15,8 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       assets_url: ${{ steps.create_release.outputs.assets_url }}
+      id: ${{ steps.create_release.outputs.id }}
+      json: ${{ steps.create_release.outputs.json }}
     steps:
       - name: Create or check draft release
         id: create_release
@@ -24,42 +27,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const tagName = process.env.TAG_NAME;
-            const [owner, repo] = process.env.REPO.split('/');
+            const script = require('./.github/scripts/create_draft_release.js')
+            await script({github, context, core}, process.env.REPO, process.env.TAG_NAME)
 
-            const releases = await github.rest.repos.listReleases({
-              owner,
-              repo
-            });
-
-            let uploadUrl;
-            let assetsUrl;
-
-            const draftRelease = releases.data.find(
-              release => release.tag_name === tagName && release.draft
-            );
-
-            if (draftRelease) {
-              core.info(`Draft release with tag ${tagName} already exists.`);
-              uploadUrl = draftRelease.upload_url;
-              assetsUrl = draftRelease.assets_url;
-            } else {
-              const newRelease = await github.rest.repos.createRelease({
-                owner,
-                repo,
-                tag_name: tagName,
-                name: `Release ${tagName}`,
-                body: 'Description of the release',
-                draft: true,
-                prerelease: false,
-              });
-              core.info(`Draft release created with tag ${tagName}: ${newRelease.data.html_url}`);
-              uploadUrl = newRelease.data.upload_url;
-              assetsUrl = newRelease.data.assets_url;
-            }
-
-            core.setOutput('upload_url', uploadUrl);
-            core.setOutput('assets_url', assetsUrl);
   release:
     runs-on: ${{ matrix.os }}
     needs: create_draft_release
@@ -224,7 +194,7 @@ jobs:
 
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
-          release: ${{ !startsWith(matrix.os, 'macos') }}
+          release: true
           mac_certs: ${{ secrets.mac_dev }}
           mac_certs_password: ${{ secrets.mac_dev_pw }}
         env:
@@ -273,6 +243,20 @@ jobs:
           name: ${{ matrix.os }}
           path: apps/studio/dist_electron
 
+        # this only works becuase the m1 build is faster, so the m1 build deletes
+        # it's latest-mac.yml before the intel build finishes, so it doesnt crash
+        # and can continue.
+      - name: Delete latest-mac.yml
+        if: startsWith(matrix.os, 'mac')
+        uses: actions/github-script@7
+        env:
+          RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
+
+        with:
+          script: |
+            const script = require('./.github/scripts/delete_latest_yml.js')
+            const [owner, repo] = process.env.RELEASE_REPO.split("/")
+            await script({ github, core, context }, owner, repo, process.env.RELEASE_ID)
       # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
       # together to create one cohesive update file.
       # Note that this works differently to linux, which has a linux-latest.yml and a linux-latest-arm.yml, oy.
@@ -280,64 +264,6 @@ jobs:
         id: mac_arch
         if: startsWith(matrix.os, 'mac')
         run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
-
-      - name: Upload release assets (mac)
-        if: startsWith(matrix.os, 'mac')
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const glob = require('glob');
-
-            const uploadUrl = `${{ needs.create_draft_release.outputs.upload_url }}`;
-            const globPatterns = [
-              'apps/studio/dist_electron/*.dmg',
-              'apps/studio/dist_electron/*.zip',
-              'apps/studio/dist_electron/*.dmg.blockmap'
-            ];
-
-            globPatterns.forEach(pattern => {
-              glob(pattern, async (err, files) => {
-                if (err) {
-                  console.error('Error finding files:', err);
-                  process.exit(1);
-                }
-
-                if (files.length === 0) {
-                  console.log(`No files found for pattern: ${pattern}`);
-                  return;
-                }
-
-                for (const filePath of files) {
-                  const fileName = path.basename(filePath);
-
-                  try {
-                    const response = await github.rest.repos.uploadReleaseAsset({
-                      url: uploadUrl,
-                      headers: {
-                        authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
-                        'content-type': 'application/octet-stream',
-                        'content-length': fs.statSync(filePath).size,
-                      },
-                      name: fileName,
-                      label: fileName,
-                      data: fs.createReadStream(filePath),
-                    });
-
-                    if (response.status === 201) {
-                      console.log(`File uploaded successfully: ${fileName}`);
-                    } else {
-                      console.error(`Failed to upload file: ${fileName}`, response);
-                      process.exit(1);
-                    }
-                  } catch (error) {
-                    console.error(`Error uploading file: ${fileName}`, error);
-                    process.exit(1);
-                  }
-                }
-              });
-            });
 
       - name: Upload YML files (platform dependant)
         id: upload-latest-mac-variations-yml
@@ -363,12 +289,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const releaseAssetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}';
-            const { data: assets } = await github.request(releaseAssetsUrl, {
-              headers: {
-                authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
-                accept: 'application/vnd.github.v3+json',
-              },
-            });
+            const { data: assets } = await github.request(releaseAssetsUrl);
 
             const assets.filter((asset) => asset.name.startsWith('latest-mac-'))
 
@@ -437,59 +358,10 @@ jobs:
             }
             const merge = mergeFiles(intel, arm)
             fs.writeFileSync('latest-mac.yml', merge)
-      - name: Upload fixed file
-        uses: actions/github-script@v7
+      - name: Upload fixed latest-mac.yml
+        uses: actions/upload-release-asset@v1
         with:
-          script: |
-            // upload latest-mac.yml to the upload_url and overwrite any existing version
-            const fs = require('fs')
-            const uploadUrl = `${{ needs.create_draft_release.outputs.upload_url }}`
-            const filePath = 'latest-mac.yml'
-            const assetName = 'latest-mac.yml';
-
-            async function findAssetIdByName(assets, name) {
-              for (const asset of assets) {
-                if (asset.name === name) {
-                  return asset.id;
-                }
-              }
-              return null;
-            }
-
-            // Get the existing assets for the release
-            const { data: assets } = await github.rest.repos.listReleaseAssets({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: releaseId,
-            });
-
-            // Check if the asset already exists and delete it if necessary
-            const assetId = await findAssetIdByName(assets, assetName);
-            if (assetId) {
-              await github.rest.repos.deleteReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                asset_id: assetId,
-              });
-              console.log(`Deleted existing asset: ${assetName}`);
-            }
-
-
-            const response = await github.rest.repos.uploadReleaseAsset({
-              url: uploadUrl,
-              headers: {
-                authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
-                'content-type': 'application/octet-stream',
-                'content-length': fs.statSync(filePath).size,
-              },
-              name: assetName,
-              label: 'latest-mac.yml',
-              data: fs.createReadStream(filePath),
-            });
-
-            if (response.status === 201) {
-              core.info('File uploaded successfully');
-            } else {
-              core.error('Failed to upload file', response);
-              process.exit(1)
-            }
+          upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
+          asset_path: './latest-mac.yml'
+          asset_name: 'latest-mac.yml'
+          asset_content_type: 'application/octet-stream'
