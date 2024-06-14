@@ -47,6 +47,14 @@ jobs:
         os: [macos-13, macos-14 ]
 
     steps:
+      # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
+      # together to create one cohesive update file.
+      # Note that this works differently to linux, which has a linux-latest.yml and a linux-latest-arm.yml, oy.
+      - name: Check architecture
+        id: mac_arch
+        if: startsWith(matrix.os, 'mac')
+        run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v3
@@ -89,18 +97,26 @@ jobs:
           python-version: 3.8
         if: ${{!startsWith(matrix.os, 'macos') && (matrix.os != 'ubuntu-arm64')}}
 
-      - name: Install python 3.8 (mac)
+      - name: Install python 3.8 (mac arm64)
         if: startsWith(matrix.os, 'macos')
+        id: mac_python
+        env:
+          ARCH: ${{ steps.mac_arch.outputs.arch}}
         run: |
-          # Install Python 3.8
           brew install python@3.8
-          # Add Python 3.8 to PATH
-          echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
-          export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
-          export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
-          echo "/usr/local/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
-          export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
-          export PYTHON_PATH="/usr/local/opt/python@3.8/libexec/bin/python3"
+          if [ "$ARCH" = "arm64" ]; then
+              # Add Python 3.8 to PATH for arm64
+              echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
+              export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
+              export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
+              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
+          else
+              # Add Python 3.8 to PATH for other architectures
+              echo "/usr/local/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
+              export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
+              export PYTHON_PATH="/usr/local/opt/python@3.8/libexec/bin/python3"
+              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
+          fi
 
       - name: Verify Python Version
         if: startsWith(matrix.os, 'windows')
@@ -116,6 +132,8 @@ jobs:
       - name: Verify Python Version
         if: ${{!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')}}
         run: |
+          ppath = $(which python)
+          echo "python path: $ppath vs PYTHON_PATH: $PYTHON_PATH"
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
           if [[ ! $PYTHON_VERSION == 3.8* ]]; then
@@ -205,9 +223,22 @@ jobs:
           APPLE_TEAM_ID: "7KK583U8H2"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHONPATH' }}"
+          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
 
+        # this only works becuase the m1 build is faster, so the m1 build deletes
+        # it's latest-mac.yml before the intel build finishes, so it doesnt crash
+        # and can continue.
+      - name: Delete latest-mac.yml
+        if: startsWith(matrix.os, 'mac')
+        uses: actions/github-script@7
+        env:
+          RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
+        with:
+          script: |
+            const script = require('./.github/scripts/delete_latest_yml.js')
+            const [owner, repo] = process.env.RELEASE_REPO.split("/")
+            await script({ github, core, context }, owner, repo, process.env.RELEASE_ID)
 
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
@@ -245,27 +276,8 @@ jobs:
           name: ${{ matrix.os }}
           path: apps/studio/dist_electron
 
-        # this only works becuase the m1 build is faster, so the m1 build deletes
-        # it's latest-mac.yml before the intel build finishes, so it doesnt crash
-        # and can continue.
-      - name: Delete latest-mac.yml
-        if: startsWith(matrix.os, 'mac')
-        uses: actions/github-script@v7
-        env:
-          RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
 
-        with:
-          script: |
-            const script = require('./.github/scripts/delete_latest_yml.js')
-            const [owner, repo] = process.env.RELEASE_REPO.split("/")
-            await script({ github, core, context }, owner, repo, process.env.RELEASE_ID)
-      # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
-      # together to create one cohesive update file.
-      # Note that this works differently to linux, which has a linux-latest.yml and a linux-latest-arm.yml, oy.
-      - name: Check architecture
-        id: mac_arch
-        if: startsWith(matrix.os, 'mac')
-        run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+
 
       - name: Upload YML files (platform dependant)
         id: upload-latest-mac-variations-yml
