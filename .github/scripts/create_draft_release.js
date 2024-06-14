@@ -36,9 +36,6 @@ module.exports = async({github, core}, repository, tagName) => {
     finishedRelease = newRelease
     core.info(`Draft release created with tag ${tagName}: ${newRelease.data.html_url}`);
   }
-  uploadUrl = newRelease.data.upload_url;
-  assetsUrl = newRelease.data.assets_url;
-
   core.setOutput('upload_url', finishedRelease.data.upload_url);
   core.setOutput('assets_url', finishedRelease.data.assets_url);
   core.setOutput('id', finishedRelease.data.id)
