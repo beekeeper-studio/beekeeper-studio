@@ -35,6 +35,9 @@ jobs:
   release:
     runs-on: ${{ matrix.os }}
     needs: create_draft_release
+    outputs:
+      mac_x86_64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
+      mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
@@ -274,85 +277,36 @@ jobs:
           name: ${{ matrix.os }}
           path: apps/studio/dist_electron
 
-
-
-
-      - name: Upload YML files (platform dependant)
-        id: upload-latest-mac-variations-yml
+      - name: Set yaml files
+        id: set_yaml
         if: startsWith(matrix.os, 'mac')
-        uses: actions/upload-release-asset@v1
+        uses: actions/github-script@v7
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARCH: ${{ steps.mac_arch.outputs.arch }}
         with:
-          upload_url: ${{needs.create_draft_release.outputs.upload_url}} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./apps/studio/dist_electron/latest-mac.yml
-          asset_name: "latest-mac-${{steps.mac_arch.outputs.arch}}.yml"
-          asset_content_type: application/octet-stream
-
+          script: |
+            const fs = require('fs')
+            const content = fs.readFileSync('apps/studio/dist_electron/latest-mac.yml')
+            core.setOutput(`mac_${process.env.ARCH}_yml`, content)
   post-release:
     needs: [release, create_draft_release]
     runs-on: ubuntu-latest
     steps:
       - run: npm install -g js-yaml
-      - name: Download mac arch yml files
-        id: get_files
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const releaseAssetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}';
-            const { data: assets } = await github.request(releaseAssetsUrl);
-
-            const filteredAssets = assets.filter((asset) => asset.name.startsWith('latest-mac-'));
-
-            if (!filteredAssets.length) {
-              core.setFailed('Required assets not found in the release.');
-              return;
-            }
-
-            const downloadAsset = async (asset) => {
-              const filePath = `./${asset.name}`;
-              const response = await github.request({
-                method: 'GET',
-                url: asset.url,
-                headers: {
-                  authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
-                  accept: 'application/octet-stream',
-                },
-                responseType: 'stream',
-              });
-
-              const writer = require('fs').createWriteStream(filePath);
-              response.data.pipe(writer);
-
-              return new Promise((resolve, reject) => {
-                writer.on('finish', resolve);
-                writer.on('error', reject);
-              });
-            };
-
-            await Promise.all(filteredAssets.map((asset) => downloadAsset(asset)));
-
-            const names = JSON.stringify(filteredAssets.map((a) => a.name));
-            core.setOutput('files', names);
-
-            core.info('Assets downloaded successfully.');
       - name: Merge yml files
         uses: actions/github-script@v7
+        env:
+          INTEL_YML: ${{ needs.release.outputs.mac_x86_64_yml }}
+          ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
-            const files = JSON.parse('${{ steps.get_files.outputs.files }}');
+            const intelContent = process.env.INTEL_YML
+            cosnt armContent = process.env.ARM_YML
 
-            const intelFilePath = `./${files[0]}`;
-            const armFilePath = `./${files[1]}`;
-
-            const mergeFiles = (intelPath, armPath) => {
-              const intelContent = fs.readFileSync(intelPath, 'utf8');
-              const armContent = fs.readFileSync(armPath, 'utf8');
-
+            const mergeFiles = () => {
               const intelObject = yaml.load(intelContent);
               const armObject = yaml.load(armContent);
 
@@ -374,7 +328,7 @@ jobs:
               return mergedString;
             };
 
-            const merge = mergeFiles(intelFilePath, armFilePath);
+            const merge = mergeFiles();
             fs.writeFileSync('latest-mac.yml', merge);
       - name: Upload fixed latest-mac.yml
         uses: actions/upload-release-asset@v1
