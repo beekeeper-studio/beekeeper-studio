@@ -224,7 +224,7 @@ jobs:
 
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
-          release: true
+          release: ${{ !startsWith(matrix.os, 'macos') }}
           mac_certs: ${{ secrets.mac_dev }}
           mac_certs_password: ${{ secrets.mac_dev_pw }}
         env:
@@ -280,6 +280,64 @@ jobs:
         id: mac_arch
         if: startsWith(matrix.os, 'mac')
         run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+
+      - name: Upload release assets (mac)
+        if: startsWith(matrix.os, 'mac')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const glob = require('glob');
+
+            const uploadUrl = `${{ needs.create_draft_release.outputs.upload_url }}`;
+            const globPatterns = [
+              'apps/studio/dist_electron/*.dmg',
+              'apps/studio/dist_electron/*.zip',
+              'apps/studio/dist_electron/*.dmg.blockmap'
+            ];
+
+            globPatterns.forEach(pattern => {
+              glob(pattern, async (err, files) => {
+                if (err) {
+                  console.error('Error finding files:', err);
+                  process.exit(1);
+                }
+
+                if (files.length === 0) {
+                  console.log(`No files found for pattern: ${pattern}`);
+                  return;
+                }
+
+                for (const filePath of files) {
+                  const fileName = path.basename(filePath);
+
+                  try {
+                    const response = await github.rest.repos.uploadReleaseAsset({
+                      url: uploadUrl,
+                      headers: {
+                        authorization: `token ${{ secrets.GITHUB_TOKEN }}`,
+                        'content-type': 'application/octet-stream',
+                        'content-length': fs.statSync(filePath).size,
+                      },
+                      name: fileName,
+                      label: fileName,
+                      data: fs.createReadStream(filePath),
+                    });
+
+                    if (response.status === 201) {
+                      console.log(`File uploaded successfully: ${fileName}`);
+                    } else {
+                      console.error(`Failed to upload file: ${fileName}`, response);
+                      process.exit(1);
+                    }
+                  } catch (error) {
+                    console.error(`Error uploading file: ${fileName}`, error);
+                    process.exit(1);
+                  }
+                }
+              });
+            });
 
       - name: Upload YML files (platform dependant)
         id: upload-latest-mac-variations-yml
