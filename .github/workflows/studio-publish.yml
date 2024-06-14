@@ -303,7 +303,7 @@ jobs:
             const releaseAssetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}';
             const { data: assets } = await github.request(releaseAssetsUrl);
 
-            const filteredAssets = assets.filter((asset) => asset.name.startsWith('latest-mac-'))
+            const filteredAssets = assets.filter((asset) => asset.name.startsWith('latest-mac-'));
 
             if (!filteredAssets.length) {
               core.setFailed('Required assets not found in the release.');
@@ -311,7 +311,7 @@ jobs:
             }
 
             const downloadAsset = async (asset) => {
-              const filePath = `./${asset.name}`
+              const filePath = `./${asset.name}`;
               const response = await github.request({
                 method: 'GET',
                 url: asset.url,
@@ -330,26 +330,31 @@ jobs:
                 writer.on('error', reject);
               });
             };
-            await promise.all(filteredAssets.map((asset) => {
-              downloadAsset(asset)
-            }))
 
-            const names = JSON.stringify(filteredAssets.map((a) => a.name))
-            core.setOutput('files', names)
+            await Promise.all(filteredAssets.map((asset) => downloadAsset(asset)));
+
+            const names = JSON.stringify(filteredAssets.map((a) => a.name));
+            core.setOutput('files', names);
 
             core.info('Assets downloaded successfully.');
       - name: Merge yml files
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
-            const files = ${{ steps.get_files.outputs.files }};
-            const intel = files[0]
-            const arm = files[1]
-            const mergeFiles = (intel, arm) => {
-              const intelObject = yaml.load(intel);
-              const armObject = yaml.load(arm);
+            const files = JSON.parse('${{ steps.get_files.outputs.files }}');
+
+            const intelFilePath = `./${files[0]}`;
+            const armFilePath = `./${files[1]}`;
+
+            const mergeFiles = (intelPath, armPath) => {
+              const intelContent = fs.readFileSync(intelPath, 'utf8');
+              const armContent = fs.readFileSync(armPath, 'utf8');
+
+              const intelObject = yaml.load(intelContent);
+              const armObject = yaml.load(armContent);
 
               const mergedObject = {
                 ...intelObject,
@@ -367,9 +372,10 @@ jobs:
 
               const mergedString = yaml.dump(mergedObject, dumpOptions);
               return mergedString;
-            }
-            const merge = mergeFiles(intel, arm)
-            fs.writeFileSync('latest-mac.yml', merge)
+            };
+
+            const merge = mergeFiles(intelFilePath, armFilePath);
+            fs.writeFileSync('latest-mac.yml', merge);
       - name: Upload fixed latest-mac.yml
         uses: actions/upload-release-asset@v1
         with:

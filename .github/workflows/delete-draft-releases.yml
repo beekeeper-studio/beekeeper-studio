@@ -1,0 +1,38 @@
+name: Delete Draft Releases
+
+on:
+  workflow_dispatch:
+
+jobs:
+  delete-draft-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Delete all draft releases
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const draftReleases = releases.filter(release => release.draft);
+
+            if (draftReleases.length === 0) {
+              core.info('No draft releases found.');
+              return;
+            }
+
+            for (const release of draftReleases) {
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+              });
+              core.info(`Deleted draft release: ${release.name}`);
+            }
+
+            core.info('All draft releases have been deleted.');
