@@ -132,8 +132,6 @@ jobs:
       - name: Verify Python Version
         if: ${{!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')}}
         run: |
-          ppath = $(which python)
-          echo "python path: $ppath vs PYTHON_PATH: $PYTHON_PATH"
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
           if [[ ! $PYTHON_VERSION == 3.8* ]]; then
