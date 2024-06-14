@@ -292,7 +292,10 @@ jobs:
     needs: [release, create_draft_release]
     runs-on: ubuntu-latest
     steps:
-      - run: npm install -g js-yaml
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - run: npm install js-yaml
       - name: Merge yml files
         uses: actions/github-script@v7
         env:
