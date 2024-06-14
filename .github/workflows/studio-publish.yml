@@ -295,7 +295,7 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
-      - run: npm install js-yaml
+      - run: npm install -g js-yaml
       - name: Download mac arch yml files
         id: get_files
         uses: actions/github-script@v7
