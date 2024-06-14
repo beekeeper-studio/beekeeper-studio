@@ -46,8 +46,8 @@ jobs:
       matrix:
         # macos-13 is Intel, macos-14 is arm (obviously)
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-        # os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
-        os: [macos-13, macos-14 ]
+        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
+        # os: [macos-13, macos-14 ]
 
     steps:
       # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
