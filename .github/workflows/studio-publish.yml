@@ -176,6 +176,8 @@ jobs:
       - name: Clean cache
         run: yarn cache clean --all
 
+      - run: rm -rf node_modules
+
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.
       # But only sometimes. I cannot figure out why.
