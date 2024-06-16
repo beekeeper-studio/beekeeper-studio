@@ -1222,17 +1222,10 @@ export class DBTestUtil {
       table.string("name")
     })
 
-    if (this.dbType === 'oracle') {
-      await this.knex.schema.createTable('IMPORT_TABLE', (t) => {
-        t.string('NAME'),
-        t.string('HAT')
-      })
-    } else {
-      await this.knex.schema.createTable('import_table', (t) => {
-        t.string('name'),
-        t.string('hat')
-      })
-    }
+    await this.knex.schema.createTable('import_table', (t) => {
+      t.string('name'),
+      t.string('hat')
+    })
 
     if (!this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird'> = {

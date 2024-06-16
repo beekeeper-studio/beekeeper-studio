@@ -830,16 +830,18 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   getImportScripts(table: TableOrView): ImportScriptFunctions {
-    const { name } = table
+    const { name, schema } = table
     const transaction = new sql.Transaction(this.pool)
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
     let request
 
     return {
-      step0: async() => {
+      step0: async(): Promise<null> => {
         request = new sql.Request(transaction)
+        return null
       },
       beginCommand: (_executeOptions: any): Promise<any> => transaction.begin(),
-      truncateCommand: (executeOptions: any): Promise<any> => request.query(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
+      truncateCommand: (executeOptions: any): Promise<any> => request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions),
       lineReadCommand: (sqlString: string, executeOptions: any): Promise<any> => request.query(sqlString, executeOptions),
       commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
       rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback()
