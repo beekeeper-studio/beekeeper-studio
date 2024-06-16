@@ -164,7 +164,7 @@ export class DBTestUtil {
     })
   }
 
-  buildImportData(tableName, schemaName) {
+  buildImportData(tableName, schemaName = null) {
     const data = [
       {
         'name': 'biff',
@@ -534,7 +534,7 @@ export class DBTestUtil {
     expect(simpleResult.find((c) => c.columnName?.toLowerCase() === 'family_name')).toBeTruthy()
 
 
-    // only databases that can actually change things past this point.
+    // only databases t can actually change things past this point.
     if (this.data.disabledFeatures?.alter?.alterColumn) return
 
     await this.knex.schema.dropTableIfExists("alter_test")
@@ -1222,10 +1222,17 @@ export class DBTestUtil {
       table.string("name")
     })
 
-    await this.knex.schema.createTable('import_table', (t) => {
-      t.string('name'),
-      t.string('hat')
-    })
+    if (this.dbType === 'oracle') {
+      await this.knex.schema.createTable('IMPORT_TABLE', (t) => {
+        t.string('NAME'),
+        t.string('HAT')
+      })
+    } else {
+      await this.knex.schema.createTable('import_table', (t) => {
+        t.string('name'),
+        t.string('hat')
+      })
+    }
 
     if (!this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird'> = {

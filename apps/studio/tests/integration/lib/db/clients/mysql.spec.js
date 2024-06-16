@@ -310,63 +310,65 @@ function testWith(tag, socket = false, readonly = false) {
       })
     })
 
-    it('should import correctly then test rollback', async () => {
-      const tableName = 'import_table'
-      const executeOptions = { multiple: false }
-      const table = {
-        name: tableName,
-        entityType: 'table'
-      }
-      const formattedData = util.buildImportData(tableName)
-      const {
-        step0,
-        beginCommand,
-        truncateCommand,
-        lineReadCommand,
-        commitCommand,
-        rollbackCommand,
-        finalCommand
-      } = util.connection.getImportScripts(table)
-      const importSQL = util.connection.getImportSQL(formattedData)
+    describe.only("Imports", () => {
+      it('should import correctly then test rollback', async () => {
+        const tableName = 'import_table'
+        const executeOptions = { multiple: false }
+        const table = {
+          name: tableName,
+          entityType: 'table'
+        }
+        const formattedData = util.buildImportData(tableName)
+        const {
+          step0,
+          beginCommand,
+          truncateCommand,
+          lineReadCommand,
+          commitCommand,
+          rollbackCommand,
+          finalCommand
+        } = util.connection.getImportScripts(table)
+        const importSQL = util.connection.getImportSQL(formattedData)
+    
+        expect(step0).toBeUndefined()
+        expect(typeof beginCommand).toBe('function')
+        expect(typeof truncateCommand).toBe('function')
+        expect(typeof lineReadCommand).toBe('function')
+        expect(typeof commitCommand).toBe('function')
+        expect(typeof rollbackCommand).toBe('function')
+        expect(finalCommand).toBeUndefined()
+    
+        await beginCommand(executeOptions)
+        await truncateCommand(executeOptions)
+        await lineReadCommand(importSQL, executeOptions)
+        await commitCommand(executeOptions)
+    
+        const hats = await util.knex.select().table(tableName)
+        expect(hats.length).toBe(4)
+      })
   
-      expect(step0).toBeUndefined()
-      expect(typeof beginCommand).toBe('function')
-      expect(typeof truncateCommand).toBe('function')
-      expect(typeof lineReadCommand).toBe('function')
-      expect(typeof commitCommand).toBe('function')
-      expect(typeof rollbackCommand).toBe('function')
-      expect(finalCommand).toBeUndefined()
-  
-      await beginCommand(executeOptions)
-      await truncateCommand(executeOptions)
-      await lineReadCommand(importSQL, executeOptions)
-      await commitCommand(executeOptions)
-  
-      const hats = await util.knex.select().table(tableName)
-      expect(hats.length).toBe(4)
-    })
-
-    it('should rollback', async () => {
-      const tableName = 'import_table'
-      const executeOptions = { multiple: false }
-      const table = {
-        name: tableName,
-        entityType: 'table'
-      }
-      const formattedData = util.buildImportData(tableName)
-      const {
-        beginCommand,
-        lineReadCommand,
-        rollbackCommand,
-      } = util.connection.getImportScripts(table)
-      const importSQL = util.connection.getImportSQL(formattedData)
-      const hatsStart = await util.knex.select().table(tableName)
-      await beginCommand(executeOptions)
-      await lineReadCommand(importSQL, executeOptions)
-      await rollbackCommand(executeOptions)
-  
-      const hats = await util.knex.select().table(tableName)
-      expect(hats.length).toBe(hatsStart.length)
+      it('should rollback', async () => {
+        const tableName = 'import_table'
+        const executeOptions = { multiple: false }
+        const table = {
+          name: tableName,
+          entityType: 'table'
+        }
+        const formattedData = util.buildImportData(tableName)
+        const {
+          beginCommand,
+          lineReadCommand,
+          rollbackCommand,
+        } = util.connection.getImportScripts(table)
+        const importSQL = util.connection.getImportSQL(formattedData)
+        const hatsStart = await util.knex.select().table(tableName)
+        await beginCommand(executeOptions)
+        await lineReadCommand(importSQL, executeOptions)
+        await rollbackCommand(executeOptions)
+    
+        const hats = await util.knex.select().table(tableName)
+        expect(hats.length).toBe(hatsStart.length)
+      })
     })
   })
 
