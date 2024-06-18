@@ -550,7 +550,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         const importSQL = util.connection.getImportSQL(formattedData)
         const hatsStart = await util.knex.select().table(tableName)
         await beginCommand(executeOptions)
-        await lineReadCommand(importSQL, executeOptions)
+        await lineReadCommand(importSQL, {multiple: true})
         await rollbackCommand(executeOptions)
     
         const hats = await util.knex.select().table(tableName)

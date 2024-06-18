@@ -300,7 +300,7 @@ describe("Firebird Tests", () => {
     await step0()
     await beginCommand()
     await truncateCommand()
-    await lineReadCommand(importSQL)
+    await lineReadCommand(importSQL, {multiple: true})
     await commitCommand()
     await finalCommand()
 

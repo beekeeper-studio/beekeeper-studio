@@ -340,7 +340,7 @@ function testWith(tag, socket = false, readonly = false) {
     
         await beginCommand(executeOptions)
         await truncateCommand(executeOptions)
-        await lineReadCommand(importSQL, executeOptions)
+        await lineReadCommand(importSQL, {multiple: true})
         await commitCommand(executeOptions)
     
         const hats = await util.knex.select().table(tableName)
