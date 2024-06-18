@@ -3,7 +3,8 @@
     v-bind="$attrs"
     :value="value"
     @input="$emit('input', $event)"
-    :lang="connectionType || 'sql'"
+    :hint="hint"
+    :mode="dialectData.textEditorMode"
     :extra-keybindings="keybindings"
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
@@ -24,6 +25,7 @@ import { mapState, mapGetters } from "vuex";
 import { plugins } from "@/lib/editor/utils";
 import { format } from "sql-formatter";
 import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
+import CodeMirror from "codemirror";
 
 export default Vue.extend({
   components: { TextEditor },
@@ -34,8 +36,12 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapGetters(['defaultSchema']),
+    ...mapGetters(['defaultSchema', 'dialectData']),
     ...mapState(["tables"]),
+    hint() {
+      // @ts-expect-error not fully typed
+      return CodeMirror.hint.sql;
+    },
     hintOptions() {
       // We do this so we can order the autocomplete options
       const firstTables = {};
@@ -91,7 +97,7 @@ export default Vue.extend({
   methods: {
     async formatSql() {
       const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.lang)),
+        language: FormatterDialect(dialectFor(this.connectionType)),
       });
       await this.setEditorValue(formatted);
     },

@@ -34,6 +34,8 @@
       <sql-text-editor
         v-model="unsavedText"
         v-bind.sync="editor"
+        :focus="focusElement === 'text-editor'"
+        @update:focus="updateTextEditorFocus"
         :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
@@ -131,7 +133,8 @@
       />
       <result-table
         ref="table"
-        v-else-if="rowCount > 0"
+        v-else-if="showResultTable"
+        :focus="focusElement === 'table'"
         :active="active"
         :table-height="tableHeight"
         :result="result"
@@ -158,7 +161,7 @@
         v-else-if="info"
       >
         <div class="alert alert-info">
-          <i class="material-icon-outlined">info</i>
+          <i class="material-icons-outlined">info</i>
           <span>{{ info }}</span>
         </div>
       </div>
@@ -194,6 +197,7 @@
         :scrollable="true"
       >
         <form
+          v-kbd-trap="true"
           v-if="query"
           @submit.prevent="saveQuery"
         >
@@ -249,7 +253,10 @@
         height="auto"
         :scrollable="true"
       >
-        <form @submit.prevent="submitQuery(queryForExecution, true)">
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="submitQuery(queryForExecution, true)"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">
               Provide parameter values
@@ -369,6 +376,7 @@
         blankQuery: new FavoriteQuery(),
         dryRun: false,
         containerResizeObserver: null,
+        focusElement: 'text-editor',
       }
     },
     computed: {
@@ -500,6 +508,7 @@
       keymap() {
         if (!this.active) return {}
         const result = {}
+        result[this.ctrlOrCmd('`')] = this.switchPaneFocus.bind(this)
         result[this.ctrlOrCmd('l')] = this.selectEditor
         result[this.ctrlOrCmd('i')] = this.submitQueryToFile
         result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
@@ -548,7 +557,7 @@
           "Ctrl+I": this.submitQueryToFile,
           "Cmd+I": this.submitQueryToFile,
           "Shift+Ctrl+I": this.submitCurrentQueryToFile,
-          "Shift+Cmd+I": this.submitCurrentQueryToFile
+          "Shift+Cmd+I": this.submitCurrentQueryToFile,
         }
 
         if(this.userKeymap === "vim") {
@@ -583,6 +592,9 @@
         if (this.marker) markers.push(this.marker)
         if (this.errorMarker) markers.push(this.errorMarker)
         return markers
+      },
+      showResultTable() {
+        return this.rowCount > 0
       },
     },
     watch: {
@@ -915,7 +927,7 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
+          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'
@@ -953,7 +965,21 @@
         if(this.query.id) {
           this.close()
         }
-      }
+      },
+      updateTextEditorFocus(focused: boolean) {
+        this.switchPaneFocus(undefined, focused ? 'text-editor' : 'table')
+      },
+      switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
+        if (!this.showResultTable) {
+          this.focusElement = 'text-editor'
+        } else if (target) {
+          this.focusElement = target
+        } else {
+          this.focusElement = this.focusElement === 'text-editor'
+            ? 'table'
+            : 'text-editor'
+        }
+      },
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()

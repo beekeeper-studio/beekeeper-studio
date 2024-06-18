@@ -108,14 +108,14 @@ export default {
     label() {
       if (this.savedConnection) {
         return this.savedConnection.name
-      } else if (this.config.connectionType === 'sqlite') {
+      } else if (this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') {
         return path.basename(this.config.defaultDatabase)
       }
 
       return this.$bks.simpleConnectionString(this.config)
     },
     connectionType() {
-      if (this.config.connectionType === 'sqlite') {
+      if (this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') {
         return 'path'
       }
 

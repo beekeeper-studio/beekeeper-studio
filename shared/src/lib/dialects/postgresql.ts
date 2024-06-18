@@ -43,6 +43,7 @@ export const PostgresData: DialectData = {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
+  textEditorMode: "text/x-pgsql",
   disabledFeatures: {
     informationSchema: {
       extra: true

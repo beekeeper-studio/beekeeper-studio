@@ -51,6 +51,13 @@
     box-shadow: none;
   }
 
+  &:focus-visible {
+    outline-style: solid;
+    outline-offset: 0.14rem;
+    outline-width: 2px;
+    outline-color: $theme-base;
+  }
+
   &.btn-icon {
     display: flex;
     align-items: center;

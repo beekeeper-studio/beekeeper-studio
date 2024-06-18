@@ -166,6 +166,10 @@
     transition: color 0.15s ease-in-out;
     cursor: pointer;
   }
+  i.material-icons {
+    margin-right: 1rem;
+    font-size: 1.2em;
+  }
   &.enabled {
     i {
       color: $theme-primary;

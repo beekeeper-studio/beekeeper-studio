@@ -18,6 +18,7 @@ const TEST_VERSIONS = [
 
 function testWith(tag, socket = false, readonly = false) {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
+    jest.setTimeout(dbtimeout)
 
     let container;
     /** @type {DBTestUtil} */
@@ -25,7 +26,6 @@ function testWith(tag, socket = false, readonly = false) {
 
     beforeAll(async () => {
       const timeoutDefault = 5000
-      jest.setTimeout(dbtimeout)
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mysql-'));
       fs.chmodSync(temp, "777")
       container = await new GenericContainer("mysql", tag)
@@ -276,6 +276,38 @@ function testWith(tag, socket = false, readonly = false) {
 
       expect(firstResult.bitcol[0]).toBe(0)
       expect(secondResult.bitcol[0]).toBe(1)
+    })
+
+    describe("Index Prefixes", () => {
+      beforeAll(async () => {
+        await util.knex.schema.createTable("has_prefix_indexes", (table) => {
+          table.specificType("one", "text")
+          table.specificType("two", "blob")
+        })
+        await util.knex.schema.raw("CREATE INDEX text_index ON has_prefix_indexes (one(10))")
+      })
+
+      it("Should be able to list indexes with custom prefixes correctly", async () => {
+        const indexes = await util.connection.listTableIndexes('has_prefix_indexes')
+        expect(indexes[0].columns[0].prefix).toBe('10')
+      })
+
+      it("Should be able to create indexes with custom prefixes correctly", async () => {
+        if (readonly) return
+
+        await util.connection.alterIndex({
+          table: 'has_prefix_indexes',
+          additions: [{
+            name: 'custom_prefix_index',
+            columns: [{ name: 'two', order: 'ASC', prefix: 5 }],
+          }],
+        })
+
+        const indexes = await util.connection.listTableIndexes('has_prefix_indexes')
+        expect(indexes[1].columns[0].prefix).toBe('5')
+
+        await util.knex.schema.raw("DROP INDEX custom_prefix_index ON has_prefix_indexes")
+      })
     })
   })
 

@@ -3,11 +3,12 @@
     class="input-group"
   >
     <input
+      :id="inputId"
       type="text"
       class="form-control clickable"
       placeholder="No file selected"
       :title="value"
-      v-model="value"
+      :value="inputValue"
       :disabled="disabled"
       readonly
       @click.prevent.stop="openFilePickerDialog"
@@ -28,6 +29,8 @@
 </template>
 
 <script>
+import pluralize from 'pluralize'
+
 /* options and all for the native file picker can be found here https://www.electronjs.org/docs/latest/api/dialog */
 export default {
   props: {
@@ -40,6 +43,11 @@ export default {
       default: ''
     },
     showHiddenFiles: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
+    multiple: {
       type: Boolean,
       required: false,
       default: false
@@ -61,11 +69,27 @@ export default {
     buttonText: {
       type: String,
       default: "Choose File"
+    },
+    inputId: {
+      type: String,
+      default: "file-picker"
     }
   },
   computed: {
     hasOtherActions() {
       return !!this.$slots.actions;
+    },
+    inputValue() {
+      const files = this.value
+
+      if (Array.isArray(files)) {
+        if (files.length > 1) {
+          return `${files[0]} (${files.length} files)`
+        }
+        return files[0]
+      }
+
+      return files
     }
   },
   methods: {
@@ -84,6 +108,10 @@ export default {
 
       if (this.showHiddenFiles) {
         dialogConfig.properties.push('showHiddenFiles')
+      }
+
+      if (this.multiple) {
+        dialogConfig.properties.push('multiSelections')
       }
 
       let files
@@ -105,7 +133,12 @@ export default {
 
       if (files) {
         if (!Array.isArray(files)) files = [files]
-        this.$emit('input', files[0])
+
+        if (this.multiple) {
+          this.$emit('input', files)
+        } else {
+          this.$emit('input', files[0])
+        }
       }
     }
   }

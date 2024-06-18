@@ -209,6 +209,8 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
+  connectionBaseType = 'firebird' as const;
+
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
@@ -220,6 +222,15 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     super(null, context, server, database);
     this.dialect = 'generic';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
+  }
+
+  async checkIsConnected(): Promise<boolean> {
+    try {
+      await this.rawExecuteQuery('SELECT 1 FROM RDB$DATABASE');
+      return true;
+    } catch (_e) {
+      return false;
+    }
   }
 
   versionString(): string {
@@ -795,6 +806,12 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     });
   }
 
+  setElementNameSql(): string {
+    // Firebird doesn't support renaming tables or any database elements we
+    // support. https://www.firebirdfaq.org/faq363/
+    return '';
+  }
+
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,
@@ -807,12 +824,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return [this.database.database];
   }
 
-  async truncateElement(
-    _elementName: string,
-    _typeOfElement: DatabaseElement,
-    _schema?: string
-  ): Promise<void> {
-    // TODO There is no internal function to truncate a table
+  // TODO There is no internal function to truncate a table
+  truncateElementSql() {
+    return ''
   }
 
   async duplicateTable(
@@ -1019,7 +1033,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 

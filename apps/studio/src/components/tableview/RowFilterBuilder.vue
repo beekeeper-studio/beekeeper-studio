@@ -2,6 +2,7 @@
   <div
     v-hotkey="keymap"
     class="table-filter"
+    v-if="!minimalMode || !hideInMinimalMode"
   >
     <form
       @submit.prevent="submit"
@@ -33,6 +34,7 @@
               class="form-control"
               type="text"
               v-model="filterRaw"
+              @blur="updateMinimalModeByFilterRaw"
               ref="valueInput"
               placeholder="Enter condition, eg: name like 'Matthew%'"
             >
@@ -50,6 +52,7 @@
             class="btn btn-primary btn-fab"
             type="submit"
             title="Filter"
+            v-if="!minimalMode"
           >
             <i class="material-icons">search</i>
           </button>
@@ -130,8 +133,11 @@
               <div class="filter-wrap">
                 <input
                   class="form-control filter-value"
+                  :class="{ 'disabled-input': isNullFilter(filter) }"
                   type="text"
+                  ref="filterInputs"
                   v-model="filter.value"
+                  @blur="updateMinimalModeByFilters"
                   :disabled="isNullFilter(filter)"
                   :title="isNullFilter(filter) ? 
                     'You cannot provide a comparison value when checking for NULL or NOT NULL' : 
@@ -168,7 +174,10 @@
             </div>
           </div>
           <div class="filter-add-apply">
-            <div class="row fixed">
+            <div
+              v-if="!minimalMode"
+              class="row fixed"
+            >
               <button
                 v-if="filters.length > 1"
                 class="btn btn-flat btn-fab remove-filter"
@@ -228,7 +237,7 @@
 <script lang="ts">
 import Vue from "vue";
 import { TableFilter } from "@/lib/db/models";
-import { joinFilters, normalizeFilters } from "@/common/utils";
+import { joinFilters, normalizeFilters, createTableFilter, checkEmptyFilters } from "@/common/utils";
 import { mapGetters, mapState } from "vuex";
 import platformInfo from "@/common/platform_info";
 import { AppEvent } from "@/common/AppEvent";
@@ -240,6 +249,7 @@ export default Vue.extend({
   props: ["columns", "reactiveFilters"],
   data() {
     return {
+      hideInMinimalMode: true,
       filterTypes: {
         equals: "=",
         "does not equal": "!=",
@@ -255,12 +265,13 @@ export default Vue.extend({
       filters: this.reactiveFilters,
       filterRaw: "",
       filterMode: BUILDER,
+      submittedWithEmptyValue: false,
       RAW,
       BUILDER,
     };
   },
   computed: {
-    ...mapGetters(["dialectData"]),
+    ...mapGetters(["dialectData", "minimalMode"]),
     ...mapState(['connection']),
     additionalFilters() {
       const [_, ...additional] = this.filters;
@@ -336,25 +347,43 @@ export default Vue.extend({
     removeFilter(shiftedIdx: number) {
       this.filters.splice(shiftedIdx + 1, 1);
     },
+    clearFilter() {
+      this.filters = [createTableFilter(this.filters[0].field)]
+    },
     submit() {
-      this.$emit(
-        "submit",
-        this.filterMode === RAW
-          ? this.filterRaw || null
-          : normalizeFilters(this.filters)
-      );
+      let filters: TableFilter[] | string | null
+      if (this.filterMode === RAW) {
+        filters = this.filterRaw || null
+      } else {
+        filters = normalizeFilters(this.filters)
+        this.submittedWithEmptyValue = checkEmptyFilters(filters)
+      }
+      this.$emit("submit", filters);
+    },
+    updateMinimalModeByFilters() {
+      this.hideInMinimalMode = checkEmptyFilters(this.filters)
+    },
+    updateMinimalModeByFilterRaw() {
+      this.hideInMinimalMode = this.filterRaw === ''
     },
   },
   watch: {
     filters: {
       deep: true,
-      handler(nextFilters: TableFilter[], oldFilters: TableFilter[]) {
-        this.$emit("input", nextFilters);
+      handler(filters: TableFilter[]) {
+        this.$emit("input", filters);
+
+        const inputs = _.isArray(this.$refs.filterInputs) ? this.$refs.filterInputs : [this.$refs.filterInputs]
+        const focusIsOnInput = inputs.some((input: HTMLInputElement) => document.activeElement.isSameNode(input))
+        if (!focusIsOnInput) {
+          this.updateMinimalModeByFilters()
+        }
+
         // Submit when it's only one filter and it's empty
         if (
-          nextFilters.length === 1 &&
-          oldFilters[0].value !== "" &&
-          nextFilters[0].value === ""
+          filters.length === 1 &&
+          filters[0].value === "" &&
+          !this.submittedWithEmptyValue
         ) {
           this.submit();
         }
@@ -364,9 +393,14 @@ export default Vue.extend({
       this.submit();
     },
     filterRaw() {
-      if (this.filterRaw === "") this.submit();
+      const focusIsOnInput = document.activeElement.isSameNode(this.$refs.valueInput)
+      if (!focusIsOnInput) {
+        this.updateMinimalModeByFilterRaw()
+      }
+      this.submit();
     },
     externalFilters() {
+      this.hideInMinimalMode = checkEmptyFilters(this.externalFilters)
       if (platformInfo.isCommunity) {
         this.filters = this.externalFilters?.slice(0, 2) || [];
       } else {

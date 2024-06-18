@@ -23,6 +23,7 @@ export interface DataState<T> {
   loading: boolean
   error: ClientError
   pollError: ClientError
+  filter?: string
 }
 
 

@@ -7,13 +7,17 @@ on:
     paths-ignore:
       - 'apps/sqltools/**'
 
+concurrency:
+  group: master-build
+  cancel-in-progress: true
+
 jobs:
   masterbuild:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [macos-13-xlarge, ubuntu-20.04, windows-2019]
+        os: [macos-14, ubuntu-20.04, windows-2019]
 
     steps:
       - name: Check out Git repository

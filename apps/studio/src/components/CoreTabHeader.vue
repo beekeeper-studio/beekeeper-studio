@@ -18,9 +18,9 @@
         <tab-icon :tab="tab" />
         <span
           class="tab-title truncate"
-          :title="title + scope"
+          :title="title + (!$store.getters.minimalMode ? scope : '')"
         >{{ title }} <span
-          v-if="scope"
+          v-if="scope && !$store.getters.minimalMode"
           class="tab-title-scope"
         >{{ scope }}</span></span>
         <div class="tab-action">

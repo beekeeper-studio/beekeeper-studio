@@ -23,6 +23,7 @@ export default class {
     this.forward(AppEvent.toggleSidebar)
     this.forward(AppEvent.quickSearch)
     this.forward(AppEvent.upgradeModal)
+    this.forward(AppEvent.promptSqlFilesImport)
   }
 
   forward(event) {

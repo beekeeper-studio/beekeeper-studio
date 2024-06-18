@@ -35,13 +35,17 @@ export const SqliteData: DialectData = {
     if (matched) return matched[1] || matched[2] || matched[3];
     return value;
   },
+  textEditorMode: "text/x-sqlite",
   disabledFeatures: {
+    schema: true,
     comments: true,
     alter: {
       alterColumn: true,
       multiStatement: true,
       addConstraint: true,
       dropConstraint: true,
+      renameView: true,
+      renameSchema: true,
     },
     informationSchema: {
       extra: true

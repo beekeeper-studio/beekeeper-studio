@@ -35,6 +35,7 @@ import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 
 (async () => {
 
@@ -142,6 +143,7 @@ import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
       theme: 'mint',
       closeWith: ['button', 'click'],
     })
+    Vue.use(VueKeyboardTrapDirectivePlugin)
 
     const app = new Vue({
       render: h => h(App),

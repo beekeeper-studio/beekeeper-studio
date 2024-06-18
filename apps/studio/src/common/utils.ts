@@ -200,6 +200,22 @@ export function normalizeFilters(filters: TableFilter[]) {
   return normalized;
 }
 
+/** Create an object for filter used in Row Filter Builder */
+export function createTableFilter(field: string): TableFilter {
+  return { op: "AND", field, type: "=", value: "" }
+}
+
+/** Check if an array of filters is considered empty */
+export function checkEmptyFilters(filters: TableFilter[]): boolean {
+  if (filters.length === 0) {
+    return true
+  }
+  if (filters.length === 1) {
+    return _.isEmpty(filters[0].value)
+  }
+  return filters.every(filter => _.isEmpty(filter.value));
+}
+
 /** Useful for identifying an entity item in table list */
 export function entityId(schema: string, entity?: TableOrView | Routine) {
   if (entity) return `${entity.entityType}.${schema}.${entity.name}`;

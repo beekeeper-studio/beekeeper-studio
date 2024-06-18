@@ -72,7 +72,7 @@ markdown_extensions:
 nav:
   - Introduction: index.md
   - getting-started-guide.md
-  - Upgrading: support/upgrading-from-the-community-edition.md
+  - purchasing-a-license.md
   - Installation:
     - installation/index.md
     - installation/windows.md
@@ -94,6 +94,7 @@ nav:
     - user_guide/importing-data-csv-json-etc.md
     - user_guide/query-magics.md
   - Support:
+    - Upgrading: support/upgrading-from-the-community-edition.md
     - support/subscription-management.md
     - support/contact-support.md
     - support/open-source.md

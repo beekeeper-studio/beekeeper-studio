@@ -204,11 +204,11 @@
   .btn {
     font-weight: 400;
 
-    &:focus {
-      font-weight: 800;
-      border: $theme-primary solid 2px;
-      line-height: 22px;
-    }
+    // &:focus {
+    //   font-weight: 800;
+    //   border: $theme-primary solid 2px;
+    //   line-height: 22px;
+    // }
   }
 
   .tab-like {
@@ -370,6 +370,9 @@
       &:focus {
         box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
       }
+    }
+    .disabled-input {
+      opacity: 0.5;
     }
     .clear {
       position: absolute;
@@ -552,5 +555,11 @@
   .no-matching-results,
   .all-label {
     opacity: 0.5;
+  }
+}
+
+.beekeeper-studio-minimal-mode {
+  .core-tabs .nav-tabs .nav-link.active {
+    font-weight: inherit;
   }
 }

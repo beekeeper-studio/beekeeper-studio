@@ -3,7 +3,10 @@ import { DockerComposeEnvironment, GenericContainer, Wait } from 'testcontainers
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
 
+const timeoutDefault = 1000 * 60 * 5 // 5 minutes
+
 describe("Oracle Tests", () => {
+  jest.setTimeout(timeoutDefault + 500) // give jest a buffer
 
   let container;
   let util
@@ -13,8 +16,6 @@ describe("Oracle Tests", () => {
 
   beforeAll(async () => {
     // this is the testcontainers default startup wait time.
-    const timeoutDefault = 1000 * 60 * 5 // 5 minutes
-    jest.setTimeout(timeoutDefault + 500) // give jest a buffer
     const localDir = path.resolve('./tests/docker/oracle_init')
     container = await new GenericContainer('gvenzl/oracle-xe:18')
       .withName('oracle')
@@ -47,7 +48,12 @@ describe("Oracle Tests", () => {
         connectionMethod: 'manual'
       }
     }
-    util = new DBTestUtil(config, "BEEKEEPER", { defaultSchema: 'BEEKEEPER', dialect: 'oracle' })
+    util = new DBTestUtil(config, "BEEKEEPER", {
+      defaultSchema: "BEEKEEPER",
+      dialect: "oracle",
+      // oracle will throw a "ORA-01100: database already mounted" error if trying to create
+      skipCreateDatabase: true,
+    });
     await util.setupdb()
 
   })

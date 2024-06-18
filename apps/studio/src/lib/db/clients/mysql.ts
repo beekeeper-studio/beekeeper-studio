@@ -31,14 +31,13 @@ import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
-import { AlterTableSpec, TableKey } from "@shared/lib/dialects/models";
+import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
-  IndexedColumn,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -191,6 +190,24 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
   });
 }
 
+export function parseIndexColumn(str: string): IndexColumn {
+  str = str.trim()
+
+  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
+  const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
+
+  let name: string = nameAndPrefix
+  let prefix: number | null = null
+
+  const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
+  if (prefixMatch) {
+    prefix = Number(prefixMatch[1]) 
+    name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
+  }
+
+  return { name, order, prefix }
+}
+
 function parseRowQueryResult(
   data: any,
   rawFields: any[],
@@ -244,6 +261,8 @@ function filterDatabase(
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
+  connectionBaseType = 'mysql' as const;
+
   versionInfo: {
     versionString: string;
     version: number;
@@ -349,9 +368,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return Object.keys(grouped).map((key, idx) => {
       const row = grouped[key][0];
 
-      const columns: IndexedColumn[] = grouped[key].map((r) => ({
+      const columns: IndexColumn[] = grouped[key].map((r) => ({
         name: r.Column_name,
         order: r.Collation === "A" ? "ASC" : "DESC",
+        prefix: r.Sub_part, // Also called index prefix length.
       }));
 
       return {
@@ -844,18 +864,31 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return true;
   }
 
-  async truncateElement(
-    elementName: string,
-    typeOfElement: DatabaseElement,
-    _schema?: string
-  ): Promise<void> {
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
+    return `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`;
+  }
+
+  async truncateElement(elementName: string, typeOfElement: DatabaseElement): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      const sql = `
-        TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)}
-          ${this.wrapIdentifier(elementName)}
-      `;
-      await this.driverExecuteSingle(sql, { connection });
+      await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement), { connection });
     });
+  }
+
+  setElementNameSql(
+    elementName: string,
+    newElementName: string,
+    typeOfElement: DatabaseElement
+  ): string {
+    elementName = this.wrapIdentifier(elementName);
+    newElementName = this.wrapIdentifier(newElementName);
+
+    let sql = ''
+
+    if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
+      sql = `RENAME TABLE ${elementName} TO ${newElementName};`;
+    }
+
+    return sql
   }
 
   async dropElement(
@@ -1108,7 +1141,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       editPartitions: false,
       backups: true,
       backDirFormat: false,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: false,
     };
   }
 

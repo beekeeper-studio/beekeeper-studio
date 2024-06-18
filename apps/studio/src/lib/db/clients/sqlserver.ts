@@ -1,12 +1,12 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import { ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
+import { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
 
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer, IDbConnectionServerConfig } from "../types"
+import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -31,6 +31,7 @@ import {
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { AuthOptions, AzureAuthService } from '../authentication/azure';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -69,6 +70,8 @@ const SQLServerContext = {
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
+  connectionBaseType = 'sqlserver' as const;
+
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => string
@@ -77,6 +80,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   readOnlyMode: boolean
   logger: any
   pool: ConnectionPool;
+  authService: AzureAuthService;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
@@ -433,6 +437,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return totalRecords
   }
 
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
+    if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
+      return ''
+    }
+
+    elementName = this.wrapValue(schema + '.' + elementName)
+    newElementName = this.wrapValue(newElementName)
+
+    return `EXEC sp_rename ${elementName}, ${newElementName};`
+  }
+
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
     await this.driverExecuteSingle(sql)
@@ -466,7 +481,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     throw new Error("Method not implemented.");
   }
 
-  // should figure out how to not require this because it's being a butt
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
     this.logger().info('RUNNING', q, options);
 
@@ -501,9 +515,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.driverExecuteSingle(truncateAll);
   }
 
-  async truncateElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
-    const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
-    await this.driverExecuteSingle(sql)
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
+    return `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema = 'dbo') {
@@ -841,10 +854,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    this.dbConfig = this.configDatabase(this.server, this.database)
+    this.dbConfig = await this.configDatabase(this.server, this.database)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
 
     this.pool.on('error', (err) => {
+      if (err instanceof ConnectionError) {
+        log.log('IS INSTANCE OF')
+      }
       log.error("Pool event: connection error:", err.name, err.message);
     });
 
@@ -854,6 +870,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async disconnect(): Promise<void> {
+    this.authService?.cancel();
     await this.pool.close();
 
     await super.disconnect();
@@ -880,7 +897,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     }
   }
 
@@ -957,19 +975,42 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<IDbConnectionServerConfig> {
+  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<any> { // changed to any for now, might need to make some changes
     const config: any = {
-      user: server.config.user,
-      password: server.config.password,
       server: server.config.host,
       database: database.database,
-      port: server.config.port,
       requestTimeout: Infinity,
       appName: 'beekeeperstudio',
       pool: {
-        max: 10,
+        max: 10
       }
     };
+
+    if (server.config.azureAuthOptions?.azureAuthEnabled) {
+      this.authService = new AzureAuthService();
+      await this.authService.init(server.config.authId)
+
+      const options: AuthOptions = {
+        password: server.config.password,
+        userName: server.config.user,
+        tenantId: server.config.azureAuthOptions.tenantId,
+        clientSecret: server.config.azureAuthOptions.clientSecret,
+        msiEndpoint: server.config.azureAuthOptions.msiEndpoint
+      };
+
+      config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
+
+      config.options = {
+        encrypt: true
+      };
+
+      return config;
+    }
+
+    config.user = server.config.user;
+    config.password = server.config.password;
+    config.port = server.config.port;
+
     if (server.config.domain) {
       config.domain = server.config.domain
     }

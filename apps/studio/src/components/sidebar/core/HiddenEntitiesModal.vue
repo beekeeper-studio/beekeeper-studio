@@ -4,17 +4,22 @@
     @before-open="onBeforeOpened"
     :name="modalName"
   >
-    <form @submit.prevent="onSubmit">
+    <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+    <form
+      v-kbd-trap="true"
+      @submit.prevent="onSubmit"
+    >
       <div class="dialog-content">
         <div class="dialog-c-title flex flex-middle">
           Hidden Entities
         </div>
-        <span class="close-btn btn btn-fab">
-          <i
-            class="material-icons"
-            @click.prevent="closeModal"
-          >clear</i>
-        </span>
+        <a
+          class="close-btn btn btn-fab"
+          href="#"
+          @click.prevent="closeModal"
+        >
+          <i class="material-icons">clear</i>
+        </a>
         <div class="modal-form">
           <div class="list-container">
             <div
