@@ -46,6 +46,7 @@ extra_css:
   - stylesheets/extra.css
 plugins:
   - search
+  - include-markdown
 #  - social:
 #      cards_layout_options:
 #        background_color: "#2c2c2c"

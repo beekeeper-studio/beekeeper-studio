@@ -2,15 +2,23 @@
 
 - A funcionalidade de atualização automática estava quebrada nas versões anteriores a 1.7.5. Por favor, faça atualização de forma manual a partir da seção de [release](https://github.com/beekeeper-studio/beekeeper-studio/releases).
 
-# Beekeeper Studio
+
+![image](https://user-images.githubusercontent.com/279769/203650152-4a34af1f-8a38-47cf-a273-d34d1c84feeb.png)
 
 Beekeeper Studio é um editor e gerenciador SQL de banco de dados multiplataforma, disponível para Linux, MacOS e Windows.
 
-Beekeeper Studio usa a licença MIT, portanto é livre e grátis.
+Beekeeper Studio usa a licença GPLv3, portanto é livre e grátis.
 
 Baixe agora [do nosso site](https://beekeeperstudio.io).
 
 Curtiu o Beekeeper Studio e quer contribuir, mas não com código? [Temos algumas ideias pra você!](https://github.com/beekeeper-studio/beekeeper-studio/issues/287)
+
+## Suporte a Bancos de Dados
+
+<!-- SUPPORT_BEGIN -->
+
+<!-- SUPPORT_END -->
+
 
 # Funcionalidades
 
@@ -25,8 +33,6 @@ Principais funcionalidades: é leve 🍫, rápido 🏎 e você realmente vai gos
 - Tema escuro como padrão.
 
 Uma de nossas frustrações com outros editores e gerenciadores SQL de código aberto é que eles usam uma abordagem de "pia na cozinha" para suas funcionalidades, adicionando tantas funcionalidades que tornam a interface desordenada e difícil de navegar. Nós queremos um visual legal, uma ferramenta SQL de código aberto que seja poderosa, mas fácil de usar. Não encontramos uma que atendesse esses requisitos, então resolvemos criar uma.
-
-![Beekeeper Studio Screenshot](https://app.duckdocs.com/sites/2/pages/introduction/images/1)
 
 Beekeeper Studio suporta conexão com os seguintes bancos de dados:
 
