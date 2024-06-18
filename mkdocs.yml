@@ -85,8 +85,9 @@ nav:
       - installation/macos-m1-intel.md
       - installation/linux.md
   - Databases:
-    - Connecting To A Database: user_guide/connecting/first-page.md
-    - Supported Databases:
+    - user_guide/connecting/first-page.md
+    - Connecting To A Database: user_guide/connecting/index.md
+    - DB Specific Guides:
       - user_guide/connecting/sqlite.md
       - user_guide/connecting/google-bigquery.md
       - user_guide/connecting/oracle-database.md
