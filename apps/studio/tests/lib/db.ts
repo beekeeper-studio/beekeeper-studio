@@ -15,7 +15,6 @@ import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
-import Client_Libsql from '@libsql/knex-libsql'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -71,6 +70,7 @@ export interface Options {
   skipGeneratedColumns?: boolean
   skipCreateDatabase?: boolean
   knexConnectionOptions?: Record<string, any>
+  knex?: Knex
 }
 
 export class DBTestUtil {
@@ -104,20 +104,14 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
-    if (config.client === 'sqlite') {
+    if (options.knex) {
+      this.knex = options.knex
+    } else if (config.client === 'sqlite') {
       this.knex = knex({
         client: "better-sqlite3",
         connection: {
           filename: database
         }
-      })
-    } else if (config.client === 'libsql') {
-      const url = !/^:memory:$|^libsql:|^http:|^https:|^ws:|^wss:/.test(database)
-        ? `file:${database}`
-        : database
-      this.knex = knex({
-        client: Client_Libsql as any,
-        connection: { filename: url },
       })
     } else if (config.client === 'oracle') {
       this.knex = knex({

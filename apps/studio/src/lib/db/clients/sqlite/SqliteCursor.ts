@@ -7,15 +7,22 @@ export class SqliteCursor extends BeeCursor {
   protected statement: Statement
   protected iterator?: IterableIterator<any>;
 
+  private usingExternalConnection = false;
+
   constructor(
-    databaseName: string,
+    database: string | Database,
     query: string,
     private params: string[],
     chunkSize: number,
     protected options?: any
   ) {
     super(chunkSize);
-    this._createConnection(databaseName);
+    if (typeof database === 'string') {
+      this._createConnection(database);
+    } else {
+      this.usingExternalConnection = true;
+      this.database = database;
+    }
     this._prepareStatement(query);
   }
 
@@ -44,7 +51,9 @@ export class SqliteCursor extends BeeCursor {
     return results
   }
   async cancel(): Promise<void> {
-    this.database.close()
+    if(!this.usingExternalConnection) {
+      this.database.close()
+    }
   }
 
 }

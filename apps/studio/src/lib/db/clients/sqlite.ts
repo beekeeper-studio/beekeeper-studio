@@ -47,6 +47,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   version: SqliteResult;
   databasePath: string;
   dialectData = SD;
+  isTempDB = false;
+  _rawConnection: Database.Database;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, sqliteContext, server, database);
@@ -54,6 +56,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     this.dialect = 'sqlite';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.databasePath = database?.database;
+    this.isTempDB = _.isEmpty(this.databasePath) || this.databasePath === ':memory:';
   }
 
   versionString(): string {
@@ -241,7 +244,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
           throw err;
         } finally {
-          if (queryConnection) {
+          if (queryConnection !== this._rawConnection) {
             queryConnection.close();
           }
         }
@@ -325,7 +328,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       await this.driverExecuteSingle('ROLLBACK', cli);
       throw ex;
     } finally {
-      cli.connection.close();
+      if (cli.connection !== this._rawConnection) {
+        cli.connection.close();
+      }
     }
 
     return results;
@@ -448,7 +453,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: rowCount,
       columns,
-      cursor: this.createCursor(this.databasePath, query, params, chunkSize)
+      cursor: this.createCursor(this.isTempDB ? this.acquireConnection() : this.databasePath, query, params, chunkSize)
     }
   }
 
@@ -456,7 +461,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: undefined,
       columns: undefined,
-      cursor: this.createCursor(this.databasePath, query, [], chunkSize)
+      cursor: this.createCursor(this.isTempDB ? this.acquireConnection() : this.databasePath, query, [], chunkSize)
     };
   }
 
@@ -582,14 +587,14 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         });
       } catch (error) {
         log.error(error);
-        if (acquiredNewConnection) {
+        if (acquiredNewConnection && connection !== this._rawConnection) {
           connection.close();
         }
         throw error;
       }
     }
 
-    if (acquiredNewConnection) {
+    if (acquiredNewConnection && connection !== this._rawConnection) {
       connection.close();
     }
 
@@ -597,7 +602,17 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   protected acquireConnection(): Database.Database {
-    return new Database(this.databasePath);
+    if (this.isTempDB) {
+      if (!this._rawConnection) {
+        this._rawConnection = this.createRawConnection(':memory:');
+      }
+      return this._rawConnection;
+    }
+    return this.createRawConnection(this.databasePath);
+  }
+
+  protected createRawConnection(filename: string) {
+    return new Database(filename);
   }
 
   protected checkReader(_queryIdentifyResult: IdentifyResult, statement: Database.Statement): boolean {

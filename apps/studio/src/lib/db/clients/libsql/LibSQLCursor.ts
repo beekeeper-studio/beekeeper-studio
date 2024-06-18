@@ -10,13 +10,14 @@ export class LibSQLCursor extends SqliteCursor {
   options: LibSQLCursorOptions
 
   constructor(
-    databaseName: string,
+    database: string | Database.Database,
     query: string,
     params: string[],
     chunkSize: number,
     options: LibSQLCursorOptions = {}
   ) {
-    super(databaseName, query, params, chunkSize, options);
+    // @ts-expect-error not fully typed
+    super(database, query, params, chunkSize, options);
   }
 
   protected _createConnection(path: string) {

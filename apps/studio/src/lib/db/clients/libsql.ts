@@ -23,7 +23,8 @@ const knex = createSQLiteKnex(Client_Libsql);
 export class LibSQLClient extends SqliteClient {
   private isRemote: boolean;
   /** Use this connection when we need to sync to remote database */
-  private connection: Database.Database;
+  // @ts-expect-error not fully typed
+  _rawConnection: Database.Database;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);
@@ -34,7 +35,6 @@ export class LibSQLClient extends SqliteClient {
 
     if (!this.databasePath) {
       this.isRemote = false;
-      this.databasePath = ":memory:";
     } else {
       this.isRemote = /^libsql:|^http:|^https:|^ws:|^wss:/.test(
         this.databasePath
@@ -55,7 +55,7 @@ export class LibSQLClient extends SqliteClient {
     await BasicDatabaseClient.prototype.connect.call(this);
 
     if (this.libsqlOptions.syncUrl) {
-      this.connection = this.acquireConnection();
+      this._rawConnection = this.acquireConnection() as any;
       // TODO should we sync when we connect?
       // this.connection.sync();
     }
@@ -70,8 +70,8 @@ export class LibSQLClient extends SqliteClient {
 
   async disconnect(): Promise<void> {
     await BasicDatabaseClient.prototype.disconnect.call(this);
-    if (this.connection) {
-      this.connection.close();
+    if (this._rawConnection) {
+      this._rawConnection.close();
     }
   }
 
@@ -87,8 +87,8 @@ export class LibSQLClient extends SqliteClient {
   }
 
   async syncDatabase() {
-    if (this.connection) {
-      this.connection.sync();
+    if (this._rawConnection) {
+      this._rawConnection.sync();
     }
   }
 
@@ -96,7 +96,7 @@ export class LibSQLClient extends SqliteClient {
     q: string,
     options: { connection?: Database.Database } = {}
   ): Promise<SqliteResult | SqliteResult[]> {
-    const connection = options.connection || this.connection;
+    const connection = options.connection || this._rawConnection;
     const ownOptions = { ...options, connection };
     if (this.isRemote) {
       // FIXME disable arrayMode for now as stmt.raw() doesn't work for remote connection
@@ -106,8 +106,8 @@ export class LibSQLClient extends SqliteClient {
   }
 
   // @ts-expect-error not fully typed
-  protected acquireConnection() {
-    return new Database(this.databasePath, {
+  protected createRawConnection(filename: string) {
+    return new Database(filename, {
       // @ts-expect-error not fully typed
       authToken: this.useAuthToken ? this.libsqlOptions.authToken : undefined,
       syncUrl: this.libsqlOptions.syncUrl,
@@ -134,6 +134,7 @@ export class LibSQLClient extends SqliteClient {
       authToken: this.useAuthToken ? this.libsqlOptions.authToken : undefined,
     };
     args[4] = options;
+    // @ts-expect-error not fully typed
     return new LibSQLCursor(...args);
   }
 
