@@ -311,7 +311,7 @@ function testWith(tag, socket = false, readonly = false) {
     })
 
     describe("Imports", () => {
-      it('should import correctly then test rollback', async () => {
+      it('should import correctly', async () => {
         const tableName = 'import_table'
         const executeOptions = { multiple: false }
         const table = {
@@ -337,7 +337,8 @@ function testWith(tag, socket = false, readonly = false) {
         expect(typeof commitCommand).toBe('function')
         expect(typeof rollbackCommand).toBe('function')
         expect(finalCommand).toBeUndefined()
-    
+        await truncateCommand(executeOptions)
+
         await beginCommand(executeOptions)
         await truncateCommand(executeOptions)
         await lineReadCommand(importSQL, {multiple: true})
@@ -357,10 +358,12 @@ function testWith(tag, socket = false, readonly = false) {
         const formattedData = util.buildImportData(tableName)
         const {
           beginCommand,
+          truncateCommand,
           lineReadCommand,
           rollbackCommand,
         } = util.connection.getImportScripts(table)
         const importSQL = util.connection.getImportSQL(formattedData)
+        await truncateCommand(executeOptions)
         const hatsStart = await util.knex.select().table(tableName)
         await beginCommand(executeOptions)
         await lineReadCommand(importSQL, executeOptions)
