@@ -310,7 +310,7 @@ function testWith(tag, socket = false, readonly = false) {
       })
     })
 
-    describe.only("Imports", () => {
+    describe("Imports", () => {
       it('should import correctly then test rollback', async () => {
         const tableName = 'import_table'
         const executeOptions = { multiple: false }
