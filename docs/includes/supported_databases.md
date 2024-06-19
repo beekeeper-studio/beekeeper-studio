@@ -14,8 +14,8 @@
 | [Cassandra](http://cassandra.apache.org/)                | ⭐ Full Support              |           |    ✅    |   [Features](https://beekeeperstudio.io/db/cassandra-client) |
 | [Firebird](https://firebirdsql.org/)                     | 🅱 Beta Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client) |
 | [LibSQL](https://libsql.org/)                            | 🅱 Beta Support               |           |    ✅    |      [Features](https://beekeeperstudio.io/db/libsql-client) |
-| [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
 | [ClickHouse](https://clickhouse.tech/)                   | ⏳ Coming Soon                |           |    ✅    |  -- |
+| [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
 | [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⏳ Coming Soon                |           |    ✅    |      -- |
 | [DuckDB](https://duckdb.org/)                            | ⏳ Coming Soon                |           |    ✅    |      -- |
 | [MongoDB](https://www.mongodb.com/)                      | 🗓️ Planned for V5               |           |    ✅    |     -- |
