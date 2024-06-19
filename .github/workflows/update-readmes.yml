@@ -1,0 +1,87 @@
+name: Update README with Supported Databases
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+
+      - name: Check if supported_databases.md changed
+        id: check_changes
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -q 'docs/includes/supported_databases.md'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update README files if necessary
+        if: steps.check_changes.outputs.changed == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const newContent = fs.readFileSync('docs/includes/supported_databases.md', 'utf8');
+
+            const escapeForRegex = (string) => {
+              return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            };
+
+            const updateFileContent = (filePath) => {
+              const fileContent = fs.readFileSync(filePath, 'utf8');
+              const newFileContent = fileContent.replace(
+                /<!-- SUPPORT_BEGIN -->[\s\S]*?<!-- SUPPORT_END -->/,
+                `<!-- SUPPORT_BEGIN -->\n${newContent}\n<!-- SUPPORT_END -->`
+              );
+              fs.writeFileSync(filePath, newFileContent, 'utf8');
+            };
+
+            const updateReadmeFiles = (dir) => {
+              fs.readdirSync(dir).forEach((file) => {
+                const fullPath = path.join(dir, file);
+                if (file.match(/^README\..*\.md$/)) {
+                  updateFileContent(fullPath);
+                }
+              });
+            };
+
+            updateReadmeFiles('.');
+
+            const { execSync } = require('child_process');
+            const branchName = `update-supported-databases-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+
+            // Configure git
+            execSync('git config --global user.name "github-actions[bot]"');
+            execSync('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
+
+            // Commit and push changes
+            execSync(`git checkout -b ${branchName}`);
+            execSync('git add README.*.md');
+            execSync('git commit -m "Update supported databases in README files"');
+            execSync(`git push origin ${branchName}`);
+
+            return branchName;
+          result-encoding: string
+          outputs: branch_name
+
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update supported databases in README files
+          branch: ${{ steps.update-readme.outputs.branch_name }}
+          title: Update supported databases in README files
+          body: This PR updates the supported databases section in the README files.

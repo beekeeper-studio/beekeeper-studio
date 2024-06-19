@@ -11,7 +11,33 @@ We publish binaries for MacOS, Windows, and Linux.
 
 👉 [Join the community Slack](https://launchpass.com/beekeeperstud-lvg5276)
 
-👉 Love Beekeeper Studio? [Leave us a testimonial!](https://testimonial.to/beekeeper-studio)
+
+## Supported Databases
+
+<!-- SUPPORT_BEGIN -->
+| Database                                                 | Support                      | Community | Ultimate |                             Beekeeper Docs |
+| :------------------------------------------------------- | :--------------------------- | :-------: | :------: | -----------------------------------------: |
+| [PostgreSQL](https://postgresql.org)                     | ⭐ Full Support              |    ✅     |    ✅    |  [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/postgresql) |
+| [MySQL](https://www.mysql.com/)                          | ⭐ Full Support              |    ✅     |    ✅    |       [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mysql) |
+| [SQLite](https://sqlite.org)                             | ⭐ Full Support              |    ✅     |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/sqlite) |
+| [SQL Server](https://www.microsoft.com/en-us/sql-server) | ⭐ Full Support              |    ✅     |    ✅    |   [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/sqlserver) |
+| [Amazon Redshift](https://aws.amazon.com/redshift/)      | ⭐ Full Support              |    ✅     |    ✅    |    [Docs](/user_guide/connecting/redshift) |
+| [CockroachDB](https://www.cockroachlabs.com/)            | ⭐ Full Support              |    ✅     |    ✅    | [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/cockroachdb) |
+| [MariaDB](https://mariadb.org/)                          | ⭐ Full Support              |    ✅     |    ✅    |     [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mariadb) |
+| [TiDB](https://pingcap.com/products/tidb/)               | ⭐ Full Support              |    ✅     |    ✅    |        [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/tidb) |
+| [Google BigQuery](https://cloud.google.com/bigquery)     | 🅱 Beta Support              |    ✅     |    ✅    |    [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
+| [Oracle Database](https://www.oracle.com/database/)      | ⭐ Full Support              |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
+| [Cassandra](http://cassandra.apache.org/)                | ⭐ Full Support              |           |    ✅    |   [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/cassandra) |
+| [Firebird](https://firebirdsql.org/)                     | 🅱 Beta Support              |           |    ✅    |    [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
+| [LibSQL](https://libsql.org/)                            | 🅱 Beta Support               |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/libsql) |
+| [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/snowflake) |
+| [Clickhouse](https://clickhouse.tech/)                   | ⏳ Coming Soon                |           |    ✅    |  [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse) |
+| [DuckDB](https://duckdb.org/)                            | ⏳ Coming Soon                |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
+| [Trino](https://trino.io/)                               | ⏳ Coming Soon                |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/presto) |
+| [Presto](https://prestodb.io/)                           | ⏳ Coming Soon                |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/presto) |
+| [MongoDB](https://www.mongodb.com/)                      | ⏳ Coming Later               |           |    ✅    |     [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
+
+<!-- SUPPORT_END -->
 
 ## Editions of Beekeeper Studio
 
@@ -49,22 +75,6 @@ Features exclusive to the full commercial edition ([available on our website](ht
 
 One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created Beekeeper Studio!
 
-Beekeeper Studio supports connecting to the following databases:
-
-- SQLite
-- MySQL
-- MariaDB
-- TiDB
-- Postgres
-- CockroachDB
-- SQL Server
-- Amazon Redshift
-
-The commercial version of Beekeeper Studio ([available here](https://beekeeperstudio.io/get)) also supports:
-
-- Oracle Database
-- Cassandra Database
-- Firebird
 
 ## Supporting Beekeeper Studio
 
@@ -131,7 +141,7 @@ yarn install # installs dependencies
 yarn run electron:serve ## the app will now start
 ```
 
-**If you get `error:03000086:digital envelope routines::initialization error`, you'll have to update openssl.** 
+**If you get `error:03000086:digital envelope routines::initialization error`, you'll have to update openssl.**
 
 - On Ubuntu/Debian:
 ```
