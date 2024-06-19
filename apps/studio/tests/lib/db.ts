@@ -1212,7 +1212,7 @@ export class DBTestUtil {
   }
 
   async databaseVersionTest() {
-    const version = this.connection.versionString();
+    const version = await this.connection.versionString();
     expect(version).toBeDefined()
   }
 }

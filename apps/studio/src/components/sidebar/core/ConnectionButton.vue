@@ -135,8 +135,8 @@ export default {
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig', 'connection': 'connection'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'versionString': 'versionString'}),
+      ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
+      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
       connectionName() {
         return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
       },
