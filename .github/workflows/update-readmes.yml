@@ -89,5 +89,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Update supported databases in README files
           branch: ${{ steps.update_readme.outputs.branch_name }}
+          base: master
           title: Update supported databases in README files
           body: This PR updates the supported databases section in the README files.
