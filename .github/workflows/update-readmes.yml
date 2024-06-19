@@ -66,22 +66,27 @@ jobs:
             const branchName = `update-supported-databases-${new Date().toISOString().replace(/[:.]/g, '-')}`;
             console.log("creating branch ", branchName)
             // Configure git
+	    const eOpts = { stdio: 'inherit' }
             execSync('git config --global user.name "github-actions[bot]"');
             execSync('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
 
             // Commit and push changes
-            execSync(`git checkout -b ${branchName}`);
+            execSync(`git checkout -b ${branchName}`, eOpts);
+            execSync(
+                'git status',
+                eOpts
+            );
+            execSync('git add .', eOpts);
+            execSync(
+                'git status',
+                eOpts
+            );
+            execSync('git commit -m "Update supported databases in README files"', eOpts);
             execSync(
                 'git status',
                 {stdio: 'inherit'}
             );
-            execSync('git add .');
-            execSync(
-                'git status',
-                {stdio: 'inherit'}
-            );
-            execSync('git commit -m "Update supported databases in README files"');
-            execSync(`git push origin ${branchName}`);
+            execSync(`git push origin ${branchName}`, eOpts);
 
             core.setOutput('branch_name', branchName);
           result-encoding: string
