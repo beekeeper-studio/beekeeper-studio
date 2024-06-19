@@ -430,7 +430,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         ]
       }
 
-      const query = util.connection.query(`
+      const query = await util.connection.query(`
         CREATE TABLE IF NOT EXISTS public.withquestionmark (
           "approved?" boolean NULL DEFAULT false,
           str_col character varying(255) NOT NULL,

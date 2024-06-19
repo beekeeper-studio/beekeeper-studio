@@ -158,7 +158,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           END;
         `;
         expect(async () => {
-          const q = util.connection.query(trigger);
+          const q = await util.connection.query(trigger);
           await q.execute();
         }).not.toThrowError();
       });
