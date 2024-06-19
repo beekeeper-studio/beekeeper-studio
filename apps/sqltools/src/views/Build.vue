@@ -193,6 +193,7 @@ export default Vue.extend ({
     formattedSql() {
       // TODO (map dialects)
       if (!this.sql) return null
+      // @ts-ignore
       return format(this.sql, { language: FormatterDialect(this.dialect)})
     }
   },
