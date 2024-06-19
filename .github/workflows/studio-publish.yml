@@ -6,74 +6,127 @@ on:
       - "v*"
     paths-ignore:
       - "apps/sqltools/**"
-
 jobs:
+
+  create_draft_release:
+    runs-on: "ubuntu-20.04"
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      assets_url: ${{ steps.create_release.outputs.assets_url }}
+      id: ${{ steps.create_release.outputs.id }}
+      json: ${{ steps.create_release.outputs.json }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+      - name: Get publish repository
+        id: extract_repo
+        run: |
+          repository=$(jq -r '.repository' apps/studio/package.json)
+          owner_repo=$(echo "$repository" | sed -E 's#(git@github.com:|https://github.com/)([^/]+)/([^/]+).git#\2/\3#')
+          echo "repository=$owner_repo" >> $GITHUB_OUTPUT
+      - name: Create or check draft release
+        id: create_release
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          RELEASE_REPO: ${{ steps.extract_repo.outputs.repository}}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const script = require('./.github/scripts/create_draft_release.js')
+            await script({github, context, core}, process.env.RELEASE_REPO, process.env.TAG_NAME)
 
   release:
     runs-on: ${{ matrix.os }}
+    needs: create_draft_release
+    outputs:
+      mac_x86_64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
+      mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13-xlarge]
+        # macos-13 is Intel, macos-14 is arm (obviously)
+        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
+        # os: [macos-13, macos-14 ]
 
     steps:
+      # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
+      # together to create one cohesive update file.
+      # Note that this works differently to linux, which has a linux-latest.yml and a linux-latest-arm.yml, oy.
+      - name: Check architecture
+        id: mac_arch
+        if: startsWith(matrix.os, 'mac')
+        run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v3
         with:
           gpg-private-key: ${{ secrets.gpg_key }}
-        if: "startsWith(matrix.os, 'ubuntu')"
+        if: startsWith(matrix.os, 'ubuntu')
 
       - name: Install dotnet
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '6.0.x'
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
 
       - name: Check out Git repository
         uses: actions/checkout@v1
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7
-        if: "startsWith(matrix.os, 'ubuntu-20.04')"
+        if: startsWith(matrix.os, 'ubuntu-20.04')
 
       - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: "startsWith(matrix.os, 'ubuntu-20.04')"
+        if: startsWith(matrix.os, 'ubuntu-20.04')
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
           vs-version: '16.11.14'
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
 
       - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: "startsWith(matrix.os, 'ubuntu-20.04')"
+        if: startsWith(matrix.os, 'ubuntu-20.04')
 
       - name: "Install python 3.8 (NOT Mac, NOT Ubuntu-arm)"
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
-        if: "!startsWith(matrix.os, 'macos') && (matrix.os != 'ubuntu-arm64')"
+        if: ${{!startsWith(matrix.os, 'macos') && (matrix.os != 'ubuntu-arm64')}}
 
-      - name: Install python 3.8 (mac)
-        if: "startsWith(matrix.os, 'macos')"
+      - name: Install python 3.8 (mac arm64)
+        if: startsWith(matrix.os, 'macos')
+        id: mac_python
+        env:
+          ARCH: ${{ steps.mac_arch.outputs.arch}}
         run: |
-          # Install Python 3.8
           brew install python@3.8
-          # Add Python 3.8 to PATH
-          echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
-          export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
-          export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
+          if [ "$ARCH" = "arm64" ]; then
+              # Add Python 3.8 to PATH for arm64
+              echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
+              export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
+              export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
+              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
+          else
+              # Add Python 3.8 to PATH for other architectures
+              echo "/usr/local/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
+              export PATH="/usr/local/opt/python@3.8/libexec/bin:$PATH"
+              export PYTHON_PATH="/usr/local/opt/python@3.8/libexec/bin/python3"
+              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
+          fi
 
       - name: Verify Python Version
-        if: "startsWith(matrix.os, 'windows')"
+        if: startsWith(matrix.os, 'windows')
         run: |
           $PYTHON_VERSION = python --version | Out-String
           Write-Output "Installed Python version: $PYTHON_VERSION"
@@ -84,7 +137,7 @@ jobs:
         shell: powershell
 
       - name: Verify Python Version
-        if: "!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')"
+        if: ${{!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')}}
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
@@ -114,7 +167,6 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu-arm64')
         continue-on-error: true
 
-
       - name: Clean cache
         run: yarn cache clean --all
 
@@ -132,7 +184,7 @@ jobs:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Remove dist directory
-        if: "!startsWith(matrix.os, 'windows')"
+        if: ${{!startsWith(matrix.os, 'windows')}}
         run: rm -rf ./apps/studio/dist_electron
       - name: Remove dist directory windows
         if: startsWith(matrix.os, 'windows')
@@ -154,7 +206,7 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: host
 
       - name: Build and Publish
-        if: "!startsWith(matrix.os, 'ubuntu-arm64')"
+        if: ${{!startsWith(matrix.os, 'ubuntu-arm64')}}
         uses: samuelmeuli/action-electron-builder@v1
         with:
           package_root: apps/studio
@@ -162,7 +214,6 @@ jobs:
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
           skip_build: true
-          args: ${{ startsWith(matrix.os, 'macos') && '--arm64 --x64' || '' }}
           use_vue_cli: true
           max_attempts: 2
 
@@ -177,8 +228,22 @@ jobs:
           APPLE_TEAM_ID: "7KK583U8H2"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHONPATH' }}"
+          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
+
+        # this only works becuase the m1 build is faster, so the m1 build deletes
+        # it's latest-mac.yml before the intel build finishes, so it doesnt crash
+        # and can continue.
+      - name: Delete latest-mac.yml
+        if: startsWith(matrix.os, 'mac')
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
+        with:
+          script: |
+            const script = require('./.github/scripts/delete_latest_yml.js')
+            const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
+            await script({ github, core, context }, assetsUrl)
 
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
@@ -204,14 +269,80 @@ jobs:
           DISTRIBUTION: ${{secrets.cloudfront_distribution}}
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Cleanup artifacts
-        if: "!startsWith(matrix.os, 'windows')"
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+        if: ${{!startsWith(matrix.os, 'windows')}}
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml)"
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os, 'windows')
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe)"
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
         continue-on-error: true
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: ${{ matrix.os }}
           path: apps/studio/dist_electron
+
+      - name: Set yaml files
+        id: set_yaml
+        if: startsWith(matrix.os, 'mac')
+        uses: actions/github-script@v7
+        env:
+          ARCH: ${{ steps.mac_arch.outputs.arch }}
+        with:
+          script: |
+            const fs = require('fs')
+            const content = fs.readFileSync('apps/studio/dist_electron/latest-mac.yml', 'utf8')
+            core.setOutput(`mac_${process.env.ARCH}_yml`, content)
+  post-release:
+    needs: [release, create_draft_release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - run: npm install js-yaml
+      - name: Merge yml files
+        uses: actions/github-script@v7
+        env:
+          INTEL_YML: ${{ needs.release.outputs.mac_x86_64_yml }}
+          ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            const intelContent = process.env.INTEL_YML
+            const armContent = process.env.ARM_YML
+
+            const mergeFiles = () => {
+              const intelObject = yaml.load(intelContent);
+              const armObject = yaml.load(armContent);
+
+              const mergedObject = {
+                ...intelObject,
+              };
+
+              mergedObject.files = [
+                ...intelObject.files,
+                ...armObject.files,
+              ];
+
+              const dumpOptions = {
+                // avoids moving the sha512 checksum into its own line
+                lineWidth: -1,
+              };
+
+              const mergedString = yaml.dump(mergedObject, dumpOptions);
+              return mergedString;
+            };
+
+            const merge = mergeFiles();
+            fs.writeFileSync('latest-mac.yml', merge, 'utf8');
+      - name: Upload fixed latest-mac.yml
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
+          asset_path: './latest-mac.yml'
+          asset_name: 'latest-mac.yml'
+          asset_content_type: 'application/octet-stream'
