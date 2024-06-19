@@ -44,6 +44,8 @@ theme:
 
 extra_css:
   - stylesheets/extra.css
+extra_javascript:
+  - javascript/extra.js
 plugins:
   - search
   - include-markdown
@@ -52,7 +54,6 @@ plugins:
 #        background_color: "#2c2c2c"
 #        color: "#ffffff"
 #        font_family: Rubik
-
 
 markdown_extensions:
   - admonition
@@ -85,8 +86,8 @@ nav:
       - installation/macos-m1-intel.md
       - installation/linux.md
   - Databases:
-    - user_guide/connecting/first-page.md
-    - Connecting To A Database: user_guide/connecting/index.md
+    - user_guide/connecting/supported-databases.md
+    - Connecting To A Database: user_guide/connecting/connecting.md
     - DB Specific Guides:
       - user_guide/connecting/sqlite.md
       - user_guide/connecting/google-bigquery.md

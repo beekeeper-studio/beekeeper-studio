@@ -4,6 +4,25 @@ summary: "How to start using Beekeeper Studio with your database of choice."
 old_url: "https://docs.beekeeperstudio.io/docs/first-page"
 ---
 
+Connecting to your database from Beekeeper Studio is easy. You can connect to a database in a few different ways:
+
+1. For SQLite databases, you can simply double click the file in your file browser
+2. For other databases, you can specify host & port, or the unix socket path.
+3. Some cloud vendors support connecting with custom authentication methods, Beekeeper Studio supports many of these too (eg: SSO for Azure SQL).
+
+
+## First Step: Select Connection Type
+
+When you open Beekeeper Studio for the first time, you'll see the connection screen. You can select the type of connection you want to make from the dropdown.
+
+You can also import a database URL here, this is super useful for Heroku Postgres, Azure SQL, and other cloud databases.
+
+### Optional: Explore The Demo Database
+
+Every new Beekeeper Studio installation comes with a `Demo Database` in the right side menu. This is a small SQLite database we bundle with the app. You can use this to explore Beekeeper Studio's features without connecting to a real database.
+
+## Complete
+
 ![Image Alt Tag](../../assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen
 
