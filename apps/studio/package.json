@@ -20,7 +20,7 @@
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh"
   },
-  "main": "dist/background.js",
+  "main": "dist_electron/background.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@azure/msal-node": "1.18.4",
