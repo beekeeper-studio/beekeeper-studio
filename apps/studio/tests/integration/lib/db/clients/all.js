@@ -864,7 +864,7 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
     ]
   };
 
-  const sql = util.connection.applyChangesSql(changes).toLowerCase();
+  const sql = (await util.connection.applyChangesSql(changes)).toLowerCase();
 
   expect(sql.includes('insert'));
   expect(sql.includes('update'));
