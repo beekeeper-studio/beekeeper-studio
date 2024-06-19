@@ -75,7 +75,7 @@ jobs:
 
             // Commit and push changes
             execSync(`git checkout -b ${branchName}`);
-            execSync('git add README.*.md');
+            execSync('git add .');
             execSync('git commit -m "Update supported databases in README files"');
             execSync(`git push origin ${branchName}`);
 
