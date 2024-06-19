@@ -19,17 +19,18 @@ jobs:
 
       - name: Check if supported_databases.md changed
         id: check_changes
-        run: |
-          commit_count=$(git rev-list --count HEAD)
-          if [ "$commit_count" -gt 1 ]; then
-            if git diff --name-only HEAD~1 | grep -q 'docs/includes/supported_databases.md'; then
-              echo "changed=true" >> $GITHUB_OUTPUT
-            else
-              echo "changed=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const core = require('@actions/core');
+
+            let changed = 'false';
+            const diffOutput = execSync('git diff --name-only HEAD~1').toString().trim();
+            if (diffOutput.includes('docs/includes/supported_databases.md')) {
+              changed = 'true';
+            }
+            core.setOutput('changed', changed);
 
       - name: Update README files if necessary
         if: steps.check_changes.outputs.changed == 'true'
