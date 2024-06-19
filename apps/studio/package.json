@@ -134,7 +134,7 @@
     "babel-eslint": "^10.0.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "electron": "22.0.0",
+    "electron": "22.3.27",
     "electron-builder": "23.0.2",
     "electron-builder-notarize": "1.5.1",
     "electronmon": "^2.0.3",

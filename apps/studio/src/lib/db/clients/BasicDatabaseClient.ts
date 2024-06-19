@@ -221,10 +221,10 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
-  abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+  abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
+    const sql = await this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     if (!sql) {
       throw new Error(`Unsupported element type: ${typeOfElement}`);
     }
@@ -233,14 +233,14 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 
-  abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+  abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     const sql = this.truncateElementSql(elementName, typeOfElement, schema);
     if (!sql) {
       throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
     }
-    await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement, schema));
+    await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement, schema));
   }
 
   abstract truncateAllTables(schema?: string): Promise<void>;

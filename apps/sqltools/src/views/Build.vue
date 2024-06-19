@@ -197,7 +197,6 @@ export default Vue.extend ({
     }
   },
   methods: {
-    // TODO (@day): does this actually work?
     generateSql: _.debounce(async function() {
       this.sql = await this.$util.send('generator/build', { schema: this.schema });
     }, 300),

@@ -59,7 +59,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     this.isTempDB = _.isEmpty(this.databasePath) || this.databasePath === ':memory:';
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version?.data[0]["sqlite_version()"];
   }
 
@@ -67,7 +67,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return new SqliteChangeBuilder(table);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: false,
       comments: false,
@@ -224,7 +224,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     }))
   }
 
-  query(queryText: string): CancelableQuery {
+  async query(queryText: string): Promise<CancelableQuery> {
     let queryConnection: Database.Database = null;
 
     return {
@@ -301,7 +301,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return result.data.map((row) => row.file || ':memory:');
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, this.knex)
   }
 
@@ -338,7 +338,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return results;
   }
 
-  getQuerySelectTop(table: string, limit: number, _schema?: string): string {
+  async getQuerySelectTop(table: string, limit: number, _schema?: string): Promise<string> {
     return `SELECT * FROM ${this.wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
@@ -478,7 +478,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     throw new Error("Method not implemented.");
   }
 
-  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement): string {
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement): Promise<string> {
     if (typeOfElement !== DatabaseElement.TABLE) {
       return ''
     }
@@ -492,17 +492,17 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     await this.driverExecuteSingle(sql);
   }
 
-  truncateElementSql(elementName: string, _typeOfElement: DatabaseElement, _schema?: string): string {
+  async truncateElementSql(elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
     return `Delete from ${SD.wrapIdentifier(elementName)}; vacuum;`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, _schema?: string): Promise<void> {
-    const sql = this.duplicateTableSql(tableName, duplicateTableName);
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName);
 
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, _schema?: string): string {
+  async duplicateTableSql(tableName: string, duplicateTableName: string, _schema?: string): Promise<string> {
     return `CREATE TABLE ${SD.wrapIdentifier(duplicateTableName)} AS SELECT * FROM ${SD.wrapIdentifier(tableName)};`
   }
 
@@ -529,7 +529,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     this._createDatabase(dbPath);
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
 

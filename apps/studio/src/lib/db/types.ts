@@ -146,4 +146,5 @@ export interface IBasicDatabaseClient {
   duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
 
   getInsertQuery(tableInsert: TableInsert): Promise<string>
+  syncDatabase(): Promise<void>
 }

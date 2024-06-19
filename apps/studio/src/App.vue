@@ -29,6 +29,7 @@
     <dropzone />
     <data-manager />
     <confirmation-modal-manager />
+    <util-died-modal />
   </div>
 </template>
 
@@ -47,6 +48,7 @@ import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
+import UtilDiedModal from '@/components/UtilDiedModal.vue'
 
 import rawLog from 'electron-log'
 
@@ -56,7 +58,7 @@ export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone, UtilDiedModal
   },
   data() {
     return {

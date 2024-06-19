@@ -4,7 +4,6 @@ import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import path from 'path'
 import { isBksInternalColumn } from "@/common/utils"
-import log from 'electron-log'
 
 export interface ContextOption {
   name: string,

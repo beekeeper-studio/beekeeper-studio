@@ -8,7 +8,7 @@ import { defaultCreateScript } from "./postgresql/scripts";
 
 
 export class CockroachClient extends PostgresClient {
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,
       comments: true,

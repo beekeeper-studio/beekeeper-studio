@@ -442,9 +442,8 @@ const store = new Vuex.Store<State>({
       context.commit('clearConnection')
       context.dispatch('updateWindowTitle', null)
     },
-    async syncDatabase(_context) {
-      // TODO (@day): this needs to be a util call
-      // await context.state.connection.syncDatabase();
+    async syncDatabase(context) {
+      await context.state.connection.syncDatabase();
     },
     async changeDatabase(context, newDatabase: string) {
       log.info("Pool changing database to", newDatabase)

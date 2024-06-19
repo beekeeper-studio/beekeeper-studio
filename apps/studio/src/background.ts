@@ -58,7 +58,8 @@ function createUtilityProcess() {
     [], 
     {
       env: { ...process.env, ...args },
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
+      serviceName: 'BeekeeperUtility'
     }
   );
 
@@ -75,10 +76,11 @@ function createUtilityProcess() {
   utilityProcess.on('exit', (code) => {
     // if non zero exit code
     if (code) {
+      utilLog.info('Utility process died, restarting')
       utilityProcess = null;
       createUtilityProcess();
 
-      createAndSendPorts(false);
+      createAndSendPorts(false, true);
     }
   })
 }
@@ -203,14 +205,14 @@ app.on('ready', async () => {
 
 })
 
-function createAndSendPorts(filter: boolean) {
+function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
   getActiveWindows().forEach((w) => {
     if (!filter || newWindows.includes(w.winId)) {
       const { port1, port2 } = new electron.MessageChannelMain();
       const sId = uuidv4();
       log.info('SENDING PORT TO RENDERER: ', sId)
       utilityProcess.postMessage({ type: 'init', sId }, [port1]);
-      w.webContents.postMessage('port', { sId }, [port2]);
+      w.webContents.postMessage('port', { sId, utilDied }, [port2]);
       w.onClose((_event: electron.Event) => {
         utilityProcess.postMessage({ type: 'close', sId })
       })

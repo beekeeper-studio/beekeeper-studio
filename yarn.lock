@@ -7723,10 +7723,10 @@ electron-util@^0.14.1:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@22.0.0:
-  version "22.0.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-22.0.0.tgz#ef84ab9cf23aa3f8c2f42a1e8e000ad7fd941058"
-  integrity sha512-cgRc4wjyM+81A0E8UGv1HNJjL1HBI5cWNh/DUIjzYvoUuiEM0SS0hAH/zaFQ18xOz2ced6Yih8SybpOiOYJhdg==
+electron@22.3.27:
+  version "22.3.27"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-22.3.27.tgz#b77451a53f0c502e7559cceac28ac58eb289eef8"
+  integrity sha512-7Rht21vHqj4ZFRnKuZdFqZFsvMBCmDqmjetiMqPtF+TmTBiGne1mnstVXOA/SRGhN2Qy5gY5bznJKpiqogjM8A==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^16.11.26"

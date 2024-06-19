@@ -5,7 +5,6 @@ import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterati
 
 
 export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
-
   async supportedFeatures(): Promise<SupportedFeatures> {
     return await Vue.prototype.$util.send('conn/supportedFeatures', {})
   }
@@ -232,5 +231,9 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     return await Vue.prototype.$util.send('conn/getInsertQuery', { tableInsert });
+  }
+
+  async syncDatabase(): Promise<void> {
+    return await Vue.prototype.$util.send('conn/syncDatabase');
   }
 }

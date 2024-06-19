@@ -81,11 +81,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version.version.split(" on ")[0];
   }
 
-  defaultSchema(): string | null {
+  async defaultSchema(): Promise<string | null> {
     return this._defaultSchema;
   }
 
@@ -93,7 +93,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return new PostgresqlChangeBuilder(table, schema);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     const hasPartitions = this.version.number >= 100000;
     return {
       customRoutines: true,
@@ -406,13 +406,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
+    const supportedFeatures = await this.supportedFeatures();
     const sql = `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
         i.indexrelid as id,
         i.indisunique,
         i.indisprimary,
-        ${this.supportedFeatures().indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
+        ${supportedFeatures.indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
         coalesce(a.attname,
                   (('{' || pg_get_expr(
                               i.indexprs,
@@ -568,7 +569,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  query(queryText: string): CancelableQuery {
+  async query(queryText: string): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
@@ -655,7 +656,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.datname);
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, this.knex)
   }
 
@@ -679,7 +680,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return results
   }
 
-  getQuerySelectTop(table: string, limit: number, schema: string = this._defaultSchema): string {
+  async getQuerySelectTop(table: string, limit: number, schema: string = this._defaultSchema): Promise<string> {
     return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
@@ -936,7 +937,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result?.description
   }
 
-  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): string {
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
     elementName = this.wrapIdentifier(elementName)
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
@@ -960,17 +961,17 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): string {
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
     return `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<void> {
-    const sql = this.duplicateTableSql(tableName, duplicateTableName, schema);
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema);
 
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): string {
+  async duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<string> {
     const sql = `
       CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
       SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
@@ -1005,12 +1006,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error('Method not implemented.');
   }
 
 
-  alterPartitionSql(payload: AlterPartitionsSpec): string {
+  async alterPartitionSql(payload: AlterPartitionsSpec): Promise<string> {
     const { table } = payload;
     const builder = new PostgresqlChangeBuilder(table);
     const creates = builder.createPartitions(payload.adds);
@@ -1020,7 +1021,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async alterPartition(payload: AlterPartitionsSpec): Promise<void> {
-    const query = this.alterPartitionSql(payload)
+    const query = await this.alterPartitionSql(payload)
     await this.driverExecuteSingle(query);
   }
 

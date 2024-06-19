@@ -127,9 +127,13 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
       }
     })
 
-    ipcRenderer.on('port', (event, {sId}) => {
+    ipcRenderer.on('port', (event, { sId, utilDied }) => {
       log.log('Received port in renderer with sId: ', sId)
       Vue.prototype.$util = new UtilityConnection(event.ports[0], sId);
+
+      if (utilDied) {
+        ipcRenderer.emit('utilDied');
+      }
     })
 
     Vue.config.productionTip = false
