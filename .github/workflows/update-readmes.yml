@@ -23,7 +23,6 @@ jobs:
         with:
           script: |
             const { execSync } = require('child_process');
-            const core = require('@actions/core');
 
             let changed = 'false';
             const diffOutput = execSync('git diff --name-only HEAD~1').toString().trim();
@@ -41,7 +40,6 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             const { execSync } = require('child_process');
-            const core = require('@actions/core');
 
             const newContent = fs.readFileSync('docs/includes/supported_databases.md', 'utf8');
 
