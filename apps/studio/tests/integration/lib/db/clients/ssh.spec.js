@@ -48,7 +48,8 @@ describe("SSH Tunnel Tests", () => {
     const qc = ConnectionProvider.for(quickConfig)
     const qdb = qc.createConnection('integration_test')
     await qdb.connect()
-    await qdb.query('select 1').execute()
+    const query = await qdb.query('select 1');
+    await query.execute()
     await qdb.disconnect();
 
     connection = ConnectionProvider.for(config)
