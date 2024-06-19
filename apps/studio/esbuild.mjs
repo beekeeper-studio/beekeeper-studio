@@ -97,7 +97,7 @@ const electronUtilityPlugin = {
   const commonArgs = {
     platform: 'node',
     publicPath: '.',
-    outdir: 'dist_electron',
+    outdir: 'dist',
     bundle: true,
     external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
     sourcemap: isWatching,
@@ -113,7 +113,7 @@ const electronUtilityPlugin = {
       assets: [
         {
           from: ['./src/index.html'],
-          to: './dist_electron/'
+          to: './dist/'
         },
       ]
     })]
@@ -137,37 +137,37 @@ const electronUtilityPlugin = {
         assets: [
           {
             from: ['../../node_modules/material-icons/**/*.woff*'],
-            to: ['./dist_electron/material-icons']
+            to: ['./dist/material-icons']
           },
           {
             from: './src/assets/logo.svg',
-            to: 'dist_electron/assets/'
+            to: 'dist/assets/'
           },
           {
             from: './src/assets/fonts/**/*',
-            to: 'dist_electron/fonts'
+            to: 'dist/fonts'
           },
           {
             from: './src/assets/icons/**/*',
-            to: 'dist_electron/icons'
+            to: 'dist/icons'
           },
           {
             from: './src/assets/images/**/*',
-            to: 'dist_electron/images'
+            to: 'dist/images'
           },
           {
             from: '../../node_modules/typeface-roboto/**/*.woff*',
-            to: './dist_electron/'
+            to: './dist/'
           },
           {
             from: '../../node_modules/xel/**/*.svg',
-            to: './dist_electron/node_modules/xel'
+            to: './dist/node_modules/xel'
           },
         ]
       }),
       sassPlugin({
         async transform(source, resolveDir, filePath) {
-          const { css } = await postcss().use(copyAssets({ base: `dist_electron` })).process(source, { from: filePath, to: `dist_electron/main.css` });
+          const { css } = await postcss().use(copyAssets({ base: `dist` })).process(source, { from: filePath, to: `dist/main.css` });
           return css;
         }
       }),
