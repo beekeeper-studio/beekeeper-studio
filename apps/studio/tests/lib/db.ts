@@ -757,7 +757,7 @@ export class DBTestUtil {
 
     expect(tables.map((t) => t.name.toLowerCase())).toContain('one_record')
 
-    const q = this.connection.query(
+    const q = await this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as total, trim('b') as total from rdb$database" :
         "select 'a' as total, 'b' as total from one_record"

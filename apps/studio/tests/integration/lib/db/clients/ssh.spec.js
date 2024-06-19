@@ -58,7 +58,8 @@ describe("SSH Tunnel Tests", () => {
 
   describe("Can SSH and run a query", () => {
     it("should work", async () => {
-      await database.query('select 1').execute()
+      const query = await database.query('select 1');
+      await query.execute()
     } )
   })
 

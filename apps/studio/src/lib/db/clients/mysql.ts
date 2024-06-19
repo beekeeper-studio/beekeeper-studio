@@ -864,22 +864,21 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return true;
   }
 
-  // TODO (@day): this may need to be async
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
     return `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`;
   }
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement), { connection });
+      await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement), { connection });
     });
   }
 
-  setElementNameSql(
+  async setElementNameSql(
     elementName: string,
     newElementName: string,
     typeOfElement: DatabaseElement
-  ): string {
+  ): Promise<string> {
     elementName = this.wrapIdentifier(elementName);
     newElementName = this.wrapIdentifier(newElementName);
 
