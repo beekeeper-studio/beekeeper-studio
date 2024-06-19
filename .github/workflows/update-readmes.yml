@@ -46,6 +46,7 @@ jobs:
             const newContent = fs.readFileSync('docs/includes/supported_databases.md', 'utf8');
 
             const updateFileContent = (filePath) => {
+              console.log("updating file content for", filePath)
               const fileContent = fs.readFileSync(filePath, 'utf8');
               const newFileContent = fileContent.replace(
                 /<!-- SUPPORT_BEGIN -->[\s\S]*?<!-- SUPPORT_END -->/,
@@ -57,9 +58,8 @@ jobs:
             const updateReadmeFiles = (dir) => {
               fs.readdirSync(dir).forEach((file) => {
                 const fullPath = path.join(dir, file);
-                if (fs.lstatSync(fullPath).isDirectory()) {
-                  updateReadmeFiles(fullPath);
-                } else if (file.match(/^README\..*\.md$/)) {
+                console.log("checking file:", dir, file, fullPath)
+                if (file.match(/README.*\.md$/)) {
                   updateFileContent(fullPath);
                 }
               });
@@ -68,7 +68,7 @@ jobs:
             updateReadmeFiles('.');
 
             const branchName = `update-supported-databases-${new Date().toISOString().replace(/[:.]/g, '-')}`;
-
+            console.log("creating branch ", branchName)
             // Configure git
             execSync('git config --global user.name "github-actions[bot]"');
             execSync('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
