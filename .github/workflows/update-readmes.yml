@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+
 jobs:
   update-readme:
     runs-on: ubuntu-latest

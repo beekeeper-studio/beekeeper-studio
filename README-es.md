@@ -36,14 +36,10 @@ Una de nuestras frustraciones con otros editores de SQL y software de gestión d
 
 Beekeeper Studio se puede conectar con las siguientes bases de datos:
 
-- SQLite
-- MySQL
-- MariaDB
-- TiDB
-- Postgres
-- CockroachDB
-- SQL Server
-- Amazon Redshift
+<!-- SUPPORT_BEGIN -->
+
+<!-- SUPPORT_END -->
+
 
 ## Apoya a Beekeeper Studio
 
@@ -70,7 +66,7 @@ Las marcas registradas de Beekeeper Studio (logos, palabras y marcas) no son de 
 
 ## Reglamento de marca registrada
 
-Las marcas registradas pueden complicarse en los proyectos de código abierto, así que adaptamos un conjunto de pautas básicas para el uso de nuestras marcas registradas, pautas que son comunes en muchos proyectos de código abierto. 
+Las marcas registradas pueden complicarse en los proyectos de código abierto, así que adaptamos un conjunto de pautas básicas para el uso de nuestras marcas registradas, pautas que son comunes en muchos proyectos de código abierto.
 
 Si solamente estás usado la app de Beekeeper Studio sin intención de bifurcar o distribuir el código, estas pautas probablemente no se aplican en tu caso.
 
