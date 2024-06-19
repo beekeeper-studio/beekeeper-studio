@@ -226,7 +226,7 @@ describe("CodeMirror completions", () => {
     ],
     from: Pos(0, 7),
     to: Pos(0, 24),
-    mode: "text/x-pgsql",
+    mode: "text/x-pgsql"
   });
 
   test("lowercase to uppercase schema", {
