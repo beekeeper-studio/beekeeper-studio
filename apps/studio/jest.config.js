@@ -13,7 +13,8 @@ module.exports = {
     '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
   },
   transform: {
-    '^.+\\.vue$': require.resolve('@vue/vue2-jest'),
+    // NOTE (@day): this won't work anymore, need to switch to vite
+    // '^.+\\.vue$': require.resolve('@vue/vue2-jest'),
   },
   setupFilesAfterEnv: [resolve(__dirname, './tests/setupTests.js')],
   setupFiles: ['./jest.polyfills.js'],
