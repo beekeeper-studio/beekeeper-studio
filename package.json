@@ -29,7 +29,10 @@
     "nan": "2.17.0",
     "node-abi": "^3.34.0",
     "cpu-features": "./.yarn/packages/empty-package",
-    "electron-builder": "23.0.2"
+    "electron-builder": "23.0.2",
+    "jest": "27.1.0",
+    "ts-jest": "27.1.0",
+    "babel-jest": "27.5.1"
   },
   "volta": {
     "node": "16.19.1",
