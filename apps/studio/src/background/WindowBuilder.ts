@@ -6,8 +6,6 @@ import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
-import url from 'url'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
 
 // eslint-disable-next-line
@@ -107,12 +105,12 @@ class BeekeeperWindow {
   private async initialize() {
     // Install Vue Devtools
     try {
-      log.debug("installing vue devtools")
-      installExtension({
-          id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
-          electron: '>=1.2.1'
-      })
-      log.debug("devtools loaded", name)
+      // log.debug("installing vue devtools")
+      // installExtension({
+          // id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
+          // electron: '>=1.2.1'
+      // })
+      // log.debug("devtools loaded", name)
     } catch (e) {
       log.error('devtools failed to install:', e.toString())
     }
