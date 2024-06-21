@@ -24,6 +24,10 @@ module.exports = {
   globals: {
   },
   transformIgnorePatterns: ['node_modules/(?!uuid)/'],
+  modulePathIgnorePatterns: [
+    '<rootDir>/dist/',
+    '<rootDir>/dist_electron/',
+  ],
   // support the same @ -> src alias mapping in source code
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
