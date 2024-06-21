@@ -106,10 +106,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     });
 
     afterAll(async () => {
-      if (util.connection) {
-        console.log("disconnecting")
-        await util.connection.disconnect();
-      }
+      await util.disconnect()
       if (dbfile) {
         console.log("removing dbfile callback")
         await dbfile.removeCallback();
@@ -118,11 +115,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         console.log("stopping container...")
         await container.stop();
         console.log("container stopped")
-      }
-      if (util.knex) {
-        // knex destroy also
-        // https://github.com/jestjs/jest/issues/11463
-        await util.knex.destroy()
       }
     });
 

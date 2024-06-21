@@ -145,6 +145,12 @@ export class DBTestUtil {
     this.connection = this.server.createConnection(database)
   }
 
+  async disconnect() {
+    if (this.connection) await this.connection.disconnect();
+    // https://github.com/jestjs/jest/issues/11463
+    if (this.knex) await this.knex.destroy();
+  }
+
   maybeArrayToObject(items, key) {
     // Only 'firebird knex' returns an object instead of an array.
     if (!Array.isArray(items)) {
