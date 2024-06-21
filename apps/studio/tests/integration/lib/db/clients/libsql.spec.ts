@@ -107,12 +107,15 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
 
     afterAll(async () => {
       if (util.connection) {
+        console.log("disconnecting")
         await util.connection.disconnect();
       }
       if (dbfile) {
+        console.log("removing dbfile callback")
         await dbfile.removeCallback();
       }
       if (container) {
+        console.log("stopping container...")
         await container.stop();
       }
     });

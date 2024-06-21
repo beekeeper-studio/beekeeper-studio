@@ -5,7 +5,7 @@ import { ConnectionTypes, keymapTypes } from './common/appdb/models/saved_connec
 
 const userDirectory = platformInfo.userDirectory
 
-if (platformInfo.debugEnabled) {
+if (platformInfo.debugEnabled && localStorage) {
   localStorage.debug = platformInfo.DEBUG
 }
 

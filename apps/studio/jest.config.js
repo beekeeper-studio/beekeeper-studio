@@ -21,8 +21,6 @@ module.exports = {
     'vue',
     'ts',
   ],
-  globals: {
-  },
   transformIgnorePatterns: ['node_modules/(?!uuid)/'],
   modulePathIgnorePatterns: [
     '<rootDir>/dist/',
