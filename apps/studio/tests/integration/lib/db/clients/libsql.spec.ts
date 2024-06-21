@@ -119,6 +119,11 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await container.stop();
         console.log("container stopped")
       }
+      if (util.knex) {
+        // knex destroy also
+        // https://github.com/jestjs/jest/issues/11463
+        await util.knex.destroy()
+      }
     });
 
     describe("Common Tests", () => {

@@ -72,6 +72,10 @@ function testWith(options) {
       if (dbfile) {
         dbfile.removeCallback();
       }
+      if (util.knex) {
+        // https://github.com/jestjs/jest/issues/11463
+        await util.knex.destroy()
+      }
     })
 
     describe("Common Tests", () => {
