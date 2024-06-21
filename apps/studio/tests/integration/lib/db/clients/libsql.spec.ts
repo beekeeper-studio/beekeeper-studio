@@ -117,6 +117,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       if (container) {
         console.log("stopping container...")
         await container.stop();
+        console.log("container stopped")
       }
     });
 
