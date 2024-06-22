@@ -97,6 +97,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // using a different thread for each connection.
     // This may cause connection limit problem. So we may have to change this at some point.
     return Promise.resolve();
+    try {
+      this.knex.destroy()
+    }
   }
 
   async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -646,7 +649,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         ordinalPosition: Number(row.cid),
         hasDefault: !_.isNil(defaultValue),
         generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
-      } 
+      }
     })
   }
 
