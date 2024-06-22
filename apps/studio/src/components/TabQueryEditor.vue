@@ -739,7 +739,7 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       async cancelQuery() {
-        if(this.running && this.runningQuery) {
+        if (this.running && this.runningQuery) {
           this.running = false
           this.info = 'Query Execution Cancelled'
           await this.runningQuery.cancel();
@@ -884,7 +884,7 @@
           // Dry run is for bigquery, allows query cost estimations
           this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
           const queryStartTime = new Date()
-          const results = await this.runningQurey.execute();
+          const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435

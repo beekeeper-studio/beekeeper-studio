@@ -97,7 +97,7 @@ const electronUtilityPlugin = {
   const commonArgs = {
     platform: 'node',
     publicPath: '.',
-    outdir: 'dist_electron',
+    outdir: 'dist',
     bundle: true,
     external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
     sourcemap: isWatching,
@@ -113,7 +113,7 @@ const electronUtilityPlugin = {
       assets: [
         {
           from: ['./src/index.html'],
-          to: './dist_electron/'
+          to: './dist/'
         },
       ]
     })]
