@@ -99,6 +99,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve();
     try {
       this.knex.destroy()
+    } catch {
+      // don't worry if this doesn't work.
     }
   }
 
