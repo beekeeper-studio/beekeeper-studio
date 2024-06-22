@@ -29,9 +29,7 @@ describe("CSV Exporter", () => {
   })
 
   afterAll(async () => {
-    if (util?.connection) {
-      await util.connection.disconnect();
-    }
+    await util.disconnect()
   })
 
   it("should create a simple json export", async () => {
