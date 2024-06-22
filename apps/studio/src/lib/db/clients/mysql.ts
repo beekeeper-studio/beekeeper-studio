@@ -1340,7 +1340,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
       lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
       commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
-      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
+      rollbackCommand: (executeOptions: any): Promise<any> => {
+        console.log('in rollback')
+        return this.rawExecuteQuery('ROLLBACK;', executeOptions)
+      }
     }
   }
 }

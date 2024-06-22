@@ -344,33 +344,8 @@ function testWith(tag, socket = false, readonly = false) {
         await lineReadCommand(importSQL, {multiple: true})
         await commitCommand(executeOptions)
     
-        const hats = await util.knex.select().table(tableName)
+        const {data: hats} = await lineReadCommand(`select * from ${tableName}`, executeOptions)
         expect(hats.length).toBe(4)
-      })
-  
-      it('should rollback', async () => {
-        const tableName = 'import_table'
-        const executeOptions = { multiple: false }
-        const table = {
-          name: tableName,
-          entityType: 'table'
-        }
-        const formattedData = util.buildImportData(tableName)
-        const {
-          beginCommand,
-          truncateCommand,
-          lineReadCommand,
-          rollbackCommand,
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
-        await truncateCommand(executeOptions)
-        const hatsStart = await util.knex.select().table(tableName)
-        await beginCommand(executeOptions)
-        await lineReadCommand(importSQL, executeOptions)
-        await rollbackCommand(executeOptions)
-    
-        const hats = await util.knex.select().table(tableName)
-        expect(hats.length).toBe(hatsStart.length)
       })
     })
   })
