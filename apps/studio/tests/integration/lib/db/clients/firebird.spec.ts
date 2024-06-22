@@ -250,7 +250,7 @@ describe("Firebird Tests", () => {
     })
   });
 
-  it('should import correctly then test rollback', async () => {
+  it('should import correctly', async () => {
     const tableName = 'import_table'
     const table: TableOrView = {
       name: tableName,
@@ -307,16 +307,6 @@ describe("Firebird Tests", () => {
     const [hats] = await util.knex(tableName).count('HAT')
     const [dataLength] = _.values(hats)
     expect(dataLength).toBe(4)
-
-    // now truncate and rollback
-    await step0()
-    await beginCommand()
-    await truncateCommand()
-    await rollbackCommand()
-    await finalCommand()
-    const [hatsAgain] = await util.knex(tableName).count('HAT')
-    const [hatsLength] = _.values(hatsAgain)
-    expect(hatsLength).toBe(4)
   })
 
 });

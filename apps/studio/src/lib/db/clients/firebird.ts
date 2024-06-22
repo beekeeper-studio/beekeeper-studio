@@ -203,16 +203,7 @@ function buildInsertQuery(
     .insert(data[0])
     .toQuery();
 
-  // FIREBIRD will uppercase all the columns, so wrap em if you want different cases
-  const columnNamesRegex = /\(([^)]+)\)/
-  const match = query.match(columnNamesRegex)
-  const columnNamesPart = match[1];
-  const wrappedColumnNamesPart = columnNamesPart
-    .split(',')
-    .map(col => `"${col.trim()}"`)
-    .join(', ');
-
-  return query.replace(columnNamesPart, wrappedColumnNamesPart)
+  return query
 }
 
 function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
