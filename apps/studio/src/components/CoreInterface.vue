@@ -38,6 +38,8 @@
       @close="quickSearchShown=false"
     />
     <ExportManager :connection="connection" />
+    <lost-connection-modal />
+    <rename-database-element-modal />
   </div>
 </template>
 
@@ -52,12 +54,14 @@
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
+  import LostConnectionModal from './LostConnectionModal.vue'
   import Vue from 'vue'
   import { SmartLocalStorage } from '@/common/LocalStorage'
+  import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
   import { mapGetters } from 'vuex'
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal },
     props: ['connection'],
     data() {
       /* eslint-disable */

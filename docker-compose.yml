@@ -161,4 +161,15 @@ services:
       - ISC_PASSWORD=masterkey
       - EnableLegacyClientAuth=true
     command: sh -c 'chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /usr/local/firebird/docker-entrypoint.sh firebird;'
+  libsql:
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    platform: linux/amd64
+    ports:
+      - 8081:8080
+      - 5001:5001
+      # environment:
+    #   - SQLD_NODE=primary
+    # volumes:
+    #   - ./dev/docker_libsql:/var/lib/sqld
+
 

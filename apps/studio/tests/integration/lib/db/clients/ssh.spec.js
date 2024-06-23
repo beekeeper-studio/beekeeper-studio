@@ -5,6 +5,8 @@ import { dbtimeout } from '../../../../lib/db'
 
 
 describe("SSH Tunnel Tests", () => {
+  jest.setTimeout(dbtimeout)
+
   let container;
   let connection
   let database
@@ -13,7 +15,6 @@ describe("SSH Tunnel Tests", () => {
 
   beforeAll(async () => {
     const timeoutDefault = 5000
-    jest.setTimeout(dbtimeout)
     environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
       .withWaitStrategy(Wait.forHealthCheck())
       .up()

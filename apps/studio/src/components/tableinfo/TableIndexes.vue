@@ -116,12 +116,12 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { CreateIndexSpec, FormatterDialect, IndexAlterations } from '@shared/lib/dialects/models'
+import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
 import rawLog from 'electron-log'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import { TableIndex, IndexedColumn } from '@/lib/db/models'
+import { TableIndex } from '@/lib/db/models'
 import { mapGetters } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
@@ -192,7 +192,7 @@ export default Vue.extend({
         return {
           ...i,
           info: i.nullsNotDistinct ? 'NULLS NOT DISTINCT' : undefined,
-          columns: i.columns.map((c: IndexedColumn) => {
+          columns: i.columns.map((c: IndexColumn) => {
             // In mysql, we can specify the prefix length
             if (this.connection.connectionBaseType === 'mysql' && !_.isNil(c.prefix)) {
               return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
@@ -300,7 +300,7 @@ export default Vue.extend({
             }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')
-            return { name, order }
+            return { name, order } as IndexColumn
           })
           const payload: CreateIndexSpec = {
             unique: data.unique,

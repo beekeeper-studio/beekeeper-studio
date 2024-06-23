@@ -18,6 +18,7 @@ const TEST_VERSIONS = [
 
 function testWith(tag, socket = false, readonly = false) {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
+    jest.setTimeout(dbtimeout)
 
     let container;
     /** @type {DBTestUtil} */
@@ -25,7 +26,6 @@ function testWith(tag, socket = false, readonly = false) {
 
     beforeAll(async () => {
       const timeoutDefault = 5000
-      jest.setTimeout(dbtimeout)
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mysql-'));
       fs.chmodSync(temp, "777")
       container = await new GenericContainer("mysql", tag)

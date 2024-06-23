@@ -65,21 +65,21 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().tableColumnsTests()
     })
 
-  test("table view tests", async () => {
-    await getUtil().tableViewTests()
-  })
+    test("table view tests", async () => {
+      await getUtil().tableViewTests()
+    })
 
-  test("stream tests", async () => {
-    if (getUtil().dbType === 'cockroachdb') {
-      return
-    }
-    await getUtil().streamTests()
-  })
+    test("stream tests", async () => {
+      if (getUtil().dbType === 'cockroachdb') {
+        return
+      }
+      await getUtil().streamTests()
+    })
 
     test("query tests", async () => {
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
-      } else {
+      } else if (getUtil().dbType !== 'libsql'){
         await getUtil().queryTests()
       }
     })
@@ -140,8 +140,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("Should create database", async () => {
-      // oracle will throw a "ORA-01100: database already mounted" error if trying to create
-      if (getUtil().dbType === 'oracle') {
+      if (getUtil().options.skipCreateDatabase) {
         return
       }
       await getUtil().createDatabaseTests()
@@ -241,6 +240,14 @@ export function runCommonTests(getUtil, opts = {}) {
           await expect(getUtil().indexTests()).rejects.toThrow(errorMessages.readOnly)
         } else {
           await getUtil().indexTests()
+        }
+      })
+
+      test("should rename database elements", async () => {
+        if (dbReadOnlyMode) {
+          await expect(getUtil().renameElementsTests()).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await getUtil().renameElementsTests()
         }
       })
     })

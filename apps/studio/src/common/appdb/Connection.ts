@@ -11,6 +11,7 @@ import { OpenTab } from "./models/OpenTab"
 import { HiddenEntity } from "./models/HiddenEntity"
 import { HiddenSchema } from "./models/HiddenSchema"
 import { PinnedConnection } from "./models/PinnedConnection"
+import { TokenCache } from "./models/token_cache"
 
 const models = [
   SavedConnection,
@@ -23,7 +24,8 @@ const models = [
   OpenTab,
   HiddenEntity,
   HiddenSchema,
-  PinnedConnection
+  PinnedConnection,
+  TokenCache
 ]
 
 

@@ -56,6 +56,9 @@ export const OracleData: DialectData = {
     informationSchema: {
       extra: true
     },
+    alter: {
+      renameSchema: true,
+    },
   },
   notices: {
   },

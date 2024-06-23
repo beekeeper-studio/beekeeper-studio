@@ -37,12 +37,15 @@ export const SqliteData: DialectData = {
   },
   textEditorMode: "text/x-sqlite",
   disabledFeatures: {
+    schema: true,
     comments: true,
     alter: {
       alterColumn: true,
       multiStatement: true,
       addConstraint: true,
       dropConstraint: true,
+      renameView: true,
+      renameSchema: true,
     },
     informationSchema: {
       extra: true

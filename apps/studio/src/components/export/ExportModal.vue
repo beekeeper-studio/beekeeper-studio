@@ -7,7 +7,11 @@
       :scrollable="true"
       @closed="$emit('closed')"
     >
-      <form @submit.prevent="submit">
+      <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+      <form
+        v-kbd-trap="true"
+        @submit.prevent="submit"
+      >
         <div class="dialog-content">
           <div class="dialog-c-title flex flex-middle">
             <div>

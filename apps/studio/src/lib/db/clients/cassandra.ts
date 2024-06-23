@@ -214,7 +214,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     } as any);
 
     return {
-      async execute() {
+      execute: async () => {
         const queries = this.identifyCommands(queryText).map((query: any) => this.executeQuery(query.text))
         const retPromises = await Promise.all(queries)
 
@@ -222,7 +222,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       },
 
       // idk if this works. Should probably try it one day...
-      async cancel() {
+      cancel: async () => {
         if (!pid) {
           throw new Error('Query not ready to be canceled');
         }
@@ -386,16 +386,18 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     throw new Error("Method not implemented.");
   }
 
+  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement): string {
+    return ''
+  }
+
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     const sql = `DROP ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
 
     await this.driverExecuteSingle(sql);
   }
 
-  async truncateElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    const sql = `TRUNCATE ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
-
-    await this.driverExecuteSingle(sql);
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, _schema?: string): string {
+    return `TRUNCATE ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
   }
 
   async truncateAllTables(_schema?: string): Promise<void> {
@@ -601,7 +603,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       command: command || (isSelect && 'SELECT'),
       rows: rows || [],
       fields: fields,
-      isPaged: data.isPaged(),
+      // FIXME not sure what this is, this causes the query to fail. .isPaged() is not defined.
+      // isPaged: data.isPaged(),
       rowCount: isSelect ? (rowLength || 0) : undefined,
       affectedRows: !isSelect && !isNaN(rowLength) ? rowLength : undefined,
     };

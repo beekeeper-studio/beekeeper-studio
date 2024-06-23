@@ -8,6 +8,7 @@ export interface IDbConnectionPublicServer {
   db: (dbName: string) => BasicDatabaseClient<any>
   disconnect: () => void
   end: () => void
+  destroyConnection: (dbName?: string) => void
   createConnection: (dbName?: string, cryptoSecret?: string) => BasicDatabaseClient<any>
   versionString: () => string
   getServerConfig: () => IDbConnectionServerConfig
@@ -58,7 +59,12 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
         server.sshTunnel = null;
       }
     },
-
+    destroyConnection(dbName?: string) {
+      if (server.db[dbName]) {
+        server.db[dbName].disconnect();
+        delete server.db[dbName];
+      }
+    },
     createConnection(dbName?: string, cryptoSecret?: string) {
       if (server.db[dbName]) {
         return server.db[dbName];

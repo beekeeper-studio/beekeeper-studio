@@ -1,14 +1,15 @@
 import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import type { RedshiftOptions, BigQueryOptions, CassandraOptions } from '@/common/appdb/models/saved_connection';
+import type { RedshiftOptions, BigQueryOptions, CassandraOptions, AzureAuthOptions, LibSQLOptions } from '@/common/appdb/models/saved_connection';
 import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb';
+export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
 
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
   "MATERIALIZED-VIEW" = 'MATERIALIZED VIEW',
-  DATABASE = 'DATABASE'
+  DATABASE = 'DATABASE',
+  SCHEMA = 'SCHEMA'
 }
 
 export interface IDbConnectionDatabase {
@@ -56,6 +57,9 @@ export interface IDbConnectionServerConfig {
   redshiftOptions?: RedshiftOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
+  azureAuthOptions?: AzureAuthOptions
+  authId?: number
+  libsqlOptions?: LibSQLOptions
   runtimeExtensions?: string[]
 }
 

@@ -23,8 +23,8 @@ describe("MySQL UNIT tests (no connection required)", () => {
     const samples = {
       "title": { name: 'title', order: 'ASC', prefix: null },
       "title DESC": { name: 'title', order: 'DESC', prefix: null },
-      "title(10) DESC": { name: 'title', order: 'DESC', prefix: '10' },
-      "title (10) DESC": { name: 'title', order: 'DESC', prefix: '10' },
+      "title(10) DESC": { name: 'title', order: 'DESC', prefix: 10 },
+      "title (10) DESC": { name: 'title', order: 'DESC', prefix: 10 },
       // "desc(5)": { name: 'desc(5)', order: 'ASC', prefix: null },
       // "desc(5)(5)": { name: 'desc(5)', order: 'ASC', prefix: '5' },
       // "desc(5) (5)": { name: 'desc(5)', order: 'ASC', prefix: '5' },

@@ -157,4 +157,23 @@ export const CLIENTS: ClientConfig[] = [
       'server:domain',
     ],
   },
+  {
+    key: 'libsql',
+    name: 'LibSQL',
+    defaultPort: 8080,
+    defaultDatabase: ':memory:',
+    disabledFeatures: [
+      'server:ssl',
+      'server:host',
+      'server:port',
+      'server:socketPath',
+      'server:user',
+      'server:password',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'scriptCreateTable',
+      'cancelQuery',
+    ],
+  }
 ];

@@ -3,6 +3,8 @@ import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all';
 
 describe("CockroachDB Tests", () => {
+  jest.setTimeout(dbtimeout)
+
   let container;
   let util
   let environment
@@ -10,7 +12,6 @@ describe("CockroachDB Tests", () => {
 
   beforeAll(async () => {
     const timeoutDefault = 5000
-    jest.setTimeout(dbtimeout)
     environment = await new DockerComposeEnvironment("tests/docker", "cockroachdb.yml").up()
     container = environment.getContainer('test_cockroachdb')
     jest.setTimeout(timeoutDefault)

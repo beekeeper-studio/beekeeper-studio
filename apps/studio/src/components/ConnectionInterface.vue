@@ -122,6 +122,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <lib-sql-form
+                  v-else-if="config.connectionType === 'libsql'"
+                  :config="config"
+                  :testing="testing"
+                />
 
 
                 <!-- TEST AND CONNECT -->
@@ -202,6 +207,7 @@ import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
+import LibSQLForm from './connection/LibSQLForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import _ from 'lodash'
@@ -216,12 +222,13 @@ import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm },
 
   data() {
     return {
@@ -360,6 +367,10 @@ export default Vue.extend({
       if (this.config === config) {
         this.config = new SavedConnection()
       }
+      if (config.azureAuthOptions?.authId) {
+        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
+        cache.remove();
+      }
       await this.$store.dispatch('pinnedConnections/remove', config)
       await this.$store.dispatch('data/connections/remove', config)
       this.$noty.success(`${config.name} deleted`)
@@ -421,6 +432,13 @@ export default Vue.extend({
         if (!this.config.name) {
           throw new Error("Name is required")
         }
+        // create token cache for azure auth
+        if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.authId) {
+          let cache = new TokenCache();
+          cache = await cache.save();
+          this.config.authId = cache.id;
+        }
+
         await this.$store.dispatch('data/connections/save', this.config)
         this.$noty.success("Connection Saved")
       } catch (ex) {

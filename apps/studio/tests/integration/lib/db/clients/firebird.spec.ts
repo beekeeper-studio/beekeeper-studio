@@ -11,12 +11,13 @@ import Firebird from "node-firebird";
 import _ from 'lodash';
 
 describe("Firebird Tests", () => {
+  jest.setTimeout(dbtimeout);
+
   let container: StartedTestContainer;
   let util: DBTestUtil;
 
   beforeAll(async () => {
     const timeoutDefault = 5000;
-    jest.setTimeout(dbtimeout);
 
     container = await new GenericContainer("jacobalberty/firebird:v4.0.1")
       .withName("test_firebird")

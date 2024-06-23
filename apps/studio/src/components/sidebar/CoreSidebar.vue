@@ -110,7 +110,9 @@
       },
       async databaseSelected(db) {
         log.info("Pool database selected", db)
-        this.$store.dispatch('changeDatabase', db)
+        this.$store.dispatch('changeDatabase', db).catch((e) => {
+          this.$noty.error(e.message);
+        })
         this.allExpanded = false
       },
       async disconnect() {
