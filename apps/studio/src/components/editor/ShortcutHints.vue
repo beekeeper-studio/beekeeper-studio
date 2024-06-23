@@ -52,36 +52,6 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Run Query to File...</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>I</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>I</span>
-      </div>
-    </div>
-    <div class="shortcut-item">
-      <div>Run Current Query to File...</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>I</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>I</span>
-      </div>
-    </div>
-    <div class="shortcut-item">
       <div>New Window</div>
       <div
         class="shortcut"
@@ -143,36 +113,19 @@
     </div>
     <div class="shortcut-item">
       <div>Find and Replace</div>
-      <div class="shortcut">
-        <span>Ctrl</span><span>H</span>
-      </div>
-    </div>
-    <div class="shortcut-item">
-      <div>Find</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
       >
-        <span>⌘</span><span>F</span>
+        <span>⌘</span><span>R</span>
       </div>
-      <div
+      <div 
         class="shortcut"
         v-else
       >
-        <span>Ctrl</span><span>F</span>
-      </div>
-    </div>
-    <div class="shortcut-item">
-      <div>Find and Replace</div>
-      <div class="shortcut">
         <span>Ctrl</span><span>R</span>
       </div>
     </div>
-    <!-- <div class="shortcut-item">
-      <div>Shortcut</div>
-      <div v-if="$config.isMac"><span class="badge">⌘ + P</span></div>
-      <div v-else><span class="badge">⌃ + P</span></div>
-    </div> -->
   </div>
 </template>
 <script type="text/javascript">
