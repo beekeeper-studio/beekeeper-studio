@@ -1,7 +1,7 @@
-import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { PinnedConnection, SavedConnection } from "@/lib/utility/ElectronUtilityAppDbClients";
 import { Module } from "vuex";
 import { State as RootState } from '../index';
+import _ from 'lodash';
 
 interface State {
   pins: PinnedConnection[]

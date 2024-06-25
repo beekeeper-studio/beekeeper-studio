@@ -134,7 +134,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
 
     async clone(_context, item: T) {
       const result = new cls()
-      cls.merge(result, item)
+      Object.assign(result, item);
       result.id = null
       result.createdAt = new Date()
       return result
@@ -142,7 +142,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
 
     async create(context, item: T) {
       const q = new cls()
-      cls.merge(q, item)
+      Object.assign(q, item);
       await q.save()
       context.commit('upsert', q)
       return q.id
@@ -151,7 +151,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     async update(context, item: T) {
       const existing = context.state.items.find((i) => i.id === item.id)
       if (!existing) throw new Error("Could not find this item")
-      cls.merge(existing, item)
+      Object.assign(existing, item);
       await existing.save()
       return existing.id
     },

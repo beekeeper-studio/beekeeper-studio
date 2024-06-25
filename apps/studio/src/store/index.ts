@@ -4,8 +4,8 @@ import Vuex from 'vuex'
 import username from 'username'
 import electron from 'electron';
 
-import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
+import { UsedConnection } from '../lib/utility/ElectronUtilityAppDbClients'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -25,7 +25,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
-import { ElectronUtilityConnectionClient } from '@/lib/ElectronUtilityConnectionClient'
+import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = RawLog.scope('store/index')
@@ -364,6 +364,7 @@ const store = new Vuex.Store<State>({
       context.commit('setUsername', name)
     },
 
+    // TODO (@day): maybe move this to the UtilityAppDbClient
     async openUrl(context, url: string) {
       const conn = new SavedConnection();
       if (!conn.parse(url)) {

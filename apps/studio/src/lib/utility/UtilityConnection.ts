@@ -1,17 +1,31 @@
-import { uuidv4 } from "./uuid";
+import { uuidv4 } from "../uuid";
 import rawLog from 'electron-log';
 import _ from 'lodash';
 
 const log = rawLog.scope('UtilConnection');
 
 type Listener = (input: any) => void;
+type Message = {
+  handlerName: string,
+  args: any,
+  id: string,
+  resolve: any,
+  reject: any
+}
+
 
 export class UtilityConnection {
   private replyHandlers: Map<string, { resolve: any, reject: any }> = new Map();
   private listeners: Array<{type: string, id: string, listener: Listener}> = new Array();
+  private messageQueue: Array<Message> = new Array();
+  private port: MessagePort;
+  private sId: string;
 
-  constructor(private port: MessagePort, private sId: string) {
-    port.onmessage = (msg) => {
+  public setPort(port: MessagePort, sId: string) {
+    this.port = port;
+    this.sId = sId;
+    log.info('RECEIVED PORT IN UtilityConnection');
+    this.port.onmessage = (msg) => {
       const { data: msgData } = msg;
       log.info('RECEIVED MESSAGE: ', msgData.type, msgData)
 
@@ -42,17 +56,35 @@ export class UtilityConnection {
         listener(input);
       }
     }
+
+    this.port.start();
+
+    if (this.messageQueue.length > 0) {
+      this.messageQueue.forEach(({ handlerName, args, id, resolve, reject }) => {
+        log.info('PROCESSING QUEUED REQUEST: ', handlerName, id);
+        args = { sId: this.sId, ...args };
+        this.replyHandlers.set(id, { resolve, reject });
+        this.port.postMessage({ id, name: handlerName, args: args ?? {}})
+      });
+      this.messageQueue = [];
+    }
   }
 
   public async send(handlerName: string, args: any): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      args = { sId: this.sId, ...args };
       const id = uuidv4();
-      log.info('SENDING REQUEST FOR NAME, ID: ', handlerName, id)
 
-      this.replyHandlers.set(id, { resolve, reject });
+      if (!this.port) {
+        log.info('QUEUEING REQUEST FOR NAME, ID: ', handlerName, id);
+        this.messageQueue.push({ handlerName, args, id, resolve, reject });
+      } else {
+        log.info('SENDING REQUEST FOR NAME, ID: ', handlerName, id)
+        args = { sId: this.sId, ...args };
 
-      this.port.postMessage({id, name: handlerName, args: args ?? {}});
+        this.replyHandlers.set(id, { resolve, reject });
+        this.port.postMessage({id, name: handlerName, args: args ?? {}});
+      }
+
     })
   }
 

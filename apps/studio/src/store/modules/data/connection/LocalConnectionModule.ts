@@ -1,4 +1,4 @@
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { SavedConnection } from "@/lib/utility/ElectronUtilityAppDbClients";
 import { DataState, DataStore, localActionsFor, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import _ from "lodash";
 

@@ -223,9 +223,13 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
   })
 }
 
-ipcMain.on('ready', (_event) => {
+ipcMain.handle('requestPorts', () => {
   createAndSendPorts(true);
 })
+
+// ipcMain.on('ready', (_event) => {
+  // createAndSendPorts(true);
+// })
 
 // Open a connection from a file (e.g. ./sqlite.db)
 app.on('open-file', async (event, file) => {
