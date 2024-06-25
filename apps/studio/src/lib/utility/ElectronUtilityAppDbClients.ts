@@ -2,8 +2,11 @@ import { RedshiftOptions, CassandraOptions, BigQueryOptions, AzureAuthOptions, L
 import { IConnection, SshMode } from '@/common/interfaces/IConnection';
 import { Transport, TransportPinnedConn } from '@/common/transport/transport';
 import Vue from 'vue';
+import rawLog from 'electron-log';
 
-abstract class BaseUtilityAppdbEntity {
+const log = rawLog.scope('UtilityAppDbEntities');
+
+abstract class BaseUtilityAppDbEntity {
   constructor(private type: string) {
     
   }
@@ -23,9 +26,13 @@ abstract class BaseUtilityAppdbEntity {
   static save<T extends Transport>(_entities: T[], _options?: any): Promise<T[]> {
     throw new Error('Save multiple not implemented. Must be overriden in base class');
   }
+
+  protected fromTransport<T extends Transport>(item: T) {
+    return Object.assign(this, item);
+  }
 }
 
-export class SavedConnection extends BaseUtilityAppdbEntity implements IConnection {
+export class SavedConnection extends BaseUtilityAppDbEntity implements IConnection {
   constructor(config?: IConnection) {
     super('saved');
     if (config) {
@@ -34,7 +41,11 @@ export class SavedConnection extends BaseUtilityAppdbEntity implements IConnecti
   }
 
   static async find(options?: any): Promise<any[]> {
-    return await Vue.prototype.$util.send('appdb/saved/find', { options: options });
+    const items = await Vue.prototype.$util.send('appdb/saved/find', { options });
+    return items.map((item) => {
+      const newItem = new SavedConnection();
+      return Object.assign(newItem, item);
+    });
   }
 
   name: string;
@@ -78,7 +89,7 @@ export class SavedConnection extends BaseUtilityAppdbEntity implements IConnecti
   libsqlOptions?: LibSQLOptions;
 }
 
-export class UsedConnection extends BaseUtilityAppdbEntity implements IConnection {
+export class UsedConnection extends BaseUtilityAppDbEntity implements IConnection {
   constructor(config?: IConnection) {
     super('used');
     if (config) {
@@ -87,7 +98,11 @@ export class UsedConnection extends BaseUtilityAppdbEntity implements IConnectio
   }
 
   static async find(options?: any): Promise<any[]> {
-    return await Vue.prototype.$util.send('appdb/used/find', { options: options });
+    const items = await Vue.prototype.$util.send('appdb/used/find', { options });
+    return items.map((item) => {
+      const newItem = new UsedConnection();
+      return Object.assign(newItem, item);
+    });
   }
   
   name: string;
@@ -131,17 +146,22 @@ export class UsedConnection extends BaseUtilityAppdbEntity implements IConnectio
   libsqlOptions?: LibSQLOptions;
 }
 
-export class PinnedConnection extends BaseUtilityAppdbEntity implements TransportPinnedConn {
-  constructor(connection: SavedConnection) {
+export class PinnedConnection extends BaseUtilityAppDbEntity implements TransportPinnedConn {
+  constructor(connection?: SavedConnection) {
     super('pinconn');
 
     if (!connection) return;
+
     this.connectionId = connection.id;
     this.workspaceId = connection.workspaceId;
   }
 
-  static async find(options?: any): Promise<any[]> {
-    return await Vue.prototype.$util.send('appdb/pinconn/find', { options });
+  static async find(options?: any): Promise<PinnedConnection[]> {
+    const items = await Vue.prototype.$util.send('appdb/pinconn/find', { options });
+    return items.map((item) => {
+      const newItem = new PinnedConnection();
+      return Object.assign(newItem, item);
+    });
   }
 
   static async save<T extends Transport>(entities: T[], options?: any): Promise<T[]> {

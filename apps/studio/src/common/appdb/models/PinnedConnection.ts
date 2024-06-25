@@ -1,3 +1,4 @@
+import { TransportPinnedConn } from "@/common/transport/transport";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import { SavedConnection } from "./saved_connection";
@@ -5,12 +6,10 @@ import { SavedConnection } from "./saved_connection";
 @Entity({ name: 'connection_pins'})
 export class PinnedConnection extends ApplicationEntity {
 
-  // TODO (@day): this should just be an IConnection
-  constructor(connection: SavedConnection) {
+  constructor(config: TransportPinnedConn) {
     super();
-    if (!connection) return;
-    this.connectionId = connection.id;
-    this.workspaceId = connection.workspaceId;
+    if (!config) return;
+    PinnedConnection.merge(this, config);
   }
 
   @Column({type: 'float', nullable: false, default: 1})
