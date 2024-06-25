@@ -21,3 +21,4 @@ yarn-error.log
 .instant/
 cli.zip
 apps/studio/test-results
+*.db
