@@ -1014,7 +1014,7 @@ export default Vue.extend({
         const result = {}
         columnNames.forEach((c) => {
           const d = rowData[c]
-          if (this.isPrimaryKey(c) && !d) {
+          if (this.isPrimaryKey(c) && (!d && d != 0)) {
             // do nothing
           } else {
             result[c] = d
