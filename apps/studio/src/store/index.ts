@@ -4,8 +4,7 @@ import Vuex from 'vuex'
 import username from 'username'
 import electron from 'electron';
 
-import { SavedConnection } from '../common/appdb/models/saved_connection'
-import { UsedConnection } from '../lib/utility/ElectronUtilityAppDbClients'
+import { UsedConnection } from '../lib/utility/appdb/UsedConnection'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -27,6 +26,7 @@ import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 import { TokenCache } from '@/common/appdb/models/token_cache'
+import { SavedConnection } from '@/lib/utility/appdb/SavedConnection';
 
 const log = RawLog.scope('store/index')
 
@@ -423,7 +423,7 @@ const store = new Vuex.Store<State>({
       const lastUsedConnection = context.state.usedConfigs.find(c => {
         return config.id &&
           config.workspaceId &&
-          c.connectionId === config.id &&
+          c.id === config.id &&
           c.workspaceId === config.workspaceId
       })
       log.debug("Found used config", lastUsedConnection)

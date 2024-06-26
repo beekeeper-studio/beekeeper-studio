@@ -1,9 +1,9 @@
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { TableOrView } from "@/lib/db/models";
+import { SavedConnection } from "@/lib/utility/appdb/SavedConnection";
 import FlexSearch from "flexsearch";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
 
 interface FlexWorker {
   addAsync(id: any, item: string): Promise<void>

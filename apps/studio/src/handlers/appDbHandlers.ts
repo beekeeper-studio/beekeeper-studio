@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportPinnedConn } from "@/common/transport/transport";
-import { FindManyOptions, SaveOptions } from "typeorm";
+import { FindManyOptions, FindOneOptions, SaveOptions } from "typeorm";
 import rawLog from 'electron-log';
 
 const log = rawLog.scope('Appdb handlers');
@@ -45,6 +45,9 @@ function handlersFor<T extends Transport>(name: string, cls: any) {
         const obj = {} as unknown as T;
         return cls.merge(obj, value);
       })
+    },
+    [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> }) {
+      return await cls.findOne(options)
     }
   }
 }
@@ -55,13 +58,16 @@ export interface IAppDbHandlers {
   'appdb/saved/savemult': ({ entities, options }: { entities: IConnection[], options: SaveOptions }) => Promise<IConnection[]>,
   'appdb/saved/remove': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/saved/find': ({ options }: { options: FindManyOptions<SavedConnection> }) => Promise<IConnection[]>
+  'appdb/saved/findOne': ({ options }: { options: FindOneOptions<SavedConnection> }) => Promise<IConnection>
   'appdb/used/save': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/used/remove': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/used/find': ({ options }: { options: FindManyOptions<UsedConnection> }) => Promise<IConnection[]>
+  'appdb/used/findOne': ({ options }: { options: FindOneOptions<UsedConnection> }) => Promise<IConnection>
   'appdb/used/savemult': ({ entities, options }: { entities: IConnection[], options: SaveOptions }) => Promise<IConnection[]>,
   'appdb/pinconn/save': ({ obj }: { obj: TransportPinnedConn }) => Promise<void>,
   'appdb/pinconn/remove': ({ obj }: { obj: TransportPinnedConn }) => Promise<void>,
   'appdb/pinconn/find': ({ options }: { options: FindManyOptions<PinnedConnection> }) => Promise<TransportPinnedConn[]>
+  'appdb/pinconn/findOne': ({ options }: { options: FindOneOptions<PinnedConnection> }) => Promise<TransportPinnedConn>
   'appdb/pinconn/savemult': ({ entities, options }: { entities: TransportPinnedConn[], options: SaveOptions }) => Promise<TransportPinnedConn[]>,
 }
 

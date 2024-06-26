@@ -6,6 +6,9 @@ import { IConnection } from "../interfaces/IConnection";
 // may need to add more in the future, this is just to make type stuff 
 export interface Transport {
   id: number | null
+  createdAt: Date,
+  updatedAt: Date,
+  version: number
 }
 
 export interface TransportPinnedConn extends Transport {

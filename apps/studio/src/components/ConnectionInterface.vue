@@ -196,7 +196,6 @@
 
 <script lang="ts">
 import os from 'os'
-import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
 import MysqlForm from './connection/MysqlForm.vue'
 import PostgresForm from './connection/PostgresForm.vue'
@@ -223,6 +222,7 @@ import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { TokenCache } from '@/common/appdb/models/token_cache'
+import { SavedConnection } from '@/lib/utility/appdb/SavedConnection'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';

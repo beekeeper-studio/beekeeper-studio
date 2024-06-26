@@ -7,8 +7,8 @@ import { havingCli, safely, safelyDo, upsert } from "./StoreHelpers";
 import { ClientError } from '@/store/modules/data/StoreHelpers'
 import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
-import { ApplicationEntity } from "@/common/appdb/models/application_entity";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { BaseUtilityAppDbEntity } from "@/lib/utility/appdb/BaseUtilityAppDbEntity";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -110,7 +110,7 @@ export function mutationsFor<T extends HasId>(obj: any, sortBy?: SortSpec) {
   }
 }
 
-export function localActionsFor<T extends ApplicationEntity>(cls: any, other: any, loadOptions: any = {}) {
+export function localActionsFor<T extends BaseUtilityAppDbEntity>(cls: any, other: any, loadOptions: any = {}) {
   return {
     async load(context) {
       context.commit("error", null)
