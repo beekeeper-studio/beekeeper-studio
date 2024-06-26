@@ -68,8 +68,6 @@ const postgresContext = {
 };
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult> {
-  connectionBaseType = 'postgresql' as const;
-
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;

@@ -17,7 +17,7 @@ import {
 import knexlib from "knex";
 import _ from "lodash";
 import rawLog from "electron-log";
-import { DuckDBClient as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
+import { Client_DuckDB as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
 import Client from "knex/lib/client";
 import { Database, Connection } from "duckdb-async";
 import { identify } from "sql-query-identifier";
@@ -104,6 +104,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       backups: false,
       backDirFormat: false,
       restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -114,7 +115,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    this.databaseInstance = await Database.create(this.databasePath, {
+    this.databaseInstance = await Database.create(this.databasePath || ":memory:", {
       access_mode: this.readOnlyMode ? "READ_ONLY" : "READ_WRITE",
     });
     this.connectionInstance = await this.databaseInstance.connect();
@@ -134,7 +135,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   async disconnect(): Promise<void> {
     await super.disconnect();
-    await this.connectionInstance.close();
+    // connectionInstance is closed by knex in super.disconnect()
+    // so no need to close this.connectionInstance
+    // await this.connectionInstance.close();
     await this.databaseInstance.close();
   }
 
@@ -153,12 +156,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     queryText: string,
     options?: any
   ): Promise<NgQueryResult[]> {
-    const connection: Connection =
-      options?.connection || this.connectionInstance;
-
-    const results = await this.driverExecuteMultiple(queryText, {
-      connection: connection,
-    });
+    const results = await this.driverExecuteMultiple(queryText, options);
 
     return results.map(({ data, columns }) => {
       const fields = columns.map((field, idx) => ({
@@ -229,10 +227,12 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     let query = "SELECT table_name, schema_name FROM duckdb_tables";
+    const options = { params: [] }
     if (filter?.schema) {
-      query += ` WHERE schema_name = ${DuckDBData.wrapLiteral(filter.schema)}`;
+      query += ` WHERE schema_name = ?`;
+      options.params = [filter.schema]
     }
-    const { data } = await this.driverExecuteSingle(query);
+    const { data } = await this.driverExecuteSingle(query, options);
     const tables: TableOrView[] = data.map((row: any) => ({
       schema: row.schema_name,
       name: row.table_name,
@@ -243,13 +243,15 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
     let query = "SELECT view_name, schema_name FROM duckdb_views";
+    const options = { params: [] }
     if (filter?.schema) {
-      query += ` WHERE schema_name = ${DuckDBData.wrapLiteral(filter.schema)}`;
+      query += ` WHERE schema_name = ?`;
+      options.params = [filter.schema]
     }
-    const { data } = await this.driverExecuteSingle(query);
+    const { data } = await this.driverExecuteSingle(query, options);
     const views: TableOrView[] = data.map((row: any) => ({
       schema: row.schema_name,
-      name: row.table_name,
+      name: row.view_name,
       entityType: "view",
     }));
     return views;
@@ -274,7 +276,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     table?: string,
     schema?: string
   ): Promise<ExtendedTableColumn[]> {
-    const params: [string, string][] = [];
+    const params: { column: string; value: string }[] = [];
     let query = `
         SELECT
           schema_name,
@@ -289,23 +291,21 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       `;
 
     if (table) {
-      params.push(["table_name", table]);
+      params.push({ column: "table_name", value: table });
     }
 
     if (schema) {
-      params.push(["schema_name", schema]);
+      params.push({ column: "schema_name", value: schema });
     }
 
     if (params.length > 0) {
       const conditions = params
-        .map(
-          ([column, value]) => `${column} = ${DuckDBData.wrapLiteral(value)}`
-        )
+        .map((p) => `${p.column} = ?`)
         .join(" AND ");
       query += ` WHERE ${conditions}`;
     }
 
-    const { data } = await this.driverExecuteSingle(query);
+    const { data } = await this.driverExecuteSingle(query, { params: [...params.map((p) => p.value)] });
     return data.map(
       (row: any): ExtendedTableColumn => ({
         schemaName: row.schema_name,
@@ -315,6 +315,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         dataType: row.data_type,
         nullable: row.is_nullable,
         defaultValue: row.column_default,
+        hasDefault: !_.isNil(row.column_default),
         comment: row.comment,
       })
     );
@@ -398,7 +399,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     q: string,
     options: any
   ): Promise<DuckDBResult | DuckDBResult[]> {
-    const queries = this.identifyCommands(q);
+    const queries = identify(q, { strict: false });
     const params = options.params;
     const results = [];
     const conn: Connection = options.connection || this.connectionInstance;
@@ -450,12 +451,12 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         constraint_column_indexes,
         constraint_column_names
       FROM duckdb_constraints
-      WHERE schema_name = ${DuckDBData.wrapLiteral(schema)}
-        AND table_name = ${DuckDBData.wrapLiteral(table)}
+      WHERE schema_name = ?
+        AND table_name = ?
         AND constraint_type = 'PRIMARY KEY'
     `;
 
-    const { data } = await this.driverExecuteSingle(sql);
+    const { data } = await this.driverExecuteSingle(sql, { params: [schema, table] });
 
     data.forEach((row: any) => {
       const columnNames: string[] = row.constraint_column_names;
@@ -583,6 +584,40 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     );
     const result = await this.getTableProperties(table, schema);
     return result.description;
+  }
+
+  setElementNameSql(
+    elementName: string,
+    newElementName: string,
+    typeOfElement: DatabaseElement,
+    schema?: string
+  ): string {
+    elementName = schema
+      ? `${DuckDBData.wrapIdentifier(schema)}.${DuckDBData.wrapIdentifier(elementName)}`
+      : DuckDBData.wrapIdentifier(elementName);
+    newElementName = DuckDBData.wrapIdentifier(newElementName);
+
+    let sql = "";
+
+    if (typeOfElement === DatabaseElement.TABLE) {
+      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName}`;
+    } else if (typeOfElement === DatabaseElement.VIEW) {
+      sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName}`;
+    } else if (typeOfElement === DatabaseElement.SCHEMA) {
+      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName}`;
+    }
+
+    return sql;
+  }
+
+  truncateElementSql(
+    elementName: string,
+    typeOfElement: DatabaseElement,
+    schema?: string
+  ): string {
+    // TODO
+    console.log(elementName, typeOfElement, schema);
+    throw new Error("Method not implemented.");
   }
 
   private async updateValues(updates: TableUpdate[]) {
@@ -846,9 +881,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       filterParams = filterBlob.filterParams;
     }
 
-    const selectSQL = `SELECT ${selects
-      .map((s) => DuckDBData.wrapIdentifier(s))
-      .join(", ")}`;
+    const selectSQL = `SELECT ${selects.join(", ")}`;
     const baseSQL = `FROM ${DuckDBData.wrapIdentifier(
       schema
     )}.${DuckDBData.wrapIdentifier(table)} ${filterString}`;
@@ -883,13 +916,20 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
           return `${field} ${item.type.toUpperCase()} (${questionMarks})`;
         }
+
+        if (item.type.includes("is")) {
+          return `${field} ${item.type.toUpperCase()} NULL`;
+        }
+
         return `${field} ${item.type.toUpperCase()} ?`;
       });
       filterString = "WHERE " + joinFilters(allFilters, filters);
 
-      filterParams = filters.flatMap((item) => {
-        return _.isArray(item.value) ? item.value : [item.value];
-      });
+      filterParams = filters
+        .filter((item) => item.value)
+        .flatMap((item) => {
+          return _.isArray(item.value) ? item.value : [item.value];
+        });
     }
     return {
       filterString,
@@ -907,13 +947,5 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   wrapIdentifier(value: string): string {
     return DuckDBData.wrapIdentifier(value);
-  }
-
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
-    }
   }
 }

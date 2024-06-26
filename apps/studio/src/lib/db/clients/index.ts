@@ -180,6 +180,17 @@ export const CLIENTS: ClientConfig[] = [
     key: 'duckdb',
     name: 'DuckDB',
     defaultDatabase: ':memory:',
-    disabledFeatures: [],
+    disabledFeatures: [
+      'server:ssl',
+      'server:host',
+      'server:port',
+      'server:socketPath',
+      'server:user',
+      'server:password',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'cancelQuery', // TODO how to do this?
+    ],
   },
 ];

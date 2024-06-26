@@ -1,6 +1,8 @@
+/* eslint-disable */
 const QueryCompiler_SQLite3 = require('knex/lib/dialects/sqlite3/query/sqlite-querycompiler');
 const { isString } = require('knex/lib/util/is');
 const isEmpty = require('lodash/isEmpty');
+/* eslint-enable */
 
 class QueryCompiler_DuckDB extends QueryCompiler_SQLite3 {
   insert() {

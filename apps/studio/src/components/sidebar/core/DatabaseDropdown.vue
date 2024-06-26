@@ -1,9 +1,8 @@
 <template>
   <div class="fixed">
     <div class="data-select-wrap">
-      <!-- FIXME: move this comparison to the DialectData -->
       <p
-        v-if="this.connection.dialect === 'sqlite'"
+        v-if="!dialect.disabledFeatures?.multipleDatabase"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,9 +17,8 @@
         placeholder="Select a database..."
         class="dropdown-search"
       />
-      <!-- FIXME: move this comparison to the DialectData -->
       <a
-        v-if="this.connection.dialect !== 'sqlite'"
+        v-if="dialect.disabledFeatures?.multipleDatabase"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -64,7 +62,7 @@
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
   import AddDatabaseForm from "@/components/connection/AddDatabaseForm"
-  import { mapActions, mapState } from 'vuex'
+  import { mapActions, mapState, mapGetters } from 'vuex'
 
   export default {
     props: [ 'connection' ],
@@ -84,8 +82,7 @@
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        // FIXME: move this comparison to the DialectData
-        if (this.connection.dialect.match(/sqlite|firebird/)) {
+        if (this.dialect.disabledFeatures?.multipleDatabase) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connection.dialect === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
@@ -103,6 +100,7 @@
         return _.without(this.dbs, this.selectedDatabase)
       },
       ...mapState({currentDatabase: 'database', dbs: 'databaseList'}),
+      ...mapGetters(['dialect']),
     },
     watch: {
       currentDatabase(newValue) {

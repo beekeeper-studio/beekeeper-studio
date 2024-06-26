@@ -15,7 +15,7 @@ import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
-import { DuckDBClient } from '../../../../shared/src/lib/knex-duckdb'
+import { Client_DuckDB } from '../../../../shared/src/lib/knex-duckdb'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -60,7 +60,7 @@ const KnexTypes: any = {
   "cockroachdb": "pg",
   "firebird": knexFirebirdDialect,
   "oracle": "oracledb",
-  "duckdb": DuckDBClient,
+  "duckdb": Client_DuckDB,
 }
 
 export interface Options {
@@ -150,6 +150,10 @@ export class DBTestUtil {
         pool: { min: 0, max: 50 }
       })
     }
+
+    this.defaultSchema = options?.defaultSchema || this.defaultSchema
+    this.server = createServer(config)
+    this.connection = this.server.createConnection(database)
   }
 
   maybeArrayToObject(items, key) {
@@ -366,7 +370,7 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
-    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql']
+    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql', 'duckdb']
 
     if (trueFalseDBs.indexOf(this.dbType) !== -1) expect(defaultValues).toEqual([true,  false])
     else expect(defaultValues).toEqual([false, false])
@@ -593,9 +597,8 @@ export class DBTestUtil {
       if (this.dbType === 'cockroachdb' && _.isNumber(s)) return `'${s.toString().replaceAll("'", "''")}':::STRING`
       if (this.dbType === 'cockroachdb') return `e'${s.replaceAll("'", "\\'")}':::STRING`
       if (this.dialect === 'postgresql') return `'${s.toString().replaceAll("'", "''")}'::character varying`
-      if (this.dialect === 'oracle') return `'${s.toString().replaceAll("'", "''")}'`
       if (this.dialect === 'sqlserver') return `('${s.toString().replaceAll("'", "''")}')`
-      if (this.dialect === 'firebird') return `'${s.toString().replaceAll("'", "''")}'`
+      if (/oracle|firebird|duckdb/.test(this.dialect)) return `'${s.toString().replaceAll("'", "''")}'`
       return s.toString()
     }
 
@@ -619,6 +622,10 @@ export class DBTestUtil {
 
 
     const varchar = (length: number) => {
+      if (this.dialect === 'duckdb') {
+        // In duckdb, the maximum length has no effect and is only provided for compatibility.
+        return 'VARCHAR'
+      }
       const str = this.dialect === 'oracle' ? 'VARCHAR2' : 'varchar'
       return `${str}(${length})`
     }
@@ -671,7 +678,7 @@ export class DBTestUtil {
 
       await this.connection.setElementName('rename_table', 'renamed_table', DatabaseElement.TABLE, this.defaultSchema)
 
-      expect(await this.knex.schema.hasTable('renamed_table')).toBe(true)
+      expect((await this.connection.listTables()).map((t) => t.name)).toContain('renamed_table')
     }
 
     if (!this.data.disabledFeatures?.alter?.renameView) {
@@ -843,7 +850,7 @@ export class DBTestUtil {
       }],
     }
     const query = generator.buildSql(schema)
-    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'duckdb'> = {
       postgresql: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
       mysql: "create table `test_table` (`id` int unsigned not null, primary key (`id`)); alter table `test_table` modify column `id` int unsigned not null auto_increment",
       sqlite: "create table `test_table` (`id` integer not null primary key autoincrement, unique (`id`))",
@@ -970,7 +977,7 @@ export class DBTestUtil {
       100,
       [],
       [{ field: 'hourly_rate', type: 'is' }],
-      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
+      this.defaultSchema,
       ['*']
     );
 
@@ -982,6 +989,7 @@ export class DBTestUtil {
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NULL",
       oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNull = expectedQueriesIsNull[this.dbType] || expectedQueriesIsNull[this.dialect]
     expect(this.fmt(queryIsNull)).toBe(this.fmt(expectedQueryIsNull))
@@ -994,7 +1002,7 @@ export class DBTestUtil {
       100,
       [],
       [{ field: 'hourly_rate', type: 'is not' }],
-      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
+      this.defaultSchema,
       ['*']
     );
 
@@ -1005,7 +1013,8 @@ export class DBTestUtil {
       sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NOT NULL",
-      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
+      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNotNull = expectedQueriesIsNotNull[this.dbType] || expectedQueriesIsNotNull[this.dialect]
     expect(this.fmt(queryIsNotNull)).toBe(this.fmt(expectedQueryIsNotNull))

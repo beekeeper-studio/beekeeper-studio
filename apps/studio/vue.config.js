@@ -14,10 +14,10 @@ if (  process.env.PI_BUILD ) {
 const externals = ['better-sqlite3',
   'sequelize', 'typeorm', 'reflect-metadata',
   'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'oracledb', '@electron/remote',
-  'libsql',
+  'libsql', 'duckdb', 'duckdb-async',
 ]
 module.exports = {
-  transpileDependencies: ['@aws-sdk/*', 'tabulator-tables'],
+  transpileDependencies: ['@aws-sdk/*', 'tabulator-tables', 'duckdb', 'duckdb-async'],
   pluginOptions: {
     electronBuilder: {
       nodeModulesPath: ['./node_modules', '../../node_modules'],
@@ -208,6 +208,7 @@ module.exports = {
       'oracle': 'oracle',
       'strong-oracle': 'strong-oracle',
       '@libsql/sqlite3': 'commonjs @libsql/sqlite3',
+      'duckdb': 'commonjs duckdb',
       // 'oracledb': 'oracledb',
     //   // 'pg': 'pg',
     //   // 'pg-query-stream': 'pg-query-stream'

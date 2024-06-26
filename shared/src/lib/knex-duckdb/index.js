@@ -1,11 +1,14 @@
+/* eslint-disable */
 const Client_SQLite3 = require("knex/lib/dialects/sqlite3");
 const QueryCompiler = require("./query/duckdb-querycompiler");
 const ColumnCompiler = require("./schema/duckdb-columncompiler");
+const SchemaCompiler = require("./schema/duckdb-compiler");
+/* eslint-enable */
 
-class DuckDBClient extends Client_SQLite3 {
+class Client_DuckDB extends Client_SQLite3 {
   constructor(config) {
     super(config);
-    // TODO remove sqlite  warnings
+    // FIXME remove sqlite  warnings
     if (config.connection && config.connection.filename === undefined && config.connection.connectionInstance === undefined) {
       this.logger.warn(
         'Could not find `connection.filename` or `connection.connectionInstance` in config. Please specify ' +
@@ -25,6 +28,10 @@ class DuckDBClient extends Client_SQLite3 {
 
   queryCompiler(builder, formatter) {
     return new QueryCompiler(this, builder, formatter);
+  }
+
+  schemaCompiler() {
+    return new SchemaCompiler(this, ...arguments);
   }
 
   columnCompiler() {
@@ -109,9 +116,9 @@ class DuckDBClient extends Client_SQLite3 {
   }
 }
 
-Object.assign(DuckDBClient.prototype, {
+Object.assign(Client_DuckDB.prototype, {
   driverName: 'duckdb',
   dialect: 'duckdb',
 });
 
-module.exports = { DuckDBClient };
+module.exports = { Client_DuckDB };

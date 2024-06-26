@@ -55,7 +55,6 @@ export abstract class BasicDatabaseClient<RawResultType> {
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
-  connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
 
@@ -227,9 +226,9 @@ export abstract class BasicDatabaseClient<RawResultType> {
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     if (!sql) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
+      throw new Error(`Cannot rename element ${elementName} to ${newElementName} of type ${typeOfElement}`);
     }
-    await this.executeQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
@@ -241,7 +240,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     if (!sql) {
       throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
     }
-    await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement, schema));
+    await this.driverExecuteSingle(sql);
   }
 
   abstract truncateAllTables(schema?: string): void;

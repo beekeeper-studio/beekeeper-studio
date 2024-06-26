@@ -194,7 +194,7 @@ export default Vue.extend({
           info: i.nullsNotDistinct ? 'NULLS NOT DISTINCT' : undefined,
           columns: i.columns.map((c: IndexColumn) => {
             // In mysql, we can specify the prefix length
-            if (this.connection.connectionBaseType === 'mysql' && !_.isNil(c.prefix)) {
+            if (this.connection.dialect === 'mysql' && !_.isNil(c.prefix)) {
               return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
             }
             return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
@@ -295,7 +295,7 @@ export default Vue.extend({
             dataColumns = [data.columns]
           }
           const columns = dataColumns.map((c: string)=> {
-            if (this.connection.connectionBaseType === 'mysql') {
+            if (this.connection.dialect === 'mysql') {
               return mysqlParseIndexColumn(c)
             }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'

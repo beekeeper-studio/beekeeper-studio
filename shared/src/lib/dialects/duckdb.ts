@@ -2,12 +2,15 @@ import {
   ColumnType,
   defaultConstraintActions,
   defaultEscapeString,
+  defaultWrapIdentifier,
+  defaultWrapLiteral,
   DialectData,
-  SpecialTypes,
+  // SpecialTypes,
 } from "./models";
 
 const types = [
-  ...SpecialTypes,
+  // FIXME: should be able to have "autoincrement" option
+  // ...SpecialTypes,
   'int', 'int2', 'int8', 'integer', 'tinyint', 'smallint', 'mediumint', 'bigint', 'decimal', 'numeric', 'float', 'double', 'real', 'double precision', 'datetime', 'varying character', 'character', 'native character', 'varchar', 'nchar', 'nvarchar2', 'unsigned big int', 'boolean', 'blob', 'text', 'clob', 'date'
 ]
 
@@ -23,8 +26,8 @@ export const DuckDBData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   escapeString: defaultEscapeString,
-  wrapLiteral: (value: string) => (value !== "*") ? `'${value.replaceAll(/'/g, "''")}'` : "*",
-  wrapIdentifier: (value: string) => (value !== "*") ? `"${value.replaceAll(/"/g, '""')}"` : "*",
+  wrapLiteral: defaultWrapLiteral,
+  wrapIdentifier: defaultWrapIdentifier,
   usesOffsetPagination: true,
   requireDataset: false,
   editorFriendlyIdentifier: (s) => s,
@@ -33,8 +36,15 @@ export const DuckDBData: DialectData = {
     if (matched) return matched[1] || matched[2] || matched[3];
     return value;
   },
+  textEditorMode: "text/x-sql",
   disabledFeatures: {
-    triggers: false,
+    triggers: true,
+    multipleDatabase: true,
+    createIndex: true,
+    alter: {
+      multiStatement: true,
+      renameSchema: true, // FIXME: error not yet supported
+    },
   },
   notices: {
     infoTriggers: "Note: DuckDB does not support triggers",

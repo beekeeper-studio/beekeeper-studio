@@ -10,8 +10,9 @@
       :title="value"
       :value="inputValue"
       :disabled="disabled"
-      readonly
-      @click.prevent.stop="openFilePickerDialog"
+      :readonly="!editable"
+      @click.prevent.stop="!editable && openFilePickerDialog()"
+      @input="$emit('input', $event.target.value)"
     >
     <div
       class="input-group-append"
@@ -73,7 +74,11 @@ export default {
     inputId: {
       type: String,
       default: "file-picker"
-    }
+    },
+    editable: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     hasOtherActions() {

@@ -1,4 +1,6 @@
+/* eslint-disable */
 const ColumnCompiler_SQLite3 = require("knex/lib/dialects/sqlite3/schema/sqlite-columncompiler");
+/* eslint-enable */
 
 class ColumnCompiler_DuckDB extends ColumnCompiler_SQLite3 {
   increments(options = { primaryKey: true }) {

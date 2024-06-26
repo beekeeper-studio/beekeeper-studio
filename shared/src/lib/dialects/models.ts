@@ -1,8 +1,8 @@
 import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'duckdb'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'duckdb'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -144,6 +144,7 @@ export interface DialectData {
       sql?: boolean
     }
     schema?: boolean
+    multipleDatabase?: boolean
   },
   notices?: {
     infoSchema?: string

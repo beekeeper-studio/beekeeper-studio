@@ -49,8 +49,6 @@ const log = rawLog.scope('oracle')
 
 
 export class OracleClient extends BasicDatabaseClient<DriverResult> {
-  connectionBaseType = 'oracle' as const;
-
   pool: oracle.Pool;
   server: IDbConnectionServer
   database: IDbConnectionDatabase

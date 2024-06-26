@@ -235,7 +235,7 @@ export function runCommonTests(getUtil, opts = {}) {
           await getUtil().alterTableTests()
         }
       })
-      test.skip("should alter indexes", async () => {
+      test("should alter indexes", async () => {
         if (dbReadOnlyMode) {
           await expect(getUtil().indexTests()).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -266,7 +266,7 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      test.skip("should not insert bad data", async () => {
+      test("should not insert bad data", async () => {
         await itShouldNotInsertBadData(getUtil())
       })
 
@@ -278,7 +278,7 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      test.skip("should not commit on change error", async () => {
+      test("should not commit on change error", async () => {
         if (dbReadOnlyMode) {
           await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -301,7 +301,7 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    test.skip("should not insert bad data", async () => {
+    test("should not insert bad data", async () => {
       await itShouldNotInsertBadDataCompositePK(getUtil())
     })
 
@@ -313,7 +313,7 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    test.skip("should not commit on change error", async () => {
+    test("should not commit on change error", async () => {
       if (dbReadOnlyMode) {
         await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
       } else {
@@ -342,6 +342,8 @@ export function runCommonTests(getUtil, opts = {}) {
 
   describe("SQLGenerator", () => {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
+      // FIXME: implement duckdb test. It should start with creating a sequence and then create the table
+      if (getUtil().dbType === 'duckdb') return
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
     })
   })
