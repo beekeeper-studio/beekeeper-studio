@@ -41,26 +41,27 @@ import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 export default {
   components: {
     StatusBar,
   },
   mixins: [data_mutators],
-  props: ["table", "connection", "tabId", "active", "properties"],
+  props: ["table", "tabId", "active", "properties"],
   data() {
     return {
       tableTriggers: null
     }
   },
   computed: {
+    ...mapState(['connectionType']),
     ...mapGetters(['dialectData']),
     notice() {
       return this.dialectData.notices?.infoTriggers;
     },
     tableColumns() {
-      return this.connection.connectionType === 'sqlite' ?
+      return this.connectionType === 'sqlite' ?
         this.sqliteTableColumns : this.normalTableColumns
     },
     sqliteTableColumns() {

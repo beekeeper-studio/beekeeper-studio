@@ -2,7 +2,6 @@ import _ from 'lodash'
 import path from 'path'
 import { BrowserWindow, Rectangle } from "electron"
 import electron from 'electron'
-import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
@@ -27,6 +26,7 @@ function getIcon() {
 class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
+  private appUrl: string
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
@@ -48,37 +48,31 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        nodeIntegration: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
+        nodeIntegration: true,
         contextIsolation: false,
-        spellcheck: false
+        spellcheck: false,
+        sandbox: false,
       },
       icon: getIcon()
     })
 
-    const runningInWebpack = !!process.env.WEBPACK_DEV_SERVER_URL
-    let appUrl = process.env.WEBPACK_DEV_SERVER_URL || 'app://./index.html'
+    const startUrl = 'app://./index.html'
+    // let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
+    const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     if (platformInfo.isWayland) {
       queryObj.runningWayland = true
     }
-
     const query = querystring.stringify(queryObj)
 
-    appUrl = query ? `${appUrl}?${query}` : appUrl
+    this.appUrl = query ? `${appUrl}?${query}` : appUrl
     remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
-    if (!runningInWebpack) {
-      createProtocol('app')
-    }
-    this.win.loadURL(appUrl)
-    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
-      this.win.webContents.openDevTools()
-    }
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
-      if (url === appUrl) return // this is good
+      if (url === this.appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
       const u = new URL(url)
@@ -87,7 +81,7 @@ class BeekeeperWindow {
     })
 
     this.win.webContents.setWindowOpenHandler(({ url }) => {
-      if (url === appUrl){
+      if (url === this.appUrl){
         return {
           action: 'allow'
         }
@@ -102,6 +96,31 @@ class BeekeeperWindow {
         e.preventDefault()
       }
     })
+
+    this.initialize()
+      .then(() => log.debug("initialize finished"))
+      .catch((ex) => log.error("INITIALIZE ERROR", ex)  )
+  }
+
+  private async initialize() {
+    // Install Vue Devtools
+    try {
+      // log.debug("installing vue devtools")
+      // installExtension({
+          // id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
+          // electron: '>=1.2.1'
+      // })
+      // log.debug("devtools loaded", name)
+    } catch (e) {
+      log.error('devtools failed to install:', e.toString())
+    }
+
+    await this.win.loadURL(this.appUrl)
+    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+      this.win.webContents.openDevTools()
+    }
+
+
   }
 
   private getWindowPosition(settings: IGroupedUserSettings) {
@@ -139,17 +158,22 @@ class BeekeeperWindow {
     return this.win ? this.win.webContents : null
   }
 
+  get winId() {
+    return this.win ? this.win.id : null;
+  }
+
   send(channel: string, ...args: any[]) {
     this.win?.webContents.send(channel, ...args)
   }
 
   initializeCallbacks() {
-    if (process.env.WEBPACK_DEV_SERVER_URL && platformInfo.isWindows) {
+    if (platformInfo.isDevelopment && platformInfo.isWindows) {
       // this.win?.webContents.on('did-finish-load', this.finishLoadListener.bind(this))
     }
     this.win?.on('closed', () => {
       this.win = null
     })
+
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
@@ -167,6 +191,10 @@ class BeekeeperWindow {
       this.win?.webContents.reload()
     }
     this.reloaded = true
+  }
+
+  onClose(listener: (event: electron.Event) => void) {
+    this.win?.on('close', listener);
   }
 
   get active() {

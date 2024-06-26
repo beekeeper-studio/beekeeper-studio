@@ -10,6 +10,7 @@
       <div
         v-kbd-trap="true"
         @click.stop
+        tabindex="0"
         @keydown.stop
         @keyup.stop="handleKeyUp"
         @keypress.stop
@@ -51,7 +52,7 @@
                   @click.prevent="format"
                   v-show="!language.noBeautify"
                 >
-                  <x-label>Format {{ language?.label }}</x-label>
+                  <x-label>Format {{ language.label }}</x-label>
                 </x-menuitem>
                 <x-menuitem @click.prevent="minify">
                   <x-label>Minify text</x-label>
@@ -149,10 +150,7 @@ import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
-import rawlog from 'electron-log'
 import TextEditor from '@/components/common/texteditor/TextEditor.vue'
-
-const log = rawlog.scope('EditorModal')
 
 export default Vue.extend({
   name: "CellEditorModal",
@@ -270,14 +268,14 @@ export default Vue.extend({
         this.$modal.hide(this.modalName)
       }
     }
-  },
+  }
 });
 </script>
 
 
 
 <style lang="scss" scoped>
-@import '@shared/assets/styles/_variables';
+@import '../../../../../shared/src/assets/styles/_variables';
 
 div.vue-dialog div.dialog-content {
   padding: 0;

@@ -11,7 +11,7 @@ const TableCompiler = require('./schema/tablecompiler').default
 /* eslint-enable */
 
 
-class BigQueryClient extends Client {
+export class BigQueryClient extends Client {
   constructor(config) {
     super(config);
   }
@@ -87,7 +87,7 @@ class BigQueryClient extends Client {
       query: obj.sql,
       params: obj.bindings
     };
-  
+
     return this.createJob(connection, queryConfig)
       .then(connection => this.getJobResults(connection, obj))
       .catch(err => {
@@ -171,6 +171,3 @@ Object.assign(BigQueryClient.prototype, {
     },
   })
 })
-
-
-module.exports = { BigQueryClient };

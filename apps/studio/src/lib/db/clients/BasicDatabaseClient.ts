@@ -5,7 +5,7 @@ import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
-import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
+import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase, IDbConnectionServer } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 
@@ -50,8 +50,7 @@ export const NoOpContextProvider: AppContextProvider = {
 };
 
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType> {
-
+export abstract class BasicDatabaseClient<RawResultType> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
@@ -80,10 +79,10 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
 
   // DB Metadata ****************************************************************
-  abstract supportedFeatures(): SupportedFeatures;
-  abstract versionString(): string;
+  abstract supportedFeatures(): Promise<SupportedFeatures>;
+  abstract versionString(): Promise<string>;
 
-  defaultSchema(): string | null {
+  async defaultSchema(): Promise<string | null> {
     return null
   }
   // ****************************************************************************
@@ -150,11 +149,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
     return Promise.resolve([])
   }
 
-  abstract query(queryText: string, options?: any): CancelableQuery;
+  abstract query(queryText: string, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
-  abstract getQuerySelectTop(table: string, limit: number, schema?: string): string;
+  abstract getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>;
   abstract listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract getPrimaryKey(table: string, schema?: string): Promise<string | null>;
   abstract getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
@@ -165,7 +164,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   abstract getDefaultCharset(): Promise<string>
   abstract listCollations(charset: string): Promise<string[]>
   abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
-  abstract createDatabaseSQL(): string
+  abstract createDatabaseSQL(): Promise<string>
   abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
   abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
   async getMaterializedViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
@@ -187,7 +186,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     await this.executeQuery(sql)
   }
 
-  alterIndexSql(changes: IndexAlterations): string | null {
+  async alterIndexSql(changes: IndexAlterations): Promise<string | null> {
     const { table, schema, additions, drops } = changes
     const changeBuilder = this.getBuilder(table, schema)
     const newIndexes = changeBuilder.createIndexes(additions)
@@ -196,11 +195,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   }
 
   async alterIndex(changes: IndexAlterations): Promise<void> {
-    const sql = this.alterIndexSql(changes);
+    const sql = await this.alterIndexSql(changes);
     await this.executeQuery(sql)
   }
 
-  alterRelationSql(changes: RelationAlterations): string | null {
+  async alterRelationSql(changes: RelationAlterations): Promise<string | null> {
     const { table, schema } = changes
     const builder = this.getBuilder(table, schema)
     const creates = builder.createRelations(changes.additions)
@@ -209,11 +208,11 @@ export abstract class BasicDatabaseClient<RawResultType> {
   }
 
   async alterRelation(changes: RelationAlterations): Promise<void> {
-    const query = this.alterRelationSql(changes)
+    const query = await this.alterRelationSql(changes)
     await this.executeQuery(query)
   }
 
-  alterPartitionSql(_changes: AlterPartitionsSpec): string | null {
+  async alterPartitionSql(_changes: AlterPartitionsSpec): Promise<string | null> {
     return ''
   }
 
@@ -221,16 +220,16 @@ export abstract class BasicDatabaseClient<RawResultType> {
     return;
   }
 
-  abstract applyChangesSql(changes: TableChanges): string;
+  abstract applyChangesSql(changes: TableChanges): Promise<string>;
 
   abstract applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>;
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
-  abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+  abstract setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    const sql = this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
+    const sql = await this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     if (!sql) {
       throw new Error(`Unsupported element type: ${typeOfElement}`);
     }
@@ -239,17 +238,17 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
 
-  abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): string;
+  abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     const sql = this.truncateElementSql(elementName, typeOfElement, schema);
     if (!sql) {
       throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
     }
-    await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement, schema));
+    await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement, schema));
   }
 
-  abstract truncateAllTables(schema?: string): void;
+  abstract truncateAllTables(schema?: string): Promise<void>;
   // ****************************************************************************
 
   // ****************************************************************************
@@ -268,7 +267,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
-  abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): string;
+  abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
   /** Sync a database file to remote database. This is a LibSQL specific feature. */

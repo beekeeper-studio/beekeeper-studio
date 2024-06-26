@@ -93,9 +93,7 @@ function testWith(tag, socket = false, readonly = false) {
     })
 
     afterAll(async () => {
-      if (util.connection) {
-        await util.connection.disconnect()
-      }
+      await util.disconnect()
       if (container) {
         await container.stop()
       }
@@ -141,7 +139,7 @@ function testWith(tag, socket = false, readonly = false) {
     })
 
     it("Should not think there are params when there aren't", async () => {
-      const runner = util.connection.query('SELECT CONCAT("A", "?", "B") as a limit 1')
+      const runner = await util.connection.query('SELECT CONCAT("A", "?", "B") as a limit 1')
       const results = await runner.execute()
       expect(results[0].rows[0]['c0']).toEqual('A?B')
     })
