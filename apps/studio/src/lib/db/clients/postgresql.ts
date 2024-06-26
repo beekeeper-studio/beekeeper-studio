@@ -913,9 +913,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       chunkSize
     }
 
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
+
     return {
-      totalRows: undefined, // totalRecords,
-      columns: undefined, // columns,
+      totalRows,
+      columns,
       cursor: new PsqlCursor(cursorOpts)
     }
   }
