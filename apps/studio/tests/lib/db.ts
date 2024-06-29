@@ -1054,6 +1054,8 @@ export class DBTestUtil {
       { name: "Elias" }
     ]
 
+    const columnExpected = ['id', 'name']
+
     if (this.dbType === 'firebird') {
       for (const name of names) {
         await this.knex('streamtest').insert(name)
@@ -1074,6 +1076,10 @@ export class DBTestUtil {
       // be correct
       expect(result.totalRows).toBe(6)
     }
+    const {columns, totalRows} = await this.connection.getColumnsAndTotalRows('select * from streamtest')
+    expect(totalRows).toBe(6)
+    // dataType isn't really a necessary field and some knex inserts where showing undefined, user-defined, and a few others. Truly the column name is the important part 
+    expect(columns.map(v => v.columnName)).toStrictEqual(columnExpected)
     const cursor = result.cursor
     await cursor.start()
     const b1 = await cursor.read()
