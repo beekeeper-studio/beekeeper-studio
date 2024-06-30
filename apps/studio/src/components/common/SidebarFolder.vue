@@ -81,8 +81,8 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '@/assets/styles/app/_variables';
-  
+  @import '../../assets/styles/app/_variables';
+
   .schema > .sub-items {
     padding-left: 18px!important;
   }

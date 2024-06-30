@@ -122,12 +122,13 @@ import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/lib/db/clients/mysql'
 
 interface State {
+  mysqlTypes: string[]
   tabulator: Tabulator
   newRows: RowComponent[]
   removedRows: RowComponent[],
@@ -141,9 +142,10 @@ export default Vue.extend({
     ErrorAlert,
   },
   mixins: [data_mutators],
-  props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
+  props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
+      mysqlTypes: ['mysql', 'mariadb', 'tidb'],
       tabulator: null,
       newRows: [],
       removedRows: [],
@@ -158,6 +160,7 @@ export default Vue.extend({
     }
   },
   computed: {
+    ...mapState(['connectionType', 'connection']),
     ...mapGetters(['dialect', 'dialectData']),
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
@@ -194,7 +197,7 @@ export default Vue.extend({
           info: i.nullsNotDistinct ? 'NULLS NOT DISTINCT' : undefined,
           columns: i.columns.map((c: IndexColumn) => {
             // In mysql, we can specify the prefix length
-            if (this.connection.connectionBaseType === 'mysql' && !_.isNil(c.prefix)) {
+            if (this.mysqlTypes(this.connectionType) && !_.isNil(c.prefix)) {
               return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
             }
             return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
@@ -225,6 +228,7 @@ export default Vue.extend({
           editor: vueEditor(CheckboxEditorVue),
         },
         {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
+        // TODO (@day): fix
         (
           this.connection.supportedFeatures().indexNullsNotDistinct
             ? { title: 'Info', field: 'info' }
@@ -295,7 +299,7 @@ export default Vue.extend({
             dataColumns = [data.columns]
           }
           const columns = dataColumns.map((c: string)=> {
-            if (this.connection.connectionBaseType === 'mysql') {
+            if (this.mysqlTypes.includes(this.connectionType)) {
               return mysqlParseIndexColumn(c)
             }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
@@ -332,9 +336,9 @@ export default Vue.extend({
       }
 
     },
-    submitSql() {
+    async submitSql() {
       const payload = this.getPayload()
-      const sql = this.connection.alterIndexSql(payload)
+      const sql = await this.connection.alterIndexSql(payload)
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

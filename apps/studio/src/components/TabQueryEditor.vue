@@ -381,7 +381,7 @@
     },
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
-      ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
+      ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
@@ -513,9 +513,6 @@
         result[this.ctrlOrCmd('i')] = this.submitQueryToFile
         result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
         return result
-      },
-      connectionType() {
-        return this.connection.connectionType;
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -742,11 +739,11 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       async cancelQuery() {
-        if(this.running && this.runningQuery) {
+        if (this.running && this.runningQuery) {
           this.running = false
           this.info = 'Query Execution Cancelled'
-          await this.runningQuery.cancel()
-          this.runningQuery = null
+          await this.runningQuery.cancel();
+          this.runningQuery = null;
         }
       },
       download(format) {
@@ -885,9 +882,9 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = this.connection.query(query, { dryRun: this.dryRun })
+          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
           const queryStartTime = new Date()
-          const results = await this.runningQuery.execute()
+          const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435

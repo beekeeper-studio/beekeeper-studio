@@ -13,7 +13,7 @@
         class="titlebar-icon"
         v-if="!$config.isMac"
       >
-        <img src="@/assets/logo.svg">
+        <img src="assets/logo.svg">
         <AppMenu />
       </div>
       <div class="titlebar-title noselect">
@@ -64,7 +64,7 @@
 
 <script>
 import { mapState } from 'vuex'
-import AppMenu from './menu/NewAppMenu'
+import AppMenu from './menu/NewAppMenu.vue'
 import platformInfo from '@/common/platform_info'
 export default {
   components: { AppMenu },

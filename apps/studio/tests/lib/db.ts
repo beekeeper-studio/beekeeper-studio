@@ -145,6 +145,12 @@ export class DBTestUtil {
     this.connection = this.server.createConnection(database)
   }
 
+  async disconnect() {
+    if (this.connection) await this.connection.disconnect();
+    // https://github.com/jestjs/jest/issues/11463
+    if (this.knex) await this.knex.destroy();
+  }
+
   maybeArrayToObject(items, key) {
     // Only 'firebird knex' returns an object instead of an array.
     if (!Array.isArray(items)) {
@@ -783,7 +789,7 @@ export class DBTestUtil {
 
     expect(tables.map((t) => t.name.toLowerCase())).toContain('one_record')
 
-    const q = this.connection.query(
+    const q = await this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as total, trim('b') as total from rdb$database" :
         "select 'a' as total, 'b' as total from one_record"
@@ -1243,7 +1249,7 @@ export class DBTestUtil {
   }
 
   async databaseVersionTest() {
-    const version = this.connection.versionString();
+    const version = await this.connection.versionString();
     expect(version).toBeDefined()
   }
 }

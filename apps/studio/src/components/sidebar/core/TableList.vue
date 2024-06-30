@@ -71,7 +71,6 @@
       <pinned-table-list
         :all-expanded="allExpanded"
         :all-collapsed="allCollapsed"
-        :connection="connection"
       />
     </div>
 
@@ -239,8 +238,8 @@
           this.$refs.tables
         ]
       },
-      supportsRoutines() {
-        return this.connection.supportedFeatures().customRoutines
+      async supportsRoutines() {
+        return this.supportedFeatures.customRoutines
       },
       canCreateTable() {
         return !this.dialectData.disabledFeatures?.createTable
@@ -253,7 +252,7 @@
           { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
         ]
       },
-      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
+      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
       ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',

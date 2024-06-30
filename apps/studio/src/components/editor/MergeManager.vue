@@ -4,7 +4,7 @@
       v-if="pendingMerge"
       class="alert alert-notice"
     >
-      <i class="material-icons">info_outlined</i> 
+      <i class="material-icons">info_outlined</i>
       <div class="alert-body">
         Merge Completed
       </div>
@@ -22,12 +22,12 @@
         >Looks Good</a>
       </span>
     </div>
-    
+
     <div
       v-else-if="pendingRemoteChanges"
       class="alert alert-info"
     >
-      <i class="material-icons">error_outline</i> 
+      <i class="material-icons">error_outline</i>
       <div class="alert-body">
         This query has been updated by someone else.
       </div>
@@ -179,8 +179,8 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-  @import '@/assets/styles/app/_variables';
-  
+  @import '../../assets/styles/app/_variables';
+
   .merge-manager {
     margin: 0 $gutter-h;
     > i {

@@ -6,11 +6,11 @@
     >
       <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
       <template v-if="storeInitialized">
-        <connection-interface v-if="!connection" />
+        <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
+        <connection-interface v-if="!connected" />
         <core-interface
           @databaseSelected="databaseSelected"
           v-else
-          :connection="connection"
         />
         <auto-updater />
         <state-manager />
@@ -29,6 +29,7 @@
     <dropzone />
     <data-manager />
     <confirmation-modal-manager />
+    <util-died-modal />
   </div>
 </template>
 
@@ -47,6 +48,7 @@ import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
+import UtilDiedModal from '@/components/UtilDiedModal.vue'
 
 import rawLog from 'electron-log'
 
@@ -56,7 +58,7 @@ export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone, UtilDiedModal
   },
   data() {
     return {
@@ -65,7 +67,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['storeInitialized', 'connection', 'database']),
+    ...mapState(['storeInitialized', 'database', 'connected']),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'

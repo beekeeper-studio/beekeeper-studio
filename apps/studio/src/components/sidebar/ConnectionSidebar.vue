@@ -227,7 +227,7 @@
 <script>
 import _ from 'lodash'
 import { mapState, mapGetters } from 'vuex'
-import ConnectionListItem from './connection/ConnectionListItem'
+import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'

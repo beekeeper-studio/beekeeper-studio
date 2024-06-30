@@ -18,7 +18,6 @@
         <core-sidebar
           @databaseSelected="databaseSelected"
           @toggleSidebar="toggleSidebar"
-          :connection="connection"
           :sidebar-shown="sidebarShown"
         />
         <statusbar>
@@ -30,14 +29,14 @@
         class="page-content flex-col"
         id="page-content"
       >
-        <core-tabs :connection="connection" />
+        <core-tabs />
       </div>
     </div>
     <quick-search
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
     />
-    <ExportManager :connection="connection" />
+    <ExportManager />
     <lost-connection-modal />
     <rename-database-element-modal />
   </div>
@@ -62,7 +61,6 @@
 
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal },
-    props: ['connection'],
     data() {
       /* eslint-disable */
       return {

@@ -21,7 +21,8 @@ export default {
     } : null
 
     return {
-      client: config.connectionType,
+      // @ts-ignore
+      client: config.connectionType ?? config._connectionType,
       host: config.host ? config.host.trim() : null,
       port: config.port,
       serviceName: config.serviceName || null,

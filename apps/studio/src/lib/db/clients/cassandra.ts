@@ -86,7 +86,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return new CassandraChangeBuilder(table, [])
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: false,
       comments: true,
@@ -99,7 +99,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       indexNullsNotDistinct: false,
     }
   }
-  versionString(): string {
+
+  async versionString(): Promise<string> {
     return this.versionInfo.versionString;
   }
 
@@ -206,7 +207,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     } as any));
   }
 
-  query(queryText: string, _options?: any): CancelableQuery {
+  async query(queryText: string, _options?: any): Promise<CancelableQuery> {
     const pid = null;
     const cancelable = createCancelablePromise({
       ...errors.CANCELED_BY_USER,
@@ -276,11 +277,11 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     }
   }
 
-  getQuerySelectTop(table: string, limit: number, _schema?: string): string {
+  async getQuerySelectTop(table: string, limit: number, _schema?: string): Promise<string> {
     return `SELECT * FROM ${this.wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
-  listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
+  async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     return Promise.resolve([]) // TODO: Make sure Cassandra doesn't  actually do this
   }
 
@@ -333,7 +334,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     await this.driverExecuteSingle(query);
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
@@ -353,7 +354,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]) // TODO: Routines really don't exist in Cassandra
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, this.knex);
   }
 
@@ -386,7 +387,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     throw new Error("Method not implemented.");
   }
 
-  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement): string {
+  async setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement): Promise<string> {
     return ''
   }
 
@@ -396,7 +397,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     await this.driverExecuteSingle(sql);
   }
 
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, _schema?: string): string {
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
     return `TRUNCATE ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
   }
 
@@ -478,12 +479,12 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, _schema?: string): Promise<void> {
-    const sql = this.duplicateTableSql(tableName, duplicateTableName);
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName);
 
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, _schema?: string): string {
+  async duplicateTableSql(tableName: string, duplicateTableName: string, _schema?: string): Promise<string> {
     const sql = `
       CREATE TABLE ${this.wrapIdentifier(duplicateTableName)} AS
       SELECT * FROM ${this.wrapIdentifier(tableName)}

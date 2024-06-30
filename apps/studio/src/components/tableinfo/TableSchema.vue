@@ -155,7 +155,7 @@ export default Vue.extend({
     ErrorAlert
   },
   mixins: [DataMutators],
-  props: ["table", "connection", "tabID", "active", "primaryKeys", "tabState"],
+  props: ["table", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {
       tabulator: null,
@@ -179,7 +179,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect', 'dialectData']),
-    ...mapState(['database']),
+    ...mapState(['database', 'connection']),
     hotkeys() {
       if (!this.active) return {}
       const result = {}
@@ -396,7 +396,7 @@ export default Vue.extend({
       try {
         this.error = null
         const changes = this.collectChanges()
-        await this.connection.alterTable(changes)
+        await this.connection.alterTable(changes);
 
         this.clearChanges()
         await this.$store.dispatch('updateTableColumns', this.table)
@@ -413,7 +413,7 @@ export default Vue.extend({
       try {
         this.error = null
         const changes = this.collectChanges()
-        const sql = await this.connection.alterTableSql(changes)
+        const sql = await this.connection.alterTableSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect)})
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch (ex) {

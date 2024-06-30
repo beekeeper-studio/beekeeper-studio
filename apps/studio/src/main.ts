@@ -35,6 +35,7 @@ import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+import { UtilityConnection } from './lib/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 
 (async () => {
@@ -93,7 +94,8 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
     // (window as any).SQLHint = SQLHint;
     (window as any).XLSX = xlsx;
     Vue.config.devtools = platformInfo.isDevelopment;
-
+    // @ts-ignore
+    window.platformInfo = platformInfo
     Vue.mixin(AppEventMixin)
     Vue.mixin({
       methods: {
@@ -122,6 +124,15 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
           }
         },
 
+      }
+    })
+
+    ipcRenderer.on('port', (event, { sId, utilDied }) => {
+      log.log('Received port in renderer with sId: ', sId)
+      Vue.prototype.$util = new UtilityConnection(event.ports[0], sId);
+
+      if (utilDied) {
+        ipcRenderer.emit('utilDied');
       }
     })
 

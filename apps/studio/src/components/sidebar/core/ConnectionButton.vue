@@ -120,7 +120,7 @@
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex'
-import SaveConnectionForm from '../../connection/SaveConnectionForm'
+import SaveConnectionForm from '../../connection/SaveConnectionForm.vue'
 import rawLog from 'electron-log'
 
 const log = rawLog.scope('app.vue')
@@ -135,8 +135,8 @@ export default {
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig', 'connection': 'connection'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'versionString': 'versionString'}),
+      ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
+      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
       connectionName() {
         return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
       },

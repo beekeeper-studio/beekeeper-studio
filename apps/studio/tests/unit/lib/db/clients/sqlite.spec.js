@@ -22,5 +22,6 @@ describe("SQLite UNIT test (no connection)", () => {
     const result = await client.alterTableSql(input)
     const expected = 'ALTER TABLE "foo" RENAME COLUMN "a" TO "b";ALTER TABLE "foo" RENAME COLUMN "c" TO "d";'
     expect(result).toBe(expected);
+    await client.disconnect()
   })
 })
