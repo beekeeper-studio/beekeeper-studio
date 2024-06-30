@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
+import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -10,7 +10,6 @@ import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
-  buildInsertQueries,
   buildSchemaFilter,
   buildSelectQueriesFromUpdates,
   buildUpdateQueries,
@@ -29,7 +28,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 const log = logRaw.scope('sql-server')
@@ -834,23 +833,23 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query);
   }
 
-  async importData(insertSQL: string) {
-    return await this.executeWithTransaction(insertSQL)
-  }
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name, schema } = table
+    const transaction = new sql.Transaction(this.pool)
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+    let request
 
-  getImportSQL(importedData: any[], isTruncate: boolean) {
-    const { schema, table } = importedData[0]
-    const queries = []
-    // IDENTITY_INSERT is used in case there is a guid getting created by the database, trying to import something into an "IDENTITY" column would fail
-    // https://stackoverflow.com/questions/1334012/cannot-insert-explicit-value-for-identity-column-in-table-table-when-identity/
-    queries.push(`SET IDENTITY_INSERT ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)} ON`)
-    if (isTruncate) {
-      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`)
+    return {
+      step0: async(): Promise<null> => {
+        request = new sql.Request(transaction)
+        return null
+      },
+      beginCommand: (_executeOptions: any): Promise<any> => transaction.begin(),
+      truncateCommand: (executeOptions: any): Promise<any> => request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions),
+      lineReadCommand: (sqlString: string, executeOptions: any): Promise<any> => request.query(sqlString, executeOptions),
+      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
+      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback()
     }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
-    queries.push(`SET IDENTITY_INSERT ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)} OFF`)
-    return joinQueries(queries)
   }
 
   /* helper functions and settings below! */

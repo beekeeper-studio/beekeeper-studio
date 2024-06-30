@@ -164,6 +164,32 @@ export class DBTestUtil {
     })
   }
 
+  buildImportData(tableName, schemaName = null) {
+    const data = [
+      {
+        'name': 'biff',
+        'hat': 'beret'
+      },
+      {
+        'name': 'spud',
+        'hat': 'fez'
+      },
+      {
+        'name': 'chuck',
+        'hat': 'barretina'
+      },
+      {
+        'name': 'lou',
+        'hat': 'tricorne'
+      }
+    ]
+    return data.map(d => ({
+      table: tableName,
+      schema: schemaName,
+      data: [d]
+    }))
+  }
+
   /** Format the SQL with the correct dialect */
   fmt(sql: string) {
     return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
@@ -508,7 +534,7 @@ export class DBTestUtil {
     expect(simpleResult.find((c) => c.columnName?.toLowerCase() === 'family_name')).toBeTruthy()
 
 
-    // only databases that can actually change things past this point.
+    // only databases t can actually change things past this point.
     if (this.data.disabledFeatures?.alter?.alterColumn) return
 
     await this.knex.schema.dropTableIfExists("alter_test")
@@ -1194,6 +1220,11 @@ export class DBTestUtil {
     await this.knex.schema.createTable('streamtest', (table) => {
       primary(table)
       table.string("name")
+    })
+
+    await this.knex.schema.createTable('import_table', (t) => {
+      t.string('name'),
+      t.string('hat')
     })
 
     if (!this.options.skipGeneratedColumns) {

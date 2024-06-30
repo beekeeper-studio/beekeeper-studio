@@ -252,3 +252,13 @@ export interface CancelableQuery {
   execute: () => Promise<QueryResult>;
   cancel: () => Promise<void>;
 }
+
+export interface ImportScriptFunctions {
+  step0?: (args?: any) => Promise<null|any>
+  beginCommand: (args?: any) => Promise<null|any>
+  truncateCommand: (args?: any) => Promise<null|any>
+  lineReadCommand: (sql: string|string[], args?: any) => Promise<null|any>,
+  commitCommand: (args?: any) => Promise<null|any>
+  rollbackCommand: (args?: any) => Promise<null|any>
+  finalCommand?: (args?: any) => Promise<any|null>
+}
