@@ -66,12 +66,16 @@ export interface IAppDbHandlers {
   'appdb/saved/find': ({ options }: { options: FindManyOptions<SavedConnection> }) => Promise<IConnection[]>
   'appdb/saved/findOne': ({ options }: { options: FindOneOptions<SavedConnection> | string | number }) => Promise<IConnection>
   'appdb/saved/parseUrl': ({ url }: { url: string }) => Promise<IConnection>, 
+
+
   'appdb/used/new': () => Promise<any>,
   'appdb/used/save': ({ obj }: { obj: IConnection }) => Promise<any>,
   'appdb/used/remove': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/used/find': ({ options }: { options: FindManyOptions<UsedConnection> }) => Promise<IConnection[]>
   'appdb/used/findOne': ({ options }: { options: FindOneOptions<UsedConnection> | string | number }) => Promise<IConnection>
   'appdb/used/savemult': ({ entities, options }: { entities: IConnection[], options: SaveOptions }) => Promise<IConnection[]>,
+
+
   'appdb/pinconn/new': () => Promise<any>,
   'appdb/pinconn/save': ({ obj }: { obj: TransportPinnedConn }) => Promise<any>,
   'appdb/pinconn/remove': ({ obj }: { obj: TransportPinnedConn }) => Promise<void>,
