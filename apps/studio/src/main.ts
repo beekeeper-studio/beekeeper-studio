@@ -128,8 +128,6 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
     })
 
     Vue.prototype.$util = new UtilityConnection();
-    // TODO (@day): this needs to be refactored. Utility Connection needs a message queue
-    // and should be instaniated right away, rather than waiting for the port and sId
     ipcRenderer.on('port', (event, { sId, utilDied }) => {
       log.log('Received port in renderer with sId: ', sId)
       if (!Vue.prototype.$util) {
