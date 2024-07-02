@@ -57,6 +57,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
+  allowReadOnly = false;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
@@ -71,6 +72,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
+    this.allowReadOnly = platformInfo.isUltimate || platformInfo.testMode;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -332,7 +334,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (platformInfo.isUltimate && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -365,7 +367,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (platformInfo.isUltimate && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
     
