@@ -224,7 +224,12 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
 }
 
 ipcMain.handle('requestPorts', () => {
-  createAndSendPorts(true);
+  log.info('Client requested ports');
+  if (!utilityProcess || !utilityProcess.pid) {
+    utilityProcess = null;
+    createUtilityProcess();
+  }
+  createAndSendPorts(false);
 })
 
 // ipcMain.on('ready', (_event) => {
