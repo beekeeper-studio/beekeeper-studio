@@ -1,11 +1,11 @@
 import { Transport, TransportPinnedConn } from "@/common/transport/transport";
-import { SavedConnection } from "./SavedConnection";
 import Vue from 'vue';
 import { BaseUtilityAppDbEntity } from "./BaseUtilityAppDbEntity";
 import { baseFind, baseFindOne } from "./Util";
+import { IConnection } from "@/common/interfaces/IConnection";
 
 export class PinnedConnection extends BaseUtilityAppDbEntity implements TransportPinnedConn {
-  constructor(connection?: SavedConnection) {
+  constructor(connection?: IConnection) {
     super('pinconn');
 
     if (!connection) return;
@@ -30,7 +30,7 @@ export class PinnedConnection extends BaseUtilityAppDbEntity implements Transpor
   position: number = 99.0;
   connectionId: number;
   workspaceId: number = -1;
-  connection: SavedConnection;
+  connection: IConnection;
   createdAt: Date;
   updatedAt: Date;
   version: number;

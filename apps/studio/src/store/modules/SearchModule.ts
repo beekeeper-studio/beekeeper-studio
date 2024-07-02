@@ -1,6 +1,6 @@
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
+import { IConnection } from "@/common/interfaces/IConnection";
 import { TableOrView } from "@/lib/db/models";
-import { SavedConnection } from "@/lib/utility/appdb/SavedConnection";
 import FlexSearch from "flexsearch";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
@@ -13,7 +13,7 @@ interface FlexWorker {
 
 interface IndexItem {
   title: string
-  item: FavoriteQuery | TableOrView | SavedConnection | string
+  item: FavoriteQuery | TableOrView | IConnection | string
   type: 'query' | 'table' | 'connection' | 'database'
 }
 

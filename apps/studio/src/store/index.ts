@@ -26,7 +26,6 @@ import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 import { TokenCache } from '@/common/appdb/models/token_cache'
-import { SavedConnection } from '@/lib/utility/appdb/SavedConnection';
 
 const log = RawLog.scope('store/index')
 
@@ -355,7 +354,7 @@ const store = new Vuex.Store<State>({
     }
   },
   actions: {
-    async test(context, config: SavedConnection) {
+    async test(context, config: IConnection) {
       await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },
 
@@ -364,14 +363,9 @@ const store = new Vuex.Store<State>({
       context.commit('setUsername', name)
     },
 
-    // TODO (@day): maybe move this to the UtilityAppDbClient
     async openUrl(context, url: string) {
-      const conn = new SavedConnection();
-      if (!conn.parse(url)) {
-        throw `Unable to parse ${url}`
-      } else {
-        await context.dispatch('connect', conn)
-      }
+      const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
+      await context.dispatch('connect', conn)
     },
 
     updateWindowTitle(context, config: Nullable<IConnection>) {

@@ -222,7 +222,6 @@ import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { TokenCache } from '@/common/appdb/models/token_cache'
-import { SavedConnection } from '@/lib/utility/appdb/SavedConnection'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -232,7 +231,7 @@ export default Vue.extend({
 
   data() {
     return {
-      config: new SavedConnection(),
+      config: {} as any,
       errors: null,
       connectionError: null,
       errorHelp: null,
@@ -275,7 +274,9 @@ export default Vue.extend({
   },
   watch: {
     workspaceId() {
-      this.config = new SavedConnection()
+      this.$util.send('appdb/saved/new').then((conn) => {
+        this.config = conn;
+      })
     },
     config: {
       deep: true,
@@ -305,6 +306,9 @@ export default Vue.extend({
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
+    this.$util.send('appdb/saved/new').then((conn) => {
+      this.config = conn;
+    })
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
     this.config.sshUsername = os.userInfo().username
@@ -330,7 +334,7 @@ export default Vue.extend({
         }
       } as Split.Options)
     })
-      await this.$store.dispatch('loadUsedConfigs')
+    await this.$store.dispatch('loadUsedConfigs')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
@@ -356,7 +360,9 @@ export default Vue.extend({
 
     },
     create() {
-      this.config = new SavedConnection()
+      this.$util.send('appdb/saved/new').then((conn) => {
+        this.config = conn;
+      })
     },
     edit(config) {
       this.config = _.clone(config)
@@ -365,7 +371,9 @@ export default Vue.extend({
     },
     async remove(config) {
       if (this.config === config) {
-        this.config = new SavedConnection()
+        this.$util.send('appdb/saved/new').then((conn) => {
+          this.config = conn;
+        })
       }
       if (config.azureAuthOptions?.authId) {
         const cache = await TokenCache.findOne(config.azureAuthOptions.authId);

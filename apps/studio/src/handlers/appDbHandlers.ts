@@ -10,6 +10,10 @@ const log = rawLog.scope('Appdb handlers');
 
 function handlersFor<T extends Transport>(name: string, cls: any) {
   return {
+    // this is so we can get defaults on objects
+    [`appdb/${name}/new`]: async function() {
+      return new cls();
+    },
     [`appdb/${name}/save`]: async function({ obj }: { obj: T }) {
       let dbObj: any;
       if (obj.id) {
@@ -20,6 +24,7 @@ function handlersFor<T extends Transport>(name: string, cls: any) {
       }
       log.info(`Saving ${name}: `, dbObj);
       await dbObj.save();
+      return dbObj;
     },
     [`appdb/${name}/savemult`]: async function({ entities, options }: { entities: T[], options: SaveOptions}) {
       const ids = entities.map((e) => e.id);
@@ -46,7 +51,7 @@ function handlersFor<T extends Transport>(name: string, cls: any) {
         return cls.merge(obj, value);
       })
     },
-    [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> }) {
+    [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
       return await cls.findOne(options)
     }
   }
@@ -54,25 +59,36 @@ function handlersFor<T extends Transport>(name: string, cls: any) {
 
 // should we even have this?
 export interface IAppDbHandlers {
-  'appdb/saved/save': ({ obj }: { obj: IConnection }) => Promise<void>,
+  'appdb/saved/new': () => Promise<any>,
+  'appdb/saved/save': ({ obj }: { obj: IConnection }) => Promise<any>,
   'appdb/saved/savemult': ({ entities, options }: { entities: IConnection[], options: SaveOptions }) => Promise<IConnection[]>,
   'appdb/saved/remove': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/saved/find': ({ options }: { options: FindManyOptions<SavedConnection> }) => Promise<IConnection[]>
-  'appdb/saved/findOne': ({ options }: { options: FindOneOptions<SavedConnection> }) => Promise<IConnection>
-  'appdb/used/save': ({ obj }: { obj: IConnection }) => Promise<void>,
+  'appdb/saved/findOne': ({ options }: { options: FindOneOptions<SavedConnection> | string | number }) => Promise<IConnection>
+  'appdb/saved/parseUrl': ({ url }: { url: string }) => Promise<IConnection>, 
+  'appdb/used/new': () => Promise<any>,
+  'appdb/used/save': ({ obj }: { obj: IConnection }) => Promise<any>,
   'appdb/used/remove': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/used/find': ({ options }: { options: FindManyOptions<UsedConnection> }) => Promise<IConnection[]>
-  'appdb/used/findOne': ({ options }: { options: FindOneOptions<UsedConnection> }) => Promise<IConnection>
+  'appdb/used/findOne': ({ options }: { options: FindOneOptions<UsedConnection> | string | number }) => Promise<IConnection>
   'appdb/used/savemult': ({ entities, options }: { entities: IConnection[], options: SaveOptions }) => Promise<IConnection[]>,
-  'appdb/pinconn/save': ({ obj }: { obj: TransportPinnedConn }) => Promise<void>,
+  'appdb/pinconn/new': () => Promise<any>,
+  'appdb/pinconn/save': ({ obj }: { obj: TransportPinnedConn }) => Promise<any>,
   'appdb/pinconn/remove': ({ obj }: { obj: TransportPinnedConn }) => Promise<void>,
   'appdb/pinconn/find': ({ options }: { options: FindManyOptions<PinnedConnection> }) => Promise<TransportPinnedConn[]>
-  'appdb/pinconn/findOne': ({ options }: { options: FindOneOptions<PinnedConnection> }) => Promise<TransportPinnedConn>
+  'appdb/pinconn/findOne': ({ options }: { options: FindOneOptions<PinnedConnection> | string | number }) => Promise<TransportPinnedConn>
   'appdb/pinconn/savemult': ({ entities, options }: { entities: TransportPinnedConn[], options: SaveOptions }) => Promise<TransportPinnedConn[]>,
 }
 
 export const AppDbHandlers: IAppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection),
   ...handlersFor<IConnection>('used', UsedConnection),
-  ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection)
+  ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
+  'appdb/saved/parseUrl': async function({ url }: { url: string }) {
+    const conn = new SavedConnection();
+    if (!conn.parse(url)) {
+      throw `Unable to parse ${url}`;
+    }
+    return conn;
+  },
 } as unknown as IAppDbHandlers;

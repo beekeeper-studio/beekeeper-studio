@@ -1,8 +1,8 @@
-import { LocalConnectionModule } from "@/store/modules/data/connection/LocalConnectionModule";
 import { LocalConnectionFolderModule } from "@/store/modules/data/connection_folder/LocalConnectionFolderModule";
 import { LocalQueryModule } from "@/store/modules/data/query/LocalQueryModule";
 import { LocalQueryFolderModule } from "@/store/modules/data/query_folder/LocalQueryFolderModule";
 import { LocalUsedQueryModule } from "@/store/modules/data/used_query/LocalUsedQueryModule";
+import { UtilConnectionModule } from "./modules/data/connection/UtilityConnectionModule";
 
 
 export const DataModules = [
@@ -14,7 +14,7 @@ export const DataModules = [
   {
     path: 'data/connections',
     cloud: null,
-    local: LocalConnectionModule
+    local: UtilConnectionModule
   },
   {
     path: 'data/queryFolders',

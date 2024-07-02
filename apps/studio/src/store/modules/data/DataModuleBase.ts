@@ -9,6 +9,8 @@ import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { BaseUtilityAppDbEntity } from "@/lib/utility/appdb/BaseUtilityAppDbEntity";
+import Vue from "vue";
+import { Transport } from "@/common/transport/transport";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -109,6 +111,59 @@ export function mutationsFor<T extends HasId>(obj: any, sortBy?: SortSpec) {
     ...obj
   }
 }
+
+export function utilActionsFor<T extends Transport>(type: string, other: any, loadOptions: any = {}) {
+  return {
+    async load(context) {
+      context.commit("error", null);
+      await safely(context, async () => {
+        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
+        if (context.rootState.workspaceId === LocalWorkspace.id) {
+          context.commit('upsert', items);
+        }
+      })
+    },
+    async poll() {
+      // do nothing, locally we don't need to poll.
+      // nothing else can change anything.
+    },
+
+    async clearError(context) {
+      context.commit('error', null)
+    },
+
+    async clone(_context, item: T) {
+      const result: T = _.cloneDeep(item)
+      result['id'] = null
+      result['createdAt'] = null
+      return result
+    },
+
+    async save(context, item: T) {
+      const updated = await Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item });
+      context.commit('upsert', updated);
+      return updated.id;
+    },
+
+    async remove(context, item: T) {
+      await Vue.prototype.$util.send(`appdb/${type}/remove`, { obj: item });
+      context.commit('remove', item)
+    },
+
+    async reload(context, id: number) {
+      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, { options: id })
+      if (item) {
+        context.commit('upsert', item)
+        return item.id
+      } else {
+        context.commit('remove', id)
+        return null
+      }
+    },
+    ...other
+  }
+}
+
 
 export function localActionsFor<T extends BaseUtilityAppDbEntity>(cls: any, other: any, loadOptions: any = {}) {
   return {
