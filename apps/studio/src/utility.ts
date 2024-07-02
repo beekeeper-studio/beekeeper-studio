@@ -2,6 +2,7 @@ import { MessagePortMain } from 'electron';
 import rawLog from 'electron-log'
 import ORMConnection from './common/appdb/Connection'
 import platformInfo from './common/platform_info';
+import { AppDbHandlers } from './handlers/appDbHandlers';
 import { ConnHandlers } from './handlers/connHandlers';
 import { ExportHandlers } from './handlers/exportHandlers';
 import { GeneratorHandlers } from './handlers/generatorHandlers';
@@ -24,7 +25,8 @@ export let handlers: Handlers = {
   ...ConnHandlers,
   ...QueryHandlers,
   ...GeneratorHandlers,
-  ...ExportHandlers
+  ...ExportHandlers,
+  ...AppDbHandlers
 }; 
 
 process.parentPort.on('message', ({ data, ports }) => {
@@ -62,7 +64,7 @@ async function runHandler(id: string, name: string, args: any) {
     }
   } else {
     replyArgs.type = 'error';
-    replyArgs.error = 'Invalid handler name';
+    replyArgs.error = `Invalid handler name: ${name}`;
   }
 
   state(args.sId).port.postMessage(replyArgs);

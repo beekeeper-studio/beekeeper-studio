@@ -35,7 +35,7 @@ import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
 import rawLog from 'electron-log'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
-import { UtilityConnection } from './lib/UtilityConnection'
+import { UtilityConnection } from './lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 
 (async () => {
@@ -127,9 +127,15 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
       }
     })
 
+    Vue.prototype.$util = new UtilityConnection();
+    // TODO (@day): this needs to be refactored. Utility Connection needs a message queue
+    // and should be instaniated right away, rather than waiting for the port and sId
     ipcRenderer.on('port', (event, { sId, utilDied }) => {
       log.log('Received port in renderer with sId: ', sId)
-      Vue.prototype.$util = new UtilityConnection(event.ports[0], sId);
+      if (!Vue.prototype.$util) {
+        Vue.prototype.$util = new UtilityConnection();
+      }
+      Vue.prototype.$util.setPort(event.ports[0], sId);
 
       if (utilDied) {
         ipcRenderer.emit('utilDied');

@@ -1,7 +1,8 @@
-import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { Module } from "vuex";
 import { State as RootState } from '../index';
+import _ from 'lodash';
+import { PinnedConnection } from "@/lib/utility/appdb/PinnedConnection";
+import { IConnection } from "@/common/interfaces/IConnection";
 
 interface State {
   pins: PinnedConnection[]
@@ -24,7 +25,7 @@ export const PinConnectionModule: Module<State, RootState> = {
         return c ? pin : null
       }).filter((p) => !!p);
     },
-    pinnedConnections(_state: State, getters): SavedConnection[] {
+    pinnedConnections(_state: State, getters): IConnection[] {
       return getters.orderedPins.map((pin) => pin.connection);
     }
   },
@@ -51,7 +52,7 @@ export const PinConnectionModule: Module<State, RootState> = {
     async unloadPins(context) {
       context.commit('set', []);
     },
-    async add(context, item: SavedConnection) {
+    async add(context, item: IConnection) {
       const existing = context.state.pins.find((p) => p.connectionId === item.id && p.workspaceId === context.rootState.workspaceId)
       if (existing) {
         return;
@@ -68,7 +69,7 @@ export const PinConnectionModule: Module<State, RootState> = {
       context.commit('set', pins)
       await PinnedConnection.save(pins);
     },
-    async remove(context, item: SavedConnection) {
+    async remove(context, item: IConnection) {
       const existing = context.state.pins.find((p) => p.connectionId === item.id && p.workspaceId === context.rootState.workspaceId);
       if (existing) {
         if (existing.id) await existing.remove();

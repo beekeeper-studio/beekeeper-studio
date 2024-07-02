@@ -4,10 +4,10 @@ import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
 import { app , shell } from 'electron'
 import platformInfo from '../common/platform_info'
 import path from 'path'
-import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
+import Vue from 'vue';
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -133,14 +133,14 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
-    const existing = await SavedConnection.findOne({where: { defaultDatabase: platformInfo.appDbPath }})
+    const existing = await Vue.prototype.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
     if (!existing) {
-      const nu = new SavedConnection()
+      const nu = {} as any;
       nu.connectionType = 'sqlite'
       nu.defaultDatabase = platformInfo.appDbPath
       nu.name = "Beekeeper's Database"
       nu.labelColor = 'orange'
-      await nu.save()
+      await Vue.prototype.$util.send('appdb/saved/save', { obj: nu });
     }
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }

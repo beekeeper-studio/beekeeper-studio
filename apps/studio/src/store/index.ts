@@ -4,8 +4,7 @@ import Vuex from 'vuex'
 import username from 'username'
 import electron from 'electron';
 
-import { UsedConnection } from '../common/appdb/models/used_connection'
-import { SavedConnection } from '../common/appdb/models/saved_connection'
+import { UsedConnection } from '../lib/utility/appdb/UsedConnection'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -25,7 +24,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
-import { ElectronUtilityConnectionClient } from '@/lib/ElectronUtilityConnectionClient'
+import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = RawLog.scope('store/index')
@@ -355,7 +354,7 @@ const store = new Vuex.Store<State>({
     }
   },
   actions: {
-    async test(context, config: SavedConnection) {
+    async test(context, config: IConnection) {
       await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },
 
@@ -365,12 +364,8 @@ const store = new Vuex.Store<State>({
     },
 
     async openUrl(context, url: string) {
-      const conn = new SavedConnection();
-      if (!conn.parse(url)) {
-        throw `Unable to parse ${url}`
-      } else {
-        await context.dispatch('connect', conn)
-      }
+      const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
+      await context.dispatch('connect', conn)
     },
 
     updateWindowTitle(context, config: Nullable<IConnection>) {
@@ -422,7 +417,7 @@ const store = new Vuex.Store<State>({
       const lastUsedConnection = context.state.usedConfigs.find(c => {
         return config.id &&
           config.workspaceId &&
-          c.connectionId === config.id &&
+          c.id === config.id &&
           c.workspaceId === config.workspaceId
       })
       log.debug("Found used config", lastUsedConnection)
