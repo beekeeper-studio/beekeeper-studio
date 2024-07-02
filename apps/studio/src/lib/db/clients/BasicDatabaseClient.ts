@@ -8,6 +8,7 @@ import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
+import platformInfo from '@/common/platform_info';
 
 const log = rawLog.scope('db');
 const logger = () => log;
@@ -311,7 +312,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (platformInfo.isUltimate && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -344,7 +345,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (platformInfo.isUltimate && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
     
