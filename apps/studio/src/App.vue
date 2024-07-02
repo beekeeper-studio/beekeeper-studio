@@ -82,7 +82,6 @@ export default Vue.extend({
     }
   },
   async mounted() {
-    await ipcRenderer.invoke('requestPorts')
     await this.$store.dispatch('fetchUsername')
 
     const query = querystring.parse(global.location.search, { parseBooleans: true })

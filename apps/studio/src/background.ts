@@ -232,9 +232,9 @@ ipcMain.handle('requestPorts', () => {
   createAndSendPorts(false);
 })
 
-// ipcMain.on('ready', (_event) => {
-  // createAndSendPorts(true);
-// })
+ipcMain.on('ready', (_event) => {
+  createAndSendPorts(true);
+})
 
 // Open a connection from a file (e.g. ./sqlite.db)
 app.on('open-file', async (event, file) => {
