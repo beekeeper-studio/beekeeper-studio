@@ -63,7 +63,7 @@
     "mkdirp": "^1.0.4",
     "module-alias": "^2.2.3",
     "mssql": "^8.0.2",
-    "mysql2": "^2.3.3",
+    "mysql2": "^3.9.8",
     "node-firebird": "^1.1.8",
     "noty": "beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6",
     "oracledb": "npm:bks-oracledb",
