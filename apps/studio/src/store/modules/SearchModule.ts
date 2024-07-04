@@ -1,5 +1,5 @@
-import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { IConnection } from "@/common/interfaces/IConnection";
+import { TransportFavoriteQuery } from "@/common/transport/transport";
 import { TableOrView } from "@/lib/db/models";
 import FlexSearch from "flexsearch";
 import { Module } from "vuex";
@@ -13,7 +13,7 @@ interface FlexWorker {
 
 interface IndexItem {
   title: string
-  item: FavoriteQuery | TableOrView | IConnection | string
+  item: TransportFavoriteQuery | TableOrView | IConnection | string
   type: 'query' | 'table' | 'connection' | 'database'
 }
 

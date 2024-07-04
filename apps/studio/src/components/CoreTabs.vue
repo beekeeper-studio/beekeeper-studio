@@ -240,7 +240,6 @@ import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
 import { DropzoneDropEvent } from '@/common/dropzone'
-import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { readWebFile, getLastExportPath } from '@/common/utils'
 import { readFileSync, writeFileSync } from 'fs'
 import Noty from 'noty'
@@ -725,7 +724,7 @@ export default Vue.extend({
           // an ability to cancel reading file.
           const text = readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
           if (text) {
-            const query = new FavoriteQuery()
+            const query = await this.$util.send('appdb/query/new');
             query.title = file.name
             query.text = text
             await this.$store.dispatch('data/queries/save', query)

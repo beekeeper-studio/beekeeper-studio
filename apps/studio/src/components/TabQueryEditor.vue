@@ -327,7 +327,6 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
-  import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   import { OpenTab } from '@/common/appdb/models/OpenTab'
 
   const log = rawlog.scope('query-editor')
@@ -373,7 +372,7 @@
         executeTime: 0,
         originalText: "",
         initialized: false,
-        blankQuery: new FavoriteQuery(),
+        blankQuery: null,
         dryRun: false,
         containerResizeObserver: null,
         focusElement: 'text-editor',
@@ -978,13 +977,14 @@
         }
       },
     },
-    mounted() {
+    async mounted() {
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()
       })
       this.containerResizeObserver.observe(this.$refs.container)
+      this.blankQuery = await this.$util.send('appdb/query/new');
     },
     beforeDestroy() {
       if(this.split) {
