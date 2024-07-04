@@ -12,9 +12,15 @@ export interface Transport {
 }
 
 export interface TransportPinnedConn extends Transport {
-  id: number | null;
   position: number;
   connectionId: number;
   workspaceId: number;
   connection: IConnection;
+}
+
+export interface TransportFavoriteQuery extends Transport {
+  title: string;
+  text: string;
+  database: string | null;
+  connectionHash: string;
 }

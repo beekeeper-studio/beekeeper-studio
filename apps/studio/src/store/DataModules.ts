@@ -1,15 +1,15 @@
 import { LocalConnectionFolderModule } from "@/store/modules/data/connection_folder/LocalConnectionFolderModule";
-import { LocalQueryModule } from "@/store/modules/data/query/LocalQueryModule";
 import { LocalQueryFolderModule } from "@/store/modules/data/query_folder/LocalQueryFolderModule";
 import { LocalUsedQueryModule } from "@/store/modules/data/used_query/LocalUsedQueryModule";
 import { UtilConnectionModule } from "./modules/data/connection/UtilityConnectionModule";
+import { UtilQueryModule } from "./modules/data/query/UtilityQueryModule";
 import { UtilUsedConnectionModule } from "./modules/data/used_connection/UtilityUsedConnectionModule";
 
 
 export const DataModules = [
   {
     path: 'data/queries',
-    local: LocalQueryModule,
+    local: UtilQueryModule,
     cloud: null,
   },
   {

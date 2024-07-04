@@ -2,10 +2,11 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection" 
 import { IConnection } from "@/common/interfaces/IConnection" 
-import { Transport, TransportPinnedConn } from "@/common/transport/transport";
+import { Transport, TransportFavoriteQuery, TransportPinnedConn } from "@/common/transport/transport";
 import { FindManyOptions, FindOneOptions, SaveOptions } from "typeorm";
 import rawLog from 'electron-log';
 import _ from 'lodash';
+import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -86,6 +87,7 @@ export const AppDbHandlers: IAppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection),
   ...handlersFor<IConnection>('used', UsedConnection),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
+  ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
