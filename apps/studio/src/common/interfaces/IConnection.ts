@@ -12,6 +12,7 @@ export function isUltimateType(s: ConnectionType) {
     'firebird',
     'cassandra',
     'libsql',
+    'duckdb',
   ]
   return types.includes(s)
 }
