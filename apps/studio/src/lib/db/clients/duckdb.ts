@@ -74,6 +74,108 @@ type DuckDBResult = {
   statement: IdentifyResult;
 };
 
+function buildFilterString(
+  filters: TableFilter[],
+  columns: ExtendedTableColumn[] = []
+) {
+  let filterString = "";
+  let filterParams = [];
+  if (filters && _.isArray(filters) && filters.length > 0) {
+    const allFilters = filters.map((item) => {
+      const column = columns.find((c) => c.columnName === item.field);
+      const field = column?.dataType.match(/blob|bytea|binary/)
+        ? `HEX(${DuckDBData.wrapIdentifier(item.field)})`
+        : DuckDBData.wrapIdentifier(item.field);
+
+      if (item.type === "in") {
+        const questionMarks = _.isArray(item.value)
+          ? item.value.map(() => "?").join(",")
+          : "?";
+
+        return `${field} ${item.type.toUpperCase()} (${questionMarks})`;
+      }
+
+      if (item.type.includes("is")) {
+        return `${field} ${item.type.toUpperCase()} NULL`;
+      }
+
+      return `${field} ${item.type.toUpperCase()} ?`;
+    });
+    filterString = "WHERE " + joinFilters(allFilters, filters);
+
+    filterParams = filters
+      .filter((item) => item.value)
+      .flatMap((item) => {
+        return _.isArray(item.value) ? item.value : [item.value];
+      });
+  }
+  return {
+    filterString,
+    filterParams,
+  };
+}
+
+function buildSelectTopQuery(
+  table: string,
+  offset?: number,
+  limit?: number,
+  orderBy?: OrderBy[],
+  filters?: string | TableFilter[],
+  schema?: string,
+  countTitle = "total",
+  columns: ExtendedTableColumn[] = [],
+  selects = ["*"]
+) {
+  log.debug(
+    "building selectTop for",
+    table,
+    offset,
+    limit,
+    orderBy,
+    schema,
+    selects
+  );
+  let orderByString = "";
+
+  if (orderBy && orderBy.length > 0) {
+    orderByString =
+      "ORDER BY " +
+      orderBy
+        .map((item: any) => {
+          if (_.isObject(item)) {
+            return `${DuckDBData.wrapIdentifier(item["field"])} ${item[
+              "dir"
+            ].toUpperCase()}`;
+          } else {
+            return DuckDBData.wrapIdentifier(item);
+          }
+        })
+        .join(",");
+  }
+  let filterString = "";
+  let filterParams = [];
+  if (_.isString(filters)) {
+    filterString = `WHERE ${filters}`;
+  } else if (_.isArray(filters)) {
+    const filterBlob = buildFilterString(filters, columns);
+    filterString = filterBlob.filterString;
+    filterParams = filterBlob.filterParams;
+  }
+
+  const selectSQL = `SELECT ${selects.join(", ")}`;
+  const baseSQL = `FROM ${DuckDBData.wrapIdentifier(
+    schema
+  )}.${DuckDBData.wrapIdentifier(table)} ${filterString}`;
+  const countSQL = `select count(*) as ${countTitle} ${baseSQL}`;
+  const sql = `
+      ${selectSQL} ${baseSQL}
+      ${orderByString}
+      ${_.isNumber(limit) ? `LIMIT ${limit}` : ""}
+      ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
+    `;
+  return { query: sql, countQuery: countSQL, params: filterParams };
+}
+
 export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   version: string;
   databasePath: string;
@@ -85,7 +187,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, duckDBContext, server, database);
 
-    this.dialect = "generic"; // TODO try 'duckdb'
+    this.dialect = "generic";
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.databasePath = database?.database;
   }
@@ -115,9 +217,12 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    this.databaseInstance = await Database.create(this.databasePath || ":memory:", {
-      access_mode: this.readOnlyMode ? "READ_ONLY" : "READ_WRITE",
-    });
+    this.databaseInstance = await Database.create(
+      this.databasePath || ":memory:",
+      {
+        access_mode: this.readOnlyMode ? "READ_ONLY" : "READ_WRITE",
+      }
+    );
     this.connectionInstance = await this.databaseInstance.connect();
 
     this.knex = knexlib({
@@ -177,8 +282,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     });
   }
 
-  // TODO not sure what DatabaseFilterOptions is. it might be possible to
-  // implement it.
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
     const { data } = await this.driverExecuteSingle(`
       SELECT database_name FROM duckdb_databases
@@ -212,10 +315,10 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       size: data.estimated_size,
       indexSize: data.index_count,
       indexes: await indexes,
-      relations: [], // TODO
+      relations: [],
       triggers: await triggers,
-      owner: "", // TODO
-      createdAt: "", // TODO
+      owner: "",
+      createdAt: "",
     };
   }
 
@@ -227,10 +330,10 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     let query = "SELECT table_name, schema_name FROM duckdb_tables";
-    const options = { params: [] }
+    const options = { params: [] };
     if (filter?.schema) {
       query += ` WHERE schema_name = ?`;
-      options.params = [filter.schema]
+      options.params = [filter.schema];
     }
     const { data } = await this.driverExecuteSingle(query, options);
     const tables: TableOrView[] = data.map((row: any) => ({
@@ -243,10 +346,10 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
     let query = "SELECT view_name, schema_name FROM duckdb_views";
-    const options = { params: [] }
+    const options = { params: [] };
     if (filter?.schema) {
       query += ` WHERE schema_name = ?`;
-      options.params = [filter.schema]
+      options.params = [filter.schema];
     }
     const { data } = await this.driverExecuteSingle(query, options);
     const views: TableOrView[] = data.map((row: any) => ({
@@ -258,7 +361,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
-    return []; // TODO not sure if duckdb has routines
+    return [];
   }
 
   async listMaterializedViewColumns(
@@ -299,13 +402,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     }
 
     if (params.length > 0) {
-      const conditions = params
-        .map((p) => `${p.column} = ?`)
-        .join(" AND ");
+      const conditions = params.map((p) => `${p.column} = ?`).join(" AND ");
       query += ` WHERE ${conditions}`;
     }
 
-    const { data } = await this.driverExecuteSingle(query, { params: [...params.map((p) => p.value)] });
+    const { data } = await this.driverExecuteSingle(query, {
+      params: [...params.map((p) => p.value)],
+    });
     return data.map(
       (row: any): ExtendedTableColumn => ({
         schemaName: row.schema_name,
@@ -376,6 +479,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return []; // TODO: not implemented yet
   }
 
+  // TODO check this. Since duckdb is a OLAP database, it might not have these kinda things (foreign keys).
   async getTableKeys(_table: string, _schema: string): Promise<TableKey[]> {
     // toTable: string;
     // toSchema: string;
@@ -386,13 +490,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     // constraintName?: string;
     // onUpdate?: string;
     // onDelete?: string;
-    // const { data } = await this.driverExecuteSingle(`
-    //   SELECT
-    //
-    //
-    //
-    // `);
-    return []; // TODO
+    // const { data } = await this.driverExecuteSingle(``);
+    return [];
   }
 
   protected async rawExecuteQuery(
@@ -456,7 +555,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         AND constraint_type = 'PRIMARY KEY'
     `;
 
-    const { data } = await this.driverExecuteSingle(sql, { params: [schema, table] });
+    const { data } = await this.driverExecuteSingle(sql, {
+      params: [schema, table],
+    });
 
     data.forEach((row: any) => {
       const columnNames: string[] = row.constraint_column_names;
@@ -533,7 +634,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     _type: string,
     _schema: string
   ): Promise<string[]> {
-    return []; // TODO not sure if duckdb has routines
+    return [];
   }
 
   applyChangesSql(changes: TableChanges): string {
@@ -593,7 +694,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     schema?: string
   ): string {
     elementName = schema
-      ? `${DuckDBData.wrapIdentifier(schema)}.${DuckDBData.wrapIdentifier(elementName)}`
+      ? `${DuckDBData.wrapIdentifier(schema)}.${DuckDBData.wrapIdentifier(
+        elementName
+      )}`
       : DuckDBData.wrapIdentifier(elementName);
     newElementName = DuckDBData.wrapIdentifier(newElementName);
 
@@ -615,9 +718,14 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     typeOfElement: DatabaseElement,
     schema?: string
   ): string {
-    // TODO
-    console.log(elementName, typeOfElement, schema);
-    throw new Error("Method not implemented.");
+    if (typeOfElement === DatabaseElement.TABLE) {
+      return schema
+        ? `TRUNCATE ${DuckDBData.wrapIdentifier(
+          schema
+        )}.${DuckDBData.wrapIdentifier(elementName)}`
+        : `TRUNCATE ${DuckDBData.wrapIdentifier(elementName)}`;
+    }
+    return "";
   }
 
   private async updateValues(updates: TableUpdate[]) {
@@ -703,17 +811,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     await this.driverExecuteSingle(`${query} ${schema}.${elementName}`);
   }
 
-  async truncateElement(
-    elementName: string,
-    _typeOfElement: DatabaseElement,
-    schema: string
-  ): Promise<void> {
-    const query = `TRUNCATE ${DuckDBData.wrapIdentifier(
-      schema
-    )}.${DuckDBData.wrapIdentifier(elementName)}`;
-    await this.driverExecuteSingle(query);
-  }
-
   async truncateAllTables(schema: string): Promise<void> {
     const tables = await this.listTables({ schema });
     for (const table of tables) {
@@ -757,7 +854,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     selects?: string[]
   ): Promise<string> {
     const columns = await this.listTableColumns(table);
-    const { query, params } = DuckDBClient.buildSelectTopQuery(
+    const { query, params } = buildSelectTopQuery(
       table,
       offset,
       limit,
@@ -793,7 +890,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async getTableLength(table: string, schema: string): Promise<number> {
-    const { countQuery, params } = DuckDBClient.buildSelectTopQuery(
+    const { countQuery, params } = buildSelectTopQuery(
       table,
       undefined,
       undefined,
@@ -831,110 +928,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       CREATE TABLE ${schema}.${duplicateTableName}
       AS SELECT * FROM ${schema}.${tableName}
     `;
-  }
-
-  // TODO put this somewhere else
-  static buildSelectTopQuery(
-    table: string,
-    offset?: number,
-    limit?: number,
-    orderBy?: OrderBy[],
-    filters?: string | TableFilter[],
-    schema?: string,
-    countTitle = "total",
-    columns: ExtendedTableColumn[] = [],
-    selects = ["*"]
-  ) {
-    log.debug(
-      "building selectTop for",
-      table,
-      offset,
-      limit,
-      orderBy,
-      schema,
-      selects
-    );
-    let orderByString = "";
-
-    if (orderBy && orderBy.length > 0) {
-      orderByString =
-        "ORDER BY " +
-        orderBy
-          .map((item: any) => {
-            if (_.isObject(item)) {
-              return `${DuckDBData.wrapIdentifier(item["field"])} ${item[
-                "dir"
-              ].toUpperCase()}`;
-            } else {
-              return DuckDBData.wrapIdentifier(item);
-            }
-          })
-          .join(",");
-    }
-    let filterString = "";
-    let filterParams = [];
-    if (_.isString(filters)) {
-      filterString = `WHERE ${filters}`;
-    } else if (_.isArray(filters)) {
-      const filterBlob = DuckDBClient.buildFilterString(filters, columns);
-      filterString = filterBlob.filterString;
-      filterParams = filterBlob.filterParams;
-    }
-
-    const selectSQL = `SELECT ${selects.join(", ")}`;
-    const baseSQL = `FROM ${DuckDBData.wrapIdentifier(
-      schema
-    )}.${DuckDBData.wrapIdentifier(table)} ${filterString}`;
-    const countSQL = `select count(*) as ${countTitle} ${baseSQL}`;
-    const sql = `
-      ${selectSQL} ${baseSQL}
-      ${orderByString}
-      ${_.isNumber(limit) ? `LIMIT ${limit}` : ""}
-      ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
-    `;
-    return { query: sql, countQuery: countSQL, params: filterParams };
-  }
-
-  // TODO put this somewhere else
-  static buildFilterString(
-    filters: TableFilter[],
-    columns: ExtendedTableColumn[] = []
-  ) {
-    let filterString = "";
-    let filterParams = [];
-    if (filters && _.isArray(filters) && filters.length > 0) {
-      const allFilters = filters.map((item) => {
-        const column = columns.find((c) => c.columnName === item.field);
-        const field = column?.dataType.match(/blob|bytea|binary/)
-          ? `HEX(${DuckDBData.wrapIdentifier(item.field)})`
-          : DuckDBData.wrapIdentifier(item.field);
-
-        if (item.type === "in") {
-          const questionMarks = _.isArray(item.value)
-            ? item.value.map(() => "?").join(",")
-            : "?";
-
-          return `${field} ${item.type.toUpperCase()} (${questionMarks})`;
-        }
-
-        if (item.type.includes("is")) {
-          return `${field} ${item.type.toUpperCase()} NULL`;
-        }
-
-        return `${field} ${item.type.toUpperCase()} ?`;
-      });
-      filterString = "WHERE " + joinFilters(allFilters, filters);
-
-      filterParams = filters
-        .filter((item) => item.value)
-        .flatMap((item) => {
-          return _.isArray(item.value) ? item.value : [item.value];
-        });
-    }
-    return {
-      filterString,
-      filterParams,
-    };
   }
 
   // disconnect(): Promise<void> {
