@@ -46,7 +46,7 @@ export default Vue.extend({
   watch: {
     workspaceId() {
       this.mountAndRefresh()
-      this.$store.dispatch('loadUsedConfigs')
+      this.$store.dispatch('data/usedconnections/load')
       this.$store.dispatch('pinnedConnections/loadPins')
     },
     importantTabStuff: {

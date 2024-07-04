@@ -334,7 +334,6 @@ export default Vue.extend({
         }
       } as Split.Options)
     })
-    await this.$store.dispatch('loadUsedConfigs')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {

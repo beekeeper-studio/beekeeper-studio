@@ -4,7 +4,6 @@ import Vuex from 'vuex'
 import username from 'username'
 import electron from 'electron';
 
-import { UsedConnection } from '../lib/utility/appdb/UsedConnection'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -51,7 +50,6 @@ export interface State {
   columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
-  connectionConfigs: UsedConnection[],
   username: Nullable<string>,
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
@@ -98,7 +96,6 @@ const store = new Vuex.Store<State>({
     tablesLoading: null,
     columnsLoading: null,
     tablesInitialLoaded: false,
-    connectionConfigs: [],
     username: null,
     menuActive: false,
     activeTab: null,
@@ -309,20 +306,6 @@ const store = new Vuex.Store<State>({
     tablesLoading(state, value: string) {
       state.tablesLoading = value
     },
-    config(state, newConfig) {
-      if (!state.connectionConfigs.includes(newConfig)) {
-        state.connectionConfigs.push(newConfig)
-      }
-    },
-    removeConfig(state, config) {
-      state.connectionConfigs = _.without(state.connectionConfigs, config)
-    },
-    configs(state, configs: UsedConnection[]){
-      Vue.set(state, 'connectionConfigs', configs)
-    },
-    usedConfigs(state, configs: UsedConnection[]) {
-      Vue.set(state, 'usedConfigs', configs)
-    },
     updateWindowTitle(state, title: string) {
       state.windowTitle = title
     },
@@ -516,16 +499,6 @@ const store = new Vuex.Store<State>({
       }
       await config.remove()
       context.commit('removeUsedConfig', config)
-    },
-    async loadUsedConfigs(context) {
-      const configs = await UsedConnection.find(
-        {
-          take: 10,
-          order: {createdAt: 'DESC'},
-          where: { workspaceId: context.state.workspaceId}
-        }
-      )
-      context.commit('usedConfigs', configs)
     },
     async menuActive(context, value) {
       context.commit('menuActive', value)
