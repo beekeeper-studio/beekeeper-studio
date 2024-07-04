@@ -105,14 +105,14 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   },
 })
 
-export function mutationsFor<T extends HasId>(obj: any, sortBy?: SortSpec) {
+export function mutationsFor<T extends HasId>(obj: any = {}, sortBy?: SortSpec) {
   return {
     ...buildBasicMutations<T>(sortBy),
     ...obj
   }
 }
 
-export function utilActionsFor<T extends Transport>(type: string, other: any, loadOptions: any = {}) {
+export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}) {
   return {
     async load(context) {
       context.commit("error", null);

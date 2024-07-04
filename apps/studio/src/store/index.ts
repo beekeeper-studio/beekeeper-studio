@@ -39,7 +39,6 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
 export interface State {
   connection: ElectronUtilityConnectionClient,
   usedConfig: Nullable<IConnection>,
-  usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
   connected: boolean,
   connectionType: Nullable<string>,
@@ -81,7 +80,6 @@ const store = new Vuex.Store<State>({
   state: {
     connection: new ElectronUtilityConnectionClient(),
     usedConfig: null,
-    usedConfigs: [],
     server: null,
     connected: false,
     connectionType: null,
@@ -144,9 +142,6 @@ const store = new Vuex.Store<State>({
     },
     selectedSidebarItem(state) {
       return state.selectedSidebarItem
-    },
-    orderedUsedConfigs(state) {
-      return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
     },
     filteredTables(state) {
       return entityFilter(state.tables, state.entityFilter);
@@ -322,9 +317,6 @@ const store = new Vuex.Store<State>({
     removeConfig(state, config) {
       state.connectionConfigs = _.without(state.connectionConfigs, config)
     },
-    removeUsedConfig(state, config) {
-      state.usedConfigs = _.without(state.usedConfigs, config)
-    },
     configs(state, configs: UsedConnection[]){
       Vue.set(state, 'connectionConfigs', configs)
     },
@@ -400,7 +392,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('recordUsedConfig', config) // TODO (@day): needs to be a utility call (actually maybe just make this part of the conn/create handler??)
+        context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
       } else {
         throw "No username provided"
@@ -409,26 +401,6 @@ const store = new Vuex.Store<State>({
     async reconnect(context) {
       if (context.state.connection) {
         await context.state.connection.connect();
-      }
-    },
-    async recordUsedConfig(context, config: IConnection) {
-
-      log.info("finding last used connection", config)
-      const lastUsedConnection = context.state.usedConfigs.find(c => {
-        return config.id &&
-          config.workspaceId &&
-          c.id === config.id &&
-          c.workspaceId === config.workspaceId
-      })
-      log.debug("Found used config", lastUsedConnection)
-      if (!lastUsedConnection) {
-        const usedConfig = new UsedConnection(config)
-        log.info("logging used connection", usedConfig, config)
-        await usedConfig.save()
-        context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
-      } else {
-        lastUsedConnection.updatedAt = new Date()
-        await lastUsedConnection.save()
       }
     },
     async disconnect(context) {

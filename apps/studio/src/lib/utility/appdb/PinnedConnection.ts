@@ -23,7 +23,7 @@ export class PinnedConnection extends BaseUtilityAppDbEntity implements Transpor
   }
 
   static async save<T extends Transport>(entities: T[], options?: any): Promise<T[]> {
-    return await Vue.prototype.$util.send('appdb/pinconn/savemult', { entities, options });
+    return await Vue.prototype.$util.send('appdb/pinconn/save', { obj: entities, options });
   }
 
   id: number | null = null;

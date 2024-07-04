@@ -262,7 +262,7 @@ export default {
     ...mapState('data/connections', {'connectionsLoading': 'loading', 'connectionsError': 'error', 'connectionFilter': 'filter'}),
     ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
     ...mapGetters({
-      'usedConfigs': 'orderedUsedConfigs',
+      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       'settings': 'settings/settings',
       'isCloud': 'isCloud',
       'activeWorkspaces': 'credentials/activeWorkspaces',
@@ -393,7 +393,7 @@ export default {
       this.$emit('duplicate', config)
     },
     removeUsedConfig(config) {
-      this.$store.dispatch('removeUsedConfig', config)
+      this.$store.dispatch('data/usedconnections/remove', config)
     },
     getLabelClass(color) {
       return `label-${color}`
