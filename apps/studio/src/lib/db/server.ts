@@ -80,7 +80,7 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
         connecting: false,
       };
 
-      // @ts-expect-error Function siginature incorrect
+      // @ts-expect-error Function signature incorrect
       server.db[dbName] = createConnection(server, database, cryptoSecret);
 
       return server.db[dbName];

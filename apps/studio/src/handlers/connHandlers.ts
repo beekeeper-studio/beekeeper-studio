@@ -138,14 +138,18 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/test': async function({ config, osUser }: { config: IConnection, osUser: string }) {
+    const tConfig = { ...config }
     // TODO (matthew): fix this mess.
+    // ts was complaining that _port isn't part of config when I can assure you it is
+    // @ts-ignore
+    tConfig.port = config._port ?? ''
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
     }
 
     const settings = await UserSetting.all();
-    const server = ConnectionProvider.for(config, osUser, settings);
-    await server?.createConnection(config.defaultDatabase || undefined).connect();
+    const server = ConnectionProvider.for(tConfig, osUser, settings);
+    await server?.createConnection(tConfig.defaultDatabase || undefined).connect();
     server.disconnect();
   },
 
