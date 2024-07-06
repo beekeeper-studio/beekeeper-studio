@@ -4,9 +4,9 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportScriptFunctions } from "../models";
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
-import { ClientError, joinQueries } from "./utils";
+import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
 import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
@@ -540,19 +540,15 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     throw new Error("Method not implemented.");
   }
 
-  async importData(sql: string): Promise<any> {
-    return await this.driverExecuteSingle(sql);
-  }
-
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const { table } = importedData[0];
-    const queries = [];
-    if (isTruncate) {
-      queries.push(`Delete from ${SD.wrapIdentifier(table)}`);
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name } = table
+    return {
+      beginCommand: (_executeOptions: any): Promise<any> => null,
+      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`Delete from ${SD.wrapIdentifier(name)}`, executeOptions),
+      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
+      commitCommand: (_executeOptions: any): Promise<any> => null,
+      rollbackCommand: (_executeOptions: any): Promise<any> => null
     }
-
-    queries.push(buildInsertQueries(knex, importedData).join(';'));
-    return joinQueries(queries);
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult | SqliteResult[]> {

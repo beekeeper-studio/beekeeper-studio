@@ -1,6 +1,6 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQuery, errorMessages, isAllowedReadOnlyQuery } from './utils';
+import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -265,6 +265,27 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract queryStream(query: string, chunkSize: number): Promise<StreamResults>;
   // ****************************************************************************
 
+  // For Import *****************************************************************
+  getImportScripts(_table: TableOrView): ImportScriptFunctions {
+    return {
+      step0: (): Promise<any|null> => null,
+      beginCommand: (_executeOptions: any): any => null,
+      truncateCommand: (): Promise<any> => null,
+      lineReadCommand: (_sqlString: string[]): Promise<any> => null,
+      commitCommand: (_executeOptions: any): Promise<any> => null,
+      rollbackCommand: (_executeOptions: any): Promise<any> => null,
+      finalCommand: (_executeOptions: any): Promise<any> => null
+    }
+  }
+
+  getImportSQL(importedData: any[]): string | string[] {
+    const queries = []
+    
+    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
+    return joinQueries(queries)
+  }
+  // ****************************************************************************
+  
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
