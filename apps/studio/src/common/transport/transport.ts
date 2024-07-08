@@ -24,3 +24,12 @@ export interface TransportFavoriteQuery extends Transport {
   database: string | null;
   connectionHash: string;
 }
+
+export interface TransportUsedQuery extends Transport {
+  text: string;
+  database: string;
+  connectionHash: string;
+  status: string;
+  numberOfRecords?: BigInt;
+  workspaceId: number;
+}
