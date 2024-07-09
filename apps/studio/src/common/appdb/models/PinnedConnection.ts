@@ -6,10 +6,15 @@ import { SavedConnection } from "./saved_connection";
 @Entity({ name: 'connection_pins'})
 export class PinnedConnection extends ApplicationEntity {
 
-  constructor(config: TransportPinnedConn) {
+  constructor(config: TransportPinnedConn | SavedConnection) {
     super();
     if (!config) return;
-    PinnedConnection.merge(this, config);
+    if ("connectionId" in config) {
+      PinnedConnection.merge(this, config);
+    } else {
+      this.connectionId = config.id;
+      this.workspaceId = config.workspaceId;
+    }
   }
 
   @Column({type: 'float', nullable: false, default: 1})
@@ -20,7 +25,4 @@ export class PinnedConnection extends ApplicationEntity {
 
   @Column({type: 'integer', nullable: false, default: -1})
   workspaceId = -1;
-
-
-  connection: SavedConnection;
 }

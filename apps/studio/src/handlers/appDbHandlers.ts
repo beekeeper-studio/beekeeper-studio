@@ -14,8 +14,8 @@ const log = rawLog.scope('Appdb handlers');
 function handlersFor<T extends Transport>(name: string, cls: any) {
   return {
     // this is so we can get defaults on objects
-    [`appdb/${name}/new`]: async function() {
-      return new cls();
+    [`appdb/${name}/new`]: async function({ init }: { init?: any }) {
+      return new cls(init);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
       if (_.isArray(obj)) {
@@ -62,7 +62,7 @@ function handlersFor<T extends Transport>(name: string, cls: any) {
 
 // should we even have this?
 export interface IAppDbHandlers {
-  'appdb/saved/new': () => Promise<any>,
+  'appdb/saved/new': ({ init }: { init?: any }) => Promise<any>,
   'appdb/saved/save': ({ obj, options }: { obj: IConnection | IConnection[], options?: SaveOptions }) => Promise<any>,
   'appdb/saved/remove': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/saved/find': ({ options }: { options: FindManyOptions<SavedConnection> }) => Promise<IConnection[]>
@@ -70,14 +70,14 @@ export interface IAppDbHandlers {
   'appdb/saved/parseUrl': ({ url }: { url: string }) => Promise<IConnection>, 
 
 
-  'appdb/used/new': () => Promise<any>,
+  'appdb/used/new': ({ init }: { init?: any }) => Promise<any>,
   'appdb/used/save': ({ obj, options }: { obj: IConnection | IConnection[], options?: SaveOptions }) => Promise<any>,
   'appdb/used/remove': ({ obj }: { obj: IConnection }) => Promise<void>,
   'appdb/used/find': ({ options }: { options: FindManyOptions<UsedConnection> }) => Promise<IConnection[]>
   'appdb/used/findOne': ({ options }: { options: FindOneOptions<UsedConnection> | string | number }) => Promise<IConnection>
 
 
-  'appdb/pinconn/new': () => Promise<any>,
+  'appdb/pinconn/new': ({ init }: { init?: any }) => Promise<any>,
   'appdb/pinconn/save': ({ obj }: { obj: TransportPinnedConn | TransportPinnedConn[], options?: SaveOptions }) => Promise<any>,
   'appdb/pinconn/remove': ({ obj }: { obj: TransportPinnedConn }) => Promise<void>,
   'appdb/pinconn/find': ({ options }: { options: FindManyOptions<PinnedConnection> }) => Promise<TransportPinnedConn[]>
