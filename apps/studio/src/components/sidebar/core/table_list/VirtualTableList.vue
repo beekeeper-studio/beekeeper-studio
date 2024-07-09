@@ -31,10 +31,10 @@ import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
 import { AppEvent } from "@/common/AppEvent";
 import { mapGetters, mapState } from "vuex";
-import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { entityId } from "@/common/utils";
 import globals from '@/common/globals';
 import "scrollyfills";
+import { TransportPinnedEntity } from "@/common/transport/transport";
 
 type Entity = TableOrView | Routine | string;
 
@@ -144,7 +144,7 @@ export default Vue.extend({
             contextMenu: this.tableMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
-            pinned: this.pins.find((pin: PinnedEntity) => pin.entity === table),
+            pinned: this.pins.find((pin: TransportPinnedEntity) => pin.entity === table),
             loadingColumns: false,
           });
         });

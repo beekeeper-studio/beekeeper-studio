@@ -370,8 +370,8 @@ const store = new Vuex.Store<State>({
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
         context.commit('newConnection', config)
+        console.log('CONFIG: ', config)
 
-        context.commit('newConnection', config)
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
