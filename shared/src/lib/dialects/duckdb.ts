@@ -40,10 +40,12 @@ export const DuckDBData: DialectData = {
   disabledFeatures: {
     triggers: true,
     multipleDatabase: true,
-    createIndex: true,
     alter: {
       multiStatement: true,
-      renameSchema: true, // FIXME: error not yet supported
+      renameSchema: true, // FIXME: Altering schemas is not yet supported by duckdb
+    },
+    index: {
+      desc: true,
     },
   },
   notices: {

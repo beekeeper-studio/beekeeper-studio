@@ -1035,6 +1035,22 @@ export class DBTestUtil {
 
   async indexTests() {
     if (this.data.disabledFeatures?.createIndex) return;
+
+    const idx = (arg: Pick<TableIndex, 'name' | 'columns' | 'table'>) => {
+      if (this.dbType === 'firebird') {
+        arg.name = arg.name.toUpperCase()
+        arg.columns = arg.columns.map((c) => ({ name: c.name.toUpperCase(), order: c.order }))
+        arg.table = arg.table.toUpperCase()
+      } else if (this.dbType === 'duckdb') {
+        // duckdb doesn't support ascending/descending index column
+        arg.columns = arg.columns.map((c) => ({ name: c.name }))
+      }
+      return {
+        schema: this.defaultSchema,
+        ...arg,
+      }
+    }
+
     await this.knex.schema.createTable("index_test", (table) => {
       table.increments('id').primary()
       table.integer('index_me')
@@ -1067,16 +1083,14 @@ export class DBTestUtil {
       .map((i) => _.pick(i, ['name', 'columns', 'table', 'schema']))
       .filter((index) => this.dialect !== 'oracle' || !index.name.startsWith('SYS_'))
       .filter((index) => this.dbType !== 'cockroachdb' || !index.name.endsWith('pkey'))
-    const schemaDefault = this.defaultSchema ? { schema: this.defaultSchema } : {}
-    expect(picked).toMatchObject(
-      [
-        {
-        ...schemaDefault,
-        name: this.dbType === 'firebird' ? 'IT_IDX2' : 'it_idx2',
-        columns: [{name: this.dbType === 'firebird' ? 'ME_TOO' : 'me_too' , order: 'ASC'}],
-        table: this.dbType  === 'firebird' ? 'INDEX_TEST' : 'index_test' ,
-      }]
-    )
+
+    expect(picked).toMatchObject([
+      idx({
+        name: 'it_idx2',
+        columns: [{ name: 'me_too', order: 'ASC' }],
+        table: 'index_test'
+      })
+    ])
 
   }
 

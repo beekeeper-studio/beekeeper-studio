@@ -4,6 +4,7 @@ import { runCommonTests } from "./all";
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import path from "path";
 import fs from "fs";
+import _ from "lodash";
 
 const TEST_VERSIONS = [{ readOnly: false }, { readOnly: true }] as const;
 
@@ -76,7 +77,55 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     describe("Common Tests", () => {
       runCommonTests(() => util);
     });
+
+    describe("Index Tests", () => {
+      beforeAll(async () => {
+        await util.knex.schema.raw(
+          "CREATE TABLE list_all_idx_test (a INT, b INT, c INT UNIQUE, PRIMARY KEY (a, b))"
+        );
+        await util.knex.schema.raw(
+          "CREATE TABLE col_exp_test (a int, b int, c int)"
+        );
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.dropTableIfExists("list_all_idx_test");
+        await util.knex.schema.dropTableIfExists("col_exp_test");
+      });
+
+      it("should be able to create index sql with columns as expressions correctly", async () => {
+        const sql = util.connection.alterIndexSql({
+          additions: [
+            {
+              name: "col_exp_test_idx",
+              columns: [{ name: "a" }, { name: "(b + c)" }],
+              unique: true,
+            },
+          ],
+          drops: [],
+          table: "col_exp_test",
+        });
+        expect(sql).toBe(
+          `CREATE UNIQUE INDEX "col_exp_test_idx" ON "col_exp_test" ("a",(b + c))`
+        );
+      });
+
+      it("should be able to list columns and expressions of an index", async () => {
+        await util.knex.schema.raw(
+          "CREATE INDEX col_exp_test_idx ON col_exp_test (a, (b + c), (a * (b - c)))"
+        );
+
+        const indexes = await util.connection.listTableIndexes("col_exp_test");
+        expect(indexes[0].columns).toEqual([
+          { name: "a" },
+          { name: "((b + c))" },
+          { name: "((a * (b - c)))" },
+        ]);
+
+        await util.knex.schema.raw("DROP INDEX col_exp_test_idx");
+      });
+    });
   });
 }
 
-TEST_VERSIONS.forEach(testWith)
+TEST_VERSIONS.forEach(testWith);

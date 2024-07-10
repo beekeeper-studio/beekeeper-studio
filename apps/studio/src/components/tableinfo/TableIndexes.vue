@@ -177,6 +177,9 @@ export default Vue.extend({
     },
     indexColumnOptions() {
       const normal = this.table.columns.map((c) => escapeHtml(c.columnName))
+      if (this.dialectData.disabledFeatures?.index?.desc) {
+        return normal
+      }
       const desc = this.table.columns.map((c) => `${escapeHtml(c.columnName)} DESC`)
       return [...normal, ...desc]
     },
@@ -196,6 +199,9 @@ export default Vue.extend({
             // In mysql, we can specify the prefix length
             if (this.connection.dialect === 'mysql' && !_.isNil(c.prefix)) {
               return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
+            }
+            if (this.dialectData.disabledFeatures?.index?.desc) {
+              return c.name
             }
             return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
           })
@@ -297,6 +303,9 @@ export default Vue.extend({
           const columns = dataColumns.map((c: string)=> {
             if (this.connection.dialect === 'mysql') {
               return mysqlParseIndexColumn(c)
+            }
+            if (this.dialectData.disabledFeatures?.index?.desc) {
+              return { name: c } as IndexColumn
             }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')

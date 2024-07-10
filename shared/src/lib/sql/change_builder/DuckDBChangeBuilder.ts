@@ -1,6 +1,6 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { DuckDBData as D } from "@shared/lib/dialects/duckdb";
-import { Dialect, SchemaItem } from "@shared/lib/dialects/models";
+import { CreateIndexSpec, Dialect, SchemaItem } from "@shared/lib/dialects/models";
 
 export class DuckDBChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'duckdb'
@@ -21,5 +21,25 @@ export class DuckDBChangeBuilder extends ChangeBuilderBase {
       item.nullable ? 'NULL' : 'NOT NULL',
       item.extra,
     ].filter((i) => !!i).join(" ")
+  }
+
+  singleIndex(spec: CreateIndexSpec): string {
+    if (!spec.name) {
+      throw new Error("Indexes require a name")
+    }
+    if (!spec.columns?.length) {
+      throw new Error("Indexes require at least one column")
+    }
+    const unique = spec.unique ? 'UNIQUE' : ''
+    const name = this.dialectData.wrapIdentifier(spec.name)
+    const table = this.tableName
+    const columns = spec.columns.map((c) => {
+      const name = c.name.trim()
+      if (name.startsWith('(') && name.endsWith(')')) {
+        return c.name // This is an expression
+      }
+      return this.dialectData.wrapIdentifier(c.name)
+    })
+    return `CREATE ${unique} INDEX ${name} ON ${table} (${columns})`
   }
 }

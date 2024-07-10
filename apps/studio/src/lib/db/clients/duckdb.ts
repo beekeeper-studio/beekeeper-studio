@@ -446,12 +446,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
           index_oid,
           comment,
           is_unique,
-          is_primary
+          is_primary,
+          sql
         FROM duckdb_indexes
         WHERE table_name = ?
           AND schema_name = ?
       `,
-      { params: [table, schema] }
+      { params: [table, schema || this.defaultSchema()] }
     );
 
     return data.map((row) => ({
@@ -459,10 +460,37 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       table: row.table_name,
       schema: row.schema_name,
       name: row.index_name,
-      columns: [], // TODO
+      columns: this.parseColumnsFromIndexSql(row.sql).map((name) => ({ name })),
       unique: row.is_unique,
       primary: row.is_primary,
     }));
+  }
+
+  private parseColumnsFromIndexSql(sql: string): string[] {
+    // See https://duckdb.org/docs/sql/statements/create_index#syntax
+    sql = sql.trim();
+
+    // Extract first set of parentheses
+    const stack = [];
+    let startIndex = -1;
+    let content = "";
+    for (let i = 0; i < sql.length; i++) {
+      if (sql[i] === "(") {
+        if (stack.length === 0) {
+          startIndex = i + 1;
+        }
+        stack.push("(");
+      } else if (sql[i] === ")") {
+        stack.pop();
+        if (stack.length === 0) {
+          content = sql.substring(startIndex, i);
+          break;
+        }
+      }
+    }
+
+    const columns = content.split(",").map((c) => c.trim());
+    return columns;
   }
 
   async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
@@ -492,6 +520,10 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     // onDelete?: string;
     // const { data } = await this.driverExecuteSingle(``);
     return [];
+  }
+
+  defaultSchema(): string {
+    return "main";
   }
 
   protected async rawExecuteQuery(

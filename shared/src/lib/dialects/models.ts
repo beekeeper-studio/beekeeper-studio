@@ -246,7 +246,7 @@ export interface AlterPartitionsSpec {
 
 export interface IndexColumn {
   name: string
-  order: 'ASC' | 'DESC'
+  order?: 'ASC' | 'DESC'
   prefix?: number | null // MySQL Only
 }
 
