@@ -2,7 +2,7 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection" 
 import { IConnection } from "@/common/interfaces/IConnection" 
-import { Transport, TransportFavoriteQuery, TransportOpenTab, TransportPinnedConn, TransportPinnedEntity, TransportUsedQuery } from "@/common/transport";
+import { Transport, TransportFavoriteQuery, TransportPinnedConn, TransportPinnedEntity, TransportUsedQuery } from "@/common/transport";
 import { FindManyOptions, FindOneOptions, SaveOptions } from "typeorm";
 import rawLog from 'electron-log';
 import _ from 'lodash';
@@ -10,6 +10,10 @@ import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
 import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { OpenTab } from "@/common/appdb/models/OpenTab";
+import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
+import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
+import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -114,6 +118,8 @@ export const AppDbHandlers: IAppDbHandlers = {
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
+  ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
+  ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
