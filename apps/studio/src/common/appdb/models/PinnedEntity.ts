@@ -1,5 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
-import { TransportPinnedEntity } from "@/common/transport/transport";
+import { TransportPinnedEntity } from "@/common/transport";
 import _ from "lodash";
 import { Column, Entity } from "typeorm";
 import { DatabaseEntity } from "../../../lib/db/models";

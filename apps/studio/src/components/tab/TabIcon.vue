@@ -1,23 +1,23 @@
 <template>
   <table-icon
-    v-if="tab.type === 'table'"
+    v-if="tab.tabType === 'table'"
     :table="tab"
   />
   <i
-    v-else-if="tab.type === 'query'"
+    v-else-if="tab.tabType === 'query'"
     class="material-icons item-icon query"
   >code</i>
   <i
-    v-else-if="tab.type === 'table-properties'"
+    v-else-if="tab.tabType === 'table-properties'"
     class="material-icons-outlined item-icon icon-table-properties"
     :class="iconClass"
   >construction</i>
   <i
-    v-else-if="tab.type === 'settings'"
+    v-else-if="tab.tabType === 'settings'"
     class="material-icons item-icon settings"
   >settings</i>
   <i
-    v-else-if="tab.type ==='table-builder'"
+    v-else-if="tab.tabType ==='table-builder'"
     class="material-icons item-icon table-builder-icon"
   >add</i>
   <i

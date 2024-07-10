@@ -1,4 +1,4 @@
-import { TransportUsedQuery } from "@/common/transport/transport";
+import { TransportUsedQuery } from "@/common/transport";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 
 export const UtilUsedQueryModule: DataStore<TransportUsedQuery, DataState<TransportUsedQuery>> = {

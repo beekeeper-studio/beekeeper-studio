@@ -34,7 +34,7 @@ import { mapGetters, mapState } from "vuex";
 import { entityId } from "@/common/utils";
 import globals from '@/common/globals';
 import "scrollyfills";
-import { TransportPinnedEntity } from "@/common/transport/transport";
+import { TransportPinnedEntity } from "@/common/transport";
 
 type Entity = TableOrView | Routine | string;
 

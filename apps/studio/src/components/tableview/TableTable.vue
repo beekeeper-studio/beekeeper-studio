@@ -302,14 +302,11 @@ import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
+import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
-
-function createTableFilter(field: string) {
-  return { op: "AND", field, type: "=", value: "" }
-}
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
@@ -735,8 +732,8 @@ export default Vue.extend({
 
         // If the filters in this.tab have changed, reapply them. We probably
         // clicked a foreign key cell from other tab.
-        if (!_.isEqual(this.tab.getFilters(), this.tableFilters)) {
-          this.tableFilters = this.tab.getFilters()
+        if (!_.isEqual(getFilters(this.tab), this.tableFilters)) {
+          this.tableFilters = getFilters(this.tab)
           this.triggerFilter(this.tableFilters)
         }
 
@@ -876,7 +873,7 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
@@ -1635,7 +1632,7 @@ export default Vue.extend({
       return classes.some(c => c.startsWith('tabulator'))
     },
     handleRowFilterBuilderInput(filters: TableFilter[]) {
-      this.tab.setFilters(filters)
+      setFilters(this.tab, filters)
       this.debouncedSaveTab(this.tab)
     },
     debouncedSaveTab: _.debounce(function(tab) {

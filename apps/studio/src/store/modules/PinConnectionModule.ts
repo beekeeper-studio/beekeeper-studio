@@ -3,7 +3,7 @@ import { State as RootState } from '../index';
 import _ from 'lodash';
 import { IConnection } from "@/common/interfaces/IConnection";
 import Vue from 'vue'
-import { TransportPinnedConn } from "@/common/transport/transport";
+import { TransportPinnedConn } from "@/common/transport";
 
 interface State {
   pins: TransportPinnedConn[]

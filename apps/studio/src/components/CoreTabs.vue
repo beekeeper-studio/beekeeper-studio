@@ -58,13 +58,13 @@
         v-show="activeTab === tab"
       >
         <QueryEditor
-          v-if="tab.type === 'query'"
+          v-if="tab.tabType === 'query'"
           :active="activeTab === tab"
           :tab="tab"
           :tab-id="tab.id"
         />
         <tab-with-table
-          v-if="tab.type === 'table'"
+          v-if="tab.tabType === 'table'"
           :tab="tab"
           @close="close"
         >
@@ -77,7 +77,7 @@
           </template>
         </tab-with-table>
         <tab-with-table
-          v-if="tab.type === 'table-properties'"
+          v-if="tab.tabType === 'table-properties'"
           :tab="tab"
           @close="close"
         >
@@ -91,7 +91,7 @@
           </template>
         </tab-with-table>
         <TableBuilder
-          v-if="tab.type === 'table-builder'"
+          v-if="tab.tabType === 'table-builder'"
           :active="activeTab === tab"
           :tab="tab"
           :tab-id="tab.id"
@@ -233,7 +233,6 @@ import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
 import { FormatterDialect } from '@shared/lib/dialects/models';
 import Vue from 'vue';
-import { OpenTab } from '@/common/appdb/models/OpenTab';
 import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
 import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
@@ -248,6 +247,7 @@ import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import pluralize from 'pluralize'
+import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 
 export default Vue.extend({
   props: [],
@@ -320,7 +320,7 @@ export default Vue.extend({
       get() {
         return this.$store.getters['tabs/sortedTabs']
       },
-      set(newTabs: OpenTab[]) {
+      set(newTabs: TransportOpenTab[]) {
         this.$store.dispatch('tabs/reorder', newTabs)
       }
     },
@@ -434,7 +434,8 @@ export default Vue.extend({
         const sql = await this.connection.duplicateTableSql(tableName, this.duplicateTableName, schema);
         const formatted = safeFormat(sql, { language: FormatterDialect(this.dialect) })
 
-        const tab = new OpenTab('query')
+        const tab = {} as TransportOpenTab;
+        tab.tabType = 'query';
         tab.unsavedQueryText = formatted
         tab.title = `Duplicating table: ${tableName}`
         tab.active = true
@@ -518,7 +519,7 @@ export default Vue.extend({
     async setActiveTab(tab) {
       await this.$store.dispatch('tabs/setActive', tab)
     },
-    async addTab(item: OpenTab) {
+    async addTab(item: TransportOpenTab) {
 
       await this.$store.dispatch('tabs/add', item)
       await this.setActiveTab(item)
@@ -557,7 +558,8 @@ export default Vue.extend({
         tabName = queryTitle
       }
 
-        const result = new OpenTab('query')
+        const result = {} as TransportOpenTab;
+        result.tabType = 'query'
         result.title = tabName,
         result.unsavedChanges = false
         result.unsavedQueryText = optionalText
@@ -776,29 +778,33 @@ export default Vue.extend({
       this.createQuery(stringResult);
     },
     openTableBuilder() {
-      const tab = new OpenTab('table-builder')
+      const tab = {} as TransportOpenTab;
+      tab.tabType = 'table-builder';
       tab.title = "New Table"
       tab.unsavedChanges = true
       this.addTab(tab)
     },
     openTableProperties({ table }) {
-      const t = new OpenTab('table-properties')
+      const t = {} as TransportOpenTab;
+      t.tabType = 'table-properties';
       t.tableName = table.name
       t.schemaName = table.schema
       t.title = table.name
-      const existing = this.tabItems.find((tab) => tab.matches(t))
+      const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
     openTable({ table, filters }) {
-      const tab = new OpenTab('table')
+      const tab = {} as TransportOpenTab;
+      tab.tabType = 'table';
       tab.title = table.name
       tab.tableName = table.name
       tab.schemaName = table.schema
       tab.entityType = table.entityType
-      tab.setFilters(filters)
+      // NOTE (@day): this should still set by reference, right?
+      setFilters(tab, filters)
       tab.titleScope = "all"
-      const existing = this.tabItems.find((t) => t.matches(tab))
+      const existing = this.tabItems.find((t) => matches(t, tab))
       if (existing) {
         if (filters) {
           existing.setFilters(filters)
@@ -821,7 +827,8 @@ export default Vue.extend({
       else this.$store.dispatch('hideEntities/removeSchema', schema)
     },
     openSettings() {
-      const tab = new OpenTab('settings')
+      const tab = {} as TransportOpenTab
+      tab.tabType = 'settings'
       tab.title = "Settings"
       this.addTab(tab)
     },
@@ -837,7 +844,7 @@ export default Vue.extend({
         }
       }
     },
-    async close(tab: OpenTab, options?: CloseTabOptions) {
+    async close(tab: TransportOpenTab, options?: CloseTabOptions) {
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
         const confirmed = await this.$confirmById(this.confirmModalId);
@@ -857,7 +864,7 @@ export default Vue.extend({
         await this.$store.dispatch('data/queries/reload', tab.queryId)
       }
     },
-    async forceClose(tab: OpenTab) {
+    async forceClose(tab: TransportOpenTab) {
       // ensure the tab is active
       this.$store.dispatch('tabs/setActive', tab);
       switch (tab.tabType) {
@@ -880,7 +887,7 @@ export default Vue.extend({
       }
       this.$store.dispatch('tabs/unload')
     },
-    async closeOther(tab: OpenTab) {
+    async closeOther(tab: TransportOpenTab) {
       const others = _.without(this.tabItems, tab)
       const unsavedTabs = others.filter((t) => t.unsavedChanges)
       if (unsavedTabs.length > 0) {
@@ -897,7 +904,7 @@ export default Vue.extend({
         this.$store.dispatch('data/queries/reload', tab.queryId)
       }
     },
-    async closeToRight(tab: OpenTab) {
+    async closeToRight(tab: TransportOpenTab) {
       const tabIndex = _.indexOf(this.tabItems, tab)
       const activeTabIndex = _.indexOf(this.tabItems, this.activeTab)
 
@@ -917,22 +924,23 @@ export default Vue.extend({
 
       this.$store.dispatch('tabs/remove', tabsToRight)
     },
-    duplicate(other: OpenTab) {
-      const tab = other.duplicate()
+    duplicate(other: TransportOpenTab) {
+      const tab = duplicate(other);
 
-      if (tab.type === 'query') {
+      if (tab.tabType === 'query') {
         tab.title = "Query #" + (this.tabItems.length + 1)
         tab.unsavedChanges = true
       }
       this.addTab(tab)
     },
     favoriteClick(item) {
-      const tab = new OpenTab('query')
+      const tab = {} as TransportOpenTab
+      tab.tabType = 'query'
       tab.title = item.title
       tab.queryId = item.id
       tab.unsavedChanges = false
 
-      const existing = this.tabItems.find((t) => t.matches(tab))
+      const existing = this.tabItems.find((t) => matches(t, tab))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
 
       this.addTab(tab)

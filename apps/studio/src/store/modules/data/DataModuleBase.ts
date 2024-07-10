@@ -9,7 +9,7 @@ import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import Vue from "vue";
-import { Transport } from "@/common/transport/transport";
+import { Transport } from "@/common/transport";
 import { ApplicationEntity } from "@/common/appdb/models/application_entity";
 
 export interface QueryModuleState {

@@ -1,4 +1,4 @@
-import { TransportFavoriteQuery } from '@/common/transport/transport';
+import { TransportFavoriteQuery } from '@/common/transport';
 import _ from 'lodash'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 

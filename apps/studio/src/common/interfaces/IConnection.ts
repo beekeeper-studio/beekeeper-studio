@@ -1,7 +1,7 @@
 import { AzureAuthOptions, LibSQLOptions, RedshiftOptions } from "../appdb/models/saved_connection"
 import { BigQueryOptions } from "../appdb/models/saved_connection"
 import { CassandraOptions } from "../appdb/models/saved_connection"
-import { Transport } from "../transport/transport"
+import { Transport } from "../transport"
 
 const ConnectionTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql'] as const
 export type ConnectionType = typeof ConnectionTypes[number]

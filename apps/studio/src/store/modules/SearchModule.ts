@@ -1,5 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
-import { TransportFavoriteQuery } from "@/common/transport/transport";
+import { TransportFavoriteQuery } from "@/common/transport";
 import { TableOrView } from "@/lib/db/models";
 import FlexSearch from "flexsearch";
 import { Module } from "vuex";

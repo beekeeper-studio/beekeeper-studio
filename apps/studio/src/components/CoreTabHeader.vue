@@ -170,12 +170,12 @@ import TabIcon from './tab/TabIcon.vue'
         }
       },
       tableTabTitle() {
-        if (!this.tab.type === 'table') return null;
+        if (!this.tab.tabType === 'table') return null;
         let result = this.tab.table.name
         return result
       },
       queryTabTitle() {
-        if (!this.tab.type === 'query') return null
+        if (!this.tab.tabType === 'query') return null
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title
         }

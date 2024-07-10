@@ -3,12 +3,14 @@ import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import rawLog from 'electron-log'
+import { TransportOpenTab } from '@/common/transport';
+import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
 
 interface State {
-  tabs: OpenTab[],
-  active?: OpenTab
+  tabs: TransportOpenTab[],
+  active?: TransportOpenTab
 }
 
 
@@ -39,19 +41,19 @@ export const TabModule: Module<State, RootState> = {
     }
   },
   mutations: {
-    set(state, tabs: OpenTab[]) {
+    set(state, tabs: TransportOpenTab[]) {
       state.tabs = tabs
       if (!tabs?.length) {
         state.active = undefined
       }
     },
-    add(state, nu: OpenTab) {
+    add(state, nu: TransportOpenTab) {
       state.tabs.push(nu)
     },
-    remove(state, tab: OpenTab) {
+    remove(state, tab: TransportOpenTab) {
       state.tabs = _.without(state.tabs, tab)
     },
-    setActive(state, tab?: OpenTab) {
+    setActive(state, tab?: TransportOpenTab) {
       state.active = tab
     }
   },
@@ -60,12 +62,14 @@ export const TabModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
         log.info("Loading tabs for ", context.rootState.workspaceId, usedConfig.id)
-        const tabs = await OpenTab.find({
-          where: {
-            connectionId: usedConfig.id,
-            workspaceId: context.rootState.workspaceId
+        const tabs = await Vue.prototype.$util.send('appdb/tabs/find', {
+          options: {
+            where: {
+              connectionId: usedConfig.id,
+              workspaceId: context.rootState.workspaceId
+            }
           }
-        })
+        });
         context.commit('set', tabs || [])
         if (tabs?.length) {
           const active = tabs.find((t) => t.active) || tabs[0]
@@ -74,40 +78,40 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
-      await OpenTab.remove(context.state.tabs)
+      await Vue.prototype.$util.send('appdb/tabs/remove', { obj: context.state.tabs })
       context.commit('set', [])
       context.commit('setActive', null)
     },
-    async add(context, item: OpenTab) {
+    async add(context, item: TransportOpenTab) {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
         log.info("saving tab", item)
         item.workspaceId = context.rootState.workspaceId
         item.connectionId = usedConfig.id
-        await item.save()
+        item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item });
       }
       context.commit('add', item)
     },
-    async reorder(context, items: OpenTab[]) {
+    async reorder(context, items: TransportOpenTab[]) {
       items.forEach((p, idx) => p.position = idx)
       const { usedConfig } = context.rootState
       context.commit('set', items)
-      if (usedConfig?.id) await OpenTab.save(items)
+      if (usedConfig?.id) await Vue.prototype.$util.send('appdb/tabs/save', { obj: items });
     },
-    async remove(context, rawItems: OpenTab | OpenTab[]) {
+    async remove(context, rawItems: TransportOpenTab | TransportOpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
       items.forEach((i) => context.commit('remove', i))
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
-        await OpenTab.remove(items)
+        await Vue.prototype.$util.send('appdb/tabs/remove', { obj: items });
       }
     },
-    async save(context, rawTabs: OpenTab[] | OpenTab) {
+    async save(context, rawTabs: TransportOpenTab[] | TransportOpenTab) {
       try {
         const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
         const { usedConfig } = context.rootState
         if (usedConfig?.id) {
-          await OpenTab.save(tabs)
+          await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs });
         }
       } catch (ex) {
         console.error("tab/save", ex)

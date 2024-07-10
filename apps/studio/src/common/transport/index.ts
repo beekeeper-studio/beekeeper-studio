@@ -2,6 +2,7 @@ import { DatabaseEntity } from "@/lib/db/models";
 import { IConnection } from "../interfaces/IConnection";
 
 
+type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table'
 
 // anything that is transferred to the utility process should implement this interface
 // may need to add more in the future, this is just to make type stuff 
@@ -45,4 +46,23 @@ export interface TransportUsedQuery extends Transport {
   status: string;
   numberOfRecords?: BigInt;
   workspaceId: number;
+}
+
+export interface TransportOpenTab extends Transport {
+  tabType: TabType,
+  unsavedChanges: boolean,
+  title: string,
+  titleScope?: string,
+  alert: boolean,
+  position: number,
+  active: boolean,
+  queryId?: number,
+  unsavedQueryText?: string,
+  tableName?: string,
+  schemaName?: string,
+  entityType?: string,
+  connectionId: number,
+  workspaceId?: number,
+  filters?: string,
+  isRunning: boolean, // not on the actual model, but used in frontend
 }

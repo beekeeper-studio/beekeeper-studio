@@ -1,4 +1,4 @@
-import { TransportPinnedEntity } from "@/common/transport/transport";
+import { TransportPinnedEntity } from "@/common/transport";
 import { DatabaseEntity } from "@/lib/db/models";
 import _ from "lodash";
 import { Module } from "vuex";

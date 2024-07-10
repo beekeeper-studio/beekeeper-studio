@@ -1,4 +1,4 @@
-import { TransportPinnedConn } from "@/common/transport/transport";
+import { TransportPinnedConn } from "@/common/transport";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import { SavedConnection } from "./saved_connection";

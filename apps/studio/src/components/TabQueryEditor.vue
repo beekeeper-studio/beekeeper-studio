@@ -327,7 +327,9 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
-  import { OpenTab } from '@/common/appdb/models/OpenTab'
+  import { TransportOpenTab } from '@/common/transport'
+  import { PropType } from 'vue'
+  import { findQuery } from '@/common/transport/TransportOpenTab'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -337,7 +339,7 @@
     // this.queryText holds the current editor value, always
     components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
     props: {
-      tab: OpenTab,
+      tab: Object as PropType<TransportOpenTab>,
       active: Boolean
     },
     data() {
@@ -406,7 +408,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return this.tab.findQuery(this.savedQueries || []) || this.blankQuery
+        return findQuery(this.tab, this.savedQueries || []) || this.blankQuery
       },
       queryTitle() {
         return this.query?.title
