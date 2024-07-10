@@ -3,6 +3,7 @@ import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
+import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
 
 type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table'
@@ -14,9 +15,13 @@ const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tab
 export class OpenTab extends ApplicationEntity {
 
 
-  constructor(tabType: TabType) {
+  constructor(init: TabType | TransportOpenTab) {
     super()
-    this.tabType = tabType
+    if (_.isString(init)) {
+      this.tabType = init
+      return;
+    }
+    OpenTab.merge(this, init);
   }
 
   get type(): TabType {

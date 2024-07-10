@@ -803,6 +803,7 @@ export default Vue.extend({
       tab.entityType = table.entityType
       tab = setFilters(tab, filters)
       tab.titleScope = "all"
+      console.log('TAB: ', tab)
       let existing = this.tabItems.find((t) => matches(t, tab))
       if (existing) {
         if (filters) {

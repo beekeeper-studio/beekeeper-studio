@@ -26,6 +26,7 @@ function handlersFor<T extends Transport>(name: string, cls: any) {
       return new cls(init);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
+      console.log('RECEIVED: ', obj)
       if (_.isArray(obj)) {
           const ids = obj.map((e) => e.id);
           const dbEntities = await cls.findByIds(ids);
