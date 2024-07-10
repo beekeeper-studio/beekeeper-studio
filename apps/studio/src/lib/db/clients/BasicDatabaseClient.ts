@@ -298,7 +298,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
-    return buildInsertQuery(this.knex, tableInsert, columns);
+    return buildInsertQuery(this.knex, tableInsert, { columns });
   }
 
   abstract wrapIdentifier(value: string): string;

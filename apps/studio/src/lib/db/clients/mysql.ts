@@ -781,7 +781,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         undefined,
         connection
       );
-      const command = buildInsertQuery(this.knex, insert, columns);
+      const command = buildInsertQuery(this.knex, insert, { columns });
       await this.driverExecuteSingle(command, { connection });
     }
     return true;

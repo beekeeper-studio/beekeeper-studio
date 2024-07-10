@@ -166,8 +166,10 @@ function buildFilterString(filters: TableFilter[], columns = []) {
 function buildInsertQuery(
   knex: Knex,
   insert: TableInsert,
-  columns = [],
-  bitConversionFunc: any = _.toNumber
+  { 
+    columns = [],
+    bitConversionFunc = _.toNumber
+  } = {}
 ) {
   const data = _.cloneDeep(insert.data);
   data.forEach((item) => {
@@ -697,7 +699,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       tableInsert.table,
       tableInsert.schema
     );
-    return buildInsertQuery(this.knex, tableInsert, columns);
+    return buildInsertQuery(this.knex, tableInsert, { columns });
   }
 
   async listTableTriggers(

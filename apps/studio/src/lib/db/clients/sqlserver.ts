@@ -558,7 +558,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         const columnsList = await Promise.all(changes.inserts.map((insert) => {
           return this.listTableColumns(insert.table, insert.schema);
         }));
-        sql = sql.concat(changes.inserts.map((insert, index) => buildInsertQuery(this.knex, insert, columnsList[index])))
+        sql = sql.concat(changes.inserts.map((insert, index) => buildInsertQuery(this.knex, insert, { columns: columnsList[index] })))
       }
 
       if (changes.updates) {
