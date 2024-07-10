@@ -14,6 +14,8 @@ import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
+import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
+import { IGroupedUserSettings, UserSetting } from "@/common/appdb/models/user_setting";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -120,11 +122,30 @@ export const AppDbHandlers: IAppDbHandlers = {
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
   ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
+  ...handlersFor<TransportUserSetting>('setting', UserSetting),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
       throw `Unable to parse ${url}`;
     }
     return conn;
+  },
+  'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
+    let existing = await UserSetting.findOne({ key });
+    if (!existing) {
+      existing = new UserSetting();
+      existing.key = key;
+      existing.defaultValue = value;
+    }
+    existing.userValue = value;
+    await existing.save();
+  },
+  'appdb/setting/get': async function({ key }: { key: string }) {
+    return await UserSetting.findOne({key});
+  },
+  // I don't think this is needed but we'll see
+  'appdb/setting/all': async function() {
+    const settings = await UserSetting.find();
+    return _(settings).groupBy('key').mapValues(vs => vs[0]).value() as IGroupedUserSettings
   },
 } as unknown as IAppDbHandlers;

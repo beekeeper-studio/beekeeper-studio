@@ -134,6 +134,7 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
         Vue.prototype.$util = new UtilityConnection();
       }
       Vue.prototype.$util.setPort(event.ports[0], sId);
+      app.$store.dispatch('settings/initializeSettings')
 
       if (utilDied) {
         ipcRenderer.emit('utilDied');
@@ -164,7 +165,6 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
       render: h => h(App),
       store,
     })
-    await app.$store.dispatch('settings/initializeSettings')
     const handler = new AppEventHandler(ipcRenderer, app)
     handler.registerCallbacks()
     app.$mount('#app')

@@ -29,13 +29,13 @@ export let handlers: Handlers = {
   ...AppDbHandlers
 }; 
 
-process.parentPort.on('message', ({ data, ports }) => {
+process.parentPort.on('message', async ({ data, ports }) => {
   const { type, sId } = data;
   switch (type) {
     case 'init':
       if (ports && ports.length > 0) {
         log.info('RECEIVED PORT: ', ports[0]);
-        init(sId, ports[0]);
+        await init(sId, ports[0]);
       }
       break;
     case 'close':
@@ -55,6 +55,10 @@ async function runHandler(id: string, name: string, args: any) {
     type: 'reply',
   };
 
+  if (name === 'test') {
+    replyArgs.data = true;
+  }
+
   if (handlers[name]) {
     try {
       replyArgs.data = await handlers[name](args)
@@ -70,10 +74,10 @@ async function runHandler(id: string, name: string, args: any) {
   state(args.sId).port.postMessage(replyArgs);
 }
 
-function init(sId: string, port: MessagePortMain) {
+async function init(sId: string, port: MessagePortMain) {
   if (!ormConnection) {
     ormConnection = new ORMConnection(platformInfo.appDbPath, false);
-    ormConnection.connect();
+    await ormConnection.connect();
   }
 
   newState(sId);

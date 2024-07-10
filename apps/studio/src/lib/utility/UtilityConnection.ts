@@ -21,6 +21,16 @@ export class UtilityConnection {
   private messageQueue: Array<Message> = new Array();
   private port: MessagePort;
   private sId: string;
+  private portsRequested: boolean = false;
+
+  public async hasWorkingPort(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      if (!this.port) reject();
+      const id = uuidv4();
+      this.replyHandlers.set(id, {resolve, reject});
+      this.port.postMessage({name: test})
+    })
+  }
 
   public setPort(port: MessagePort, sId: string) {
     this.port = port;
@@ -78,7 +88,10 @@ export class UtilityConnection {
       if (!this.port) {
         log.info('QUEUEING REQUEST FOR NAME, ID: ', handlerName, id);
         this.messageQueue.push({ handlerName, args, id, resolve, reject });
-        ipcRenderer.invoke('requestPorts')
+        if (!this.portsRequested) {
+          ipcRenderer.invoke('requestPorts')
+          this.portsRequested = true;
+        }
       } else {
         log.info('SENDING REQUEST FOR NAME, ID: ', handlerName, id)
         args = { sId: this.sId, ...args };

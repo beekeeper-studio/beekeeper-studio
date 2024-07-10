@@ -3,7 +3,7 @@ import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import rawLog from 'electron-log'
-import { TransportOpenTab } from '@/common/transport';
+import { TransportOpenTab } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')

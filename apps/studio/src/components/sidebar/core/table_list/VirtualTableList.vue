@@ -164,7 +164,7 @@ export default Vue.extend({
             parent,
             level: noFolder ? 0 : 1,
             pinned: this.pins.find(
-              (pin: PinnedEntity) => pin.entity === routine
+              (pin: TransportPinnedEntity) => pin.entity === routine
             ),
           });
         });

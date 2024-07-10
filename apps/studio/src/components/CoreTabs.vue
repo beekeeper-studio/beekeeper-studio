@@ -795,19 +795,18 @@ export default Vue.extend({
       this.addTab(t)
     },
     openTable({ table, filters }) {
-      const tab = {} as TransportOpenTab;
+      let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
       tab.title = table.name
       tab.tableName = table.name
       tab.schemaName = table.schema
       tab.entityType = table.entityType
-      // NOTE (@day): this should still set by reference, right?
-      setFilters(tab, filters)
+      tab = setFilters(tab, filters)
       tab.titleScope = "all"
-      const existing = this.tabItems.find((t) => matches(t, tab))
+      let existing = this.tabItems.find((t) => matches(t, tab))
       if (existing) {
         if (filters) {
-          existing.setFilters(filters)
+          existing = setFilters(existing, filters)
         }
         this.$store.dispatch('tabs/setActive', existing)
       } else {
