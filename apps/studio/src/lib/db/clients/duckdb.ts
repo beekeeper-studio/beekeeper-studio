@@ -788,24 +788,22 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     typeOfElement: DatabaseElement,
     schema?: string
   ): string {
-    elementName = schema
-      ? `${DuckDBData.wrapIdentifier(schema)}.${DuckDBData.wrapIdentifier(
-        elementName
-      )}`
-      : DuckDBData.wrapIdentifier(elementName);
-    newElementName = DuckDBData.wrapIdentifier(newElementName);
+    if (
+      typeOfElement === DatabaseElement.TABLE ||
+      typeOfElement === DatabaseElement.VIEW ||
+      typeOfElement === DatabaseElement.SCHEMA
+    ) {
+      elementName = schema
+        ? `${DuckDBData.wrapIdentifier(schema)}.${DuckDBData.wrapIdentifier(
+          elementName
+        )}`
+        : DuckDBData.wrapIdentifier(elementName);
+      newElementName = DuckDBData.wrapIdentifier(newElementName);
 
-    let sql = "";
-
-    if (typeOfElement === DatabaseElement.TABLE) {
-      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName}`;
-    } else if (typeOfElement === DatabaseElement.VIEW) {
-      sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName}`;
-    } else if (typeOfElement === DatabaseElement.SCHEMA) {
-      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName}`;
+      return `ALTER ${typeOfElement} ${elementName} RENAME TO ${newElementName}`;
     }
 
-    return sql;
+    return "";
   }
 
   truncateElementSql(
