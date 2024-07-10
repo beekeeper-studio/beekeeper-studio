@@ -504,22 +504,85 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async getTableReferences(_table: string, _schema: string): Promise<string[]> {
-    return []; // TODO: not implemented yet
+    const { data } = await this.driverExecuteSingle(`
+      WITH cte AS (
+        SELECT rc.unique_constraint_name AS unique_constraint_name
+        FROM information_schema.referential_constraints rc
+        JOIN information_schema.key_column_usage kcu
+          ON rc.constraint_name = kcu.constraint_name
+        JOIN information_schema.table_constraints tc
+          ON rc.constraint_name = tc.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_schema = 'main'
+          AND tc.table_name = 'dept_emp'
+      )
+      SELECT kc.table_name
+      FROM cte
+      JOIN information_schema.key_column_usage kc
+        ON cte.unique_constraint_name = kc.constraint_name
+    `);
+    return data.map((row) => row.table_name);
   }
 
-  // TODO check this. Since duckdb is a OLAP database, it might not have these kinda things (foreign keys).
-  async getTableKeys(_table: string, _schema: string): Promise<TableKey[]> {
-    // toTable: string;
-    // toSchema: string;
-    // toColumn: string;
-    // fromTable: string;
-    // fromSchema: string;
-    // fromColumn: string;
-    // constraintName?: string;
-    // onUpdate?: string;
-    // onDelete?: string;
-    // const { data } = await this.driverExecuteSingle(``);
-    return [];
+  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+    const { data } = await this.driverExecuteSingle(
+      `
+      SELECT
+        kcu.constraint_schema AS from_schema,
+        kcu.table_name AS from_table,
+        STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
+        rc.unique_constraint_schema AS to_schema,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule,
+        (
+          SELECT STRING_AGG(kcu2.column_name, ',' ORDER BY kcu2.ordinal_position)
+          FROM information_schema.key_column_usage AS kcu2
+          WHERE kcu2.constraint_name = rc.unique_constraint_name
+        ) AS to_column,
+        (
+          SELECT kcu2.table_name
+          FROM information_schema.key_column_usage AS kcu2
+          WHERE kcu2.constraint_name = rc.unique_constraint_name LIMIT 1
+        ) AS to_table
+      FROM
+        information_schema.key_column_usage AS kcu
+      JOIN
+        information_schema.table_constraints AS tc
+      ON
+        tc.constraint_name = kcu.constraint_name
+      JOIN
+        information_schema.referential_constraints AS rc
+      ON
+        rc.constraint_name = kcu.constraint_name
+      WHERE
+        tc.constraint_type = 'FOREIGN KEY' AND
+        kcu.table_schema = ? AND
+        kcu.table_name = ? AND
+        (to_column IS NOT NULL OR to_table IS NOT NULL)
+      GROUP BY
+        kcu.constraint_schema,
+        kcu.table_name,
+        rc.unique_constraint_schema,
+        rc.unique_constraint_name,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule;
+    `,
+      { params: [schema || this.defaultSchema(), table] }
+    );
+
+    return data.map((row) => ({
+      toTable: row.to_table,
+      toSchema: row.to_schema,
+      toColumn: row.to_column,
+      fromTable: row.from_table,
+      fromSchema: row.from_schema,
+      fromColumn: row.from_column,
+      constraintName: row.constraint_name,
+      onUpdate: row.update_rule,
+      onDelete: row.delete_rule,
+    }));
   }
 
   defaultSchema(): string {
