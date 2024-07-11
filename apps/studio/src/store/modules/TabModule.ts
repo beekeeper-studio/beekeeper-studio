@@ -1,5 +1,4 @@
 import _ from 'lodash'
-import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import rawLog from 'electron-log'
@@ -125,14 +124,14 @@ export const TabModule: Module<State, RootState> = {
       }
       
     },
-    async setActive(context, tab: OpenTab) {
+    async setActive(context, tab: TransportOpenTab) {
       const oldActive = context.state.active
       context.commit('setActive', tab)
       if (oldActive) {
         oldActive.active = false
       }
       tab.active = true
-      await context.dispatch('save', [tab, oldActive].filter((x) => x))
+      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))
 
     }
 

@@ -15,7 +15,8 @@ import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
-import { IGroupedUserSettings, UserSetting } from "@/common/appdb/models/user_setting";
+import { UserSetting } from "@/common/appdb/models/user_setting";
+import { TokenCache } from "@/common/appdb/models/token_cache";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -144,9 +145,13 @@ export const AppDbHandlers: IAppDbHandlers = {
   'appdb/setting/get': async function({ key }: { key: string }) {
     return await UserSetting.findOne({key});
   },
-  // I don't think this is needed but we'll see
-  'appdb/setting/all': async function() {
-    const settings = await UserSetting.find();
-    return _(settings).groupBy('key').mapValues(vs => vs[0]).value() as IGroupedUserSettings
+  'appdb/cache/remove': async function({ authId }: { authId: number }) {
+    const cache = await TokenCache.findOne(authId);
+    await cache.remove();
   },
+  'appdb/cache/new': async function() {
+    let cache = new TokenCache();
+    cache = await cache.save();
+    return cache.id;
+  }
 } as unknown as IAppDbHandlers;

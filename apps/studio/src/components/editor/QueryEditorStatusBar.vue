@@ -155,7 +155,6 @@
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
 import pluralize from 'pluralize'
-import { UserSetting } from '@/common/appdb/models/user_setting';
 import { mapState } from 'vuex';
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({

@@ -327,9 +327,8 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
-  import { TransportOpenTab } from '@/common/transport'
   import { PropType } from 'vue'
-  import { findQuery } from '@/common/transport/TransportOpenTab'
+  import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -980,13 +979,13 @@
       },
     },
     async mounted() {
+      this.blankQuery = await this.$util.send('appdb/query/new');
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()
       })
       this.containerResizeObserver.observe(this.$refs.container)
-      this.blankQuery = await this.$util.send('appdb/query/new');
     },
     beforeDestroy() {
       if(this.split) {

@@ -221,7 +221,6 @@ import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
-import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -375,8 +374,7 @@ export default Vue.extend({
         })
       }
       if (config.azureAuthOptions?.authId) {
-        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
-        cache.remove();
+        await this.$util.send('appdb/cache/remove', { authId: config.azureAuthOptions.authId });
       }
       await this.$store.dispatch('pinnedConnections/remove', config)
       await this.$store.dispatch('data/connections/remove', config)
@@ -441,9 +439,8 @@ export default Vue.extend({
         }
         // create token cache for azure auth
         if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.authId) {
-          let cache = new TokenCache();
-          cache = await cache.save();
-          this.config.authId = cache.id;
+          const cacheId = await this.$util.send('appdb/cache/new');
+          this.config.authId = cacheId;
         }
 
         await this.$store.dispatch('data/connections/save', this.config)

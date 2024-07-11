@@ -909,7 +909,7 @@ export default Vue.extend({
               this.openColumnFilterMenuItem,
             ]
           },
-        } as unknown,
+        },
         columns: this.tableColumns,
         ajaxURL: "http://fake",
         sortMode: 'remote',
@@ -932,7 +932,7 @@ export default Vue.extend({
           scrollPageUp: false,
           scrollPageDown: false
         },
-      } as unknown);
+      });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {

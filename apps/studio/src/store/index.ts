@@ -24,7 +24,6 @@ import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
-import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = RawLog.scope('store/index')
 
@@ -491,14 +490,6 @@ const store = new Vuex.Store<State>({
     async unpinRoutine(context, routine: Routine) {
       routine.pinned = true
       context.commit('addPinned', routine)
-    },
-    async removeUsedConfig(context, config) {
-      if (config.azureAuthOptions?.authId) {
-        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
-        cache.remove();
-      }
-      await config.remove()
-      context.commit('removeUsedConfig', config)
     },
     async menuActive(context, value) {
       context.commit('menuActive', value)

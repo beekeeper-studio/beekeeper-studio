@@ -1,7 +1,7 @@
 import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
 import { loadEncryptionKey } from './common/encryption_key'
-import { ConnectionTypes, keymapTypes } from './common/appdb/models/saved_connection'
+import { ConnectionTypes, keymapTypes } from './lib/db/types'
 
 const userDirectory = platformInfo.userDirectory
 

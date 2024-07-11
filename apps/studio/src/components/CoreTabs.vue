@@ -539,7 +539,7 @@ export default Vue.extend({
         this.setActiveTab(this.tabItems[this.activeIdx - 1])
       }
     },
-    closeCurrentTab(_id?:number, options?:CloseTabOptions) {
+    closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
     },
     handleCreateTab() {

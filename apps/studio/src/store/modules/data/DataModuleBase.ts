@@ -10,7 +10,6 @@ import { State as RootState } from '../../index'
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import Vue from "vue";
 import { Transport } from "@/common/transport";
-import { ApplicationEntity } from "@/common/appdb/models/application_entity";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -165,7 +164,7 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
 }
 
 
-export function localActionsFor<T extends ApplicationEntity>(cls: any, other: any, loadOptions: any = {}) {
+export function localActionsFor<T extends Transport>(cls: any, other: any, loadOptions: any = {}) {
   return {
     async load(context) {
       context.commit("error", null)

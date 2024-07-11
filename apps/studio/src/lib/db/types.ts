@@ -1,10 +1,82 @@
 import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import type { RedshiftOptions, BigQueryOptions, CassandraOptions, AzureAuthOptions, LibSQLOptions } from '@/common/appdb/models/saved_connection';
 import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
+
+export const ConnectionTypes = [
+  { name: 'MySQL', value: 'mysql' },
+  { name: 'TiDB', value: 'tidb' },
+  { name: 'MariaDB', value: 'mariadb' },
+  { name: 'Postgres', value: 'postgresql' },
+  { name: 'SQLite', value: 'sqlite' },
+  { name: 'LibSQL', value: 'libsql' },
+  { name: 'SQL Server', value: 'sqlserver' },
+  { name: 'Amazon Redshift', value: 'redshift' },
+  { name: 'CockroachDB', value: 'cockroachdb' },
+  { name: 'Oracle', value: 'oracle' },
+  { name: 'Cassandra', value: 'cassandra' },
+  { name: 'BigQuery', value: 'bigquery' },
+  { name: 'Firebird', value: 'firebird'},
+]
+
+export const keymapTypes = [
+  { name: "Default", value: "default" },
+  { name: "Vim", value: "vim" }
+]
+
+export enum AzureAuthType {
+  Default, // This actually may not work at all, might need to just give up on it
+  Password,
+  AccessToken,
+  MSIVM,
+  ServicePrincipalSecret
+}
+
+// supported auth types that actually work :roll_eyes: default i'm looking at you
+export const AzureAuthTypes = [
+  // Can't have 2FA, kinda redundant now
+  // { name: 'Password', value: AzureAuthType.Password },
+  { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
+  // This may be reactivated when we move to client server architecture
+  // { name: 'MSI VM', value: AzureAuthType.MSIVM },
+  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
+];
+
+export interface RedshiftOptions {
+  iamAuthenticationEnabled?: boolean
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  awsRegion?: string;
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+}
+
+export interface CassandraOptions {
+  localDataCenter?: string
+}
+
+export interface BigQueryOptions {
+  keyFilename?: string;
+  projectId?: string;
+  devMode?: boolean
+}
+
+export interface AzureAuthOptions {
+  azureAuthEnabled?: boolean;
+  azureAuthType?: AzureAuthType;
+  tenantId?: string;
+  clientSecret?: string;
+  msiEndpoint?: string;
+}
+export interface LibSQLOptions {
+  mode: 'url' | 'file';
+  authToken?: string;
+  syncUrl?: string;
+  syncPeriod?: number;
+}
 
 export enum DatabaseElement {
   TABLE = 'TABLE',

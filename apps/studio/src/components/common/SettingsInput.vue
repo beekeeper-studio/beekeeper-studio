@@ -27,7 +27,6 @@
 </template>
 
 <script lang="ts">
-import { UserSetting } from '@/common/appdb/models/user_setting'
 import Vue from 'vue'
 import _ from 'lodash'
 import { mapState } from 'vuex'
@@ -60,9 +59,9 @@ export default Vue.extend({
       this.$emit('changed', this.value)
     }, 500)
   },
-  beforeMount() {
+  async beforeMount() {
     if (!this.setting) {
-      const nu = new UserSetting()
+      const nu = await this.$util.send('appdb/setting/new');
       nu.key = this.settingKey
       this.$store.dispatch('settings/saveSetting', nu)
     }
