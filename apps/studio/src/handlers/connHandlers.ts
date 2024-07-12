@@ -29,6 +29,7 @@ export interface IConnectionHandlers {
   // Connection *****************************************************************
   'conn/connect': ({ sId }: { sId: string}) => Promise<void>,
   'conn/disconnect': ({ sId }: { sId: string}) => Promise<void>,
+  'conn/cancelConnect': ({ sId }: { sId: string }) => Promise<void>,
 
   
   // List schema information ****************************************************
@@ -98,6 +99,15 @@ export interface IConnectionHandlers {
   'conn/getInsertQuery': ({ tableInsert, sId }: { tableInsert: TableInsert, sId: string }) => Promise<string>,
 
   'conn/syncDatabase': ({ sId }: { sId: string }) => Promise<void>
+
+  /**
+   * For cases that are so specific, for example, signing out from azure sso
+   * auth which only exists in SQLServer client. Example usage:
+   * ``js
+   * this.$util.send('conn/invoke', { name: 'sign-out' })
+   * ``
+   **/
+  'conn/invoke': ({ name, args, sId }: { name: string, args?: any, sId: string }) => Promise<void>,
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -120,10 +130,13 @@ export const ConnHandlers: IConnectionHandlers = {
       }
     }
 
+    const abortController = new AbortController();
+    state(sId).abortController = abortController;
+
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
     const connection = server.createConnection(config.defaultDatabase || undefined);
-    await connection.connect();
+    await connection.connect(abortController.signal);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
 
@@ -137,7 +150,7 @@ export const ConnHandlers: IConnectionHandlers = {
     });
   },
 
-  'conn/test': async function({ config, osUser }: { config: IConnection, osUser: string }) {
+  'conn/test': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) {
     // TODO (matthew): fix this mess.
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
@@ -145,7 +158,11 @@ export const ConnHandlers: IConnectionHandlers = {
 
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
-    await server?.createConnection(config.defaultDatabase || undefined).connect();
+    const abortController = new AbortController();
+    state(sId).abortController = abortController;
+    await server?.createConnection(config.defaultDatabase || undefined).connect(abortController.signal);
+    // @ts-expect-error abort reason is not fully typed
+    abortController.abort("Connection test is done. Cleaning up.");
     server.disconnect();
   },
 
@@ -191,6 +208,10 @@ export const ConnHandlers: IConnectionHandlers = {
 
   'conn/connect': getDriverHandler('connect'),
   'conn/disconnect': getDriverHandler('disconnect'),
+  'conn/cancelConnect': async function({ sId }: { sId: string }) {
+    // @ts-expect-error reason is not fully typed
+    state(sId).abortController?.abort('Canceled by user');
+  },
 
   'conn/listTables': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
     checkConnection(sId);
@@ -429,5 +450,23 @@ export const ConnHandlers: IConnectionHandlers = {
     checkConnection(sId);
     return await state(sId).connection.getInsertQuery(tableInsert)
   },
-  'conn/syncDatabase': getDriverHandler('syncDatabase')
+  'conn/syncDatabase': getDriverHandler('syncDatabase'),
+
+  'conn/invoke': async function({ name, args, sId }: { name: string, args?: any, sId: string }) {
+    checkConnection(sId);
+
+    if (state(sId).connection.connectionType === 'sqlserver' && name === 'sign-out') {
+      await state(sId).connection.invoke('sign-out')
+
+      // Clean up authId cause it's invalid after signing out
+      const savedConnection = await SavedConnection.findOne(state(sId).usedConfig.id)
+      savedConnection.authId = null
+      await savedConnection.save()
+      state(sId).usedConfig.authId = null
+
+      return
+    }
+
+    return await state(sId).connection.invoke(name, args);
+  }
 }

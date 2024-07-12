@@ -88,7 +88,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // Connection *****************************************************************
-  async connect(): Promise<void> {
+  async connect(_signal?: AbortSignal): Promise<void> {
     /* eslint no-param-reassign: 0 */
     if (this.database.connecting) {
       throw new Error('There is already a connection in progress for this database. Aborting this new request.');
@@ -291,9 +291,17 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
-  /** Sync a database file to remote database. This is a LibSQL specific feature. */
+  /**
+   * Sync a database file to remote database. This is a LibSQL specific feature.
+   * FIXME (azmi): this is too specific (only used by LibSQL) and might be
+   * best to use invoke() instead.
+   **/
   async syncDatabase(): Promise<void> {
     throw new Error("Not implemented");
+  }
+
+  async invoke(name: string, args?: any): Promise<any> {
+    log.debug('invoke', name, args)
   }
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {

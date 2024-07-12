@@ -389,8 +389,12 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, config: IConnection) {
+      await context.dispatch('connectWithAbort', { config })
+    },
+    async connectWithAbort(context, payload: { config: IConnection, abortSignal?: AbortSignal }) {
+      const { config, abortSignal } = payload
       if (context.state.username) {
-        // HACK (@day): this is just to fix some issues with the typeorm models moving to the utility process. 
+        // HACK (@day): this is just to fix some issues with the typeorm models moving to the utility process.
         // this should be removed once the appdb handlers have been merged.
         const tConfig = JSON.parse(JSON.stringify(config));
         tConfig.port = config.port;
@@ -421,6 +425,9 @@ const store = new Vuex.Store<State>({
       if (context.state.connection) {
         await context.state.connection.connect();
       }
+    },
+    async cancelConnect() {
+      await Vue.prototype.$util.send('conn/cancelConnect');
     },
     async recordUsedConfig(context, config: IConnection) {
 
