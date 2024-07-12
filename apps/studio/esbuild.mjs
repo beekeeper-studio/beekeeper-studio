@@ -92,98 +92,126 @@ const electronUtilityPlugin = {
   }
 }
 
-  const commonArgs = {
-    platform: 'node',
-    publicPath: '.',
-    outdir: 'dist',
-    bundle: true,
-    external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
-    sourcemap: isWatching,
-    minify: !isWatching
+const electronPreloadPlugin = {
+  name: "electron-preload-restarter",
+  setup(build) {
+    if (!isWatching) return;
+    build.onStart(() => console.log("ESBUILD: Building Preload 🏗"));
+    build.onEnd(() => {
+      console.log("ESBUILD: Built Preload ✅");
+      if (electron) {
+        process.kill(electron.pid, 'SIGINT');
+      }
+      //start electron again
+      electron = spawn(path.join('../../node_modules/electron/dist/electron'), ['.'], { stdio: 'inherit' });
+    });
   }
+}
 
-  const mainArgs = {
-    ...commonArgs,
-    entryPoints: ['src/background.ts'],
-    plugins: [electronMainPlugin,
+const env = isWatching ? '"development"' : '"production"';
+const commonArgs = {
+  platform: 'node',
+  publicPath: '.',
+  outdir: 'dist',
+  bundle: true,
+  external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
+  sourcemap: isWatching,
+  minify: !isWatching,
+  define: {
+    'process.env.NODE_ENV': env
+  }
+}
+
+const mainArgs = {
+  ...commonArgs,
+  entryPoints: ['src/background.ts'],
+  plugins: [electronMainPlugin,
+  copy({
+    resolveFrom: 'cwd',
+    assets: [
+      {
+        from: ['./src/index.html'],
+        to: './dist/'
+      },
+    ]
+  })]
+}
+
+const utilityArgs = {
+  ...commonArgs,
+  entryPoints: ['src/utility.ts'],
+  plugins: [electronUtilityPlugin]
+}
+
+const preloadArgs = {
+  ...commonArgs,
+  entryPoints: ['src/preload.ts'],
+  plugins: [electronPreloadPlugin]
+}
+
+const rendererArgs = {
+  ...commonArgs,
+  entryPoints: ['src/main.ts'],
+  plugins: [
+    tabulatorPlugin,
+    electronRendererPlugin,
+    vuePlugin(),
     copy({
-      resolveFrom: 'cwd',
+      resolveFrom: "cwd",
       assets: [
         {
-          from: ['./src/index.html'],
+          from: ['../../node_modules/material-icons/**/*.woff*'],
+          to: ['./dist/material-icons']
+        },
+        {
+          from: './src/assets/logo.svg',
+          to: 'dist/assets/'
+        },
+        {
+          from: './src/assets/fonts/**/*',
+          to: 'dist/fonts'
+        },
+        {
+          from: './src/assets/icons/**/*',
+          to: 'dist/icons'
+        },
+        {
+          from: './src/assets/images/**/*',
+          to: 'dist/images'
+        },
+        {
+          from: '../../node_modules/typeface-roboto/**/*.woff*',
           to: './dist/'
         },
+        {
+          from: '../../node_modules/xel/**/*.svg',
+          to: './dist/node_modules/xel'
+        },
       ]
-    })]
-  }
+    }),
+    sassPlugin({
+      async transform(source, resolveDir, filePath) {
+        const { css } = await postcss().use(copyAssets({ base: `dist` })).process(source, { from: filePath, to: `dist/main.css` });
+        return css;
+      }
+    }),
 
-  const utilityArgs = {
-    ...commonArgs,
-    entryPoints: ['src/utility.ts'],
-    plugins: [electronUtilityPlugin]
-  }
-
-  const rendererArgs = {
-    ...commonArgs,
-    entryPoints: ['src/main.ts'],
-    plugins: [
-      tabulatorPlugin,
-      electronRendererPlugin,
-      vuePlugin(),
-      copy({
-        resolveFrom: "cwd",
-        assets: [
-          {
-            from: ['../../node_modules/material-icons/**/*.woff*'],
-            to: ['./dist/material-icons']
-          },
-          {
-            from: './src/assets/logo.svg',
-            to: 'dist/assets/'
-          },
-          {
-            from: './src/assets/fonts/**/*',
-            to: 'dist/fonts'
-          },
-          {
-            from: './src/assets/icons/**/*',
-            to: 'dist/icons'
-          },
-          {
-            from: './src/assets/images/**/*',
-            to: 'dist/images'
-          },
-          {
-            from: '../../node_modules/typeface-roboto/**/*.woff*',
-            to: './dist/'
-          },
-          {
-            from: '../../node_modules/xel/**/*.svg',
-            to: './dist/node_modules/xel'
-          },
-        ]
-      }),
-      sassPlugin({
-        async transform(source, resolveDir, filePath) {
-          const { css } = await postcss().use(copyAssets({ base: `dist` })).process(source, { from: filePath, to: `dist/main.css` });
-          return css;
-        }
-      }),
-
-    ]
-  }
+  ]
+}
 
 
-  if(isWatching) {
-    const main = await esbuild.context(mainArgs)
-    const renderer = await esbuild.context(rendererArgs)
-    const utility = await esbuild.context(utilityArgs)
-    Promise.all([main.watch(), renderer.watch(), utility.watch()])
-  } else {
-    Promise.all([
-      esbuild.build(mainArgs),
-      esbuild.build(rendererArgs),
-      esbuild.build(utilityArgs)
-    ])
-  }
+if(isWatching) {
+  const main = await esbuild.context(mainArgs)
+  const renderer = await esbuild.context(rendererArgs)
+  const utility = await esbuild.context(utilityArgs)
+  const preload = await esbuild.context(preloadArgs)
+  Promise.all([main.watch(), renderer.watch(), utility.watch(), preload.watch()])
+} else {
+  Promise.all([
+    esbuild.build(mainArgs),
+    esbuild.build(rendererArgs),
+    esbuild.build(utilityArgs),
+    esbuild.build(preloadArgs)
+  ])
+}
 // launch electron

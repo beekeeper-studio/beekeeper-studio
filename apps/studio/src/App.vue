@@ -35,7 +35,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import { ipcRenderer } from 'electron'
 import { mapGetters, mapState } from 'vuex'
 import Titlebar from './components/Titlebar.vue'
 import CoreInterface from './components/CoreInterface.vue'
@@ -50,7 +49,7 @@ import ConfirmationModalManager from '@/components/common/modals/ConfirmationMod
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
 
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 
 const log = rawLog.scope('app.vue')
 
@@ -91,9 +90,8 @@ export default Vue.extend({
       this.runningWayland = !!query.runningWayland
     }
 
-
     this.$nextTick(() => {
-      ipcRenderer.send('ready')
+      window.main.isReady();
     })
     console.log("MAIN THEME VALUE: ", this.themeValue)
     if (this.themeValue) {

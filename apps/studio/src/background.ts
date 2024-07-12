@@ -3,13 +3,14 @@ import 'module-alias/register';
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
-import log from 'electron-log'
+import log from 'electron-log/main'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
+log.initialize();
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})
 log.info("initializing background")

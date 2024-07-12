@@ -6,8 +6,8 @@ import rawLog from "electron-log";
 import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
 import appConfig from '../../config'
 
-import { resolveHomePathToAbsolute } from '../../common/utils'
 import { IDbConnectionServerConfig, IDbSshTunnel } from './types';
+import { resolveHomePathToAbsolute } from '@/handlers/utils';
 
 const log = rawLog.scope('db:tunnel');
 const logger = () => log;
