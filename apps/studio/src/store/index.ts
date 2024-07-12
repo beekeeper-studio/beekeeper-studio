@@ -376,6 +376,10 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, config: IConnection) {
+      await context.dispatch('connectWithAbort', { config })
+    },
+    async connectWithAbort(context, payload: { config: IConnection, abortSignal?: AbortSignal }) {
+      const { config, abortSignal } = payload
       if (context.state.username) {
         // create token cache for azure auth
         if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
@@ -399,7 +403,7 @@ const store = new Vuex.Store<State>({
           context.commit('setConnError', msg);
         };
 
-        await connection.connect()
+        await connection.connect(abortSignal)
         connection.connectionType = config.connectionType;
 
         context.commit('newConnection', {config: config, server, connection})
