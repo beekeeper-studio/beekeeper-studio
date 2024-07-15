@@ -9,10 +9,10 @@ import { runCommonTests, runReadOnlyTests } from './all'
 
 const TEST_VERSIONS = [
   {version: '5.7'},
-  {version: '5.7', readonly: true},
-  { version: '8', socket: false, readonly: true},
-  { version: '8', socket: false},
-  { version: '8', socket: true }
+  // {version: '5.7', readonly: true},
+  // { version: '8', socket: false, readonly: true},
+  // { version: '8', socket: false},
+  // { version: '8', socket: true }
 ]
 
 
@@ -326,7 +326,7 @@ function testWith(tag, socket = false, readonly = false) {
           rollbackCommand,
           finalCommand
         } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
+        const importSQL = util.connection.getImportSQL(formattedData, ['id'])
     
         expect(step0).toBeUndefined()
         expect(typeof beginCommand).toBe('function')

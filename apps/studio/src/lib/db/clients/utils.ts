@@ -179,7 +179,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber } = {}) {
+export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber, asUpsert = false, primaryKeys = [] as string[] } = {}) {
   const data = _.cloneDeep(insert.data)
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
@@ -209,15 +209,25 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
   if (insert.schema) {
     builder.withSchema(insert.schema)
   }
-  const query = builder
+  
+  if (asUpsert && primaryKeys.length > 0) {
+    // might have to be different for different engines. 
+    // https://knexjs.org/guide/query-builder.html#onconflict
+    return builder
+      .insert(data)
+      .onConflict(primaryKeys)
+      .merge()
+      .toQuery()
+  }
+  
+  return builder
     .insert(data)
     .toQuery()
-  return query
 }
 
-export function buildInsertQueries(knex, inserts) {
+export function buildInsertQueries(knex, inserts, { asUpsert = false, primaryKeys = [] } = {}) {
   if (!inserts) return []
-  return inserts.map(insert => buildInsertQuery(knex, insert))
+  return inserts.map(insert => buildInsertQuery(knex, insert, { asUpsert, primaryKeys }))
 }
 
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {
