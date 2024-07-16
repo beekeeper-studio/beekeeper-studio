@@ -786,7 +786,7 @@ export class DBTestUtil {
       const result = await q.execute()
 
       if (this.dbType === 'duckdb') {
-        // node-duckdb cannot get results with the same field names
+        // FIXME duckdb cannot get results with the same field names
         expect(result[0].rows).toMatchObject([{ c1: "b" }])
       } else {
         expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
@@ -985,10 +985,10 @@ export class DBTestUtil {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
       sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
-      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      sqlserver: "SELECT * FROM [dbo].[jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NULL",
-      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      oracle: `SELECT * FROM "BEEKEEPER"."jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
       duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNull = expectedQueriesIsNull[this.dbType] || expectedQueriesIsNull[this.dialect]
@@ -1010,10 +1010,10 @@ export class DBTestUtil {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
       sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
-      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      sqlserver: "SELECT * FROM [dbo].[jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NOT NULL",
-      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      oracle: `SELECT * FROM "BEEKEEPER"."jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
       duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNotNull = expectedQueriesIsNotNull[this.dbType] || expectedQueriesIsNotNull[this.dialect]
@@ -1044,6 +1044,9 @@ export class DBTestUtil {
       } else if (this.dbType === 'duckdb') {
         // duckdb doesn't support ascending/descending index column
         arg.columns = arg.columns.map((c) => ({ name: c.name }))
+      }
+      if (this.data.disabledFeatures?.schema) {
+        return arg
       }
       return {
         schema: this.defaultSchema,
