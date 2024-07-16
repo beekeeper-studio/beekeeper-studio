@@ -32,7 +32,7 @@ export abstract class ChangeBuilderBase {
 
   // column alteration
   alterType(column: string, newType: string) {
-    return `ALTER COLUMN ${this.wrapIdentifier(column)} TYPE ${newType}`
+    return `ALTER COLUMN ${this.wrapIdentifier(column)} TYPE ${this.wrapLiteral(newType)}`
   }
 
   alterDefault(column: string, newDefault: string | boolean | null) {
