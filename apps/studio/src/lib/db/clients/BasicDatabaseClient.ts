@@ -8,6 +8,7 @@ import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
+import platformInfo from '@/common/platform_info';
 
 const log = rawLog.scope('db');
 const logger = () => log;
@@ -24,6 +25,11 @@ export interface QueryLogOptions {
     options: any // just whatever options the database driver provides.
     status: 'completed' | 'failed'
     error?: string
+}
+
+interface ColumnsAndTotalRows {
+  columns: TableColumn[]
+  totalRows: number
 }
 
 // this provides the ability to get the current tab information, plus provides
@@ -52,6 +58,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
+  allowReadOnly = false;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
@@ -65,6 +72,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
+    this.allowReadOnly = platformInfo.isUltimate || platformInfo.testMode;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -289,9 +297,23 @@ export abstract class BasicDatabaseClient<RawResultType> {
     }
   }
 
+  async getColumnsAndTotalRows(query: string): Promise<ColumnsAndTotalRows> {
+    const [result] = await this.executeQuery(query)
+    const {fields, rowCount: totalRows} = result
+    const columns = fields.map(f => ({
+      columnName: f.name,
+      dataType: f.dataType
+    }))
+
+    return {
+      columns,
+      totalRows
+    }
+  } 
+
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -324,7 +346,7 @@ export abstract class BasicDatabaseClient<RawResultType> {
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
     

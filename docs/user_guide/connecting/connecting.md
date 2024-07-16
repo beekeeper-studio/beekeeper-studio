@@ -1,27 +1,27 @@
 ---
-title: Overview
+title: Connecting To A Database
 summary: "How to start using Beekeeper Studio with your database of choice."
 old_url: "https://docs.beekeeperstudio.io/docs/first-page"
 ---
 
-The connection screen allows you to enter connection information for your database.
+Connecting to your database from Beekeeper Studio is easy. You can connect to a database in a few different ways:
 
-## Supported Database Types
+1. For SQLite databases, you can simply double click the file in your file browser
+2. For other databases, you can specify host & port, or the unix socket path.
+3. Some cloud vendors support connecting with custom authentication methods, Beekeeper Studio supports many of these too (eg: SSO for Azure SQL).
 
-Beekeeper Studio currently supports the following database types:
 
-- PostgreSQL
-- MySQL
-- SQLite
-- SQL Server (2005 onwards works)
-- Amazon Redshift
-- CockroachDB
-- MariaDB
-- TiDB
-- Oracle Database
-- Cassandra
-- Google BigQuery
-- Firebird
+## First Step: Select Connection Type
+
+When you open Beekeeper Studio for the first time, you'll see the connection screen. You can select the type of connection you want to make from the dropdown.
+
+You can also import a database URL here, this is super useful for Heroku Postgres, Azure SQL, and other cloud databases.
+
+### Optional: Explore The Demo Database
+
+Every new Beekeeper Studio installation comes with a `Demo Database` in the right side menu. This is a small SQLite database we bundle with the app. You can use this to explore Beekeeper Studio's features without connecting to a real database.
+
+## Complete
 
 ![Image Alt Tag](../../assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen
@@ -51,14 +51,14 @@ There are three ways to connect to a database with SSL
 
 Here's a table of how the various `sslmode` flags from command line clients map to Beekeeper:
 
-| sslmode | Turn on SSL? | rejectUnauthorized |
-|------|-----|-----|
-| disable |	no | 	n/a |
-| allow |	no | 	n/a |
-| prefer |	no | 	n/a |
-| require |	yes | 	false |
-| verify-ca |	yes | 	false |
-| verify-full |	yes | 	true |
+| sslmode     | Turn on SSL? | rejectUnauthorized |
+| ----------- | ------------ | ------------------ |
+| disable     | no           | n/a                |
+| allow       | no           | n/a                |
+| prefer      | no           | n/a                |
+| require     | yes          | false              |
+| verify-ca   | yes          | false              |
+| verify-full | yes          | true               |
 
 You can provide your own custom certificate files if needed.
 

@@ -1103,7 +1103,8 @@ export class DBTestUtil {
       { name: "Alethea" },
       { name: "Elias" }
     ]
-
+    const columnsExpected = ['id', 'name']
+    
     if (this.dbType === 'firebird') {
       for (const name of names) {
         await this.knex('streamtest').insert(name)
@@ -1118,12 +1119,21 @@ export class DBTestUtil {
       5,
       this.defaultSchema,
     )
-    expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
+    expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(columnsExpected)
     if (this.connection.connectionType !== 'tidb') {
       // tiDB doesn't always update statistics, so this might not
       // be correct
       expect(result.totalRows).toBe(6)
     }
+
+    const selectSql = await this.knex('streamtest').select().toQuery()
+
+    const {columns, totalRows} = await this.connection.getColumnsAndTotalRows(selectSql)
+    const columnsActual = columns.map(v => v.columnName.toLowerCase())
+    expect(totalRows).toBe(6)
+    // dataType isn't really a necessary field and some knex inserts where showing undefined, user-defined, and a few others. Truly the column name is the important part 
+    // Also, stick with "toEqual" instead of "toStrictEqual" Save yourself. Save your sooooooul 
+    expect(columnsActual).toEqual(columnsExpected)
     const cursor = result.cursor
     await cursor.start()
     const b1 = await cursor.read()

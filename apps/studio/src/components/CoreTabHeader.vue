@@ -171,7 +171,7 @@ import TabIcon from './tab/TabIcon.vue'
       },
       tableTabTitle() {
         if (!this.tab.type === 'table') return null;
-        let result = this.tab.table.name
+        let result = this.tab.tableName
         return result
       },
       queryTabTitle() {

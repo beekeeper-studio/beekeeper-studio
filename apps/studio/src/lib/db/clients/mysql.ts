@@ -1264,9 +1264,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
     log.debug("results", theCursor);
 
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
+
     return {
-      totalRows: undefined, // rowCount,
-      columns: undefined, // theCursor.result.columns,
+      totalRows,
+      columns,
       cursor: theCursor,
     };
   }

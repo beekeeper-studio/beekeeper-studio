@@ -32,6 +32,18 @@
 
 }
 
+article {
+    a:hover {
+        text-decoration: underline;
+    }
+}
 
 
+.md-typeset table:not([class]) td {
+    padding: 0.75em 1.25em;
+}
 
+
+.md-typeset table:not([class]) th {
+    padding: 0.75em 1.25em;
+}

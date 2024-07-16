@@ -429,11 +429,12 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     const theCursor = new BigQueryCursor(this.client, query, [], chunkSize);
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     log.debug('results', theCursor);
 
     return {
-      totalRows: undefined, // rowCount,
-      columns: undefined, // theCursor.result.columns,
+      totalRows,
+      columns,
       cursor: theCursor
     };
   }

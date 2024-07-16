@@ -703,9 +703,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     return {
-      totalRows: undefined,
-      columns: undefined,
+      totalRows,
+      columns,
       cursor: new SqlServerCursor(this.pool.request(), query, chunkSize),
     }
   }
