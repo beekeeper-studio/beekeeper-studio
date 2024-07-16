@@ -4,14 +4,18 @@ const ColumnCompiler_SQLite3 = require("knex/lib/dialects/sqlite3/schema/sqlite-
 
 class ColumnCompiler_DuckDB extends ColumnCompiler_SQLite3 {
   increments(options = { primaryKey: true }) {
-    const sequence = `seq_${this.tableCompiler.tableNameRaw}_id`;
-    // this.pushAdditional(function () {
-    //   this.pushQuery(`CREATE SEQUENCE '${sequence}' START 1`);
-    // })
+    const sequence = `${this.tableCompiler.tableNameRaw}_seq_id`;
+    const sql =
+      `create sequence ${this.formatter.wrap(sequence)} start 1;` +
+      `alter table ${this.formatter.wrap(this.tableCompiler.tableNameRaw)}` +
+      `alter column ${this.formatter.wrap(this.getColumnName())}` +
+      `set default nextval('${sequence}')`;
+    this.pushAdditional(function () {
+      this.pushQuery(sql);
+    });
     return (
       "integer not null" +
-      (this.tableCompiler._canBeAddPrimaryKey(options) ? " primary key" : "") +
-      ` DEFAULT nextval('${sequence}')`
+      (this.tableCompiler._canBeAddPrimaryKey(options) ? " primary key" : "")
     );
   }
 }

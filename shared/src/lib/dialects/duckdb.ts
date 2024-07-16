@@ -5,12 +5,11 @@ import {
   defaultWrapIdentifier,
   defaultWrapLiteral,
   DialectData,
-  // SpecialTypes,
+  SpecialTypes,
 } from "./models";
 
 const types = [
-  // FIXME: should be able to have "autoincrement" option
-  // ...SpecialTypes,
+  ...SpecialTypes,
   'int', 'int2', 'int8', 'integer', 'tinyint', 'smallint', 'mediumint', 'bigint', 'decimal', 'numeric', 'float', 'double', 'real', 'double precision', 'datetime', 'varying character', 'character', 'native character', 'varchar', 'nchar', 'nvarchar2', 'unsigned big int', 'boolean', 'blob', 'text', 'clob', 'date'
 ]
 

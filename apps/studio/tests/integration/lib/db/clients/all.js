@@ -342,8 +342,6 @@ export function runCommonTests(getUtil, opts = {}) {
 
   describe("SQLGenerator", () => {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
-      // FIXME: implement duckdb test. It should start with creating a sequence and then create the table
-      if (getUtil().dbType === 'duckdb') return
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
     })
   })

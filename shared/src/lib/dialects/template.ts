@@ -119,7 +119,11 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
     bigquery: {
       dataType: 'timestamp',
       defaultValue: 'CURRENT_TIMESTAMP'
-    }
+    },
+    duckdb: {
+      dataType: 'timestamp',
+      defaultValue: 'current_timestamp'
+    },
   }
 })
 

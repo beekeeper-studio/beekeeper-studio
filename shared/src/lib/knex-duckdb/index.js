@@ -3,6 +3,7 @@ const Client_SQLite3 = require("knex/lib/dialects/sqlite3");
 const QueryCompiler = require("./query/duckdb-querycompiler");
 const ColumnCompiler = require("./schema/duckdb-columncompiler");
 const SchemaCompiler = require("./schema/duckdb-compiler");
+const TableCompiler = require("./schema/duckdb-tablecompiler");
 /* eslint-enable */
 
 class Client_DuckDB extends Client_SQLite3 {
@@ -36,6 +37,10 @@ class Client_DuckDB extends Client_SQLite3 {
 
   columnCompiler() {
     return new ColumnCompiler(this, ...arguments);
+  }
+
+  tableCompiler() {
+    return new TableCompiler(this, ...arguments);
   }
 
   acquireRawConnection() {
