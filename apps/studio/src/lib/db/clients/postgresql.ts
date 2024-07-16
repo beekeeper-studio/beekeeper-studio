@@ -1040,7 +1040,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name, schema } = table
     return {
       beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('BEGIN;', executeOptions),

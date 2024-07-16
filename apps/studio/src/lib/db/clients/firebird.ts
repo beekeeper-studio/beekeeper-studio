@@ -1224,7 +1224,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     throw new Error("Method not implemented.");
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name } = table
     let connection
     let transaction
@@ -1251,7 +1251,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  getImportSQL(importedData: TableInsert[]): string[] {
+  async getImportSQL(importedData: TableInsert[]): Promise<string[]> {
     return buildInsertQueries(this.knex, importedData)
   }
 

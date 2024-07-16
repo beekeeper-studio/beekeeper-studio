@@ -1,6 +1,6 @@
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
+import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportScriptFunctions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "./handlerState";
@@ -89,6 +89,9 @@ export interface IConnectionHandlers {
   // For Export *****************************************************************
   'conn/queryStream': ({ query, chunkSize, sId }: { query: string, chunkSize: number, sId: string }) => Promise<StreamResults>,
 
+  // For Import *****************************************************************
+  'conn/getImportScripts': ({ table, sId }: {table: TableOrView, sId: string}) => Promise<ImportScriptFunctions>,
+  'conn/getImportSQL': ({ importedData, sId }: {importedData: any[], sId: string}) => Promise<string | string[]>,
 
   // Duplicate Table ************************************************************
   'conn/duplicateTable': ({ tableName, duplicateTableName, schema, sId }: { tableName: string, duplicateTableName: string, schema?: string, sId: string }) => Promise<void>,
@@ -413,6 +416,16 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/queryStream': async function({ query, chunkSize, sId }: { query: string, chunkSize: number, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.queryStream(query, chunkSize);
+  },
+
+  'conn/getImportScripts': async function({ table, sId }: { table: TableOrView, sId: string }) {
+    checkConnection(sId)
+    return await state(sId).connection.getImportScripts(table)
+  },
+
+  'conn/getImportSQL': async function({ importedData, sId }:  {importedData: any[], sId: string }) {
+    checkConnection(sId)
+    return await state(sId).connection.getImportSQL(importedData)
   },
 
   'conn/duplicateTable': async function({ tableName, duplicateTableName, schema, sId }: { tableName: string, duplicateTableName: string, schema?: string, sId: string }) {

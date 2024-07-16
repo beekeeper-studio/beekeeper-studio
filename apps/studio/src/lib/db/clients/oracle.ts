@@ -100,7 +100,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { schema, name } = table
     return {
       beginCommand: (_executeOptions: any): Promise<any> => null,

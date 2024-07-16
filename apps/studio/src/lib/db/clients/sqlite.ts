@@ -540,7 +540,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     throw new Error("Method not implemented.");
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name } = table
     return {
       beginCommand: (_executeOptions: any): Promise<any> => null,

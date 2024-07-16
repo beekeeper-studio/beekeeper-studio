@@ -266,7 +266,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  getImportScripts(_table: TableOrView): ImportScriptFunctions {
+  async getImportScripts(_table: TableOrView): Promise<ImportScriptFunctions> {
     return {
       step0: (): Promise<any|null> => null,
       beginCommand: (_executeOptions: any): any => null,
@@ -278,7 +278,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
-  getImportSQL(importedData: any[]): string | string[] {
+  async getImportSQL(importedData: any[]): Promise<string | string[]> {
     const queries = []
     
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))

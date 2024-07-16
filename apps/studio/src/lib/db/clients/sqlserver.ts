@@ -833,7 +833,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query);
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name, schema } = table
     const transaction = new sql.Transaction(this.pool)
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''

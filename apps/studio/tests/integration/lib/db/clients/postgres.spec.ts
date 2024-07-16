@@ -511,8 +511,8 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           commitCommand,
           rollbackCommand,
           finalCommand
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
+        } = await util.connection.getImportScripts(table)
+        const importSQL = await util.connection.getImportSQL(formattedData)
     
         expect(step0).toBeUndefined()
         expect(typeof beginCommand).toBe('function')
@@ -543,8 +543,8 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           beginCommand,
           lineReadCommand,
           rollbackCommand,
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
+        } = await util.connection.getImportScripts(table)
+        const importSQL = await util.connection.getImportSQL(formattedData)
         const hatsStart = await util.knex.select().table(tableName)
         await beginCommand(executeOptions)
         await lineReadCommand(importSQL, {multiple: true})
