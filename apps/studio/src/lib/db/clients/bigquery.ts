@@ -2,7 +2,7 @@ import * as bq from '@google-cloud/bigquery';
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete } from "../models";
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
 import Client from 'knex/lib/client';
@@ -15,6 +15,7 @@ import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
+import { IDbConnectionServer } from '../backendTypes';
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
 const logger = () => log

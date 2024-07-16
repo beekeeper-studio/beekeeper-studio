@@ -195,7 +195,6 @@
 </template>
 
 <script lang="ts">
-import os from 'os'
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
 import MysqlForm from './connection/MysqlForm.vue'
 import PostgresForm from './connection/PostgresForm.vue'
@@ -310,7 +309,7 @@ export default Vue.extend({
     })
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
-    this.config.sshUsername = os.userInfo().username
+    this.config.sshUsername = await window.main.fetchUsername()
     this.$nextTick(() => {
       const components = [
         this.$refs.sidebar.$refs.sidebar,

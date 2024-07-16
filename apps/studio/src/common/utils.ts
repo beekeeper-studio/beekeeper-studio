@@ -5,6 +5,25 @@ import _ from 'lodash';
 import { format } from 'sql-formatter';
 import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
+import { IndexColumn } from '@shared/lib/dialects/models';
+
+export function parseIndexColumn(str: string): IndexColumn {
+  str = str.trim()
+
+  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
+  const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
+
+  let name: string = nameAndPrefix
+  let prefix: number | null = null
+
+  const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
+  if (prefixMatch) {
+    prefix = Number(prefixMatch[1])
+    name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
+  }
+
+  return { name, order, prefix }
+}
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)

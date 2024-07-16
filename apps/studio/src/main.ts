@@ -6,23 +6,15 @@ import 'xel/xel'
 import { TabulatorFull as Tabulator } from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
-import App from './App.vue'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
 import $ from 'jquery'
-import tls from 'tls'
 
 import store from './store/index'
-import 'reflect-metadata'
-import {TypeOrmPlugin} from './lib/typeorm_plugin'
-import config from './config'
 import ConfigPlugin from './plugins/ConfigPlugin'
 import { VueElectronPlugin } from './lib/NativeWrapper'
-// TODO (@day): preload
-import { ipcRenderer } from 'electron'
 import AppEventHandler from './lib/events/AppEventHandler'
-import Connection from './common/appdb/Connection'
 import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
@@ -34,10 +26,11 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 import { UtilityConnection } from './lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
+import App from './App.vue' // deal with this last
 
 (async () => {
 
@@ -77,16 +70,13 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
     });
 
 
-    tls.DEFAULT_MIN_VERSION = "TLSv1"
+    window.main.setTlsMinVersion("TLSv1");
     TimeAgo.addLocale(en)
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
     Tabulator.registerModule([HeaderSortTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
-    const appDb = platformInfo.appDbPath
-    const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
-    await connection.connect();
 
     (window as any).$ = $;
     (window as any).jQuery = $;
@@ -129,21 +119,11 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
     })
 
     Vue.prototype.$util = new UtilityConnection();
-    ipcRenderer.on('port', (event, { sId, utilDied }) => {
-      log.log('Received port in renderer with sId: ', sId)
-      if (!Vue.prototype.$util) {
-        Vue.prototype.$util = new UtilityConnection();
-      }
-      Vue.prototype.$util.setPort(event.ports[0], sId);
+    window.main.attachPortListener().then(() => {
       app.$store.dispatch('settings/initializeSettings')
-
-      if (utilDied) {
-        ipcRenderer.emit('utilDied');
-      }
     })
 
     Vue.config.productionTip = false
-    Vue.use(TypeOrmPlugin, {connection})
     Vue.use(VueHotkey)
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
@@ -166,7 +146,7 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
       render: h => h(App),
       store,
     })
-    const handler = new AppEventHandler(ipcRenderer, app)
+    const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     app.$mount('#app')
   } catch (err) {

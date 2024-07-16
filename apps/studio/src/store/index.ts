@@ -1,8 +1,6 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import username from 'username'
-import electron from 'electron';
 
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
@@ -12,7 +10,7 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
-import RawLog from 'electron-log'
+import RawLog from 'electron-log/renderer'
 import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
@@ -333,7 +331,7 @@ const store = new Vuex.Store<State>({
     },
 
     async fetchUsername(context) {
-      const name = await username()
+      const name = await window.main.fetchUsername();
       context.commit('setUsername', name)
     },
 
@@ -348,7 +346,7 @@ const store = new Vuex.Store<State>({
         : 'Beekeeper Studio'
 
       context.commit('updateWindowTitle', title)
-      electron.ipcRenderer.send('setWindowTitle', title)
+      window.main.setWindowTitle(title);
     },
 
     async saveConnection(context, config: IConnection) {

@@ -1,7 +1,6 @@
 import { uuidv4 } from "../uuid";
-import rawLog from 'electron-log';
+import rawLog from 'electron-log/renderer';
 import _ from 'lodash';
-import { ipcRenderer } from "electron";
 
 const log = rawLog.scope('UtilConnection');
 
@@ -89,7 +88,7 @@ export class UtilityConnection {
         log.info('QUEUEING REQUEST FOR NAME, ID: ', handlerName, id);
         this.messageQueue.push({ handlerName, args, id, resolve, reject });
         if (!this.portsRequested) {
-          ipcRenderer.invoke('requestPorts')
+          window.main.requestPorts();
           this.portsRequested = true;
         }
       } else {

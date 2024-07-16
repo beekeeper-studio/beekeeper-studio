@@ -239,8 +239,7 @@ import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
 import { DropzoneDropEvent } from '@/common/dropzone'
-import { readWebFile, getLastExportPath } from '@/common/utils'
-import { readFileSync, writeFileSync } from 'fs'
+import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
@@ -724,7 +723,7 @@ export default Vue.extend({
         try {
           // TODO (azmi): this process can take longer by accident. Consider
           // an ability to cancel reading file.
-          const text = readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
+          const text = window.main.readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
           if (text) {
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
@@ -765,7 +764,7 @@ export default Vue.extend({
       this.$noty.info('Exporting query',  { queue: notyQueue })
 
       try {
-        writeFileSync(filePath, query.text, { encoding: 'utf8' })
+        window.main.writeFileSync(filePath, query.text, { encoding: 'utf8' })
         this.$noty.success('Query exported!', { killer: notyQueue })
       } catch (e) {
         console.error(e)

@@ -139,7 +139,7 @@ import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
 import { mapState } from 'vuex'
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 
 const log = rawLog.scope('TabTableProperties')
 export default {

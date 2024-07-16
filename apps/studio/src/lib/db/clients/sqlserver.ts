@@ -6,7 +6,7 @@ import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
 
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types"
+import { DatabaseElement, IDbConnectionDatabase } from "../types"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -32,6 +32,7 @@ import {
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
+import { IDbConnectionServer } from '../backendTypes';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData

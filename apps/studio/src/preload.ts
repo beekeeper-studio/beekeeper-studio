@@ -1,11 +1,19 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { AppEvent } from './common/AppEvent';
 import path from 'path';
-import fs from 'fs';
+import fs, { readFileSync, WriteFileOptions, writeFileSync } from 'fs';
 import { Options } from 'yargs-parser';
 import yargs from 'yargs-parser';
 import { SettingsPlugin } from './plugins/SettingsPlugin';
 import { homedir } from 'os';
+import tls, { SecureVersion } from 'tls';
+import username from 'username';
+import { execSync } from 'child_process';
+import Vue from 'vue';
+import { UtilityConnection } from './lib/utility/UtilityConnection';
+import rawLog from 'electron-log/renderer';
+
+const log = rawLog.scope('preload.ts');
 
 const electron = require('@electron/remote');
 
@@ -53,11 +61,44 @@ export const api = {
     if (!AppEvent[event]) return;
     ipcRenderer.send(event, name, arg)
   },
+  on: (event: AppEvent, bind: any) => {
+    if (!AppEvent[event]) return;
+    ipcRenderer.on(event, bind);
+  },
+  onUtilDied: (bind: any) => {
+    ipcRenderer.on('utilDied', bind);
+  },
+  onUpdateEvent: (event: 'update-available' | 'manual-update' | 'update-downloaded', bind: any) => {
+    const eType = ['update-available', 'manual-update', 'update-downloaded'];
+    if (!eType.includes(event)) return;
+    ipcRenderer.on(event, bind);
+  },
+  updaterReady: () => {
+    ipcRenderer.send('updater-ready');
+  },
+  triggerDownload: () => {
+    ipcRenderer.send('download-update');
+  },
+  triggerInstall: () => {
+    ipcRenderer.send('install-update');
+  },
+  openExternally: (link: string) => {
+    ipcRenderer.send(AppEvent.openExternally, [link]);
+  },
   resolve: (toResolve: string) => {
     return path.resolve(toResolve);
   },
   join: (...paths: string[]): string => {
     return path.join(...paths);
+  },
+  readFileSync: (path: string, options: { encoding: string; flag?: string | undefined; } | string): string => {
+    return readFileSync(path, options);
+  },
+  writeFileSync: (path: string, text: string, options?: WriteFileOptions) => {
+    return writeFileSync(path, text, options);
+  },
+  basename: (p: string, ext?: string): string => {
+    return path.basename(p, ext);
   },
   yargs: (argv: string | string[], opts?: Options) => {
     return yargs(argv, opts);
@@ -139,6 +180,37 @@ export const api = {
   showItemInFolder(path: string) {
     electron.shell.showItemInFolder(path);
   },
+  setTlsMinVersion(version: SecureVersion) {
+    tls.DEFAULT_MIN_VERSION = version;
+  },
+  async fetchUsername(): Promise<string> {
+    return await username();
+  },
+  setWindowTitle(title: string) {
+    ipcRenderer.send('setWindowTitle', title);
+  },
+  hasSshKeysPlug() {
+    return execSync('snapctl is-connected ssh-keys');
+  },
+  async attachPortListener() {
+    return new Promise<void>((resolve, _reject) => {
+      ipcRenderer.on('port', (event, { sId, utilDied }) => {
+        log.log('Received port in renderer with sId: ', sId)
+        if (!Vue.prototype.$util) {
+          Vue.prototype.$util = new UtilityConnection();
+        }
+        Vue.prototype.$util.setPort(event.ports[0], sId);
+
+        if (utilDied) {
+          ipcRenderer.emit('utilDied');
+        }
+        resolve();
+      })
+    })
+  },
+  requestPorts() {
+    ipcRenderer.invoke('requestPorts');
+  }
 }
 
 contextBridge.exposeInMainWorld('main', api);

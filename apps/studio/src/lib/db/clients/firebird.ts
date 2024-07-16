@@ -6,7 +6,6 @@ import { identify } from "sql-query-identifier";
 import {
   DatabaseElement,
   IDbConnectionDatabase,
-  IDbConnectionServer,
 } from "../types";
 import {
   CancelableQuery,
@@ -52,6 +51,7 @@ import {
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
+import { IDbConnectionServer } from "../backendTypes";
 
 type FirebirdResult = {
   rows: any[];

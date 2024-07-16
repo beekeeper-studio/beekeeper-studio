@@ -5,7 +5,7 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models";
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { ClientError, joinQueries } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
 import { identify } from "sql-query-identifier";
@@ -15,6 +15,7 @@ import _ from 'lodash';
 import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
+import { IDbConnectionServer } from "../backendTypes";
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();

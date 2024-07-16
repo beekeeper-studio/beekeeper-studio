@@ -1,4 +1,3 @@
-import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
@@ -134,21 +133,6 @@ export interface IDbConnectionServerConfig {
   authId?: number
   libsqlOptions?: LibSQLOptions
   runtimeExtensions?: string[]
-}
-
-export interface IDbSshTunnel {
-  connection: SSHConnection,
-  localHost: string,
-  localPort: number,
-  tunnel: Record<string, any>
-}
-
-export interface IDbConnectionServer {
-  db: {
-    [x: string]: IBasicDatabaseClient
-  },
-  sshTunnel?: Nullable<IDbSshTunnel>,
-  config: IDbConnectionServerConfig,
 }
 
 export interface IBasicDatabaseClient {
