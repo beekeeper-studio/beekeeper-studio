@@ -111,6 +111,22 @@ export function runCommonTests(getUtil, opts = {}) {
       })
     })
 
+    describe("Binary tests", () => {
+      test("should apply changes with binary", async () => {
+        // FIXME we don't support binary on firebird query results yet
+        if (getUtil().dbType === 'firebird') return
+        // FIXME oracle knex generates some weird 'returning sql'
+        if (getUtil().dbType === 'oracle') return
+        await getUtil().binaryChangesTests()
+      })
+
+      test("should mutate and access binary data correctly", async () => {
+        // FIXME we don't support binary on firebird query results yet
+        if (getUtil().dbType === 'firebird') return
+        await getUtil().binaryMutatorAccessorTests()
+      })
+    })
+
   })
 
   describe("Drop Table Tests", () => {

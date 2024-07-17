@@ -1520,7 +1520,7 @@ pg.types.setTypeParser(pg.types.builtins.INTERVAL,    'text', (val) => val); // 
 /**
  * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
  */
-pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
+// pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
 
 export function wrapIdentifier(value: string): string {
   if (value === '*') return value;

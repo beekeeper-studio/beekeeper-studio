@@ -15,6 +15,7 @@ import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
+import { Accessors, Mutators } from '@/lib/data/tools'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -47,6 +48,11 @@ function normalizeTables(tables: TableOrView[], dbType: string): TableOrView[] {
     }))
   }
   return tables;
+}
+
+/** Convert hex string to buffer */
+function b(v: string) {
+  return Buffer.from(v, 'hex')
 }
 
 const KnexTypes: any = {
@@ -180,6 +186,9 @@ export class DBTestUtil {
     // See createTables for why this is commented out
     // await this.knex("foo.bar").insert({ id: 1, name: "Dots are evil" });
 
+
+    await this.knex.table('binary_data').insert({ id: b('deadbeef'), bin: b('afafafaf') })
+    await this.knex.table('binary_data').insert({ id: b('bbadbeef'), bin: b('eeeeeeee') })
 
     if (!this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
@@ -1097,6 +1106,52 @@ export class DBTestUtil {
     await cursor.close()
   }
 
+  async binaryChangesTests() {
+    await this.connection.applyChanges({
+      inserts: [{
+        table: 'binary_data',
+        schema: this.defaultSchema,
+        data: [{ id: b('beefcafe'), bin: b('cafed00d') }],
+      }],
+      updates: [{
+        table: 'binary_data',
+        schema: this.defaultSchema,
+        primaryKeys: [{ column: 'id', value: b('deadbeef') }],
+        column: 'bin',
+        value: b('fafafafa')
+      }],
+      deletes: [{
+        table: 'binary_data',
+        schema: this.defaultSchema,
+        primaryKeys: [{ column: 'id', value: b('bbadbeef') }],
+      }],
+    })
+
+    const { result } = await this.connection.selectTop('binary_data', 0, 10, [{ dir: 'ASC', field: 'id' }], [])
+    expect(result).toStrictEqual([
+      { id: b('beefcafe'), bin: b('cafed00d') },
+      { id: b('deadbeef'), bin: b('fafafafa') },
+    ])
+  }
+
+  async binaryMutatorAccessorTests() {
+    const columns = await this.connection.listTableColumns('binary_data', this.defaultSchema)
+    const idInfo = columns.find((c) => c.columnName.toLowerCase() === 'id')
+    const mutate = Mutators.resolveTabulatorMutator(idInfo.dataType, dialectFor(this.connection.connectionType))
+    const access = Accessors.resolveTabulatorAccessor(idInfo.dataType, dialectFor(this.connection.connectionType))
+
+    const { result } = await this.connection.selectTop('binary_data', 0, 10, [], [])
+    const id = result[0].id
+    expect(_.isBuffer(id)).toBeTruthy()
+
+    const mutatedBuffer = mutate(id) as string
+    expect(_.isString(mutatedBuffer)).toBeTruthy()
+    expect(mutatedBuffer.startsWith('0x')).toBeTruthy()
+
+    const accessedBuffer = access(mutatedBuffer) as Buffer
+    expect(accessedBuffer).toEqual(id)
+  }
+
   async generatedColumnsTests() {
     if (this.options.skipGeneratedColumns) return
 
@@ -1198,6 +1253,11 @@ export class DBTestUtil {
     await this.knex.schema.createTable('streamtest', (table) => {
       primary(table)
       table.string("name")
+    })
+
+    await this.knex.schema.createTable("binary_data", (table) => {
+      table.binary("id", 4)
+      table.binary("bin", 4)
     })
 
     if (!this.options.skipGeneratedColumns) {
