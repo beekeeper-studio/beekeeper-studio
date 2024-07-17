@@ -34,12 +34,6 @@ import App from './App.vue' // deal with this last
 
 (async () => {
 
-  const transports = [rawLog.transports.console, rawLog.transports.file]
-  if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
-    transports.forEach(t => t.level = 'silly')
-  } else {
-    transports.forEach(t => t.level = 'warn')
-  }
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 
@@ -118,10 +112,6 @@ import App from './App.vue' // deal with this last
       }
     })
 
-    Vue.prototype.$util = new UtilityConnection();
-    window.main.attachPortListener().then(() => {
-      app.$store.dispatch('settings/initializeSettings')
-    })
 
     Vue.config.productionTip = false
     Vue.use(VueHotkey)
@@ -146,6 +136,20 @@ import App from './App.vue' // deal with this last
       render: h => h(App),
       store,
     })
+
+    Vue.prototype.$util = new UtilityConnection();
+    window.main.attachPortListener();
+    window.onmessage = (event) => {
+      if (event.source === window && event.data.type === 'port') {
+        const [ port ] = event.ports;
+        const { sId } = event.data;
+
+        log.log('GOT PORT: ', port, sId)
+        Vue.prototype.$util.setPort(port, sId);
+        app.$store.dispatch('settings/initializeSettings');
+      }
+    }
+
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     app.$mount('#app')

@@ -34,7 +34,7 @@ export class UtilityConnection {
   public setPort(port: MessagePort, sId: string) {
     this.port = port;
     this.sId = sId;
-    log.info('RECEIVED PORT IN UtilityConnection');
+    log.info('RECEIVED PORT IN UtilityConnection: ', port);
     this.port.onmessage = (msg) => {
       const { data: msgData } = msg;
       log.info('RECEIVED MESSAGE: ', msgData.type, msgData)

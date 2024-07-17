@@ -55,7 +55,8 @@ const SettingStoreModule: Module<State, any> = {
     },
     themeValue(state) {
       const theme = state.settings.theme ? getValue(state.settings.theme) : null;
-      if (!theme) return null
+      // TEMP (@day): this should be null
+      if (!theme) return 'system'
       if (['system', 'dark', 'light'].includes(theme as string)) {
         return theme
       }

@@ -84,7 +84,7 @@ export default Vue.extend({
   async mounted() {
     await this.$store.dispatch('fetchUsername')
 
-    const query = querystring.parse(global.location.search, { parseBooleans: true })
+    const query = querystring.parse(window.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
       this.runningWayland = !!query.runningWayland
@@ -93,7 +93,6 @@ export default Vue.extend({
     this.$nextTick(() => {
       window.main.isReady();
     })
-    console.log("MAIN THEME VALUE: ", this.themeValue)
     if (this.themeValue) {
       document.body.className = `theme-${this.themeValue}`
     }

@@ -9,8 +9,6 @@ import { homedir } from 'os';
 import tls, { SecureVersion } from 'tls';
 import username from 'username';
 import { execSync } from 'child_process';
-import Vue from 'vue';
-import { UtilityConnection } from './lib/utility/UtilityConnection';
 import rawLog from 'electron-log/renderer';
 
 const log = rawLog.scope('preload.ts');
@@ -52,6 +50,7 @@ function fileExistsSync(filename: string): boolean {
     return false;
   }
 }
+
 
 export const api = {
   isReady: () => {
@@ -192,20 +191,14 @@ export const api = {
   hasSshKeysPlug() {
     return execSync('snapctl is-connected ssh-keys');
   },
-  async attachPortListener() {
-    return new Promise<void>((resolve, _reject) => {
-      ipcRenderer.on('port', (event, { sId, utilDied }) => {
-        log.log('Received port in renderer with sId: ', sId)
-        if (!Vue.prototype.$util) {
-          Vue.prototype.$util = new UtilityConnection();
-        }
-        Vue.prototype.$util.setPort(event.ports[0], sId);
+  attachPortListener() {
+    ipcRenderer.on('port', (event, { sId, utilDied }) => {
+      log.log('Received port in renderer with sId: ', sId);
+      window.postMessage({ type: 'port', sId }, '*', event.ports);
 
-        if (utilDied) {
-          ipcRenderer.emit('utilDied');
-        }
-        resolve();
-      })
+      if (utilDied) {
+        ipcRenderer.emit('utilDied');
+      }
     })
   },
   requestPorts() {
