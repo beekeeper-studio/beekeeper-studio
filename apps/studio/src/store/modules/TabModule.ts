@@ -105,7 +105,7 @@ export const TabModule: Module<State, RootState> = {
     },
     async add(context, options: { item: TransportOpenTab, endOfPosition?: boolean }) {
       const { usedConfig } = context.rootState
-      const { item, endOfPosition } = options
+      let { item, endOfPosition } = options
       if (endOfPosition) {
         item.position = (context.getters.sortedTabs.reverse()[0]?.position || 0) + 1
       }
