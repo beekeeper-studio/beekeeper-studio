@@ -17,9 +17,7 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError,
-  joinQueries,
-  buildInsertQueries,
+  ClientError
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -37,6 +35,7 @@ import {
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
+  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -1248,9 +1247,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
     log.debug("results", theCursor);
 
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
+
     return {
-      totalRows: undefined, // rowCount,
-      columns: undefined, // theCursor.result.columns,
+      totalRows,
+      columns,
       cursor: theCursor,
     };
   }
@@ -1315,28 +1316,19 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return defaultValue;
   }
 
-  async importData(sql: string): Promise<any> {
-    const fullQuery = joinQueries([
-      'START TRANSACTION', sql, 'COMMIT'
-    ]);
-    try {
-      return await this.driverExecuteSingle(fullQuery)
-    } catch (ex) {
-      log.error("importData", fullQuery, ex)
-      await this.driverExecuteSingle('ROLLBACK');
-      throw ex;
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name } = table
+    
+    return {
+      beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('START TRANSACTION;', executeOptions),
+      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
+      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
+      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
+      rollbackCommand: (executeOptions: any): Promise<any> => {
+        console.log('in rollback')
+        return this.rawExecuteQuery('ROLLBACK;', executeOptions)
+      }
     }
-  }
-
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const { table } = importedData[0]
-    const queries = []
-    if (isTruncate) {
-      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(table)}`)
-    }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
-    return joinQueries(queries)
   }
 }
 

@@ -30,6 +30,7 @@ import {
   StreamResults,
   TableColumn,
   Routine,
+  ImportScriptFunctions,
 } from "../models";
 import {
   BasicDatabaseClient,
@@ -41,7 +42,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildUpdateQueries, joinQueries } from "./utils";
+import { buildDeleteQueries, buildUpdateQueries } from "./utils";
 import {
   Pool,
   Connection,
@@ -201,7 +202,8 @@ function buildInsertQuery(
     // TODO: try extending the builder instead
     .insert(data[0])
     .toQuery();
-  return query;
+
+  return query
 }
 
 function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
@@ -1222,31 +1224,35 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     throw new Error("Method not implemented.");
   }
 
-  async importData(sql: string): Promise<any> {
-    const connection = await this.pool.getConnection();
-    const transaction = await connection.transaction();
-    try {
-      await transaction.query(sql);
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name } = table
+    let connection
+    let transaction
 
-      await transaction.commit();
-    } catch (ex) {
-      log.error("importData", sql, ex);
-      await transaction.rollback();
-      throw ex;
-    } finally {
-      await connection.release()
+    return {
+      step0: async(): Promise<any|null> => {
+        connection = await this.pool.getConnection()
+        transaction = await connection.transaction()
+      },
+      beginCommand: (_executeOptions: any): any => null,
+      truncateCommand: (): Promise<any> => transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`),
+      lineReadCommand: (sqlString: string[]): Promise<any> => {
+        // firebird doesn't do multiple commands at once so you have to split it up
+        try {
+          const theStrings = sqlString.map(sql => transaction.query(`${sql};`))
+          return Promise.all(theStrings)
+        } catch(err) {
+          throw new Error(err)
+        }
+      },
+      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
+      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback(),
+      finalCommand: (_executeOptions: any): Promise<any> => connection.release()
     }
   }
 
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const queries = [];
-    if (isTruncate) {
-      return null;
-      // TODO: there is no internal method to truncate re: @azmy
-    }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'));
-    return joinQueries(queries);
+  getImportSQL(importedData: TableInsert[]): string[] {
+    return buildInsertQueries(this.knex, importedData)
   }
 
 }

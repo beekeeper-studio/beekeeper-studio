@@ -357,7 +357,13 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
-        await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
+        // HACK (@day): this is just to fix some issues with the typeorm models moving to the utility process. 
+        // this should be removed once the appdb handlers have been merged.
+        const tConfig = JSON.parse(JSON.stringify(config));
+        tConfig.port = config.port;
+        tConfig.connectionType = config.connectionType;
+
+        await Vue.prototype.$util.send('conn/create', { config: tConfig, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();

@@ -5,11 +5,34 @@ import {sassPlugin} from 'esbuild-sass-plugin'
 import { copy } from 'esbuild-plugin-copy';
 import postcss from 'postcss'
 import copyAssets from 'postcss-copy-assets';
-import { spawn } from 'child_process'
+import { spawn, exec } from 'child_process'
 import path from 'path';
 const isWatching = process.argv[2] === 'watch';
 
 
+function getElectronBinary() {
+  return new Promise((resolve, reject) => {
+    exec('yarn bin electron --json', (err, stdout) => {
+      if (err) {
+        reject(err)
+      }
+
+      try {
+        resolve(JSON.parse(stdout).data)
+      } catch (error) {
+        reject(error)
+      }
+    })
+  })
+}
+
+let electronBin
+try {
+  electronBin = await getElectronBinary()
+} catch (err) {
+  console.error(err)
+  throw new Error(err)
+}
 
 const externals = ['better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
@@ -53,7 +76,7 @@ const electronMainPlugin = {
         process.kill(electron.pid, 'SIGINT')
       }
       // start electron again
-      electron = spawn(path.join('../../node_modules/electron/dist/electron'), ['.'], { stdio: 'inherit' })
+      electron = spawn(path.join(electronBin), ['.'], { stdio: 'inherit' })
 
     })
   }
@@ -86,7 +109,7 @@ const electronUtilityPlugin = {
         process.kill(electron.pid, 'SIGINT')
       }
       // start electron again
-      electron = spawn(path.join('../../node_modules/electron/dist/electron'), ['.'], { stdio: 'inherit' })
+      electron = spawn(path.join(electronBin), ['.'], { stdio: 'inherit' })
 
     })
   }
@@ -103,7 +126,7 @@ const electronPreloadPlugin = {
         process.kill(electron.pid, 'SIGINT');
       }
       //start electron again
-      electron = spawn(path.join('../../node_modules/electron/dist/electron'), ['.'], { stdio: 'inherit' });
+      electron = spawn(path.join(electronBin), ['.'], { stdio: 'inherit' })
     });
   }
 }

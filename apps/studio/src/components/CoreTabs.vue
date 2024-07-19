@@ -358,6 +358,7 @@ export default Vue.extend({
     },
     keymap() {
       const result = {
+        'ctrl+shift+T': this.reopenLastClosedTab,
         'ctrl+tab': this.nextTab,
         'ctrl+shift+tab': this.previousTab,
         'alt+1': this.handleAltNumberKeyPress,
@@ -520,8 +521,11 @@ export default Vue.extend({
     },
     async addTab(item: TransportOpenTab) {
 
-      await this.$store.dispatch('tabs/add', item)
+      await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
       await this.setActiveTab(item)
+    },
+    async reopenLastClosedTab() {
+      await this.$store.dispatch("tabs/reopenLastClosedTab")
     },
     nextTab() {
       if (this.activeTab == this.lastTab) {

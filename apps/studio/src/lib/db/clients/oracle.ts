@@ -11,6 +11,7 @@ import {
   ExtendedTableColumn,
   FieldDescriptor,
   FilterOptions,
+  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -31,8 +32,7 @@ import {
   buildUpdateQueries,
   withClosable,
   buildDeleteQueries,
-  applyChangesSql,
-  joinQueries
+  applyChangesSql
 } from './utils';
 import rawLog from 'electron-log'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
@@ -101,19 +101,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  async importData(insertSQL) {
-    await this.driverExecuteMultiple(insertSQL.split(';'))
-  }
-
-  getImportSQL (importedData, isTruncate) {
-    const { schema, table } = importedData[0]
-    const queries = []
-    if (isTruncate) {
-      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)};`)
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { schema, name } = table
+    return {
+      beginCommand: (_executeOptions: any): Promise<any> => null,
+      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions),
+      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
+      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
+      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
     }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
-    return joinQueries(queries)
   }
 
   async createDatabaseSQL() {
@@ -712,9 +708,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     return {
-      totalRows: undefined,
-      columns: undefined,
+      totalRows,
+      columns,
       cursor: new OracleCursor(this.pool, query, [], chunkSize)
     }
   }

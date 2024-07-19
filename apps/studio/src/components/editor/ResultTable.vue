@@ -170,7 +170,7 @@
         });
       },
       copySelection() {
-        if (!document.activeElement.classList.contains('tabulator-tableholder')) return
+        if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
         copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
       },
       dataToJson(rawData, firstObjectOnly) {
