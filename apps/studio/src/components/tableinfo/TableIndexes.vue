@@ -359,7 +359,6 @@ export default Vue.extend({
   },
   mounted() {
     // this.initializeTabulator()
-    ipcRenderer.invoke('hi')
     this.tabState.dirty = false
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData,

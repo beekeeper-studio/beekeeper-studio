@@ -42,11 +42,10 @@ export function getFilters(obj: TransportOpenTab): Nullable<TableFilter[]> {
     const result: TableFilter | TableFilter[] = JSON.parse(obj.filters);
     if (_.isArray(result)) return result;
     if (_.isObject(result)) return [result];
-    return null;
   } catch (ex) {
     console.warn("error inflating filter", obj.filters);
-    return null;
   }
+  return null;
 }
 
 export function isBeta(obj: TransportOpenTab): boolean {

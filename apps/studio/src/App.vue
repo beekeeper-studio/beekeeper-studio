@@ -77,7 +77,6 @@ export default Vue.extend({
       log.info('database changed', this.database)
     },
     themeValue() {
-      console.log("THEME VALUE: ", this.themeValue)
       document.body.className = `theme-${this.themeValue}`
     }
   },

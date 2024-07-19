@@ -57,11 +57,11 @@ export const api = {
     ipcRenderer.send('ready');
   },
   send: (event: AppEvent, name: string, arg?: any) => {
-    if (!AppEvent[event]) return;
+    if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.send(event, name, arg)
   },
   on: (event: AppEvent, bind: any) => {
-    if (!AppEvent[event]) return;
+    if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.on(event, bind);
   },
   onUtilDied: (bind: any) => {
