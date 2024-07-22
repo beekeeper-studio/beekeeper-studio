@@ -187,8 +187,17 @@ export class DBTestUtil {
     // await this.knex("foo.bar").insert({ id: 1, name: "Dots are evil" });
 
 
-    await this.knex.table('binary_data').insert({ id: b('deadbeef'), bin: b('afafafaf') })
-    await this.knex.table('binary_data').insert({ id: b('bbadbeef'), bin: b('eeeeeeee') })
+    if (this.dbType === 'libsql') {
+      // LibSQL knex bugs out. we need to do this manually. https://github.com/libsql/knex-libsql/issues/4
+      await this.knex.schema.raw("INSERT INTO binary_data (id, bin) VALUES (x'deadbeef', x'afafafaf')")
+      await this.knex.schema.raw("INSERT INTO binary_data (id, bin) VALUES (x'bbadbeef', x'eeeeeeee')")
+    } else {
+      await this.knex.table('binary_data').insert({ id: b('deadbeef'), bin: b('afafafaf') })
+      await this.knex.table('binary_data').insert({ id: b('bbadbeef'), bin: b('eeeeeeee') })
+    }
+
+      await this.knex.table('binary_data').insert({ id: b('deadbeef'), bin: b('afafafaf') })
+      await this.knex.table('binary_data').insert({ id: b('bbadbeef'), bin: b('eeeeeeee') })
 
     if (!this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
