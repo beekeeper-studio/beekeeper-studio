@@ -49,7 +49,7 @@ export const Mutators = {
    */
   genericMutator(value: any, preserveComplex = false): JsonFriendly {
     const mutate = Mutators.genericMutator
-    if (_.isBuffer(value)) return `0x${value.toString('hex')}`
+    if (_.isBuffer(value)) return value.toString('hex')
     if (_.isDate(value)) return value.toISOString()
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
@@ -120,11 +120,6 @@ export const Accessors = {
   },
 
   binaryAccessor(value: any, _dialect?: Dialect) {
-    // Remove 0x prefix
-    if (value.startsWith('0x')) {
-      return Buffer.from(value.substring(2), 'hex')
-    }
-    // Do nothing cause we don't know how to convert this to binary
-    return value
+    return Buffer.from(value, 'hex')
   }
 }

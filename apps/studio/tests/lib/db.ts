@@ -1146,7 +1146,7 @@ export class DBTestUtil {
 
     const mutatedBuffer = mutate(id) as string
     expect(_.isString(mutatedBuffer)).toBeTruthy()
-    expect(mutatedBuffer.startsWith('0x')).toBeTruthy()
+    expect(mutatedBuffer).toMatch(/^[0-9a-fA-F]+$/)
 
     const accessedBuffer = access(mutatedBuffer) as Buffer
     expect(accessedBuffer).toEqual(id)
