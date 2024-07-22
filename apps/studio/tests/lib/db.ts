@@ -196,9 +196,6 @@ export class DBTestUtil {
       await this.knex.table('binary_data').insert({ id: b('bbadbeef'), bin: b('eeeeeeee') })
     }
 
-      await this.knex.table('binary_data').insert({ id: b('deadbeef'), bin: b('afafafaf') })
-      await this.knex.table('binary_data').insert({ id: b('bbadbeef'), bin: b('eeeeeeee') })
-
     if (!this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
