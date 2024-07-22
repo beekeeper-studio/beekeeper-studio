@@ -6,6 +6,12 @@ function dec28bits(num: any): string {
   return ("00000000" + num.toString(2)).slice(-8);
 }
 
+// https://stackoverflow.com/a/40031979/10012118
+function buf2hex(buffer: ArrayBuffer) {
+  return [...new Uint8Array(buffer)]
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 // Tabulator Mutator
 export const Mutators = {
@@ -50,6 +56,7 @@ export const Mutators = {
   genericMutator(value: any, preserveComplex = false): JsonFriendly {
     const mutate = Mutators.genericMutator
     if (_.isBuffer(value)) return value.toString('hex')
+    if (_.isArrayBuffer(value)) return buf2hex(value)
     if (_.isDate(value)) return value.toISOString()
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)

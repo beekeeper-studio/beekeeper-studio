@@ -1128,7 +1128,12 @@ export class DBTestUtil {
     })
 
     const { result } = await this.connection.selectTop('binary_data', 0, 10, [{ dir: 'ASC', field: 'id' }], [])
-    expect(result).toStrictEqual([
+    // LibSQL returns binary data as ArrayBuffers instead of Buffers
+    const finalResult = result.map((r) => ({
+      id: _.isArrayBuffer(r.id) ? Buffer.from(r.id) : r.id,
+      bin: _.isArrayBuffer(r.bin) ? Buffer.from(r.bin) : r.bin,
+    }));
+    expect(finalResult).toEqual([
       { id: b('beefcafe'), bin: b('cafed00d') },
       { id: b('deadbeef'), bin: b('fafafafa') },
     ])
@@ -1142,14 +1147,14 @@ export class DBTestUtil {
 
     const { result } = await this.connection.selectTop('binary_data', 0, 10, [], [])
     const id = result[0].id
-    expect(_.isBuffer(id)).toBeTruthy()
+    expect(_.isBuffer(id) || _.isArrayBuffer(id)).toBeTruthy()
 
     const mutatedBuffer = mutate(id) as string
     expect(_.isString(mutatedBuffer)).toBeTruthy()
     expect(mutatedBuffer).toMatch(/^[0-9a-fA-F]+$/)
 
     const accessedBuffer = access(mutatedBuffer) as Buffer
-    expect(accessedBuffer).toEqual(id)
+    expect(accessedBuffer).toEqual(this.dialect === 'sqlite' ? Buffer.from(id) : id)
   }
 
   async generatedColumnsTests() {

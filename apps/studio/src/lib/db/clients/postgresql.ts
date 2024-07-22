@@ -6,6 +6,7 @@ import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _  from 'lodash'
 import knexlib from 'knex'
+import { makeEscape } from 'knex/lib/util/string'
 import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
@@ -24,13 +25,74 @@ import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderB
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 
 
-const base64 = require('base64-url'); // eslint-disable-line
+// const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
 
 const log = logRaw.scope('postgresql')
 const logger = () => log
 
 const knex = knexlib({ client: 'pg'})
+Object.assign(knex.client, {
+  _escapeBinding: makeEscape({
+    escapeArray(val, esc) {
+      return esc(arrayString(val, esc));
+    },
+    escapeString(str) {
+      let hasBackslash = false;
+      let escaped = "'";
+      for (let i = 0; i < str.length; i++) {
+        const c = str[i];
+        if (c === "'") {
+          escaped += c + c;
+        } else if (c === '\\') {
+          escaped += c + c;
+          hasBackslash = true;
+        } else {
+          escaped += c;
+        }
+      }
+      escaped += "'";
+      if (hasBackslash === true) {
+        escaped = 'E' + escaped;
+      }
+      return escaped;
+    },
+    escapeObject(val, prepareValue, _timezone, seen = []) {
+      if (val && typeof val.toPostgres === 'function') {
+        seen = seen || [];
+        if (seen.indexOf(val) !== -1) {
+          throw new Error(
+            `circular reference detected while preparing "${val}" for query`
+          );
+        }
+        seen.push(val);
+        return prepareValue(val.toPostgres(prepareValue), seen);
+      }
+      return JSON.stringify(val);
+    },
+    escapeBuffer(val) {
+      return `'\\x${val.toString('hex')}'`
+    },
+  }),
+});
+
+function arrayString(arr, esc) {
+  let result = '{';
+  for (let i = 0; i < arr.length; i++) {
+    if (i > 0) result += ',';
+    const val = arr[i];
+    if (val === null || typeof val === 'undefined') {
+      result += 'NULL';
+    } else if (Array.isArray(val)) {
+      result += arrayString(val, esc);
+    } else if (typeof val === 'number') {
+      result += val;
+    } else {
+      result += JSON.stringify(typeof val === 'string' ? val : esc(val));
+    }
+  }
+  return result + '}';
+}
 
 const pgErrors = {
   CANCELED: '57014',
@@ -1475,11 +1537,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
   // if a type is BYTEA, decodes BASE64 URL encoded to hex
-  private normalizeValue(value: string, column?: ExtendedTableColumn) {
+  private normalizeValue(value: string | Buffer, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
       return JSON.parse(value)
     } else if (column?.dataType === 'bytea' && value) {
-      return '\\x' + base64.decode(value, 'hex')
+      return '\\x' + value.toString('hex')
     }
     return value
   }
