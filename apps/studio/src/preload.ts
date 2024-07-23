@@ -10,6 +10,7 @@ import tls, { SecureVersion } from 'tls';
 import username from 'username';
 import { execSync } from 'child_process';
 import rawLog from 'electron-log/renderer';
+import pluralize from 'pluralize';
 
 const log = rawLog.scope('preload.ts');
 
@@ -203,6 +204,9 @@ export const api = {
   },
   requestPorts() {
     ipcRenderer.invoke('requestPorts');
+  },
+  pluralize(word: string, count?: number, inclusive?: boolean) {
+    return pluralize(word, count, inclusive);
   }
 }
 

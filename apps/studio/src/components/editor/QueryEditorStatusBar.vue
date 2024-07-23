@@ -26,7 +26,7 @@
                 :key="index"
                 :value="index"
               >
-                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row',
+                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ window.main.pluralize('row',
                                                                                                  resultOption.rows.length, false) }}</option>
             </select>
           </div>
@@ -151,10 +151,8 @@
   </statusbar>
 </template>
 <script>
-// import Pluralize from 'pluralize'
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
-import pluralize from 'pluralize'
 import { mapState } from 'vuex';
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
@@ -275,7 +273,7 @@ export default {
       }
     },
     pluralize(word, amount, flag) {
-      return pluralize(word, amount, flag)
+      return window.main.pluralize(word, amount, flag)
     },
     // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
     shortNum(num, fixed) {

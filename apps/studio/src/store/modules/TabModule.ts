@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import rawLog from 'electron-log'
-import { TransportOpenTab } from '@/common/transport/TransportOpenTab';
+import { TransportOpenTab, duplicate, matches } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
@@ -52,7 +52,7 @@ export const TabModule: Module<State, RootState> = {
       state.tabs.push(nu)
 
       // Prevent multiple tabs per table
-      const existingTabInClosedTabs = state.lastClosedTabs.find((tab) => tab.matches(nu))
+      const existingTabInClosedTabs = state.lastClosedTabs.find((tab) => matches(tab, nu))
       if (existingTabInClosedTabs) {
         state.lastClosedTabs = _.without(state.lastClosedTabs, existingTabInClosedTabs)
       }
@@ -60,7 +60,7 @@ export const TabModule: Module<State, RootState> = {
     remove(state, tabs: TransportOpenTab | TransportOpenTab[]) {
       if (!_.isArray(tabs)) tabs = [tabs]
       state.tabs = _.without(state.tabs, ...tabs)
-      state.lastClosedTabs.push(...tabs.map((tab) => tab.duplicate()))
+      state.lastClosedTabs.push(...tabs.map((tab) => duplicate(tab)))
     },
     setActive(state, tab?: TransportOpenTab) {
       state.active = tab

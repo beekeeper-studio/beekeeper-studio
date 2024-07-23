@@ -312,7 +312,6 @@
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
-  import pluralize from 'pluralize'
 
   import platformInfo from '@/common/platform_info'
   import { splitQueries } from '../lib/db/sql_tools'
@@ -451,7 +450,7 @@
         return result.length ? result : null
       },
       runningText() {
-        return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
+        return `Running ${this.runningType} (${window.main.pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false

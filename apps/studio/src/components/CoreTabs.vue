@@ -245,7 +245,6 @@ import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import pluralize from 'pluralize'
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 
 export default Vue.extend({
@@ -884,7 +883,7 @@ export default Vue.extend({
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
           'Close all tabs?',
-          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)}. Are you sure?`
+          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`
         )
         if (!confirmed) return
       }
@@ -896,7 +895,7 @@ export default Vue.extend({
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
           'Close other tabs?',
-          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)}. Are you sure?`
+          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`
         )
         if (!confirmed) return
       }
@@ -916,7 +915,7 @@ export default Vue.extend({
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
           'Close tabs to the right?',
-          `You have ${unsavedTabs.length} unsaved ${pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`
+          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`
         )
         if (!confirmed) return
       }

@@ -275,7 +275,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import pluralize from 'pluralize'
 import { ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
@@ -436,7 +435,7 @@ export default Vue.extend({
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
     },
     hiddenColumnMessage() {
-      return `${pluralize("column", this.hiddenColumnCount, true)} hidden`
+      return `${window.main.pluralize('column', this.hiddenColumnCount, true)} hidden`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
@@ -1348,7 +1347,7 @@ export default Vue.extend({
           }
 
           if (replaceData) {
-            const niceChanges = pluralize('change', this.pendingChangesCount, true)
+            const niceChanges = window.main.pluralize('change', this.pendingChangesCount, true);
             this.$noty.success(`${niceChanges} successfully applied`)
             this.tabulator.replaceData()
           }
