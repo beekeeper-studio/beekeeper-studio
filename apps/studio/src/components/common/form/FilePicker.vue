@@ -79,6 +79,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    openFileOrFolder: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     hasOtherActions() {
@@ -117,6 +121,12 @@ export default {
 
       if (this.multiple) {
         dialogConfig.properties.push('multiSelections')
+      }
+
+      if (this.openFileOrFolder) {
+        // On Windows and Linux an open dialog can not be both a file selector
+        // and a directory selector.
+        dialogConfig.properties.push('openDirectory')
       }
 
       let files
