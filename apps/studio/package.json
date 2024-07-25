@@ -176,6 +176,6 @@
     "nan": "2.17.0",
     "cpu-features": ".yarn/packages/empty-package",
     "sqlite3": "5.1.6",
-    "duckdb": "1.0.1-dev15.0"
+    "duckdb": "beekeeper-studio/duckdb-node#8a3b0c595e3d938a6f8442ed69349135e57c9d4a"
   }
 }

@@ -7240,10 +7240,9 @@ duckdb-async@^1.0.0:
   dependencies:
     duckdb "1.0.0"
 
-duckdb@1.0.0, duckdb@1.0.1-dev15.0:
-  version "1.0.1-dev15.0"
-  resolved "https://registry.yarnpkg.com/duckdb/-/duckdb-1.0.1-dev15.0.tgz#3da57cf9428750a9013e725f26027a92465795b8"
-  integrity sha512-L9D1Gn4vrA4vE6JfmMC7ZqAqIGKFvDowsGulQHvRp4xPzTg9C2/aA7l+8d/eORfPhuJrLGrmoutx7xCalAPQmQ==
+duckdb@1.0.0, duckdb@beekeeper-studio/duckdb-node#8a3b0c595e3d938a6f8442ed69349135e57c9d4a:
+  version "1.0.0-bks12"
+  resolved "https://codeload.github.com/beekeeper-studio/duckdb-node/tar.gz/8a3b0c595e3d938a6f8442ed69349135e57c9d4a"
   dependencies:
     "@mapbox/node-pre-gyp" "^1.0.0"
     node-addon-api "^7.0.0"
