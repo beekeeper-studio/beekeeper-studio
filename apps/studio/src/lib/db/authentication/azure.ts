@@ -34,7 +34,7 @@ type CloudTokenResponse = {
 
 type Response = AxiosResponse<CloudTokenResponse, any>;
 
-export interface CloudToken { 
+export interface CloudToken {
   id: string,
   created_at: string,
   updated_at: string,
@@ -202,6 +202,7 @@ export class AzureAuthService {
       const tokenResponse = await this.pca.acquireTokenByCode(tokenRequest)
 
       localCache.homeId = tokenResponse.account.homeAccountId;
+      localCache.name = tokenResponse.account.name;
       localCache.save();
       return {
         type: 'azure-active-directory-access-token',
@@ -214,6 +215,13 @@ export class AzureAuthService {
 
   public cancel(): void {
     this.cancelFulfillment = true;
+  }
+
+  public async signOut() {
+    const tokenCache = this.pca.getTokenCache();
+    const account = await tokenCache.getAccountByHomeId(localCache.homeId);
+    await this.pca.signOut({ account })
+    await localCache.remove()
   }
 
   private async tryRefresh(): Promise<AuthConfig | null> {

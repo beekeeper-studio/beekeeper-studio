@@ -386,7 +386,8 @@ const store = new Vuex.Store<State>({
       const { config, abortSignal } = payload
       if (context.state.username) {
         // create token cache for azure auth
-        if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+        const foundTokenCache = await TokenCache.findOne(config.authId)
+        if (config.azureAuthOptions.azureAuthEnabled && (!config.authId || !foundTokenCache)) {
           let cache = new TokenCache();
           cache = await cache.save();
           config.authId = cache.id;

@@ -1,5 +1,5 @@
 <template>
-  <div class="with-connection-type">
+  <div class="with-connection-type sql-server-form">
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
@@ -81,6 +81,20 @@
             v-model="config.defaultDatabase"
           >
         </div>
+        <div class="advanced-connection-settings signed-in-as" v-if="accessTokenCache">
+          <div class="advanced-body">
+            <span class="info">Signed in{{ accessTokenCache.name ? ` as ${accessTokenCache.name}` : '' }}</span>
+            <button
+              class="btn btn-flat btn-icon"
+              type="button"
+              @click.prevent="signOut"
+              :disabled="signingOut"
+            >
+              <i class="material-icons">logout</i>
+              Sign out
+            </button>
+          </div>
+        </div>
         <div class="form-group" v-show="showUser">
           <label for="user">User</label>
           <input
@@ -158,11 +172,14 @@
       return {
         azureAuthEnabled: false,
         authType: 'default',
-        authTypes: AzureAuthTypes
+        authTypes: AzureAuthTypes,
+        accessTokenCache: null,
+        signingOut: false,
+        errorSigningOut: null,
       }
     },
     watch: {
-      authType() {
+      async authType() {
         if (this.authType === 'default') {
           // this is good
           this.azureAuthEnabled = false
@@ -176,6 +193,13 @@
             this.azureAuthEnabled = true
             this.config.azureAuthOptions.azureAuthType = this.authType
           }
+        }
+
+        if (this.authType === AzureAuthType.AccessToken) {
+          const cache = await TokenCache.findOne(this.config.azureAuthOptions.authId);
+          this.accessTokenCache = cache
+        } else {
+          this.accessTokenCache = null
         }
       },
       azureAuthEnabled() {
@@ -201,6 +225,20 @@
       },
     },
     methods: {
+      async signOut() {
+        try {
+          this.signingOut = true
+          const service = new AzureAuthService()
+          await service.init(this.accessTokenCache.id)
+          await service.signOut()
+          this.config.authId = null
+          this.accessTokenCache = null
+        } catch (e) {
+          this.errorSigningOut = e
+        } finally {
+          this.signingOut = false
+        }
+      },
     }
   }
 </script>
