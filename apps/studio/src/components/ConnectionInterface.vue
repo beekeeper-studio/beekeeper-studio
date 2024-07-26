@@ -425,10 +425,14 @@ export default Vue.extend({
         return
       }
 
+      this._beforeConnect()
+      this.abortController = new AbortController()
+
       try {
         this.testing = true
         this.connectionError = null
-        await this.$store.dispatch('test', this.config)
+        const abortSignal = this.abortController.signal
+        await this.$store.dispatch('testWithAbort', { config: this.config, abortSignal })
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {
@@ -436,6 +440,7 @@ export default Vue.extend({
         this.$noty.error("Error establishing a connection")
       } finally {
         this.testing = false
+        this._afterConnect()
       }
     },
     async save() {
@@ -468,7 +473,7 @@ export default Vue.extend({
         this.errors = null
       }
     },
-    // Before running connect method
+    // Before running connect/test method
     _beforeConnect() {
       if (
         this.config.connectionType === 'sqlserver' &&
@@ -478,7 +483,7 @@ export default Vue.extend({
         this.loadingSSOModalOpened = true
       }
     },
-    // After running connect method, success or fail
+    // After running connect/test method, success or fail
     _afterConnect() {
       this.loadingSSOModalOpened = false
     },

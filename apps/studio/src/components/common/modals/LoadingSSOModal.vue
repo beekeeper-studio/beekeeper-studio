@@ -1,10 +1,10 @@
 <template>
   <portal to="modals">
-    <modal class="vue-dialog beekeeper-modal wait-sso-modal" :name="modalName" :clickToClose="false">
+    <modal class="vue-dialog beekeeper-modal wait-sso-modal" :name="modalName" :click-to-close="false">
       <div v-kbd-trap="true">
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Signing you in...
+            Waiting for authentication...
             <loading-spinner />
           </div>
         </div>
