@@ -334,12 +334,16 @@ const store = new Vuex.Store<State>({
   },
   actions: {
     async test(context, config: SavedConnection) {
+      await context.dispatch('testWithAbort', { config })
+    },
+    async testWithAbort(context, payload: { config: SavedConnection, abortSignal?: AbortSignal }) {
+      const { config, abortSignal } = payload
       // TODO (matthew): fix this mess.
       if (context.state.username) {
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
 
-        await server?.createConnection(config.defaultDatabase || undefined).connect()
+        await server?.createConnection(config.defaultDatabase || undefined).connect(abortSignal)
         server.disconnect()
       } else {
         throw "No username provided"
