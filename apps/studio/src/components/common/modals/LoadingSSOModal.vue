@@ -4,7 +4,7 @@
       <div v-kbd-trap="true">
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Waiting for authentication...
+            Waiting for authentication
             <loading-spinner />
           </div>
         </div>
