@@ -160,6 +160,7 @@
   import { TokenCache } from '@/common/appdb/models/token_cache';
   import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
+  import _ from 'lodash'
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
@@ -195,8 +196,9 @@
           }
         }
 
-        if (this.authType === AzureAuthType.AccessToken) {
-          const cache = await TokenCache.findOne(this.config.azureAuthOptions.authId);
+        const authId = this.config.azureAuthOptions?.authId || this.config?.authId
+        if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
+          const cache = await TokenCache.findOne(authId);
           this.accessTokenCache = cache
         } else {
           this.accessTokenCache = null
@@ -235,6 +237,7 @@
           this.accessTokenCache = null
         } catch (e) {
           this.errorSigningOut = e
+          this.$emit('error', e)
         } finally {
           this.signingOut = false
         }
