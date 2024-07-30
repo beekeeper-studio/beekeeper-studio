@@ -22,6 +22,8 @@ import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import { Signer } from "@aws-sdk/rds-signer";
+import { fromIni } from "@aws-sdk/credential-providers";
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -124,7 +126,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     //test connection
     const test = await this.conn.pool.connect()
     test.release();
-    
+
     this.conn.pool.on('acquire', (_client) => {
       log.debug('Pool event: connection acquired')
     })
@@ -1223,10 +1225,34 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
+
+    let resolvedPw = null;
+    const redshiftOptions = server.config.redshiftOptions;
+    console.log("redshiftOptions", redshiftOptions);
+    if (
+      server.config.client === "postgresql" &&
+      redshiftOptions?.iamAuthenticationEnabled
+    ) {
+      const nodeProviderChainCredentials = fromIni({
+        profile: redshiftOptions.awsProfile ?? "default",
+      });
+      const signer = new Signer({
+        credentials: nodeProviderChainCredentials,
+        region: redshiftOptions?.awsRegion,
+        hostname: server.config.host,
+        port: server.config.port,
+        username: server.config.user,
+      });
+
+      console.log(server.config.host, server.config.port, server.config.user)
+
+      resolvedPw = await signer.getAuthToken();
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: server.config.password || undefined,
+      password: resolvedPw || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
