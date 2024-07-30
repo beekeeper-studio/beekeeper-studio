@@ -61,6 +61,11 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().listTableTests()
     })
 
+    test("list indexes should work", async () => {
+      if (getUtil().data.disabledFeatures?.createIndex) return
+      await getUtil().listIndexTests()
+    })
+
     test("column tests", async() => {
       await getUtil().tableColumnsTests()
     })
