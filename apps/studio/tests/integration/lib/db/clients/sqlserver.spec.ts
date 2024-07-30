@@ -8,8 +8,12 @@ const TEST_VERSIONS = [
   { version: '2017-latest', readonly: true },
   { version: '2019-latest', readonly: false },
   { version: '2019-latest', readonly: true },
-  { version: '2022-latest', readonly: false },
-  { version: '2022-latest', readonly: true },
+  // FIXME 2022-latest has a breaking change. We'll use the previous build
+  // for now.
+  // { version: '2022-latest', readonly: false },
+  // { version: '2022-latest', readonly: true },
+  { version: '2022-CU13-ubuntu-22.04', readonly: false },
+  { version: '2022-CU13-ubuntu-22.04', readonly: true },
 ]
 
 function testWith(dockerTag: string, readonly: boolean) {
