@@ -852,10 +852,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   /* helper functions and settings below! */
 
-  async connect(): Promise<void> {
+  async connect(abortSignal?: AbortSignal): Promise<void> {
     await super.connect();
 
-    this.dbConfig = await this.configDatabase(this.server, this.database)
+    this.dbConfig = await this.configDatabase(this.server, this.database, abortSignal)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
 
     this.pool.on('error', (err) => {
@@ -976,7 +976,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<any> { // changed to any for now, might need to make some changes
+  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, abortSignal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
     const config: any = {
       server: server.config.host,
       database: database.database,
@@ -990,6 +990,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     if (server.config.azureAuthOptions?.azureAuthEnabled) {
       this.authService = new AzureAuthService();
       await this.authService.init(server.config.authId)
+      abortSignal?.addEventListener('abort', () => this.authService.cancel());
 
       const options: AuthOptions = {
         password: server.config.password,

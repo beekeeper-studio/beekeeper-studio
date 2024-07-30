@@ -34,7 +34,7 @@ type CloudTokenResponse = {
 
 type Response = AxiosResponse<CloudTokenResponse, any>;
 
-export interface CloudToken { 
+export interface CloudToken {
   id: string,
   created_at: string,
   updated_at: string,
@@ -81,7 +81,6 @@ const cachePlugin = {
 
 export class AzureAuthService {
   private pca: msal.PublicClientApplication;
-  private start: number = null;
 
   private cancelFulfillment = false;
 
@@ -183,7 +182,6 @@ export class AzureAuthService {
     log.debug('Getting auth code')
     window.location.href = authUrl;
 
-    this.start = Date.now();
     const result = await this.checkStatus(beekeeperCloudToken.url);
     if (!result || result?.data?.cloud_token?.status !== 'fulfilled') {
       throw new Error(`Looks like you didn't sign in on your browser. Please try again.`);
@@ -204,6 +202,7 @@ export class AzureAuthService {
       const tokenResponse = await this.pca.acquireTokenByCode(tokenRequest)
 
       localCache.homeId = tokenResponse.account.homeAccountId;
+      localCache.name = tokenResponse.account.name;
       localCache.save();
       return {
         type: 'azure-active-directory-access-token',
@@ -216,6 +215,13 @@ export class AzureAuthService {
 
   public cancel(): void {
     this.cancelFulfillment = true;
+  }
+
+  public async signOut() {
+    const tokenCache = this.pca.getTokenCache();
+    const account = await tokenCache.getAccountByHomeId(localCache.homeId);
+    await this.pca.signOut({ account })
+    await localCache.remove()
   }
 
   private async tryRefresh(): Promise<AuthConfig | null> {
@@ -250,10 +256,9 @@ export class AzureAuthService {
 
     return null;
   }
-  
+
   private async checkStatus(url: string): Promise<Response> {
-    const timedOut = Date.now() - this.start >= globals.pollingTimeout;
-    if (this.cancelFulfillment || timedOut) {
+    if (this.cancelFulfillment) {
       return null;
     }
     const result = await axios.get(url) as Response;

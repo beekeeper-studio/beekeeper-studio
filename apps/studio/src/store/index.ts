@@ -334,12 +334,16 @@ const store = new Vuex.Store<State>({
   },
   actions: {
     async test(context, config: SavedConnection) {
+      await context.dispatch('testWithAbort', { config })
+    },
+    async testWithAbort(context, payload: { config: SavedConnection, abortSignal?: AbortSignal }) {
+      const { config, abortSignal } = payload
       // TODO (matthew): fix this mess.
       if (context.state.username) {
         const settings = await UserSetting.all()
         const server = ConnectionProvider.for(config, context.state.username, settings)
 
-        await server?.createConnection(config.defaultDatabase || undefined).connect()
+        await server?.createConnection(config.defaultDatabase || undefined).connect(abortSignal)
         server.disconnect()
       } else {
         throw "No username provided"
@@ -376,9 +380,14 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, config: IConnection) {
+      await context.dispatch('connectWithAbort', { config })
+    },
+    async connectWithAbort(context, payload: { config: IConnection, abortSignal?: AbortSignal }) {
+      const { config, abortSignal } = payload
       if (context.state.username) {
         // create token cache for azure auth
-        if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+        const foundTokenCache = await TokenCache.findOne(config.authId)
+        if (config.azureAuthOptions.azureAuthEnabled && (!config.authId || !foundTokenCache)) {
           let cache = new TokenCache();
           cache = await cache.save();
           config.authId = cache.id;
@@ -399,7 +408,7 @@ const store = new Vuex.Store<State>({
           context.commit('setConnError', msg);
         };
 
-        await connection.connect()
+        await connection.connect(abortSignal)
         connection.connectionType = config.connectionType;
 
         context.commit('newConnection', {config: config, server, connection})
