@@ -352,7 +352,7 @@ export class DBTestUtil {
 
   async listIndexTests() {
     const indexes = await this.connection.listTableIndexes("has_index", this.defaultSchema)
-    expect(indexes.find((i) => i.name === 'has_index_foo_idx')).toBeDefined()
+    expect(indexes.find((i) => i.name.toLowerCase() === 'has_index_foo_idx')).toBeDefined()
   }
 
   async tableColumnsTests() {
