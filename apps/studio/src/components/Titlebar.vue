@@ -70,48 +70,34 @@ export default {
   components: { AppMenu },
   data() {
     return {
-      maximized: this.$native.getCurrentWindow()?.isMaximized(),
-      fullscreen: this.$native.getCurrentWindow()?.isFullScreen(),
     }
   },
   computed: {
     ...mapState(['windowTitle']),
+    maximized() {
+      return false
+    },
+    fullscreen() {
+      return false
+    }
   },
   mounted() {
-    this.getWindow()?.on('maximize', () => {
-      this.maximized = true
-    })
-    this.getWindow()?.on('unmaximize', () => {
-      this.maximized = false
-    })
-    this.getWindow()?.on('enter-full-screen', () => {
-      this.fullscreen = true
-    })
-    this.getWindow()?.on('leave-full-screen', () => {
-      this.fullscreen = false
-    })
   },
   methods: {
-    getWindow() {
-      return this.$native.getCurrentWindow()
-    },
-    isMaximized() {
-      return this.getWindow()?.isMaximized()
-    },
     minimizeWindow() {
-      this.getWindow()?.minimize();
+      window.main.minimizeWindow();
     },
     maximizeWindow() {
       if (this.fullscreen) {
-        this.getWindow()?.setFullScreen(false);
-      } else if (this.isMaximized()) {
-        this.getWindow()?.unmaximize();
+        window.main.setFullScreen(false)
+      } else if (this.maximized) {
+        window.main.unmaximizeWindow()
       } else {
-        this.getWindow()?.maximize();
+        window.main.maximizeWindow();
       }
     },
     closeWindow() {
-      this.getWindow()?.close()
+      window.main.closeWindow();
     }
   }
 }
