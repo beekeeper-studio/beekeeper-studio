@@ -263,7 +263,6 @@ export default {
     ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
     ...mapGetters({
       'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
-      'settings': 'settings/settings',
       'isCloud': 'isCloud',
       'activeWorkspaces': 'credentials/activeWorkspaces',
       'pinnedConnections': 'pinnedConnections/pinnedConnections',

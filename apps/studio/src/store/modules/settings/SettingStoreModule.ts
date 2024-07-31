@@ -1,5 +1,5 @@
 
-import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, getValue } from '../../../common/transport/TransportUserSetting'
+import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, getValue, setValue } from '../../../common/transport/TransportUserSetting'
 import _ from 'lodash'
 import Vue from 'vue'
 import { Module } from 'vuex'
@@ -43,7 +43,7 @@ const SettingStoreModule: Module<State, any> = {
       if (!key || !value) return;
       const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
-      setting.value = value
+      setValue(setting, value);
       setting.key = key
       await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
       context.commit(M.ADD, setting)

@@ -329,6 +329,7 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
+  import { getValue } from '@/common/transport/TransportUserSetting'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -387,7 +388,7 @@
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = this.settings?.keymap?.value;
+          const value = getValue(this.settings?.keymap);
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {

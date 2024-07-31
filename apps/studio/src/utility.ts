@@ -35,7 +35,9 @@ process.parentPort.on('message', async ({ data, ports }) => {
     case 'init':
       if (ports && ports.length > 0) {
         log.info('RECEIVED PORT: ', ports[0]);
-        await init(sId, ports[0]);
+        await initState(sId, ports[0]);
+      } else {
+        await init();
       }
       break;
     case 'close':
@@ -70,12 +72,7 @@ async function runHandler(id: string, name: string, args: any) {
   state(args.sId).port.postMessage(replyArgs);
 }
 
-async function init(sId: string, port: MessagePortMain) {
-  if (!ormConnection) {
-    ormConnection = new ORMConnection(platformInfo.appDbPath, false);
-    await ormConnection.connect();
-  }
-
+async function initState(sId: string, port: MessagePortMain) {
   newState(sId);
 
   state(sId).port = port;
@@ -86,4 +83,11 @@ async function init(sId: string, port: MessagePortMain) {
   })
 
   state(sId).port.start();
+}
+
+async function init() {
+  ormConnection = new ORMConnection(platformInfo.appDbPath, false);
+  await ormConnection.connect();
+
+  process.parentPort.postMessage('ready');
 }

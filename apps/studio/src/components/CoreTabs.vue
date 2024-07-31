@@ -519,7 +519,6 @@ export default Vue.extend({
       await this.$store.dispatch('tabs/setActive', tab)
     },
     async addTab(item: TransportOpenTab) {
-
       const savedItem = await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
       await this.setActiveTab(savedItem)
     },

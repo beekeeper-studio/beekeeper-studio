@@ -1,13 +1,12 @@
+import { getValue } from '@/common/transport/TransportUserSetting';
 import Vue from 'vue';
-
-
 
 export const SettingsPlugin = {
 
   async get(key: string, defaultValue?: any) {
     const result = await Vue.prototype.$util.send('appdb/setting/get', { key });
     if (result) {
-      return result.value
+      return getValue(result)
     }
     return defaultValue || null
   },

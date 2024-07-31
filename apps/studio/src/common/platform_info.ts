@@ -19,7 +19,7 @@ function isUtility() {
 let platformInfo;
 
 if (isRenderer()) {
-  platformInfo = window.main.platformInfo();
+  platformInfo = window?.main?.platformInfo();
 } else {
   let e
   const p = process;
