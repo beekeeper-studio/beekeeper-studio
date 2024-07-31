@@ -254,14 +254,18 @@ app.on('open-url', async (event, url) => {
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
-  const rendererTrigger = 'tmp/restart-renderer'
+  const rendererTrigger = path.join(process.cwd(), 'tmp/restart-renderer')
 
   // after messing around with SIGUSR, I just use a file, so much easier.
-  fs.watchFile(rendererTrigger, (current, previous) => {
-    if (current.mtime !== previous.mtime)
-      console.log("reloading webcontents")
-      getActiveWindows().forEach((w) => w.webContents.reload())
-  })
+  if (fs.existsSync(rendererTrigger)) {
+    fs.watchFile(rendererTrigger, (current, previous) => {
+      if (current.mtime !== previous.mtime)
+        console.log("reloading webcontents")
+        getActiveWindows().forEach((w) => w.webContents.reload())
+    })
+  } else {
+    console.log('not watching for restart trigger, file does not exist')
+  }
 
   console.log("Setting DEV KILL flags")
   process.on('message', data => {
