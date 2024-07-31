@@ -40,6 +40,8 @@ class BeekeeperWindow {
     }
 
       log.info('constructing the window')
+    const preloadPath = path.join(__dirname, 'preload.js')
+    console.log("PRELOAD PATH:", preloadPath)
     this.win = new BrowserWindow({
       ...this.getWindowPosition(settings),
       minWidth: 800,
@@ -48,7 +50,7 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
+        preload: preloadPath,
         nodeIntegration: false,
         contextIsolation: true,
         spellcheck: false,
