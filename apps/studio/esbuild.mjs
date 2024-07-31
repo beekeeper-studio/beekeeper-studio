@@ -5,7 +5,7 @@ import {sassPlugin} from 'esbuild-sass-plugin'
 import { copy } from 'esbuild-plugin-copy';
 import postcss from 'postcss'
 import copyAssets from 'postcss-copy-assets';
-import { spawn, exec } from 'child_process'
+import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 const isWatching = process.argv[2] === 'watch';
 import _ from 'lodash'
@@ -68,7 +68,7 @@ const restartElectron = _.debounce(() => {
   // start electron again
   electron = spawn(electronBin, ['.'], { stdio: 'inherit' })
   electron.on('exit', (code, signal) => console.log('electron exited', code, signal))
-  console.log('forked electron, pid: ', electron.pid)
+  console.log('spawned electron, pid: ', electron.pid)
 
 }, 500)
 
@@ -93,70 +93,24 @@ const tabulatorPlugin = {
 }
 
 
-const electronMainPlugin = {
-  name: "electron-main-process-restarter",
-  setup(build) {
-    if (!isWatching) return
-    build.onStart(() => console.log("ESBUILD: Building Main 🏗"))
-    build.onEnd(() => {
-      console.log("ESBUILD: Built Main ✅")
-      restartElectron()
-    })
+function getElectronPlugin(name, action = () => restartElectron()) {
+  return {
+    name: `${name}-plugin`,
+    setup(build) {
+      if (!isWatching) return
+      build.onStart(() => console.log(`ESBUILD: Building ${name}  🏗`))
+      build.onEnd(() => {
+        console.log(`ESBUILD: Built ${name} ✅`)
+        action()
+      })
+    }
   }
 }
 
+const electronRendererPlugin = getElectronPlugin("Renderer", () => {
+  if (electron) touch('./.tmp/restart-renderer')
+})
 
-const electronRendererPlugin = {
-  name: 'example',
-  setup(build) {
-    if (!isWatching) return
-    build.onStart(() => {
-      console.log("ESBUILD: Building Renderer 🏗")
-    })
-    build.onEnd(async (result) => {
-      console.log("ESBUILD: Built Renderer ✅")
-      if (electron) {
-        console.log("electron pid", electron.pid)
-        // electron.send('renderer')
-        // electron.kill('SIGUSR2')
-        touch('./tmp/restart-renderer')
-      }
-    })
-  },
-}
-
-const electronUtilityPlugin = {
-  name: "electron-utility-process-restarter",
-  setup(build) {
-    if (!isWatching) return
-    build.onStart(() => console.log("ESBUILD: Building Utility 🏗"))
-    build.onEnd(() => {
-      console.log("ESBUILD: Built Utility ✅")
-      if (electron) {
-        restartElectron()
-        console.log("electron pid", electron.pid)
-        // electron.send('utility')
-        // electron.kill('SIGUSR1')
-        // touch('./tmp/restart-utility')
-
-      }
-    })
-  }
-}
-
-const electronPreloadPlugin = {
-  name: "electron-preload-restarter",
-  setup(build) {
-    if (!isWatching) return;
-    build.onStart(() => console.log("ESBUILD: Building Preload 🏗"));
-    build.onEnd(() => {
-      console.log("ESBUILD: Built Preload ✅");
-      if (electron) {
-        restartElectron()
-      }
-    });
-  }
-}
 
 const env = isWatching ? '"development"' : '"production"';
 const commonArgs = {
@@ -174,8 +128,8 @@ const commonArgs = {
 
 const mainArgs = {
   ...commonArgs,
-  entryPoints: ['src/background.ts'],
-  plugins: [electronMainPlugin,
+  entryPoints: ['src/background.ts', 'src/utility.ts', 'src/preload.ts'],
+  plugins: [getElectronPlugin("Main"),
   copy({
     resolveFrom: 'cwd',
     assets: [
@@ -187,17 +141,6 @@ const mainArgs = {
   })]
 }
 
-const utilityArgs = {
-  ...commonArgs,
-  entryPoints: ['src/utility.ts'],
-  plugins: [electronUtilityPlugin]
-}
-
-const preloadArgs = {
-  ...commonArgs,
-  entryPoints: ['src/preload.ts'],
-  plugins: [electronPreloadPlugin]
-}
 
 const rendererArgs = {
   ...commonArgs,
@@ -249,23 +192,15 @@ const rendererArgs = {
   ]
 }
 
-
-    ]
-  }
-
-
-  if(isWatching) {
-    const main = await esbuild.context(mainArgs)
-    const renderer = await esbuild.context(rendererArgs)
-    const utility = await esbuild.context(utilityArgs)
-    await utility.rebuild()
-    await renderer.rebuild()
-    Promise.all([main.watch(), renderer.watch(), utility.watch()])
-  } else {
-    Promise.all([
-      esbuild.build(mainArgs),
-      esbuild.build(rendererArgs),
-      esbuild.build(utilityArgs)
-    ])
-  }
+if(isWatching) {
+  const main = await esbuild.context(mainArgs)
+  const renderer = await esbuild.context(rendererArgs)
+  await renderer.rebuild()
+  Promise.all([main.watch(), renderer.watch()])
+} else {
+  Promise.all([
+    esbuild.build(mainArgs),
+    esbuild.build(rendererArgs),
+  ])
+}
 // launch electron
