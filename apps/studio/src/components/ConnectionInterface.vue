@@ -220,7 +220,7 @@ import rawLog from 'electron-log'
 import { mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
-import { AzureAuthType } from '@/lib/db/authentication/azure'
+import { AzureAuthType } from '@/lib/db/authentication/azureTypes'
 import UpsellContent from './connection/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -248,7 +248,6 @@ export default Vue.extend({
       sidebarShown: true,
       version: platformInfo.appVersion,
       loadingSSOModalOpened: false,
-      abortController: null,
     }
   },
   computed: {
@@ -402,12 +401,10 @@ export default Vue.extend({
       }
 
       this._beforeConnect()
-      this.abortController = new AbortController()
       this.connectionError = null
       try {
-        const abortSignal = this.abortController.signal
         this.connecting = true
-        await this.$store.dispatch('connectWithAbort', { config: this.config, abortSignal })
+        await this.$store.dispatch('connect', this.config)
       } catch (ex) {
         this.connectionError = ex
         this.$noty.error("Error establishing a connection")
@@ -427,13 +424,11 @@ export default Vue.extend({
       }
 
       this._beforeConnect()
-      this.abortController = new AbortController()
 
       try {
         this.testing = true
         this.connectionError = null
-        const abortSignal = this.abortController.signal
-        await this.$store.dispatch('testWithAbort', { config: this.config, abortSignal })
+        await this.$store.dispatch('test', this.config)
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {
@@ -489,7 +484,7 @@ export default Vue.extend({
       this.loadingSSOModalOpened = false
     },
     loadingSSOCanceled() {
-      this.abortController.abort()
+      this.$store.dispatch('cancelConnect')
     },
   },
 })

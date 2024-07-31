@@ -81,7 +81,7 @@
             v-model="config.defaultDatabase"
           >
         </div>
-        <div class="advanced-connection-settings signed-in-as" v-if="accessTokenCache">
+        <div class="advanced-connection-settings signed-in-as" v-if="hasAccessTokenCache">
           <div class="advanced-body">
             <span class="info">Signed in{{ accessTokenCache.name ? ` as ${accessTokenCache.name}` : '' }}</span>
             <button
@@ -156,7 +156,7 @@
 <script>
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
-  import { AzureAuthService, AzureAuthTypes, AzureAuthType } from '../../lib/db/authentication/azure'
+  import { AzureAuthTypes, AzureAuthType } from '../../lib/db/authentication/azureTypes'
   import { TokenCache } from '@/common/appdb/models/token_cache';
   import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
@@ -225,14 +225,15 @@
       showMsiEndpoint() {
         return [AzureAuthType.MSIVM].includes(this.authType)
       },
+      hasAccessTokenCache() {
+        return Boolean(this.accessTokenCache?.cache)
+      },
     },
     methods: {
       async signOut() {
         try {
           this.signingOut = true
-          const service = new AzureAuthService()
-          await service.init(this.accessTokenCache.id)
-          await service.signOut()
+          await this.$util.send('conn/invoke', { name: 'sign-out' });
           this.config.authId = null
           this.accessTokenCache = null
         } catch (e) {

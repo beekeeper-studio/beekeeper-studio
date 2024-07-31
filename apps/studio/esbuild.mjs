@@ -173,7 +173,12 @@ const electronUtilityPlugin = {
   const utilityArgs = {
     ...commonArgs,
     entryPoints: ['src/utility.ts'],
-    plugins: [electronUtilityPlugin]
+    plugins: [electronUtilityPlugin],
+    // import.meta.url is undefined in esbuild
+    define: { 'import.meta.url': '_importMetaUrl' },
+    banner: {
+      js: "const _importMetaUrl=require('url').pathToFileURL(__filename);",
+    },
   }
 
   const rendererArgs = {

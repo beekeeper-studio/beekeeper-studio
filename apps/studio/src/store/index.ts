@@ -426,6 +426,9 @@ const store = new Vuex.Store<State>({
         await context.state.connection.connect();
       }
     },
+    async cancelConnect() {
+      await Vue.prototype.$util.send('conn/cancelConnect');
+    },
     async recordUsedConfig(context, config: IConnection) {
 
       log.info("finding last used connection", config)

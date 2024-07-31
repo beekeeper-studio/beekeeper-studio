@@ -4,26 +4,10 @@ import { wait } from '@shared/lib/wait';
 import rawLog from 'electron-log';
 import { TokenCache } from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
+import open from 'open';
+import { AzureAuthType } from './azureTypes';
 
 const log = rawLog.scope('auth/azure');
-
-export enum AzureAuthType {
-  Default, // This actually may not work at all, might need to just give up on it
-  Password,
-  AccessToken,
-  MSIVM,
-  ServicePrincipalSecret
-}
-
-// supported auth types that actually work :roll_eyes: default i'm looking at you
-export const AzureAuthTypes = [
-  // Can't have 2FA, kinda redundant now
-  // { name: 'Password', value: AzureAuthType.Password },
-  { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
-  // This may be reactivated when we move to client server architecture
-  // { name: 'MSI VM', value: AzureAuthType.MSIVM },
-  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
-];
 
 type CloudTokenResponse = {
   cloud_token: CloudToken,
@@ -63,6 +47,7 @@ export interface AuthOptions {
   tenantId?: string,
   msiEndpoint?: string,
   clientSecret?: string
+  signal: AbortSignal
 }
 
 let localCache: TokenCache;
@@ -82,7 +67,7 @@ const cachePlugin = {
 export class AzureAuthService {
   private pca: msal.PublicClientApplication;
 
-  private cancelFulfillment = false;
+  private signal: AbortSignal;
 
   public async init(authId: number) {
     if (!authId) {
@@ -105,6 +90,7 @@ export class AzureAuthService {
   }
 
   public async auth(authType: AzureAuthType, options: AuthOptions): Promise<AuthConfig> {
+    this.signal = options.signal;
     switch (authType) {
       case AzureAuthType.AccessToken:
         return await this.accessToken();
@@ -180,7 +166,10 @@ export class AzureAuthService {
     const authUrl = await this.pca.getAuthCodeUrl(authCodeUrlParams);
 
     log.debug('Getting auth code')
-    window.location.href = authUrl;
+
+    // FIXME (azmi): we don't need this after appdb handlers PR is merged.
+    // we can just use window.location.href instead.
+    open(authUrl);
 
     const result = await this.checkStatus(beekeeperCloudToken.url);
     if (!result || result?.data?.cloud_token?.status !== 'fulfilled') {
@@ -211,10 +200,6 @@ export class AzureAuthService {
         }
       };
     }
-  }
-
-  public cancel(): void {
-    this.cancelFulfillment = true;
   }
 
   public async signOut() {
@@ -258,8 +243,8 @@ export class AzureAuthService {
   }
 
   private async checkStatus(url: string): Promise<Response> {
-    if (this.cancelFulfillment) {
-      return null;
+    if (this.signal.aborted) {
+      this.throwAbort();
     }
     const result = await axios.get(url) as Response;
     if (result?.data?.cloud_token?.status !== 'fulfilled') {
@@ -268,5 +253,14 @@ export class AzureAuthService {
     } else {
       return result;
     }
+  }
+
+  private throwAbort() {
+    // @ts-expect-error reason is not fully typed
+    if (this.signal.reason) {
+      // @ts-expect-error reason not fully typed
+      throw new Error(`Aborted with reason: ${this.signal.reason}`);
+    }
+    throw new Error("Aborted but no reason was given.");
   }
 }
