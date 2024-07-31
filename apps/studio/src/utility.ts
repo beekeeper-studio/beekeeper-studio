@@ -25,9 +25,10 @@ export let handlers: Handlers = {
   ...QueryHandlers,
   ...GeneratorHandlers,
   ...ExportHandlers
-}; 
+};
 
 process.parentPort.on('message', ({ data, ports }) => {
+  console.log("hello there!")
   const { type, sId } = data;
   switch (type) {
     case 'init':

@@ -54,8 +54,8 @@ function createUtilityProcess() {
   }
 
   utilityProcess = electron.utilityProcess.fork(
-    path.join(__dirname, 'utility.js'), 
-    [], 
+    path.join(__dirname, 'utility.js'),
+    [],
     {
       env: { ...process.env, ...args },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -75,11 +75,11 @@ function createUtilityProcess() {
 
   utilityProcess.on('exit', (code) => {
     // if non zero exit code
+    console.log("UTILITY DEAD", code)
     if (code) {
       utilLog.info('Utility process died, restarting')
       utilityProcess = null;
       createUtilityProcess();
-
       createAndSendPorts(false, true);
     }
   })
@@ -244,31 +244,25 @@ app.on('open-url', async (event, url) => {
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
-  if (process.platform === 'win32') {
-    process.on('message', data => {
-      if (data === 'graceful-exit') {
-        app.quit()
-      }
-    })
-  } else {
-    process.on('SIGTERM', () => {
-      app.quit()
-    })
+  const rendererTrigger = 'tmp/restart-renderer'
 
-    // This doesn't fully reload the app, just restart it,
-    // so not suitable for development restarts
-    process.on('SIGUSR1', () => {
-      // log.info("SIGUSR1 =====> Restarting app")
-      // app.relaunch()
-      // app.quit()
-    })
-
-
-
-    process.on('SIGUSR2', () => {
-      log.info("SIGUSR2 =====> Reloading webcontents")
+  // after messing around with SIGUSR, I just use a file, so much easier.
+  fs.watchFile(rendererTrigger, (current, previous) => {
+    if (current.mtime !== previous.mtime)
+      console.log("reloading webcontents")
       getActiveWindows().forEach((w) => w.webContents.reload())
-    })
-  }
+  })
+
+  console.log("Setting DEV KILL flags")
+  process.on('message', data => {
+    if (data === 'graceful-exit') {
+      app.quit()
+    }
+  })
+
+  process.on('SIGTERM', () => {
+    app.quit()
+  })
+
 }
 
