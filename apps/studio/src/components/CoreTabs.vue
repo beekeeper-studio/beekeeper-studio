@@ -520,8 +520,8 @@ export default Vue.extend({
     },
     async addTab(item: TransportOpenTab) {
 
-      await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
-      await this.setActiveTab(item)
+      const savedItem = await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
+      await this.setActiveTab(savedItem)
     },
     async reopenLastClosedTab() {
       await this.$store.dispatch("tabs/reopenLastClosedTab")
@@ -805,7 +805,6 @@ export default Vue.extend({
       tab.entityType = table.entityType
       tab = setFilters(tab, filters)
       tab.titleScope = "all"
-      console.log('TAB: ', tab)
       let existing = this.tabItems.find((t) => matches(t, tab))
       if (existing) {
         if (filters) {
