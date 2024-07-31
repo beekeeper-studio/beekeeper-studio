@@ -126,21 +126,26 @@ const commonArgs = {
   }
 }
 
-const mainArgs = {
-  ...commonArgs,
-  entryPoints: ['src/background.ts', 'src/utility.ts', 'src/preload.ts'],
-  plugins: [getElectronPlugin("Main"),
-  copy({
-    resolveFrom: 'cwd',
-    assets: [
-      {
-        from: ['./src/index.html'],
-        to: './dist/'
-      },
-    ]
-  })]
-}
+  const mainArgs = {
+    ...commonArgs,
+    entryPoints: ['src/background.ts'],
+    plugins: [electronMainPlugin,
+    copy({
+      resolveFrom: 'cwd',
+      assets: [
+        {
+          from: ['./src/index.html'],
+          to: './dist/'
+        },
+      ]
+    })]
+  }
 
+  const utilityArgs = {
+    ...commonArgs,
+    entryPoints: ['src/utility.ts'],
+    plugins: [electronUtilityPlugin]
+  }
 
 const rendererArgs = {
   ...commonArgs,
@@ -192,15 +197,18 @@ const rendererArgs = {
   ]
 }
 
-if(isWatching) {
-  const main = await esbuild.context(mainArgs)
-  const renderer = await esbuild.context(rendererArgs)
-  await renderer.rebuild()
-  Promise.all([main.watch(), renderer.watch()])
-} else {
-  Promise.all([
-    esbuild.build(mainArgs),
-    esbuild.build(rendererArgs),
-  ])
-}
+  if(isWatching) {
+    const main = await esbuild.context(mainArgs)
+    const renderer = await esbuild.context(rendererArgs)
+    const utility = await esbuild.context(utilityArgs)
+    await utility.rebuild()
+    await renderer.rebuild()
+    Promise.all([main.watch(), renderer.watch(), utility.watch()])
+  } else {
+    Promise.all([
+      esbuild.build(mainArgs),
+      esbuild.build(rendererArgs),
+      esbuild.build(utilityArgs)
+    ])
+  }
 // launch electron
