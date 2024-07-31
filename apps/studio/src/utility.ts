@@ -27,7 +27,7 @@ export let handlers: Handlers = {
   ...GeneratorHandlers,
   ...ExportHandlers,
   ...AppDbHandlers
-}; 
+};
 
 process.parentPort.on('message', async ({ data, ports }) => {
   const { type, sId } = data;
