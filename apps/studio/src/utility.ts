@@ -55,10 +55,6 @@ async function runHandler(id: string, name: string, args: any) {
     type: 'reply',
   };
 
-  if (name === 'test') {
-    replyArgs.data = true;
-  }
-
   if (handlers[name]) {
     try {
       replyArgs.data = await handlers[name](args)
