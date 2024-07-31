@@ -328,6 +328,8 @@
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
+  import { blankFavoriteQuery } from '@/common/transport'
+  import { getValue } from '@/common/transport/TransportUserSetting'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -372,7 +374,7 @@
         executeTime: 0,
         originalText: "",
         initialized: false,
-        blankQuery: null,
+        blankQuery: blankFavoriteQuery(),
         dryRun: false,
         containerResizeObserver: null,
         focusElement: 'text-editor',
@@ -386,7 +388,7 @@
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = this.settings?.keymap?.value;
+          const value = getValue(this.settings?.keymap);
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -406,7 +408,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return findQuery(this.tab, this.savedQueries || []) || this.blankQuery
+        return findQuery(this.tab, this.savedQueries ?? []) ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
@@ -978,7 +980,6 @@
       },
     },
     async mounted() {
-      this.blankQuery = await this.$util.send('appdb/query/new');
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {

@@ -64,15 +64,6 @@ export interface TransportUserSetting extends Transport {
   valueType: UserSettingValueType
 }
 
-export function getUserValue(obj: TransportUserSetting): UserSettingValue {
-  return getVal(obj.valueType, obj._userValue);
-}
-
-export function setUserValue(obj: TransportUserSetting, updated: UserSettingValue): TransportUserSetting {
-  obj._userValue = setVal(updated);
-  return obj;
-}
-
 export function getValue(obj: TransportUserSetting): UserSettingValue {
   const raw = obj._userValue || getPlatformDefault(obj) || obj.defaultValue;
   return getVal(obj.valueType, raw);

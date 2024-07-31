@@ -116,6 +116,7 @@ export const TabModule: Module<State, RootState> = {
         item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item });
       }
       context.commit('add', item)
+      return item;
     },
     async reorder(context, items: TransportOpenTab[]) {
       items.forEach((p, idx) => p.position = idx)

@@ -38,6 +38,19 @@ export interface TransportFavoriteQuery extends Transport {
   connectionHash: string;
 }
 
+export function blankFavoriteQuery(): TransportFavoriteQuery {
+  return {
+    title: undefined,
+    text: undefined,
+    database: null,
+    connectionHash: undefined,
+    id: undefined,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    version: undefined
+  }
+}
+
 export interface TransportUsedQuery extends Transport {
   text: string;
   database: string;

@@ -39,7 +39,7 @@ let utilityProcess: Electron.UtilityProcess
 // don't need this
 let newWindows: number[] = new Array();
 
-function createUtilityProcess() {
+async function createUtilityProcess() {
   if (utilityProcess) {
     return;
   }
@@ -74,15 +74,25 @@ function createUtilityProcess() {
     utilLog.error(chunk.toString())
   })
 
-  utilityProcess.on('exit', (code) => {
+  utilityProcess.on('exit', async (code) => {
     // if non zero exit code
     console.log("UTILITY DEAD", code)
     if (code) {
       utilLog.info('Utility process died, restarting')
       utilityProcess = null;
-      createUtilityProcess();
+      await createUtilityProcess();
       createAndSendPorts(false, true);
     }
+  })
+
+  utilityProcess.postMessage({ type: 'init' });
+  return new Promise<void>((resolve, _reject) => {
+    utilityProcess.rawListeners
+    utilityProcess.on('message', (msg: string) => {
+      if (msg === 'ready') {
+        resolve()
+      }
+    })
   })
 }
 
@@ -160,10 +170,9 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   // dock icon is clicked and there are no other windows open.
   if (!hasVisibleWindows) {
     if (!settings) throw "No settings initialized!"
-    buildWindow(settings)
+    await createUtilityProcess()
 
-    // NOTE (@day): we should only be calling this once. make a decision
-    createUtilityProcess()
+    buildWindow(settings)
   }
 })
 
@@ -198,9 +207,9 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
+      await createUtilityProcess()
+
       await buildWindow(settings)
-      // NOTE (@day): we should only be calling this once. make a decision
-      createUtilityProcess()
     }
   }
 
@@ -224,11 +233,11 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
   })
 }
 
-ipcMain.handle('requestPorts', () => {
+ipcMain.handle('requestPorts', async () => {
   log.info('Client requested ports');
   if (!utilityProcess || !utilityProcess.pid) {
     utilityProcess = null;
-    createUtilityProcess();
+    await createUtilityProcess();
   }
   createAndSendPorts(false);
 })
@@ -254,14 +263,18 @@ app.on('open-url', async (event, url) => {
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
-  const rendererTrigger = 'tmp/restart-renderer'
+  const rendererTrigger = path.join(process.cwd(), 'tmp/restart-renderer')
 
   // after messing around with SIGUSR, I just use a file, so much easier.
-  fs.watchFile(rendererTrigger, (current, previous) => {
-    if (current.mtime !== previous.mtime)
-      console.log("reloading webcontents")
-      getActiveWindows().forEach((w) => w.webContents.reload())
-  })
+  if (fs.existsSync(rendererTrigger)) {
+    fs.watchFile(rendererTrigger, (current, previous) => {
+      if (current.mtime !== previous.mtime)
+        console.log("reloading webcontents")
+        getActiveWindows().forEach((w) => w.webContents.reload())
+    })
+  } else {
+    console.log('not watching for restart trigger, file does not exist')
+  }
 
   console.log("Setting DEV KILL flags")
   process.on('message', data => {

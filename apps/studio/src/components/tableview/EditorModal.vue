@@ -151,6 +151,7 @@ import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
 import TextEditor from '@/components/common/texteditor/TextEditor.vue'
+import { getValue } from '@/common/transport/TransportUserSetting'
 
 export default Vue.extend({
   name: "CellEditorModal",
@@ -172,7 +173,7 @@ export default Vue.extend({
       return uuidv4()
     },
     userKeymap() {
-      const value = this.settings?.keymap?.value;
+      const value = getValue(this.settings?.keymap);
       const keymapTypes = this.$config.defaults.keymapTypes
       return value && keymapTypes.map(k => k.value).includes(value) ? value : 'default';
     },
