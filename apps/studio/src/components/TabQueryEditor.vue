@@ -328,6 +328,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
+  import { blankFavoriteQuery } from '@/common/transport'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -372,7 +373,7 @@
         executeTime: 0,
         originalText: "",
         initialized: false,
-        blankQuery: null,
+        blankQuery: blankFavoriteQuery(),
         dryRun: false,
         containerResizeObserver: null,
         focusElement: 'text-editor',
@@ -406,7 +407,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return findQuery(this.tab, this.savedQueries || []) || this.blankQuery
+        return findQuery(this.tab, this.savedQueries ?? []) ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
@@ -978,7 +979,6 @@
       },
     },
     async mounted() {
-      this.blankQuery = await this.$util.send('appdb/query/new');
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {
