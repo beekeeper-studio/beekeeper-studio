@@ -70,34 +70,36 @@ export default {
   components: { AppMenu },
   data() {
     return {
+      maximized: false,
+      fullscreen: false
     }
   },
   computed: {
-    ...mapState(['windowTitle']),
-    maximized() {
-      return false
-    },
-    fullscreen() {
-      return false
-    }
+    ...mapState(['windowTitle'])
   },
   mounted() {
   },
   methods: {
-    minimizeWindow() {
-      window.main.minimizeWindow();
+    async updateFlags() {
+      this.maximized = await window.main.isMaximized();
+      this.fullscreen = await window.main.isFullscreen();
     },
-    maximizeWindow() {
+    async minimizeWindow() {
+      await window.main.minimizeWindow();
+      await this.updateFlags();
+    },
+    async maximizeWindow() {
       if (this.fullscreen) {
-        window.main.setFullScreen(false)
+        await window.main.setFullScreen(false)
       } else if (this.maximized) {
-        window.main.unmaximizeWindow()
+        await window.main.unmaximizeWindow()
       } else {
-        window.main.maximizeWindow();
+        await window.main.maximizeWindow();
       }
+      await this.updateFlags();
     },
-    closeWindow() {
-      window.main.closeWindow();
+    async closeWindow() {
+      await window.main.closeWindow();
     }
   }
 }

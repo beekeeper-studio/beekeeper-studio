@@ -170,20 +170,20 @@ export const api = {
   async isFullscreen() {
     return await ipcRenderer.invoke('isFullscreen');
   },
-  setFullScreen(value: boolean) {
-    ipcRenderer.send('setFullscreen', value);
+  async setFullScreen(value: boolean) {
+    await ipcRenderer.invoke('setFullscreen', value);
   },
-  minimizeWindow() {
-    ipcRenderer.send('minimizeWindow');
+  async minimizeWindow() {
+    await ipcRenderer.invoke('minimizeWindow');
   },
-  unmaximizeWindow() {
-    ipcRenderer.send('unmaximizeWindow');
+  async unmaximizeWindow() {
+    await ipcRenderer.invoke('unmaximizeWindow');
   },
-  maximizeWindow() {
-    ipcRenderer.send('maximizeWindow');
+  async maximizeWindow() {
+    await ipcRenderer.invoke('maximizeWindow');
   },
-  closeWindow() {
-    ipcRenderer.send('closeWindow');
+  async closeWindow() {
+    await ipcRenderer.invoke('closeWindow');
   },
   writeTextToClipboard(text: string) {
     return electron.clipboard.writeText(text);

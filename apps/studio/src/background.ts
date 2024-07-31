@@ -269,23 +269,23 @@ ipcMain.handle('isFullscreen', () => {
   return getCurrentWindow().isFullscreen();
 })
 
-ipcMain.on('setFullscreen', (_event, value) => {
+ipcMain.handle('setFullscreen', (_event, value) => {
   getCurrentWindow().setFullscreen(value);
 })
 
-ipcMain.on('minimizeWindow', () => {
+ipcMain.handle('minimizeWindow', () => {
   getCurrentWindow().minimizeWindow();
 })
 
-ipcMain.on('unmaximizeWindow', () => {
+ipcMain.handle('unmaximizeWindow', () => {
   getCurrentWindow().unmaximizeWindow();
 })
 
-ipcMain.on('maximizeWindow', () => {
+ipcMain.handle('maximizeWindow', () => {
   getCurrentWindow().maximizeWindow();
 })
 
-ipcMain.on('closeWindow', () => {
+ipcMain.handle('closeWindow', () => {
   getCurrentWindow().closeWindow();
 })
 
