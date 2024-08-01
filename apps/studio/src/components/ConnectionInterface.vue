@@ -63,7 +63,7 @@
                   <option
                     disabled
                     hidden
-                    value="null"
+                    value="undefined"
                   >
                     Select a connection type...
                   </option>
