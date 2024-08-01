@@ -94,7 +94,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       });
 
       it("should be able to create index sql with columns as expressions correctly", async () => {
-        const sql = util.connection.alterIndexSql({
+        const sql = await util.connection.alterIndexSql({
           additions: [
             {
               name: "col_exp_test_idx",

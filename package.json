@@ -30,8 +30,7 @@
     "node-abi": "^3.34.0",
     "cpu-features": "./.yarn/packages/empty-package",
     "electron-builder": "23.0.2",
-    "duckdb": "beekeeper-studio/duckdb-node#8a3b0c595e3d938a6f8442ed69349135e57c9d4a",
-    "electron-builder": "23.0.2"
+    "duckdb": "beekeeper-studio/duckdb-node#8a3b0c595e3d938a6f8442ed69349135e57c9d4a"
   },
   "volta": {
     "node": "16.19.1",
