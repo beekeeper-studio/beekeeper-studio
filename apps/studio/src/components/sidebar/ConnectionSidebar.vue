@@ -375,10 +375,7 @@ export default {
       this.$root.$emit(AppEvent.promptConnectionImport)
     },
     async refresh() {
-      this.$store.dispatch('data/connectionFolders/load')
-      this.$store.dispatch('data/connections/load')
-      await this.$store.dispatch('pinnedConnections/loadPins');
-      await this.$store.dispatch('pinnedConnections/reorder');
+      await this.$store.dispatch('refreshConnections')
     },
     edit(config) {
       this.$emit('edit', config)

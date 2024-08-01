@@ -37,7 +37,7 @@
     }
   }
 
-  &.confirmation-modal, &.sql-files-import-modal {
+  &.confirmation-modal, &.sql-files-import-modal, &.wait-sso-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;
@@ -68,6 +68,23 @@
 
     .file-picker-wrapper {
       margin-top: 1rem;
+    }
+  }
+
+  &.wait-sso-modal {
+    .dialog-content {
+      padding-top: 2rem;
+      padding-bottom: 0.5rem;
+    }
+    .dialog-c-title {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-right: 0;
+    }
+    .vue-dialog-buttons {
+      padding-bottom: 2rem;
+      justify-content: center;
     }
   }
 }

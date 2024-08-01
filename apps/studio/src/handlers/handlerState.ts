@@ -11,6 +11,8 @@ class State {
   server: IDbConnectionPublicServer = null;
   usedConfig: IConnection = null;
   connection: BasicDatabaseClient<any> = null;
+  /** Used to cancel connection */
+  abortController: AbortController = null;
   database: string = null;
   username: string = null;
   queries: Map<string, CancelableQuery> = new Map();

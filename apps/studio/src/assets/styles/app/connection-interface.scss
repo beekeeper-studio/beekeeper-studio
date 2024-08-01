@@ -58,6 +58,14 @@
   .bigquery-form {
     margin-bottom: $gutter-h;
   }
+  .sql-server-form {
+    .signed-in-as .advanced-body {
+      padding-top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
   .text-connect {
     padding-top: 0.25rem;
   }

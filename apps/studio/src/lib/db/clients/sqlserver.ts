@@ -854,10 +854,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   /* helper functions and settings below! */
 
-  async connect(): Promise<void> {
+  async connect(signal?: AbortSignal): Promise<void> {
     await super.connect();
 
-    this.dbConfig = await this.configDatabase(this.server, this.database)
+    this.dbConfig = await this.configDatabase(this.server, this.database, signal)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
 
     this.pool.on('error', (err) => {
@@ -873,7 +873,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async disconnect(): Promise<void> {
-    this.authService?.cancel();
     await this.pool.close();
 
     await super.disconnect();
@@ -920,6 +919,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       })
     }
     return applyChangesSql(changes, this.knex)
+  }
+
+  async invoke(name: string, args: any): Promise<void> {
+    super.invoke(name, args)
+
+    if (name === 'sign-out') {
+      await this.authService?.signOut();
+    }
   }
 
   wrapIdentifier(value: string) {
@@ -978,7 +985,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<any> { // changed to any for now, might need to make some changes
+  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
     const config: any = {
       server: server.config.host,
       database: database.database,
@@ -998,7 +1005,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         userName: server.config.user,
         tenantId: server.config.azureAuthOptions.tenantId,
         clientSecret: server.config.azureAuthOptions.clientSecret,
-        msiEndpoint: server.config.azureAuthOptions.msiEndpoint
+        msiEndpoint: server.config.azureAuthOptions.msiEndpoint,
+        signal,
       };
 
       config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
