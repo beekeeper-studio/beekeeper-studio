@@ -9,6 +9,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { AzureAuthService } from "@/lib/db/authentication/azure";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -104,10 +105,10 @@ export interface IConnectionHandlers {
    * For cases that are so specific, for example, signing out from azure sso
    * auth which only exists in SQLServer client. Example usage:
    * ``js
-   * this.$util.send('conn/invoke', { name: 'sign-out' })
+   * this.$util.send('conn/invoke', { name: 'sign-out', data: this.authId })
    * ``
    **/
-  'conn/invoke': ({ name, args, sId }: { name: string, args?: any, sId: string }) => Promise<void>,
+  'conn/invoke': ({ name, data, sId }: { name: string, data?: any, sId: string }) => Promise<void>,
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -452,21 +453,22 @@ export const ConnHandlers: IConnectionHandlers = {
   },
   'conn/syncDatabase': getDriverHandler('syncDatabase'),
 
-  'conn/invoke': async function({ name, args, sId }: { name: string, args?: any, sId: string }) {
-    checkConnection(sId);
-
-    if (state(sId).connection.connectionType === 'sqlserver' && name === 'sign-out') {
-      await state(sId).connection.invoke('sign-out')
+  'conn/invoke': async function({ name, data, sId }: { name: string, data?: any, sId: string }) {
+    if (name === 'azure-sso-sign-out') {
+      const { config } = data as { config: IConnection }
+      await AzureAuthService.ssoSignOut(config.authId)
 
       // Clean up authId cause it's invalid after signing out
-      const savedConnection = await SavedConnection.findOne(state(sId).usedConfig.id)
+      const savedConnection = await SavedConnection.findOne(config.id)
       savedConnection.authId = null
       await savedConnection.save()
-      state(sId).usedConfig.authId = null
+      if (state(sId).usedConfig) {
+        state(sId).usedConfig.authId = null
+      }
 
       return
     }
 
-    return await state(sId).connection.invoke(name, args);
+    return await state(sId).connection.invoke(name, data);
   }
 }

@@ -389,10 +389,6 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, config: IConnection) {
-      await context.dispatch('connectWithAbort', { config })
-    },
-    async connectWithAbort(context, payload: { config: IConnection, abortSignal?: AbortSignal }) {
-      const { config, abortSignal } = payload
       if (context.state.username) {
         // HACK (@day): this is just to fix some issues with the typeorm models moving to the utility process.
         // this should be removed once the appdb handlers have been merged.
@@ -454,6 +450,7 @@ const store = new Vuex.Store<State>({
       server?.disconnect()
       context.commit('clearConnection')
       context.dispatch('updateWindowTitle', null)
+      context.dispatch('refreshConnections')
     },
     async syncDatabase(context) {
       await context.state.connection.syncDatabase();
@@ -578,6 +575,12 @@ const store = new Vuex.Store<State>({
     },
     async tabActive(context, value: CoreTab) {
       context.commit('tabActive', value)
+    },
+    async refreshConnections(context) {
+      context.dispatch('data/connectionFolders/load')
+      context.dispatch('data/connections/load')
+      await context.dispatch('pinnedConnections/loadPins');
+      await context.dispatch('pinnedConnections/reorder');
     }
   },
   plugins: []

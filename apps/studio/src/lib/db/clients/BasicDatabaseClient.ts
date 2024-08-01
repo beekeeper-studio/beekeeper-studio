@@ -300,8 +300,8 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     throw new Error("Not implemented");
   }
 
-  async invoke(name: string, args?: any): Promise<any> {
-    log.debug('invoke', name, args)
+  async invoke(name: string, data?: any): Promise<any> {
+    log.debug('invoke', name, data)
   }
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {

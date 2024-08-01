@@ -106,6 +106,12 @@ export class AzureAuthService {
     }
   }
 
+  public static async ssoSignOut(authId: number) {
+    const service = new AzureAuthService();
+    await service.init(authId);
+    await service.signOut();
+  }
+
   private servicePrincipal(options: AuthOptions): AuthConfig {
     return {
       type: 'azure-active-directory-service-principal-secret',

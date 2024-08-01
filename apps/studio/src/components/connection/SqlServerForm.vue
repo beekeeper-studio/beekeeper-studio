@@ -233,7 +233,10 @@
       async signOut() {
         try {
           this.signingOut = true
-          await this.$util.send('conn/invoke', { name: 'sign-out' });
+          await this.$util.send('conn/invoke', {
+            name: 'azure-sso-sign-out',
+            data: { config: this.config },
+          });
           this.config.authId = null
           this.accessTokenCache = null
         } catch (e) {
