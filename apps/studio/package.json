@@ -45,7 +45,7 @@
     "diff-match-patch": "^1.0.5",
     "electron-devtools-installer": "^3.1.1",
     "electron-log": "^5.1.5",
-    "electron-updater": "^4.6.5",
+    "electron-updater": "^6.3.0",
     "electron-util": "^0.14.1",
     "esbuild-plugin-copy": "^2.1.1",
     "flexsearch": "beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d",
