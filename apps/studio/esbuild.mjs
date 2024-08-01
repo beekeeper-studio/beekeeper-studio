@@ -68,7 +68,7 @@ const restartElectron = _.debounce(() => {
   // start electron again
   electron = spawn(electronBin, ['.'], { stdio: 'inherit' })
   electron.on('exit', (code, signal) => console.log('electron exited', code, signal))
-  console.log('forked electron, pid: ', electron.pid)
+  console.log('spawned electron, pid: ', electron.pid)
 
 }, 500)
 
@@ -93,50 +93,43 @@ const tabulatorPlugin = {
 }
 
 
-const electronMainPlugin = {
-  name: "electron-main-process-restarter",
-  setup(build) {
-    if (!isWatching) return
-    build.onStart(() => console.log("ESBUILD: Building Main 🏗"))
-    build.onEnd(() => {
-      console.log("ESBUILD: Built Main ✅")
-      restartElectron()
-    })
+function getElectronPlugin(name, action = () => restartElectron()) {
+  return {
+    name: `${name}-plugin`,
+    setup(build) {
+      if (!isWatching) return
+      build.onStart(() => console.log(`ESBUILD: Building ${name}  🏗`))
+      build.onEnd(() => {
+        console.log(`ESBUILD: Built ${name} ✅`)
+        action()
+      })
+    }
   }
 }
 
+const electronRendererPlugin = getElectronPlugin("Renderer", () => {
+  if (electron) touch('./.tmp/restart-renderer')
+})
 
-const electronRendererPlugin = {
-  name: 'example',
-  setup(build) {
-    if (!isWatching) return
-    build.onStart(() => {
-      console.log("ESBUILD: Building Renderer 🏗")
-    })
-    build.onEnd(async (result) => {
-      console.log("ESBUILD: Built Renderer ✅")
-      if (electron) {
-        console.log("electron pid", electron.pid)
-        touch('./tmp/restart-renderer')
-      }
-    })
-  },
-}
 
-  const commonArgs = {
-    platform: 'node',
-    publicPath: '.',
-    outdir: 'dist',
-    bundle: true,
-    external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
-    sourcemap: isWatching,
-    minify: !isWatching
+const env = isWatching ? '"development"' : '"production"';
+const commonArgs = {
+  platform: 'node',
+  publicPath: '.',
+  outdir: 'dist',
+  bundle: true,
+  external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
+  sourcemap: isWatching,
+  minify: !isWatching,
+  define: {
+    'process.env.NODE_ENV': env
   }
+}
 
   const mainArgs = {
     ...commonArgs,
-    entryPoints: ['src/background.ts', 'src/utility.ts'],
-    plugins: [electronMainPlugin,
+    entryPoints: ['src/background.ts', 'src/utility.ts', 'src/preload.ts'],
+    plugins: [getElectronPlugin("Main"),
     copy({
       resolveFrom: 'cwd',
       assets: [
@@ -148,56 +141,55 @@ const electronRendererPlugin = {
     })]
   }
 
-  const rendererArgs = {
-    ...commonArgs,
-    entryPoints: ['src/main.ts'],
-    plugins: [
-      tabulatorPlugin,
-      electronRendererPlugin,
-      vuePlugin(),
-      copy({
-        resolveFrom: "cwd",
-        assets: [
-          {
-            from: ['../../node_modules/material-icons/**/*.woff*'],
-            to: ['./dist/material-icons']
-          },
-          {
-            from: './src/assets/logo.svg',
-            to: 'dist/assets/'
-          },
-          {
-            from: './src/assets/fonts/**/*',
-            to: 'dist/fonts'
-          },
-          {
-            from: './src/assets/icons/**/*',
-            to: 'dist/icons'
-          },
-          {
-            from: './src/assets/images/**/*',
-            to: 'dist/images'
-          },
-          {
-            from: '../../node_modules/typeface-roboto/**/*.woff*',
-            to: './dist/'
-          },
-          {
-            from: '../../node_modules/xel/**/*.svg',
-            to: './dist/node_modules/xel'
-          },
-        ]
-      }),
-      sassPlugin({
-        async transform(source, resolveDir, filePath) {
-          const { css } = await postcss().use(copyAssets({ base: `dist` })).process(source, { from: filePath, to: `dist/main.css` });
-          return css;
-        }
-      }),
+const rendererArgs = {
+  ...commonArgs,
+  entryPoints: ['src/main.ts'],
+  plugins: [
+    tabulatorPlugin,
+    electronRendererPlugin,
+    vuePlugin(),
+    copy({
+      resolveFrom: "cwd",
+      assets: [
+        {
+          from: ['../../node_modules/material-icons/**/*.woff*'],
+          to: ['./dist/material-icons']
+        },
+        {
+          from: './src/assets/logo.svg',
+          to: 'dist/assets/'
+        },
+        {
+          from: './src/assets/fonts/**/*',
+          to: 'dist/fonts'
+        },
+        {
+          from: './src/assets/icons/**/*',
+          to: 'dist/icons'
+        },
+        {
+          from: './src/assets/images/**/*',
+          to: 'dist/images'
+        },
+        {
+          from: '../../node_modules/typeface-roboto/**/*.woff*',
+          to: './dist/'
+        },
+        {
+          from: '../../node_modules/xel/**/*.svg',
+          to: './dist/node_modules/xel'
+        },
+      ]
+    }),
+    sassPlugin({
+      async transform(source, resolveDir, filePath) {
+        const { css } = await postcss().use(copyAssets({ base: `dist` })).process(source, { from: filePath, to: `dist/main.css` });
+        return css;
+      }
+    }),
 
-    ]
-  }
-
+  ]
+}
 
   if(isWatching) {
     const main = await esbuild.context(mainArgs)

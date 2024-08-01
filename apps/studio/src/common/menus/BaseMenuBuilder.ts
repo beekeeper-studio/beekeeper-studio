@@ -1,6 +1,6 @@
 
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { IGroupedUserSettings } from '../appdb/models/user_setting'
+import { IGroupedUserSettings } from '../transport/TransportUserSetting'
 import { menuItems } from './MenuItems'
 // TODO (matthew): When multi-window
 // use menu switching to switch menus on the fly

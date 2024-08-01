@@ -1,12 +1,13 @@
+import { TransportHiddenEntity, TransportHiddenSchema, matches, matchesSchema } from "@/common/transport/TransportHidden";
 import { DatabaseEntity } from "@/lib/db/models";
 import _ from "lodash";
 import { Module } from "vuex";
-import { HiddenEntity } from "../../common/appdb/models/HiddenEntity";
-import { HiddenSchema } from "../../common/appdb/models/HiddenSchema";
 import { State as RootState } from '../index'
+import Vue from 'vue';
+
 interface State {
-  entities: HiddenEntity[];
-  schemas: HiddenSchema[];
+  entities: TransportHiddenEntity[];
+  schemas: TransportHiddenSchema[];
 }
 
 export const HideEntityModule: Module<State, RootState> = {
@@ -20,7 +21,7 @@ export const HideEntityModule: Module<State, RootState> = {
       const dbEntities = [...tables, ...routines] as DatabaseEntity[]
       return state.entities
         .filter((e) => e.databaseName === database)
-        .map((e) => dbEntities.find((dbEntity) => e.matches(dbEntity)))
+        .map((e) => dbEntities.find((dbEntity) => matches(e, dbEntity)))
     },
     databaseSchemas(state, _, { database }) {
       return state.schemas
@@ -39,16 +40,16 @@ export const HideEntityModule: Module<State, RootState> = {
       state.entities = entities
       state.schemas = schemas
     },
-    addEntity(state, entity: HiddenEntity) {
+    addEntity(state, entity: TransportHiddenEntity) {
       state.entities.push(entity)
     },
-    addSchema(state, schema: HiddenSchema) {
+    addSchema(state, schema: TransportHiddenSchema) {
       state.schemas.push(schema)
     },
-    removeEntity(state, entity: HiddenEntity) {
+    removeEntity(state, entity: TransportHiddenEntity) {
       state.entities = _.without(state.entities, entity)
     },
-    removeSchema(state, schema: HiddenSchema) {
+    removeSchema(state, schema: TransportHiddenSchema) {
       state.schemas = _.without(state.schemas, schema)
     },
   },
@@ -65,8 +66,12 @@ export const HideEntityModule: Module<State, RootState> = {
           }
         }
 
-        const entities = await HiddenEntity.find(findOptions)
-        const schemas = await HiddenSchema.find(findOptions)
+        const entities = await Vue.prototype.$util.send('appdb/hiddenEntity/find', {
+          options: findOptions
+        });
+        const schemas = await Vue.prototype.$util.send('appdb/hiddenSchema/find', {
+          options: findOptions
+        });
 
         context.commit('set', { entities, schemas })
       }
@@ -76,49 +81,56 @@ export const HideEntityModule: Module<State, RootState> = {
     },
     async maybeSave(context) {
       const { usedConfig } = context.rootState
-      const unsavedEntities = context.state.entities.filter((e)=> !e.hasId())
-      const unsavedSchemas = context.state.schemas.filter((s)=> !s.hasId())
+      const unsavedEntities = context.state.entities.filter((e)=> !e.id)
+      const unsavedSchemas = context.state.schemas.filter((s)=> !s.id)
 
       await Promise.all([...unsavedEntities, ...unsavedSchemas].map((u) => {
-        if(u.connectionId === usedConfig.id && u.workspaceId === usedConfig.id)
-          u.save()
+        if(u.connectionId === usedConfig.id && u.workspaceId === usedConfig.id) {
+          let scope = 'hiddenSchema';
+          if ("entityType" in u) scope = 'hiddenEntity';
+          Vue.prototype.$util.send(`appdb/${scope}/save`, { obj: u });
+        }
       }))
     },
     async addEntity(context, item: DatabaseEntity) {
       const { database, usedConfig } = context.rootState
-      const existing = context.state.entities.find((e) => e.matches(item, database || undefined))
+      const existing = context.state.entities.find((e) => matches(e, item, database || undefined))
       if (existing) return
 
       if (database && usedConfig) {
-        const entity = new HiddenEntity(item, database, usedConfig)
-        if(usedConfig.id) await entity.save()
+        const entity = await Vue.prototype.$util.send('appdb/hiddenEntity/new', {
+          init: { table: item, db: database, saved: usedConfig}
+        })
+        if(usedConfig.id) await Vue.prototype.$util.send('appdb/hiddenEntity/save', { obj: entity })
         context.commit('addEntity', entity)
       }
     },
     async addSchema(context, item: string) {
       const { database, usedConfig } = context.rootState
-      const existing = context.state.schemas.find((s) => s.matches(item, database || undefined))
+      const existing = context.state.schemas.find((s) => matchesSchema(s, item, database || undefined))
       if (existing) return
 
       if (database && usedConfig) {
-        const schema = new HiddenSchema(item, database, usedConfig)
-        if(usedConfig.id) await schema.save()
+        const schema = await Vue.prototype.$util.send('appdb/hiddenSchema/new', {
+          init: { name: item, db: database, saved: usedConfig}
+        })
+        if(usedConfig.id) await Vue.prototype.$util.send('appdb/hiddenSchema/save', { obj: schema });
         context.commit('addSchema', schema)
       }
     },
     async removeEntity(context, item: DatabaseEntity) {
       const { database } = context.rootState
-      const existing = context.state.entities.find((e) => e.matches(item, database || undefined))
+      const existing = context.state.entities.find((e) => matches(e, item, database || undefined))
       if (existing) {
-        if (existing.id) await existing.remove()
+        if (existing.id) await Vue.prototype.$util.send('appdb/hiddenEntity/remove', { obj: existing })
         context.commit('removeEntity', existing)
       }
     },
     async removeSchema(context, item: string) {
       const { database } = context.rootState
-      const existing = context.state.schemas.find((s) => s.matches(item, database || undefined))
+      const existing = context.state.schemas.find((s) => matchesSchema(s, item, database || undefined))
       if (existing) {
-        if (existing.id) await existing.remove()
+        if (existing.id) await Vue.prototype.$util.send('appdb/hiddenSchema/remove', { obj: existing })
         context.commit('removeSchema', existing)
       }
     },

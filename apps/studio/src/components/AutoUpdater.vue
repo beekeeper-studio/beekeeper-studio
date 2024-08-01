@@ -3,11 +3,8 @@
 </template>
 
 <script lang="ts">
-import { ipcRenderer } from 'electron'
 import Noty from 'noty'
 import Vue from 'vue'
-
-import {AppEvent} from '../common/AppEvent'
 
 export default Vue.extend({
   data() {
@@ -64,17 +61,17 @@ export default Vue.extend({
   computed: {
   },
   mounted() {
-    ipcRenderer.on('update-available', this.notifyUpdate)
-    ipcRenderer.on('manual-update', this.notifyManual)
-    ipcRenderer.on('update-downloaded', this.notifyDownloaded)
-    ipcRenderer.send('updater-ready')
+    window.main.onUpdateEvent('update-available', this.notifyUpdate)
+    window.main.onUpdateEvent('manual-update', this.notifyManual)
+    window.main.onUpdateEvent('update-downloaded', this.notifyDownloaded)
+    window.main.updaterReady();
   },
   methods: {
     closeAll() {
       Noty.closeAll('download')
     },
     triggerDownload() {
-      ipcRenderer.send('download-update')
+      window.main.triggerDownload();
       this.downloadNotification.close()
       this.$noty.info("Hold tight! Downloading update...")
     },
@@ -83,10 +80,10 @@ export default Vue.extend({
       this.manualNotification.show()
     },
     linkToDownload() {
-      ipcRenderer.send(AppEvent.openExternally, ["https://beekeeperstudio.io/get"])
+      window.main.openExternally("https://beekeeperstudio.io/get");
     },
     triggerInstall() {
-      ipcRenderer.send('install-update')
+      window.main.triggerInstall();
     },
     notifyUpdate() {
       this.closeAll()

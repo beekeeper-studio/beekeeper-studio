@@ -1,4 +1,5 @@
-import { parseIndexColumn, testOnly } from '../../../../../src/lib/db/clients/mysql'
+import { testOnly } from '../../../../../src/lib/db/clients/mysql'
+import { parseIndexColumn } from '../../../../../src/common/utils'
 
 
 describe("MySQL UNIT tests (no connection required)", () => {

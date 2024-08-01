@@ -167,7 +167,6 @@
   </div>
 </template>
 <script>
-import * as path from 'path'
 import dateFormat from 'dateformat'
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
@@ -261,7 +260,7 @@ export default {
     },
     filePath() {
       if (!this.fileDirectory || !this.fileName) return null
-      return path.join(this.fileDirectory, this.fileName)
+      return window.main.join(this.fileDirectory, this.fileName)
     },
     dialogOptions() {
       const result = { buttonLabel: 'Choose Directory', properties: [ 'openDirectory', 'createDirectory'] }
