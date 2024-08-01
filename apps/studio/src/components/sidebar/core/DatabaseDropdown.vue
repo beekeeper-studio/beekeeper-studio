@@ -46,7 +46,6 @@
           v-kbd-trap="true"
         >
           <add-database-form
-            :connection="connection"
             @databaseCreated="databaseCreated"
             @cancel="$modal.hide('config-add-database')"
           />
@@ -61,11 +60,11 @@
   import { ipcRenderer } from 'electron'
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
-  import AddDatabaseForm from "@/components/connection/AddDatabaseForm"
+  import AddDatabaseForm from "@/components/connection/AddDatabaseForm.vue"
   import { mapActions, mapState, mapGetters } from 'vuex'
 
   export default {
-    props: [ 'connection' ],
+    props: [ ],
     data() {
       return {
         selectedDatabase: null,
@@ -80,12 +79,13 @@
     },
     methods: {
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
+      ...mapState({ connectionType: 'connectionType' }),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
         if (this.dialect.disabledFeatures?.multipleDatabase) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
-          const url = this.connection.dialect === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
+          const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
           return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()

@@ -327,8 +327,8 @@ export function runCommonTests(getUtil, opts = {}) {
       await prepareTestTable(getUtil())
     })
 
-    test("Should generate scripts for all types of changes", () => {
-      itShouldGenerateSQLForAllChanges(getUtil())
+    test("Should generate scripts for all types of changes", async () => {
+      await itShouldGenerateSQLForAllChanges(getUtil())
     })
 
     test("Should generate scripts for top selection", async () => {
@@ -817,7 +817,7 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
 
 }
 
-export const itShouldGenerateSQLForAllChanges = function(util) {
+export const itShouldGenerateSQLForAllChanges = async function(util) {
   const changes = {
     inserts: [
       {
@@ -864,7 +864,7 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
     ]
   };
 
-  const sql = util.connection.applyChangesSql(changes).toLowerCase();
+  const sql = (await util.connection.applyChangesSql(changes)).toLowerCase();
 
   expect(sql.includes('insert'));
   expect(sql.includes('update'));

@@ -11,6 +11,7 @@ import {
   ExtendedTableColumn,
   FieldDescriptor,
   FilterOptions,
+  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -31,8 +32,7 @@ import {
   buildUpdateQueries,
   withClosable,
   buildDeleteQueries,
-  applyChangesSql,
-  joinQueries
+  applyChangesSql
 } from './utils';
 import rawLog from 'electron-log'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
@@ -52,14 +52,14 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   pool: oracle.Pool;
   server: IDbConnectionServer
   database: IDbConnectionDatabase
-  defaultSchema: () => string
+  defaultSchema: () => Promise<string>
   instantClientLocation: string
   version: string
   readOnlyMode: boolean
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knexLib({ client: 'oracledb'}), NoOpContextProvider, server, database);
-    this.defaultSchema = ():string => server.config.user.toUpperCase()
+    this.defaultSchema = async (): Promise<string> => server.config.user.toUpperCase()
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
   }
@@ -98,22 +98,18 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  async importData(insertSQL) {
-    await this.driverExecuteMultiple(insertSQL.split(';'))
-  }
-
-  getImportSQL (importedData, isTruncate) {
-    const { schema, table } = importedData[0]
-    const queries = []
-    if (isTruncate) {
-      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)};`)
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { schema, name } = table
+    return {
+      beginCommand: (_executeOptions: any): Promise<any> => null,
+      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions),
+      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
+      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
+      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
     }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
-    return joinQueries(queries)
   }
 
-  createDatabaseSQL() {
+  async createDatabaseSQL() {
     return `
     -- taken from Step 7 of https://docs.oracle.com/cd/B19306_01/server.102/b14231/create.htm#i1008760
     CREATE DATABASE mynewdb
@@ -142,11 +138,11 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     `
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, this.knex);
   }
 
@@ -167,7 +163,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return selectResults
   }
 
-  getQuerySelectTop(table: string, limit: number, schema?: string): string {
+  async getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
     return `SELECT * from ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)} FETCH FIRST ${limit} ROWS ONLY`
   }
 
@@ -192,7 +188,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
     throw new Error('Method not implemented.');
   }
-  truncateAllTables(_schema?: string): void {
+  async truncateAllTables(_schema?: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -267,7 +263,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return query
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = this.defaultSchema(), selects: string[] = ['*']): Promise<TableResult> {
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = null, selects: string[] = ['*']): Promise<TableResult> {
+    schema = schema ? schema : await this.defaultSchema();
     const query = this.genSelect(table, offset, limit, orderBy, filters, schema, false, selects)
     const result = await this.driverExecuteSimple(query)
     const fields = Object.keys(result[0] || {})
@@ -286,7 +283,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       cursor: new OracleCursor(this.pool, q, [], chunkSize)
     }
   }
-  supportedFeatures = () => ({
+
+  supportedFeatures = async () => ({
     customRoutines: false,
     comments: true,
     properties: true,
@@ -577,7 +575,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     })
   }
 
-  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this.defaultSchema()): string {
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = null): Promise<string> {
+    schema = schema ? schema : await this.defaultSchema();
     elementName = this.wrapIdentifier(elementName)
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
@@ -599,17 +598,17 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema = 'public'): string {
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<string> {
     return `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema: string): Promise<void> {
-    const sql = this.duplicateTableSql(tableName, duplicateTableName, schema);
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema);
 
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema: string): string {
+  async duplicateTableSql(tableName: string, duplicateTableName: string, schema: string): Promise<string> {
     const sql = `
       CREATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(duplicateTableName)} AS
       SELECT * FROM ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(tableName)}
@@ -669,7 +668,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return `${dataType}(${charLength})`
   }
 
-  query(text: string): CancelableQuery {
+  async query(text: string): Promise<CancelableQuery> {
     let canceling = false
     let connection = null
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER)

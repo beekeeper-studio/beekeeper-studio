@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "esnext",
     "moduleResolution": "node",
+    "target": "ESNext",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "jsx": "preserve",

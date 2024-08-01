@@ -17,9 +17,7 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError,
-  joinQueries,
-  buildInsertQueries,
+  ClientError
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -38,6 +36,7 @@ import {
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
+  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -201,7 +200,7 @@ export function parseIndexColumn(str: string): IndexColumn {
 
   const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
   if (prefixMatch) {
-    prefix = Number(prefixMatch[1]) 
+    prefix = Number(prefixMatch[1])
     name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
   }
 
@@ -307,7 +306,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     await super.disconnect();
   }
 
-  versionString() {
+  async versionString() {
     return this.versionInfo?.versionString;
   }
 
@@ -769,7 +768,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return results;
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, knex);
   }
 
@@ -862,21 +861,21 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return true;
   }
 
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
     return `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`;
   }
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      await this.driverExecuteSingle(this.truncateElementSql(elementName, typeOfElement), { connection });
+      await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement), { connection });
     });
   }
 
-  setElementNameSql(
+  async setElementNameSql(
     elementName: string,
     newElementName: string,
     typeOfElement: DatabaseElement
-  ): string {
+  ): Promise<string> {
     elementName = this.wrapIdentifier(elementName);
     newElementName = this.wrapIdentifier(newElementName);
 
@@ -908,15 +907,15 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     duplicateTableName: string,
     _schema?: string
   ): Promise<void> {
-    const sql = this.duplicateTableSql(tableName, duplicateTableName);
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName);
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(
+  async duplicateTableSql(
     tableName: string,
     duplicateTableName: string,
     _schema?: string
-  ): string {
+  ): Promise<string> {
     let sql = `
       CREATE TABLE ${this.wrapIdentifier(duplicateTableName)}
         LIKE ${this.wrapIdentifier(tableName)};
@@ -928,7 +927,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return sql;
   }
 
-  query(queryText: string): CancelableQuery {
+  async query(queryText: string): Promise<CancelableQuery> {
     let pid = null;
     let canceling = false;
     const cancelable = createCancelablePromise({
@@ -1130,7 +1129,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return new MySqlChangeBuilder(table, []);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,
       comments: true,
@@ -1186,7 +1185,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return data.map((row) => row.referenced_table_name);
   }
 
-  getQuerySelectTop(table: string, limit: number, _schema?: string): string {
+  async getQuerySelectTop(table: string, limit: number, _schema?: string): Promise<string> {
     return `SELECT * FROM ${this.wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
@@ -1310,7 +1309,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return data.map((row) => row.Collation).sort();
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     const sql = `
       create database "mydatabase"
         character set "utf8mb4"
@@ -1333,28 +1332,19 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return defaultValue;
   }
 
-  async importData(sql: string): Promise<any> {
-    const fullQuery = joinQueries([
-      'START TRANSACTION', sql, 'COMMIT'
-    ]);
-    try {
-      return await this.driverExecuteSingle(fullQuery)
-    } catch (ex) {
-      log.error("importData", fullQuery, ex)
-      await this.driverExecuteSingle('ROLLBACK');
-      throw ex;
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name } = table
+    
+    return {
+      beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('START TRANSACTION;', executeOptions),
+      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
+      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
+      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
+      rollbackCommand: (executeOptions: any): Promise<any> => {
+        console.log('in rollback')
+        return this.rawExecuteQuery('ROLLBACK;', executeOptions)
+      }
     }
-  }
-
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const { table } = importedData[0]
-    const queries = []
-    if (isTruncate) {
-      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(table)}`)
-    }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
-    return joinQueries(queries)
   }
 }
 

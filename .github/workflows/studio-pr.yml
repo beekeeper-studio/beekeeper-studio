@@ -75,16 +75,16 @@ jobs:
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
-          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+          npx rimraf "apps/studio/dist/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
 
       - name: Cleanup artifacts Win
         if: "startsWith(matrix.os, 'windows')"
         continue-on-error: true
         run: |
-          npx rimraf "apps\studio\dist_electron\!(*.exe)"
+          npx rimraf "apps\studio\dist\!(*.exe)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: ${{ matrix.os }}
-          path: apps/studio/dist_electron
+          path: apps/studio/dist

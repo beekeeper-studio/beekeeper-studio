@@ -140,8 +140,8 @@
 </template>
 
 <script>
-  import CommonServerInputs from './CommonServerInputs'
-  import CommonAdvanced from './CommonAdvanced'
+  import CommonServerInputs from './CommonServerInputs.vue'
+  import CommonAdvanced from './CommonAdvanced.vue'
   import { AzureAuthService, AzureAuthTypes, AzureAuthType } from '../../lib/db/authentication/azure'
   import { TokenCache } from '@/common/appdb/models/token_cache';
   import platformInfo from '@/common/platform_info'

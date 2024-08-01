@@ -75,11 +75,11 @@ export class LibSQLClient extends SqliteClient {
     }
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version?.data[0]["version"] || "";
   }
 
-  truncateElementSql(elementName: string): string {
+  async truncateElementSql(elementName: string): Promise<string> {
     // FIXME libsql doesn't expose `vacuum` yet. We'll need to run vacuum after
     // delete according to SqliteClient.
     // See https://github.com/tursodatabase/libsql/issues/1415

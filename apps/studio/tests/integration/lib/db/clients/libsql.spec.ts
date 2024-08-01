@@ -106,14 +106,15 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     });
 
     afterAll(async () => {
-      if (util.connection) {
-        await util.connection.disconnect();
-      }
+      await util.disconnect()
       if (dbfile) {
+        console.log("removing dbfile callback")
         await dbfile.removeCallback();
       }
       if (container) {
+        console.log("stopping container...")
         await container.stop();
+        console.log("container stopped")
       }
     });
 
@@ -158,7 +159,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           END;
         `;
         expect(async () => {
-          const q = util.connection.query(trigger);
+          const q = await util.connection.query(trigger);
           await q.execute();
         }).not.toThrowError();
       });

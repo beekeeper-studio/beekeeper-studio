@@ -34,7 +34,7 @@
         <div
           class="statusbar-item row-counts"
           v-if="rowCount > 0"
-          v-tooltip="`${rowCount} Records${result?.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
+          v-tooltip="`${rowCount} Records${result && result.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
         >
           <i class="material-icons">list_alt</i>
           <span class="num-rows">{{ rowCount }}</span>
@@ -92,7 +92,7 @@
           >
             <x-menuitem
               @click.prevent="$event => submitCurrentQueryToFile()"
-              :disabled="!result?.truncated"
+              :disabled="!(result && result.truncated)"
             >
               <x-label>Download Full Resultset</x-label>
               <i
@@ -153,7 +153,7 @@
 <script>
 // import Pluralize from 'pluralize'
 import humanizeDuration from 'humanize-duration'
-import Statusbar from '../common/StatusBar'
+import Statusbar from '../common/StatusBar.vue'
 import pluralize from 'pluralize'
 import { UserSetting } from '@/common/appdb/models/user_setting';
 import { mapState } from 'vuex';

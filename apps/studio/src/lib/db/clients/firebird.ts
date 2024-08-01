@@ -31,6 +31,7 @@ import {
   StreamResults,
   TableColumn,
   Routine,
+  ImportScriptFunctions,
 } from "../models";
 import {
   BasicDatabaseClient,
@@ -42,7 +43,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildUpdateQueries, joinQueries } from "./utils";
+import { buildDeleteQueries, buildUpdateQueries } from "./utils";
 import {
   Pool,
   Connection,
@@ -201,7 +202,8 @@ function buildInsertQuery(
     // TODO: try extending the builder instead
     .insert(data[0])
     .toQuery();
-  return query;
+
+  return query
 }
 
 function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
@@ -231,7 +233,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version;
   }
 
@@ -633,7 +635,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  query(queryText: string): CancelableQuery {
+  async query(queryText: string): Promise<CancelableQuery> {
     let connection: Connection | undefined;
 
     return {
@@ -804,7 +806,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     });
   }
 
-  setElementNameSql(): string {
+  async setElementNameSql(): Promise<string> {
     // Firebird doesn't support renaming tables or any database elements we
     // support. https://www.firebirdfaq.org/faq363/
     return '';
@@ -823,7 +825,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   // TODO There is no internal function to truncate a table
-  truncateElementSql() {
+  async truncateElementSql() {
     return ''
   }
 
@@ -882,7 +884,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     let queriesStr = "";
     buildInsertQueries(this.knex, changes.inserts || []).forEach((query) => {
       queriesStr += `${query};`;
@@ -1022,7 +1024,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }));
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: false,
       comments: false,
@@ -1091,7 +1093,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return []; // TODO
   }
 
-  getQuerySelectTop(table: string, limit: number, _schema?: string): string {
+  async getQuerySelectTop(table: string, limit: number, _schema?: string): Promise<string> {
     return `SELECT FIRST ${limit} * FROM ${table}`;
   }
 
@@ -1183,11 +1185,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return description;
   }
 
-  duplicateTableSql(
+  async duplicateTableSql(
     _tableName: string,
     _duplicateTableName: string,
     _schema?: string
-  ): string {
+  ): Promise<string> {
     // TODO There is no native implementation of this
     throw new Error("Method not implemented.");
   }
@@ -1216,34 +1218,39 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return [];
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
-  async importData(sql: string): Promise<any> {
-    const connection = await this.pool.getConnection();
-    const transaction = await connection.transaction();
-    try {
-      await transaction.query(sql);
 
-      await transaction.commit();
-    } catch (ex) {
-      log.error("importData", sql, ex);
-      await transaction.rollback();
-      throw ex;
-    } finally {
-      await connection.release()
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name } = table
+    let connection
+    let transaction
+
+    return {
+      step0: async(): Promise<any|null> => {
+        connection = await this.pool.getConnection()
+        transaction = await connection.transaction()
+      },
+      beginCommand: (_executeOptions: any): any => null,
+      truncateCommand: (): Promise<any> => transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`),
+      lineReadCommand: (sqlString: string[]): Promise<any> => {
+        // firebird doesn't do multiple commands at once so you have to split it up
+        try {
+          const theStrings = sqlString.map(sql => transaction.query(`${sql};`))
+          return Promise.all(theStrings)
+        } catch(err) {
+          throw new Error(err)
+        }
+      },
+      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
+      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback(),
+      finalCommand: (_executeOptions: any): Promise<any> => connection.release()
     }
   }
 
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const queries = [];
-    if (isTruncate) {
-      return null;
-      // TODO: there is no internal method to truncate re: @azmy
-    }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'));
-    return joinQueries(queries);
+  getImportSQL(importedData: TableInsert[]): string[] {
+    return buildInsertQueries(this.knex, importedData)
   }
 
 }

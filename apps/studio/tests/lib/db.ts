@@ -156,6 +156,12 @@ export class DBTestUtil {
     this.connection = this.server.createConnection(database)
   }
 
+  async disconnect() {
+    if (this.connection) await this.connection.disconnect();
+    // https://github.com/jestjs/jest/issues/11463
+    if (this.knex) await this.knex.destroy();
+  }
+
   maybeArrayToObject(items, key) {
     // Only 'firebird knex' returns an object instead of an array.
     if (!Array.isArray(items)) {
@@ -167,6 +173,32 @@ export class DBTestUtil {
       result[key] = item
       return result
     })
+  }
+
+  buildImportData(tableName, schemaName = null) {
+    const data = [
+      {
+        'name': 'biff',
+        'hat': 'beret'
+      },
+      {
+        'name': 'spud',
+        'hat': 'fez'
+      },
+      {
+        'name': 'chuck',
+        'hat': 'barretina'
+      },
+      {
+        'name': 'lou',
+        'hat': 'tricorne'
+      }
+    ]
+    return data.map(d => ({
+      table: tableName,
+      schema: schemaName,
+      data: [d]
+    }))
   }
 
   /** Format the SQL with the correct dialect */
@@ -518,7 +550,7 @@ export class DBTestUtil {
     expect(simpleResult.find((c) => c.columnName?.toLowerCase() === 'family_name')).toBeTruthy()
 
 
-    // only databases that can actually change things past this point.
+    // only databases t can actually change things past this point.
     if (this.data.disabledFeatures?.alter?.alterColumn) return
 
     await this.knex.schema.dropTableIfExists("alter_test")
@@ -776,7 +808,7 @@ export class DBTestUtil {
 
     expect(tables.map((t) => t.name.toLowerCase())).toContain('one_record')
 
-    const q = this.connection.query(
+    const q = await this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as total, trim('b') as total from rdb$database" :
         "select 'a' as total, 'b' as total from one_record"
@@ -1257,6 +1289,11 @@ export class DBTestUtil {
       table.string("name")
     })
 
+    await this.knex.schema.createTable('import_table', (t) => {
+      t.string('name'),
+      t.string('hat')
+    })
+
     if (!this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
@@ -1280,7 +1317,7 @@ export class DBTestUtil {
   }
 
   async databaseVersionTest() {
-    const version = this.connection.versionString();
+    const version = await this.connection.versionString();
     expect(version).toBeDefined()
   }
 }

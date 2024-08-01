@@ -66,9 +66,7 @@ function testWith(options) {
     })
 
     afterAll(async () => {
-      if (util.connection) {
-        await util.connection.disconnect()
-      }
+      await util.disconnect()
       if (dbfile) {
         dbfile.removeCallback();
       }
