@@ -54,7 +54,7 @@ class BeekeeperWindow {
         nodeIntegration: false,
         contextIsolation: true,
         spellcheck: false,
-        sandbox: false,
+        sandbox: true,
       },
       icon: getIcon()
     })

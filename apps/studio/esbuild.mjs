@@ -128,7 +128,7 @@ const commonArgs = {
 
   const mainArgs = {
     ...commonArgs,
-    entryPoints: ['src/background.ts', 'src/utility.ts'],
+    entryPoints: ['src/background.ts', 'src/utility.ts', 'src/preload.ts'],
     plugins: [getElectronPlugin("Main"),
     copy({
       resolveFrom: 'cwd',
