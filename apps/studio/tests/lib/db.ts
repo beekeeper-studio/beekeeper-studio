@@ -832,7 +832,7 @@ export class DBTestUtil {
       throw ex
     }
 
-    const q2 = this.connection.query(
+    const q2 = await this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as a from rdb$database; select trim('b') as b from rdb$database" :
         "select 'a' as a from one_record; select 'b' as b from one_record"
