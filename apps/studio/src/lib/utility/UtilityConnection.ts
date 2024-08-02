@@ -2,7 +2,7 @@ import { uuidv4 } from "../uuid";
 import rawLog from 'electron-log/renderer';
 import _ from 'lodash';
 
-const log = rawLog.scope('UtilConnection');
+const log = rawLog.scope('renderer/utilityconnection');
 
 type Listener = (input: any) => void;
 type Message = {
@@ -113,5 +113,5 @@ export class UtilityConnection {
   public removeListener(id: string) {
     this.listeners = _.reject(this.listeners, { 'id': id });
   }
- 
+
 }

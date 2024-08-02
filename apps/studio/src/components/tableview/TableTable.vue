@@ -275,7 +275,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import { ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
+import { ColumnComponent, CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
@@ -1003,6 +1003,16 @@ export default Vue.extend({
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
     },
+    buildPendingDeletes() {
+      return this.pendingChanges.deletes.map((update) => {
+        return _.omit(update, ['row'])
+      });
+    },
+    buildPendingUpdates() {
+      return this.pendingChanges.updates.map((update) => {
+        return _.omit(update, ['key', 'oldValue', 'cell'])
+      });
+    },
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
@@ -1285,8 +1295,8 @@ export default Vue.extend({
       try {
         const changes = {
           inserts: this.buildPendingInserts(),
-          updates: this.pendingChanges.updates,
-          deletes: this.pendingChanges.deletes
+          updates: this.buildPendingUpdates(),
+          deletes: this.builudPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
@@ -1320,11 +1330,10 @@ export default Vue.extend({
         let replaceData = false
 
         try {
-
           const payload = {
             inserts: this.buildPendingInserts(),
-            updates: this.pendingChanges.updates,
-            deletes: this.pendingChanges.deletes
+            updates: this.buildPendingUpdates(),
+            deletes: this.buildPendingDeletes()
           }
 
           const result = await this.connection.applyChanges(payload);

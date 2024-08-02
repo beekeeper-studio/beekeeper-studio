@@ -164,9 +164,26 @@ export const api = {
   openLink(link: string) {
     return electron.shell.openExternal(link);
   },
-  // this scares me
-  getCurrentWindow() {
-    return electron.getCurrentWindow();
+  async isMaximized() {
+    return await ipcRenderer.invoke('isMaximized');
+  },
+  async isFullscreen() {
+    return await ipcRenderer.invoke('isFullscreen');
+  },
+  async setFullScreen(value: boolean) {
+    await ipcRenderer.invoke('setFullscreen', value);
+  },
+  async minimizeWindow() {
+    await ipcRenderer.invoke('minimizeWindow');
+  },
+  async unmaximizeWindow() {
+    await ipcRenderer.invoke('unmaximizeWindow');
+  },
+  async maximizeWindow() {
+    await ipcRenderer.invoke('maximizeWindow');
+  },
+  async closeWindow() {
+    await ipcRenderer.invoke('closeWindow');
   },
   writeTextToClipboard(text: string) {
     return electron.clipboard.writeText(text);

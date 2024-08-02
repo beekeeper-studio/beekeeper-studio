@@ -21,7 +21,7 @@ import MenuHandler from './background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
-import { buildWindow, getActiveWindows } from './background/WindowBuilder'
+import { buildWindow, getActiveWindows, getCurrentWindow } from './background/WindowBuilder'
 import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
@@ -260,6 +260,34 @@ app.on('open-url', async (event, url) => {
 
   await buildWindow(settings, { url })
 });
+
+ipcMain.handle('isMaximized', () => {
+  return getCurrentWindow().isMaximized();
+})
+
+ipcMain.handle('isFullscreen', () => {
+  return getCurrentWindow().isFullscreen();
+})
+
+ipcMain.handle('setFullscreen', (_event, value) => {
+  getCurrentWindow().setFullscreen(value);
+})
+
+ipcMain.handle('minimizeWindow', () => {
+  getCurrentWindow().minimizeWindow();
+})
+
+ipcMain.handle('unmaximizeWindow', () => {
+  getCurrentWindow().unmaximizeWindow();
+})
+
+ipcMain.handle('maximizeWindow', () => {
+  getCurrentWindow().maximizeWindow();
+})
+
+ipcMain.handle('closeWindow', () => {
+  getCurrentWindow().closeWindow();
+})
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {

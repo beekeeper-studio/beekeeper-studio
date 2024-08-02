@@ -63,7 +63,7 @@
                   <option
                     disabled
                     hidden
-                    value="null"
+                    value="undefined"
                   >
                     Select a connection type...
                   </option>
@@ -301,6 +301,7 @@ export default Vue.extend({
     }
   },
   async mounted() {
+    await this.$util.send('appdb/tabs/doSomethingBackend')
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
