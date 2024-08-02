@@ -7,10 +7,16 @@ import { TableOrView } from '@/lib/db/models'
 const TEST_VERSIONS = [
   { version: '2017-latest', readonly: false },
   { version: '2017-latest', readonly: true },
-  { version: '2019-latest', readonly: false },
-  { version: '2019-latest', readonly: true },
-  { version: '2022-latest', readonly: false },
-  { version: '2022-latest', readonly: true },
+  // FIXME 2022-latest has a breaking change. We'll use the previous build
+  // for now.
+  // { version: '2019-latest', readonly: false },
+  // { version: '2019-latest', readonly: true },
+  // { version: '2022-latest', readonly: false },
+  // { version: '2022-latest', readonly: true },
+  { version: '2019-CU27-ubuntu-20.04', readonly: false },
+  { version: '2019-CU27-ubuntu-20.04', readonly: true },
+  { version: '2022-CU13-ubuntu-22.04', readonly: false },
+  { version: '2022-CU13-ubuntu-22.04', readonly: true },
 ]
 
 function testWith(dockerTag: string, readonly: boolean) {
@@ -35,7 +41,7 @@ function testWith(dockerTag: string, readonly: boolean) {
         .withExposedPorts(1433)
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
-          test: `/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`,
+          test: `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`,
           interval: 2000,
           timeout: 3000,
           retries: 10,
