@@ -116,7 +116,7 @@ export class LibSQLClient extends SqliteClient {
             id: `c${idx}`,
             name: column.name
           }))
-        } else {
+        } else if (data.length > 0) {
           fields = Object.keys(data[0]).map((name, idx) => ({
             id: `c${idx}`,
             name,
