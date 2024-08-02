@@ -284,8 +284,8 @@ describe("Firebird Tests", () => {
       commitCommand,
       rollbackCommand,
       finalCommand
-    } = util.connection.getImportScripts(table)
-    const importSQL = util.connection.getImportSQL(formattedData)
+    } = await util.connection.getImportScripts(table)
+    const importSQL = await util.connection.getImportSQL(formattedData)
 
     expect(typeof step0).toBe('function')
     expect(typeof beginCommand).toBe('function')

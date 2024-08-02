@@ -325,8 +325,8 @@ function testWith(tag, socket = false, readonly = false) {
           commitCommand,
           rollbackCommand,
           finalCommand
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
+        } = await util.connection.getImportScripts(table)
+        const importSQL = await util.connection.getImportSQL(formattedData)
     
         expect(step0).toBeUndefined()
         expect(typeof beginCommand).toBe('function')

@@ -1316,7 +1316,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return defaultValue;
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name } = table
     
     return {
