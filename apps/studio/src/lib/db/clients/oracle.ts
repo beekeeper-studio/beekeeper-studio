@@ -3,7 +3,7 @@ import knexLib from 'knex';
 import oracle from 'bks-oracledb'
 import _ from 'lodash'
 
-import { IDbConnectionDatabase, IDbConnectionServer, DatabaseElement } from "../types";
+import { IDbConnectionDatabase, DatabaseElement } from "../types";
 import { BasicDatabaseClient, NoOpContextProvider } from "./BasicDatabaseClient";
 import {
   CancelableQuery,
@@ -43,6 +43,7 @@ import platformInfo from '@/common/platform_info';
 import { OracleCursor } from './oracle/OracleCursor';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
+import { IDbConnectionServer } from '../backendTypes';
 
 const log = rawLog.scope('oracle')
 

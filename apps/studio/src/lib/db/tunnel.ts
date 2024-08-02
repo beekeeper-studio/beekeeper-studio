@@ -1,13 +1,14 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import fs from 'fs'
 import path from 'path'
-import pf from 'portfinder'
 import rawLog from "electron-log";
 import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
 import appConfig from '../../config'
+import pf from 'portfinder'
 
-import { resolveHomePathToAbsolute } from '../../common/utils'
-import { IDbConnectionServerConfig, IDbSshTunnel } from './types';
+import { IDbConnectionServerConfig } from './types';
+import { resolveHomePathToAbsolute } from '@/handlers/utils';
+import { IDbSshTunnel } from './backendTypes';
 
 const log = rawLog.scope('db:tunnel');
 const logger = () => log;

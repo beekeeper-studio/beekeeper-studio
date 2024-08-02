@@ -48,8 +48,9 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
+        preload: path.join(__dirname, 'preload.js'),
+        nodeIntegration: false,
+        contextIsolation: true,
         spellcheck: false,
         sandbox: false,
       },
@@ -201,6 +202,37 @@ class BeekeeperWindow {
     return !!this.win
   }
 
+  get focused() {
+    return !!this.win && this.win.isFocused();
+  }
+
+  isMaximized() {
+    return this.win?.isMaximized();
+  }
+
+  isFullscreen() {
+    return this.win?.isFullScreen();
+  }
+
+  setFullscreen(value: boolean) {
+    this.win?.setFullScreen(value);
+  }
+
+  minimizeWindow() {
+    this.win?.minimize();
+  }
+
+  unmaximizeWindow() {
+    this.win?.unmaximize();
+  }
+
+  maximizeWindow() {
+    this.win?.maximize();
+  }
+
+  closeWindow() {
+    this.win?.close();
+  }
 }
 
 export function getActiveWindows(): BeekeeperWindow[] {
@@ -209,4 +241,8 @@ export function getActiveWindows(): BeekeeperWindow[] {
 
 export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): void {
   windows.push(new BeekeeperWindow(settings, options || {}))
+}
+
+export function getCurrentWindow(): BeekeeperWindow {
+  return _.filter(windows, 'focused')[0]
 }

@@ -36,7 +36,6 @@
 </template>
 
 <script lang="ts">
-import { ipcRenderer } from 'electron';
 
 export default {
   methods: {
@@ -49,7 +48,7 @@ export default {
     }
   },
   mounted() {
-    ipcRenderer.on('utilDied', (_event) => {
+    window.main.onUtilDied((_event) => {
       this.$modal.show('util-died-modal');
     });
   }

@@ -117,7 +117,7 @@ import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
@@ -125,7 +125,7 @@ import { TableIndex } from '@/lib/db/models'
 import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
-import { parseIndexColumn as mysqlParseIndexColumn } from '@/lib/db/clients/mysql'
+import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 
 interface State {
   mysqlTypes: string[]

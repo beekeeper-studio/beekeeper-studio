@@ -70,48 +70,36 @@ export default {
   components: { AppMenu },
   data() {
     return {
-      maximized: this.$native.getCurrentWindow()?.isMaximized(),
-      fullscreen: this.$native.getCurrentWindow()?.isFullScreen(),
+      maximized: false,
+      fullscreen: false
     }
   },
   computed: {
-    ...mapState(['windowTitle']),
+    ...mapState(['windowTitle'])
   },
   mounted() {
-    this.getWindow()?.on('maximize', () => {
-      this.maximized = true
-    })
-    this.getWindow()?.on('unmaximize', () => {
-      this.maximized = false
-    })
-    this.getWindow()?.on('enter-full-screen', () => {
-      this.fullscreen = true
-    })
-    this.getWindow()?.on('leave-full-screen', () => {
-      this.fullscreen = false
-    })
   },
   methods: {
-    getWindow() {
-      return this.$native.getCurrentWindow()
+    async updateFlags() {
+      this.maximized = await window.main.isMaximized();
+      this.fullscreen = await window.main.isFullscreen();
     },
-    isMaximized() {
-      return this.getWindow()?.isMaximized()
+    async minimizeWindow() {
+      await window.main.minimizeWindow();
+      await this.updateFlags();
     },
-    minimizeWindow() {
-      this.getWindow()?.minimize();
-    },
-    maximizeWindow() {
+    async maximizeWindow() {
       if (this.fullscreen) {
-        this.getWindow()?.setFullScreen(false);
-      } else if (this.isMaximized()) {
-        this.getWindow()?.unmaximize();
+        await window.main.setFullScreen(false)
+      } else if (this.maximized) {
+        await window.main.unmaximizeWindow()
       } else {
-        this.getWindow()?.maximize();
+        await window.main.maximizeWindow();
       }
+      await this.updateFlags();
     },
-    closeWindow() {
-      this.getWindow()?.close()
+    async closeWindow() {
+      await window.main.closeWindow();
     }
   }
 }

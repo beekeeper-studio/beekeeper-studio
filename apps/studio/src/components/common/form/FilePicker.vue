@@ -30,7 +30,6 @@
 </template>
 
 <script>
-import pluralize from 'pluralize'
 
 /* options and all for the native file picker can be found here https://www.electronjs.org/docs/latest/api/dialog */
 export default {

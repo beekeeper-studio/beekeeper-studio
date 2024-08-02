@@ -5,9 +5,10 @@ import Client_Libsql from "@libsql/knex-libsql";
 import { BasicDatabaseClient } from "./BasicDatabaseClient";
 import Database from "libsql";
 import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
-import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { IDbConnectionDatabase } from "../types";
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
+import { IDbConnectionServer } from "../backendTypes";
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);

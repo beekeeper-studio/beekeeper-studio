@@ -1,5 +1,5 @@
 <template>
-  <div 
+  <div
     class="list-item"
     :title="title"
     @contextmenu.stop.prevent="showContextMenu"
@@ -14,7 +14,7 @@
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">{{ label }}</div>
-        <div class="subtitle"> 
+        <div class="subtitle">
           <span
             class="bastion"
             v-if="this.config.sshBastionHost"
@@ -66,7 +66,6 @@
   </div>
 </template>
 <script>
-import path from 'path'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
@@ -109,7 +108,7 @@ export default {
       if (this.savedConnection) {
         return this.savedConnection.name
       } else if (this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') {
-        return path.basename(this.config.defaultDatabase || '')
+        return window.main.basename(this.config.defaultDatabase)
       }
 
       return this.$bks.simpleConnectionString(this.config)
@@ -136,7 +135,7 @@ export default {
       if (this.isRecentList) {
         if (!this.config.connectionId || !this.config.workspaceId) return null
 
-        return this.connectionConfigs.find((c) => 
+        return this.connectionConfigs.find((c) =>
           c.id === this.config.connectionId &&
           c.workspaceId === this.config.workspaceId
         )

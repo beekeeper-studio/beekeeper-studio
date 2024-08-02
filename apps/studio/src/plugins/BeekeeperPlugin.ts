@@ -2,7 +2,6 @@ import { AppEvent } from "@/common/AppEvent"
 import Vue from 'vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
-import path from 'path'
 import { isBksInternalColumn } from "@/common/utils"
 
 export interface ContextOption {
@@ -73,7 +72,7 @@ export const BeekeeperPlugin = {
 
     let connectionString = `${config.host}:${config.port}`;
     if (config.connectionType.match(/sqlite|libsql|duckdb/)) {
-      return path.basename(config.defaultDatabase || "./unknown.db")
+      return window.main.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
     } else if (config.connectionType === 'bigquery') {

@@ -1,5 +1,3 @@
-import { readVimrc } from "@/common/utils";
-
 export type IMapping = {
   mappingMode: string;
   lhs: string;
@@ -21,7 +19,7 @@ export function applyConfig(codeMirrorVimInstance: any, config: Config) {
 }
 
 export function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
-  const potentialCommands = readVimrc();
+  const potentialCommands = window.main.readVimrc();
 
   if (potentialCommands.length === 0) {
     return;

@@ -1,10 +1,10 @@
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
-import { DataState, DataStore, localActionsFor, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { IConnection } from "@/common/interfaces/IConnection";
+import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import _ from "lodash";
 
-type State = DataState<SavedConnection>
+type State = DataState<IConnection>
 
-export const LocalConnectionModule: DataStore<SavedConnection, State> = {
+export const UtilConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
   state: {
     items: [],
@@ -13,12 +13,12 @@ export const LocalConnectionModule: DataStore<SavedConnection, State> = {
     pollError: null,
     filter: undefined
   },
-  mutations: mutationsFor<SavedConnection>({
-    connectionFilter(state: DataState<SavedConnection>, str: string) {
+  mutations: mutationsFor<IConnection>({
+    connectionFilter(state: DataState<IConnection>, str: string) {
       state.filter = str;
     }
   }),
-  actions: localActionsFor<SavedConnection>(SavedConnection, {
+  actions: utilActionsFor<IConnection>('saved', {
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500)

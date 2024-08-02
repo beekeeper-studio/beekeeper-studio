@@ -1,74 +1,15 @@
-
 import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
-
 import { ApplicationEntity } from './application_entity'
-import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
 import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { ConnectionType } from "@/lib/db/types"
-import { AzureAuthType } from "@/lib/db/authentication/azure"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions } from "@/lib/db/types"
+import { resolveHomePathToAbsolute } from "@/handlers/utils"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
-
-export const ConnectionTypes = [
-  { name: 'MySQL', value: 'mysql' },
-  { name: 'TiDB', value: 'tidb' },
-  { name: 'MariaDB', value: 'mariadb' },
-  { name: 'Postgres', value: 'postgresql' },
-  { name: 'SQLite', value: 'sqlite' },
-  { name: 'LibSQL', value: 'libsql' },
-  { name: 'SQL Server', value: 'sqlserver' },
-  { name: 'Amazon Redshift', value: 'redshift' },
-  { name: 'CockroachDB', value: 'cockroachdb' },
-  { name: 'Oracle', value: 'oracle' },
-  { name: 'Cassandra', value: 'cassandra' },
-  { name: 'BigQuery', value: 'bigquery' },
-  { name: 'Firebird', value: 'firebird'},
-  { name: 'DuckDB', value: 'duckdb' },
-]
-
-export const keymapTypes = [
-  { name: "Default", value: "default" },
-  { name: "Vim", value: "vim" }
-]
-
-export interface RedshiftOptions {
-  iamAuthenticationEnabled?: boolean
-  accessKeyId?: string;
-  secretAccessKey?: string;
-  awsRegion?: string;
-  clusterIdentifier?: string;
-  databaseGroup?: string;
-  tokenDurationSeconds?: number;
-}
-
-export interface CassandraOptions {
-  localDataCenter?: string
-}
-
-export interface BigQueryOptions {
-  keyFilename?: string;
-  projectId?: string;
-  devMode?: boolean
-}
-
-export interface AzureAuthOptions {
-  azureAuthEnabled?: boolean;
-  azureAuthType?: AzureAuthType;
-  tenantId?: string;
-  clientSecret?: string;
-  msiEndpoint?: string;
-}
-export interface LibSQLOptions {
-  mode: 'url' | 'file';
-  authToken?: string;
-  syncUrl?: string;
-  syncPeriod?: number;
-}
 
 export interface ConnectionOptions {
   cluster?: string
