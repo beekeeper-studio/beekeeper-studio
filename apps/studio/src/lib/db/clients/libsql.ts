@@ -8,6 +8,7 @@ import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
 import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
+import { NgQueryResult } from "../models";
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);
@@ -92,6 +93,50 @@ export class LibSQLClient extends SqliteClient {
     }
   }
 
+  // FIXME (azmi): we need this until array mode is fixed
+  async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
+    const arrayMode: boolean = options.arrayMode;
+    const result = await this.driverExecuteMultiple(queryText, options);
+
+    return (result || []).map(({ data, columns, statement, changes }) => {
+      // Fallback in case the identifier could not reconize the command
+      const isSelect = Array.isArray(data);
+      let rows: any[];
+      let fields: any[];
+
+      if (isSelect && arrayMode) {
+        rows = data.map((row: Record<string, any>) =>
+          Object.keys(row).reduce((obj, key, idx) => {
+            obj[`c${idx}`] = row[key];
+            return obj
+          }, {})
+        );
+        if (columns.length > 0) {
+          fields = columns.map((column, idx) => ({
+            id: `c${idx}`,
+            name: column.name
+          }))
+        } else {
+          fields = Object.keys(data[0]).map((name, idx) => ({
+            id: `c${idx}`,
+            name,
+          }));
+        }
+      } else {
+        rows = data || [];
+        fields = Object.keys(rows[0] || {}).map((name) => ({name, id: name }));
+      }
+
+      return {
+        command: statement.type || (isSelect && 'SELECT'),
+        rows,
+        fields,
+        rowCount: data && data.length,
+        affectedRows: changes || 0,
+      };
+    });
+  }
+
   protected async rawExecuteQuery(
     q: string,
     options: { connection?: Database.Database } = {}
@@ -100,9 +145,9 @@ export class LibSQLClient extends SqliteClient {
     const ownOptions = { ...options, connection };
     if (this.isRemote) {
       // FIXME disable arrayMode for now as stmt.raw() doesn't work for remote connection
-      return super.rawExecuteQuery(q, { ...ownOptions, arrayMode: false });
+      return await super.rawExecuteQuery(q, { ...ownOptions, arrayMode: false });
     }
-    return super.rawExecuteQuery(q, ownOptions);
+    return await super.rawExecuteQuery(q, ownOptions)
   }
 
   // @ts-expect-error not fully typed
