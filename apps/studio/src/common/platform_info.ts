@@ -24,15 +24,14 @@ if (isRenderer()) {
   let e
   const p = process;
   const { resolve, join } = require('path');
-  const yargs = require('yargs-parser');
-  
+
   if (!isUtility()) {
-    e = require('electron')
+    // e = require('electron')
   }
 
   const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
   const testMode = p.env.TEST_MODE ? true : false
-  const isDevEnv = !(e?.app && (e?.app.isPackaged ?? p.env.isPackaged));
+  const isDevEnv = true //!(e?.app && (e?.app.isPackaged ?? p.env.isPackaged));
   const isWindows = platform === 'win32'
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')
@@ -47,9 +46,9 @@ if (isRenderer()) {
   const oracleSupported = isMac && isArm ? false : true
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
-  let userDirectory =  testMode ? './tmp' : e?.app.getPath("userData") ?? p.env.userDir
-  const downloadsDirectory = testMode ? './tmp' : e?.app.getPath('downloads') ?? p.env.downloadDir
-  const homeDirectory = testMode ? './tmp' : e?.app.getPath('home') ?? p.env?.homeDir
+  let userDirectory =  '/home/rathboma/.config/beekeeper-studio' // testMode ? './tmp' : e?.app.getPath("userData") ?? p.env.userDir
+  const downloadsDirectory = '/home/rathboma/Downloads' // testMode ? './tmp' : e?.app.getPath('downloads') ?? p.env.downloadDir
+  const homeDirectory = '/home/rathboma' // testMode ? './tmp' : e?.app.getPath('home') ?? p.env?.homeDir
   if (p.env.PORTABLE_EXECUTABLE_DIR) {
     userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
   }
@@ -57,7 +56,8 @@ if (isRenderer()) {
   const sessionType = p.env.XDG_SESSION_TYPE
 
   const slice = isDevEnv ? 2 : 1
-  const parsedArgs = yargs(p.argv.slice(slice))
+  // const parsedArgs = yargs(p.argv.slice(slice))
+  const parsedArgs = { _: []}
   // TODO: Automatically enable wayland without flags once
   // we're confident it will 'just work' for all Wayland users.
   function isWaylandMode() {

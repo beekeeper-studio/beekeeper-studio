@@ -155,7 +155,7 @@
     "jest-serializer-vue": "^3.1.0",
     "jest-transform-stub": "^2.0.0",
     "jest-watch-typeahead": "^2.2.2",
-    "node-abi": "^3.34.0",
+    "node-abi": "^3.65.0",
     "node-gyp": "^10.1.0",
     "nodemon": "^3.1.0",
     "postcss": "^8.4.38",
@@ -168,6 +168,7 @@
     "tsc-alias": "^1.8.9",
     "typescript": "~4.3.0",
     "vite": "^5.3.5",
+    "vite-plugin-commonjs": "^0.10.1",
     "vue-template-compiler": "^2.7.16",
     "xvfb-maybe": "^0.2.1"
   },
@@ -176,11 +177,6 @@
       "node_modules",
       "../**/dist"
     ]
-  },
-  "postcss": {
-    "plugins": {
-      "autoprefixer": {}
-    }
   },
   "browserslist": [
     "> 1%",

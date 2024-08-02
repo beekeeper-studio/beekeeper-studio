@@ -193,9 +193,9 @@ const rendererArgs = {
 
   if(isWatching) {
     const main = await esbuild.context(mainArgs)
-    const renderer = await esbuild.context(rendererArgs)
-    await renderer.rebuild()
-    Promise.all([main.watch(), renderer.watch()])
+    // const renderer = await esbuild.context(rendererArgs)
+    // await renderer.rebuild()
+    Promise.all([main.watch()])
   } else {
     Promise.all([
       esbuild.build(mainArgs),

@@ -54,14 +54,15 @@ class BeekeeperWindow {
         nodeIntegration: false,
         contextIsolation: true,
         spellcheck: false,
-        sandbox: true,
+        sandbox: false,
       },
       icon: getIcon()
     })
 
+    const devUrl = 'http://localhost:3003'
     const startUrl = 'app://./index.html'
-    // let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
-    const appUrl = startUrl
+    let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
+    // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     if (platformInfo.isWayland) {
