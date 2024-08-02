@@ -7,7 +7,7 @@ const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
 import knexFirebirdDialect from "knex-firebird-dialect"
 import { identify } from 'sql-query-identifier'
-import { Client_DuckDB } from '../../lib/knex-duckdb'
+import { Client_DuckDB } from '../knex-duckdb'
 
 interface GeneratorConnection {
   dbConfig: any

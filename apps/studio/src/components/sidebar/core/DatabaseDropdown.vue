@@ -2,7 +2,7 @@
   <div class="fixed">
     <div class="data-select-wrap">
       <p
-        v-if="!dialect.disabledFeatures?.multipleDatabase"
+        v-if="supportsMultipleDatabase"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,7 +18,7 @@
         class="dropdown-search"
       />
       <a
-        v-if="dialect.disabledFeatures?.multipleDatabase"
+        v-if="!supportsMultipleDatabase"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -95,6 +95,9 @@
       this.selectedDatabase = this.currentDatabase
     },
     computed: {
+      supportsMultipleDatabase() {
+        return !this.dialect.disabledFeatures?.multipleDatabase
+      },
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
