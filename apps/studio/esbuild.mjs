@@ -92,8 +92,8 @@ const commonArgs = {
   outdir: 'dist',
   bundle: true,
   external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
-  sourcemap: isWatching,
-  minify: !isWatching,
+  sourcemap: true,
+  minify: false,
   define: {
     'process.env.NODE_ENV': env
   }
@@ -102,16 +102,7 @@ const commonArgs = {
   const mainArgs = {
     ...commonArgs,
     entryPoints: ['src/background.ts', 'src/utility.ts', 'src/preload.ts'],
-    plugins: [getElectronPlugin("Main"),
-    copy({
-      resolveFrom: 'cwd',
-      assets: [
-        {
-          from: ['./src/index.html'],
-          to: './dist/'
-        },
-      ]
-    })]
+    plugins: [getElectronPlugin("Main")]
   }
 
   if(isWatching) {

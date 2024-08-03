@@ -60,7 +60,7 @@ class BeekeeperWindow {
     })
 
     const devUrl = 'http://localhost:3003'
-    const startUrl = 'app://./index.html'
+    const startUrl = 'app://./renderer/index.html'
     let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}

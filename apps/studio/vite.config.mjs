@@ -26,7 +26,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist', // Output directory for the renderer process
+    outDir: 'dist/renderer', // Output directory for the renderer process
     emptyOutDir: true, // Clears the directory before building
     rollupOptions: {
       external: [],

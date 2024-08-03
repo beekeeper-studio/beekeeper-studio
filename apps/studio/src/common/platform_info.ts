@@ -46,6 +46,7 @@ if (isRenderer()) {
   const oracleSupported = isMac && isArm ? false : true
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
+  // FIXME: This needs fixing before release - need day's patches to rejig platform_info
   let userDirectory =  '/home/rathboma/.config/beekeeper-studio' // testMode ? './tmp' : e?.app.getPath("userData") ?? p.env.userDir
   const downloadsDirectory = '/home/rathboma/Downloads' // testMode ? './tmp' : e?.app.getPath('downloads') ?? p.env.downloadDir
   const homeDirectory = '/home/rathboma' // testMode ? './tmp' : e?.app.getPath('home') ?? p.env?.homeDir
