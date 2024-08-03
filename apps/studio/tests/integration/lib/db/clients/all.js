@@ -79,7 +79,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("query tests", async () => {
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
-      } else if (getUtil().dbType !== 'libsql'){
+      } else {
         await getUtil().queryTests()
       }
     })
