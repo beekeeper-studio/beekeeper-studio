@@ -1,0 +1,7 @@
+{
+  "name": "cpu-features",
+  "version": "0.10.0",
+  "description": "Fake package",
+  "main": "index.js",
+  "license": "MIT"
+}
