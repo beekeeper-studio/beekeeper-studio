@@ -1,7 +1,7 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
+export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql' | 'duckdb';
 
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
@@ -17,6 +17,7 @@ export const ConnectionTypes = [
   { name: 'Cassandra', value: 'cassandra' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
+  { name: 'DuckDB', value: 'duckdb' },
 ]
 
 export const keymapTypes = [

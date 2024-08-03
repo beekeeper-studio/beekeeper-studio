@@ -36,8 +36,6 @@ const bigqueryContext = {
 }
 
 export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
-  connectionBaseType = 'bigquery' as const;
-
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   client: bq.BigQuery;

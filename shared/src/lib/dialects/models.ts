@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'duckdb'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -40,6 +40,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   bigquery: "BigQuery",
   firebird: "Firebird",
   oracle: "Oracle Database",
+  duckdb: "DuckDB",
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -62,6 +63,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'postgresql') return 'postgresql'
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
+  if (d === 'duckdb') return 'sql'
   return 'mysql' // we want this as the default
 }
 
@@ -142,6 +144,7 @@ export interface DialectData {
       sql?: boolean
     }
     schema?: boolean
+    multipleDatabase?: boolean
   },
   notices?: {
     infoSchema?: string
@@ -243,7 +246,7 @@ export interface AlterPartitionsSpec {
 
 export interface IndexColumn {
   name: string
-  order: 'ASC' | 'DESC'
+  order?: 'ASC' | 'DESC'
   prefix?: number | null // MySQL Only
 }
 

@@ -107,7 +107,7 @@ export const ConnHandlers: IConnectionHandlers = {
       throw new Error(errorMessages.noUsername);
     }
 
-    if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
       let cache = new TokenCache();
       cache = await cache.save();
       config.authId = cache.id;

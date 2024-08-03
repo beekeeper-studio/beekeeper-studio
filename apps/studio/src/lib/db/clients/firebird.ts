@@ -211,8 +211,6 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
-  connectionBaseType = 'firebird' as const;
-
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;

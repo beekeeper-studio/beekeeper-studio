@@ -60,7 +60,6 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
-  connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
 
@@ -232,9 +231,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     const sql = await this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     if (!sql) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
+      throw new Error(`Cannot rename element ${elementName} to ${newElementName} of type ${typeOfElement}`);
     }
-    await this.executeQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
@@ -242,11 +241,11 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    const sql = this.truncateElementSql(elementName, typeOfElement, schema);
+    const sql = await this.truncateElementSql(elementName, typeOfElement, schema);
     if (!sql) {
       throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
     }
-    await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement, schema));
+    await this.driverExecuteSingle(sql);
   }
 
   abstract truncateAllTables(schema?: string): Promise<void>;
@@ -281,12 +280,12 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   getImportSQL(importedData: any[]): string | string[] {
     const queries = []
-    
+
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
-  
+
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
@@ -328,7 +327,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       columns,
       totalRows
     }
-  } 
+  }
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
@@ -368,7 +367,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
-    
+
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;

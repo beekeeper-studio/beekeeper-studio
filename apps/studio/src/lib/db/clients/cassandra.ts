@@ -57,8 +57,6 @@ type CassandraVersion = {
 };
 
 export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
-  connectionBaseType = 'cassandra' as const;
-
   client: cassandra.Client;
   versionInfo: CassandraVersion;
 
