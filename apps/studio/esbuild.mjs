@@ -1,10 +1,6 @@
 #!/usr/bin/env node
 import esbuild from 'esbuild';
-import vuePlugin from 'esbuild-vue'
-import {sassPlugin} from 'esbuild-sass-plugin'
 import { copy } from 'esbuild-plugin-copy';
-import postcss from 'postcss'
-import copyAssets from 'postcss-copy-assets';
 import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 const isWatching = process.argv[2] === 'watch';
@@ -72,26 +68,6 @@ const restartElectron = _.debounce(() => {
 
 }, 500)
 
-const tabulatorPlugin = {
-  name: 'tabulator-tables resolver',
-  setup(build) {
-    build.onResolve({ filter: /^tabulator-tables$/ }, async (args) => {
-      const result = await build.resolve('../../node_modules/tabulator-tables/dist/js/tabulator_esm.js', {
-        kind: 'import-statement',
-        resolveDir: path.dirname(args.path),
-      })
-
-      if (result.errors.length > 0) {
-        return { errors: result.errors }
-      }
-
-      return {
-        path: result.path
-      }
-    });
-  },
-}
-
 
 function getElectronPlugin(name, action = () => restartElectron()) {
   return {
@@ -107,9 +83,6 @@ function getElectronPlugin(name, action = () => restartElectron()) {
   }
 }
 
-const electronRendererPlugin = getElectronPlugin("Renderer", () => {
-  if (electron) touch('./.tmp/restart-renderer')
-})
 
 
 const env = isWatching ? '"development"' : '"production"';
@@ -141,65 +114,12 @@ const commonArgs = {
     })]
   }
 
-const rendererArgs = {
-  ...commonArgs,
-  entryPoints: ['src/main.ts'],
-  plugins: [
-    tabulatorPlugin,
-    electronRendererPlugin,
-    vuePlugin(),
-    copy({
-      resolveFrom: "cwd",
-      assets: [
-        {
-          from: ['../../node_modules/material-icons/**/*.woff*'],
-          to: ['./dist/material-icons']
-        },
-        {
-          from: './src/assets/logo.svg',
-          to: 'dist/assets/'
-        },
-        {
-          from: './src/assets/fonts/**/*',
-          to: 'dist/fonts'
-        },
-        {
-          from: './src/assets/icons/**/*',
-          to: 'dist/icons'
-        },
-        {
-          from: './src/assets/images/**/*',
-          to: 'dist/images'
-        },
-        {
-          from: '../../node_modules/typeface-roboto/**/*.woff*',
-          to: './dist/'
-        },
-        {
-          from: '../../node_modules/xel/**/*.svg',
-          to: './dist/node_modules/xel'
-        },
-      ]
-    }),
-    sassPlugin({
-      async transform(source, resolveDir, filePath) {
-        const { css } = await postcss().use(copyAssets({ base: `dist` })).process(source, { from: filePath, to: `dist/main.css` });
-        return css;
-      }
-    }),
-
-  ]
-}
-
   if(isWatching) {
     const main = await esbuild.context(mainArgs)
-    // const renderer = await esbuild.context(rendererArgs)
-    // await renderer.rebuild()
     Promise.all([main.watch()])
   } else {
     Promise.all([
       esbuild.build(mainArgs),
-      esbuild.build(rendererArgs),
     ])
   }
 // launch electron

@@ -149,8 +149,6 @@
     "electronmon": "^2.0.3",
     "esbuild": "^0.21.2",
     "esbuild-node-externals": "^1.13.1",
-    "esbuild-sass-plugin": "^3.2.0",
-    "esbuild-vue": "^1.2.2",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "execa": "npm:@esm2cjs/execa",
