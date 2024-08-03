@@ -15,10 +15,12 @@
     "test:e2e": "xvfb-maybe yar playwright test e2e/*",
     "lint": "eslint",
     "electron:build": "yarn build && yarn electron-builder",
-    "electron:serve": "./esbuild.mjs watch",
+    "electron:serve": "concurrently -c blue,green -n esbuild,vite 'yarn dev:esbuild' 'yarn dev:vite'",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
-    "test:integration": "../../bin/integration-tests.sh"
+    "test:integration": "../../bin/integration-tests.sh",
+    "dev:esbuild": "./esbuild.mjs watch",
+    "dev:vite": "vite dev"
   },
   "main": "dist/background.js",
   "dependencies": {
@@ -38,6 +40,7 @@
     "cassandra-driver": "^4.6.4",
     "cassandra-knex": "beekeeper-studio/cassandra-knex#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a",
     "codemirror": "^5.63.1",
+    "concurrently": "^8.2.2",
     "connection-string": "^3.4.2",
     "core-js": "^3",
     "dateformat": "^3.0.3",
@@ -184,10 +187,6 @@
   ],
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "resolutions": {
-    "watchpack": "1.6.1",
-    "node-pre-gyp": "0.12.0",
-    "nan": "2.17.0",
-    "cpu-features": ".yarn/packages/empty-package",
-    "sqlite3": "5.1.6"
+    "cpu-features": "file:./.yarn/packages/empty-package"
   }
 }
