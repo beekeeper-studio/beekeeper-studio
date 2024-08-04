@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions, ImportFuncOptions } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
@@ -267,7 +267,35 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  getImportScripts(_table: TableOrView): ImportScriptFunctions {
+  async importStepZero(_table: TableOrView): Promise<any> {
+    return null
+  }
+  async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importTruncateCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importLineReadCommand (_table: TableOrView, _sqlString: string|string[], _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importCommitCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importRollbackCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importFinalCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+  
+  // getImportScripts can be deleted
+  async getImportScripts(_table: TableOrView): Promise<ImportScriptFunctions> {
     return {
       step0: (): Promise<any|null> => null,
       beginCommand: (_executeOptions: any): any => null,
@@ -279,7 +307,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
-  getImportSQL(importedData: any[]): string | string[] {
+  async getImportSQL(importedData: any[]): Promise<string | string[]> {
     const queries = []
     
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))

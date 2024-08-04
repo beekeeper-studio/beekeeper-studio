@@ -345,6 +345,12 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
     })
   })
+
+  describe.only("Import Scripts", () => {
+    test("Import data", async ()=> {
+      await getUtil().importScriptsTests()
+    })
+  })
 }
 
 // test functions below

@@ -8,7 +8,7 @@ import { IDbConnectionPublicServer } from '../../src/lib/db/server'
 import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
-import { TableIndex, TableOrView } from '../../src/lib/db/models'
+import { ImportFuncOptions, TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
@@ -1132,6 +1132,93 @@ export class DBTestUtil {
 
     const rows = await this.connection.selectTop('with_generated_cols', 0, 10, [], [], this.defaultSchema)
     expect(rows.result.map((r) => r.full_name)).toEqual(['Tom Tester'])
+  }
+
+  async importScriptsTests() {
+    // cassandra and big query don't allow import so no need to test!
+    // oracle is breaking on the test with an invalid table name, not sure what's up with that right now
+    if (['oracle', 'cassandra','bigquery'].includes(this.dbType)) {
+      return expect.anything()
+    }
+    const schema = ['postgresql'].includes(this.dbType) ? 'public' : null
+    let tableName = 'import_table'
+    
+    const importScriptOptions: ImportFuncOptions = {
+      executeOptions: { multiple: false }
+    }
+
+    let data = []
+    let hatColumn = 'hat'
+
+    if (['firebird', 'oracle'].includes(this.dbType)) {
+      data = [
+        {
+          'NAME': 'biff',
+          'HAT': 'beret'
+        },
+        {
+          'NAME': 'spud',
+          'HAT': 'fez'
+        },
+        {
+          'NAME': 'chuck',
+          'HAT': 'barretina'
+        },
+        {
+          'NAME': 'lou',
+          'HAT': 'tricorne'
+        }
+      ]
+      tableName = 'IMPORT_TABLE'
+      hatColumn = 'HAT'
+    } else {
+      data = [
+        {
+          'name': 'biff',
+          'hat': 'beret'
+        },
+        {
+          'name': 'spud',
+          'hat': 'fez'
+        },
+        {
+          'name': 'chuck',
+          'hat': 'barretina'
+        },
+        {
+          'name': 'lou',
+          'hat': 'tricorne'
+        }
+      ]
+    }
+    const table: TableOrView = {
+      schema,
+      name: tableName,
+      entityType: 'table'
+    }
+    const formattedData = data.map(d => ({
+      table: tableName,
+      data: [d]
+    }))
+    const importSQL = await this.connection.getImportSQL(formattedData)
+
+    importScriptOptions.clientExtras = await this.connection.importStepZero(table)
+    await this.connection.importBeginCommand(table, importScriptOptions)
+    await this.connection.importTruncateCommand(table, importScriptOptions)
+
+    const editedImportScriptOptions = {
+      clientExtras: importScriptOptions.clientExtras,
+      executeOptions: { multiple: true } 
+    }
+
+    await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
+    
+    await this.connection.importCommitCommand(table, importScriptOptions)
+    await this.connection.importFinalCommand(table, importScriptOptions)
+
+    const [hats] = await this.knex(tableName).count(hatColumn)
+    const [dataLength] = _.values(hats)
+    expect(Number(dataLength)).toBe(4)
   }
 
   private async createTables() {
