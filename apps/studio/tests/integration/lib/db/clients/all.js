@@ -197,6 +197,17 @@ export function runCommonTests(getUtil, opts = {}) {
     })
   })
 
+  describe("Import Scripts", () => {
+    test("Import data", async ()=> {
+      const importScriptConfig = await prepareImportTests(getUtil)
+      await getUtil().importScriptsTests(importScriptConfig)
+    })
+    test.only("Rollback data", async ()=> {
+      const importScriptConfig = await prepareImportTests(getUtil)
+      await getUtil().importScriptRollbackTest(importScriptConfig)
+    })
+  })
+
 
   // press f for oracle.
   const f = readOnly ? describe.skip : describe
@@ -343,12 +354,6 @@ export function runCommonTests(getUtil, opts = {}) {
   describe("SQLGenerator", () => {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
-    })
-  })
-
-  describe.only("Import Scripts", () => {
-    test("Import data", async ()=> {
-      await getUtil().importScriptsTests()
     })
   })
 }
@@ -878,4 +883,71 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
   expect(sql.includes('test_inserts'));
   expect(sql.includes('jane'));
   expect(sql.includes('testy'));
+}
+
+export async function prepareImportTests (util) {
+  const dbType = util().dbType
+  const schema = ['postgresql'].includes(dbType) ? 'public' : null
+  const tableName = 'importstuff'
+  
+  const importScriptOptions = {
+    executeOptions: { multiple: false }
+  }
+
+  let data = []
+  let hatColumn = 'hat'
+
+  if (['firebird', 'oracle'].includes(dbType)) {
+    data = [
+      {
+        'NAME': 'biff',
+        'HAT': 'beret'
+      },
+      {
+        'NAME': 'spud',
+        'HAT': 'fez'
+      },
+      {
+        'NAME': 'chuck',
+        'HAT': 'barretina'
+      },
+      {
+        'NAME': 'lou',
+        'HAT': 'tricorne'
+      }
+    ]
+    hatColumn = 'HAT'
+  } else {
+    data = [
+      {
+        'name': 'biff',
+        'hat': 'beret'
+      },
+      {
+        'name': 'spud',
+        'hat': 'fez'
+      },
+      {
+        'name': 'chuck',
+        'hat': 'barretina'
+      },
+      {
+        'name': 'lou',
+        'hat': 'tricorne'
+      }
+    ]
+  }
+  const table = {
+    schema,
+    name: tableName,
+    entityType: 'table'
+  }
+  const formattedData = data.map(d => ({
+    table: tableName,
+    data: [d]
+  }))
+
+  return {
+    tableName, table, formattedData, importScriptOptions, hatColumn
+  }
 }
