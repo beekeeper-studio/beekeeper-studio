@@ -17,7 +17,7 @@
       "@/*": [
         "./src/*"
       ],
-      "@shared/*": ["../../shared/src/*"]
+      "@shared/*": ["./src/shared/*"]
     },
     "lib": [
       "esnext",

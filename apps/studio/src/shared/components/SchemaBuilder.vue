@@ -257,8 +257,8 @@ export default Vue.extend({
 
 
 <style lang="scss">
-  @import '../../../shared/src/assets/styles/_variables';
-  @import '../../../shared/src/assets/styles/_extends';
+  @import '../../shared/assets/styles/_variables';
+  @import '../../shared/assets/styles/_extends';
   $row-height:             42px;
   $min-cell-width:         24px;
   $cell-font-size:         14px;

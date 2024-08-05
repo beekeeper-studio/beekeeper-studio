@@ -276,7 +276,7 @@ export default Vue.extend({
 
 
 <style lang="scss" scoped>
-@import '../../../../../shared/src/assets/styles/_variables';
+@import '../../shared/assets/styles/_variables';
 
 div.vue-dialog div.dialog-content {
   padding: 0;

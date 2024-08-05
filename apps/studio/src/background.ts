@@ -1,5 +1,4 @@
 'use strict'
-import 'module-alias/register';
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
