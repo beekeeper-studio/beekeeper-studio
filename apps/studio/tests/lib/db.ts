@@ -1166,11 +1166,11 @@ export class DBTestUtil {
     // mysql was added to the list because a timeout was required to get the rollback number ot show
     // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
     let expectedLength = 0
-    if (['cassandra','bigquery', 'mysql'].includes(this.dbType)) {
+    if (['cassandra','bigquery', 'mysql', 'tidb'].includes(this.dbType)) {
       return expect.anything()
     }
 
-    if (['sqlite'].includes(this.dbType)) {
+    if (['sqlite', 'libsql'].includes(this.dbType)) {
       expectedLength = 4
     }
 
