@@ -5,10 +5,10 @@ import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
-import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
-import { getDialectData } from '../../../../shared/src/lib/dialects/'
+import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
+import { getDialectData } from '@shared/lib/dialects'
 import _ from 'lodash'
-import { ImportFuncOptions, TableIndex, TableOrView } from '../../src/lib/db/models'
+import { TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
@@ -1282,11 +1282,6 @@ export class DBTestUtil {
     await this.knex.schema.createTable('streamtest', (table) => {
       primary(table)
       table.string("name")
-    })
-
-    await this.knex.schema.createTable('importstuff', (t) => {
-      t.string('name'),
-      t.string('hat')
     })
 
     if (!this.options.skipGeneratedColumns) {

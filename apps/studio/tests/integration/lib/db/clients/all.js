@@ -198,6 +198,9 @@ export function runCommonTests(getUtil, opts = {}) {
   })
 
   describe("Import Scripts", () => {
+    beforeEach(async() => {
+      await prepareImportTable(getUtil())
+    })
     test("Import data", async ()=> {
       const importScriptConfig = await prepareImportTests(getUtil)
       await getUtil().importScriptsTests(importScriptConfig)
@@ -366,6 +369,14 @@ const prepareTestTable = async function(util) {
     table.integer("id").primary().notNullable()
     table.specificType("first_name", "varchar(255)")
     table.specificType("last_name", "varchar(255)")
+  })
+}
+
+const prepareImportTable = async function(util) {
+  await util.knex.schema.dropTableIfExists("importstuff")
+  await util.knex.schema.createTable('importstuff', (t) => {
+    t.string('name'),
+    t.string('hat')
   })
 }
 
