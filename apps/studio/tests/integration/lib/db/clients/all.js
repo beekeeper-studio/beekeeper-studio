@@ -202,7 +202,7 @@ export function runCommonTests(getUtil, opts = {}) {
       const importScriptConfig = await prepareImportTests(getUtil)
       await getUtil().importScriptsTests(importScriptConfig)
     })
-    test.only("Rollback data", async ()=> {
+    test("Rollback data", async ()=> {
       const importScriptConfig = await prepareImportTests(getUtil)
       await getUtil().importScriptRollbackTest(importScriptConfig)
     })

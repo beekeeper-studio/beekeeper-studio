@@ -8,11 +8,11 @@ import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { runCommonTests, runReadOnlyTests } from './all'
 
 const TEST_VERSIONS = [
-  // {version: '5.7'},
-  // {version: '5.7', readonly: true},
-  // { version: '8', socket: false, readonly: true},
+  {version: '5.7'},
+  {version: '5.7', readonly: true},
+  { version: '8', socket: false, readonly: true},
   { version: '8', socket: false},
-  // { version: '8', socket: true }
+  { version: '8', socket: true }
 ]
 
 

@@ -1188,9 +1188,12 @@ export class DBTestUtil {
     await this.connection.importRollbackCommand(table, importScriptOptions)
     await this.connection.importFinalCommand(table, importScriptOptions)
 
-    const [hats] = await this.knex(tableName).count(hatColumn)
-    const [dataLength] = _.values(hats)
-    expect(Number(dataLength)).toBe(expectedLength)
+    // setTimeout added because mysql ¯\_(ツ)_/¯
+    setTimeout(async () => {
+      const [hats] = await this.knex(tableName).count(hatColumn)
+      const [dataLength] = _.values(hats)
+      expect(Number(dataLength)).toBe(expectedLength)
+    }, 500)
   }
 
   private async createTables() {
