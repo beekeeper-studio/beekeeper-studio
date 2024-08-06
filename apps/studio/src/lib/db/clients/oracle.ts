@@ -11,6 +11,7 @@ import {
   ExtendedTableColumn,
   FieldDescriptor,
   FilterOptions,
+  ImportFuncOptions,
   ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
@@ -101,7 +102,24 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async importTruncateCommand (table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
+    const { schema, name } = table
+    return this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions)
+  }
+
+  async importLineReadCommand (_table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery(sqlString, executeOptions)
+  }
+
+  async importCommitCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('COMMIT;', executeOptions)
+  }
+
+  async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('ROLLBACK;', executeOptions)
+  }
+  
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { schema, name } = table
     return {
       beginCommand: (_executeOptions: any): Promise<any> => null,

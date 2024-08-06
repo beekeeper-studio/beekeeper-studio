@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportScriptFunctions } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportScriptFunctions, ImportFuncOptions } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -1041,7 +1041,29 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async importBeginCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('BEGIN;', importOptions.executeOptions)
+  }
+
+  async importTruncateCommand (table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    return this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, importOptions.executeOptions)
+  }
+
+  async importLineReadCommand (_table: TableOrView, sqlString: string, importOptions: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery(sqlString, importOptions.executeOptions)
+  }
+
+  async importCommitCommand (_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('COMMIT;', importOptions.executeOptions)
+  }
+
+  async importRollbackCommand (_table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
+  }
+
+  // get rid of at some point please and thanks
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name, schema } = table
     return {
       beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('BEGIN;', executeOptions),

@@ -253,6 +253,11 @@ export interface CancelableQuery {
   cancel: () => Promise<void>;
 }
 
+export interface ImportFuncOptions {
+  clientExtras?: {[key: string]: any}
+  executeOptions?: {[key: string]: any}
+}
+
 export interface ImportScriptFunctions {
   step0?: (args?: any) => Promise<null|any>
   beginCommand: (args?: any) => Promise<null|any>
