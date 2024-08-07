@@ -2,12 +2,12 @@ import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
 import { app , shell } from 'electron'
-import platformInfo from '../common/platform_info'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
 import Vue from 'vue';
+import { platformInfo } from '@/handlers/handlerState'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 

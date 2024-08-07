@@ -1,7 +1,8 @@
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
-import platformInfo from '../../platform_info';
+import { platformInfo } from '@/handlers/handlerState'
 import { Entity, Column } from 'typeorm'
+import { UserSettingValue } from "@/common/transport/TransportUserSetting";
 
 export interface IGroupedUserSettings {
   [x: string]: UserSetting
@@ -15,8 +16,6 @@ export enum UserSettingValueType {
   array = 4,
   boolean = 5,
 }
-
-type UserSettingValue = string | number | boolean | Array<any> | Record<string, any> | null
 
 const TypeDefaults = {
   0: "",

@@ -3,10 +3,10 @@ import * as path from 'path'
 import { readFile } from 'fs'
 import * as fs from 'fs'
 import { URL } from 'url'
-import rawLog from 'electron-log'
-import platformInfo from '@/common/platform_info'
+import { platformInfo } from '@/handlers/handlerState'
+// import rawLog from 'electron-log'
 
-const log = rawLog.scope('ProtocolBuilder')
+// const log = rawLog.scope('ProtocolBuilder')
 
 
 
@@ -19,13 +19,13 @@ export const ProtocolBuilder = {
         let pathName = new URL(request.url).pathname
         pathName = decodeURI(pathName) // Needed in case URL contains spaces
 
-        const emptySourceMap = JSON.stringify({
-          version: 3,
-          file: request.url,
-          sources: [],
-          names: [],
-          mappings: ''
-        });
+        // const emptySourceMap = JSON.stringify({
+        //   version: 3,
+        //   file: request.url,
+        //   sources: [],
+        //   names: [],
+        //   mappings: ''
+        // });
 
 
         // our app runs from dist/, regardless of whether this is inside of the
@@ -42,7 +42,7 @@ export const ProtocolBuilder = {
           }
         }
 
-        readFile(normalizedPath, (error, data) => {
+        readFile(normalizedPath, (_error, data) => {
 
           let mimeType = ''
 

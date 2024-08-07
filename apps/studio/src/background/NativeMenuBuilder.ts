@@ -4,7 +4,7 @@ import { ipcMain, BrowserWindow } from 'electron'
 import {AppEvent} from '../common/AppEvent'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
-import platformInfo from '@/common/platform_info'
+import { platformInfo } from '@/handlers/handlerState'
 
 const log = rawLog.scope('NativeMenuBuilder')
 

@@ -3,10 +3,10 @@ import { autoUpdater } from 'electron-updater'
 import globals from '../common/globals'
 import { getActiveWindows } from './WindowBuilder'
 import rawlog from 'electron-log'
+import platformInfo from '@/common/platform_info'
+
 
 const log = rawlog.scope('update-manager')
-
-import platformInfo from '../common/platform_info'
 
 autoUpdater.autoDownload = false
 autoUpdater.logger = log

@@ -2,24 +2,23 @@ import crypto from 'crypto'
 import Encryptor from 'simple-encryptor'
 import fs from 'fs'
 import path from 'path'
-import platformInfo from './platform_info'
+import { platformInfo } from '../handlers/handlerState'
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
   }
 }
-const userDirectory = platformInfo.userDirectory
 
 const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
-const keyFile = path.join(userDirectory, '.key')
-
 let _encryptionKey: Nullable<string> = null
 
 export function loadEncryptionKey(): string {
   if (_encryptionKey) {
     return _encryptionKey
   }
+  const userDirectory = platformInfo.userDirectory
+  const keyFile = path.join(userDirectory, '.key')
   const encryptor = Encryptor(defaultEncryptionKey)
 
   initUserDirectory(userDirectory)

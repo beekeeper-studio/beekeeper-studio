@@ -8,7 +8,6 @@ import knexlib from 'knex';
 import Client from 'knex/lib/client';
 import { BigQueryClient as BigQueryKnexClient } from '@shared/lib/knex-bigquery';
 import { BigQueryChangeBuilder } from "@shared/lib/sql/change_builder/BigQueryChangeBuilder";
-import platformInfo from "@/common/platform_info";
 import rawLog from 'electron-log';
 import { applyChangesSql, buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '@/common/utils';
@@ -16,6 +15,7 @@ import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
+import { platformInfo } from '@/handlers/handlerState';
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
 const logger = () => log

@@ -1,7 +1,6 @@
 import DefaultMenu from './BaseMenuBuilder'
-import platformInfo from '../platform_info'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { getStringValue, IGroupedUserSettings } from '../transport/TransportUserSetting'
+import { IGroupedUserSettings } from '../transport/TransportUserSetting'
 
 export default class extends DefaultMenu {
   constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler) {
@@ -21,16 +20,16 @@ export default class extends DefaultMenu {
         this.menuItems.minimalModeToggle,
       ]
     }
-    if (!platformInfo.isMac)
+    if (!window.main.platformInfo.isMac)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
-    if (platformInfo.isDevelopment)
+    if (window.main.platformInfo.isDevelopment)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
     return result
   }
 
   buildTemplate(): Electron.MenuItemConstructorOptions[] {
     const appMenu: Electron.MenuItemConstructorOptions[] = []
-    if (platformInfo.isMac) {
+    if (window.main.platformInfo.isMac) {
       appMenu.push({
         label: "Beekeeper Studio",
         submenu: [
@@ -59,7 +58,7 @@ export default class extends DefaultMenu {
 
     const windowMenu: Electron.MenuItemConstructorOptions[] = []
     console.log("Menu style", this.settings.menuStyle)
-    if ((platformInfo.isMac || getStringValue(this.settings.menuStyle) === 'native') && !platformInfo.isWayland) {
+    if ((window.main.platformInfo.isMac || this.settings.menuStyle.value === 'native') && !window.main.platformInfo.isWayland) {
       windowMenu.push({
         label: 'Window',
         role: 'windowMenu'

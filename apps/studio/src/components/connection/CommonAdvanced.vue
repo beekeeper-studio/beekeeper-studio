@@ -202,7 +202,6 @@
 import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 
-import platformInfo from '@/common/platform_info'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 
   export default {
@@ -219,7 +218,7 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
           { label: "Username & Password", mode: "userpass" },
           { label: "SSH Agent", mode: "agent" }
         ],
-        filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh')
+        filePickerDefaultPath: window.main.join(window.main.platformInfo.homeDirectory, '.ssh')
       }
     },
     methods: {

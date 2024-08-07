@@ -154,7 +154,6 @@
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
 import { mapState } from 'vuex';
-import { getValue } from '@/common/transport/TransportUserSetting'
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -207,7 +206,7 @@ export default {
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
-        const value = getValue(this.settings?.keymap);
+        const value = this.settings?.keymap?.value;
         return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
       },
       set(value) {
@@ -220,7 +219,7 @@ export default {
     },
     hasUsedDropdown: {
       get() {
-        return getValue(this.settings?.hideResultsDropdown) ?? false
+        return this.settings?.hideResultsDropdown?.value ?? false
       },
       set(value) {
         this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })

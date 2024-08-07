@@ -41,14 +41,13 @@
   </div>
 </template>
 <script lang="ts">
-import platformInfo from '@/common/platform_info'
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
   props: ['error', 'title', 'closable', 'helpText'],
   computed: {
     dev() {
-      return platformInfo.isDevelopment
+      return window.main.platformInfo.isDevelopment
     },
     errors() {
       const result = _.isArray(this.error) ? this.error : [this.error]

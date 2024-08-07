@@ -72,7 +72,6 @@
 import _ from 'lodash'
 import ClientMenuActionHandler from '../../lib/menu/ClientMenuActionHandler'
 import MenuBuilder from '../../common/menus/MenuBuilder'
-import platformInfo from '../../common/platform_info'
 import { mapGetters } from 'vuex'
 
 
@@ -213,12 +212,12 @@ export default {
     },
     shortcutText(item) {
       if (!item.accelerator) return ""
-      const meta = platformInfo.isMac ? 'Cmd' : 'Ctrl'
+      const meta = window.main.platformInfo.isMac ? 'Cmd' : 'Ctrl'
       return item.accelerator.replace('CommandOrControl', meta)
     },
     shortcut(item) {
       if (!item.click || !item.accelerator || item.registerAccelerator === false) return null
-      const ctrlKey = platformInfo.isMac ? 'meta' : 'ctrl'
+      const ctrlKey = window.main.platformInfo.isMac ? 'meta' : 'ctrl'
       return item.accelerator
         .replace('CommandOrControl', ctrlKey)
         .replace('Plus', 'numpad +')

@@ -69,7 +69,6 @@
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
-import platformInfo from '@/common/platform_info'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 
 export default {
@@ -146,7 +145,7 @@ export default {
   },
   methods: {
     showContextMenu(event) {
-      const ultimateCheck = platformInfo.isUltimate
+      const ultimateCheck = window.main.platformInfo.isUltimate
         ? true
         : !isUltimateType(this.config.connectionType)
 

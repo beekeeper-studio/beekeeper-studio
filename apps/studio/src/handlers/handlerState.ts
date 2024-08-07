@@ -1,4 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { IPlatformInfo } from "@/common/IPlatformInfo";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/server";
@@ -20,7 +21,6 @@ class State {
 
 const states = new Map<string, State>();
 
-// I kinda hate this tbh. modifying could be scary
 export function state(id: string): State {
   return states.get(id);
 }
@@ -31,6 +31,13 @@ export function newState(id: string): void {
 
 export function removeState(id: string): void {
   states.delete(id);
+}
+
+// really don't like this, would prefer if we could store it on the process or something
+export let platformInfo: IPlatformInfo;
+
+export function setPlatformInfo(info: IPlatformInfo): void {
+  platformInfo = info;
 }
 
 export const errorMessages = {

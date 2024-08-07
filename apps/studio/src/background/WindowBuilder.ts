@@ -2,10 +2,10 @@ import _ from 'lodash'
 import path from 'path'
 import { BrowserWindow, Rectangle } from "electron"
 import electron from 'electron'
-import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
+import platformInfo from '../common/platform_info'
 
 
 // eslint-disable-next-line

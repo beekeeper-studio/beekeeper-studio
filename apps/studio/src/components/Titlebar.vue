@@ -65,7 +65,6 @@
 <script>
 import { mapState } from 'vuex'
 import AppMenu from './menu/NewAppMenu.vue'
-import platformInfo from '@/common/platform_info'
 export default {
   components: { AppMenu },
   data() {

@@ -1,13 +1,12 @@
 import { MessagePortMain } from 'electron';
 import rawLog from 'electron-log'
 import ORMConnection from './common/appdb/Connection'
-import platformInfo from './common/platform_info';
 import { AppDbHandlers } from './handlers/appDbHandlers';
 import { ConnHandlers } from './handlers/connHandlers';
 import { ExportHandlers } from './handlers/exportHandlers';
 import { GeneratorHandlers } from './handlers/generatorHandlers';
 import { Handlers } from './handlers/handlers';
-import { newState, removeState, state } from './handlers/handlerState';
+import { newState, removeState, setPlatformInfo, state } from './handlers/handlerState';
 import { QueryHandlers } from './handlers/queryHandlers';
 
 const log = rawLog.scope('UtilityProcess');
@@ -37,6 +36,8 @@ process.parentPort.on('message', async ({ data, ports }) => {
         log.info('RECEIVED PORT: ', ports[0]);
         await initState(sId, ports[0]);
       } else {
+        log.info('RECEIVED PLATFORM INFO: ', data.platformInfo);
+        setPlatformInfo(data.platformInfo)
         await init();
       }
       break;

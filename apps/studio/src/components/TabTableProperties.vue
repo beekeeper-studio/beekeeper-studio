@@ -136,7 +136,6 @@ import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import TablePartitionsVue from './tableinfo/TablePartitions.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
-import platformInfo from '../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
 import { mapState } from 'vuex'
 import rawLog from 'electron-log/renderer'
@@ -148,7 +147,7 @@ export default {
   data() {
     return {
       initialized: false,
-      dev: platformInfo.isDevelopment,
+      dev: window.main.platformInfo.isDevelopment,
       loading: true,
       error: null,
       primaryKeys: [],

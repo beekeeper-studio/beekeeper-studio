@@ -1,8 +1,5 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
-import platformInfo from "../platform_info";
-import { getValue, IGroupedUserSettings } from '../transport/TransportUserSetting';
-
-
+import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
 export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings) {
   return {
@@ -15,8 +12,8 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     quit: {
       id: 'quit',
-      label: platformInfo.isMac ? 'Quit' : 'Exit',
-      accelerator: platformInfo.isMac ? 'CommandOrControl+Q' : undefined,
+      label: window.main.platformInfo.isMac ? 'Quit' : 'Exit',
+      accelerator: window.main.platformInfo.isMac ? 'CommandOrControl+Q' : undefined,
       click: actionHandler.quit
     },
     undo: {
@@ -28,7 +25,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     redo: {
       id: "redo",
       label: "Redo",
-      accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
+      accelerator: window.main.platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
       click: actionHandler.redo
     },
     cut: {
@@ -82,7 +79,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
-      accelerator: platformInfo.isMac ? 'Shift+CommandOrControl+F' : 'F11',
+      accelerator: window.main.platformInfo.isMac ? 'Shift+CommandOrControl+F' : 'F11',
       click: actionHandler.fullscreen
     },
     // help
@@ -171,14 +168,14 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: 'Native',
           click: actionHandler.switchMenuStyle,
-          checked: getValue(settings.menuStyle) === 'native'
+          checked: settings.menuStyle?.value === 'native'
         },
         {
           id: "ms-client",
           type: 'radio',
           label: 'Client',
           click: actionHandler.switchMenuStyle,
-          checked: getValue(settings.menuStyle) === 'client'
+          checked: settings.menuStyle?.value === 'client'
         }
       ]
     },
@@ -190,19 +187,19 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: "System",
           click: actionHandler.switchTheme,
-          checked: getValue(settings.theme) === 'system'
+          checked: settings.theme?.value === 'system'
         },
         {
           type: "radio",
           label: "Light",
           click: actionHandler.switchTheme,
-          checked: getValue(settings.theme) === 'light'
+          checked: settings.theme?.value === 'light'
         },
         {
           type: 'radio',
           label: "Dark",
           click: actionHandler.switchTheme,
-          checked: getValue(settings.theme) === 'dark'
+          checked: settings.theme?.value === 'dark'
         }
       ]
     },

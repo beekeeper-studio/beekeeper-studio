@@ -1,106 +1,74 @@
+// This file should only be included in background.ts
 
-function isRenderer() {
-  // running in a web browser
-  if (typeof process === 'undefined') return true
+const electron = require('electron');
+import yargs from 'yargs-parser'
+import path from 'path';
+import { IPlatformInfo } from './IPlatformInfo';
 
-  // node-integration is disabled
-  if (!process) return true
-
-  // We're in node.js somehow
-  if (!process.type) return false
-
-  return process.type === 'renderer'
+const isDevEnv = !(electron?.app && electron?.app.isPackaged);
+const slice = isDevEnv ? 2 : 1;
+const parsedArgs = yargs(process.argv.slice(slice));
+// TODO: Automatically enable wayland without flags once
+// we're confident it will 'just work' for all Wayland users.
+function isWaylandMode() {
+  return parsedArgs['ozone-platform-hint'] === 'auto' &&
+    sessionType === 'wayland' && !isWindows && !isMac
 }
 
-function isUtility() {
-  return process.type === 'utility'
+const platform = process.env.OS_OVERRIDE ? process.env.OS_OVERRIDE : process.platform;
+const isWindows = platform === 'win32';
+const isMac = platform === 'darwin';
+const isArm = process.arch.startsWith('arm');
+const sessionType = process.env.XDG_SESSION_TYPE;
+const resourcesPath = isDevEnv ? path.resolve('./extra_resources') : path.resolve(process.resourcesPath);
+const testMode = process.env.TEST_MODE ? true : false;
+const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
+// can't do this in the main process
+// const windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+let userDirectory =  testMode ? './tmp' : electron?.app.getPath("userData")
+const downloadsDirectory = testMode ? './tmp' : electron?.app.getPath('downloads')
+const homeDirectory = testMode ? './tmp' : electron?.app.getPath('home')
+if (process.env.PORTABLE_EXECUTABLE_DIR) {
+  userDirectory = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
+}
+const updatesDisabled = !!process.env.BEEKEEPER_DISABLE_UPDATES
+const locale = electron?.app?.getLocale() ?? process.env.locale;
+
+
+const platformInfo: IPlatformInfo = {
+  isWindows, isMac, isArm,
+  oracleSupported: isMac && isArm ? false : true,
+  parsedArgs,
+  isLinux: !isWindows && !isMac,
+  sessionType,
+  isWayland: isWaylandMode(),
+  isSnap: process.env.ELECTRON_SNAP,
+  isPortable: isWindows && !!process.env.PORTABLE_EXECUTABLE_DIR,
+  isDevelopment: isDevEnv,
+  isAppImage: process.env.DESKTOPINTEGRATION === 'AppImageLauncher',
+  sshAuthSock: process.env.SSH_AUTH_SOCK,
+  environment: process.env.NODE_ENV,
+  resourcesPath,
+  env: {
+    development: isDevEnv,
+    test: testMode,
+    production: !isDevEnv && !testMode
+  },
+  debugEnabled: !!process.env.DEBUG,
+  DEBUG: process.env.DEBUG,
+  platform: easyPlatform,
+  darkMode: testMode ? true : electron?.nativeTheme.shouldUseDarkColors,
+  userDirectory,
+  downloadsDirectory,
+  homeDirectory,
+  testMode,
+  appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
+  updatesDisabled,
+  appVersion: testMode ? 'test-mode' : electron?.app.getVersion(),
+  cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
+  locale,
+  isCommunity: true,
+  isUltimate: false,
 }
 
-let platformInfo;
-
-if (isRenderer()) {
-  platformInfo = window?.main?.platformInfo();
-} else {
-  let e
-  const p = process;
-  const { resolve, join } = require('path');
-  const yargs = require('yargs-parser');
-  
-  if (!isUtility()) {
-    e = require('electron')
-  }
-
-  const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
-  const testMode = p.env.TEST_MODE ? true : false
-  const isDevEnv = !(e?.app && (e?.app.isPackaged ?? p.env.isPackaged));
-  const isWindows = platform === 'win32'
-  const isMac = platform === 'darwin'
-  const isArm = p.arch.startsWith('arm')
-  const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
-  const locale = e?.app?.getLocale() ?? p.env.locale;
-  let windowPrefersDarkMode = false
-  if (isRenderer()) {
-    windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
-  }
-  const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
-
-  const oracleSupported = isMac && isArm ? false : true
-
-  const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
-  let userDirectory =  testMode ? './tmp' : e?.app.getPath("userData") ?? p.env.userDir
-  const downloadsDirectory = testMode ? './tmp' : e?.app.getPath('downloads') ?? p.env.downloadDir
-  const homeDirectory = testMode ? './tmp' : e?.app.getPath('home') ?? p.env?.homeDir
-  if (p.env.PORTABLE_EXECUTABLE_DIR) {
-    userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
-  }
-
-  const sessionType = p.env.XDG_SESSION_TYPE
-
-  const slice = isDevEnv ? 2 : 1
-  const parsedArgs = yargs(p.argv.slice(slice))
-  // TODO: Automatically enable wayland without flags once
-  // we're confident it will 'just work' for all Wayland users.
-  function isWaylandMode() {
-    return parsedArgs['ozone-platform-hint'] === 'auto' &&
-      sessionType === 'wayland' && !isWindows && !isMac
-  }
-
-  platformInfo = {
-    isWindows, isMac, isArm, oracleSupported,
-    parsedArgs,
-    isLinux: !isWindows && !isMac,
-    sessionType,
-    isWayland: isWaylandMode(),
-    isSnap: p.env.ELECTRON_SNAP,
-    isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
-    isDevelopment: isDevEnv,
-    isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
-    sshAuthSock: p.env.SSH_AUTH_SOCK,
-    environment: p.env.NODE_ENV,
-    resourcesPath,
-    env: {
-      development: isDevEnv,
-      test: testMode,
-      production: !isDevEnv && !testMode
-    },
-    debugEnabled: !!p.env.DEBUG,
-    DEBUG: p.env.DEBUG,
-    platform: easyPlatform,
-    darkMode: testMode? true : (e?.nativeTheme.shouldUseDarkColors ?? p.env.shouldUseDarkColors) || windowPrefersDarkMode,
-    userDirectory,
-    downloadsDirectory,
-    homeDirectory,
-    testMode,
-    appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
-    updatesDisabled,
-    appVersion: testMode ? 'test-mode' : e?.app.getVersion() ?? p.env.version,
-    cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
-    locale,
-    isCommunity: true,
-    isUltimate: false,
-
-    // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
-  }
-}
-
-export default platformInfo
+export default platformInfo;

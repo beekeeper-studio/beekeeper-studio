@@ -44,21 +44,11 @@ async function createUtilityProcess() {
     return;
   }
 
-  const args = {
-    isPackage: `${electron.app.isPackaged}`,
-    locale: electron.app.getLocale(),
-    userDir: electron.app.getPath('userData'),
-    downloadDir: electron.app.getPath('downloads'),
-    homeDir: electron.app.getPath('home'),
-    shouldUseDarkColors: `${electron.nativeTheme.shouldUseDarkColors}`,
-    version: electron.app.getVersion()
-  }
-
   utilityProcess = electron.utilityProcess.fork(
     path.join(__dirname, 'utility.js'),
     [],
     {
-      env: { ...process.env, ...args },
+      env: { ...process.env },
       stdio: ['ignore', 'pipe', 'pipe'],
       serviceName: 'BeekeeperUtility'
     }
@@ -85,12 +75,13 @@ async function createUtilityProcess() {
     }
   })
 
-  utilityProcess.postMessage({ type: 'init' });
+  utilityProcess.postMessage({ type: 'init', platformInfo });
   return new Promise<void>((resolve, _reject) => {
     utilityProcess.rawListeners
     utilityProcess.on('message', (msg: string) => {
       if (msg === 'ready') {
-        resolve()
+        getCurrentWindow().webContents.postMessage('platformInfo', platformInfo);
+        resolve();
       }
     })
   })

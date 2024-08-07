@@ -39,11 +39,11 @@ import { createCancelablePromise, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { identify as rawIdentify } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
-import platformInfo from '@/common/platform_info';
 import { OracleCursor } from './oracle/OracleCursor';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { IDbConnectionServer } from '../backendTypes';
+import { platformInfo } from '@/handlers/handlerState';
 
 const log = rawLog.scope('oracle')
 

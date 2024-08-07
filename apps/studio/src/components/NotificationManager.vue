@@ -5,7 +5,6 @@
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import Vue from 'vue'
 import Noty from 'noty'
-import platformInfo from '@/common/platform_info'
 
 export default Vue.extend({
   data: () => {
@@ -25,7 +24,7 @@ export default Vue.extend({
     }
   },
   mounted() {
-    if (platformInfo.isCommunity) {
+    if (window.main.platformInfo.isCommunity) {
       const today = new Date()
       const upgradeSuggested = SmartLocalStorage.getDate('ultimate-upsell')
       const lastWeek = new Date(today.getTime() - (28 * 24 * 60 * 60 * 1000))
