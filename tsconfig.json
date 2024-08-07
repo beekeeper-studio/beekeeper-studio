@@ -1,0 +1,54 @@
+{
+  "vueCompilerOptions": {
+    "target": 2.7
+  },
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "jsx": "preserve",
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "target": "es2018",
+    "module": "esnext",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "types": [
+      "jest"
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@shared/*": ["./src/shared/*"]
+    },
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ]
+  },
+  "include": [
+    "src/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "tests/**/*.ts",
+    "../../shared/src/**/*.ts",
+    "../../shared/src/**/*.tsx",
+    "../../shared/src/**/*.vue",
+    "src/*.js",
+    "src/**/*.js"
+  ],
+  "exclude": [
+    "node_modules", "dist", "dist_electron"
+  ],
+  "sourceMapPathOverrides": {
+    "src/*": "${webRoot}/apps/studio/src/*"
+  }
+}
