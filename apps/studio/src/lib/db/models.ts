@@ -42,6 +42,7 @@ export interface TableOrView extends DatabaseEntity {
   partitions?: TablePartition[];
   tabletype?: string | null
   parenttype?: string | null
+  engine?: string
 }
 
 export interface TableIndex {

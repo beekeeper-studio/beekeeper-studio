@@ -2,6 +2,7 @@ import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 
 /**
  * @typedef {import('../../../../lib/db').DBTestUtil} DBTestUtil
+ * @typedef {import('../../../../../../../shared/src/lib/dialects/models').DialectData['disabledFeatures']} DisabledFeatures
  * @param {() => DBTestUtil} getUtil
  **/
 export function runReadOnlyTests(getUtil) {
@@ -45,11 +46,15 @@ export function runReadOnlyTests(getUtil) {
   })
 }
 
-/** @param {() => DBTestUtil} getUtil */
+/**
+ * @param {() => DBTestUtil} getUtil
+ * @param {{readOnly?: boolean, dbReadOnlyMode?: boolean, disabledFeatures?: DisabledFeatures}} opts?
+ * */
 export function runCommonTests(getUtil, opts = {}) {
   const {
     readOnly = false,
-    dbReadOnlyMode = false
+    dbReadOnlyMode = false,
+    disabledFeatures,
   } = opts
 
   describe("RO", () => {
@@ -92,10 +97,11 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().filterTests()
     })
 
-
-    test("table triggers", async () => {
-      await getUtil().triggerTests()
-    })
+    if (!disabledFeatures.triggers) {
+      test("table triggers", async () => {
+        await getUtil().triggerTests()
+      })
+    }
 
     test("primary key tests", async () => {
       await getUtil().primaryKeyTests()
@@ -106,9 +112,11 @@ export function runCommonTests(getUtil, opts = {}) {
         await getUtil().tablePropertiesTests()
       })
 
-      test("should list generated columns", async () => {
-        await getUtil().generatedColumnsTests()
-      })
+      if (!disabledFeatures.generatedColumns) {
+        test("should list generated columns", async () => {
+          await getUtil().generatedColumnsTests()
+        })
+      }
     })
 
   })
@@ -266,9 +274,12 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      test("should not insert bad data", async () => {
-        await itShouldNotInsertBadData(getUtil())
-      })
+      // lets use .skip() function instead of this
+      if (!disabledFeatures?.transactions) {
+        test("should not insert bad data", async () => {
+          await itShouldNotInsertBadData(getUtil())
+        })
+      }
 
       test("should apply all types of changes", async () => {
         if (dbReadOnlyMode) {
@@ -278,13 +289,15 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      test("should not commit on change error", async () => {
-        if (dbReadOnlyMode) {
-          await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
-        } else {
-          await itShouldNotCommitOnChangeError(getUtil())
-        }
-      })
+      if (!disabledFeatures?.transactions) {
+        test("should not commit on change error", async () => {
+          if (dbReadOnlyMode) {
+            await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
+          } else {
+            await itShouldNotCommitOnChangeError(getUtil())
+          }
+        })
+      }
     })
   })
 
@@ -301,9 +314,11 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    test("should not insert bad data", async () => {
-      await itShouldNotInsertBadDataCompositePK(getUtil())
-    })
+    if (!disabledFeatures?.transactions) {
+      test("should not insert bad data", async () => {
+        await itShouldNotInsertBadDataCompositePK(getUtil())
+      })
+    }
 
     test("should apply all types of changes", async () => {
       if (dbReadOnlyMode) {
@@ -313,13 +328,15 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    test("should not commit on change error", async () => {
-      if (dbReadOnlyMode) {
-        await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
-      } else {
-        await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
-      }
-    })
+    if (!disabledFeatures?.transactions) {
+      test("should not commit on change error", async () => {
+        if (dbReadOnlyMode) {
+          await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
+        }
+      })
+    }
   })
 
   describe("Get data modification SQL", () => {
@@ -359,6 +376,7 @@ const prepareTestTable = async function(util) {
 }
 
 
+/** @param {DBTestUtil} util */
 export const itShouldInsertGoodData = async function(util) {
 
   const inserts = [
@@ -383,7 +401,8 @@ export const itShouldInsertGoodData = async function(util) {
   ]
   await util.connection.applyChanges({ inserts: inserts })
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 }
 
@@ -466,7 +485,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
 
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(1)
   const firstResult = { ...results[0] }
   // hack for cockroachdb
@@ -636,6 +656,7 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
   expect(results.length).toBe(0)
 }
 
+/** @param {DBTestUtil} util */
 export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
 
   const changes = {
@@ -705,9 +726,14 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
     ]
   }
 
+  function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts_composite_pk')
+  const _results = await util.knex.select().table('test_inserts_composite_pk').orderBy('id1', 'asc')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 
   const firstResult = { ...results[0] }

@@ -25,6 +25,8 @@
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@azure/msal-node": "1.18.4",
+    "@cleverbrush/knex-clickhouse": "^1.1.10",
+    "@clickhouse/client": "^1.2.0",
     "@electron/remote": "^2.0.9",
     "@google-cloud/bigquery": "^6.2.0",
     "@libsql/knex-libsql": "^0.1.0",

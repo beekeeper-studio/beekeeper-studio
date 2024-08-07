@@ -4,7 +4,7 @@ import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResul
 import { DatabaseElement } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "./handlerState";
-import ConnectionProvider from '../lib/connection-provider'; 
+import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
@@ -25,12 +25,12 @@ export interface IConnectionHandlers {
   'conn/getDefaultCharset': ({ sId }: { sId: string}) => Promise<string>,
   'conn/listCollations': ({ charset, sId }: { charset: string, sId: string }) => Promise<string[]>,
 
-  
+
   // Connection *****************************************************************
   'conn/connect': ({ sId }: { sId: string}) => Promise<void>,
   'conn/disconnect': ({ sId }: { sId: string}) => Promise<void>,
 
-  
+
   // List schema information ****************************************************
   'conn/listTables': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/listViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
@@ -107,7 +107,7 @@ export const ConnHandlers: IConnectionHandlers = {
       throw new Error(errorMessages.noUsername);
     }
 
-    if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
       let cache = new TokenCache();
       cache = await cache.save();
       config.authId = cache.id;
@@ -223,7 +223,7 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/listTableIndexes': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
-    checkConnection(sId);  
+    checkConnection(sId);
     return await state(sId).connection.listTableIndexes(table, schema);
   },
 
