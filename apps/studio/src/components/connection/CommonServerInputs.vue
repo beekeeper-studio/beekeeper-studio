@@ -1,5 +1,6 @@
 <template>
   <div class="host-port-user-password">
+    <slot name="header"></slot>
     <div class="row">
       <div
         class="form-group col"
