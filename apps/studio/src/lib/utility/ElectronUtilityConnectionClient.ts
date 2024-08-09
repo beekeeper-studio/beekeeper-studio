@@ -189,6 +189,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/setTableDescription', { table, description, schema });
   }
 
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/setElementName', { elementName, newElementName, typeOfElement, schema });
+  }
+
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     return await Vue.prototype.$util.send('conn/dropElement', { elementName, typeOfElement, schema });
   }

@@ -1,4 +1,4 @@
-import { FormatterDialect } from '../../../../src/shared/lib/dialects/models'
+import { FormatterDialect } from "@shared/lib/dialects/models"
 
 
 
