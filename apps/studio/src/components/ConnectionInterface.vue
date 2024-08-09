@@ -209,7 +209,6 @@ import LibSQLForm from './connection/LibSQLForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import _ from 'lodash'
-import platformInfo from '@/common/platform_info'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
 import { mapState } from 'vuex'
@@ -238,7 +237,7 @@ export default Vue.extend({
       url: null,
       importError: null,
       sidebarShown: true,
-      version: platformInfo.appVersion
+      version: this.$config.appVersion
     }
   },
   computed: {
@@ -248,7 +247,7 @@ export default Vue.extend({
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (platformInfo.isUltimate) return false
+      if (this.$config.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -301,7 +300,6 @@ export default Vue.extend({
     }
   },
   async mounted() {
-    await this.$util.send('appdb/tabs/doSomethingBackend')
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
@@ -395,7 +393,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -413,7 +411,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
