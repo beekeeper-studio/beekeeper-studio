@@ -355,6 +355,11 @@ export class DBTestUtil {
     expect(columns.length).toBe(7)
   }
 
+  async listIndexTests() {
+    const indexes = await this.connection.listTableIndexes("has_index", this.defaultSchema)
+    expect(indexes.find((i) => i.name.toLowerCase() === 'has_index_foo_idx')).toBeDefined()
+  }
+
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
