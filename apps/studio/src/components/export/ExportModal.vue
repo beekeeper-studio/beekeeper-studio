@@ -172,7 +172,6 @@ import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
 import FilePicker from '../common/form/FilePicker.vue'
-import platformInfo from '../../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
 const log = rawlog.scope('export/export-modal')
 
@@ -272,7 +271,7 @@ export default {
     defaultPath() {
       let previous = localStorage.getItem('export/directory')
       if (previous === 'undefined' || previous === 'null') previous = null
-      return previous || platformInfo.downloadsDirectory
+      return previous || this.$config.downloadsDirectory
     },
     filterTooltip() {
       if (!this.hasFilters) {

@@ -313,7 +313,6 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import platformInfo from '@/common/platform_info'
   import { splitQueries } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
@@ -329,7 +328,6 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
-  import { getValue } from '@/common/transport/TransportUserSetting'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -388,7 +386,7 @@
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = getValue(this.settings?.keymap);
+          const value = this.settings?.keymap.value;
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -817,7 +815,7 @@
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitQueryToFile() {
-        if (platformInfo.isCommunity) {
+        if (this.$config.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
@@ -829,7 +827,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
-        if (platformInfo.isCommunity) {
+        if (this.$config.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }

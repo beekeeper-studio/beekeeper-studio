@@ -32,7 +32,6 @@ import CodeMirror from "codemirror";
 
 import { EditorMarker } from "@/lib/editor/utils";
 import { setKeybindingsFromVimrc, applyConfig, Register } from "@/lib/editor/vim";
-import { getValue } from '@/common/transport/TransportUserSetting';
 
 export default {
   props: [
@@ -67,7 +66,7 @@ export default {
     },
     userKeymap() {
       const settings = this.$store.state.settings?.settings;
-      const value = getValue(settings?.keymap);
+      const value = settings?.keymap.value;
       return value && this.keymapTypes.map((k) => k.value).includes(value)
         ? value
         : "default";

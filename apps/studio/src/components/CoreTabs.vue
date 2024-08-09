@@ -725,6 +725,7 @@ export default Vue.extend({
         try {
           // TODO (azmi): this process can take longer by accident. Consider
           // an ability to cancel reading file.
+          // FIXME (@azmy): this needs to be a util call
           const text = window.main.readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
           if (text) {
             const query = await this.$util.send('appdb/query/new');

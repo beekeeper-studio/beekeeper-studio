@@ -19,7 +19,6 @@ import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
 import VueClipboard from 'vue-clipboard2'
-import platformInfo from './common/platform_info'
 import { AppEventMixin } from './common/AppEvent'
 import BeekeeperPlugin from './plugins/BeekeeperPlugin'
 import _ from 'lodash'
@@ -34,6 +33,7 @@ import App from './App.vue' // deal with this last
 
 (async () => {
 
+  await window.main.requestPlatformInfo();
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 
@@ -42,7 +42,7 @@ import App from './App.vue' // deal with this last
     log.debug("APP BOOTING")
     log.debug("####################################")
     log.debug("Platform Information (App)")
-    log.debug(JSON.stringify(platformInfo, null, 2))
+    log.debug(JSON.stringify(window.platformInfo, null, 2))
 
     _.mixin({
       'deepMapKeys': function (obj, fn) {
@@ -78,9 +78,9 @@ import App from './App.vue' // deal with this last
     // (window as any).hint = Hint;
     // (window as any).SQLHint = SQLHint;
     (window as any).XLSX = xlsx;
-    Vue.config.devtools = platformInfo.isDevelopment;
+    Vue.config.devtools = window.platformInfo.isDevelopment;
     // @ts-ignore
-    window.platformInfo = platformInfo
+    // window.platformInfo = window.main.platformInfo
     Vue.mixin(AppEventMixin)
     Vue.mixin({
       methods: {

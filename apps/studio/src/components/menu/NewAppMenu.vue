@@ -72,7 +72,6 @@
 import _ from 'lodash'
 import ClientMenuActionHandler from '../../lib/menu/ClientMenuActionHandler'
 import MenuBuilder from '../../common/menus/MenuBuilder'
-import platformInfo from '../../common/platform_info'
 import { mapGetters } from 'vuex'
 
 
@@ -121,7 +120,7 @@ export default {
     settings: {
       deep: true,
       handler() {
-        this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler)
+        this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
         this.menus = this.menuBuilder.buildTemplate()
       }
     },
@@ -213,12 +212,12 @@ export default {
     },
     shortcutText(item) {
       if (!item.accelerator) return ""
-      const meta = platformInfo.isMac ? 'Cmd' : 'Ctrl'
+      const meta = this.$config.isMac ? 'Cmd' : 'Ctrl'
       return item.accelerator.replace('CommandOrControl', meta)
     },
     shortcut(item) {
       if (!item.click || !item.accelerator || item.registerAccelerator === false) return null
-      const ctrlKey = platformInfo.isMac ? 'meta' : 'ctrl'
+      const ctrlKey = this.$config.isMac ? 'meta' : 'ctrl'
       return item.accelerator
         .replace('CommandOrControl', ctrlKey)
         .replace('Plus', 'numpad +')
@@ -257,7 +256,7 @@ export default {
     }
   },
   mounted() {
-    this.menuBuilder = new MenuBuilder(this.$store.state.settings.settings, this.actionHandler)
+    this.menuBuilder = new MenuBuilder(this.$store.state.settings.settings, this.actionHandler, this.$config)
     this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
     window.addEventListener('keydown', this.maybeCaptureKeydown, false)

@@ -20,7 +20,7 @@ export default class NativeMenuBuilder {
       settings.menuStyle.value === 'native') &&
       !platformInfo.isWayland
     ) {
-      this.builder = new MenuBuilder(settings, this.handler)
+      this.builder = new MenuBuilder(settings, this.handler, platformInfo)
     }
   }
 
@@ -38,8 +38,8 @@ export default class NativeMenuBuilder {
   listenForClicks(): void {
     ipcMain.on(AppEvent.menuClick, (event, actionName: keyof NativeMenuActionHandlers, arg) => {
       try {
-        log.debug("Received Menu Click, event", actionName, arg)
         const window = BrowserWindow.fromWebContents(event.sender)
+        log.debug("Received Menu Click, event", actionName, arg, window)
         if (window) {
           const func = this.handler[actionName].bind(this.handler)
           func(arg || null, window)
