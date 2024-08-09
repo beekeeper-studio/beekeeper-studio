@@ -4,6 +4,7 @@ import { parse as bytesParse } from 'bytes'
 import { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
+import { makeEscape } from "knex/lib/util/string";
 import _ from 'lodash'
 
 import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types"
@@ -66,6 +67,18 @@ const SQLServerContext = {
   }
 }
 
+const knex = knexlib({ client: 'mssql'})
+knex.client = Object.assign(knex.client, {
+  _escapeBinding: makeEscape({
+    escapeString(str: string) {
+      return `'${str.replace(/'/g, "''")}'`;
+    },
+    escapeBuffer(buffer: Buffer) {
+      return `0x${buffer.toString('hex')}`;
+    },
+  }),
+});
+
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
@@ -83,7 +96,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   authService: AzureAuthService;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
+    super( knex, SQLServerContext, server, database)
     this.dialect = 'mssql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.defaultSchema = ():string => 'dbo'

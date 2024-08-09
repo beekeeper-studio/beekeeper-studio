@@ -280,6 +280,7 @@ import pluralize from 'pluralize'
 import { ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
+import { Accessors } from '@/lib/data/tools'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
@@ -609,6 +610,7 @@ export default Vue.extend({
             generated: column.generated,
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
+          accessorData: Accessors.resolveTabulatorAccessor(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           minWidth: globals.minColumnWidth,
           width: columnWidth,
@@ -1148,12 +1150,14 @@ export default Vue.extend({
       const primaryKeys = pkCells.map((cell) => {
         return {
           column: cell.getField(),
-          value: cell.getValue()
+          // We do this so we can get a buffer instead of a hex string
+          value: cell.getData('data')[cell.getField()]
         }
       })
       if (currentEdit) {
         currentEdit.value = cell.getValue()
       } else {
+        const accessor = Accessors.resolveDataAccessor(column.dataType, dialectFor(this.connection.connectionType))
         const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
           key: key,
           table: this.table.name,
@@ -1163,9 +1167,9 @@ export default Vue.extend({
           columnType: column ? column.dataType : undefined,
           columnObject: column,
           primaryKeys,
-          oldValue: cell.getOldValue(),
-          cell: cell,
-          value: cell.getValue(0)
+          oldValue: accessor(cell.getOldValue()),
+          cell,
+          value: cell.getData('data')[cell.getField()],
         }
         // remove existing pending updates with identical pKey-column combo
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
