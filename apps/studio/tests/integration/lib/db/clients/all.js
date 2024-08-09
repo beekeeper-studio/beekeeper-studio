@@ -373,8 +373,14 @@ const prepareTestTable = async function(util) {
 }
 
 const prepareImportTable = async function(util) {
-  await util.knex.schema.dropTableIfExists("importstuff")
-  await util.knex.schema.createTable('importstuff', (t) => {
+
+  const tableName = (['firebird'].includes(util.dbType)) ? 'IMPORTSTUFF' : 'importstuff'
+  const something = await util.knex.raw('SELECT USER FROM dual')
+
+
+  console.log(`tableName: ${tableName}, schema: ${something}`)
+  await util.knex.schema.dropTableIfExists(tableName)
+  await util.knex.schema.createTable(tableName, (t) => {
     t.string('name'),
     t.string('hat')
   })
@@ -898,8 +904,8 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
 
 export async function prepareImportTests (util) {
   const dbType = util().dbType
-  const schema = ['postgresql'].includes(dbType) ? 'public' : null
-  const tableName = 'importstuff'
+  let schema = ['postgresql', 'oracle'].includes(dbType) ? 'public' : null
+  let tableName = 'importstuff'
   
   const importScriptOptions = {
     executeOptions: { multiple: false }
@@ -909,6 +915,8 @@ export async function prepareImportTests (util) {
   let hatColumn = 'hat'
 
   if (['firebird', 'oracle'].includes(dbType)) {
+    schema = schema?.toUpperCase()
+    tableName = 'IMPORTSTUFF'
     data = [
       {
         'NAME': 'biff',
@@ -958,6 +966,7 @@ export async function prepareImportTests (util) {
     data: [d]
   }))
 
+  console.log(`tableName in prepare tests: ${tableName}`)
   return {
     tableName, table, formattedData, importScriptOptions, hatColumn
   }
