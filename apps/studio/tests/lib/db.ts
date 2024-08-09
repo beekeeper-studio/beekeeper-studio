@@ -1141,16 +1141,10 @@ export class DBTestUtil {
       return expect.anything()
     }
 
-    console.log(tableName)
-
     const importSQL = await this.connection.getImportSQL(formattedData)
-    console.log('we are starting now')
     importScriptOptions.clientExtras = await this.connection.importStepZero(table)
-    console.log('get here? - step 0')
     await this.connection.importBeginCommand(table, importScriptOptions)
-    console.log('get here? - begin')
     await this.connection.importTruncateCommand(table, importScriptOptions)
-    console.log('get here? - truncate')
     
     const editedImportScriptOptions = {
       clientExtras: importScriptOptions.clientExtras,
@@ -1158,16 +1152,11 @@ export class DBTestUtil {
     }
     
     await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
-    console.log('get here? - line')
     
     await this.connection.importCommitCommand(table, importScriptOptions)
-    console.log('get here? - commit')
     await this.connection.importFinalCommand(table, importScriptOptions)
-    console.log('get here? - final')
 
-    console.log('did it get here?')
     const [hats] = await this.knex(tableName).count(hatColumn)
-    console.log('knex being a pill?')
     const [dataLength] = _.values(hats)
     expect(Number(dataLength)).toBe(4)
   }

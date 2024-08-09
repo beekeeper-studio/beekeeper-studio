@@ -375,10 +375,7 @@ const prepareTestTable = async function(util) {
 const prepareImportTable = async function(util) {
 
   const tableName = (['firebird'].includes(util.dbType)) ? 'IMPORTSTUFF' : 'importstuff'
-  const something = await util.knex.raw('SELECT USER FROM dual')
 
-
-  console.log(`tableName: ${tableName}, schema: ${something}`)
   await util.knex.schema.dropTableIfExists(tableName)
   await util.knex.schema.createTable(tableName, (t) => {
     t.string('name'),
@@ -966,7 +963,6 @@ export async function prepareImportTests (util) {
     data: [d]
   }))
 
-  console.log(`tableName in prepare tests: ${tableName}`)
   return {
     tableName, table, formattedData, importScriptOptions, hatColumn
   }
