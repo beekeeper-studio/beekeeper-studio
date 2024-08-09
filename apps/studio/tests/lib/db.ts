@@ -1136,8 +1136,8 @@ export class DBTestUtil {
 
   async importScriptsTests({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
     // cassandra and big query don't allow import so no need to test!
-    // oracle is continually getting INVALID TABLE NAME errors so going to take it out of the running
-    if (['cassandra','bigquery', 'oracle'].includes(this.dbType)) {
+    // oracle doesn't want to find the table, so it doesn't get to have nice things
+    if (['cassandra', 'bigquery', 'oracle'].includes(this.dialect)) {
       return expect.anything()
     }
 
@@ -1166,11 +1166,11 @@ export class DBTestUtil {
     // mysql was added to the list because a timeout was required to get the rollback number ot show
     // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
     let expectedLength = 0
-    if (['cassandra','bigquery', 'mysql', 'tidb', 'oracle'].includes(this.dbType)) {
+    if (['cassandra','bigquery', 'mysql', 'oracle'].includes(this.dialect)) {
       return expect.anything()
     }
 
-    if (['sqlite', 'libsql'].includes(this.dbType)) {
+    if (['sqlite'].includes(this.dialect)) {
       expectedLength = 4
     }
 

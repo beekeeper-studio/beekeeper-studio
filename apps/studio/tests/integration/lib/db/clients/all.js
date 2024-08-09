@@ -900,8 +900,7 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
 }
 
 export async function prepareImportTests (util) {
-  const dbType = util().dbType
-  let schema = ['postgresql', 'oracle'].includes(dbType) ? 'public' : null
+  const dialect = util().dialect
   let tableName = 'importstuff'
   
   const importScriptOptions = {
@@ -911,8 +910,7 @@ export async function prepareImportTests (util) {
   let data = []
   let hatColumn = 'hat'
 
-  if (['firebird', 'oracle'].includes(dbType)) {
-    schema = schema?.toUpperCase()
+  if (['firebird', 'oracle'].includes(dialect)) {
     tableName = 'IMPORTSTUFF'
     data = [
       {
@@ -954,7 +952,7 @@ export async function prepareImportTests (util) {
     ]
   }
   const table = {
-    schema,
+    schema: util().defaultSchema ?? null,
     name: tableName,
     entityType: 'table'
   }
