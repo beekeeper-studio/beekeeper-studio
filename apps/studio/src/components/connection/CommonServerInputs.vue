@@ -198,8 +198,8 @@
 </template>
 
 <script>
-import FilePicker from '@/components/common/form/FilePicker'
-import ExternalLink from '@/components/common/ExternalLink'
+import FilePicker from '@/components/common/form/FilePicker.vue'
+import ExternalLink from '@/components/common/ExternalLink.vue'
 import { findClient } from '@/lib/db/clients'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 

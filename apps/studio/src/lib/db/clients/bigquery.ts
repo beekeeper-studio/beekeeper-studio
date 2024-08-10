@@ -2,7 +2,7 @@ import * as bq from '@google-cloud/bigquery';
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete } from "../models";
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
 import Client from 'knex/lib/client';
@@ -15,6 +15,7 @@ import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
+import { IDbConnectionServer } from '../backendTypes';
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
 const logger = () => log
@@ -46,7 +47,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     super(null, bigqueryContext, server, database);
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return null
   }
 
@@ -54,7 +55,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return new BigQueryChangeBuilder(table, database);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return { 
       customRoutines: false, 
       comments: false, 
@@ -179,7 +180,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     }));
   }  
 
-  query(queryText: string, options: any = {}): CancelableQuery {
+  async query(queryText: string, options: any = {}): Promise<CancelableQuery> {
     logger().debug('bigQuery query: ' + queryText);
     let job = null;
     const cancelable = createCancelablePromise({
@@ -252,7 +253,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return data;
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, this.knex);
   }
 
@@ -280,7 +281,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return results;
   }
 
-  getQuerySelectTop(table: string, limit: number, _schema?: string): string {
+  async getQuerySelectTop(table: string, limit: number, _schema?: string): Promise<string> {
     return `SELECT * FROM ${wrapIdentifier(this.database.database)}.${wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
@@ -337,15 +338,15 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return data.rows.map((row) => row.createtable)[0];
   }
 
-  getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+  async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
     throw new Error("Method not implemented.");
   }
 
-  getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
+  async getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
     throw new Error("Method not implemented.");
   }
 
-  truncateAllTables(_schema?: string): void {
+  async truncateAllTables(_schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
@@ -431,11 +432,12 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     const theCursor = new BigQueryCursor(this.client, query, [], chunkSize);
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     log.debug('results', theCursor);
 
     return {
-      totalRows: undefined, // rowCount,
-      columns: undefined, // theCursor.result.columns,
+      totalRows,
+      columns,
       cursor: theCursor
     };
   }
@@ -444,27 +446,27 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return wrapIdentifier(value);
   }
 
-  setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
+  async setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
-  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): string {
+  async setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
     return ''
   }
 
-  dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+  async dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  truncateElementSql(): string {
+  async truncateElementSql(): Promise<string> {
     return ''
   }
 
-  duplicateTable(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<void> {
+  async duplicateTable(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): string {
+  async duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
@@ -487,7 +489,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     logger().debug(`Dataset ${dataset.id} created.`);
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
 

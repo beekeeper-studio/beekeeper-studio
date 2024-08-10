@@ -8,8 +8,8 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
+import { DatabaseElement, IDbConnectionDatabase } from '../types'
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportScriptFunctions } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -22,6 +22,7 @@ import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import { IDbConnectionServer } from '../backendTypes';
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -81,11 +82,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version.version.split(" on ")[0];
   }
 
-  defaultSchema(): string | null {
+  async defaultSchema(): Promise<string | null> {
     return this._defaultSchema;
   }
 
@@ -93,7 +94,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return new PostgresqlChangeBuilder(table, schema);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     const hasPartitions = this.version.number >= 100000;
     return {
       customRoutines: true,
@@ -406,13 +407,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
+    const supportedFeatures = await this.supportedFeatures();
     const sql = `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
         i.indexrelid as id,
         i.indisunique,
         i.indisprimary,
-        ${this.supportedFeatures().indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
+        ${supportedFeatures.indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
         coalesce(a.attname,
                   (('{' || pg_get_expr(
                               i.indexprs,
@@ -568,7 +570,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  query(queryText: string): CancelableQuery {
+  async query(queryText: string): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
@@ -655,7 +657,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.datname);
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, this.knex)
   }
 
@@ -679,7 +681,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return results
   }
 
-  getQuerySelectTop(table: string, limit: number, schema: string = this._defaultSchema): string {
+  async getQuerySelectTop(table: string, limit: number, schema: string = this._defaultSchema): Promise<string> {
     return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
@@ -913,9 +915,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       chunkSize
     }
 
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
+
     return {
-      totalRows: undefined, // totalRecords,
-      columns: undefined, // columns,
+      totalRows,
+      columns,
       cursor: new PsqlCursor(cursorOpts)
     }
   }
@@ -936,7 +940,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result?.description
   }
 
-  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): string {
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
     elementName = this.wrapIdentifier(elementName)
     newElementName = this.wrapIdentifier(newElementName)
     schema = this.wrapIdentifier(schema)
@@ -960,17 +964,17 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): string {
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
     return `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<void> {
-    const sql = this.duplicateTableSql(tableName, duplicateTableName, schema);
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema);
 
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): string {
+  async duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<string> {
     const sql = `
       CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
       SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
@@ -1005,12 +1009,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error('Method not implemented.');
   }
 
 
-  alterPartitionSql(payload: AlterPartitionsSpec): string {
+  async alterPartitionSql(payload: AlterPartitionsSpec): Promise<string> {
     const { table } = payload;
     const builder = new PostgresqlChangeBuilder(table);
     const creates = builder.createPartitions(payload.adds);
@@ -1020,7 +1024,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async alterPartition(payload: AlterPartitionsSpec): Promise<void> {
-    const query = this.alterPartitionSql(payload)
+    const query = await this.alterPartitionSql(payload)
     await this.driverExecuteSingle(query);
   }
 
@@ -1037,30 +1041,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async importData(sql: string): Promise<any> {
-    const fullQuery = joinQueries([
-      'BEGIN', sql, 'COMMIT'
-    ]);
-    try {
-      return await this.driverExecuteSingle(fullQuery);
-    } catch (ex) {
-      log.error("importData", fullQuery, ex);
-      await this.driverExecuteSingle('ROLLBACK');
-      throw ex;
+  getImportScripts(table: TableOrView): ImportScriptFunctions {
+    const { name, schema } = table
+    return {
+      beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('BEGIN;', executeOptions),
+      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions),
+      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
+      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
+      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
     }
   }
-
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const { schema, table } = importedData[0];
-    const queries = [];
-    if (isTruncate) {
-      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`);
-    }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'));
-    return joinQueries(queries);
-  }
-
 
   protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
 

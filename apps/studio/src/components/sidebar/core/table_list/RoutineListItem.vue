@@ -118,7 +118,7 @@ import { AppEvent } from "@/common/AppEvent";
 
   import { mapGetters } from 'vuex'
 	export default {
-		props: ["connection", "routine", "noSelect", "forceExpand", "forceCollapse", "pinned", 'draggable'],
+		props: ["routine", "noSelect", "forceExpand", "forceCollapse", "pinned", 'draggable'],
     data() {
       return {
         showArgs: false,

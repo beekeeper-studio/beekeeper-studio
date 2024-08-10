@@ -6,11 +6,11 @@
     >
       <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
       <template v-if="storeInitialized">
-        <connection-interface v-if="!connection" />
+        <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
+        <connection-interface v-if="!connected" />
         <core-interface
           @databaseSelected="databaseSelected"
           v-else
-          :connection="connection"
         />
         <auto-updater />
         <state-manager />
@@ -29,12 +29,12 @@
     <dropzone />
     <data-manager />
     <confirmation-modal-manager />
+    <util-died-modal />
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import { ipcRenderer } from 'electron'
 import { mapGetters, mapState } from 'vuex'
 import Titlebar from './components/Titlebar.vue'
 import CoreInterface from './components/CoreInterface.vue'
@@ -47,8 +47,9 @@ import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
+import UtilDiedModal from '@/components/UtilDiedModal.vue'
 
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 
 const log = rawLog.scope('app.vue')
 
@@ -56,7 +57,7 @@ export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone, UtilDiedModal
   },
   data() {
     return {
@@ -65,7 +66,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['storeInitialized', 'connection', 'database']),
+    ...mapState(['storeInitialized', 'database', 'connected']),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'
@@ -82,15 +83,14 @@ export default Vue.extend({
   async mounted() {
     await this.$store.dispatch('fetchUsername')
 
-    const query = querystring.parse(global.location.search, { parseBooleans: true })
+    const query = querystring.parse(window.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
       this.runningWayland = !!query.runningWayland
     }
 
-
     this.$nextTick(() => {
-      ipcRenderer.send('ready')
+      window.main.isReady();
     })
     if (this.themeValue) {
       document.body.className = `theme-${this.themeValue}`

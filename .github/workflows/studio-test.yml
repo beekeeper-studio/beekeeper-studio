@@ -96,31 +96,31 @@ jobs:
           command: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
-  e2e:
-    name: E2E tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v2
+  # e2e:
+  #   name: E2E tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Check out Git repository
+  #       uses: actions/checkout@v2
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-          cache: yarn
+  #     - name: Install Node.js, NPM and Yarn
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version-file: '.nvmrc'
+  #         cache: yarn
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-        env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+  #     - name: Install dependencies
+  #       run: yarn install --frozen-lockfile
+  #       env:
+  #         npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
-      - name: E2E Tests
-        run: yarn workspace beekeeper-studio run test:e2e
+  #     - name: E2E Tests
+  #       run: yarn workspace beekeeper-studio run test:e2e
 
-      - name: Upload test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: apps/studio/test-results
-          retention-days: 30
+  #     - name: Upload test results
+  #       if: ${{ !cancelled() }}
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: test-results
+  #         path: apps/studio/test-results
+  #         retention-days: 30

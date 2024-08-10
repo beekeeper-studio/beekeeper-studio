@@ -28,9 +28,7 @@ describe("TiDB Tests", () => {
   })
 
   afterAll(async () => {
-    if (util.connection) {
-      await util.connection.disconnect()
-    }
+    await util.disconnect()
     if (container) {
       await container.stop()
     }

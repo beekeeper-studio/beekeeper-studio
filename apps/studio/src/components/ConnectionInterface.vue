@@ -63,7 +63,7 @@
                   <option
                     disabled
                     hidden
-                    value="null"
+                    value="undefined"
                   >
                     Select a connection type...
                   </option>
@@ -195,8 +195,6 @@
 </template>
 
 <script lang="ts">
-import os from 'os'
-import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
 import MysqlForm from './connection/MysqlForm.vue'
 import PostgresForm from './connection/PostgresForm.vue'
@@ -222,7 +220,6 @@ import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
-import { TokenCache } from '@/common/appdb/models/token_cache'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -232,7 +229,7 @@ export default Vue.extend({
 
   data() {
     return {
-      config: new SavedConnection(),
+      config: {} as any,
       errors: null,
       connectionError: null,
       errorHelp: null,
@@ -275,7 +272,9 @@ export default Vue.extend({
   },
   watch: {
     workspaceId() {
-      this.config = new SavedConnection()
+      this.$util.send('appdb/saved/new').then((conn) => {
+        this.config = conn;
+      })
     },
     config: {
       deep: true,
@@ -305,9 +304,12 @@ export default Vue.extend({
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
+    this.$util.send('appdb/saved/new').then((conn) => {
+      this.config = conn;
+    })
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
-    this.config.sshUsername = os.userInfo().username
+    this.config.sshUsername = await window.main.fetchUsername()
     this.$nextTick(() => {
       const components = [
         this.$refs.sidebar.$refs.sidebar,
@@ -330,7 +332,6 @@ export default Vue.extend({
         }
       } as Split.Options)
     })
-      await this.$store.dispatch('loadUsedConfigs')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
@@ -356,7 +357,9 @@ export default Vue.extend({
 
     },
     create() {
-      this.config = new SavedConnection()
+      this.$util.send('appdb/saved/new').then((conn) => {
+        this.config = conn;
+      })
     },
     edit(config) {
       this.config = _.clone(config)
@@ -365,11 +368,12 @@ export default Vue.extend({
     },
     async remove(config) {
       if (this.config === config) {
-        this.config = new SavedConnection()
+        this.$util.send('appdb/saved/new').then((conn) => {
+          this.config = conn;
+        })
       }
       if (config.azureAuthOptions?.authId) {
-        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
-        cache.remove();
+        await this.$util.send('appdb/cache/remove', { authId: config.azureAuthOptions.authId });
       }
       await this.$store.dispatch('pinnedConnections/remove', config)
       await this.$store.dispatch('data/connections/remove', config)
@@ -434,9 +438,8 @@ export default Vue.extend({
         }
         // create token cache for azure auth
         if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.authId) {
-          let cache = new TokenCache();
-          cache = await cache.save();
-          this.config.authId = cache.id;
+          const cacheId = await this.$util.send('appdb/cache/new');
+          this.config.authId = cacheId;
         }
 
         await this.$store.dispatch('data/connections/save', this.config)

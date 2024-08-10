@@ -5,9 +5,10 @@ import Client_Libsql from "@libsql/knex-libsql";
 import { BasicDatabaseClient } from "./BasicDatabaseClient";
 import Database from "libsql";
 import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
-import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { IDbConnectionDatabase } from "../types";
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
+import { IDbConnectionServer } from "../backendTypes";
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);
@@ -75,11 +76,11 @@ export class LibSQLClient extends SqliteClient {
     }
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version?.data[0]["version"] || "";
   }
 
-  truncateElementSql(elementName: string): string {
+  async truncateElementSql(elementName: string): Promise<string> {
     // FIXME libsql doesn't expose `vacuum` yet. We'll need to run vacuum after
     // delete according to SqliteClient.
     // See https://github.com/tursodatabase/libsql/issues/1415

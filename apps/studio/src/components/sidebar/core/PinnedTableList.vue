@@ -28,7 +28,6 @@
           v-if="p.entityType !== 'routine'"
           :table="p.entity"
           :pinned="true"
-          :connection="connection"
           :draggable="sort.field === 'position'"
           :container="$refs.pinContainer"
           :force-expand="allExpanded"
@@ -42,7 +41,6 @@
           :container="$refs.pinContainer"
           :draggable="sort.field === 'position'"
           :routine="p.entity"
-          :connection="connection"
           :pinned="true"
           :force-expand="allExpanded"
           :force-collapse="allCollapsed"
@@ -55,17 +53,18 @@
 <script lang="ts">
 import _ from 'lodash'
 import Draggable from 'vuedraggable'
-import { PinnedEntity } from '@/common/appdb/models/PinnedEntity'
 import RoutineListItem from '@/components/sidebar/core/table_list/RoutineListItem.vue'
 import TableListItem from '@/components/sidebar/core/table_list/TableListItem.vue'
 import Vue from 'vue'
 import TableListContextMenus from '@/mixins/TableListContextMenus'
 import SidebarSortButtons from '@/components/common/SidebarSortButtons.vue'
+import { TransportPinnedEntity } from '@/common/transport';
+
 export default Vue.extend({
   components: { RoutineListItem, Draggable, TableListItem, SidebarSortButtons },
   mixins: [TableListContextMenus],
   props: [
-    'allExpanded', 'allCollapsed', 'connection'
+    'allExpanded', 'allCollapsed'
   ],
   data: () => ({
     sort: { field: 'position', order: 'asc' },
@@ -77,13 +76,13 @@ export default Vue.extend({
   }),
   computed: {
     orderedPins: {
-      get(): PinnedEntity[] {
-        const raw: PinnedEntity[] = this.$store.getters['pins/orderedPins']
+      get(): TransportPinnedEntity[] {
+        const raw: TransportPinnedEntity[] = this.$store.getters['pins/orderedPins']
         let result = _.sortBy(raw, this.sort.field)
         if (this.sort.order === 'desc' && this.sort.field !== 'position') return result.reverse()
         return result;
       },
-      set(pins: PinnedEntity[]) {
+      set(pins: TransportPinnedEntity[]) {
         this.$store.dispatch('pins/reorder', pins)
       }
     }

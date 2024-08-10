@@ -1,27 +1,20 @@
-import tls from 'tls'
 import Vue from 'vue'
 import VueHotkey from 'v-hotkey'
-import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
+import VTooltip from 'v-tooltip'
 import 'xel/xel'
 import { TabulatorFull as Tabulator } from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
-import App from './App.vue'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
 import $ from 'jquery'
 
 import store from './store/index'
-import 'reflect-metadata'
-import {TypeOrmPlugin} from './lib/typeorm_plugin'
-import config from './config'
 import ConfigPlugin from './plugins/ConfigPlugin'
 import { VueElectronPlugin } from './lib/NativeWrapper'
-import { ipcRenderer } from 'electron'
 import AppEventHandler from './lib/events/AppEventHandler'
-import Connection from './common/appdb/Connection'
 import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
@@ -33,18 +26,14 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+import { UtilityConnection } from './lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
+import App from './App.vue' // deal with this last
 
 (async () => {
 
-  const transports = [rawLog.transports.console, rawLog.transports.file]
-  if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
-    transports.forEach(t => t.level = 'silly')
-  } else {
-    transports.forEach(t => t.level = 'warn')
-  }
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 
@@ -75,16 +64,13 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
     });
 
 
-    tls.DEFAULT_MIN_VERSION = "TLSv1"
+    window.main.setTlsMinVersion("TLSv1");
     TimeAgo.addLocale(en)
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
     Tabulator.registerModule([HeaderSortTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
-    const appDb = platformInfo.appDbPath
-    const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
-    await connection.connect();
 
     (window as any).$ = $;
     (window as any).jQuery = $;
@@ -93,7 +79,8 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
     // (window as any).SQLHint = SQLHint;
     (window as any).XLSX = xlsx;
     Vue.config.devtools = platformInfo.isDevelopment;
-
+    // @ts-ignore
+    window.platformInfo = platformInfo
     Vue.mixin(AppEventMixin)
     Vue.mixin({
       methods: {
@@ -125,8 +112,8 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
       }
     })
 
+
     Vue.config.productionTip = false
-    Vue.use(TypeOrmPlugin, {connection})
     Vue.use(VueHotkey)
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
@@ -149,8 +136,21 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
       render: h => h(App),
       store,
     })
-    await app.$store.dispatch('settings/initializeSettings')
-    const handler = new AppEventHandler(ipcRenderer, app)
+
+    Vue.prototype.$util = new UtilityConnection();
+    window.main.attachPortListener();
+    window.onmessage = (event) => {
+      if (event.source === window && event.data.type === 'port') {
+        const [ port ] = event.ports;
+        const { sId } = event.data;
+
+        log.log('GOT PORT: ', port, sId)
+        Vue.prototype.$util.setPort(port, sId);
+        app.$store.dispatch('settings/initializeSettings');
+      }
+    }
+
+    const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     app.$mount('#app')
   } catch (err) {

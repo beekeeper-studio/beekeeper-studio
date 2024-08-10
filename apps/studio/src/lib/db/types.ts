@@ -1,8 +1,80 @@
-import type { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import type { RedshiftOptions, BigQueryOptions, CassandraOptions, AzureAuthOptions, LibSQLOptions } from '@/common/appdb/models/saved_connection';
-import { BasicDatabaseClient } from './clients/BasicDatabaseClient';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
+
+export const ConnectionTypes = [
+  { name: 'MySQL', value: 'mysql' },
+  { name: 'TiDB', value: 'tidb' },
+  { name: 'MariaDB', value: 'mariadb' },
+  { name: 'Postgres', value: 'postgresql' },
+  { name: 'SQLite', value: 'sqlite' },
+  { name: 'LibSQL', value: 'libsql' },
+  { name: 'SQL Server', value: 'sqlserver' },
+  { name: 'Amazon Redshift', value: 'redshift' },
+  { name: 'CockroachDB', value: 'cockroachdb' },
+  { name: 'Oracle', value: 'oracle' },
+  { name: 'Cassandra', value: 'cassandra' },
+  { name: 'BigQuery', value: 'bigquery' },
+  { name: 'Firebird', value: 'firebird'},
+]
+
+export const keymapTypes = [
+  { name: "Default", value: "default" },
+  { name: "Vim", value: "vim" }
+]
+
+export enum AzureAuthType {
+  Default, // This actually may not work at all, might need to just give up on it
+  Password,
+  AccessToken,
+  MSIVM,
+  ServicePrincipalSecret
+}
+
+// supported auth types that actually work :roll_eyes: default i'm looking at you
+export const AzureAuthTypes = [
+  // Can't have 2FA, kinda redundant now
+  // { name: 'Password', value: AzureAuthType.Password },
+  { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
+  // This may be reactivated when we move to client server architecture
+  // { name: 'MSI VM', value: AzureAuthType.MSIVM },
+  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
+];
+
+export interface RedshiftOptions {
+  iamAuthenticationEnabled?: boolean
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  awsRegion?: string;
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+}
+
+export interface CassandraOptions {
+  localDataCenter?: string
+}
+
+export interface BigQueryOptions {
+  keyFilename?: string;
+  projectId?: string;
+  devMode?: boolean
+}
+
+export interface AzureAuthOptions {
+  azureAuthEnabled?: boolean;
+  azureAuthType?: AzureAuthType;
+  tenantId?: string;
+  clientSecret?: string;
+  msiEndpoint?: string;
+}
+export interface LibSQLOptions {
+  mode: 'url' | 'file';
+  authToken?: string;
+  syncUrl?: string;
+  syncPeriod?: number;
+}
 
 export enum DatabaseElement {
   TABLE = 'TABLE',
@@ -63,17 +135,72 @@ export interface IDbConnectionServerConfig {
   runtimeExtensions?: string[]
 }
 
-export interface IDbSshTunnel {
-  connection: SSHConnection,
-  localHost: string,
-  localPort: number,
-  tunnel: Record<string, any>
-}
+export interface IBasicDatabaseClient {
+  supportedFeatures(): Promise<SupportedFeatures>
+  versionString(): Promise<string>,
+  defaultSchema(): Promise<string | null>,
+  listCharsets(): Promise<string[]>,
+  getDefaultCharset(): Promise<string>,
+  listCollations(charset: string): Promise<string[]>,
 
-export interface IDbConnectionServer {
-  db: {
-    [x: string]: BasicDatabaseClient<any>
-  },
-  sshTunnel?: Nullable<IDbSshTunnel>,
-  config: IDbConnectionServerConfig,
+  connect(): Promise<void>,
+  disconnect(): Promise<void>,
+
+  listTables(filter?: FilterOptions): Promise<TableOrView[]>,
+  listViews(filter?: FilterOptions): Promise<TableOrView[]>,
+  listRoutines(filter?: FilterOptions): Promise<Routine[]>,
+  listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>,
+  listTableColumns(table: string, schema?: string): Promise<ExtendedTableColumn[]>,
+  listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>,
+  listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>,
+  listSchemas(filter?: SchemaFilterOptions): Promise<string[]>,
+  getTableReferences(table: string, schema?: string): Promise<string[]>,
+  getTableKeys(table: string, schema?: string): Promise<TableKey[]>,
+  listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
+  query(queryText: string, options?: any): Promise<CancelableQuery>,
+  executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
+  listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
+  getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
+  getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>,
+  listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>,
+  getPrimaryKey(table: string, schema?: string): Promise<string | null>,
+  getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
+
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<void>,
+  createDatabaseSQL(): Promise<string>,
+  getTableCreateScript(table: string, schema?: string): Promise<string>,
+  getViewCreateScript(view: string, schema?: string): Promise<string[]>,
+  getMaterializedViewCreateScript(view: string, schema?: string): Promise<string[]>,
+  getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>,
+
+  alterTableSql(change: AlterTableSpec): Promise<string>,
+  alterTable(change: AlterTableSpec): Promise<void>,
+  alterIndexSql(changes: IndexAlterations): Promise<string | null>,
+  alterIndex(changes: IndexAlterations): Promise<void>,
+  alterRelationSql(changes: RelationAlterations): Promise<string | null>
+  alterRelation(changes: RelationAlterations): Promise<void>,
+  alterPartitionSql(changes: AlterPartitionsSpec): Promise<string | null>,
+  alterPartition(changes: AlterPartitionsSpec): Promise<void>,
+
+  applyChangesSql(changes: TableChanges): Promise<string>,
+  applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
+  setTableDescription(table: string, description: string, schema?: string): Promise<string>
+  setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
+  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
+  truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
+  truncateAllTables(schema?: string): Promise<void>
+
+
+  getTableLength(table: string, schema?: string): Promise<number>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
+  selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> 
+
+  queryStream(query: string, chunkSize: number): Promise<StreamResults>
+
+  duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>
+  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
+
+  getInsertQuery(tableInsert: TableInsert): Promise<string>
+  syncDatabase(): Promise<void>
 }

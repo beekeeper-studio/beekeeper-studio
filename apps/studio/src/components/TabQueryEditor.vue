@@ -312,7 +312,6 @@
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
-  import pluralize from 'pluralize'
 
   import platformInfo from '@/common/platform_info'
   import { splitQueries } from '../lib/db/sql_tools'
@@ -327,8 +326,10 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
-  import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
-  import { OpenTab } from '@/common/appdb/models/OpenTab'
+  import { PropType } from 'vue'
+  import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
+  import { blankFavoriteQuery } from '@/common/transport'
+  import { getValue } from '@/common/transport/TransportUserSetting'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -338,7 +339,7 @@
     // this.queryText holds the current editor value, always
     components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
     props: {
-      tab: OpenTab,
+      tab: Object as PropType<TransportOpenTab>,
       active: Boolean
     },
     data() {
@@ -373,7 +374,7 @@
         executeTime: 0,
         originalText: "",
         initialized: false,
-        blankQuery: new FavoriteQuery(),
+        blankQuery: blankFavoriteQuery(),
         dryRun: false,
         containerResizeObserver: null,
         focusElement: 'text-editor',
@@ -381,13 +382,13 @@
     },
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
-      ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
+      ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = this.settings?.keymap?.value;
+          const value = getValue(this.settings?.keymap);
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -407,7 +408,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return this.tab.findQuery(this.savedQueries || []) || this.blankQuery
+        return findQuery(this.tab, this.savedQueries ?? []) ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
@@ -451,7 +452,7 @@
         return result.length ? result : null
       },
       runningText() {
-        return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
+        return `Running ${this.runningType} (${window.main.pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
@@ -513,9 +514,6 @@
         result[this.ctrlOrCmd('i')] = this.submitQueryToFile
         result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
         return result
-      },
-      connectionType() {
-        return this.connection.connectionType;
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -742,11 +740,11 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       async cancelQuery() {
-        if(this.running && this.runningQuery) {
+        if (this.running && this.runningQuery) {
           this.running = false
           this.info = 'Query Execution Cancelled'
-          await this.runningQuery.cancel()
-          this.runningQuery = null
+          await this.runningQuery.cancel();
+          this.runningQuery = null;
         }
       },
       download(format) {
@@ -885,9 +883,9 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = this.connection.query(query, { dryRun: this.dryRun })
+          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
           const queryStartTime = new Date()
-          const results = await this.runningQuery.execute()
+          const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
@@ -981,7 +979,7 @@
         }
       },
     },
-    mounted() {
+    async mounted() {
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {

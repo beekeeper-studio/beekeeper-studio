@@ -1,5 +1,5 @@
 
-import { IGroupedUserSettings, UserSetting, UserSettingValueType } from '../../../common/appdb/models/user_setting'
+import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, getValue, setValue } from '../../../common/transport/TransportUserSetting'
 import _ from 'lodash'
 import Vue from 'vue'
 import { Module } from 'vuex'
@@ -20,11 +20,11 @@ const SettingStoreModule: Module<State, any> = {
     settings: {},
   }),
   mutations: {
-    replaceSettings(state, newSettings: UserSetting) {
+    replaceSettings(state, newSettings: TransportUserSetting) {
       const grouped = _.groupBy(newSettings, 'key')
-      state.settings = _.mapValues(grouped, v => v[0]) as IGroupedUserSettings
+      state.settings = _.mapValues(grouped, v => v[0]) as unknown as IGroupedUserSettings
     },
-    addSetting(state, newSetting: UserSetting) {
+    addSetting(state, newSetting: TransportUserSetting) {
       if (!state.settings[newSetting.key]) {
         Vue.set(state.settings, newSetting.key, newSetting)
       }
@@ -32,20 +32,20 @@ const SettingStoreModule: Module<State, any> = {
   },
   actions: {
     async initializeSettings(context) {
-      const settings = await UserSetting.find()
+      const settings = await Vue.prototype.$util.send('appdb/setting/find');
       context.commit(M.REPLACEALL, settings)
     },
-    async saveSetting(context, setting: UserSetting) {
-      await setting.save()
+    async saveSetting(context, setting: TransportUserSetting) {
+      await Vue.prototype.$util.send('appdb/setting/save', { obj: setting })
       context.commit(M.ADD, setting)
     },
     async save(context, { key, value }) {
       if (!key || !value) return;
-      const setting = context.state.settings[key] || new UserSetting()
+      const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
-      setting.value = value
+      setValue(setting, value);
       setting.key = key
-      await setting.save()
+      await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
       context.commit(M.ADD, setting)
     }
   },
@@ -54,22 +54,24 @@ const SettingStoreModule: Module<State, any> = {
       return state.settings
     },
     themeValue(state) {
-      if (!state.settings.theme.value) return null
-      if (['system', 'dark', 'light'].includes(state.settings.theme.value as string)) {
-        return state.settings.theme.value
+      const theme = state.settings.theme ? getValue(state.settings.theme) : null;
+      if (!theme) return null
+      if (['system', 'dark', 'light'].includes(theme as string)) {
+        return theme
       }
       return 'system'
     },
     menuStyle(state) {
       if (!state.settings.menuStyle) return 'native'
-      return state.settings.menuStyle.value
+      return getValue(state.settings.menuStyle)
     },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'
-      return state.settings.sortOrder.value
+      return getValue(state.settings.sortOrder)
     },
     minimalMode(state) {
-      return state.settings.minimalMode.value
+      if (!state.settings.minimalMode) return false;
+      return getValue(state.settings.minimalMode)
     },
   }
 }

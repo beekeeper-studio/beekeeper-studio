@@ -4,7 +4,7 @@
     class="tabletable tabcontent flex-col"
     :class="{'view-only': !editable}"
   >
-    <EditorModal
+    <editor-modal
       ref="editorModal"
       @save="onSaveEditorModal"
     />
@@ -13,7 +13,7 @@
     </template>
     <template v-else>
       <row-filter-builder
-        v-if="table.columns?.length"
+        v-if="table.columns && table.columns.length"
         :columns="table.columns"
         :reactive-filters="tableFilters"
         @input="handleRowFilterBuilderInput"
@@ -50,7 +50,6 @@
         <table-length
           v-if="!minimalMode"
           :table="table"
-          :connection="connection"
         />
         <a
           @click="refreshTable"
@@ -276,8 +275,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import pluralize from 'pluralize'
-import { ColumnComponent, CellComponent, RangeComponent } from 'tabulator-tables'
+import { ColumnComponent, CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
@@ -303,6 +301,7 @@ import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
+import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 
 const log = rawLog.scope('TableTable')
 
@@ -311,7 +310,7 @@ let draftFilters: TableFilter[] | string | null;
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "active", 'tab', 'table'],
+  props: ["active", 'tab', 'table'],
   data() {
     return {
       filters: [],
@@ -355,13 +354,13 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
     isEmpty() {
       return _.isEmpty(this.data);
     },
     isCassandra() {
-      return this.connection?.connectionType === 'cassandra'
+      return this.connectionType === 'cassandra'
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -436,7 +435,7 @@ export default Vue.extend({
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
     },
     hiddenColumnMessage() {
-      return `${pluralize("column", this.hiddenColumnCount, true)} hidden`
+      return `${window.main.pluralize('column', this.hiddenColumnCount, true)} hidden`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
@@ -499,7 +498,6 @@ export default Vue.extend({
             { separator: true },
             ...copyActionsMenu({
               range,
-              connection: this.connection,
               table: this.table.name,
               schema: this.table.schema,
             }),
@@ -514,7 +512,7 @@ export default Vue.extend({
             keyDatas.forEach(keyData => {
               menu.push({
                 label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
-                action: (e, cell) => this.fkClick(keyData, cell)
+                action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
           }
@@ -524,7 +522,7 @@ export default Vue.extend({
       }
 
       const columnMenu = (_e, column: ColumnComponent) => {
-        const range = _.last(column.getRanges())
+        const range = _.last((column as any).getRanges()) as RangeComponent;
         let hideColumnLabel = `Hide ${column.getDefinition().title}`
 
         if (hideColumnLabel.length > 33) {
@@ -536,7 +534,6 @@ export default Vue.extend({
           { separator: true },
           ...copyActionsMenu({
             range,
-            connection: this.connection,
             table: this.table.name,
             schema: this.table.schema,
           }),
@@ -608,7 +605,7 @@ export default Vue.extend({
             dataType: column.dataType,
             generated: column.generated,
           },
-          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
+          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
           dataType: column.dataType,
           minWidth: globals.minColumnWidth,
           width: columnWidth,
@@ -734,8 +731,8 @@ export default Vue.extend({
 
         // If the filters in this.tab have changed, reapply them. We probably
         // clicked a foreign key cell from other tab.
-        if (!_.isEqual(this.tab.getFilters(), this.tableFilters)) {
-          this.tableFilters = this.tab.getFilters()
+        if (!_.isEqual(getFilters(this.tab), this.tableFilters)) {
+          this.tableFilters = getFilters(this.tab)
           this.triggerFilter(this.tableFilters)
         }
 
@@ -872,10 +869,10 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
+      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
@@ -1006,6 +1003,16 @@ export default Vue.extend({
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
     },
+    buildPendingDeletes() {
+      return this.pendingChanges.deletes.map((update) => {
+        return _.omit(update, ['row'])
+      });
+    },
+    buildPendingUpdates() {
+      return this.pendingChanges.updates.map((update) => {
+        return _.omit(update, ['key', 'oldValue', 'cell'])
+      });
+    },
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
@@ -1014,7 +1021,7 @@ export default Vue.extend({
         const result = {}
         columnNames.forEach((c) => {
           const d = rowData[c]
-          if (this.isPrimaryKey(c) && !d) {
+          if (this.isPrimaryKey(c) && (!d && d != 0)) {
             // do nothing
           } else {
             result[c] = d
@@ -1288,10 +1295,10 @@ export default Vue.extend({
       try {
         const changes = {
           inserts: this.buildPendingInserts(),
-          updates: this.pendingChanges.updates,
-          deletes: this.pendingChanges.deletes
+          updates: this.buildPendingUpdates(),
+          deletes: this.builudPendingDeletes()
         }
-        const sql = this.connection.applyChangesSql(changes)
+        const sql = await this.connection.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
@@ -1323,14 +1330,13 @@ export default Vue.extend({
         let replaceData = false
 
         try {
-
           const payload = {
             inserts: this.buildPendingInserts(),
-            updates: this.pendingChanges.updates,
-            deletes: this.pendingChanges.deletes
+            updates: this.buildPendingUpdates(),
+            deletes: this.buildPendingDeletes()
           }
 
-          const result = await this.connection.applyChanges(payload)
+          const result = await this.connection.applyChanges(payload);
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
@@ -1350,7 +1356,7 @@ export default Vue.extend({
           }
 
           if (replaceData) {
-            const niceChanges = pluralize('change', this.pendingChangesCount, true)
+            const niceChanges = window.main.pluralize('change', this.pendingChangesCount, true);
             this.$noty.success(`${niceChanges} successfully applied`)
             this.tabulator.replaceData()
           }
@@ -1491,10 +1497,22 @@ export default Vue.extend({
               orderBy,
               filters,
               this.table.schema,
-              selects,
-              // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
-              { allowFilter: this.isCassandra }
+              selects
             );
+
+            // TODO(@day): it has come to my attention that the below comment does not properly explain my confusion, where is this allowFilter business coming from and WHY
+            // the fuck is this??
+            //const response = await this.connection.selectTop(
+            //  this.table.name,
+            //  offset,
+            //  this.limit,
+            //  orderBy,
+            //  filters,
+            //  this.table.schema,
+            //  selects,
+            //  // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
+            //  { allowFilter: this.isCassandra }
+            //);
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1622,7 +1640,7 @@ export default Vue.extend({
       return classes.some(c => c.startsWith('tabulator'))
     },
     handleRowFilterBuilderInput(filters: TableFilter[]) {
-      this.tab.setFilters(filters)
+      setFilters(this.tab, filters)
       this.debouncedSaveTab(this.tab)
     },
     debouncedSaveTab: _.debounce(function(tab) {

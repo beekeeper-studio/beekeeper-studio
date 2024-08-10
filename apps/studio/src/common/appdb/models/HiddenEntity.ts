@@ -1,4 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { TransportHiddenEntity } from "@/common/transport/TransportHidden";
 import _ from "lodash";
 import { Column, Entity } from "typeorm";
 import { DatabaseEntity } from "../../../lib/db/models";
@@ -9,12 +10,20 @@ function schemaMatch(a: string | null | undefined, b: string | null | undefined)
   return a === b
 }
 
+type InitInput = { table?: DatabaseEntity, db?: string | null, saved?: IConnection } 
+
 @Entity({ name: 'hidden_entities'})
 export class HiddenEntity extends ApplicationEntity {
 
-  constructor(table?: DatabaseEntity, db?: string | null, saved?: IConnection) {
+  constructor(input: InitInput | TransportHiddenEntity) {
     super()
-     if (table) {
+    if (!input) return;
+    if ("databaseName" in input) {
+      HiddenEntity.merge(this, input);
+      return;
+    }
+    const { table, db, saved } = input;
+    if (table) {
       this.entityName = table.name
       this.schemaName = table.schema
       this.entityType = table.entityType
