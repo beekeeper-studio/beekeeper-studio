@@ -21,7 +21,6 @@ import {
 } from "./utils";
 import {
   IDbConnectionDatabase,
-  IDbConnectionServer,
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
@@ -59,6 +58,7 @@ import {
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { uuidv4 } from "@/lib/uuid";
+import { IDbConnectionServer } from "../backendTypes";
 
 type ResultType = {
   data: any[];
@@ -187,24 +187,6 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
   return fields.map((field, idx) => {
     return { id: rowsAsArray ? `c${idx}` : field.name, ...field };
   });
-}
-
-export function parseIndexColumn(str: string): IndexColumn {
-  str = str.trim()
-
-  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
-  const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
-
-  let name: string = nameAndPrefix
-  let prefix: number | null = null
-
-  const prefixMatch = nameAndPrefix.match(/\((\d+)\)$/)
-  if (prefixMatch) {
-    prefix = Number(prefixMatch[1])
-    name = nameAndPrefix.slice(0, nameAndPrefix.length - prefixMatch[0].length).trimEnd()
-  }
-
-  return { name, order, prefix }
 }
 
 function parseRowQueryResult(

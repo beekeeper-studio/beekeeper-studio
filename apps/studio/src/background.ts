@@ -1,15 +1,15 @@
 'use strict'
-import 'module-alias/register';
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
-import log from 'electron-log'
+import log from 'electron-log/main'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
+log.initialize();
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})
 log.info("initializing background")
@@ -20,7 +20,7 @@ import MenuHandler from './background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
-import { buildWindow, getActiveWindows } from './background/WindowBuilder'
+import { buildWindow, getActiveWindows, getCurrentWindow } from './background/WindowBuilder'
 import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
@@ -38,7 +38,7 @@ let utilityProcess: Electron.UtilityProcess
 // don't need this
 let newWindows: number[] = new Array();
 
-function createUtilityProcess() {
+async function createUtilityProcess() {
   if (utilityProcess) {
     return;
   }
@@ -54,8 +54,8 @@ function createUtilityProcess() {
   }
 
   utilityProcess = electron.utilityProcess.fork(
-    path.join(__dirname, 'utility.js'), 
-    [], 
+    path.join(__dirname, 'utility.js'),
+    [],
     {
       env: { ...process.env, ...args },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -73,15 +73,25 @@ function createUtilityProcess() {
     utilLog.error(chunk.toString())
   })
 
-  utilityProcess.on('exit', (code) => {
+  utilityProcess.on('exit', async (code) => {
     // if non zero exit code
+    console.log("UTILITY DEAD", code)
     if (code) {
       utilLog.info('Utility process died, restarting')
       utilityProcess = null;
-      createUtilityProcess();
-
+      await createUtilityProcess();
       createAndSendPorts(false, true);
     }
+  })
+
+  utilityProcess.postMessage({ type: 'init' });
+  return new Promise<void>((resolve, _reject) => {
+    utilityProcess.rawListeners
+    utilityProcess.on('message', (msg: string) => {
+      if (msg === 'ready') {
+        resolve()
+      }
+    })
   })
 }
 
@@ -159,10 +169,9 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   // dock icon is clicked and there are no other windows open.
   if (!hasVisibleWindows) {
     if (!settings) throw "No settings initialized!"
-    buildWindow(settings)
+    await createUtilityProcess()
 
-    // NOTE (@day): we should only be calling this once. make a decision
-    createUtilityProcess()
+    buildWindow(settings)
   }
 })
 
@@ -197,9 +206,9 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
+      await createUtilityProcess()
+
       await buildWindow(settings)
-      // NOTE (@day): we should only be calling this once. make a decision
-      createUtilityProcess()
     }
   }
 
@@ -223,6 +232,15 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
   })
 }
 
+ipcMain.handle('requestPorts', async () => {
+  log.info('Client requested ports');
+  if (!utilityProcess || !utilityProcess.pid) {
+    utilityProcess = null;
+    await createUtilityProcess();
+  }
+  createAndSendPorts(false);
+})
+
 ipcMain.on('ready', (_event) => {
   createAndSendPorts(true);
 })
@@ -242,33 +260,59 @@ app.on('open-url', async (event, url) => {
   await buildWindow(settings, { url })
 });
 
+ipcMain.handle('isMaximized', () => {
+  return getCurrentWindow().isMaximized();
+})
+
+ipcMain.handle('isFullscreen', () => {
+  return getCurrentWindow().isFullscreen();
+})
+
+ipcMain.handle('setFullscreen', (_event, value) => {
+  getCurrentWindow().setFullscreen(value);
+})
+
+ipcMain.handle('minimizeWindow', () => {
+  getCurrentWindow().minimizeWindow();
+})
+
+ipcMain.handle('unmaximizeWindow', () => {
+  getCurrentWindow().unmaximizeWindow();
+})
+
+ipcMain.handle('maximizeWindow', () => {
+  getCurrentWindow().maximizeWindow();
+})
+
+ipcMain.handle('closeWindow', () => {
+  getCurrentWindow().closeWindow();
+})
+
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
-  if (process.platform === 'win32') {
-    process.on('message', data => {
-      if (data === 'graceful-exit') {
-        app.quit()
-      }
+  const rendererTrigger = path.join(process.cwd(), 'tmp/restart-renderer')
+
+  // after messing around with SIGUSR, I just use a file, so much easier.
+  if (fs.existsSync(rendererTrigger)) {
+    fs.watchFile(rendererTrigger, (current, previous) => {
+      if (current.mtime !== previous.mtime)
+        console.log("reloading webcontents")
+        getActiveWindows().forEach((w) => w.webContents.reload())
     })
   } else {
-    process.on('SIGTERM', () => {
-      app.quit()
-    })
-
-    // This doesn't fully reload the app, just restart it,
-    // so not suitable for development restarts
-    process.on('SIGUSR1', () => {
-      // log.info("SIGUSR1 =====> Restarting app")
-      // app.relaunch()
-      // app.quit()
-    })
-
-
-
-    process.on('SIGUSR2', () => {
-      log.info("SIGUSR2 =====> Reloading webcontents")
-      getActiveWindows().forEach((w) => w.webContents.reload())
-    })
+    console.log('not watching for restart trigger, file does not exist')
   }
+
+  console.log("Setting DEV KILL flags")
+  process.on('message', data => {
+    if (data === 'graceful-exit') {
+      app.quit()
+    }
+  })
+
+  process.on('SIGTERM', () => {
+    app.quit()
+  })
+
 }
 

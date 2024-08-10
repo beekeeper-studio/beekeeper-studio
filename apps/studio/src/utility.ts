@@ -2,6 +2,7 @@ import { MessagePortMain } from 'electron';
 import rawLog from 'electron-log'
 import ORMConnection from './common/appdb/Connection'
 import platformInfo from './common/platform_info';
+import { AppDbHandlers } from './handlers/appDbHandlers';
 import { ConnHandlers } from './handlers/connHandlers';
 import { ExportHandlers } from './handlers/exportHandlers';
 import { GeneratorHandlers } from './handlers/generatorHandlers';
@@ -24,16 +25,19 @@ export let handlers: Handlers = {
   ...ConnHandlers,
   ...QueryHandlers,
   ...GeneratorHandlers,
-  ...ExportHandlers
+  ...ExportHandlers,
+  ...AppDbHandlers
 }; 
 
-process.parentPort.on('message', ({ data, ports }) => {
+process.parentPort.on('message', async ({ data, ports }) => {
   const { type, sId } = data;
   switch (type) {
     case 'init':
       if (ports && ports.length > 0) {
         log.info('RECEIVED PORT: ', ports[0]);
-        init(sId, ports[0]);
+        await initState(sId, ports[0]);
+      } else {
+        await init();
       }
       break;
     case 'close':
@@ -62,18 +66,13 @@ async function runHandler(id: string, name: string, args: any) {
     }
   } else {
     replyArgs.type = 'error';
-    replyArgs.error = 'Invalid handler name';
+    replyArgs.error = `Invalid handler name: ${name}`;
   }
 
   state(args.sId).port.postMessage(replyArgs);
 }
 
-function init(sId: string, port: MessagePortMain) {
-  if (!ormConnection) {
-    ormConnection = new ORMConnection(platformInfo.appDbPath, false);
-    ormConnection.connect();
-  }
-
+async function initState(sId: string, port: MessagePortMain) {
   newState(sId);
 
   state(sId).port = port;
@@ -84,4 +83,11 @@ function init(sId: string, port: MessagePortMain) {
   })
 
   state(sId).port.start();
+}
+
+async function init() {
+  ormConnection = new ORMConnection(platformInfo.appDbPath, false);
+  await ormConnection.connect();
+
+  process.parentPort.postMessage('ready');
 }

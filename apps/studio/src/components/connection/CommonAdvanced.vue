@@ -199,10 +199,9 @@
   </toggle-form-area>
 </template>
 <script>
-  import FilePicker from '@/components/common/form/FilePicker.vue'
-  import ExternalLink from '@/components/common/ExternalLink.vue'
+import FilePicker from '@/components/common/form/FilePicker.vue'
+import ExternalLink from '@/components/common/ExternalLink.vue'
 
-  import { join as pathJoin } from 'path'
 import platformInfo from '@/common/platform_info'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 
@@ -220,7 +219,7 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
           { label: "Username & Password", mode: "userpass" },
           { label: "SSH Agent", mode: "agent" }
         ],
-        filePickerDefaultPath: pathJoin(platformInfo.homeDirectory, '.ssh')
+        filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh')
       }
     },
     methods: {

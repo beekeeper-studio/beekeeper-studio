@@ -2,11 +2,9 @@
   <div v-if="false" />
 </template>
 <script lang="ts">
-import { ipcRenderer } from 'electron'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import Vue from 'vue'
 import Noty from 'noty'
-import { AppEvent } from '@/common/AppEvent'
 import platformInfo from '@/common/platform_info'
 
 export default Vue.extend({
@@ -21,7 +19,7 @@ export default Vue.extend({
         closeWith: ['button'],
         buttons: [
           Noty.button('Close', 'btn btn-flat', () => Noty.closeAll('upsell')),
-          Noty.button('Get Started', 'btn btn-primary', () => ipcRenderer.send(AppEvent.openExternally, ['https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition']))
+          Noty.button('Get Started', 'btn btn-primary', () => window.main.openExternally('https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition'))
         ]
       })
     }

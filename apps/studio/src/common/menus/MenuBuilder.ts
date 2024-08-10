@@ -1,7 +1,7 @@
 import DefaultMenu from './BaseMenuBuilder'
 import platformInfo from '../platform_info'
-import { IGroupedUserSettings } from '../appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
+import { getStringValue, IGroupedUserSettings } from '../transport/TransportUserSetting'
 
 export default class extends DefaultMenu {
   constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler) {
@@ -59,7 +59,7 @@ export default class extends DefaultMenu {
 
     const windowMenu: Electron.MenuItemConstructorOptions[] = []
     console.log("Menu style", this.settings.menuStyle)
-    if ((platformInfo.isMac || this.settings.menuStyle?.stringValue === 'native') && !platformInfo.isWayland) {
+    if ((platformInfo.isMac || getStringValue(this.settings.menuStyle) === 'native') && !platformInfo.isWayland) {
       windowMenu.push({
         label: 'Window',
         role: 'windowMenu'

@@ -74,6 +74,7 @@ export interface IConnectionHandlers {
   'conn/applyChangesSql': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<string>,
   'conn/applyChanges': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<TableUpdateResult[]>,
   'conn/setTableDescription': ({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) => Promise<string>,
+  'conn/setElementName': ({ elementName, newElementName, typeOfElement, schema, sId }: { elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
   'conn/dropElement': ({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
   'conn/truncateElement': ({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
   'conn/truncateAllTables': ({ schema, sId }: { schema?: string, sId: string }) => Promise<void>,
@@ -373,6 +374,11 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/setTableDescription': async function({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) {
      checkConnection(sId);
      return await state(sId).connection.setTableDescription(table, description, schema);
+  },
+
+  'conn/setElementName': async function({ elementName, newElementName, typeOfElement, schema, sId }: { elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.setElementName(elementName, newElementName, typeOfElement, schema);
   },
 
   'conn/dropElement': async function({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) {

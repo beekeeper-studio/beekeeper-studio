@@ -1,7 +1,5 @@
-import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
-import { loadEncryptionKey } from './common/encryption_key'
-import { ConnectionTypes, keymapTypes } from './common/appdb/models/saved_connection'
+import { ConnectionTypes, keymapTypes } from './lib/db/types'
 
 const userDirectory = platformInfo.userDirectory
 
@@ -13,7 +11,7 @@ function hasSshKeysPlug() {
   if (!platformInfo.isSnap) return false;
 
   try {
-    const code = execSync('snapctl is-connected ssh-keys')
+    const code = typeof window === 'undefined' ? require('child_process').execSync('snapctl is-connected ssh-keys') : window.main.hasSshKeysPlug();
     return Number(code) === 0
   } catch (error) {
     return false
@@ -24,7 +22,6 @@ function hasSshKeysPlug() {
 export default {
   ...platformInfo,
   userDirectory,
-  encryptionKey: loadEncryptionKey(),
   snapSshPlug: hasSshKeysPlug(),
 
   defaults: {

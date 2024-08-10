@@ -1,6 +1,6 @@
-import { DatabaseElement, IBasicDatabaseClient } from "./db/types";
+import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger } from "./db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 
 
@@ -187,6 +187,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async setTableDescription(table: string, description: string, schema?: string): Promise<string> {
     return await Vue.prototype.$util.send('conn/setTableDescription', { table, description, schema });
+  }
+
+  async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/setElementName', { elementName, newElementName, typeOfElement, schema });
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {

@@ -4,7 +4,6 @@
 <script>
 import Noty from "noty";
 import ExportInfo from "./mixins/export-info";
-import { Export } from '../../lib/export';
 import { ExportStatus } from '../../lib/export/models'
 
 export default {
