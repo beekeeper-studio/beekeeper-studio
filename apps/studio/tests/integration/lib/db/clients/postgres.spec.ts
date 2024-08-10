@@ -34,6 +34,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
 
+      const startupTimeout = dbtimeout * 2;
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
       container = await new GenericContainer(`postgres:${dockerTag}`)
         .withEnvironment({
@@ -46,7 +47,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           target: "/var/run/postgresql", 
           mode: "rw"
         }])
-        .withStartupTimeout(dbtimeout)
+        .withStartupTimeout(startupTimeout)
         .start()
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
