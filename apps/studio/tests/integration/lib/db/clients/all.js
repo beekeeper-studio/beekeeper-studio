@@ -54,7 +54,7 @@ export function runCommonTests(getUtil, opts = {}) {
   const {
     readOnly = false,
     dbReadOnlyMode = false,
-    disabledFeatures,
+    disabledFeatures = {},
   } = opts
 
   describe("RO", () => {
