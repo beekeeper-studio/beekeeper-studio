@@ -19,14 +19,20 @@ describe("Oracle Tests", () => {
     const localDir = path.resolve('./tests/docker/oracle_init')
     container = await new GenericContainer('gvenzl/oracle-xe:18')
       .withName('oracle')
-      .withEnv("ORACLE_PASSWORD", 'password')
-      .withEnv('ORACLE_DATABASE', 'beekeeper')
-      .withEnv('APP_USER', 'beekeeper')
-      .withEnv('APP_USER_PASSWORD', 'password')
+      .withEnvironment({
+        "ORACLE_PASSWORD": "password",
+        "ORACLE_DATABASE": "beekeeper",
+        "APP_USER": "beekeeper",
+        "APP_USER_PASSWORD": "password"
+      })
       .withExposedPorts(1521)
-      .withBindMount(localDir, '/docker-entrypoint-initdb.d', 'ro')
+      .withBindMounts([{
+        source: localDir, 
+        target: '/docker-entrypoint-initdb.d', 
+        mode: 'ro'
+      }])
       .withHealthCheck({
-        test: "sqlplus -s beekeeper/password@//localhost/BEEKEEPER <<< \"select * from actor;\" | grep 'no rows'",
+        test: ["CMD-SHELL", "sqlplus -s beekeeper/password@//localhost/BEEKEEPER <<< \"select * from actor;\" | grep 'no rows'"],
         interval: 10000,
         timeout: 10000,
         retries: 12, // 2 minutes

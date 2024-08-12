@@ -6,7 +6,7 @@ const { resolve } = require('path')
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   moduleNameMapper: {
-    '^@shared/(.*)': resolve(__dirname, '../../shared/src/$1'),
+    '^@shared/(.*)': resolve(__dirname, './src/shared/$1'),
     '^@/(.*)': resolve(__dirname, './src/$1'),
     "^axios$": "axios/dist/node/axios.cjs",
     '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
@@ -29,7 +29,7 @@ module.exports = {
   // support the same @ -> src alias mapping in source code
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@shared(.*)$': '<rootDir>/src/shared/$1',
+    '^@shared(.*)$': '<rootDir>/src/shared/$1'
   },
   // serializer for snapshots
   snapshotSerializers: [
