@@ -3,8 +3,7 @@ import { GenericContainer, StartedTestContainer } from "testcontainers";
 import { DBTestUtil, dbtimeout } from "../../../../lib/db";
 import { runCommonTests, runReadOnlyTests } from "./all";
 import knex from "knex";
-import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse-temp";
-import { ClickHouseData } from "@shared/lib/dialects/clickhouse";
+import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 
 function testWith(options = { readOnly: false }) {
   describe(`Clickhouse [read-only mode? ${options.readOnly}]`, () => {
@@ -16,7 +15,7 @@ function testWith(options = { readOnly: false }) {
     beforeAll(async () => {
       const timeoutDefault = 5000;
       container = await new GenericContainer("clickhouse/clickhouse-server")
-        .withName("some-clickhouse-server")
+        .withName(`clickhouse-server-readonly-${options.readOnly.toString()}`)
         .withEnvironment({
           CLICKHOUSE_USER: "username",
           CLICKHOUSE_PASSWORD: "password",

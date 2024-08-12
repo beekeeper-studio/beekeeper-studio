@@ -157,18 +157,18 @@ export class DBTestUtil {
     if (this.knex) await this.knex.destroy();
   }
 
-  // maybeArrayToObject(items, key) {
-  //   // Only 'firebird knex' returns an object instead of an array.
-  //   if (!Array.isArray(items)) {
-  //     items = [items]
-  //   }
-  //   return items.map((item) => {
-  //     if(_.isObject(item)) return item
-  //     const result = {}
-  //     result[key] = item
-  //     return result
-  //   })
-  // }
+  maybeArrayToObject(items, key) {
+    // Only 'firebird knex' returns an object instead of an array.
+    if (!Array.isArray(items)) {
+      items = [items]
+    }
+    return items.map((item) => {
+      if(_.isObject(item)) return item
+      const result = {}
+      result[key] = item
+      return result
+    })
+  }
 
   buildImportData(tableName, schemaName = null) {
     const data = [
@@ -205,14 +205,20 @@ export class DBTestUtil {
     await this.connection.connect()
     await this.createTables()
 
-    const addressId = 1
-    this.personId = 1
-    this.jobId = 1
+    const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
+    const isOracle = this.connection.connectionType === 'oracle'
+    await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
+    let people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
+    let jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
 
-    await this.knex("MixedCase").insert({bananas: "pears"})
-    await this.knex("addresses").insert({id: addressId, country: "US"})
-    await this.knex("people").insert({ id: this.personId, email: "foo@bar.com", address_id: addressId})
-    await this.knex("jobs").insert({ id: this.jobId, job_name: "Programmer"})
+    if (this.dialect === 'clickhouse') {
+      people = (await this.knex("people").select("id").where({email: "foo@bar.com"}))[0]
+      jobs = (await this.knex("jobs").select("id").where({job_name: "Programmer"}))[0]
+    }
+
+    // Oracle or Knex has decided in its infinite wisdom to return the ids as strings, so make em numbers for the id because that's what they are in the table itself.
+    this.jobId = isOracle ? Number(jobs[0].id) : jobs[0].id
+    this.personId = isOracle ? Number(people[0].id) : people[0].id
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
 
     // See createTables for why this is commented out

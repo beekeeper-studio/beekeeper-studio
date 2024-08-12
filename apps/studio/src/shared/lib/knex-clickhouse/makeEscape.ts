@@ -1,3 +1,4 @@
+// "forked" from https://github.com/cleverbrush/framework/blob/e1dbee24d205ddb84807ae5327c8fe9592cd6064/libs/knex-clickhouse/src/makeEscape.ts
 /*
  *  NOTE: functions below are taken from knex npm package,
  *  unfortunately they are not exported, so we have to copy them here

@@ -5,7 +5,7 @@ import {
   ExecutionContext,
   QueryLogOptions,
 } from "./BasicDatabaseClient";
-import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse-temp";
+import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import knexlib from "knex";
 import { createClient, InsertParams, ResponseJSON } from "@clickhouse/client";
 import { NodeClickHouseClient } from "@clickhouse/client/dist/client";

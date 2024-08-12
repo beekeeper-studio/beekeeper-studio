@@ -1,3 +1,4 @@
+// "forked" from  https://github.com/cleverbrush/framework/blob/e1dbee24d205ddb84807ae5327c8fe9592cd6064/libs/knex-clickhouse/src/index.ts
 import SchemaCompiler from "./schema/clickhouse-compiler";
 import ColumnCompiler from "./schema/clickhouse-columncompiler";
 import TableCompiler from "./schema/clickhouse-tablecompiler";
