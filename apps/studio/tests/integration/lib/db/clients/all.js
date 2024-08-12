@@ -2,7 +2,6 @@ import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 
 /**
  * @typedef {import('../../../../lib/db').DBTestUtil} DBTestUtil
- * @typedef {import('../../../../../../../shared/src/lib/dialects/models').DialectData['disabledFeatures']} DisabledFeatures
  * @param {() => DBTestUtil} getUtil
  **/
 export function runReadOnlyTests(getUtil) {
@@ -48,13 +47,12 @@ export function runReadOnlyTests(getUtil) {
 
 /**
  * @param {() => DBTestUtil} getUtil
- * @param {{readOnly?: boolean, dbReadOnlyMode?: boolean, disabledFeatures?: DisabledFeatures}} opts?
+ * @param {{readOnly?: boolean, dbReadOnlyMode?: boolean}} opts?
  * */
 export function runCommonTests(getUtil, opts = {}) {
   const {
     readOnly = false,
     dbReadOnlyMode = false,
-    disabledFeatures = {},
   } = opts
 
   describe("RO", () => {
@@ -97,11 +95,10 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().filterTests()
     })
 
-    if (!disabledFeatures.triggers) {
-      test("table triggers", async () => {
-        await getUtil().triggerTests()
-      })
-    }
+    test("table triggers", async () => {
+      if (getUtil().data.disabledFeatures?.triggers) return
+      await getUtil().triggerTests()
+    })
 
     test("primary key tests", async () => {
       await getUtil().primaryKeyTests()
@@ -113,11 +110,10 @@ export function runCommonTests(getUtil, opts = {}) {
         await getUtil().tablePropertiesTests()
       })
 
-      if (!disabledFeatures.generatedColumns) {
-        test("should list generated columns", async () => {
-          await getUtil().generatedColumnsTests()
-        })
-      }
+      test("should list generated columns", async () => {
+        if (getUtil().data.disabledFeatures?.generatedColumns || getUtil().options.skipGeneratedColumns) return
+        await getUtil().generatedColumnsTests()
+      })
     })
 
   })
@@ -275,11 +271,10 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      if (!disabledFeatures?.transactions) {
-        test("should not insert bad data", async () => {
-          await itShouldNotInsertBadData(getUtil())
-        })
-      }
+      test("should not insert bad data", async () => {
+        if (getUtil().data.disabledFeatures?.transactions) return
+        await itShouldNotInsertBadData(getUtil())
+      })
 
       test("should apply all types of changes", async () => {
         if (dbReadOnlyMode) {
@@ -289,15 +284,14 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      if (!disabledFeatures?.transactions) {
-        test("should not commit on change error", async () => {
-          if (dbReadOnlyMode) {
-            await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
-          } else {
-            await itShouldNotCommitOnChangeError(getUtil())
-          }
-        })
-      }
+      test("should not commit on change error", async () => {
+        if (getUtil().data.disabledFeatures?.transactions) return
+        if (dbReadOnlyMode) {
+          await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
+        } else {
+          await itShouldNotCommitOnChangeError(getUtil())
+        }
+      })
     })
   })
 
@@ -314,11 +308,10 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    if (!disabledFeatures?.transactions) {
-      test("should not insert bad data", async () => {
-        await itShouldNotInsertBadDataCompositePK(getUtil())
-      })
-    }
+    test("should not insert bad data", async () => {
+      if (getUtil().data.disabledFeatures?.transactions) return
+      await itShouldNotInsertBadDataCompositePK(getUtil())
+    })
 
     test("should apply all types of changes", async () => {
       if (dbReadOnlyMode) {
@@ -328,15 +321,14 @@ export function runCommonTests(getUtil, opts = {}) {
       }
     })
 
-    if (!disabledFeatures?.transactions) {
-      test("should not commit on change error", async () => {
-        if (dbReadOnlyMode) {
-          await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
-        } else {
-          await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
-        }
-      })
-    }
+    test("should not commit on change error", async () => {
+      if (getUtil().data.disabledFeatures?.transactions) return
+      if (dbReadOnlyMode) {
+        await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
+      }
+    })
   })
 
   describe("Get data modification SQL", () => {

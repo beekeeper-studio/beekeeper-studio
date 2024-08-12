@@ -17,9 +17,11 @@ function testWith(options = { readOnly: false }) {
       const timeoutDefault = 5000;
       container = await new GenericContainer("clickhouse/clickhouse-server")
         .withName("some-clickhouse-server")
-        .withEnv("CLICKHOUSE_USER", "username")
-        .withEnv("CLICKHOUSE_PASSWORD", "password")
-        .withEnv("CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT", "1")
+        .withEnvironment({
+          CLICKHOUSE_USER: "username",
+          CLICKHOUSE_PASSWORD: "password",
+          CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1",
+        })
         .withExposedPorts(8123)
         .withStartupTimeout(dbtimeout)
         .start();
@@ -70,12 +72,7 @@ function testWith(options = { readOnly: false }) {
       if (options.readOnly) {
         runReadOnlyTests(() => util);
       } else {
-        runCommonTests(() => util, {
-          disabledFeatures: {
-            ...ClickHouseData.disabledFeatures,
-            transactions: true,
-          },
-        });
+        runCommonTests(() => util);
       }
     });
 

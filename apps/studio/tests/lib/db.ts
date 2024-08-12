@@ -79,7 +79,7 @@ export class DBTestUtil {
   public server: IDbConnectionPublicServer
   public connection: BasicDatabaseClient<any>
   public extraTables = 0
-  private options: Options
+  public options: Options
   private dbType: ConnectionType | 'generic'
 
   private dialect: Dialect
@@ -219,7 +219,7 @@ export class DBTestUtil {
     // await this.knex("foo.bar").insert({ id: 1, name: "Dots are evil" });
 
 
-    if (!this.data.disabledFeatures.generatedColumns) {
+    if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
       ])
@@ -1272,7 +1272,7 @@ export class DBTestUtil {
       t.string('hat')
     })
 
-    if (!this.data.disabledFeatures.generatedColumns) {
+    if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",

@@ -83,5 +83,6 @@ export const ClickHouseData: DialectData = {
       multiStatement: true,
       renameSchema: true,
     },
+    transactions: true,
   },
 }
