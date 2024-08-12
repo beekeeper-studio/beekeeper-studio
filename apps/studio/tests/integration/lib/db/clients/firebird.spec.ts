@@ -21,14 +21,16 @@ describe("Firebird Tests", () => {
 
     container = await new GenericContainer("jacobalberty/firebird:v4.0.1")
       .withName("test_firebird")
-      .withEnv("ISC_PASSWORD", "masterkey")
-      .withEnv("FIREBIRD_DATABASE", "defaultdb.fdb")
-      .withEnv("EnableLegacyClientAuth", "true")
+      .withEnvironment({
+        "ISC_PASSWORD": "masterkey",
+        "FIREBIRD_DATABASE": "defaultdb.fdb",
+        "EnableLegacyClientAuth": "true"
+      })
       .withExposedPorts(3050)
       .withWaitStrategy(Wait.forHealthCheck())
       .withHealthCheck({
         /* eslint-disable-next-line */
-        test: `(echo "select 1 as a from rdb\$database;" | /usr/local/firebird/bin/isql -user sysdba -password masterkey /firebird/data/sakila.fdb) || exit 1`,
+        test: ['CMD-SHELL', `(echo "select 1 as a from rdb\$database;" | /usr/local/firebird/bin/isql -user sysdba -password masterkey /firebird/data/sakila.fdb) || exit 1`],
         interval: 2000,
         timeout: 3000,
         retries: 10,

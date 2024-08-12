@@ -12,8 +12,10 @@ describe("MariaDB Tests", () => {
     const timeoutDefault = 5000
     container = await new GenericContainer("mariadb")
       .withName("maria")
-      .withEnv("MYSQL_ROOT_PASSWORD", "test")
-      .withEnv("MYSQL_DATABASE", "test")
+      .withEnvironment({
+        "MYSQL_ROOT_PASSWORD": "test",
+        "MYSQL_DATABASE": "test"
+      })
       .withExposedPorts(3306)
       .withStartupTimeout(dbtimeout)
       .start()

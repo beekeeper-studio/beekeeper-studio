@@ -33,14 +33,16 @@ function testWith(dockerTag: string, readonly: boolean) {
 
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
         .withName(`mssql-${dockerTag}`)
-        .withEnv("MSSQL_PID", "Express")
-        .withEnv("SA_PASSWORD", "Example*1")
-        .withEnv("MSSQL_SA_PASSWORD", "Example*1")
-        .withEnv("ACCEPT_EULA", "Y")
+        .withEnvironment({
+          "MSSQL_PID": "Express",
+          "SA_PASSWORD": "Example*1",
+          "MSSQL_SA_PASSWORD": "Example*1",
+          "ACCEPT_EULA": "Y"
+        })
         .withExposedPorts(1433)
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
-          test: `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`,
+          test: ["CMD-SHELL", `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
           interval: 2000,
           timeout: 3000,
           retries: 10,
