@@ -7,14 +7,12 @@ import {
 } from "./BasicDatabaseClient";
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse-temp";
 import knexlib from "knex";
-import { createClient, DataFormat, InsertParams } from "@clickhouse/client";
+import { createClient, InsertParams, ResponseJSON } from "@clickhouse/client";
 import { NodeClickHouseClient } from "@clickhouse/client/dist/client";
-import { ResultJSONType } from "@clickhouse/client-common/dist/result";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
   ExtendedTableColumn,
-  FieldDescriptor,
   FilterOptions,
   NgQueryResult,
   OrderBy,
@@ -36,14 +34,17 @@ import {
   TableUpdateResult,
 } from "../models";
 import { ClickHouseData } from "@shared/lib/dialects/clickhouse";
-import _ from "lodash";
+import _, { isNaN } from "lodash";
 import {
   createCancelablePromise,
   joinFilters,
-  streamToBuffer,
   streamToString,
 } from "@/common/utils";
-import { IndexColumn, TableKey } from "@shared/lib/dialects/models";
+import {
+  AlterTableSpec,
+  IndexColumn,
+  TableKey,
+} from "@shared/lib/dialects/models";
 import { Stream } from "stream";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { ClickHouseChangeBuilder } from "@shared/lib/sql/change_builder/ClickHouseChangeBuilder";
@@ -58,15 +59,30 @@ import { IDbConnectionServer } from "../backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
 
-interface Result<T = unknown, F = unknown> {
+interface JSONResult {
   statement: IdentifyResult;
-  data: ResultJSONType<T, F> | Stream;
+  data: ResponseJSON;
+  resultType: "json";
 }
+
+interface StreamResult {
+  statement: IdentifyResult;
+  data: Stream;
+  resultType: "stream";
+}
+
+type Result = JSONResult | StreamResult;
 
 interface ExecuteQueryOptions {
   params?: Record<string, any>;
-  format?: DataFormat;
   queryId?: string;
+}
+
+interface RawExecuteQueryOptions extends ExecuteQueryOptions {
+  statements: IdentifyResult[];
+  /** Run using insert method */
+  insert?: InsertParams;
+  arrayMode?: boolean;
 }
 
 const log = rawLog.scope("clickhouse");
@@ -87,34 +103,41 @@ const clickhouseContext = {
 const knex = knexlib({ client: ClickhouseKnexClient });
 
 const RE_NULLABLE = /^Nullable\((.*)\)$/;
+const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/i;
 
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
-  _client: NodeClickHouseClient;
+  client: NodeClickHouseClient;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, clickhouseContext, server, database);
+    this.dialect = 'generic';
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   async connect(): Promise<void> {
     await super.connect();
-    this._client = createClient({
+    this.client = createClient({
       url: this.server.config.url,
       username: this.server.config.user,
       password: this.server.config.password,
       database: this.database.database,
       application: "Beekeeper Studio",
+      clickhouse_settings: {
+        default_format: "JSONCompact",
+      },
     });
-    const { data } = await this.driverExecuteSingle(
+    const result = await this.driverExecuteSingle(
       "SELECT version() AS version"
     );
-    const str = await streamToString(data as Stream);
+    const json = result.data as ResponseJSON<{ version: string }>;
+    const str = json.data[0].version;
     this.version = str.trim();
   }
 
   async disconnect(): Promise<void> {
     await super.disconnect();
-    await this._client.close();
+    await this.client.close();
   }
 
   async versionString(): Promise<string> {
@@ -122,12 +145,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
-    const sql = `SELECT name, engine FROM system.tables where database = {database: String} ORDER BY name`;
-    const { data } = await this.driverExecuteSingle(sql, {
-      params: { database: this.database.database },
-      format: "JSONEachRow",
-    });
-    return data.map((row) => ({
+    const sql = `SELECT name, engine FROM system.tables where database = currentDatabase() ORDER BY name`;
+    const result = await this.driverExecuteSingle(sql);
+    const json = result.data as ResponseJSON<{ name: string; engine: string }>;
+    return json.data.map((row) => ({
       name: row.name,
       entityType: "table",
       engine: row.engine,
@@ -148,15 +169,23 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         comment,
         default_expression,
       FROM system.columns
-      WHERE database = {database: String}
+      WHERE database = currentDatabase()
         ${table ? "AND table = {table: String}" : ""}
       ORDER BY position
     `;
-    const { data } = await this.driverExecuteSingle(sql, {
-      params: { database: this.database.database, table },
-      format: "JSONEachRow",
+    const result = await this.driverExecuteSingle(sql, {
+      params: { table },
     });
-    return data.map((row) => {
+    const json = result.data as ResponseJSON<{
+      name: string;
+      table: string;
+      type: string;
+      is_in_primary_key: number;
+      position: number;
+      comment: string;
+      default_expression: string;
+    }>;
+    return json.data.map((row) => {
       // Empty string if it is not defined.
       const hasDefault = row.default_expression !== "";
       return {
@@ -173,28 +202,36 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     });
   }
 
+  async alterTable(change: AlterTableSpec): Promise<void> {
+    const sql = await this.alterTableSql(change);
+    const queries = sql
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const query of queries) {
+      await this.executeQuery(query);
+    }
+  }
+
   async getPrimaryKeys(
     table: string,
     _schema?: string
   ): Promise<PrimaryKeyColumn[]> {
     log.debug("finding primary keys for", this.db, table);
-
-    const { data } = (await this.driverExecuteSingle(
+    const result = await this.driverExecuteSingle(
       `
         SELECT name, position FROM system.columns
-        WHERE database = {database: String}
+        WHERE database = currentDatabase()
           AND table = {table: String}
           AND is_in_primary_key = 1
       `,
-      {
-        params: { database: this.database.database, table },
-        format: "JSONEachRow",
-      }
-    )) as any;
-
-    if (data.length === 0) return [];
-
-    return data.map((r) => ({
+      { params: { table } }
+    );
+    const json = result.data as ResponseJSON<{
+      name: string;
+      position: number;
+    }>;
+    return json.data.map((r) => ({
       columnName: r.name,
       position: r.position,
     }));
@@ -225,16 +262,12 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       columns,
       selects
     );
-
-    const { query, params } = queries;
-
-    const { data } = await this.driverExecuteSingle(query, {
-      params,
-      format: "JSONEachRow",
-    });
+    const { fullQuery } = queries;
+    const result = await this.driverExecuteSingle(fullQuery);
+    const json = result.data as ResponseJSON;
     return {
-      result: data as any[],
-      fields: Object.keys(data[0] || {}),
+      result: json.data as any[],
+      fields: Object.keys(json.data[0] || {}),
     };
   }
 
@@ -275,16 +308,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     `;
     const params = { database: this.database.database, table };
 
-    const [{ data: info }, relations, triggers, indexes] = await Promise.all([
-      this.driverExecuteSingle(query, { params, format: "JSONEachRow" }),
+    const [queryResult, relations, triggers, indexes] = await Promise.all([
+      this.driverExecuteSingle(query, { params }),
       this.getTableKeys(table),
       this.listTableTriggers(table),
       this.listTableIndexes(table),
     ]);
 
+    const json = queryResult.data as ResponseJSON<{
+      comment: string;
+      total_bytes: number;
+    }>;
+
     return {
-      description: info[0].comment,
-      size: info[0].total_bytes,
+      description: json.data[0].comment,
+      size: json.data[0].total_bytes,
       indexes,
       relations,
       triggers,
@@ -315,11 +353,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         IN ${ClickHouseData.wrapIdentifier(this.database.database)}
     `;
 
-    const { data } = await this.driverExecuteSingle(sql, {
-      format: "JSONEachRow",
-    });
+    const result = await this.driverExecuteSingle(sql);
+    const json = result.data as ResponseJSON;
 
-    const grouped = _.groupBy(data, "key_name");
+    const grouped = _.groupBy(json.data, "key_name");
 
     return Object.keys(grouped).map((key, idx) => {
       const row = grouped[key][0] as any;
@@ -346,16 +383,17 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     _filter: FilterOptions = { schema: "public" }
   ): Promise<TableOrView[]> {
     const sql = `
-      SELECT
-        table_schema as schema,
-        table_name as name
+      SELECT table_name as name
       FROM information_schema.views
-      ORDER BY table_schema, table_name
+      WHERE table_schema = currentDatabase()
+      ORDER BY table_name
     `;
-    const { data } = await this.driverExecuteSingle(sql, {
-      format: "JSONEachRow",
-    });
-    return data as TableOrView[];
+    const result = await this.driverExecuteSingle(sql);
+    const json = result.data as ResponseJSON<{ name: string }>;
+    return json.data.map((row) => ({
+      name: row.name,
+      entityType: "view",
+    }));
   }
 
   async applyChangesSql(changes: TableChanges): Promise<string> {
@@ -368,7 +406,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     await this.runWithTransactionIfSupported(async () => {
       log.debug("Applying changes", changes);
 
-      if (changes.inserts) {
+      if (changes.inserts?.length) {
         for (const { table, data } of changes.inserts) {
           await this.driverExecuteSingle("", {
             insert: { table, values: data, format: "JSONEachRow" },
@@ -376,11 +414,11 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         }
       }
 
-      if (changes.updates) {
+      if (changes.updates?.length) {
         results = await this.updateValues(changes.updates);
       }
 
-      if (changes.deletes) {
+      if (changes.deletes?.length) {
         await this.deleteValues(changes.deletes);
       }
     });
@@ -436,12 +474,12 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       }),
       {}
     );
-    const data = await this.driverExecuteSingle(sql, {
+    const result = await this.driverExecuteSingle(sql, {
       params: { table, ...valueParams },
-      format: "JSONEachRow",
+      returnType: "RowAsObject",
     });
-    results.push(data);
-
+    const json = result.data as ResponseJSON;
+    results.push(json.data);
     return results;
   }
 
@@ -450,10 +488,11 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     const targetTables = _.uniq(
       deletes.map((d) => ClickHouseData.escapeString(d.table, true))
     ).join(",");
-    const { data: tables } = (await this.driverExecuteSingle(
-      `SELECT table, engine FROM system.tables WHERE table IN (${targetTables})`,
-      { format: "JSONEachRow" }
-    )) as any;
+    const result = await this.driverExecuteSingle(
+      `SELECT table, engine FROM system.tables WHERE table IN (${targetTables})`
+    );
+    const json = result.data as ResponseJSON<{ table: string; engine: string }>;
+    const tables = json.data;
 
     const mergeTreeTables = [];
     for (const { table, engine } of tables) {
@@ -517,10 +556,9 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
     const sql = "SHOW DATABASES";
-    const { data } = await this.driverExecuteSingle(sql, {
-      format: "JSONEachRow",
-    });
-    return data.map((row) => row.name);
+    const result = await this.driverExecuteSingle(sql);
+    const json = result.data as ResponseJSON<{ name: string }>;
+    return json.data.map((row) => row.name);
   }
 
   async createDatabase(
@@ -551,10 +589,20 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   async duplicateTable(
     tableName: string,
     duplicateTableName: string,
-    _schema?: string
+    schema?: string
   ): Promise<void> {
-    const sql = await this.duplicateTableSql(tableName, duplicateTableName);
-    await this.driverExecuteSingle(sql);
+    const sql = await this.duplicateTableSql(
+      tableName,
+      duplicateTableName,
+      schema
+    );
+    const queries = sql
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const query of queries) {
+      await this.driverExecuteSingle(query);
+    }
   }
 
   async duplicateTableSql(
@@ -605,17 +653,14 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
-    let uuid = uuidv4();
+    let queryId = uuidv4();
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
     return {
       execute: async (): Promise<NgQueryResult[]> => {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, {
-              queryId: uuid,
-              format: "JSONCompact",
-            }),
+            this.executeQuery(queryText, { queryId }),
           ]);
           if (!data) return [];
           return data;
@@ -634,7 +679,9 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         // [cluster-name] option, in order to ensure the query is killed on
         // all replicas:::
         // See https://clickhouse.com/docs/en/sql-reference/statements/kill
-        await this.driverExecuteSingle(`KILL QUERY WHERE query_id='${uuid}'`);
+        await this.driverExecuteSingle(
+          `KILL QUERY WHERE query_id='${queryId}'`
+        );
         cancelable.cancel();
       },
     };
@@ -644,62 +691,119 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     queryText: string,
     options?: ExecuteQueryOptions
   ): Promise<NgQueryResult[]> {
-    // FIXME (azmi): this is a mess. we should probably limit the format to
-    // JSONCompact for now
-    const containsMeta = options?.format?.match(
-      /^(JSON|JSONStrings|JSONCompact|JSONCompactStrings|JSONColumnsWithMetadata)$/
-    );
-    const result = (await this.driverExecuteMultiple(
-      queryText,
-      options
-    )) as any;
+    // FIXME we should check if the result is in JSON or buffer. If not both,
+    // just cast it to a string.
+    const results = await this.driverExecuteMultiple(queryText, {
+      ...options,
+      arrayMode: true,
+    });
     const ret = [];
-    for (let { statement, data } of result) {
-      if (data instanceof Stream) {
+    for (const result of results) {
+      const data =
+        result.resultType === "stream"
+          ? await streamToString(result.data)
+          : result.data;
+
+      const isEmptyResult = !data;
+
+      if (isEmptyResult) {
         ret.push({
-          fields: [
-            {
-              id: "c0",
-              name: "Result",
-            },
-          ],
+          fields: [],
           affectedRows: undefined, // TODO (azmi): implement affectedRows
-          command: statement.type,
-          rows: [{ c0: await streamToBuffer(data) }],
+          command: result.statement.type,
+          rows: [],
           rowCount: 0,
         });
         continue;
       }
 
-      let fields: FieldDescriptor[];
-
-      if (containsMeta) {
-        fields = data.meta.map((field, idx) => ({
-          id: `c${idx}`,
-          name: field.name,
-          dataType: field.type,
-        }));
-      } else {
-        fields = Object.keys(data[0]).map((key, idx) => ({
-          id: `c${idx}`,
-          name: key,
-        }));
+      if (_.isString(data)) {
+        ret.push({
+          fields: [{ id: "c0", name: "Result" }],
+          affectedRows: undefined, // TODO (azmi): implement affectedRows
+          command: result.statement.type,
+          rows: [{ c0: data }],
+          rowCount: 1,
+        });
+        continue;
       }
 
-      if (containsMeta) {
-        data = data.data.map((row: any[]) =>
-          row.reduce((obj, value, idx) => ({ ...obj, [`c${idx}`]: value }), {})
-        );
-      }
+      const fields = data.meta.map((field, idx) => ({
+        id: `c${idx}`,
+        name: field.name,
+        dataType: field.type,
+      }));
+
+      const rows = data.data.map((row) =>
+        row.reduce((acc, val, idx) => ({ ...acc, [`c${idx}`]: val }), {})
+      );
+
+      // console.log("what is this??", result.statement, rows, fields);
+
       ret.push({
         fields,
-        affectedRows: undefined,
-        command: statement.type,
-        rows: data,
-        rowCount: data.length,
+        affectedRows: undefined, // TODO we can get this somewhere i feel like??
+        command: result.statement.type,
+        rows,
+        rowCount: rows.length,
       });
     }
     return ret;
+  }
+
+  async rawExecuteQuery(
+    query: string,
+    options: RawExecuteQueryOptions
+  ): Promise<Result[]> {
+    log.info(`Running Query`, query, options);
+
+    if (options.insert) {
+      await this.client.insert(options.insert as any);
+      return [];
+    }
+
+    const results: Result[] = [];
+
+    // Multi-statement is not supported so we need to execute each statement
+    // one by one.
+    for (const statement of options.statements) {
+      const format = this.parseQueryFormat(statement.text);
+      let resultType: Result["resultType"];
+      let data: ResponseJSON | Stream;
+      if (statement.executionType === "LISTING" && !format) {
+        console.log("running LISTING", statement.text, options.params);
+        const result = await this.client.query({
+          query: statement.text,
+          query_params: options.params,
+          query_id: options.queryId,
+          format: options.arrayMode ? "JSONCompact" : "JSON",
+        });
+        data = await result.json();
+        resultType = "json";
+        results.push({ statement, data, resultType: "json" });
+      } else {
+        const result = await this.client.exec({
+          query,
+          query_params: options.params,
+          query_id: options.queryId,
+
+          // Recommended for cluster usage to avoid situations where a query
+          // processing error occurred after the response code, and HTTP
+          // headers were already sent to the client.
+          // See https://clickhouse.com/docs/en/interfaces/http/#response-buffering
+          clickhouse_settings: {
+            wait_end_of_query: 1,
+          },
+        });
+        data = result.stream;
+        resultType = "stream";
+        results.push({ statement, data: result.stream, resultType: "stream" });
+      }
+    }
+
+    log.info(`Running Query Finished`);
+
+    return results;
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
@@ -736,19 +840,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         AND c.database = v.table_schema
       WHERE v.is_insertable_into = 'YES'
         AND v.table_name = {table: String}
+        AND v.table_schema = currentDatabase()
     `;
-    const { data } = await this.driverExecuteSingle(sql, {
-      format: "JSONEachRow",
+    const result = await this.driverExecuteSingle(sql, {
       params: { table },
     });
-    return data.map(
-      (row) =>
-        ({
-          columnName: row.name,
-          dataType: row.type,
-          tableName: row.table_name,
-        } as TableColumn)
-    );
+    const json = result.data as ResponseJSON<{
+      name: string;
+      type: string;
+      table_name: string;
+    }>;
+    return json.data.map((row) => ({
+      columnName: row.name,
+      dataType: row.type,
+      tableName: row.table_name,
+    }));
   }
 
   async listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
@@ -779,14 +885,14 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       SELECT v.table_name as name
       FROM information_schema.views v
       WHERE v.is_insertable_into = 'YES'
+        AND v.table_schema = currentDatabase()
     `;
-    const { data } = await this.driverExecuteSingle(sql, {
-      format: "JSONEachRow",
-    });
-    return data.map(
-      (row) =>
-        ({ name: row.name, entityType: "materialized-view" } as TableOrView)
-    );
+    const result = await this.driverExecuteSingle(sql);
+    const json = result.data as ResponseJSON<{ name: string }>;
+    return json.data.map((row) => ({
+      name: row.name,
+      entityType: "materialized-view",
+    }));
   }
 
   async listCharsets(): Promise<string[]> {
@@ -806,28 +912,29 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const { data } = await this.driverExecuteSingle(
+    const result = await this.driverExecuteSingle(
       `
-        SELECT create_table_query
-        FROM system.tables
-        WHERE name = {table: String}
-      `,
-      { format: "JSONEachRow", params: { table } }
+      SELECT create_table_query
+      FROM system.tables
+      WHERE name = {table: String}
+    `,
+      { params: { table } }
     );
-
-    return data[0]?.create_table_query || "";
+    const json = result.data as ResponseJSON<{ create_table_query: string }>;
+    return json.data[0]?.create_table_query || "";
   }
 
   async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
-    const { data } = await this.driverExecuteSingle(
+    const result = await this.driverExecuteSingle(
       `
-        SELECT view_definition
-        FROM information_schema.views
-        WHERE table_name = {view: String}
-      `,
-      { format: "JSONEachRow", params: { view } }
+      SELECT view_definition
+      FROM information_schema.views
+      WHERE table_name = {view: String}
+    `,
+      { params: { view } }
     );
-    return data.map((row) => row.view_definition);
+    const json = result.data as ResponseJSON<{ view_definition: string }>;
+    return json.data.map((row) => row.view_definition);
   }
 
   async getRoutineCreateScript(
@@ -858,11 +965,12 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
-    const { data } = await this.driverExecuteSingle(
+    const result = await this.driverExecuteSingle(
       `SELECT count() as count FROM {table: Idenfifier}`,
       { params: { table } }
     );
-    return data[0].count;
+    const json = result.data as ResponseJSON<{ count: number }>;
+    return json.data[0].count;
   }
 
   async selectTopStream(
@@ -880,20 +988,20 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       filters,
       schema
     );
-    const { data } = await this.driverExecuteSingle(qs.countQuery, {
+    const result = await this.driverExecuteSingle(qs.countQuery, {
       params: qs.params,
-      format: "JSONEachRow",
+      returnType: "RowAsObject",
     });
-    const totalRows = Number(data[0].total) || 0;
+    const json = result.data as ResponseJSON<{ total: number }>;
+    const totalRows = Number(json.data[0].total) || 0;
     const columns = await this.listTableColumns(table, schema);
     const cursor = new ClickHouseCursor({
-        table,
-        orderBy,
-        filters,
-        client: this._client,
-        chunkSize,
-      }),
-
+      table,
+      orderBy,
+      filters,
+      client: this.client,
+      chunkSize,
+    });
     return { totalRows, columns, cursor };
   }
 
@@ -903,64 +1011,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   wrapIdentifier(value: string): string {
     return ClickHouseData.wrapIdentifier(value);
-  }
-
-  async rawExecuteQuery(
-    query: string,
-    options: ExecuteQueryOptions & {
-      statements: IdentifyResult[];
-      /** Run using insert method */
-      insert?: InsertParams;
-    }
-  ): Promise<Result[]> {
-    log.info(`Running Query`, query, options);
-    // console.log(
-    //   `Running Query`,
-    //   query,
-    //   options.insert && JSON.stringify(options.insert, null, 2)
-    // );
-
-    const results = [];
-
-    if (options.insert) {
-      await this._client.insert(options.insert as any);
-    } else {
-      // Multi-statement is not supported so we need to execute each statement
-      // one by one.
-      for (const statement of options.statements) {
-        // console.log("running", statement.text);
-        if (options.format?.includes("JSON")) {
-          const resultSet = await this._client.query({
-            query: statement.text,
-            query_params: options.params,
-            format: options.format,
-            query_id: options.queryId,
-          });
-          results.push({ statement, data: await resultSet.json() });
-        } else {
-          const resultSet = await this._client.exec({
-            query: options.format
-              ? `${statement.text} FORMAT ${options.format}`
-              : statement.text,
-            query_params: options.params,
-            query_id: options.queryId,
-
-            // Recommended for cluster usage to avoid situations where a query
-            // processing error occurred after the response code, and HTTP
-            // headers were already sent to the client.
-            // See https://clickhouse.com/docs/en/interfaces/http/#response-buffering
-            clickhouse_settings: {
-              wait_end_of_query: 1,
-            },
-          });
-          results.push({ statement, data: resultSet.stream });
-        }
-      }
-
-      log.info(`Running Query Finished`);
-    }
-
-    return results;
   }
 
   static buildFilterString(filters: TableFilter[], columns = []) {
@@ -984,8 +1034,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
             : `{p${paramCounter++}: Dynamic}`;
           const values = _.isArray(item.value)
             ? item.value
-                .map((v) => ClickHouseData.escapeString(v, true))
-                .join(",")
+              .map((v) => ClickHouseData.escapeString(v, true))
+              .join(",")
             : ClickHouseData.escapeString(item.value, true);
 
           filtersWithParams.push(
@@ -1102,5 +1152,17 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       countQuery: countSQL,
       params: filterParams,
     };
+  }
+
+  private parseQueryFormat(query: string): string {
+    const match = query.match(RE_SELECT_FORMAT);
+    if (match && match[1]) {
+      return match[1];
+    }
+    return "";
+  }
+
+  protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
+    return super.violatesReadOnly(statements, options) || (this.readOnlyMode && options.insert)
   }
 }

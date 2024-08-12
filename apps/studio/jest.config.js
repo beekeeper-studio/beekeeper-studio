@@ -29,7 +29,7 @@ module.exports = {
   // support the same @ -> src alias mapping in source code
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@shared(.*)$': '<rootDir>/../../shared/src/$1'
+    '^@shared(.*)$': '<rootDir>/src/shared/$1',
   },
   // serializer for snapshots
   snapshotSerializers: [

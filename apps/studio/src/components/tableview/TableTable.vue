@@ -982,8 +982,8 @@ export default Vue.extend({
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       if (this.isEditorMenuDisabled(cell)) return
-      // FIXME maybe we can avoid calling child methods directly like this? 
-      // it should be done by calling an event using this.$modal.show(modalName) 
+      // FIXME maybe we can avoid calling child methods directly like this?
+      // it should be done by calling an event using this.$modal.show(modalName)
       // or this.$trigger(AppEvent.something) if possible
       this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
     },
@@ -1296,7 +1296,7 @@ export default Vue.extend({
         const changes = {
           inserts: this.buildPendingInserts(),
           updates: this.buildPendingUpdates(),
-          deletes: this.builudPendingDeletes()
+          deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })

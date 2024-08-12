@@ -107,6 +107,7 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().primaryKeyTests()
     })
 
+
     describe("Table Structure", () => {
       test("should fetch table properties", async () => {
         await getUtil().tablePropertiesTests()
@@ -274,7 +275,6 @@ export function runCommonTests(getUtil, opts = {}) {
         }
       })
 
-      // lets use .skip() function instead of this
       if (!disabledFeatures?.transactions) {
         test("should not insert bad data", async () => {
           await itShouldNotInsertBadData(getUtil())

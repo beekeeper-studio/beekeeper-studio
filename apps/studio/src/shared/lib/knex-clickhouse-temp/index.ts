@@ -217,7 +217,6 @@ export class ClickhouseKnexClient extends Knex.Client {
 
             format: 'JSONCompact'
         };
-    console.log(queryParams)
 
         obj.finalQuery = query;
         switch (method) {

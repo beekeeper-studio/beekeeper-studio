@@ -9,6 +9,8 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { warn } from 'console';
 
 const log = rawLog.scope('db');
 const logger = () => log;
@@ -281,12 +283,12 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   getImportSQL(importedData: any[]): string | string[] {
     const queries = []
-    
+
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
-  
+
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
@@ -330,9 +332,13 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
+  protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
+    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly
+  }
+
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -368,7 +374,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
