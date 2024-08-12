@@ -66,7 +66,6 @@
   </div>
 </template>
 <script>
-import path from 'path'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
@@ -109,7 +108,7 @@ export default {
       if (this.savedConnection) {
         return this.savedConnection.name
       } else if (this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') {
-        return path.basename(this.config.defaultDatabase)
+        return window.main.basename(this.config.defaultDatabase)
       }
 
       return this.$bks.simpleConnectionString(this.config)

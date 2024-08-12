@@ -59,7 +59,6 @@
 
 <script type="text/javascript">
   import _ from 'lodash'
-  import { ipcRenderer } from 'electron'
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
   import AddDatabaseForm from "@/components/connection/AddDatabaseForm.vue"
@@ -89,7 +88,7 @@
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
-          return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url })
+          return window.main.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()
         this.selectedDatabase = db

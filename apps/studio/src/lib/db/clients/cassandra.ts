@@ -1,7 +1,7 @@
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults } from "../models";
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -16,6 +16,7 @@ import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode } from "@shared/lib/dialects/cassandra";
 import { applyChangesSql } from "./utils";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
+import { IDbConnectionServer } from "../backendTypes";
 const log = rawLog.scope("cassandra");
 const logger = () => log;
 

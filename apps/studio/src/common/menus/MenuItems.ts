@@ -1,6 +1,6 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
-import { IGroupedUserSettings } from '../appdb/models/user_setting';
 import platformInfo from "../platform_info";
+import { getValue, IGroupedUserSettings } from '../transport/TransportUserSetting';
 
 
 
@@ -171,14 +171,14 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: 'Native',
           click: actionHandler.switchMenuStyle,
-          checked: settings.menuStyle.value === 'native'
+          checked: getValue(settings.menuStyle) === 'native'
         },
         {
           id: "ms-client",
           type: 'radio',
           label: 'Client',
           click: actionHandler.switchMenuStyle,
-          checked: settings.menuStyle.value === 'client'
+          checked: getValue(settings.menuStyle) === 'client'
         }
       ]
     },
@@ -190,19 +190,19 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: "System",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'system'
+          checked: getValue(settings.theme) === 'system'
         },
         {
           type: "radio",
           label: "Light",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'light'
+          checked: getValue(settings.theme) === 'light'
         },
         {
           type: 'radio',
           label: "Dark",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'dark'
+          checked: getValue(settings.theme) === 'dark'
         }
       ]
     },

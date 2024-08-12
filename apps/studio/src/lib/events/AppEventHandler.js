@@ -1,23 +1,20 @@
 import { AppEvent } from "../../common/AppEvent"
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 
 const log = rawLog.scope("AppEventHandler")
 
 export default class {
-
   vueApp
-  ipcRenderer
 
-  constructor(ipcRenderer, vueApp) {
+  constructor(vueApp) {
     this.vueApp = vueApp
-    this.ipcRenderer = ipcRenderer
   }
 
   registerCallbacks() {
-    this.ipcRenderer.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
-    this.ipcRenderer.on(AppEvent.menuStyleChanged, this.menuStyle.bind(this))
-    this.ipcRenderer.on(AppEvent.disconnect, this.disconnect.bind(this))
-    this.ipcRenderer.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
+    window.main.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
+    window.main.on(AppEvent.menuStyleChanged, this.menuStyle.bind(this))
+    window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
+    window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.toggleSidebar)
@@ -31,7 +28,7 @@ export default class {
       log.debug("Received from electron, forwarding to app", event)
       this.vueApp.$emit(event)
     }
-    this.ipcRenderer.on(event, emit.bind(this))
+    window.main.on(event, emit.bind(this))
   }
 
   closeTab() {

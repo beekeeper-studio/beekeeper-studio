@@ -1,10 +1,20 @@
+import { TransportPinnedEntity } from "@/common/transport";
 import { DatabaseEntity } from "@/lib/db/models";
 import _ from "lodash";
 import { Module } from "vuex";
-import { PinnedEntity } from "../../common/appdb/models/PinnedEntity";
 import { State as RootState } from '../index'
+import Vue from "vue";
+
+function matches(pin: TransportPinnedEntity, entity: DatabaseEntity, database?: string) {
+  return entity.name === pin.entityName &&
+    ((_.isNil(entity.schema) && _.isNil(pin.schemaName)) || 
+      entity.schema === pin.schemaName) &&
+    entity.entityType === pin.entityType &&
+    (!database || database === pin.databaseName)
+}
+
 interface State {
-  pins: PinnedEntity[],
+  pins: TransportPinnedEntity[],
 }
 
 export const PinModule: Module<State, RootState> = {
@@ -14,14 +24,14 @@ export const PinModule: Module<State, RootState> = {
   }),
   getters: {
 
-    pinned(state: State, _g, root): PinnedEntity[] {
+    pinned(state: State, _g, root): TransportPinnedEntity[] {
       return state.pins.filter((p) => p.databaseName === root.database)
     },
-    orderedPins(_state, getters, rootState): PinnedEntity[] {
+    orderedPins(_state, getters, rootState): TransportPinnedEntity[] {
       const { tables, routines } = rootState
       return getters.pinned.sort((a, b) => a.position - b.position).map((pin) => {
         const items = [...tables, ...routines]
-        const t = items.find((t) => pin.matches(t))
+        const t = items.find((t) => matches(pin, t))
         if (t) pin.entity = t
         return t ? pin : null
       }).filter((p) => !!p)
@@ -31,13 +41,13 @@ export const PinModule: Module<State, RootState> = {
     }
   },
   mutations: {
-    set(state, pins: PinnedEntity[]) {
+    set(state, pins: TransportPinnedEntity[]) {
       state.pins = pins
     },
-    add(state, newPin: PinnedEntity) {
+    add(state, newPin: TransportPinnedEntity) {
       state.pins.push(newPin)
     },
-    remove(state, pin: PinnedEntity) {
+    remove(state, pin: TransportPinnedEntity) {
       state.pins = _.without(state.pins, pin)
     },
   },
@@ -46,10 +56,12 @@ export const PinModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       if (usedConfig && usedConfig.id) {
         // await usedConfig.reload()
-        const pins = await PinnedEntity.find({
-          where: {
-            connectionId: usedConfig.id,
-            workspaceId: usedConfig.workspaceId
+        const pins = await Vue.prototype.$util.send('appdb/pins/find', {
+          options: {
+            where: {
+              connectionId: usedConfig.id,
+              workspaceId: usedConfig.workspaceId
+            }
           }
         })
         context.commit('set', pins || [])
@@ -60,36 +72,45 @@ export const PinModule: Module<State, RootState> = {
     },
     async maybeSavePins(context) {
       const { usedConfig } = context.rootState
-      const unsavedPins = context.state.pins.filter((p)=> !p.hasId())
+      // this used to be !p.hasId(), hopefully this still works? the alternative is ugly
+      const unsavedPins = context.state.pins.filter((p)=> !p.id)
       await Promise.all(unsavedPins.map((p) => {
-        p.connectionId === usedConfig.id && p.workspaceId === usedConfig.id
-        p.save()
+        p.connectionId === usedConfig.id && p.workspaceId === usedConfig.id && 
+          Vue.prototype.$util.send('appdb/pins/save', { obj: p });
       }))
     },
     async add(context, item: DatabaseEntity) {
       const { database, usedConfig } = context.rootState
-      const existing = context.state.pins.find((p) => p.matches(item, database || undefined))
+      const existing = context.state.pins.find((p) => matches(p, item, database || undefined))
       if (existing) return
 
       if (database && usedConfig) {
-        const newPin = new PinnedEntity(item, database, usedConfig)
+        console.log('GETTING NEW PIN: ', item, database, usedConfig)
+        const newPin = await Vue.prototype.$util.send('appdb/pins/new', {
+          init: {
+            table: item,
+            db: database,
+            saved: usedConfig
+          }
+        });
+        console.log('RECEIVED NEW PIN: ', newPin)
         newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1
-        if(usedConfig.id) await newPin.save()
+        if(usedConfig.id) await Vue.prototype.$util.send('appdb/pins/save', { obj: newPin });
         context.commit('add', newPin)
       }
     },
-    async reorder(context, pins: PinnedEntity[]) {
+    async reorder(context, pins: TransportPinnedEntity[]) {
       pins.forEach((p, idx) => p.position = idx)
       const { usedConfig } = context.rootState
       context.commit('set', pins)
-      if (usedConfig.id) await PinnedEntity.save(pins)
+      if (usedConfig.id) await Vue.prototype.$util.send('appdb/pins/save', { obj: pins });
     },
     async remove(context, item: DatabaseEntity) {
       const { database } = context.rootState
 
-      const existing = context.state.pins.find((p) => p.matches(item, database || undefined))
+      const existing = context.state.pins.find((p) => matches(p, item, database || undefined))
       if (existing) {
-        if (existing.id) await existing.remove()
+        if (existing.id) await Vue.prototype.$util.send('appdb/pins/remove', { obj: existing })
         context.commit('remove', existing)
       }
     }

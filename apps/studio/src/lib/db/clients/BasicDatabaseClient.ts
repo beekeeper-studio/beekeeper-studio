@@ -5,9 +5,10 @@ import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
-import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase, IDbConnectionServer } from '../types';
+import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
+import { IDbConnectionServer } from '../backendTypes';
 
 const log = rawLog.scope('db');
 const logger = () => log;

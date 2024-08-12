@@ -5,7 +5,7 @@ import rawLog from 'electron-log';
 import { TokenCache } from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
 import open from 'open';
-import { AzureAuthType } from './azureTypes';
+import { AzureAuthType } from '../types';
 
 const log = rawLog.scope('auth/azure');
 

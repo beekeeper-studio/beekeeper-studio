@@ -53,12 +53,13 @@
 <script lang="ts">
 import _ from 'lodash'
 import Draggable from 'vuedraggable'
-import { PinnedEntity } from '@/common/appdb/models/PinnedEntity'
 import RoutineListItem from '@/components/sidebar/core/table_list/RoutineListItem.vue'
 import TableListItem from '@/components/sidebar/core/table_list/TableListItem.vue'
 import Vue from 'vue'
 import TableListContextMenus from '@/mixins/TableListContextMenus'
 import SidebarSortButtons from '@/components/common/SidebarSortButtons.vue'
+import { TransportPinnedEntity } from '@/common/transport';
+
 export default Vue.extend({
   components: { RoutineListItem, Draggable, TableListItem, SidebarSortButtons },
   mixins: [TableListContextMenus],
@@ -75,13 +76,13 @@ export default Vue.extend({
   }),
   computed: {
     orderedPins: {
-      get(): PinnedEntity[] {
-        const raw: PinnedEntity[] = this.$store.getters['pins/orderedPins']
+      get(): TransportPinnedEntity[] {
+        const raw: TransportPinnedEntity[] = this.$store.getters['pins/orderedPins']
         let result = _.sortBy(raw, this.sort.field)
         if (this.sort.order === 'desc' && this.sort.field !== 'position') return result.reverse()
         return result;
       },
-      set(pins: PinnedEntity[]) {
+      set(pins: TransportPinnedEntity[]) {
         this.$store.dispatch('pins/reorder', pins)
       }
     }

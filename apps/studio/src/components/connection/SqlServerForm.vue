@@ -156,7 +156,7 @@
 <script>
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
-  import { AzureAuthTypes, AzureAuthType } from '../../lib/db/authentication/azureTypes'
+  import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
   import { TokenCache } from '@/common/appdb/models/token_cache';
   import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'

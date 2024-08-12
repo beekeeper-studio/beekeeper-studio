@@ -1,11 +1,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import username from 'username'
-import electron from 'electron';
 
-import { UsedConnection } from '../common/appdb/models/used_connection'
-import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
@@ -14,7 +10,7 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
-import RawLog from 'electron-log'
+import RawLog from 'electron-log/renderer'
 import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
@@ -25,8 +21,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
-import { ElectronUtilityConnectionClient } from '@/lib/ElectronUtilityConnectionClient'
-import { TokenCache } from '@/common/appdb/models/token_cache'
+import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 
 const log = RawLog.scope('store/index')
 
@@ -40,7 +35,6 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
 export interface State {
   connection: ElectronUtilityConnectionClient,
   usedConfig: Nullable<IConnection>,
-  usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
   connected: boolean,
   connectionType: Nullable<string>,
@@ -53,7 +47,6 @@ export interface State {
   columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
-  connectionConfigs: UsedConnection[],
   username: Nullable<string>,
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
@@ -82,7 +75,6 @@ const store = new Vuex.Store<State>({
   state: {
     connection: new ElectronUtilityConnectionClient(),
     usedConfig: null,
-    usedConfigs: [],
     server: null,
     connected: false,
     connectionType: null,
@@ -101,7 +93,6 @@ const store = new Vuex.Store<State>({
     tablesLoading: null,
     columnsLoading: null,
     tablesInitialLoaded: false,
-    connectionConfigs: [],
     username: null,
     menuActive: false,
     activeTab: null,
@@ -145,9 +136,6 @@ const store = new Vuex.Store<State>({
     },
     selectedSidebarItem(state) {
       return state.selectedSidebarItem
-    },
-    orderedUsedConfigs(state) {
-      return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
     },
     filteredTables(state) {
       return entityFilter(state.tables, state.entityFilter);
@@ -315,23 +303,6 @@ const store = new Vuex.Store<State>({
     tablesLoading(state, value: string) {
       state.tablesLoading = value
     },
-    config(state, newConfig) {
-      if (!state.connectionConfigs.includes(newConfig)) {
-        state.connectionConfigs.push(newConfig)
-      }
-    },
-    removeConfig(state, config) {
-      state.connectionConfigs = _.without(state.connectionConfigs, config)
-    },
-    removeUsedConfig(state, config) {
-      state.usedConfigs = _.without(state.usedConfigs, config)
-    },
-    configs(state, configs: UsedConnection[]){
-      Vue.set(state, 'connectionConfigs', configs)
-    },
-    usedConfigs(state, configs: UsedConnection[]) {
-      Vue.set(state, 'usedConfigs', configs)
-    },
     updateWindowTitle(state, title: string) {
       state.windowTitle = title
     },
@@ -355,22 +326,18 @@ const store = new Vuex.Store<State>({
     }
   },
   actions: {
-    async test(context, config: SavedConnection) {
+    async test(context, config: IConnection) {
       await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },
 
     async fetchUsername(context) {
-      const name = await username()
+      const name = await window.main.fetchUsername();
       context.commit('setUsername', name)
     },
 
     async openUrl(context, url: string) {
-      const conn = new SavedConnection();
-      if (!conn.parse(url)) {
-        throw `Unable to parse ${url}`
-      } else {
-        await context.dispatch('connect', conn)
-      }
+      const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
+      await context.dispatch('connect', conn)
     },
 
     updateWindowTitle(context, config: Nullable<IConnection>) {
@@ -379,7 +346,7 @@ const store = new Vuex.Store<State>({
         : 'Beekeeper Studio'
 
       context.commit('updateWindowTitle', title)
-      electron.ipcRenderer.send('setWindowTitle', title)
+      window.main.setWindowTitle(title);
     },
 
     async saveConnection(context, config: IConnection) {
@@ -406,12 +373,12 @@ const store = new Vuex.Store<State>({
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
         context.commit('newConnection', config)
+        console.log('CONFIG: ', config)
 
-        context.commit('newConnection', config)
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('recordUsedConfig', config) // TODO (@day): needs to be a utility call (actually maybe just make this part of the conn/create handler??)
+        context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
       } else {
         throw "No username provided"
@@ -420,29 +387,6 @@ const store = new Vuex.Store<State>({
     async reconnect(context) {
       if (context.state.connection) {
         await context.state.connection.connect();
-      }
-    },
-    async cancelConnect() {
-      await Vue.prototype.$util.send('conn/cancelConnect');
-    },
-    async recordUsedConfig(context, config: IConnection) {
-
-      log.info("finding last used connection", config)
-      const lastUsedConnection = context.state.usedConfigs.find(c => {
-        return config.id &&
-          config.workspaceId &&
-          c.connectionId === config.id &&
-          c.workspaceId === config.workspaceId
-      })
-      log.debug("Found used config", lastUsedConnection)
-      if (!lastUsedConnection) {
-        const usedConfig = new UsedConnection(config)
-        log.info("logging used connection", usedConfig, config)
-        await usedConfig.save()
-        context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
-      } else {
-        lastUsedConnection.updatedAt = new Date()
-        await lastUsedConnection.save()
       }
     },
     async disconnect(context) {
@@ -551,24 +495,6 @@ const store = new Vuex.Store<State>({
     async unpinRoutine(context, routine: Routine) {
       routine.pinned = true
       context.commit('addPinned', routine)
-    },
-    async removeUsedConfig(context, config) {
-      if (config.azureAuthOptions?.authId) {
-        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
-        cache.remove();
-      }
-      await config.remove()
-      context.commit('removeUsedConfig', config)
-    },
-    async loadUsedConfigs(context) {
-      const configs = await UsedConnection.find(
-        {
-          take: 10,
-          order: {createdAt: 'DESC'},
-          where: { workspaceId: context.state.workspaceId}
-        }
-      )
-      context.commit('usedConfigs', configs)
     },
     async menuActive(context, value) {
       context.commit('menuActive', value)

@@ -1,5 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team, 2020 Beekeeper Studio team
-import { ConnectionType, IDbConnectionDatabase, IDbConnectionServer } from "./types"
+import { ConnectionType, IDbConnectionDatabase } from "./types"
 import { MysqlClient } from './clients/mysql';
 import { PostgresClient } from './clients/postgresql';
 import { SQLServerClient } from './clients/sqlserver';
@@ -13,6 +13,7 @@ import { FirebirdClient } from './clients/firebird';
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
 import { LibSQLClient } from "./clients/libsql";
+import { IDbConnectionServer } from "./backendTypes";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],

@@ -1,8 +1,8 @@
-import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+import { TransportFavoriteQuery } from '@/common/transport';
 import _ from 'lodash'
-import { mutationsFor, DataState, DataStore, localActionsFor } from '../DataModuleBase'
+import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 
-export const LocalQueryModule: DataStore<FavoriteQuery, DataState<FavoriteQuery>> = {
+export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<TransportFavoriteQuery>> = {
   namespaced: true,
   state: {
     items: [],
@@ -11,13 +11,13 @@ export const LocalQueryModule: DataStore<FavoriteQuery, DataState<FavoriteQuery>
     pollError: null,
     filter: undefined // maybe this can be more advanced? date filter?
   },
-  mutations: mutationsFor<FavoriteQuery>({
+  mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
-    savedQueryFilter(state: DataState<FavoriteQuery>, str: string) {
+    savedQueryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
       state.filter = str;
     }
   }, { field: 'title', direction : 'asc'}),
-  actions: localActionsFor<FavoriteQuery>(FavoriteQuery, {
+  actions: utilActionsFor<TransportFavoriteQuery>('query', {
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500)
