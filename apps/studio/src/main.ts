@@ -8,7 +8,7 @@ import './filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
-import './assets/styles/app.scss'
+import '@/assets/styles/app.scss'
 import $ from 'jquery'
 
 import store from './store/index'
