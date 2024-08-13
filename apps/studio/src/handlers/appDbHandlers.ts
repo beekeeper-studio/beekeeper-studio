@@ -20,12 +20,12 @@ import { TokenCache } from "@/common/appdb/models/token_cache";
 
 const log = rawLog.scope('Appdb handlers');
 
-function defaultTransform<T extends Transport>(obj: T, cls: any) {
+function defaultTransform<T extends Transport>(obj: T, cls?: any) {
   const newObj = {} as unknown as T;
   return cls.merge(newObj, obj);
 }
 
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => T = defaultTransform) {
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls?: any) => T = defaultTransform) {
 
   return {
     // this is so we can get defaults on objects
@@ -80,15 +80,25 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
   }
 }
 
-function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+function transformSetting(obj: UserSetting): TransportUserSetting {
   return {
     ...obj,
     value: obj.value
   };
 }
 
+function transformSavedConn(obj: SavedConnection): IConnection {
+  return {
+    ...obj,
+    connectionType: obj._connectionType,
+    sshMode: obj._sshMode,
+    port: obj._port,
+    socketPath: obj._socketPath
+  }
+}
+
 export const AppDbHandlers = {
-  ...handlersFor<IConnection>('saved', SavedConnection),
+  ...handlersFor<IConnection>('saved', SavedConnection, transformSavedConn),
   ...handlersFor<IConnection>('used', UsedConnection),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
@@ -98,12 +108,16 @@ export const AppDbHandlers = {
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
   ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
-  'appdb/saved/parseUrl': async function({ url }: { url: string }) {
-    const conn = new SavedConnection();
+  'appdb/saved/parseUrl': async function({ url, conn }: { url: string, conn?: SavedConnection }) {
+    if (!conn) {
+      conn = new SavedConnection()
+    } else {
+      conn = await SavedConnection.findOne(conn.id) ?? new SavedConnection();
+    }
     if (!conn.parse(url)) {
       throw `Unable to parse ${url}`;
     }
-    return conn;
+    return transformSavedConn(conn);
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOne({ key });
@@ -116,7 +130,7 @@ export const AppDbHandlers = {
     await existing.save();
   },
   'appdb/setting/get': async function({ key }: { key: string }) {
-    return transformSetting(await UserSetting.findOne({key}), UserSetting);
+    return transformSetting(await UserSetting.findOne({key}));
   },
   'appdb/cache/remove': async function({ authId }: { authId: number }) {
     const cache = await TokenCache.findOne(authId);

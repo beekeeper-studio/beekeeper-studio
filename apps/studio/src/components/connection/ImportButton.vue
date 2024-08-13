@@ -68,15 +68,17 @@ export default {
       }
     },
     methods: {
-      importFromUrl() {
-        if(this.config.parse(this.url)) {
+      async importFromUrl() {
+        try {
+          const config = await this.$util.send('appdb/saved/parseUrl', { url: this.url, conn: this.config });
+          Object.assign(this.config, config)
           if(!this.config.connectionType) {
             this.importError = "Unable to determine database type from the URL"
           } else {
             this.url = null
             this.$modal.hide('import-modal')
           }
-        } else {
+        } catch {
           this.importError = "Unable to parse url"
         }
       },

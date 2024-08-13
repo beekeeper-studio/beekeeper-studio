@@ -241,9 +241,9 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
       },
     },
     methods: {
-      onPaste(event) {
+      async onPaste(event) {
           const data = event.clipboardData.getData('text')
-          if (this.config.parse(data)) {
+          if (await this.$util.send('appdb/saved/parseUrl', { url: data })) {
             event.preventDefault()
           }
       },

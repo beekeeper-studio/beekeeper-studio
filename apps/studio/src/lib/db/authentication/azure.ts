@@ -165,6 +165,7 @@ export class AzureAuthService {
     const authUrl = await this.pca.getAuthCodeUrl(authCodeUrlParams);
 
     log.debug('Getting auth code')
+    // TODO (@day): this doesn't actually work at all
     window.location.href = authUrl;
 
     this.start = Date.now();
