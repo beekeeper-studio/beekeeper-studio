@@ -15,7 +15,7 @@ import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
-import { Client_DuckDB } from '../../../../shared/src/lib/knex-duckdb'
+import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -1140,7 +1140,7 @@ export class DBTestUtil {
       { name: "Elias" }
     ]
     const columnsExpected = ['id', 'name']
-    
+
     if (this.dbType === 'firebird') {
       for (const name of names) {
         await this.knex('streamtest').insert(name)
@@ -1167,8 +1167,8 @@ export class DBTestUtil {
     const {columns, totalRows} = await this.connection.getColumnsAndTotalRows(selectSql)
     const columnsActual = columns.map(v => v.columnName.toLowerCase())
     expect(totalRows).toBe(6)
-    // dataType isn't really a necessary field and some knex inserts where showing undefined, user-defined, and a few others. Truly the column name is the important part 
-    // Also, stick with "toEqual" instead of "toStrictEqual" Save yourself. Save your sooooooul 
+    // dataType isn't really a necessary field and some knex inserts where showing undefined, user-defined, and a few others. Truly the column name is the important part
+    // Also, stick with "toEqual" instead of "toStrictEqual" Save yourself. Save your sooooooul
     expect(columnsActual).toEqual(columnsExpected)
     const cursor = result.cursor
     await cursor.start()
