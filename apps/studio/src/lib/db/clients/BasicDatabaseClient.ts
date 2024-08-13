@@ -292,17 +292,8 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
-  /**
-   * Sync a database file to remote database. This is a LibSQL specific feature.
-   * FIXME (azmi): this is too specific (only used by LibSQL) and might be
-   * best to use invoke() instead.
-   **/
   async syncDatabase(): Promise<void> {
     throw new Error("Not implemented");
-  }
-
-  async invoke(name: string, data?: any): Promise<any> {
-    log.debug('invoke', name, data)
   }
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {

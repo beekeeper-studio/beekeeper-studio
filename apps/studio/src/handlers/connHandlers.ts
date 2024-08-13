@@ -30,7 +30,6 @@ export interface IConnectionHandlers {
   // Connection *****************************************************************
   'conn/connect': ({ sId }: { sId: string}) => Promise<void>,
   'conn/disconnect': ({ sId }: { sId: string}) => Promise<void>,
-  'conn/cancelConnect': ({ sId }: { sId: string }) => Promise<void>,
 
   
   // List schema information ****************************************************
@@ -102,14 +101,10 @@ export interface IConnectionHandlers {
 
   'conn/syncDatabase': ({ sId }: { sId: string }) => Promise<void>
 
-  /**
-   * For cases that are so specific, for example, signing out from azure sso
-   * auth which only exists in SQLServer client. Example usage:
-   * ``js
-   * this.$util.send('conn/invoke', { name: 'sign-out', data: this.authId })
-   * ``
-   **/
-  'conn/invoke': ({ name, data, sId }: { name: string, data?: any, sId: string }) => Promise<void>,
+  'conn/azure-cancel-auth': ({ sId }: { sId: string }) => Promise<void>
+  'conn/azure-sign-out': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
+  /** Get account name if it's signed in, otherwise return undefined */
+  'conn/azure-get-account-name': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -133,7 +128,7 @@ export const ConnHandlers: IConnectionHandlers = {
     }
 
     const abortController = new AbortController();
-    state(sId).abortController = abortController;
+    state(sId).connectionAbortController = abortController;
 
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
@@ -150,6 +145,7 @@ export const ConnHandlers: IConnectionHandlers = {
       dbConfig: connection.server.config,
       dbName: connection.database.database
     });
+    state(sId).connectionAbortController = null
   },
 
   'conn/test': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) {
@@ -161,11 +157,11 @@ export const ConnHandlers: IConnectionHandlers = {
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
     const abortController = new AbortController();
-    state(sId).abortController = abortController;
+    state(sId).connectionAbortController = abortController;
     await server?.createConnection(config.defaultDatabase || undefined).connect(abortController.signal);
-    // @ts-expect-error abort reason is not fully typed
-    abortController.abort("Connection test is done. Cleaning up.");
+    abortController.abort();
     server.disconnect();
+    state(sId).connectionAbortController = null;
   },
 
   'conn/changeDatabase': async function({ newDatabase, sId }: { newDatabase: string, sId: string }) {
@@ -210,10 +206,6 @@ export const ConnHandlers: IConnectionHandlers = {
 
   'conn/connect': getDriverHandler('connect'),
   'conn/disconnect': getDriverHandler('disconnect'),
-  'conn/cancelConnect': async function({ sId }: { sId: string }) {
-    // @ts-expect-error reason is not fully typed
-    state(sId).abortController?.abort('Canceled by user');
-  },
 
   'conn/listTables': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
     checkConnection(sId);
@@ -459,22 +451,28 @@ export const ConnHandlers: IConnectionHandlers = {
   },
   'conn/syncDatabase': getDriverHandler('syncDatabase'),
 
-  'conn/invoke': async function({ name, data, sId }: { name: string, data?: any, sId: string }) {
-    if (name === 'azure-sso-sign-out') {
-      const { config } = data as { config: IConnection }
-      await AzureAuthService.ssoSignOut(config.authId)
+  'conn/azure-cancel-auth': async function({ sId }: { sId: string }) {
+    state(sId).connectionAbortController?.abort();
+  },
 
-      // Clean up authId cause it's invalid after signing out
-      const savedConnection = await SavedConnection.findOne(config.id)
-      savedConnection.authId = null
-      await savedConnection.save()
-      if (state(sId).usedConfig) {
-        state(sId).usedConfig.authId = null
-      }
+  'conn/azure-get-account-name': async function({ authId }: { authId: string }) {
+    if (!authId) {
+      throw new Error("authId is required");
+    };
+    const cache = await TokenCache.findOne(authId)
+    if (!cache) return null
+    return cache.name
+  },
 
-      return
+  'conn/azure-sign-out': async function({ config, sId }: { config: IConnection, sId: string }) {
+    await AzureAuthService.ssoSignOut(config.authId)
+
+    // Clean up authId cause it's invalid after signing out
+    const savedConnection = await SavedConnection.findOne(config.id)
+    savedConnection.authId = null
+    await savedConnection.save()
+    if (state(sId).usedConfig) {
+      state(sId).usedConfig.authId = null
     }
-
-    return await state(sId).connection.invoke(name, data);
-  }
+  },
 }

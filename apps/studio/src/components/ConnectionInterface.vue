@@ -218,7 +218,7 @@ import rawLog from 'electron-log'
 import { mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
-import { AzureAuthType } from '@/lib/db/authentication/azureTypes'
+import { AzureAuthType } from '@/lib/db/types'
 import UpsellContent from './connection/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -404,7 +404,7 @@ export default Vue.extend({
         return
       }
 
-      this._beforeConnect()
+      this.beforeConnect()
       this.connectionError = null
       try {
         this.connecting = true
@@ -415,7 +415,7 @@ export default Vue.extend({
         log.error(ex)
       } finally {
         this.connecting = false
-        this._afterConnect()
+        this.afterConnect()
       }
     },
     async handleConnect(config) {
@@ -427,7 +427,7 @@ export default Vue.extend({
         return
       }
 
-      this._beforeConnect()
+      this.beforeConnect()
 
       try {
         this.testing = true
@@ -440,7 +440,7 @@ export default Vue.extend({
         this.$noty.error("Error establishing a connection")
       } finally {
         this.testing = false
-        this._afterConnect()
+        this.afterConnect()
       }
     },
     async save() {
@@ -473,7 +473,7 @@ export default Vue.extend({
       }
     },
     // Before running connect/test method
-    _beforeConnect() {
+    beforeConnect() {
       if (
         this.config.connectionType === 'sqlserver' &&
         this.config.azureAuthOptions.azureAuthEnabled &&
@@ -483,11 +483,11 @@ export default Vue.extend({
       }
     },
     // After running connect/test method, success or fail
-    _afterConnect() {
+    afterConnect() {
       this.loadingSSOModalOpened = false
     },
     loadingSSOCanceled() {
-      this.$store.dispatch('cancelConnect')
+      this.$util.send('conn/azure-cancel-auth');
     },
   },
 })

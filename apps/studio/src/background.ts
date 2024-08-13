@@ -26,7 +26,7 @@ import platformInfo from './common/platform_info'
 import { AppEvent } from './common/AppEvent'
 import { ProtocolBuilder } from './background/lib/electron/ProtocolBuilder';
 import { uuidv4 } from './lib/uuid';
-
+import { UtilProcMessage } from './types'
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -84,11 +84,16 @@ async function createUtilityProcess() {
     }
   })
 
+  utilityProcess.on("message", (msg: UtilProcMessage) => {
+    if (msg.type === 'openExternal') {
+      electron.shell.openExternal(msg.url)
+    }
+  })
+
   utilityProcess.postMessage({ type: 'init' });
   return new Promise<void>((resolve, _reject) => {
-    utilityProcess.rawListeners
-    utilityProcess.on('message', (msg: string) => {
-      if (msg === 'ready') {
+    utilityProcess.on('message', (msg: UtilProcMessage) => {
+      if (msg.type === 'ready') {
         resolve()
       }
     })

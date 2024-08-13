@@ -92,9 +92,11 @@ export const api = {
     return path.join(...paths);
   },
   readFileSync: (path: string, options: { encoding: string; flag?: string | undefined; } | string): string => {
+    // TODO move to util process
     return readFileSync(path, options);
   },
   writeFileSync: (path: string, text: string, options?: WriteFileOptions) => {
+    // TODO move to util process
     return writeFileSync(path, text, options);
   },
   basename: (p: string, ext?: string): string => {

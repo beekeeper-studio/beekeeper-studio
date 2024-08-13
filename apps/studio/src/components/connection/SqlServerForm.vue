@@ -83,7 +83,7 @@
         </div>
         <div class="advanced-connection-settings signed-in-as" v-if="hasAccessTokenCache">
           <div class="advanced-body">
-            <span class="info">Signed in{{ accessTokenCache.name ? ` as ${accessTokenCache.name}` : '' }}</span>
+            <span class="info">Signed in{{ accountName ? ` as ${accountName}` : '' }}</span>
             <button
               class="btn btn-flat btn-icon"
               type="button"
@@ -157,7 +157,6 @@
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
-  import { TokenCache } from '@/common/appdb/models/token_cache';
   import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
@@ -174,7 +173,7 @@
         azureAuthEnabled: false,
         authType: 'default',
         authTypes: AzureAuthTypes,
-        accessTokenCache: null,
+        accountName: null,
         signingOut: false,
         errorSigningOut: null,
       }
@@ -198,10 +197,9 @@
 
         const authId = this.config.azureAuthOptions?.authId || this.config?.authId
         if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
-          const cache = await TokenCache.findOne(authId);
-          this.accessTokenCache = cache
+          this.accountName = await this.$util.send('conn/azure-get-account-name', { authId });
         } else {
-          this.accessTokenCache = null
+          this.accountName = null
         }
       },
       azureAuthEnabled() {
@@ -226,19 +224,16 @@
         return [AzureAuthType.MSIVM].includes(this.authType)
       },
       hasAccessTokenCache() {
-        return Boolean(this.accessTokenCache?.cache)
+        return Boolean(this.accountName)
       },
     },
     methods: {
       async signOut() {
         try {
           this.signingOut = true
-          await this.$util.send('conn/invoke', {
-            name: 'azure-sso-sign-out',
-            data: { config: this.config },
-          });
+          await this.$util.send('conn/azure-sign-out', { config: this.config });
           this.config.authId = null
-          this.accessTokenCache = null
+          this.accountName = null
         } catch (e) {
           this.errorSigningOut = e
           this.$emit('error', e)

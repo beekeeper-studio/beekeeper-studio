@@ -4,7 +4,6 @@ import { wait } from '@shared/lib/wait';
 import rawLog from 'electron-log';
 import { TokenCache } from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
-import open from 'open';
 import { AzureAuthType } from '../types';
 
 const log = rawLog.scope('auth/azure');
@@ -47,7 +46,7 @@ export interface AuthOptions {
   tenantId?: string,
   msiEndpoint?: string,
   clientSecret?: string
-  signal: AbortSignal
+  signal?: AbortSignal
 }
 
 let localCache: TokenCache;
@@ -67,7 +66,7 @@ const cachePlugin = {
 export class AzureAuthService {
   private pca: msal.PublicClientApplication;
 
-  private signal: AbortSignal;
+  private signal?: AbortSignal;
 
   public async init(authId: number) {
     if (!authId) {
@@ -173,9 +172,7 @@ export class AzureAuthService {
 
     log.debug('Getting auth code')
 
-    // FIXME (azmi): we don't need this after appdb handlers PR is merged.
-    // we can just use window.location.href instead.
-    open(authUrl);
+    process.parentPort.postMessage({ type: 'openExternal', url: authUrl });
 
     const result = await this.checkStatus(beekeeperCloudToken.url);
     if (!result || result?.data?.cloud_token?.status !== 'fulfilled') {
@@ -249,9 +246,7 @@ export class AzureAuthService {
   }
 
   private async checkStatus(url: string): Promise<Response> {
-    if (this.signal.aborted) {
-      this.throwAbort();
-    }
+    this.checkAbortSignal();
     const result = await axios.get(url) as Response;
     if (result?.data?.cloud_token?.status !== 'fulfilled') {
       await wait(2000);
@@ -261,12 +256,10 @@ export class AzureAuthService {
     }
   }
 
-  private throwAbort() {
-    // @ts-expect-error reason is not fully typed
-    if (this.signal.reason) {
-      // @ts-expect-error reason not fully typed
-      throw new Error(`Aborted with reason: ${this.signal.reason}`);
+  private checkAbortSignal() {
+    if (!this.signal) return;
+    if (this.signal.aborted) {
+      throw new Error("Aborted");
     }
-    throw new Error("Aborted but no reason was given.");
   }
 }

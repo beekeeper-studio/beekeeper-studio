@@ -12,7 +12,6 @@
     "build": "./esbuild.mjs",
     "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
     "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
-
     "test:e2e": "xvfb-maybe yar playwright test e2e/*",
     "lint": "eslint",
     "electron:build": "yarn build && yarn electron-builder",
@@ -65,7 +64,6 @@
     "mysql2": "^2.3.3",
     "node-firebird": "^1.1.8",
     "noty": "beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6",
-    "open": "^10.1.0",
     "oracledb": "npm:bks-oracledb",
     "papaparse": "^5.3.0",
     "pg": "^8.11.3",
