@@ -1,4 +1,4 @@
-import { OpenOptions } from "@/background/WindowBuilder"
+// import { OpenOptions } from "@/background/WindowBuilder"
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -19,7 +19,7 @@ export interface IMenuActionHandler {
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  newWindow: (menuItem: Electron.MenuItem|OpenOptions, win: ElectronWindow) => void
+  newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newQuery: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   closeTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
