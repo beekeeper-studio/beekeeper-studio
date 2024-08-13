@@ -1249,7 +1249,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     if(server.config.socketPathEnabled) {
       config.host = server.config.socketPath;
-      config.port = null;
+      config.port = server.config.port;
       return config;
     }
 
