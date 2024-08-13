@@ -1,3 +1,5 @@
+import Vue from "vue";
+
 export type IMapping = {
   mappingMode: string;
   lhs: string;
@@ -18,8 +20,19 @@ export function applyConfig(codeMirrorVimInstance: any, config: Config) {
   }
 }
 
-export function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
-  const potentialCommands = window.main.readVimrc();
+async function readVimrc(pathToVimrc?: string): Promise<string[]> {
+  const userDirectory = window.main.platformInfo().userDirectory;
+  const vimrcPath = await Vue.prototype.$util.send('file/pathJoin', { paths: [pathToVimrc ?? userDirectory, ".beekeeper.vimrc"]});
+  if (await Vue.prototype.$util.send('file/exists', { path: vimrcPath })) {
+    const data = Vue.prototype.$util.send('file/read', { path: vimrcPath, options: { encoding: 'utf-8', flag: 'r'}});
+    const dataSplit = data.split("\n");
+    return dataSplit;
+  }
+  return [];
+}
+
+export async function setKeybindingsFromVimrc(codeMirrorVimInstance: any): Promise<void> {
+  const potentialCommands = await readVimrc();
 
   if (potentialCommands.length === 0) {
     return;
@@ -109,7 +122,7 @@ export class Register {
   linewise = false;
   blockwise = false;
   clipboard: Clipboard;
-  
+
   constructor(clipboard: Clipboard) {
     this.clipboard = clipboard;
     this.clear();

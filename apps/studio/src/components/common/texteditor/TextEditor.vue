@@ -130,7 +130,7 @@ export default {
     },
   },
   methods: {
-    initialize() {
+    async initialize() {
       this.destroyEditor();
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
@@ -213,7 +213,7 @@ export default {
           if (this.vimConfig) {
             applyConfig(codeMirrorVimInstance, this.vimConfig);
           }
-          setKeybindingsFromVimrc(codeMirrorVimInstance);
+          await setKeybindingsFromVimrc(codeMirrorVimInstance);
 
           // cm throws if this is already defined, we don't need to handle that case
           try {

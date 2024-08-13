@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { AppEvent } from './common/AppEvent';
 import path from 'path';
-import fs, { readFileSync, WriteFileOptions, writeFileSync } from 'fs';
 import { Options } from 'yargs-parser';
 import yargs from 'yargs-parser';
 import { SettingsPlugin } from './plugins/SettingsPlugin';
@@ -44,15 +43,6 @@ if (process.env.PORTABLE_EXECUTABLE_DIR) {
 const updatesDisabled = !!process.env.BEEKEEPER_DISABLE_UPDATES
 const locale = electron?.app?.getLocale() ?? process.env.locale;
 
-function fileExistsSync(filename: string): boolean {
-  try {
-    return fs.statSync(filename).isFile();
-  } catch (e) {
-    return false;
-  }
-}
-
-
 export const api = {
   isReady: () => {
     ipcRenderer.send('ready');
@@ -90,12 +80,6 @@ export const api = {
   },
   join: (...paths: string[]): string => {
     return path.join(...paths);
-  },
-  readFileSync: (path: string, options: { encoding: string; flag?: string | undefined; } | string): string => {
-    return readFileSync(path, options);
-  },
-  writeFileSync: (path: string, text: string, options?: WriteFileOptions) => {
-    return writeFileSync(path, text, options);
   },
   basename: (p: string, ext?: string): string => {
     return path.basename(p, ext);
@@ -138,16 +122,6 @@ export const api = {
       isCommunity: true,
       isUltimate: false,
     }
-  },
-  readVimrc(pathToVimrc?: string): string[] {
-    const vimrcPath = path.join(pathToVimrc ?? userDirectory, ".beekeeper.vimrc");
-    if (fileExistsSync(vimrcPath)) {
-      const data = fs.readFileSync(vimrcPath, { encoding: 'utf-8', flag: 'r'});
-      const dataSplit = data.split("\n");
-      return dataSplit;
-    }
-
-    return [];
   },
   async getLastExportPath(filename?: string) {
     return await SettingsPlugin.get(
