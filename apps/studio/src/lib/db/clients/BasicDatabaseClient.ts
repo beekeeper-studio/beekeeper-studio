@@ -281,7 +281,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   getImportSQL(importedData: any[], primaryKeys: string[] = []): string | string[] {
     const queries = []
-    queries.push(buildInsertQueries(this.knex, importedData, { asUpsert: true, primaryKeys }).join(';'))
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
@@ -296,12 +296,13 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     throw new Error("Not implemented");
   }
 
-  async getInsertQuery(tableInsert: TableInsert, asUpsert = false): Promise<string> {
+  protected createUpsertFunc: ((table: TableInsert, data: {[key: string]: any}) => string) | null = null
+
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert = false): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
     const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)
     const primaryKeys = primaryKeysPromise.map(v => v.columnName)
-    console.log('~~ Primary Keys ~~', primaryKeys)
-    return buildInsertQuery(this.knex, tableInsert, { columns, asUpsert, primaryKeys });
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc });
   }
 
   abstract wrapIdentifier(value: string): string;

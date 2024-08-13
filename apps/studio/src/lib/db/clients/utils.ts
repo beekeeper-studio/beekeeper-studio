@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
@@ -179,7 +179,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber, asUpsert = false, primaryKeys = [] as string[] } = {}) {
+export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber, runAsUpsert = false, primaryKeys = [] as string[], createUpsertFunc = null }: BuildInsertOptions = {}) {
   const data = _.cloneDeep(insert.data)
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
@@ -210,7 +210,10 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
     builder.withSchema(insert.schema)
   }
   
-  if (asUpsert && primaryKeys.length > 0) {
+  if (runAsUpsert && typeof(createUpsertFunc) === 'function'){
+    return createUpsertFunc(insert, data)
+    // use the createUpsertFunc. Should be Oracle, Firebird, and SqlServer
+  } else if (runAsUpsert) {
     // might have to be different for different engines. 
     // https://knexjs.org/guide/query-builder.html#onconflict
     return builder
@@ -225,9 +228,9 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
     .toQuery()
 }
 
-export function buildInsertQueries(knex, inserts, { asUpsert = false, primaryKeys = [] } = {}) {
+export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [] } = {}) {
   if (!inserts) return []
-  return inserts.map(insert => buildInsertQuery(knex, insert, { asUpsert, primaryKeys }))
+  return inserts.map(insert => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys }))
 }
 
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {

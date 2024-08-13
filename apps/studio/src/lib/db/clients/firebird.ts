@@ -169,7 +169,7 @@ function buildInsertQuery(
   { 
     columns = [],
     bitConversionFunc = _.toNumber,
-    asUpsert = false
+    runAsUpsert = false
   } = {}
 ) {
   const data = _.cloneDeep(insert.data);
@@ -689,7 +689,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  async getInsertQuery(tableInsert: TableInsert, asUpsert: boolean = false): Promise<string> {
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert: boolean = false): Promise<string> {
     if (tableInsert.data.length > 1) {
       // TODO: We can't insert multiple rows at once with Firebird. And
       // firebird knex only accepts an object instead of an array, while the
@@ -700,7 +700,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       tableInsert.table,
       tableInsert.schema
     );
-    return buildInsertQuery(this.knex, tableInsert, { columns, asUpsert });
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert });
   }
 
   async listTableTriggers(

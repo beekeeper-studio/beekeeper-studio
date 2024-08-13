@@ -21,6 +21,7 @@ import {
   TableColumn,
   TableFilter,
   TableIndex,
+  TableInsert,
   TableOrView,
   TableProperties,
   TableResult,
@@ -65,6 +66,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     this.defaultSchema = async (): Promise<string> => server.config.user.toUpperCase()
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
+    // Typescript wasn't having it that createUpsertFunc could be either a function or null, so this ended up working
+    this.createUpsertFunc = this.createUpsertSQL
   }
 
   getBuilder(table: string, schema?: string): ChangeBuilderBase {
@@ -110,6 +113,12 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
       rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
     }
+  }
+
+  // took this approach because Typescript wasn't liking the base function could be a null value or a function
+  createUpsertSQL(table: TableInsert, data: {[key: string]: any}): string {
+    console.log('CREATE UPSERT THING!')
+    return ''
   }
 
   async createDatabaseSQL() {

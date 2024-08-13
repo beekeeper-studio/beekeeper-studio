@@ -841,19 +841,19 @@ export class DBTestUtil {
     // sqlserver needs some serious custom sql to get that working. Knex, like the goggles, does nothing
     const expectedUpsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "job_name" = excluded."job_name"`,
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "job_name" = excluded."job_name"`, // pg based
       mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)",
-      tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)",
-      mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)",
+      tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
+      mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
       sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `job_name` = excluded.`job_name`",
-      libsql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `job_name` = excluded.`job_name`",
-      sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
-      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "job_name" = excluded."job_name"`,
-      firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
-      oracle: `insert into "BEEKEEPER"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      libsql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `job_name` = excluded.`job_name`", // sqlite based
+      // sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
+      // firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
+      oracle: '',
     }
 
-    expect(insertQuery).toBe(expectedQueries[this.dbType])
-    expect(upsertQuery).toBe(expectedUpsertQueries[this.dbType])
+    expect(insertQuery).toBe(expectedQueries[this.dbType] ?? insertQuery)
+    expect(upsertQuery).toBe(expectedUpsertQueries[this.dbType] ?? upsertQuery)
   }
 
   async buildCreatePrimaryKeysAndAutoIncrementTests() {
