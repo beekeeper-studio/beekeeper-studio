@@ -30,11 +30,17 @@ function testWith(tag, socket = false, readonly = false) {
       fs.chmodSync(temp, "777")
       container = await new GenericContainer("mysql", tag)
         .withName("testmysql")
-        .withEnv("MYSQL_ROOT_PASSWORD", "test")
-        .withEnv("MYSQL_DATABASE", "test")
+        .withEnvironment({
+          "MYSQL_ROOT_PASSWORD": "test",
+          "MYSQL_DATABASE": "test"
+        })
         .withExposedPorts(3306)
         .withStartupTimeout(dbtimeout)
-        .withBindMount(temp, '/var/run/mysqld/', 'rw')
+        .withBindMounts([{
+          source: temp, 
+          target: '/var/run/mysqld/', 
+          mode: 'rw'
+        }])
         .start()
       jest.setTimeout(timeoutDefault)
       const config = {

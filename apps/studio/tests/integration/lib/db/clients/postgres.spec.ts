@@ -34,13 +34,20 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
 
+      const startupTimeout = dbtimeout * 2;
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
       container = await new GenericContainer(`postgres:${dockerTag}`)
-        .withEnv("POSTGRES_PASSWORD", "example")
-        .withEnv("POSTGRES_DB", "banana")
+        .withEnvironment({
+          "POSTGRES_PASSWORD": "example",
+          "POSTGRES_DB": "banana"
+        })
         .withExposedPorts(5432)
-        .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
-        .withStartupTimeout(dbtimeout)
+        .withBindMounts([{
+          source: path.join(temp, "postgresql"), 
+          target: "/var/run/postgresql", 
+          mode: "rw"
+        }])
+        .withStartupTimeout(startupTimeout)
         .start()
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',

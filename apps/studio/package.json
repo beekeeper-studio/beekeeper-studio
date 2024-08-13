@@ -166,9 +166,8 @@
     "postcss-import-alias-resolver": "^0.1.1",
     "sass": "^1.77.1",
     "sass-embedded": "^1.77.1",
-    "testcontainers": "~8.9.0",
+    "testcontainers": "~9.12.0",
     "ts-jest": "^29.1.5",
-    "tsc-alias": "^1.8.9",
     "typescript": "~4.3.0",
     "vue-template-compiler": "^2.7.16",
     "xvfb-maybe": "^0.2.1"
@@ -195,6 +194,6 @@
     "nan": "2.17.0",
     "cpu-features": ".yarn/packages/empty-package",
     "sqlite3": "5.1.6",
-    "duckdb": "beekeeper-studio/duckdb-node#8a3b0c595e3d938a6f8442ed69349135e57c9d4a"
+    "duckdb": "beekeeper-studio/duckdb-node#27bbc4c60a6a32300df2947e83d499f0cde2318a"
   }
 }
