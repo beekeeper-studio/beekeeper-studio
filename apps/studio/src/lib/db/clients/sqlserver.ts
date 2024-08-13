@@ -922,14 +922,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return applyChangesSql(changes, this.knex)
   }
 
-  async invoke(name: string, args: any): Promise<void> {
-    super.invoke(name, args)
-
-    if (name === 'sign-out') {
-      await this.authService?.signOut();
-    }
-  }
-
   wrapIdentifier(value: string) {
     if (_.isString(value)) {
       return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
