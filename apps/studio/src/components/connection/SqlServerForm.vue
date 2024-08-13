@@ -160,6 +160,7 @@
   import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
+  import { mapState } from 'vuex'
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
@@ -197,7 +198,7 @@
 
         const authId = this.config.azureAuthOptions?.authId || this.config?.authId
         if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
-          this.accountName = await this.$util.send('conn/azure-get-account-name', { authId });
+          this.accountName = await this.connection.azureGetAccountName(authId);
         } else {
           this.accountName = null
         }
@@ -207,6 +208,7 @@
       }
     },
     computed: {
+      ...mapState(['connection']),
       showUser() {
         return [AzureAuthType.Password].includes(this.authType)
       },
@@ -231,7 +233,7 @@
       async signOut() {
         try {
           this.signingOut = true
-          await this.$util.send('conn/azure-sign-out', { config: this.config });
+          await this.connection.azureSignOut(this.config);
           this.config.authId = null
           this.accountName = null
         } catch (e) {

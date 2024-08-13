@@ -248,7 +248,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['workspaceId']),
+    ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
@@ -487,7 +487,7 @@ export default Vue.extend({
       this.loadingSSOModalOpened = false
     },
     loadingSSOCanceled() {
-      this.$util.send('conn/azure-cancel-auth');
+      this.connection.azureCancelAuth();
     },
   },
 })

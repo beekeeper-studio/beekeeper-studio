@@ -101,10 +101,10 @@ export interface IConnectionHandlers {
 
   'conn/syncDatabase': ({ sId }: { sId: string }) => Promise<void>
 
-  'conn/azure-cancel-auth': ({ sId }: { sId: string }) => Promise<void>
-  'conn/azure-sign-out': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
+  'conn/azureCancelAuth': ({ sId }: { sId: string }) => Promise<void>
+  'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
-  'conn/azure-get-account-name': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -451,11 +451,11 @@ export const ConnHandlers: IConnectionHandlers = {
   },
   'conn/syncDatabase': getDriverHandler('syncDatabase'),
 
-  'conn/azure-cancel-auth': async function({ sId }: { sId: string }) {
+  'conn/azureCancelAuth': async function({ sId }: { sId: string }) {
     state(sId).connectionAbortController?.abort();
   },
 
-  'conn/azure-get-account-name': async function({ authId }: { authId: string }) {
+  'conn/azureGetAccountName': async function({ authId }: { authId: string }) {
     if (!authId) {
       throw new Error("authId is required");
     };
@@ -464,7 +464,7 @@ export const ConnHandlers: IConnectionHandlers = {
     return cache.name
   },
 
-  'conn/azure-sign-out': async function({ config, sId }: { config: IConnection, sId: string }) {
+  'conn/azureSignOut': async function({ config, sId }: { config: IConnection, sId: string }) {
     await AzureAuthService.ssoSignOut(config.authId)
 
     // Clean up authId cause it's invalid after signing out
