@@ -2,7 +2,7 @@
 import esbuild from 'esbuild';
 import { spawn, exec, fork } from 'child_process'
 import path from 'path';
-
+import _ from 'lodash'
 
 const isWatching = process.argv[2] === 'watch';
 
