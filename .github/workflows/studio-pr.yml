@@ -21,7 +21,8 @@ jobs:
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v1
         with:
-          node-version: 16
+          node-version-file: '.nvmrc'
+          cache: yarn
 
       - name: Install python 3.8 (not Mac)
         uses: actions/setup-python@v5
