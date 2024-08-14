@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v1
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
           cache: yarn
