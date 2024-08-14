@@ -2,9 +2,9 @@ import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
-import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties } from "../models";
+import { DatabaseFilterOptions, FilterOptions, PrimaryKeyColumn, SchemaFilterOptions, SupportedFeatures, TableOrView, TableProperties } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
-import { escapeString } from "./utils";
+import { buildDatabaseFilter, buildSchemaFilter, escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
 import { TableKey } from "@shared/lib/dialects/models";
@@ -156,6 +156,40 @@ export class RedshiftClient extends PostgresClient {
     }
 
     return sql
+  }
+
+  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
+    const normalSchemas = await super.listSchemas(filter);
+
+    const schemaFilter = buildSchemaFilter(filter, 'schemaname');
+    const sql = `
+      SELECT schemaname 
+      FROM SVV_EXTERNAL_SCHEMAS
+      ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+      ORDER BY schemaname
+    `;
+
+    const data = await this.driverExecuteSingle(sql);
+
+    const externalSchemas = data.rows.map((row) => row.schema_name);
+    // TODO (@day): these need to return objects that include whether or not they are external
+    return [...normalSchemas, ...externalSchemas].sort();
+  }
+
+  async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
+    const normalDatabases = await super.listDatabases(filter);
+    const databaseFilter = buildDatabaseFilter(filter, 'databasename');
+    const sql = `
+      SELECT databasename
+      FROM SVV_EXTERNAL_DATABASES
+      ${databaseFilter ? `WHERE ${databaseFilter}` : ''}
+      ORDER BY databasename
+    `;
+
+    const data = await this.driverExecuteSingle(sql);
+    const externalDatabases = data.rows.map((row) => row.databasename);
+
+    return [...normalDatabases, ...externalDatabases].sort();
   }
 
   protected countQuery(_options: STQOptions, baseSQL: string): string {
