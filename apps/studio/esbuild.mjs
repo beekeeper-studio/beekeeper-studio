@@ -1,35 +1,10 @@
 #!/usr/bin/env node
 import esbuild from 'esbuild';
-import { copy } from 'esbuild-plugin-copy';
 import { spawn, exec, fork } from 'child_process'
 import path from 'path';
+
+
 const isWatching = process.argv[2] === 'watch';
-import _ from 'lodash'
-import { close, open, utimes } from 'fs'
-import fs from 'fs'
-
-
-
-if (!fs.existsSync('./tmp')){
-    fs.mkdirSync('./tmp');
-}
-
-const touch = path => {
-  return new Promise((resolve, reject) => {
-    const time = new Date();
-    utimes(path, time, time, err => {
-      if (err) {
-        return open(path, 'w', (err, fd) => {
-          if (err) return reject(err);
-          close(fd, err => (err ? reject(err) : resolve(fd)));
-        });
-      }
-      resolve();
-    });
-  });
-};
-
-
 
 function getElectronBinary() {
   const winLinux = path.join('../../node_modules/electron/dist/electron')
