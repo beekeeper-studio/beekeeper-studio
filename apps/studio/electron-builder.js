@@ -9,15 +9,20 @@ module.exports = {
   releaseInfo: {
     releaseNotesFile: "build/release-notes.md"
   },
+  directories: {
+    output: "dist_electron"
+  },
   files: [
     'dist/**/*',
     'package.json',
     'public/icons/**/*',
     '!**/node_gyp_bins/*'
-
   ],
   afterSign: "electron-builder-notarize",
   afterPack: "./build/afterPack.js",
+  asarUnpack: [
+    '**/package.json'
+  ],
   extraResources: [
     {
       from: './extra_resources/demo.db',
