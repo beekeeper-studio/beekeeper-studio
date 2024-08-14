@@ -13,7 +13,7 @@
         class="titlebar-icon"
         v-if="!$config.isMac"
       >
-        <img src="assets/logo.svg">
+        <img src="@/assets/logo.svg">
         <AppMenu />
       </div>
       <div class="titlebar-title noselect">

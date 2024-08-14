@@ -26,7 +26,7 @@ if (isRenderer()) {
   const p = process;
   const { resolve, join } = require('path');
   const yargs = require('yargs-parser');
-  
+
   if (!isUtility()) {
     e = require('electron')
   }
