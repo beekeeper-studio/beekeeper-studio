@@ -202,7 +202,6 @@
 import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 
-import platformInfo from '@/common/platform_info'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 
   export default {
