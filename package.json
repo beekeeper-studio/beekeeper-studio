@@ -25,14 +25,5 @@
     "test:ci": "yarn workspace beekeeper-studio test:ci",
     "all:lint": "yarn workspace beekeeper-studio lint && yarn workspace sqltools lint && npx eslint 'shared/**' --fix"
   },
-  "resolutions": {
-    "nan": "2.17.0",
-    "node-abi": "^3.34.0",
-    "cpu-features": ".yarn/packages/empty-package",
-    "electron-builder": "23.0.2"
-  },
-  "volta": {
-    "node": "16.19.1",
-    "yarn": "1.22.21"
-  }
+  "resolutions": {}
 }
