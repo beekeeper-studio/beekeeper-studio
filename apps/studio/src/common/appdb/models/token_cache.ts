@@ -13,4 +13,7 @@ export class TokenCache extends ApplicationEntity {
 
   @Column({ type: "text", nullable: true, transformer: [encrypt] })
   cache: Nullable<string>;
+
+  @Column({ type: "text", nullable: true })
+  name: Nullable<string>;
 }

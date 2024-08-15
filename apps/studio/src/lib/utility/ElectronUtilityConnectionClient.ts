@@ -2,6 +2,7 @@ import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
+import { IConnection } from "@/common/interfaces/IConnection";
 
 
 export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
@@ -239,5 +240,17 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async syncDatabase(): Promise<void> {
     return await Vue.prototype.$util.send('conn/syncDatabase');
+  }
+
+  async azureCancelAuth(): Promise<void> {
+    return await Vue.prototype.$util.send('conn/azureCancelAuth');
+  }
+
+  async azureGetAccountName(authId: string): Promise<string | null> {
+    return await Vue.prototype.$util.send('conn/azureGetAccountName', { authId });
+  }
+
+  async azureSignOut(config: IConnection): Promise<void> {
+    return await Vue.prototype.$util.send('conn/azureSignOut', { config });
   }
 }
