@@ -15,113 +15,61 @@ const log = rawLog.scope('preload.ts');
 
 const electron = require('@electron/remote');
 
-const isDevEnv = !(electron?.app && (electron?.app.isPackaged ?? process.env.isPackaged));
-const slice = isDevEnv ? 2 : 1;
-const parsedArgs = yargs(process.argv.slice(slice));
-// TODO: Automatically enable wayland without flags once
-// we're confident it will 'just work' for all Wayland users.
-function isWaylandMode() {
-  return parsedArgs['ozone-platform-hint'] === 'auto' &&
-    sessionType === 'wayland' && !isWindows && !isMac
-}
-
-const platform = process.env.OS_OVERRIDE ? process.env.OS_OVERRIDE : process.platform;
-const isWindows = platform === 'win32';
-const isMac = platform === 'darwin';
-const isArm = process.arch.startsWith('arm');
-const sessionType = process.env.XDG_SESSION_TYPE;
-const resourcesPath = isDevEnv ? path.resolve('./extra_resources') : path.resolve(process.resourcesPath);
 const testMode = process.env.TEST_MODE ? true : false;
-const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
-const windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
 let userDirectory =  testMode ? './tmp' : electron?.app.getPath("userData")
-const downloadsDirectory = testMode ? './tmp' : electron?.app.getPath('downloads')
-const homeDirectory = testMode ? './tmp' : electron?.app.getPath('home')
 if (process.env.PORTABLE_EXECUTABLE_DIR) {
   userDirectory = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
 }
-const updatesDisabled = !!process.env.BEEKEEPER_DISABLE_UPDATES
-const locale = electron?.app?.getLocale() ?? process.env.locale;
 
 export const api = {
-  isReady: () => {
+  async requestPlatformInfo() {
+    const platformInfo = await ipcRenderer.invoke('platformInfo')
+    // will this work?
+    contextBridge.exposeInMainWorld('platformInfo', platformInfo);
+    // api.platformInfo = platformInfo;
+  },
+  isReady() {
     ipcRenderer.send('ready');
   },
-  send: (event: AppEvent, name: string, arg?: any) => {
+  send(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.send(event, name, arg)
   },
-  on: (event: AppEvent, bind: any) => {
+  on(event: AppEvent, bind: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.on(event, bind);
   },
-  onUtilDied: (bind: any) => {
+  onUtilDied(bind: any) {
     ipcRenderer.on('utilDied', bind);
   },
-  onUpdateEvent: (event: 'update-available' | 'manual-update' | 'update-downloaded', bind: any) => {
+  onUpdateEvent(event: 'update-available' | 'manual-update' | 'update-downloaded', bind: any) {
     const eType = ['update-available', 'manual-update', 'update-downloaded'];
     if (!eType.includes(event)) return;
     ipcRenderer.on(event, bind);
   },
-  updaterReady: () => {
+  updaterReady() {
     ipcRenderer.send('updater-ready');
   },
-  triggerDownload: () => {
+  triggerDownload() {
     ipcRenderer.send('download-update');
   },
-  triggerInstall: () => {
+  triggerInstall() {
     ipcRenderer.send('install-update');
   },
-  openExternally: (link: string) => {
+  openExternally(link: string) {
     ipcRenderer.send(AppEvent.openExternally, [link]);
   },
-  resolve: (toResolve: string) => {
+  resolve(toResolve: string) {
     return path.resolve(toResolve);
   },
-  join: (...paths: string[]): string => {
+  join(...paths: string[]): string {
     return path.join(...paths);
   },
   basename: (p: string, ext?: string): string => {
     return path.basename(p, ext);
   },
-  yargs: (argv: string | string[], opts?: Options) => {
+  yargs(argv: string | string[], opts?: Options) {
     return yargs(argv, opts);
-  },
-  platformInfo: () => {
-    return {
-      isWindows, isMac, isArm,
-      oracleSupported: isMac && isArm ? false : true,
-      isLinux: !isWindows && !isMac,
-      sessionType,
-      isWayland: isWaylandMode(),
-      isSnap: process.env.ELECTRON_SNAP,
-      isPortable: isWindows && process.env.PORTABLE_EXECUTABLE_DIR,
-      isDevelopment: isDevEnv,
-      isAppImage: process.env.DESKTOPINTEGRATION === 'AppImageLauncher',
-      sshAuthSock: process.env.SSH_AUTH_SOCK,
-      environment: process.env.NODE_ENV,
-      resourcesPath,
-      env: {
-        development: isDevEnv,
-        test: testMode,
-        production: !isDevEnv && !testMode
-      },
-      debugEnabled: !!process.env.DEBUG,
-      DEBUG: process.env.DEBUG,
-      platform: easyPlatform,
-      darkMode: testMode ? true : electron?.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
-      userDirectory,
-      downloadsDirectory,
-      homeDirectory,
-      testMode,
-      appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
-      updatesDisabled,
-      appVersion: testMode ? 'test-mode' : electron?.app.getVersion(),
-      cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
-      locale,
-      isCommunity: true,
-      isUltimate: false,
-    }
   },
   async getLastExportPath(filename?: string) {
     return await SettingsPlugin.get(

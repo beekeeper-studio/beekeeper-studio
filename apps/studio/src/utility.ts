@@ -20,6 +20,7 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
+  stack?: string
 }
 
 export let handlers: Handlers = {
@@ -64,6 +65,7 @@ async function runHandler(id: string, name: string, args: any) {
       replyArgs.data = await handlers[name](args)
     } catch (e) {
       replyArgs.type = 'error';
+      replyArgs.stack = e?.stack
       replyArgs.error = e?.message ?? e
     }
   } else {
@@ -91,5 +93,5 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
-  process.parentPort.postMessage('ready');
+  process.parentPort.postMessage({ type: 'ready' });
 }
