@@ -718,10 +718,6 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
     ]
   }
 
-  function wait(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  }
-
   await util.connection.applyChanges(changes)
 
   const _results = await util.knex.select().table('test_inserts_composite_pk').orderBy('id1', 'asc')
