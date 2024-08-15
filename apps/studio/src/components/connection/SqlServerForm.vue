@@ -157,7 +157,6 @@
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
-  import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
   import { mapState } from 'vuex'
@@ -186,7 +185,7 @@
           this.azureAuthEnabled = false
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
-          if (platformInfo.isCommunity) {
+          if (this.$config.isCommunity) {
             // we want to display a modal
             this.$root.$emit(AppEvent.upgradeModal);
             this.authType = 'default'
