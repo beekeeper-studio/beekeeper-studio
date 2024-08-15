@@ -21,10 +21,10 @@ export function applyConfig(codeMirrorVimInstance: any, config: Config) {
 }
 
 async function readVimrc(pathToVimrc?: string): Promise<string[]> {
-  const userDirectory = window.main.platformInfo().userDirectory;
+  const userDirectory = window.platformInfo.userDirectory;
   const vimrcPath = await Vue.prototype.$util.send('file/pathJoin', { paths: [pathToVimrc ?? userDirectory, ".beekeeper.vimrc"]});
   if (await Vue.prototype.$util.send('file/exists', { path: vimrcPath })) {
-    const data = Vue.prototype.$util.send('file/read', { path: vimrcPath, options: { encoding: 'utf-8', flag: 'r'}});
+    const data = await Vue.prototype.$util.send('file/read', { path: vimrcPath, options: { encoding: 'utf-8', flag: 'r'}});
     const dataSplit = data.split("\n");
     return dataSplit;
   }
