@@ -26,6 +26,7 @@ import platformInfo from './common/platform_info'
 import { AppEvent } from './common/AppEvent'
 import { ProtocolBuilder } from './background/lib/electron/ProtocolBuilder';
 import { uuidv4 } from './lib/uuid';
+import installExtension, { REDUX_DEVTOOLS, VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from './types'
 
 function initUserDirectory(d: string) {
@@ -169,6 +170,10 @@ app.on('window-all-closed', () => {
   }
 })
 
+ipcMain.handle('platformInfo', () => {
+  return platformInfo;
+})
+
 app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -192,6 +197,10 @@ app.on('browser-window-created', (event: electron.Event, window: electron.Browse
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
+
+      installExtension(VUEJS_DEVTOOLS)
+        .then((name) => console.log(`Added Extension:  ${name}`))
+        .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because
     // we can't connect to bigquery-emulator on localhost.
     // See: https://github.com/electron/electron/issues/23664

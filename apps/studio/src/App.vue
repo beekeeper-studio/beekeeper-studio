@@ -106,7 +106,6 @@ export default Vue.extend({
       }
     }
 
-
   },
   methods: {
     databaseSelected(_db) {
