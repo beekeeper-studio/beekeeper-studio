@@ -9,6 +9,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { AzureAuthService } from "@/lib/db/authentication/azure";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -99,6 +100,11 @@ export interface IConnectionHandlers {
   'conn/getInsertQuery': ({ tableInsert, sId }: { tableInsert: TableInsert, sId: string }) => Promise<string>,
 
   'conn/syncDatabase': ({ sId }: { sId: string }) => Promise<void>
+
+  'conn/azureCancelAuth': ({ sId }: { sId: string }) => Promise<void>
+  'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
+  /** Get account name if it's signed in, otherwise return undefined */
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -121,10 +127,13 @@ export const ConnHandlers: IConnectionHandlers = {
       }
     }
 
+    const abortController = new AbortController();
+    state(sId).connectionAbortController = abortController;
+
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
     const connection = server.createConnection(config.defaultDatabase || undefined);
-    await connection.connect();
+    await connection.connect(abortController.signal);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
 
@@ -136,9 +145,10 @@ export const ConnHandlers: IConnectionHandlers = {
       dbConfig: connection.server.config,
       dbName: connection.database.database
     });
+    state(sId).connectionAbortController = null
   },
 
-  'conn/test': async function({ config, osUser }: { config: IConnection, osUser: string }) {
+  'conn/test': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) {
     // TODO (matthew): fix this mess.
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
@@ -146,8 +156,12 @@ export const ConnHandlers: IConnectionHandlers = {
 
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
-    await server?.createConnection(config.defaultDatabase || undefined).connect();
+    const abortController = new AbortController();
+    state(sId).connectionAbortController = abortController;
+    await server?.createConnection(config.defaultDatabase || undefined).connect(abortController.signal);
+    abortController.abort();
     server.disconnect();
+    state(sId).connectionAbortController = null;
   },
 
   'conn/changeDatabase': async function({ newDatabase, sId }: { newDatabase: string, sId: string }) {
@@ -435,5 +449,30 @@ export const ConnHandlers: IConnectionHandlers = {
     checkConnection(sId);
     return await state(sId).connection.getInsertQuery(tableInsert)
   },
-  'conn/syncDatabase': getDriverHandler('syncDatabase')
+  'conn/syncDatabase': getDriverHandler('syncDatabase'),
+
+  'conn/azureCancelAuth': async function({ sId }: { sId: string }) {
+    state(sId).connectionAbortController?.abort();
+  },
+
+  'conn/azureGetAccountName': async function({ authId }: { authId: string }) {
+    if (!authId) {
+      throw new Error("authId is required");
+    };
+    const cache = await TokenCache.findOne(authId)
+    if (!cache) return null
+    return cache.name
+  },
+
+  'conn/azureSignOut': async function({ config, sId }: { config: IConnection, sId: string }) {
+    await AzureAuthService.ssoSignOut(config.authId)
+
+    // Clean up authId cause it's invalid after signing out
+    const savedConnection = await SavedConnection.findOne(config.id)
+    savedConnection.authId = null
+    await savedConnection.save()
+    if (state(sId).usedConfig) {
+      state(sId).usedConfig.authId = null
+    }
+  },
 }
