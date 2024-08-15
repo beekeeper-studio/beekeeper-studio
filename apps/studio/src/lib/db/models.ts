@@ -268,5 +268,5 @@ export interface BuildInsertOptions {
   bitConversionFunc?: (value: any) => any
   runAsUpsert?: boolean
   primaryKeys?: string[]
-  createUpsertFunc?: null | ((table: TableInsert, data: {[key: string]: any}) => string)
+  createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
 }

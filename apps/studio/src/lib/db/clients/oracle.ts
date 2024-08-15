@@ -7,6 +7,7 @@ import { IDbConnectionDatabase, DatabaseElement } from "../types";
 import { BasicDatabaseClient, NoOpContextProvider } from "./BasicDatabaseClient";
 import {
   CancelableQuery,
+  DatabaseEntity,
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FieldDescriptor,
@@ -116,8 +117,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   // took this approach because Typescript wasn't liking the base function could be a null value or a function
-  createUpsertSQL(table: TableInsert, data: {[key: string]: any}): string {
-    console.log('CREATE UPSERT THING!')
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
+    const columnsWithoutPK = _.without(Object.keys(data), primaryKeys[0])
+    const usingSQLStatement = data.map( (val, idx) => {
+      const columns = Object.keys(val)
+      if (idx === 0) {
+        return ``
+      }
+    })
+    console.log('CREATE UPSERT THING!', schema, tableName)
     return ''
   }
 

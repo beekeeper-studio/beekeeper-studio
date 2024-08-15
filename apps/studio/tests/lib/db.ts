@@ -823,10 +823,24 @@ export class DBTestUtil {
 
   async getInsertQueryTests() {
     const row = { job_name: "Programmer", hourly_rate: 41 }
+    const initialID = this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId
+    const secondID = Number(initialID) + 1
+    const thirdID = Number(initialID) + 2
     const tableInsert = { table: 'jobs', schema: this.defaultSchema, data: [row] }
+    const upsertRow = {
+      id: initialID,
+      ...row
+    }
+    const tableUpsert = { table: 'jobs', schema: this.defaultSchema, data: [ upsertRow ] }
+    const tableMultipleUpsert = { table: 'jobs', schema: this.defaultSchema, data: [
+      upsertRow,
+      { id: secondID, job_name: "Blerk", hourly_rate: 40 },
+      { id: thirdID, job_name: "blarns", hourly_rate: 39}
+    ] }
     const insertQuery = await this.connection.getInsertQuery(tableInsert)
-    const upsertQuery = await this.connection.getInsertQuery(tableInsert, true)
-    const expectedQueries = {
+    const upsertQuery = await this.connection.getInsertQuery(tableUpsert, true)
+    const multipleUpsertQuery = await this.connection.getInsertQuery(tableMultipleUpsert, true)
+    const expectedInsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
@@ -840,20 +854,53 @@ export class DBTestUtil {
     }
     // sqlserver needs some serious custom sql to get that working. Knex, like the goggles, does nothing
     const expectedUpsertQueries = {
-      postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "job_name" = excluded."job_name"`,
-      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "job_name" = excluded."job_name"`, // pg based
+      postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, '${initialID}', 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`, // pg based
       mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)",
       tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
       mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
-      sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `job_name` = excluded.`job_name`",
-      libsql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `job_name` = excluded.`job_name`", // sqlite based
+      sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
+      libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, " + initialID + ", 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
       // sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
       // firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
-      oracle: '',
+      oracle: `
+        MERGE INTO Beekeeper.jobs target
+        USING ( SELECT 'Programmer' AS job_name, 41 AS hourly_rate FROM dual ) source
+        ON (target.job_name = source.job_name)
+        WHEN MATCHED THEN
+          UPDATE SET target.hourly_rate = source.hourly_rate
+        WHEN NOT MATCHED THEN
+          INSERT (job_name, hourly_rate)
+          VALUES (source.job_name, source.hourly_rate);`,
+    }
+    const expectedMultipleUpsertQueries = {
+      postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, '${initialID}', 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`, // pg based
+      mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)",
+      tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
+      mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
+      sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, '" + initialID + "' as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, " + secondID + " as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, " + thirdID + " as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
+      libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, `" + initialID + "` as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, `" + secondID + "` as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, `" + thirdID + "` as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
+      // sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
+      // firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
+      oracle: `
+        MERGE INTO Beekeeper.jobs target
+        USING (
+          SELECT 'Programmer' AS job_name, 41 AS hourly_rate FROM dual UNION ALL
+          SELECT 'Blerk', 40 FROM dual UNION ALL
+          SELECT 'blarns', 39 FROM dual
+        ) source
+        ON (target.job_name = source.job_name)
+        WHEN MATCHED THEN
+          UPDATE SET target.hourly_rate = source.hourly_rate
+        WHEN NOT MATCHED THEN
+          INSERT (job_name, hourly_rate)
+          VALUES (source.job_name, source.hourly_rate);`,
     }
 
-    expect(insertQuery).toBe(expectedQueries[this.dbType] ?? insertQuery)
+    expect(insertQuery).toBe(expectedInsertQueries[this.dbType] ?? insertQuery)
     expect(upsertQuery).toBe(expectedUpsertQueries[this.dbType] ?? upsertQuery)
+    expect(multipleUpsertQuery).toBe(expectedMultipleUpsertQueries[this.dbType] ?? upsertQuery)
   }
 
   async buildCreatePrimaryKeysAndAutoIncrementTests() {
