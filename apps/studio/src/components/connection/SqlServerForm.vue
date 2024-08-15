@@ -142,7 +142,6 @@
 <script>
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
-  import platformInfo from '@/common/platform_info'
   import { AppEvent } from '@/common/AppEvent'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
 

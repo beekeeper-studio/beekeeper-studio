@@ -215,7 +215,6 @@ import DuckDBForm from './connection/DuckDBForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import _ from 'lodash'
-import platformInfo from '@/common/platform_info'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
 import { mapState } from 'vuex'
@@ -244,7 +243,7 @@ export default Vue.extend({
       url: null,
       importError: null,
       sidebarShown: true,
-      version: platformInfo.appVersion
+      version: this.$config.appVersion
     }
   },
   computed: {
@@ -254,7 +253,7 @@ export default Vue.extend({
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (platformInfo.isUltimate) return false
+      if (this.$config.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -400,7 +399,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -418,7 +417,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 

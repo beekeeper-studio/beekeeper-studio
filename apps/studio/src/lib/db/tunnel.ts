@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import rawLog from "electron-log";
 import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
-import appConfig from '../../config'
+import appConfig from '@/common/platform_info'
 import pf from 'portfinder'
 
 import { IDbConnectionServerConfig } from './types';
