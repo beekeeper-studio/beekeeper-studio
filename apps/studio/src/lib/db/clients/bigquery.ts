@@ -516,8 +516,11 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   private async listTablesOrViews(db: string, type: string) {
     // Lists all tables or views in the dataset
     const [tables] = await this.client.dataset(db).getTables();
-    let data = tables.map((table) => ({ name: table.id, entityType: table.metadata.type, metadata: table.metadata, table: table }));
-    data = data.filter((table) => table.metadata.type === type);
+    let data = tables.map((table) => ({ 
+      name: table.id, 
+      entityType: table.metadata.type, 
+    }));
+    data = data.filter((table) => table.entityType === type);
     logger().debug(`listTablesOrViews for type:${type} data: `, data);
     return data;
   }

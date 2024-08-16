@@ -34,6 +34,7 @@ import App from './App.vue' // deal with this last
 (async () => {
 
   await window.main.requestPlatformInfo();
+  console.log('PLATFORM INFO: ', window.platformInfo)
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 

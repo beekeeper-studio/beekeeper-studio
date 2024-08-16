@@ -29,7 +29,7 @@
     "@aws-sdk/client-redshift": "^3.145.0",
     "@azure/msal-node": "^2.12.0",
     "@electron/remote": "^2.0.10",
-    "@google-cloud/bigquery": "^6.2.0",
+    "@google-cloud/bigquery": "^7.9.0",
     "@libsql/knex-libsql": "^0.1.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "axios": "^1.7.4",

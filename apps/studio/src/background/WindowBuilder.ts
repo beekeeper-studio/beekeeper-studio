@@ -70,12 +70,13 @@ class BeekeeperWindow {
     }
     const query = querystring.stringify(queryObj)
 
-    this.appUrl = query ? `${appUrl}?${query}` : appUrl
+    this.appUrl = query ? `${appUrl}?${query}` : `${appUrl}/`
     remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
+      log.info('APP URL: ', this.appUrl, 'URL: ', url)
       if (url === this.appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
