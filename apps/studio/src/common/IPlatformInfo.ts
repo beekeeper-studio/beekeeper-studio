@@ -8,7 +8,7 @@ export interface IPlatformInfo {
   sessionType: string,
   isWayland: boolean,
   isSnap: string,
-  isPortable: boolean,
+  isPortable: string,
   isDevelopment: boolean,
   isAppImage: boolean,
   sshAuthSock: string,

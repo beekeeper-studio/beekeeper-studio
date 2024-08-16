@@ -1,9 +1,7 @@
-import config from '../config'
-import { initConfig } from '../config'
+import { buildConfig } from '../config'
 
 export default {
   install(Vue) {
-    initConfig();
-    Vue.prototype.$config = config
+    Vue.prototype.$config = buildConfig(window.platformInfo)
   }
 }
