@@ -1,6 +1,6 @@
 import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
-import oracle from 'bks-oracledb'
+import oracle from 'oracledb'
 import _ from 'lodash'
 
 import { IDbConnectionDatabase, DatabaseElement } from "../types";
