@@ -13,11 +13,15 @@ services:
       - psql:/var/lib/postgresql/data
     ports:
       - 5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "integration_test"]
   ssh:
     build:
       context: ./
       dockerfile: ./SSHDockerFile
     container_name: test_ssh
+    healthcheck:
+      test: ["CMD-SHELL", "ssh", "-o", "PasswordAuthentication=No", "beekeeper:password@localhost", "true"]
     environment:
       - PUID=1000
       - PGID=1000
