@@ -1228,7 +1228,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     let resolvedPw = null;
     const redshiftOptions = server.config.redshiftOptions;
-    console.log("redshiftOptions", redshiftOptions);
+
     if (
       server.config.client === "postgresql" &&
       redshiftOptions?.iamAuthenticationEnabled
@@ -1243,8 +1243,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         port: server.config.port,
         username: server.config.user,
       });
-
-      console.log(server.config.host, server.config.port, server.config.user)
 
       resolvedPw = await signer.getAuthToken();
     }

@@ -23,7 +23,7 @@
   "main": "dist/background.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
-    "@aws-sdk/credential-providers": "^3.614.0",
+    "@aws-sdk/credential-providers": "^3.145.0",
     "@aws-sdk/rds-signer": "^3.614.0",
     "@azure/msal-node": "1.18.4",
     "@electron/remote": "^2.0.9",
