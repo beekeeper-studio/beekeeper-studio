@@ -43,8 +43,8 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         })
         .withExposedPorts(5432)
         .withBindMounts([{
-          source: path.join(temp, "postgresql"), 
-          target: "/var/run/postgresql", 
+          source: path.join(temp, "postgresql"),
+          target: "/var/run/postgresql",
           mode: "rw"
         }])
         .withStartupTimeout(startupTimeout)
@@ -520,7 +520,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           finalCommand
         } = util.connection.getImportScripts(table)
         const importSQL = util.connection.getImportSQL(formattedData)
-    
+
         expect(step0).toBeUndefined()
         expect(typeof beginCommand).toBe('function')
         expect(typeof truncateCommand).toBe('function')
@@ -528,16 +528,16 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         expect(typeof commitCommand).toBe('function')
         expect(typeof rollbackCommand).toBe('function')
         expect(finalCommand).toBeUndefined()
-    
+
         await beginCommand(executeOptions)
         await truncateCommand(executeOptions)
         await lineReadCommand(importSQL, executeOptions)
         await commitCommand(executeOptions)
-    
+
         const hats = await util.knex.select().table(tableName)
         expect(hats.length).toBe(4)
       })
-  
+
       it('should rollback', async () => {
         const tableName = 'import_table'
         const executeOptions = { multiple: false }
@@ -556,7 +556,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         await beginCommand(executeOptions)
         await lineReadCommand(importSQL, {multiple: true})
         await rollbackCommand(executeOptions)
-    
+
         const hats = await util.knex.select().table(tableName)
         expect(hats.length).toBe(hatsStart.length)
       })

@@ -93,6 +93,7 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
+          on_retry_command: "docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)"
           command: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
