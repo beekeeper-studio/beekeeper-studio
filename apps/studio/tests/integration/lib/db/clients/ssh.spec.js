@@ -11,12 +11,12 @@ describe("SSH Tunnel Tests", () => {
   let connection
   let database
   let environment
-  // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
   beforeAll(async () => {
     const timeoutDefault = 5000
     environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
-      .withWaitStrategy(Wait.forHealthCheck())
+      .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
+      .withWaitStrategy('test_ssh', Wait.forListeningPorts())
       .up()
 
     container = environment.getContainer('test_ssh')

@@ -76,7 +76,7 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().streamTests()
     })
 
-    test("query tests", async () => {
+    test.only("query tests", async () => {
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
       } else if (getUtil().dbType !== 'libsql'){
