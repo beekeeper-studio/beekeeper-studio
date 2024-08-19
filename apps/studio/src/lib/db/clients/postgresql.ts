@@ -118,6 +118,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const dbConfig = await this.configDatabase(this.server, this.database);
 
+    log.info("Connecting to postgres, config:", dbConfig)
+
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };
@@ -125,7 +127,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     //test connection
     const test = await this.conn.pool.connect()
     test.release();
-    
+
     this.conn.pool.on('acquire', (_client) => {
       log.debug('Pool event: connection acquired')
     })

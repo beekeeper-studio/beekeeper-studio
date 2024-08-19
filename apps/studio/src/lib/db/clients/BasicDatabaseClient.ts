@@ -10,7 +10,7 @@ import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 
-const log = rawLog.scope('db');
+const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
 
 export interface ExecutionContext {
@@ -107,6 +107,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       if (this.server.config.ssh && !this.server.sshTunnel) {
         logger().debug('creating ssh tunnel');
         this.server.sshTunnel = await connectTunnel(this.server.config);
+        console.log('Tunnel opened (supposedly)')
 
         this.server.config.localHost = this.server.sshTunnel.localHost
         this.server.config.localPort = this.server.sshTunnel.localPort
@@ -281,12 +282,12 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   getImportSQL(importedData: any[]): string | string[] {
     const queries = []
-    
+
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
-  
+
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
@@ -327,7 +328,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       columns,
       totalRows
     }
-  } 
+  }
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
@@ -367,7 +368,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
-    
+
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
