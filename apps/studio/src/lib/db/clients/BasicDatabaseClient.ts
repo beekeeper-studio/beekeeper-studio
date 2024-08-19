@@ -17,7 +17,7 @@ const { exec } = require('child_process');
 
 async function checkListeningPorts() {
   return new Promise((resolve, reject) => {
-    exec('netstat -tulpn | grep LISTEN', (error, stdout, stderr) => {
+    exec('sudo netstat -tulpn | grep LISTEN', (error, stdout, stderr) => {
       if (error) {
         reject(`Error executing command: ${error.message}`);
         return;
