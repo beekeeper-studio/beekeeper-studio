@@ -9,9 +9,44 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
+import * as net from 'net'
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
+
+async function checkPort(host, port) {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    socket.setTimeout(3000);  // Timeout after 3 seconds
+
+    socket.on('connect', () => {
+      resolve(`Port ${port} on ${host} is open and accepting connections.`);
+      socket.destroy();
+    });
+
+    socket.on('timeout', () => {
+      reject(`Port ${port} on ${host} is not responding.`);
+      socket.destroy();
+    });
+
+    socket.on('error', (err) => {
+      reject(`Port ${port} on ${host} is closed or not accepting connections. Error: ${err.message}`);
+    });
+
+    socket.on('close', (hadError) => {
+      if (hadError) {
+        reject(`Failed to connect to port ${port} on ${host}.`);
+      }
+    });
+
+    socket.connect(port, host);
+  });
+}
+
+// Replace with the host and port you want to check
+checkPort('127.0.0.1', 8080);
+
+
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -108,9 +143,19 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
         logger().debug('creating ssh tunnel');
         this.server.sshTunnel = await connectTunnel(this.server.config);
         console.log('Tunnel opened (supposedly)')
+        try {
+          const result = await checkPort('127.0.0.1', this.server.sshTunnel.localPort)
+          logger().info("CHECKPORT PASSED", result)
+        } catch (ex) {
+          logger().error('CHECKPORT FAILED', ex)
+        }
+
 
         this.server.config.localHost = this.server.sshTunnel.localHost
         this.server.config.localPort = this.server.sshTunnel.localPort
+
+
+
       }
 
     } catch (err) {
