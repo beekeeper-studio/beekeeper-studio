@@ -32,6 +32,10 @@ describe("SSH Tunnel Tests", () => {
       password: 'example',
       connectionType: 'postgresql'
     }
+
+    let host = container.getHost()
+    // localhost doesn't work properly on Github Actions
+    if (host === 'localhost') host = '127.0.0.1'
     const config = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -39,11 +43,13 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
-      sshHost: container.getIpAddress(),
-      sshPort: 2222,
+      sshHost: host,
+      sshPort: container.getMappedPort(2222),
       sshUsername: 'beekeeper',
       sshPassword: 'password'
     }
+
+
 
     // const qc = ConnectionProvider.for(quickConfig)
     // const qdb = qc.createConnection('integration_test')
