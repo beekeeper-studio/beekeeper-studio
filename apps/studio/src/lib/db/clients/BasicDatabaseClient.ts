@@ -9,43 +9,27 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
-import * as net from 'net'
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
 
-async function checkPort(host, port) {
+const { exec } = require('child_process');
+
+async function checkListeningPorts() {
   return new Promise((resolve, reject) => {
-    const socket = new net.Socket();
-    socket.setTimeout(3000);  // Timeout after 3 seconds
-
-    socket.on('connect', () => {
-      resolve(`Port ${port} on ${host} is open and accepting connections.`);
-      socket.destroy();
-    });
-
-    socket.on('timeout', () => {
-      reject(`Port ${port} on ${host} is not responding.`);
-      socket.destroy();
-    });
-
-    socket.on('error', (err) => {
-      reject(`Port ${port} on ${host} is closed or not accepting connections. Error: ${err.message}`);
-    });
-
-    socket.on('close', (hadError) => {
-      if (hadError) {
-        reject(`Failed to connect to port ${port} on ${host}.`);
+    exec('netstat -tulpn | grep LISTEN', (error, stdout, stderr) => {
+      if (error) {
+        reject(`Error executing command: ${error.message}`);
+        return;
       }
+      if (stderr) {
+        reject(`Error in command output: ${stderr}`);
+        return;
+      }
+      resolve(stdout);
     });
-
-    socket.connect(port, host);
   });
 }
-
-// Replace with the host and port you want to check
-checkPort('127.0.0.1', 8080);
-
 
 
 export interface ExecutionContext {
@@ -144,7 +128,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
         this.server.sshTunnel = await connectTunnel(this.server.config);
         console.log('Tunnel opened (supposedly)')
         try {
-          const result = await checkPort('127.0.0.1', this.server.sshTunnel.localPort)
+          const result = await checkListeningPorts()
           logger().info("CHECKPORT PASSED", result)
         } catch (ex) {
           logger().error('CHECKPORT FAILED', ex)
