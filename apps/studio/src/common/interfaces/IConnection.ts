@@ -1,7 +1,6 @@
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType } from "@/lib/db/types"
 import { Transport } from "../transport"
 
-export { ConnectionType }
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
 export function isUltimateType(s: ConnectionType) {
@@ -10,7 +9,7 @@ export function isUltimateType(s: ConnectionType) {
     'firebird',
     'cassandra',
     'libsql',
-    'clickhouse',
+    // 'clickhouse',
   ]
   return types.includes(s)
 }
