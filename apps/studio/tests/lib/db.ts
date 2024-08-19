@@ -841,6 +841,7 @@ export class DBTestUtil {
       const expectedResults = {
         common: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
         clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
+        oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
       }
       expect(fields).toMatchObject(expectedResults[this.dialect] || expectedResults.common)
     } catch (ex) {

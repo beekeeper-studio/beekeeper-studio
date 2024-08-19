@@ -12,8 +12,9 @@ import { IDbConnectionServer } from '../backendTypes';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { warn } from 'console';
 
-const log = rawLog.scope('db');
+const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
+
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -112,6 +113,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
         this.server.config.localHost = this.server.sshTunnel.localHost
         this.server.config.localPort = this.server.sshTunnel.localPort
+
+
+
       }
 
     } catch (err) {

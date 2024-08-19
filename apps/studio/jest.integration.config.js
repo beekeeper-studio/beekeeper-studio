@@ -6,6 +6,7 @@ const config = {
   ...unitConfig,
   testEnvironment: 'node',
   setupFilesAfterEnv: [],
+  silent: false,
   globals: {
     fetch: global.fetch,
     // just to keep config.ts happy in debug mode
