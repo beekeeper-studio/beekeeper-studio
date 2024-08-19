@@ -37,6 +37,7 @@ interface Options {
   skipAutoPrivateKey?: boolean
   noReadline?: boolean
   keepaliveInterval?: number
+  bindHost?: string
 }
 
 interface ForwardingOptions {
@@ -56,6 +57,10 @@ class SSHConnection {
     this.log = rawLog.scope('vendor/node-ssh-forward')
     if (!options.username) {
       this.options.username = process.env['SSH_USERNAME'] || process.env['USER']
+    }
+
+    if (!options.bindHost) {
+      this.options.bindHost = '127.0.0.1'
     }
     if (!options.endPort) {
       this.options.endPort = 22
@@ -230,14 +235,14 @@ class SSHConnection {
     return new Promise<any>((resolve, reject) => {
       this.server = net.createServer((socket) => {
         this.debug('Forwarding connection from "localhost:%d" to "%s:%d"', options.fromPort, options.toHost, options.toPort)
-        connection.forwardOut('localhost', options.fromPort, options.toHost || 'localhost', options.toPort, (error, stream) => {
+        connection.forwardOut('127.0.0.1', options.fromPort, options.toHost || '127.0.0.1', options.toPort, (error, stream) => {
           if (error) {
             return reject(error)
           }
           socket.pipe(stream)
           stream.pipe(socket)
         })
-      }).listen(options.fromPort, 'localhost', () => {
+      }).listen(options.fromPort, this.options.bindHost, () => {
         this.debug("Tunnel listening configured")
         resolve({})
       })
