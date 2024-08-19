@@ -104,7 +104,9 @@ class SSHConnection {
         if (err) {
           return reject(err)
         }
-        stream.on('close', async () => {
+        stream.on('exit', (code) => this.debug('EVENT exit:', code))
+        stream.on('close', async (...args) => {
+          this.debug('EVENT close:', ...args)
           stream.end()
           process.stdin.unpipe(stream)
           process.stdin.destroy()
