@@ -13,24 +13,6 @@ import { IDbConnectionServer } from '../backendTypes';
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
 
-const { exec } = require('child_process');
-
-async function checkListeningPorts() {
-  return new Promise((resolve, reject) => {
-    exec('sudo netstat -tulpn | grep LISTEN', (error, stdout, stderr) => {
-      if (error) {
-        reject(`Error executing command: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        reject(`Error in command output: ${stderr}`);
-        return;
-      }
-      resolve(stdout);
-    });
-  });
-}
-
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -126,14 +108,6 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       if (this.server.config.ssh && !this.server.sshTunnel) {
         logger().debug('creating ssh tunnel');
         this.server.sshTunnel = await connectTunnel(this.server.config);
-        console.log('Tunnel opened (supposedly)')
-        try {
-          const result = await checkListeningPorts()
-          logger().info("CHECKPORT PASSED", result)
-        } catch (ex) {
-          logger().error('CHECKPORT FAILED', ex)
-        }
-
 
         this.server.config.localHost = this.server.sshTunnel.localHost
         this.server.config.localPort = this.server.sshTunnel.localPort

@@ -118,8 +118,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const dbConfig = await this.configDatabase(this.server, this.database);
 
-    log.info("Connecting to postgres, config:", dbConfig)
-
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };

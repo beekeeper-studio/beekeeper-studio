@@ -235,7 +235,7 @@ class SSHConnection {
     return new Promise<any>((resolve, reject) => {
       this.server = net.createServer((socket) => {
         this.debug('Forwarding connection from "localhost:%d" to "%s:%d"', options.fromPort, options.toHost, options.toPort)
-        connection.forwardOut('127.0.0.1', options.fromPort, options.toHost || '127.0.0.1', options.toPort, (error, stream) => {
+        connection.forwardOut(this.options.bindHost, options.fromPort, options.toHost || '127.0.0.1', options.toPort, (error, stream) => {
           if (error) {
             return reject(error)
           }

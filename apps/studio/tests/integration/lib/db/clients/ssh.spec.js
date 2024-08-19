@@ -33,9 +33,9 @@ describe("SSH Tunnel Tests", () => {
       connectionType: 'postgresql'
     }
 
+    // NB: If this fails it's due to ipv4 vs ipv6 mixup.
+    // as of Node 17+ DNS defaults to v6 instead of v4.
     let host = container.getHost()
-    // localhost doesn't work properly on Github Actions
-    if (host === 'localhost') host = '127.0.0.1'
     const config = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -43,20 +43,18 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
-      sshHost: host,
+      sshHost: container.getHost(),
       sshPort: container.getMappedPort(2222),
       sshUsername: 'beekeeper',
       sshPassword: 'password'
     }
 
-
-
-    // const qc = ConnectionProvider.for(quickConfig)
-    // const qdb = qc.createConnection('integration_test')
-    // await qdb.connect()
-    // const query = await qdb.query('select 1');
-    // await query.execute()
-    // await qdb.disconnect();
+    const qc = ConnectionProvider.for(quickConfig)
+    const qdb = qc.createConnection('integration_test')
+    await qdb.connect()
+    const query = await qdb.query('select 1');
+    await query.execute()
+    await qdb.disconnect();
 
     console.log("Starting SSH test with config", config)
     connection = ConnectionProvider.for(config)
