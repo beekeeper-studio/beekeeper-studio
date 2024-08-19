@@ -9,8 +9,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: integration_test
-    volumes:
-      - psql:/var/lib/postgresql/data
     ports:
       - 5432
   ssh:
