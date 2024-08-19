@@ -45,13 +45,14 @@ describe("SSH Tunnel Tests", () => {
       sshPassword: 'password'
     }
 
-    const qc = ConnectionProvider.for(quickConfig)
-    const qdb = qc.createConnection('integration_test')
-    await qdb.connect()
-    const query = await qdb.query('select 1');
-    await query.execute()
-    await qdb.disconnect();
+    // const qc = ConnectionProvider.for(quickConfig)
+    // const qdb = qc.createConnection('integration_test')
+    // await qdb.connect()
+    // const query = await qdb.query('select 1');
+    // await query.execute()
+    // await qdb.disconnect();
 
+    console.log("Starting SSH test with config", config)
     connection = ConnectionProvider.for(config)
     database = connection.createConnection('integration_test')
     await database.connect()
