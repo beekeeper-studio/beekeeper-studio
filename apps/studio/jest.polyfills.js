@@ -12,8 +12,8 @@
 const { TextDecoder, TextEncoder } = require('util')
 const rawLog = require('electron-log/main')
 
-rawLog.transports.console.level = 'debug'
 rawLog.initialize()
+rawLog.transports.console.level = 'debug'
 
 
 globalThis.fetch = require('node-fetch')
