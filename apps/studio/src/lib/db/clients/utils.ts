@@ -204,6 +204,7 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
     })
 
   })
+
   const table = insert.dataset ? `${insert.dataset}.${insert.table}` : insert.table;
   const builder = knex(table);
   if (insert.schema) {

@@ -25,6 +25,8 @@ export default class NativeMenuBuilder {
   }
 
   initialize(): void {
+    console.log('~~~~~~~~~~~')
+    console.log(Boolean(this.builder))
     if (this.builder) {
       const template = this.builder.buildTemplate()
       this.menu = this.electron.Menu.buildFromTemplate(template)

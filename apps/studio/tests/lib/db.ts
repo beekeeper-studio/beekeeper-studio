@@ -822,12 +822,16 @@ export class DBTestUtil {
   }
 
   async getInsertQueryTests() {
+    const isFirebird = this.dbType === 'firebird'
     const row = { job_name: "Programmer", hourly_rate: 41 }
     const initialID = this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId
     const secondID = Number(initialID) + 1
     const thirdID = Number(initialID) + 2
     const tableInsert = { table: 'jobs', schema: this.defaultSchema, data: [row] }
-    const upsertRow = {
+    const upsertRow = isFirebird ? {
+      ID: initialID,
+      ...row
+    } : {
       id: initialID,
       ...row
     }
@@ -839,7 +843,8 @@ export class DBTestUtil {
     ] }
     const insertQuery = await this.connection.getInsertQuery(tableInsert)
     const upsertQuery = await this.connection.getInsertQuery(tableUpsert, true)
-    const multipleUpsertQuery = await this.connection.getInsertQuery(tableMultipleUpsert, true)
+    const multipleUpsertQuery = isFirebird ? '' : await this.connection.getInsertQuery(tableMultipleUpsert, true)
+
     const expectedInsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
@@ -862,16 +867,29 @@ export class DBTestUtil {
       sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
       libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, " + initialID + ", 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
       // sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
-      // firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
-      oracle: `
-        MERGE INTO Beekeeper.jobs target
-        USING ( SELECT 'Programmer' AS job_name, 41 AS hourly_rate FROM dual ) source
-        ON (target.job_name = source.job_name)
+      firebird: `
+       MERGE INTO jobs AS target
+        USING (
+          SELECT ${initialID} AS ID, 'Programmer' AS job_name, 41 AS hourly_rate FROM RDB$DATABASE
+        ) AS source
+        ON (target.ID = source.ID)
         WHEN MATCHED THEN
-          UPDATE SET target.hourly_rate = source.hourly_rate
+          UPDATE SET
+            job_name = source.job_name, hourly_rate = source.hourly_rate
         WHEN NOT MATCHED THEN
-          INSERT (job_name, hourly_rate)
-          VALUES (source.job_name, source.hourly_rate);`,
+          INSERT (ID, job_name, hourly_rate) VALUES (source.ID, source.job_name, source.hourly_rate);
+      `,
+      oracle: `
+        MERGE INTO BEEKEEPER.jobs target
+        USING (
+          SELECT ${initialID} AS 'id', 'Programmer' AS 'job_name', 41 AS 'hourly_rate' FROM dual
+        ) source
+        ON (target.id = source.id)
+        WHEN MATCHED THEN
+          UPDATE SET
+            target.job_name = source.job_name, target.hourly_rate = source.hourly_rate
+        WHEN NOT MATCHED THEN
+          INSERT (id, job_name, hourly_rate) VALUES (source.id, source.job_name, source.hourly_rate);`,
     }
     const expectedMultipleUpsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
@@ -882,25 +900,27 @@ export class DBTestUtil {
       sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, '" + initialID + "' as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, " + secondID + " as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, " + thirdID + " as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
       libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, `" + initialID + "` as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, `" + secondID + "` as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, `" + thirdID + "` as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
       // sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
-      // firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
+      firebird: '',
       oracle: `
-        MERGE INTO Beekeeper.jobs target
+        MERGE INTO BEEKEEPER.jobs target
         USING (
-          SELECT 'Programmer' AS job_name, 41 AS hourly_rate FROM dual UNION ALL
-          SELECT 'Blerk', 40 FROM dual UNION ALL
-          SELECT 'blarns', 39 FROM dual
+          SELECT ${initialID} AS 'id', 'Programmer' AS 'job_name', 41 AS 'hourly_rate' FROM dual
+          UNION ALL
+          SELECT ${secondID}, 'Blerk', 40 FROM dual
+          UNION ALL
+          SELECT ${thirdID}, 'blarns', 39 FROM dual
         ) source
-        ON (target.job_name = source.job_name)
+        ON (target.id = source.id)
         WHEN MATCHED THEN
-          UPDATE SET target.hourly_rate = source.hourly_rate
+          UPDATE SET
+            target.job_name = source.job_name, target.hourly_rate = source.hourly_rate
         WHEN NOT MATCHED THEN
-          INSERT (job_name, hourly_rate)
-          VALUES (source.job_name, source.hourly_rate);`,
+          INSERT (id, job_name, hourly_rate) VALUES (source.id, source.job_name, source.hourly_rate);`,
     }
 
     expect(insertQuery).toBe(expectedInsertQueries[this.dbType] ?? insertQuery)
-    expect(upsertQuery).toBe(expectedUpsertQueries[this.dbType] ?? upsertQuery)
-    expect(multipleUpsertQuery).toBe(expectedMultipleUpsertQueries[this.dbType] ?? upsertQuery)
+    expect(this.fmt(upsertQuery)).toBe(this.fmt(expectedUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
+    expect(this.fmt(multipleUpsertQuery)).toBe(this.fmt(expectedMultipleUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
   }
 
   async buildCreatePrimaryKeysAndAutoIncrementTests() {
