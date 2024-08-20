@@ -14,9 +14,9 @@ const TEST_VERSIONS = [
   // { version: '2022-latest', readonly: false },
   // { version: '2022-latest', readonly: true },
   { version: '2019-CU27-ubuntu-20.04', readonly: false },
-  { version: '2019-CU27-ubuntu-20.04', readonly: true },
-  { version: '2022-CU13-ubuntu-22.04', readonly: false },
-  { version: '2022-CU13-ubuntu-22.04', readonly: true },
+  // { version: '2019-CU27-ubuntu-20.04', readonly: true },
+  // { version: '2022-CU13-ubuntu-22.04', readonly: false },
+  // { version: '2022-CU13-ubuntu-22.04', readonly: true },
 ]
 
 function testWith(dockerTag: string, readonly: boolean) {

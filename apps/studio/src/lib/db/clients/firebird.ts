@@ -1245,7 +1245,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const updateSet = () => `${columnsWithoutPK.map(cpk => `${cpk} = source.${cpk}`).join(', ')}`
     const formatValue = (val) => _.isString(val) ? `'${val}'` : val
     const usingSQLStatement = data.map( (val, idx) => {
-      console.log(val)
       if (idx === 0) {
         return `SELECT ${formatValue(val[PK])} AS ${PK}, ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS ${col}`).join(', ')} FROM RDB$DATABASE`
       }

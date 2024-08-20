@@ -28,7 +28,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions, DatabaseEntity } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
@@ -88,6 +88,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.defaultSchema = async (): Promise<string> => 'dbo'
     this.logger = () => log
+    this.createUpsertFunc = this.createUpsertSQL
   }
 
   async getVersion(): Promise<SQLServerVersion> {
@@ -468,6 +469,34 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const { data } = await this.driverExecuteSingle(sql)
 
     return data.recordset.map((row) => row.name)
+  }
+
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
+    const [PK] = primaryKeys
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+    const columns = `([${PK}], ${columnsWithoutPK.map(cpk => `[${cpk}]`).join(', ')})`
+    const insertSQL = () => `
+      INSERT ${columns}
+      VALUES (source.${PK}, ${columnsWithoutPK.map(cpk => `source.${cpk}`).join(', ')})
+    `
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `target.${cpk} = source.${cpk}`).join(', ')}`
+    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
+    const usingSQLStatement = data.map( (val) =>
+      `(${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')})`
+    ).join(', ')
+
+    return `
+      MERGE INTO [${schema}].[${tableName}] AS target
+      USING (VALUES
+        ${usingSQLStatement}
+      ) AS source ${columns}
+      ON target.${PK} = source.${PK}
+      WHEN MATCHED THEN
+        UPDATE SET
+          ${updateSet()}
+      WHEN NOT MATCHED THEN
+        ${insertSQL()};
+    `
   }
 
   /*

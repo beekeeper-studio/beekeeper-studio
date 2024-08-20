@@ -866,7 +866,20 @@ export class DBTestUtil {
       mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
       sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
       libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, " + initialID + ", 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
-      // sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
+      sqlserver: `
+        MERGE INTO [dbo].[jobs] AS target
+        USING (VALUES
+          (${initialID}, 'Programmer', 41)
+        ) AS source ([id], [job_name], [hourly_rate])
+        ON target.id = source.id
+        WHEN MATCHED THEN
+          UPDATE SET 
+            target.job_name = source.job_name, 
+            target.hourly_rate = source.hourly_rate 
+        WHEN NOT MATCHED THEN
+          INSERT ([id], [job_name], [hourly_rate])
+          VALUES (source.id, source.job_name, source.hourly_rate);
+      `,
       firebird: `
        MERGE INTO jobs AS target
         USING (
@@ -889,7 +902,7 @@ export class DBTestUtil {
           UPDATE SET
             target.job_name = source.job_name, target.hourly_rate = source.hourly_rate
         WHEN NOT MATCHED THEN
-          INSERT (id, job_name, hourly_rate) VALUES (source.id, source.job_name, source.hourly_rate);`,
+          INSERT ([id], [job_name], [hourly_rate]) VALUES (source.id, source.job_name, source.hourly_rate);`,
     }
     const expectedMultipleUpsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
@@ -899,7 +912,21 @@ export class DBTestUtil {
       mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer') on duplicate key update `hourly_rate` = values(`hourly_rate`), `job_name` = values(`job_name`)", // mysql based
       sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, '" + initialID + "' as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, " + secondID + " as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, " + thirdID + " as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
       libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, `" + initialID + "` as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, `" + secondID + "` as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, `" + thirdID + "` as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
-      // sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
+      sqlserver: `
+      MERGE INTO [dbo].[jobs] AS target
+      USING (VALUES
+        (${initialID}, 'Programmer', 41),
+        (${secondID}, 'Blerk', 40),
+        (${thirdID}, 'blarns', 39)
+      ) AS source ([id], [job_name], [hourly_rate])
+      ON target.id = source.id
+      WHEN MATCHED THEN
+        UPDATE SET 
+          target.job_name = source.job_name, 
+          target.hourly_rate = source.hourly_rate
+      WHEN NOT MATCHED THEN
+        INSERT ([id], [job_name], [hourly_rate])
+        VALUES (source.id, source.job_name, source.hourly_rate);`,
       firebird: '',
       oracle: `
         MERGE INTO BEEKEEPER.jobs target
