@@ -215,6 +215,12 @@ export class DbConnectionBase extends ApplicationEntity {
 @Entity({ name: 'saved_connection' })
 export class SavedConnection extends DbConnectionBase implements IConnection {
 
+  constructor(props?: any) {
+    super();
+
+    if (props) SavedConnection.merge(this, props);
+  }
+
   @Column("varchar")
   name!: string
 

@@ -63,7 +63,7 @@
                   <option
                     disabled
                     hidden
-                    value="undefined"
+                    value="null"
                   >
                     Select a connection type...
                   </option>
@@ -88,9 +88,6 @@
                   v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
-                  @save="save"
-                  @test="testConnection"
-                  @connect="submit"
                 />
                 <postgres-form
                   v-else-if="config.connectionType === 'postgresql'"
