@@ -525,12 +525,6 @@ export class DBTestUtil {
   async alterTableTests() {
 
     await this.knex.schema.dropTableIfExists("alter_test")
-    console.log(this.knex.schema.createTable("alter_test", (table) => {
-      table.specificType("id", 'varchar(255)').notNullable().primary()
-      table.specificType("first_name", "varchar(255)").nullable()
-      table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rathbone')
-      table.specificType("age", "varchar(255)").defaultTo('8').nullable()
-    }).toQuery())
     await this.knex.schema.createTable("alter_test", (table) => {
       table.specificType("id", 'varchar(255)').notNullable().primary()
       table.specificType("first_name", "varchar(255)").nullable()
@@ -561,20 +555,6 @@ export class DBTestUtil {
     if (this.data.disabledFeatures?.alter?.alterColumn) return
 
     await this.knex.schema.dropTableIfExists("alter_test")
-    console.log(this.knex.schema.createTable("alter_test", (table) => {
-      if (this.dbType === 'firebird') {
-        table.specificType('id', 'VARCHAR(255) NOT NULL')
-        table.specificType('first_name', 'VARCHAR(255)')
-        table.specificType('last_name', "VARCHAR(255) DEFAULT 'Rath''bone' NOT NULL")
-        table.specificType('age', "VARCHAR(255) DEFAULT '8'")
-      } else {
-        table.specificType("id", 'varchar(255)').notNullable().primary()
-        table.specificType("first_name", "varchar(255)").nullable()
-        table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rath\'bone')
-        table.specificType("age", "varchar(255)").defaultTo('8').nullable()
-      }
-    }).toQuery())
-
     await this.knex.schema.createTable("alter_test", (table) => {
       if (this.dbType === 'firebird') {
         table.specificType('id', 'VARCHAR(255) NOT NULL')
@@ -1275,7 +1255,8 @@ export class DBTestUtil {
     })
 
     await this.knex.schema.createTable('import_table', (t) => {
-      t.string('name').primary(),
+      primary(t)
+      t.string('name')
       t.string('hat')
     })
 
