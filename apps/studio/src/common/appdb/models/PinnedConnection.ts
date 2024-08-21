@@ -5,9 +5,7 @@ import { SavedConnection } from "./saved_connection";
 
 @Entity({ name: 'connection_pins'})
 export class PinnedConnection extends ApplicationEntity {
-
-  constructor(config: TransportPinnedConn | SavedConnection) {
-    super();
+  withProps(config: TransportPinnedConn | SavedConnection): PinnedConnection {
     if (!config) return;
     if ("connectionId" in config) {
       PinnedConnection.merge(this, config);

@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportFavoriteQuery, TransportPinnedConn, TransportPinnedEntity, TransportUsedQuery } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, SaveOptions } from "typeorm";
+import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
 import rawLog from 'electron-log';
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
@@ -30,12 +30,14 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
   return {
     // this is so we can get defaults on objects
     [`appdb/${name}/new`]: async function({ init }: { init?: any }) {
-      return transform(new cls(init), cls);
+      return transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
       if (_.isArray(obj)) {
           const ids = obj.map((e) => e.id);
-          const dbEntities = await cls.findByIds(ids);
+          const dbEntities = await cls.findBy({
+            id: In(ids)
+          });
           const newEnts = obj.map((e) => {
             const dbEnt = dbEntities.find((v) => v.id === e.id);
 
@@ -43,15 +45,15 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
               return cls.merge(dbEnt, e);
             }
 
-            return new cls(e);
+            return new cls().withProps(e);
           });
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
-        let dbObj: any = obj.id ? await cls.findOne(obj.id) : new cls(obj);
+        let dbObj: any = obj.id ? await cls.findOneBy(obj.id) : new cls().withProps(obj);
         if (dbObj && obj.id) {
           cls.merge(dbObj, obj);
         } else if (!dbObj) {
-          dbObj = new cls(obj);
+          dbObj = new cls().withProps(obj);
         }
         log.info(`Saving ${name}: `, dbObj);
         await dbObj.save();
@@ -61,10 +63,12 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
     [`appdb/${name}/remove`]: async function({ obj }: { obj: T | T[] }) {
       if (_.isArray(obj)) {
         const ids = obj.map((e) => e.id);
-        const dbEntities = await cls.findByIds(ids);
+        const dbEntities = await cls.findBy({
+          id: In(ids)
+        });
         await cls.remove(dbEntities)
       } else {
-        const dbObj = await cls.findOne(obj.id);
+        const dbObj = await cls.findOneBy(obj.id);
         log.info(`Removing ${name}: `, dbObj);
         await dbObj?.remove();
       }
@@ -75,7 +79,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       })
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
-      return transform(await cls.findOne(options), cls)
+      return transform(await cls.findOneBy(options), cls)
     }
   }
 }
@@ -106,7 +110,7 @@ export const AppDbHandlers = {
     return conn;
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
-    let existing = await UserSetting.findOne({ key });
+    let existing = await UserSetting.findOneBy({ key });
     if (!existing) {
       existing = new UserSetting();
       existing.key = key;
@@ -116,10 +120,10 @@ export const AppDbHandlers = {
     await existing.save();
   },
   'appdb/setting/get': async function({ key }: { key: string }) {
-    return transformSetting(await UserSetting.findOne({key}), UserSetting);
+    return transformSetting(await UserSetting.findOneBy({key}), UserSetting);
   },
   'appdb/cache/remove': async function({ authId }: { authId: number }) {
-    const cache = await TokenCache.findOne(authId);
+    const cache = await TokenCache.findOneBy({ id: authId });
     await cache.remove();
   },
   'appdb/cache/new': async function() {

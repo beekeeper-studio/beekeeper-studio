@@ -7,11 +7,11 @@ type InitInput = { name: string, db: string, saved: IConnection}
 
 @Entity({ name: 'hidden_schemas'})
 export class HiddenSchema extends ApplicationEntity {
-  constructor(input: InitInput | TransportHiddenSchema) {
-    super()
+  withProps(input: InitInput | TransportHiddenSchema): HiddenSchema {
     if (!input) return;
     if ("databaseName" in input) {
-      HiddenSchema.merge(this, input);
+      // this shouldn't be necessary grrr
+      HiddenSchema.merge(this, input as any);
       return;
     }
     const { name, db, saved } = input;

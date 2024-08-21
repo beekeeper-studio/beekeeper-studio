@@ -15,8 +15,7 @@ type InitInput = {table?: DatabaseEntity, db?: string | null, saved?: IConnectio
 @Entity({ name: 'pins'})
 export class PinnedEntity extends ApplicationEntity {
 
-  constructor(input: InitInput | TransportPinnedEntity) {
-    super()
+  withProps(input: InitInput | TransportPinnedEntity) {
     if (!input) return;
     if ("databaseName" in input) {
       PinnedEntity.merge(this, input);

@@ -15,11 +15,10 @@ type InitInput = { table?: DatabaseEntity, db?: string | null, saved?: IConnecti
 @Entity({ name: 'hidden_entities'})
 export class HiddenEntity extends ApplicationEntity {
 
-  constructor(input: InitInput | TransportHiddenEntity) {
-    super()
+  withProps(input: InitInput | TransportHiddenEntity) {
     if (!input) return;
     if ("databaseName" in input) {
-      HiddenEntity.merge(this, input);
+      HiddenEntity.merge(this, input as any);
       return;
     }
     const { table, db, saved } = input;
