@@ -2,7 +2,7 @@
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
-import log from 'electron-log/main'
+import log from 'electron-log'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
