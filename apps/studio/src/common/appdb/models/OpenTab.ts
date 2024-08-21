@@ -16,7 +16,7 @@ export class OpenTab extends ApplicationEntity {
   withProps(init: TabType | TransportOpenTab): OpenTab {
     if (_.isString(init)) {
       this.tabType = init
-      return;
+      return this;
     }
     _.merge(this, init)
     return this;

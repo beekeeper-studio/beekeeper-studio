@@ -13,6 +13,7 @@ export class PinnedConnection extends ApplicationEntity {
       this.connectionId = config.id;
       this.workspaceId = config.workspaceId;
     }
+    return this;
   }
 
   @Column({type: 'float', nullable: false, default: 1})

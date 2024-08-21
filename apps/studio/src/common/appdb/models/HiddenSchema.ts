@@ -12,7 +12,7 @@ export class HiddenSchema extends ApplicationEntity {
     if ("databaseName" in input) {
       // this shouldn't be necessary grrr
       HiddenSchema.merge(this, input as any);
-      return;
+      return this;
     }
     const { name, db, saved } = input;
     this.name = name
@@ -21,6 +21,7 @@ export class HiddenSchema extends ApplicationEntity {
       this.connectionId = saved.id
       this.workspaceId = saved.workspaceId
     }
+    return this;
   }
 
   matches(schemaName: string, database?: string): boolean {
