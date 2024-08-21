@@ -21,7 +21,7 @@ export class OpenTab extends ApplicationEntity {
       this.tabType = init
       return;
     }
-    OpenTab.merge(this, init);
+    _.merge(this, init)
   }
 
   get type(): TabType {

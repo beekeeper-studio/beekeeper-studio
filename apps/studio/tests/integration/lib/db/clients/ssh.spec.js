@@ -32,6 +32,10 @@ describe("SSH Tunnel Tests", () => {
       password: 'example',
       connectionType: 'postgresql'
     }
+
+    // NB: If this fails it's due to ipv4 vs ipv6 mixup.
+    // as of Node 17+ DNS defaults to v6 instead of v4.
+    let host = container.getHost()
     const config = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -52,6 +56,7 @@ describe("SSH Tunnel Tests", () => {
     await query.execute()
     await qdb.disconnect();
 
+    console.log("Starting SSH test with config", config)
     connection = ConnectionProvider.for(config)
     database = connection.createConnection('integration_test')
     await database.connect()
