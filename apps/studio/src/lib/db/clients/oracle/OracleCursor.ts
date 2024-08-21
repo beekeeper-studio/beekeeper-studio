@@ -1,5 +1,5 @@
 import { BeeCursor } from "../../models";
-import oracle from 'bks-oracledb'
+import oracle from 'oracledb'
 import rawLog from 'electron-log'
 import { waitFor } from "../base/wait";
 

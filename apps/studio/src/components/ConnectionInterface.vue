@@ -63,7 +63,7 @@
                   <option
                     disabled
                     hidden
-                    value="undefined"
+                    value="null"
                   >
                     Select a connection type...
                   </option>
@@ -88,9 +88,6 @@
                   v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
-                  @save="save"
-                  @test="testConnection"
-                  @connect="submit"
                 />
                 <postgres-form
                   v-else-if="config.connectionType === 'postgresql'"
@@ -111,6 +108,7 @@
                   v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
+                  @error="connectionError = $event"
                 />
                 <big-query-form
                   v-else-if="config.connectionType === 'bigquery'"
@@ -137,7 +135,7 @@
                   <span class="expand" />
                   <div class="btn-group">
                     <button
-                      :disabled="testing"
+                      :disabled="testing || connecting"
                       class="btn btn-flat"
                       type="button"
                       @click.prevent="testConnection"
@@ -145,7 +143,7 @@
                       Test
                     </button>
                     <button
-                      :disabled="testing"
+                      :disabled="testing || connecting"
                       class="btn btn-primary"
                       type="submit"
                       @click.prevent="submit"
@@ -191,6 +189,7 @@
         }}</a></small>
       </div>
     </div>
+    <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
   </div>
 </template>
 
@@ -208,13 +207,14 @@ import FirebirdForm from './connection/FirebirdForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
+import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
-import platformInfo from '@/common/platform_info'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
 import { mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
+import { AzureAuthType } from '@/lib/db/types'
 import UpsellContent from './connection/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -225,7 +225,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
 
   data() {
     return {
@@ -234,21 +234,23 @@ export default Vue.extend({
       connectionError: null,
       errorHelp: null,
       testing: false,
+      connecting: false,
       split: null,
       url: null,
       importError: null,
       sidebarShown: true,
-      version: platformInfo.appVersion
+      loadingSSOModalOpened: false,
+      version: this.$config.appVersion
     }
   },
   computed: {
-    ...mapState(['workspaceId']),
+    ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (platformInfo.isUltimate) return false
+      if (this.$config.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -394,17 +396,22 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
+      this.beforeConnect()
       this.connectionError = null
       try {
+        this.connecting = true
         await this.$store.dispatch('connect', this.config)
       } catch (ex) {
         this.connectionError = ex
         this.$noty.error("Error establishing a connection")
         log.error(ex)
+      } finally {
+        this.connecting = false
+        this.afterConnect()
       }
     },
     async handleConnect(config) {
@@ -412,9 +419,11 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
+
+      this.beforeConnect()
 
       try {
         this.testing = true
@@ -427,6 +436,7 @@ export default Vue.extend({
         this.$noty.error("Error establishing a connection")
       } finally {
         this.testing = false
+        this.afterConnect()
       }
     },
     async save() {
@@ -457,7 +467,24 @@ export default Vue.extend({
       } else {
         this.errors = null
       }
-    }
+    },
+    // Before running connect/test method
+    beforeConnect() {
+      if (
+        this.config.connectionType === 'sqlserver' &&
+        this.config.azureAuthOptions.azureAuthEnabled &&
+        this.config.azureAuthOptions.azureAuthType === AzureAuthType.AccessToken
+      ) {
+        this.loadingSSOModalOpened = true
+      }
+    },
+    // After running connect/test method, success or fail
+    afterConnect() {
+      this.loadingSSOModalOpened = false
+    },
+    loadingSSOCanceled() {
+      this.connection.azureCancelAuth();
+    },
   },
 })
 </script>

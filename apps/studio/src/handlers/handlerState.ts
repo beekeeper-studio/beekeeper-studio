@@ -16,6 +16,8 @@ class State {
   queries: Map<string, CancelableQuery> = new Map();
   generator: SqlGenerator = null;
   exports: Map<string, Export> = new Map();
+
+  connectionAbortController: AbortController = null;
 }
 
 const states = new Map<string, State>();

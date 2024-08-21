@@ -32,7 +32,6 @@ import CodeMirror from "codemirror";
 
 import { EditorMarker } from "@/lib/editor/utils";
 import { setKeybindingsFromVimrc, applyConfig, Register } from "@/lib/editor/vim";
-import { getValue } from '@/common/transport/TransportUserSetting';
 
 export default {
   props: [
@@ -67,7 +66,7 @@ export default {
     },
     userKeymap() {
       const settings = this.$store.state.settings?.settings;
-      const value = getValue(settings?.keymap);
+      const value = settings?.keymap.value;
       return value && this.keymapTypes.map((k) => k.value).includes(value)
         ? value
         : "default";
@@ -130,7 +129,7 @@ export default {
     },
   },
   methods: {
-    initialize() {
+    async initialize() {
       this.destroyEditor();
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
@@ -213,7 +212,7 @@ export default {
           if (this.vimConfig) {
             applyConfig(codeMirrorVimInstance, this.vimConfig);
           }
-          setKeybindingsFromVimrc(codeMirrorVimInstance);
+          await setKeybindingsFromVimrc(codeMirrorVimInstance);
 
           // cm throws if this is already defined, we don't need to handle that case
           try {

@@ -41,13 +41,13 @@ export class UtilityConnection {
 
       if (msgData.type === 'error') {
         // handle errors
-        const { id, error } = msgData;
+        const { id, error, stack } = msgData;
 
         const handler = this.replyHandlers.get(id);
         if (handler) {
           log.error('GOT ERROR BACK FOR REQUEST ID: ', id);
           this.replyHandlers.delete(id);
-          handler.reject(error);
+          handler.reject(`${error} ${stack ? 'Stack: ' + stack : ''}`);
         }
       } else if (msgData.type === 'reply') {
         const { id, data } = msgData;

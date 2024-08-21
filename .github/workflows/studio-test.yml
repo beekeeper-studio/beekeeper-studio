@@ -92,8 +92,9 @@ jobs:
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 20
-          max_attempts: 3
-          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent ${{ matrix.chunk[1] }}
+          max_attempts: 2
+          on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
+          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
   # e2e:
