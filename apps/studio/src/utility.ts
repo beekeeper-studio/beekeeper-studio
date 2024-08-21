@@ -91,5 +91,5 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
-  process.parentPort.postMessage('ready');
+  process.parentPort.postMessage({ type: 'ready' });
 }

@@ -1,6 +1,6 @@
 import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
-import oracle from 'bks-oracledb'
+import oracle from 'oracledb'
 import _ from 'lodash'
 
 import { IDbConnectionDatabase, DatabaseElement } from "../types";
@@ -783,7 +783,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           // remove the semicolon, because Oracle, but not for blocks....also because oracle.
           const queryText = this.maybeStripSemicolon(q.text, q)
           log.debug("Execute Query", queryText, options)
-          const data = await c.execute(queryText, {})
+          const data = await c.execute(queryText, {}, { outFormat: oracle.OUT_FORMAT_ARRAY})
 
           results.push({ result: data, info: q})
         }

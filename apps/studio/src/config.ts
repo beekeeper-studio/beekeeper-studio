@@ -16,20 +16,30 @@ function hasSshKeysPlug() {
   }
 }
 
-export function initConfig() {
-  platformInfo = window.platformInfo;
+export function buildConfig(platInfo: IPlatformInfo) {
+  platformInfo = platInfo;
   userDirectory = platformInfo.userDirectory
   snapSshPlug = hasSshKeysPlug();
 
   if (platformInfo.debugEnabled && localStorage) {
     localStorage.debug = platformInfo.DEBUG
   }
+
+  return {
+    ...platformInfo,
+    snapSshPlug,
+    defaults: {
+      connectionTypes: ConnectionTypes,
+      keymapTypes: keymapTypes,
+    },
+    maxResults: 50000
+  }
   
 }
 
 // this is available in vue as `this.$config`
 export default {
-  ...platformInfo,
+  ...window.platformInfo,
   userDirectory,
   snapSshPlug,
 
