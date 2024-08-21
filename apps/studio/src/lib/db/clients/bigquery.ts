@@ -17,6 +17,7 @@ import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
 const { wrapIdentifier } = BigQueryData;
+import _ from 'lodash';
 const log = rawLog.scope('bigquery')
 const logger = () => log
 
@@ -360,6 +361,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
+    log.debug('DB: ', this.db, 'wrapped: ', this.wrapIdentifier(this.db))
     const query = `
       SELECT
         use.column_name as column_name,
@@ -578,6 +580,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // BigQuery can return nested objects with custom types in the results
     // look for the value string property.
     // https://github.com/googleapis/nodejs-bigquery/blob/71dbed2140893677f7af254f5a7713a7f50bae92/src/bigquery.ts#L2191
+    if (!Array.isArray(data)) return [];
     return data.map((row) => {
       const parsedRow = {}
       Object.keys(row).forEach((key) => {
