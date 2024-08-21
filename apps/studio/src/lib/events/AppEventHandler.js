@@ -19,6 +19,10 @@ export default class {
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.toggleSidebar)
     this.forward(AppEvent.quickSearch)
+    this.forward(AppEvent.enterLicense)
+    this.forward(AppEvent.backupDatabase);
+    this.forward(AppEvent.restoreDatabase);
+    this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
   }

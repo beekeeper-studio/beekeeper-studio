@@ -17,6 +17,8 @@
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml } from '@shared/lib/tabulator'
   import { dialectFor } from '@shared/lib/dialects/models'
+  import { FkLinkMixin } from '@/mixins/fk_click'
+  import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import globals from '@/common/globals'
   import Papa from 'papaparse'
   import { mapState } from 'vuex'
@@ -28,7 +30,7 @@
   import { tabulatorForTableData } from '@/common/tabulator';
 
   export default {
-    mixins: [Converter, Mutators],
+    mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
         tabulator: null,
@@ -98,9 +100,28 @@
           ]
         }
 
-        const columns = this.result.fields.map((column, index) => {
+        const columns = this.result.fields.flatMap((column, index) => {
           const title = column.name || `Result ${index}`
+          const results = []
+          const magic = MagicColumnBuilder.build(column.name) || {}
+
+          let cssClass = 'hide-header-menu-icon'
+
+          if (magic.cssClass) {
+            cssClass += ` ${magic.cssClass}`
+          }
+
+          if (magic.formatterParams?.fk) {
+            magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
+          }
+
+          const magicStuff = _.pick(magic, ['formatter', 'formatterParams', 'title'])
+          const defaults = {
+            formatter: this.cellFormatter,
+          }
+
           const result = {
+            ...defaults,
             title,
             titleFormatter() {
               return `<span class="title">${escapeHtml(title)}</span>`
@@ -117,13 +138,22 @@
             headerContextMenu: columnMenu,
             headerMenu: columnMenu,
             resizable: 'header',
-            cssClass: 'hide-header-menu-icon',
+            cssClass,
+            ...magicStuff,
           }
+
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
             result['sorter'] = this.intervalSorter;
           }
-          return result;
+
+          results.push(result)
+
+          if (magic && magic.tableLink) {
+            const fkCol = this.fkColumn(result, [magic.tableLink])
+            results.push(fkCol)
+          }
+          return results;
         })
 
         return columns

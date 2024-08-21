@@ -120,13 +120,39 @@
                   :config="config"
                   :testing="testing"
                 />
+                <oracle-form
+                  v-if="config.connectionType === 'oracle'"
+                  :config="config"
+                  :testing="testing"
+                />
+                <cassandra-form
+                  v-if="config.connectionType === 'cassandra'"
+                  :config="config"
+                  :testing="testing"
+                />
                 <lib-sql-form
                   v-else-if="config.connectionType === 'libsql'"
                   :config="config"
                   :testing="testing"
                 />
 
-
+                <!-- Set the database up in read only mode (or not, your choice) -->
+                <div class="form-group">
+                  <label
+                    class="checkbox-group"
+                    for="readOnlyMode"
+                  >
+                    <input
+                      class="form-control"
+                      id="readOnlyMode"
+                      type="checkbox"
+                      name="readOnlyMode"
+                      v-model="config.readOnlyMode"
+                    >
+                    <span>Read Only Mode</span>
+                    <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
+                  </label>
+                </div>
                 <!-- TEST AND CONNECT -->
                 <div
                   v-if="!shouldUpsell"
@@ -225,7 +251,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm },
 
   data() {
     return {
@@ -334,6 +360,8 @@ export default Vue.extend({
         }
       } as Split.Options)
     })
+      await this.$store.dispatch('credentials/load')
+      await this.$store.dispatch('loadUsedConfigs')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {

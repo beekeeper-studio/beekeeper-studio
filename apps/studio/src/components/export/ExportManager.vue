@@ -25,6 +25,7 @@ import { AppEvent, RootBinding } from '../../common/AppEvent'
 import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
+import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
 import { ExportProgress, ExportStatus, StartExportOptions } from '../../lib/export/models'
 import globals from '@/common/globals'
 

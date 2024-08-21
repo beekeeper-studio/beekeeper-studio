@@ -20,6 +20,12 @@ const ExportStoreModule: Module<State, any> = {
     async removeExport(context, id): Promise<void> {
       await Vue.prototype.$util.send('export/remove', {id});
       context.commit('removeExport', id);
+    },
+    async retryExportForTable(_context, id) {
+      await Vue.prototype.$util.send('export/start', { id });
+    },
+    async retryFailedExports() {
+      await Vue.prototype.$util.send('export/retryFailed');
     }
   },
   mutations: {

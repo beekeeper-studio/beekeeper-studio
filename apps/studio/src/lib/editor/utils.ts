@@ -1,4 +1,5 @@
 import * as CodeMirrorPlugins from "@/lib/editor/CodeMirrorPlugins";
+import { TableOrView } from "../db/models";
 
 export interface EditorMarker {
   from: { line: number; ch: number };
@@ -12,4 +13,13 @@ export const plugins = {
   autoComplete: CodeMirrorPlugins.registerAutoComplete,
   autoRemoveQueryQuotes: (dialect: string) =>
     CodeMirrorPlugins.registerAutoRemoveQueryQuotes.bind(null, dialect),
+  queryMagic: (
+    defaultSchemaGetter: () => string,
+    tablesGetter: () => TableOrView[]
+  ) =>
+    CodeMirrorPlugins.registerQueryMagic.bind(
+      null,
+      defaultSchemaGetter,
+      tablesGetter
+    ),
 };
