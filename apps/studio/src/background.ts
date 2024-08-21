@@ -2,7 +2,7 @@
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
-import log from 'electron-log/main'
+import log from 'electron-log'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
@@ -26,7 +26,7 @@ import platformInfo from './common/platform_info'
 import { AppEvent } from './common/AppEvent'
 import { ProtocolBuilder } from './background/lib/electron/ProtocolBuilder';
 import { uuidv4 } from './lib/uuid';
-import installExtension, { REDUX_DEVTOOLS, VUEJS_DEVTOOLS } from 'electron-devtools-installer';
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from './types'
 
 function initUserDirectory(d: string) {
