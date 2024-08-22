@@ -3,6 +3,7 @@ import rawLog from 'electron-log'
 import ORMConnection from './common/appdb/Connection'
 import platformInfo from './common/platform_info';
 import { AppDbHandlers } from './handlers/appDbHandlers';
+import { BackupHandlers } from './handlers/backupHandlers';
 import { ConnHandlers } from './handlers/connHandlers';
 import { ExportHandlers } from './handlers/exportHandlers';
 import { GeneratorHandlers } from './handlers/generatorHandlers';
@@ -27,7 +28,8 @@ export let handlers: Handlers = {
   ...QueryHandlers,
   ...GeneratorHandlers,
   ...ExportHandlers,
-  ...AppDbHandlers
+  ...AppDbHandlers,
+  ...BackupHandlers
 }; 
 
 process.parentPort.on('message', async ({ data, ports }) => {

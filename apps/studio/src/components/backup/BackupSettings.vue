@@ -300,7 +300,7 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-@import '../../../../../shared/src/assets/styles/_variables';
+@import '../../assets/styles/app/_variables';
 
 .alert.info-alert {
   display: flex;

@@ -1,3 +1,4 @@
+import { IBackupHandlers } from "./backupHandlers";
 import { IConnectionHandlers } from "./connHandlers";
 import { IExportHandlers } from "./exportHandlers";
 import { IGeneratorHandlers } from "./generatorHandlers";
@@ -7,5 +8,6 @@ export interface Handlers extends
   IConnectionHandlers,
   IQueryHandlers,
   IGeneratorHandlers,
-  IExportHandlers
+  IExportHandlers,
+  IBackupHandlers
    {};

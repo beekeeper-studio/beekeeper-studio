@@ -164,6 +164,9 @@ export default Vue.extend({
       'commandEnd': 'commandEnd',
       'failed': 'failed',
     }),
+    ...mapState({
+      'supportedFeatures': 'supportedFeatures'
+    }),
     includedTables() {
       if (!this.backupTables) {
         return 0;
@@ -171,7 +174,7 @@ export default Vue.extend({
       return this.backupTables.filter((x) => x.included).length;
     },
     isSupported(): boolean {
-      return this.isRestore ? this.connection.supportedFeatures().restore : this.connection.supportedFeatures().backups;
+      return this.isRestore ? this.supportedFeatures.restore : this.supportedFeatures.backups;
     },
     steps(): Step[] {
       return [

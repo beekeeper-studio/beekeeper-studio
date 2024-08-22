@@ -4,6 +4,7 @@ import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/server";
 import { Export } from "@/lib/export";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
+import { ChildProcessWithoutNullStreams } from "child_process";
 import { MessagePortMain } from "electron";
 
 class State {
@@ -16,6 +17,7 @@ class State {
   queries: Map<string, CancelableQuery> = new Map();
   generator: SqlGenerator = null;
   exports: Map<string, Export> = new Map();
+  backupProc: ChildProcessWithoutNullStreams = null;
 
   connectionAbortController: AbortController = null;
 }

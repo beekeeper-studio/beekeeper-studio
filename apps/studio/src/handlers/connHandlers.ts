@@ -1,7 +1,7 @@
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
-import { DatabaseElement } from "@/lib/db/types";
+import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "./handlerState";
 import ConnectionProvider from '../lib/connection-provider'; 
@@ -17,6 +17,7 @@ export interface IConnectionHandlers {
   'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
+  'conn/getServerConfig': ({ sId }: { sId: string }) => Promise<IDbConnectionServerConfig>,
 
   // DB Metadata ****************************************************************
   'conn/supportedFeatures': ({ sId }: { sId: string}) => Promise<SupportedFeatures>,
@@ -190,6 +191,9 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).usedConfig = null;
     state(sId).database = null;
     state(sId).generator = null;
+  },
+  'conn/getServerConfig': async function({ sId }: { sId: string }) {
+    return state(sId).server.getServerConfig();
   },
 
   // can only be used when the function doesn't have any arguments :sad:

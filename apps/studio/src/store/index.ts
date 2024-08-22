@@ -373,13 +373,18 @@ const store = new Vuex.Store<State>({
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
         context.commit('newConnection', config)
-        console.log('CONFIG: ', config)
 
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
         context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
+
+        if (supportedFeatures.backups) {
+          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+        }
+
       } else {
         throw "No username provided"
       }

@@ -67,34 +67,34 @@
 </template>
 
 <script lang="ts">  
-  import Vue from 'vue'
-  import SettingsInput from '../common/SettingsInput.vue'
-  import { mapState } from 'vuex'
-  import ToggleFormArea from '../common/ToggleFormArea.vue'
-  import FilePicker from '../common/form/FilePicker.vue'
-  export default Vue.extend({
-    props: ['config'],
-    components: {
+import Vue from 'vue'
+import SettingsInput from '../common/SettingsInput.vue'
+import { mapState } from 'vuex'
+import ToggleFormArea from '../common/ToggleFormArea.vue'
+import FilePicker from '../common/form/FilePicker.vue'
+export default Vue.extend({
+  props: ['config'],
+  components: {
     SettingsInput,
     ToggleFormArea,
     FilePicker
-},
-    data() {
-      return {
-        snap: "https://docs.beekeeperstudio.io/pages/troubleshooting#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive"
-      }
-    },
-    computed: {
-      ...mapState('settings', { 'settings': 'settings'}),
-      extensionChosen() {
-        return !!this.settings?.sqliteExtensionFile?.value
-      }
-    },
-    methods: {
-      async unloadExtension() {
-        this.settings.sqliteExtensionFile.value = ''
-	await this.$store.dispatch('settings/saveSetting', this.settings.sqliteExtensionFile)
-      },
+  },
+  data() {
+    return {
+      snap: "https://docs.beekeeperstudio.io/pages/troubleshooting#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive"
     }
-}
+  },
+  computed: {
+    ...mapState('settings', { 'settings': 'settings'}),
+    extensionChosen() {
+      return !!this.settings?.sqliteExtensionFile?.value
+    }
+  },
+  methods: {
+    async unloadExtension() {
+      this.settings.sqliteExtensionFile.value = ''
+    	await this.$store.dispatch('settings/saveSetting', this.settings.sqliteExtensionFile)
+    },
+  }
+})
 </script>

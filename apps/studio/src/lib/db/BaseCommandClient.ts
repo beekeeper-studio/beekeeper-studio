@@ -1,36 +1,30 @@
 import { BackupConfig } from "./models/BackupConfig";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { BasicDatabaseClient } from "./clients/BasicDatabaseClient";
 import { IDbConnectionServerConfig } from "./types";
-import { SupportedBackupFeatures, Command, CommandSettingSection, CommandControlAction, CommandSettingControl } from "./models";
-import { ChildProcess, spawn } from "child_process";
+import { SupportedBackupFeatures, Command, CommandSettingSection, CommandControlAction, CommandSettingControl, SupportedFeatures } from "./models";
 import platformInfo from "@/common/platform_info";
 import { TempFileManager } from "../TempFileManager";
+import Vue from "vue";
 
 export interface Notification {
   text: string,
   type: any
 }
 
-export const errorMessages = {
-  nonZero: 'Command returned non-zero exit code'
-}
-
-type DatabaseClient = BasicDatabaseClient<any>
-
 export abstract class BaseCommandClient {
   // temp file (for full logs)
   private tempFile: TempFileManager = null;
-  // the command instance (for cancelling)
-  private proc: ChildProcess = null;
   protected readonly defaultFileType: string = '';
 
   protected pathSep: string = !platformInfo.isWindows ? '/' : '\\';
   protected mode: 'backup' | 'restore' = 'backup';
   // Backup Config
   protected _config: BackupConfig;
-  // This is for when we support SQL commands
-  protected static _conn: DatabaseClient;
+  protected static _supportedFeatures: SupportedFeatures;
+
+  set connSupportedFeatures(value: SupportedFeatures) {
+    BaseCommandClient._supportedFeatures = value;
+  }
 
   // For ssh
   protected static _localHost: string;
@@ -38,10 +32,6 @@ export abstract class BaseCommandClient {
   set serverConfig(value: IDbConnectionServerConfig) {
     BaseCommandClient._localHost = value.localHost;
     BaseCommandClient._localPort = value.localPort;
-  }
-
-  set connection(value: DatabaseClient) {
-    BaseCommandClient._conn = value;
   }
 
   // Connection Details
@@ -392,12 +382,8 @@ export abstract class BaseCommandClient {
     return this._runCommand(command);
   }
 
-  public cancelCommand(): boolean {
-    if (this.proc) {
-      return this.proc.kill();
-    }
-    // proc has already finished
-    return true;
+  public async cancelCommand(): Promise<boolean> {
+    return await Vue.prototype.$util.send('backup/cancelCommand');
   }
 
   protected determineFileType(config: BackupConfig = this._config): string {
@@ -413,116 +399,30 @@ export abstract class BaseCommandClient {
     }
   }
 
-  // TODO (day): apparently the where command can return multiple values, so we are going to
-  // have to account for that and choose the 'right' output (probable just the first one that
-  // includes the tool name)
   private async whichDumpTool(): Promise<string> {
     if (!this.toolName) {
       return null;
     }
 
-    const command = `${platformInfo.isWindows ? 'where' : 'which'}`
-
-    return new Promise<string>((resolve, reject) => {
-      const proc = spawn(command, [this.toolName], { shell: true });
-
-      proc.stdout.on('data', (chunk) => {
-        if (chunk) {
-          const path: string = chunk.toString().trim();
-          resolve(path);
-        }
-      });
-
-      proc.stderr.on('data', (chunk) => {
-        reject(chunk.toString());
-      })
-
-      proc.on('error', (err) => {
-        reject(err);
-      })
-
-      proc.on('close', (code) => {
-        if (code != 0) {
-          reject('ERROR: Command exited with errors');
-        }
-      })
-    })
+    return await Vue.prototype.$util.send('backup/whichDumpTool', { toolName: this.toolName });
   }
 
   private async _runCommand(command: Command): Promise<void> {
-    if (command.isSql) {
-      // Execute SQL command on connection
-      return new Promise<void>((resolve, reject) => {
-        BaseCommandClient._conn.query(`${command.mainCommand} ${command.options ? command.options.join(' ') : ''}`).execute()
-          .catch((reason) => {
-            this._notificationCallback({
-              text: reason.message ?? reason ?? 'Something went wrong',
-              type: 'error'
-            });
-            reject();
-          })
-          .then(async (_value) => {
-            // check that the previous command succeeded?
-            if (!command.postCommand) {
-              resolve();
-            } else {
-              await this._runCommand(command.postCommand);
-              resolve();
-            }
-          });
-      })
-    } else {
-      this.proc = spawn(command.mainCommand, command.options, {
-        shell: true,
-        env: command.env
-      });
+    const backupNotif = Vue.prototype.$util.addListener('backupNotif', (notif: Notification) => {
+      this._notificationCallback(notif);
+    });
 
-      this.proc.stdout.on('data', (chunk) => {
-        this.processLog(chunk).forEach((log) => {
-          if (log && this._addLogCallback) {
-            this._addLogCallback(log);
-          }
-        })
-      });
+     const backupLog = Vue.prototype.$util.addListener('backupLog', (chunk) => {
+       this.processLog(chunk).forEach((log) => {
+         if (log && this._addLogCallback) {
+           this._addLogCallback(log);
+         }
+       })
+     });
 
-      this.proc.stderr.on('data', (chunk) => {
-        // pg_dump outputs to the stderr buffer for some reason.
-        this.processLog(chunk).forEach((log) => {
-          if (log && this._addLogCallback) {
-            this._addLogCallback(log);
-          }
-        })
-      })
+     await Vue.prototype.$util.send('backup/runCommand', { command });
 
-      return new Promise<void>((resolve, reject) => {
-        this.proc.on('error', (err) => {
-          this._notificationCallback({
-            text: err.message,
-            type: 'error'
-          });
-
-          reject(`Command run error: ${err.message}`);
-        })
-
-        this.proc.on('close', async (code) => {
-          // non-zero means something went wrong
-          if (code != 0) {
-            this._notificationCallback({
-              text: 'Something went wrong! Check the command logs for details',
-              type: 'error'
-            });
-
-            reject(errorMessages.nonZero);
-          } else if (!command.postCommand) {
-            resolve();
-          } else {
-            await this._runCommand(command.postCommand);
-            resolve();
-          }
-          this.proc = null;
-        })
-      })
-
-    }
+     Vue.prototype.$util.removeListener(backupNotif);
+     Vue.prototype.$util.removeListener(backupLog);
   }
 }

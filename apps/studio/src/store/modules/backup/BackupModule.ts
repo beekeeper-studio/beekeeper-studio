@@ -66,8 +66,8 @@ export const BackupModule: Module<State, RootState> = {
     setRestoreClient(state, restoreClient: BaseCommandClient) {
       state.restoreClient = restoreClient;
     },
-    setClientConnection(state, connection) {
-      getCommandClient(state).connection = connection;
+    setClientSupportedFeatures(state, features) {
+      getCommandClient(state).connSupportedFeatures = features;
     },
     setClientConnectionConfig(state, config) {
       getCommandClient(state).connConfig = config;
@@ -130,7 +130,7 @@ export const BackupModule: Module<State, RootState> = {
     async findDumpTool(context) {
       await context.getters.commandClient.findDumpTool();
     },
-    setConnectionConfigs(context, {config, connection, serverConfig}) {
+    setConnectionConfigs(context, {config, supportedFeatures, serverConfig}) {
       const clients = commandClientsFor(config.connectionType)
       context.commit('setBackupClient', clients.backup);
       context.commit('setRestoreClient', clients.restore);
@@ -145,7 +145,7 @@ export const BackupModule: Module<State, RootState> = {
         }).show();
       }
 
-      context.commit('setClientConnection', connection);
+      context.commit('setClientSupportedFeatures', supportedFeatures);
       context.commit('setClientConnectionConfig', config);
       context.commit('setClientServerConfig', serverConfig);
     },
@@ -170,8 +170,8 @@ export const BackupModule: Module<State, RootState> = {
       const end = new Date();
       context.commit('setEndDate', end);
     },
-    cancel(context) {
-      context.getters.commandClient.cancelCommand();
+    async cancel(context) {
+      await context.getters.commandClient.cancelCommand();
       context.dispatch('reset');
     },
     loadTables(context, tables: TableOrView[]) {
