@@ -14,6 +14,11 @@ Supported Architectures: `x86-64` (most laptops and desktops) and `ARM64` (Raspb
 
 ## AppImage
 
+!!! info "Ubuntu requires Fuse Libraries"
+    In Ubuntu you will need to install libfuse for the AppImage to work. Here's how:
+    Ubuntu < 22.04 use: `sudo apt-get install fuse libfuse2`
+    Ubuntu >= 22.04 use: `sudo apt install libfuse2`
+
 AppImages can be downloaded and run directly on most Linux distributions without any sort of installation. This is great if you don't have root access, but still want to use Beekeeper Studio.
 
 The AppImage distribution of Beekeeper Studio provides automatic updates.

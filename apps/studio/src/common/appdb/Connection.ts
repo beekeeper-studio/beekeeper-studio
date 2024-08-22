@@ -1,4 +1,4 @@
-import { createConnection, Connection as TypeORMConnection } from "typeorm"
+import { DataSource } from "typeorm"
 import { SavedConnection } from "./models/saved_connection"
 import { UsedConnection } from "./models/used_connection"
 import { UsedQuery } from './models/used_query'
@@ -30,12 +30,12 @@ const models = [
 
 
 export default class Connection {
-  private connection?: TypeORMConnection
+  private connection?: DataSource
 
   constructor(private path: string, private logging: LoggerOptions) {}
 
-  async connect(): Promise<TypeORMConnection> {
-    this.connection = await createConnection({
+  async connect(): Promise<DataSource> {
+    this.connection = new DataSource({
       database: this.path,
       type: 'better-sqlite3',
       synchronize: false,
@@ -43,6 +43,7 @@ export default class Connection {
       entities: models,
       logging: this.logging,
     })
+    await this.connection.initialize()
     return this.connection
   }
 

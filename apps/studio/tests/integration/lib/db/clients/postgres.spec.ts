@@ -1,4 +1,4 @@
-import { GenericContainer, StartedTestContainer } from 'testcontainers'
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
@@ -16,9 +16,9 @@ const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: true},
   { version: '9.4', socket: false, readonly: false},
   { version: '9.4', socket: false, readonly: true},
-  { version: 'latest', socket: true, readonly: false },
-  { version: 'latest', socket: false, readonly: true },
-  { version: 'latest', socket: false, readonly: false },
+  { version: '16.4', socket: true, readonly: false },
+  { version: '16.4', socket: false, readonly: true },
+  { version: '16.4', socket: false, readonly: false },
 ] as const
 
 type TestVersion = typeof TEST_VERSIONS[number]['version']
@@ -41,10 +41,19 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           "POSTGRES_PASSWORD": "example",
           "POSTGRES_DB": "banana"
         })
+        .withHealthCheck({
+          test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d banana > /dev/null"],
+          interval: 2000,
+          timeout: 3000,
+          retries: 10,
+          startPeriod: 5000,
+        })
+        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
+        // .withWaitStrategy(Wait.forHealthCheck())
         .withExposedPorts(5432)
         .withBindMounts([{
-          source: path.join(temp, "postgresql"), 
-          target: "/var/run/postgresql", 
+          source: path.join(temp, "postgresql"),
+          target: "/var/run/postgresql",
           mode: "rw"
         }])
         .withStartupTimeout(startupTimeout)
@@ -499,7 +508,6 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         runCommonTests(() => util, { dbReadOnlyMode: readonly })
       }
     })
-
   })
 }
 
