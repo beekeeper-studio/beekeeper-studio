@@ -996,9 +996,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     const totalRows = Number(json.data[0].total) || 0;
     const columns = await this.listTableColumns(table, schema);
     const cursor = new ClickHouseCursor({
-      table,
-      orderBy,
-      filters,
+      query: qs.query,
+      params: qs.params,
       client: this.client,
       chunkSize,
     });
