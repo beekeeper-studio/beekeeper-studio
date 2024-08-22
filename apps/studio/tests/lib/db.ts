@@ -877,6 +877,7 @@ export class DBTestUtil {
       sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
       libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, " + initialID + ", 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
       sqlserver: `
+        SET IDENTITY_INSERT [dbo].[jobs] ON;
         MERGE INTO [dbo].[jobs] AS target
         USING (VALUES
           (${initialID}, 'Programmer', 41)
@@ -889,6 +890,7 @@ export class DBTestUtil {
         WHEN NOT MATCHED THEN
           INSERT ([id], [job_name], [hourly_rate])
           VALUES (source.id, source.job_name, source.hourly_rate);
+        SET IDENTITY_INSERT [dbo].[jobs] ON;
       `,
       firebird: `
        MERGE INTO jobs AS target
@@ -923,6 +925,7 @@ export class DBTestUtil {
       sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, '" + initialID + "' as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, " + secondID + " as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, " + thirdID + " as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
       libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, `" + initialID + "` as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, `" + secondID + "` as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, `" + thirdID + "` as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
       sqlserver: `
+      SET IDENTITY_INSERT [dbo].[jobs] ON;
       MERGE INTO [dbo].[jobs] AS target
       USING (VALUES
         (${initialID}, 'Programmer', 41),
@@ -936,7 +939,8 @@ export class DBTestUtil {
           target.hourly_rate = source.hourly_rate
       WHEN NOT MATCHED THEN
         INSERT ([id], [job_name], [hourly_rate])
-        VALUES (source.id, source.job_name, source.hourly_rate);`,
+        VALUES (source.id, source.job_name, source.hourly_rate);
+      SET IDENTITY_INSERT [dbo].[jobs] OFF;`,
       firebird: '',
       oracle: `
         MERGE INTO BEEKEEPER.jobs target

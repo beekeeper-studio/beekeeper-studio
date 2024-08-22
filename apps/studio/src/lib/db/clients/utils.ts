@@ -181,6 +181,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
 
 export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber, runAsUpsert = false, primaryKeys = [] as string[], createUpsertFunc = null }: BuildInsertOptions = {}) {
   const data = _.cloneDeep(insert.data)
+  const canRunAsUpsert = _.intersection(Object.keys(data[0]), primaryKeys).length === primaryKeys.length && runAsUpsert
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
     insertColumns.forEach((ic) => {
@@ -211,10 +212,10 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
     builder.withSchema(insert.schema)
   }
 
-  if (runAsUpsert && typeof(createUpsertFunc) === 'function'){
+  if (canRunAsUpsert && typeof(createUpsertFunc) === 'function'){
     return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
     // use the createUpsertFunc. Should be Oracle, Firebird, and SqlServer
-  } else if (runAsUpsert) {
+  } else if (canRunAsUpsert) {
     // might have to be different for different engines. 
     // https://knexjs.org/guide/query-builder.html#onconflict
     return builder

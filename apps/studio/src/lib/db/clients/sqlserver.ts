@@ -486,6 +486,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     ).join(', ')
 
     return `
+      SET IDENTITY_INSERT [${schema}].[${tableName}] ON;
       MERGE INTO [${schema}].[${tableName}] AS target
       USING (VALUES
         ${usingSQLStatement}
@@ -496,6 +497,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           ${updateSet()}
       WHEN NOT MATCHED THEN
         ${insertSQL()};
+      SET IDENTITY_INSERT [${schema}].[${tableName}] OFF;
     `
   }
 
