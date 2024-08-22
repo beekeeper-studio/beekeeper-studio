@@ -5,6 +5,7 @@ import platformInfo from './common/platform_info';
 import { AppDbHandlers } from './handlers/appDbHandlers';
 import { ConnHandlers } from './handlers/connHandlers';
 import { ExportHandlers } from './handlers/exportHandlers';
+import { FileHandlers } from './handlers/fileHandlers';
 import { GeneratorHandlers } from './handlers/generatorHandlers';
 import { Handlers } from './handlers/handlers';
 import { newState, removeState, state } from './handlers/handlerState';
@@ -27,8 +28,9 @@ export let handlers: Handlers = {
   ...QueryHandlers,
   ...GeneratorHandlers,
   ...ExportHandlers,
-  ...AppDbHandlers
-}; 
+  ...AppDbHandlers,
+  ...FileHandlers,
+};
 
 process.parentPort.on('message', async ({ data, ports }) => {
   const { type, sId } = data;
