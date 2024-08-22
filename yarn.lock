@@ -2056,21 +2056,12 @@
   resolved "https://registry.yarnpkg.com/@cleverbrush/deep/-/deep-1.1.10.tgz#9dfb24355e2d325b040d9cd643edfe02d19e8178"
   integrity sha512-Cw5Ev1TfbJRm/YCZbAFYzo0gNGX2VwKWxcIJiRmanefGPYVt7YZXKHBIj5iMbEfl0J6kWcGxam777Sg/76o1WQ==
 
-"@cleverbrush/knex-clickhouse@^1.1.10":
-  version "1.1.10"
-  resolved "https://registry.yarnpkg.com/@cleverbrush/knex-clickhouse/-/knex-clickhouse-1.1.10.tgz#60be99aae94a22dcc4f89859f184748ab9be7c42"
-  integrity sha512-5RkCyOWWZPCUwCi3tx8dVL42T0o48F6IHGTfNAoAb/kAtpgh+NwWLfoH/KlYRkwpk1lhakHkDpyPX4SPPvnH/Q==
-  dependencies:
-    "@cleverbrush/async" "^1.1.10"
-    "@cleverbrush/deep" "^1.1.10"
-    "@clickhouse/client" "^1.0.1"
-
 "@clickhouse/client-common@1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@clickhouse/client-common/-/client-common-1.2.0.tgz#8845d373a14c6076d59118a0cb58afad84687372"
   integrity sha512-VfA/C/tVJ2eNe72CaQ7eXmai+yqFEvZjQZiNtvJoOMLP+Vtb6DzqH9nfkgsiHHMhUhhclvt2mFh6+euk1Ea5wA==
 
-"@clickhouse/client@^1.0.1", "@clickhouse/client@^1.2.0":
+"@clickhouse/client@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@clickhouse/client/-/client-1.2.0.tgz#83aa3b69635e19c94a975ee7ec9a68843915b94b"
   integrity sha512-zMp2EhMfp1IrFKr/NjDwNiLsf7nq68nW8lGKszwFe7Iglc6Z5PY9ZA9Hd0XqAk75Q1NmFrkGCP1r3JCM1Nm1Bw==
