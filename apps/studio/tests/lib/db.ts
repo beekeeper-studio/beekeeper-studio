@@ -890,7 +890,7 @@ export class DBTestUtil {
         WHEN NOT MATCHED THEN
           INSERT ([id], [job_name], [hourly_rate])
           VALUES (source.id, source.job_name, source.hourly_rate);
-        SET IDENTITY_INSERT [dbo].[jobs] ON;
+        SET IDENTITY_INSERT [dbo].[jobs] OFF;
       `,
       firebird: `
        MERGE INTO jobs AS target
