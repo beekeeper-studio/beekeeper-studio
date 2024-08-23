@@ -907,14 +907,15 @@ export class DBTestUtil {
       oracle: `
       MERGE INTO BEEKEEPER.jobs target
       USING (
-        SELECT ${initialID} AS 'id', 'Programmer' AS 'job_name', 41 AS 'hourly_rate' FROM dual
-      ) source
-      ON (target.id = source.id)
+        SELECT
+          ${initialID} AS 'id', 'Programmer' AS 'job_name', 41 AS 'hourly_rate' FROM dual
+      ) source ON (target.id = source.id)
       WHEN MATCHED THEN
         UPDATE SET
           target.job_name = source.job_name, target.hourly_rate = source.hourly_rate
       WHEN NOT MATCHED THEN
-        INSERT ([id], [job_name], [hourly_rate]) VALUES (source.id, source.job_name, source.hourly_rate);`,
+        INSERT (id, job_name, hourly_rate)
+        VALUES (source.id, source.job_name, source.hourly_rate);`.trim(),
     }
     const expectedMultipleUpsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
@@ -950,13 +951,14 @@ export class DBTestUtil {
         SELECT ${secondID}, 'Blerk', 40 FROM dual
         UNION ALL
         SELECT ${thirdID}, 'blarns', 39 FROM dual
-      ) source
-      ON (target.id = source.id)
+      ) source ON (target.id = source.id)
       WHEN MATCHED THEN
         UPDATE SET
-          target.job_name = source.job_name, target.hourly_rate = source.hourly_rate
+          target.job_name = source.job_name,
+          target.hourly_rate = source.hourly_rate
       WHEN NOT MATCHED THEN
-        INSERT (id, job_name, hourly_rate) VALUES (source.id, source.job_name, source.hourly_rate);`,
+        INSERT (id, job_name, hourly_rate)
+        VALUES (source.id, source.job_name, source.hourly_rate);`.trim(),
     }
 
     expect(insertQuery).toBe(expectedInsertQueries[this.dbType] ?? insertQuery)
