@@ -201,7 +201,7 @@ function buildInsertQuery(
     });
   });
 
-  if (runAsUpsert){
+  if (_.intersection(Object.keys(data[0]), primaryKeys).length === primaryKeys.length && runAsUpsert){
     return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
   }
  
