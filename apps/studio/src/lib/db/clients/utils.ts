@@ -214,7 +214,6 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
 
   if (canRunAsUpsert && typeof(createUpsertFunc) === 'function'){
     return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
-    // use the createUpsertFunc. Should be Oracle, Firebird, and SqlServer
   } else if (canRunAsUpsert) {
     // might have to be different for different engines. 
     // https://knexjs.org/guide/query-builder.html#onconflict

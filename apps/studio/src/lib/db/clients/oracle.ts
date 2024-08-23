@@ -117,6 +117,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   // took this approach because Typescript wasn't liking the base function could be a null value or a function
   createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
+    console.log('I made it in here')
     const [PK] = primaryKeys
     const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
     const insertSQL = () => `
