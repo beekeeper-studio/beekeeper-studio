@@ -130,8 +130,7 @@ export default {
   },
   methods: {
     focusEditor() {
-    console.log("called!");
-     this.editor.focus();
+      this.editor.focus();
     },
     async initialize() {
       this.destroyEditor();
