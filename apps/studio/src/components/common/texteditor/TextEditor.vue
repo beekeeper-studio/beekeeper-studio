@@ -130,7 +130,9 @@ export default {
   },
   methods: {
     focusEditor() {
-      this.editor.focus();
+      if(this.editor){
+         this.editor.focus();
+       }
     },
     async initialize() {
       this.destroyEditor();
@@ -361,8 +363,8 @@ export default {
     },
   },
   mounted() {
-    window.addEventListener('focus', this.focusEditor);
     this.initialize();
+    window.addEventListener('focus', this.focusEditor);
   },
   beforeDestroy() {
     window.removeEventListener('focus', this.focusEditor);
