@@ -66,7 +66,7 @@ export default {
     },
     userKeymap() {
       const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap.value;
+      const value = settings?.keymap?.value;
       return value && this.keymapTypes.map((k) => k.value).includes(value)
         ? value
         : "default";
@@ -129,6 +129,10 @@ export default {
     },
   },
   methods: {
+    focusEditor() {
+    console.log("called!");
+     this.editor.focus();
+    },
     async initialize() {
       this.destroyEditor();
 
@@ -358,9 +362,11 @@ export default {
     },
   },
   mounted() {
+    window.addEventListener('focus', this.focusEditor);
     this.initialize();
   },
   beforeDestroy() {
+    window.removeEventListener('focus', this.focusEditor);
     this.destroyEditor();
   },
 };
