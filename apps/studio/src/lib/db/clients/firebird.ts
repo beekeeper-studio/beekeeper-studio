@@ -217,8 +217,8 @@ function buildInsertQuery(
   return query
 }
 
-function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
-  return inserts.map((insert) => buildInsertQuery(knex, insert));
+function buildInsertQueries(knex: Knex, inserts: TableInsert[], { runAsUpsert = false, primaryKeys = [], createUpsertFunc = null } = {}) {
+  return inserts.map((insert) => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }));
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
@@ -1297,8 +1297,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  getImportSQL(importedData: TableInsert[]): string[] {
-    return buildInsertQueries(this.knex, importedData)
+  getImportSQL(importedData: TableInsert[], primaryKeys: string[] = []): string[] {
+    return buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys, createUpsertFunc: this.createUpsertFunc })
   }
 
 }
