@@ -801,8 +801,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         try {
           // TODO (azmi): this process can take longer by accident. Consider
           // an ability to cancel reading file.
-          // FIXME (@azmy): this needs to be a util call
-          const text = window.main.readFileSync(file.path, { encoding: 'utf8', flag: 'r' })
+          const text = await this.$util.send('file/read', { path: file.path, options: { encoding: 'utf8', flag: 'r' }})
           if (text) {
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
@@ -843,7 +842,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.$noty.info('Exporting query',  { queue: notyQueue })
 
       try {
-        window.main.writeFileSync(filePath, query.text, { encoding: 'utf8' })
+        await this.$util.send('file/write', { path: filePath, text: query.text, options: { encoding: 'utf8' }})
         this.$noty.success('Query exported!', { killer: notyQueue })
       } catch (e) {
         console.error(e)
