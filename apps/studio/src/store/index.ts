@@ -5,7 +5,7 @@ import Vuex from 'vuex'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
-import { IDbConnectionPublicServer } from '../lib/db/server'
+import { IDbConnectionPublicServer } from '../lib/db/serverTypes'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'

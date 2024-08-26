@@ -1,7 +1,7 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { CancelableQuery } from "@/lib/db/models";
-import { IDbConnectionPublicServer } from "@/lib/db/server";
+import { IDbConnectionPublicServer } from "@/lib/db/serverTypes";
 import { Export } from "@/lib/export";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { ChildProcessWithoutNullStreams } from "child_process";

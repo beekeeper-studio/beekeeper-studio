@@ -1,10 +1,8 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
-import { IDbConnectionPublicServer } from '../../src/lib/db/server'
 import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
 import _ from 'lodash'
@@ -15,6 +13,9 @@ import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
+import { IDbConnectionPublicServer } from './db/serverTypes'
+// TODO (@day): this may need to be moved uggh
+import { createServer } from '@commercial/backend/lib/db/server'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>

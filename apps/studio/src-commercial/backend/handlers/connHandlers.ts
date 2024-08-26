@@ -3,7 +3,7 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
-import { checkConnection, errorMessages, getDriverHandler, state } from "./handlerState";
+import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
 import ConnectionProvider from '../lib/connection-provider'; 
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
