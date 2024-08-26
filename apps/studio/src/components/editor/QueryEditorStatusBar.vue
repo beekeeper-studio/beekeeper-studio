@@ -178,7 +178,7 @@ export default {
   data() {
     return {
       showHint: false,
-      selectedResult: 0,
+      selectedResult: 0
     }
   },
 
@@ -244,7 +244,8 @@ export default {
         return null
       }
       const executeTime = this.executeTime || 0
-      return shortEnglishHumanizer(executeTime)
+      
+      return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
     },
     executionTimeTitle() {
       if (!this.executeTime) {
