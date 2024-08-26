@@ -231,6 +231,7 @@ export interface SupportedFeatures {
   backDirFormat: boolean;
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
+  transactions: boolean;
 }
 
 export interface FieldDescriptor {

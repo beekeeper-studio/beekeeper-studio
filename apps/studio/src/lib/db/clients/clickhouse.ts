@@ -7,8 +7,12 @@ import {
 } from "./BasicDatabaseClient";
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import knexlib from "knex";
-import { createClient, InsertParams, ResponseJSON } from "@clickhouse/client";
-import { NodeClickHouseClient } from "@clickhouse/client/dist/client";
+import {
+  createClient,
+  InsertParams,
+  ResponseJSON,
+  ClickHouseClient as NodeClickHouseClient,
+} from "@clickhouse/client";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
@@ -34,7 +38,7 @@ import {
   TableUpdateResult,
 } from "../models";
 import { ClickHouseData } from "@shared/lib/dialects/clickhouse";
-import _, { isNaN } from "lodash";
+import _ from "lodash";
 import {
   createCancelablePromise,
   joinFilters,
@@ -51,6 +55,7 @@ import { ClickHouseChangeBuilder } from "@shared/lib/sql/change_builder/ClickHou
 import {
   applyChangesSql,
   buildDeleteQueries,
+  buildSelectQueriesFromUpdates,
   buildUpdateQueries,
 } from "./utils";
 import { uuidv4 } from "@/lib/uuid";
@@ -108,10 +113,11 @@ const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/i;
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
   client: NodeClickHouseClient;
+  supportsTransaction: boolean;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, clickhouseContext, server, database);
-    this.dialect = 'generic';
+    this.dialect = "generic";
     this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
@@ -133,6 +139,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     const json = result.data as ResponseJSON<{ version: string }>;
     const str = json.data[0].version;
     this.version = str.trim();
+    this.supportsTransaction = await this.checkTransactionSupport();
   }
 
   async disconnect(): Promise<void> {
@@ -403,7 +410,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = [];
 
-    await this.runWithTransactionIfSupported(async () => {
+    await this.runWithTransaction(async () => {
       log.debug("Applying changes", changes);
 
       if (changes.inserts?.length) {
@@ -426,30 +433,41 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return results;
   }
 
-  private async runWithTransactionIfSupported(fn: () => Promise<any>) {
-    let supportsTransaction = false;
-
-    try {
-      log.debug("Checking if transaction is supported");
-      await this.driverExecuteSingle("BEGIN TRANSACTION");
-      supportsTransaction = true;
-    } catch (e) {
-      log.error(e);
-      log.debug("Transaction not supported");
-    }
-
+  private async runWithTransaction(fn: () => Promise<any>) {
+    const supportsTransactions = (await this.supportedFeatures()).transactions;
     try {
       await fn();
-      if (supportsTransaction) {
+      if (supportsTransactions) {
         await this.driverExecuteSingle("COMMIT");
       }
     } catch (e) {
       log.error(e);
-      if (supportsTransaction) {
+      if (supportsTransactions) {
         await this.driverExecuteSingle("ROLLBACK");
       }
       throw e;
     }
+  }
+
+  /**
+   * ClickHouse has experimental support for transactions, commits, and
+   * rollback functionality. You'll need to enable it by adding the settings
+   * to the ClickHouse config.
+   *
+   * See: https://clickhouse.com/docs/en/guides/developer/transactional#transactions-commit-and-rollback
+   **/
+  private async checkTransactionSupport(): Promise<boolean> {
+    let supportsTransaction = false;
+    try {
+      log.debug("Checking if transaction is supported");
+      await this.driverExecuteSingle("BEGIN TRANSACTION");
+      await this.driverExecuteSingle("ROLLBACK");
+      supportsTransaction = true;
+    } catch (e) {
+      log.warn(e);
+      log.debug("Transaction not supported");
+    }
+    return supportsTransaction;
   }
 
   private async updateValues(updates: TableUpdate[]) {
@@ -461,25 +479,12 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       await this.driverExecuteSingle(query);
     }
 
-    const { table, primaryKeys } = updates[0];
-    let sql = "SELECT * FROM {table: Identifier} WHERE ";
-    sql += primaryKeys
-      .map((_p, idx) => `{col${idx}: Identifier} = {val${idx}: Dynamic}`)
-      .join(" AND ");
-    const valueParams = primaryKeys.reduce(
-      (acc, p, idx) => ({
-        ...acc,
-        [`col${idx}`]: p.column,
-        [`val${idx}`]: p.value,
-      }),
-      {}
-    );
-    const result = await this.driverExecuteSingle(sql, {
-      params: { table, ...valueParams },
-      returnType: "RowAsObject",
-    });
-    const json = result.data as ResponseJSON;
-    results.push(json.data);
+    const sqls = buildSelectQueriesFromUpdates(this.knex, updates);
+    for (const sql of sqls) {
+      const result = await this.driverExecuteSingle(sql);
+      const json = result.data as ResponseJSON;
+      results.push(json.data);
+    }
     return results;
   }
 
@@ -514,18 +519,16 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     );
 
     for (const { table, primaryKeys } of nonMergeTreeDeletes) {
-      const wrappedTable = ClickHouseData.wrapIdentifier(table);
       let whereSql = "";
-      for (const [_, pk] of primaryKeys.entries()) {
+      for (const [idx, pk] of primaryKeys.entries()) {
         if (whereSql.length > 0) {
           whereSql += " AND ";
         }
         const column = ClickHouseData.wrapIdentifier(pk.column);
-        const value = ClickHouseData.escapeString(pk.value, true);
-        whereSql += `${column} = ${value}`;
+        whereSql += `${column} = {pk${idx}: String}`;
       }
-      const sql = `ALTER TABLE ${wrappedTable} DELETE WHERE ${whereSql}`;
-      await this.driverExecuteSingle(sql);
+      const sql = `ALTER TABLE {table: Identifier} DELETE WHERE ${whereSql}`;
+      await this.driverExecuteSingle(sql, { params: { table } });
     }
   }
 
@@ -709,7 +712,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       if (isEmptyResult) {
         ret.push({
           fields: [],
-          affectedRows: undefined, // TODO (azmi): implement affectedRows
+          affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
           rows: [],
           rowCount: 0,
@@ -720,7 +723,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       if (_.isString(data)) {
         ret.push({
           fields: [{ id: "c0", name: "Result" }],
-          affectedRows: undefined, // TODO (azmi): implement affectedRows
+          affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
           rows: [{ c0: data }],
           rowCount: 1,
@@ -738,11 +741,9 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         row.reduce((acc, val, idx) => ({ ...acc, [`c${idx}`]: val }), {})
       );
 
-      // console.log("what is this??", result.statement, rows, fields);
-
       ret.push({
         fields,
-        affectedRows: undefined, // TODO we can get this somewhere i feel like??
+        affectedRows: 0, // TODO we can get this somewhere i feel like??
         command: result.statement.type,
         rows,
         rowCount: rows.length,
@@ -771,7 +772,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       let resultType: Result["resultType"];
       let data: ResponseJSON | Stream;
       if (statement.executionType === "LISTING" && !format) {
-        console.log("running LISTING", statement.text, options.params);
         const result = await this.client.query({
           query: statement.text,
           query_params: options.params,
@@ -817,6 +817,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: this.supportsTransaction,
     };
   }
 
@@ -966,7 +967,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
     const result = await this.driverExecuteSingle(
-      `SELECT count() as count FROM {table: Idenfifier}`,
+      `SELECT count() as count FROM {table: Identifier}`,
       { params: { table } }
     );
     const json = result.data as ResponseJSON<{ count: number }>;
@@ -990,7 +991,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     );
     const result = await this.driverExecuteSingle(qs.countQuery, {
       params: qs.params,
-      returnType: "RowAsObject",
     });
     const json = result.data as ResponseJSON<{ total: number }>;
     const totalRows = Number(json.data[0].total) || 0;
@@ -1033,8 +1033,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
             : `{p${paramCounter++}: Dynamic}`;
           const values = _.isArray(item.value)
             ? item.value
-              .map((v) => ClickHouseData.escapeString(v, true))
-              .join(",")
+                .map((v) => ClickHouseData.escapeString(v, true))
+                .join(",")
             : ClickHouseData.escapeString(item.value, true);
 
           filtersWithParams.push(
@@ -1162,6 +1162,9 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
-    return super.violatesReadOnly(statements, options) || (this.readOnlyMode && options.insert)
+    return (
+      super.violatesReadOnly(statements, options) ||
+      (this.readOnlyMode && options.insert)
+    );
   }
 }

@@ -9,7 +9,7 @@ export function isUltimateType(s: ConnectionType) {
     'firebird',
     'cassandra',
     'libsql',
-    // 'clickhouse',
+    'clickhouse',
   ]
   return types.includes(s)
 }

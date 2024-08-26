@@ -2,6 +2,7 @@ import { BeeCursor } from "../../models";
 import rawlog from "electron-log";
 import type { ClickHouseClient, Row, StreamReadable } from "@clickhouse/client";
 import { uuidv4 } from "@/lib/uuid";
+import { waitFor } from "../base/wait";
 
 interface CursorOptions {
   query: string;
@@ -17,17 +18,21 @@ export class ClickHouseCursor extends BeeCursor {
   private client: ClickHouseClient;
   private queryId: string;
   private stream: StreamReadable<Row<unknown, "JSONCompactEachRow">[]>;
-  private rows: any[][] = [];
+  private rowBuffer: any[][] = [];
+  private end = false;
+  private error?: Error;
+  private bufferReady = false;
 
   constructor(options: CursorOptions) {
     super(options.chunkSize);
     this.options = options;
     this.client = options.client;
-    this.queryId = uuidv4();
   }
 
   async start(): Promise<void> {
     log.info("Starting cursor");
+
+    this.queryId = uuidv4();
 
     const result = await this.client.query({
       query: this.options.query,
@@ -38,23 +43,51 @@ export class ClickHouseCursor extends BeeCursor {
 
     this.stream = result.stream();
 
-    return new Promise((resolve, reject) => {
-      this.stream.on("data", (rows) => {
-        rows.forEach((row) => {
-          this.rows.push(row.json());
-        });
-      });
-      this.stream.on("end", () => {
-        resolve();
-      });
-      this.stream.on("error", (err) => {
-        reject(err);
-      });
+    this.stream.on("data", this.handleRows.bind(this));
+    this.stream.on("end", this.handleEnd.bind(this));
+    this.stream.on("error", this.handleError.bind(this));
+  }
+
+  private handleRows(rows: Row[]) {
+    rows.forEach((row) => {
+      this.rowBuffer.push(row.json());
+      if (this.rowBuffer.length >= this.chunkSize) {
+        this.stream.pause();
+        this.bufferReady = true;
+      }
     });
   }
 
+  private handleEnd() {
+    log.debug("handling end");
+    this.end = true;
+    this.stream.destroy();
+  }
+
+  private handleError(error: Error) {
+    log.debug("handling error");
+    this.error = error;
+    console.error(error);
+  }
+
+  private pop() {
+    const result = this.rowBuffer;
+    this.rowBuffer = [];
+    return result;
+  }
+
+  private resume() {
+    this.bufferReady = false;
+    this.stream.resume();
+  }
+
   async read() {
-    return this.rows.splice(0, this.chunkSize);
+    await waitFor(() => this.bufferReady || this.end || !!this.error);
+    if (this.error) throw this.error;
+    if (this.end) return this.pop();
+    const results = this.pop();
+    this.resume();
+    return results;
   }
 
   async cancel() {
@@ -62,5 +95,6 @@ export class ClickHouseCursor extends BeeCursor {
     await this.client.command({
       query: `KILL QUERY WHERE query_id='${this.queryId}'`,
     });
+    this.stream?.destroy();
   }
 }

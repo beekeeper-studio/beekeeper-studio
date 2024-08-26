@@ -10,7 +10,6 @@ import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
-import { warn } from 'console';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -350,9 +349,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     options['multiple'] = false
     options['statements'] = statements
     try {
-      // console.log(q, options)
         const result = await this.rawExecuteQuery(q, options) as RawResultType
-      // console.log(q, _.isArray(result) ? result[0] : result)
         return _.isArray(result) ? result[0] : result
     } catch (ex) {
         // if (!await this.checkIsConnected()) {

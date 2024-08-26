@@ -45,7 +45,6 @@ export class ClickHouseChangeBuilder extends ChangeBuilderBase {
   alterNullable(column: string, nullable: boolean) {
     const columnInfo = this.columns.find((c) => c.columnName === column)
     let dataType = columnInfo.dataType
-    console.log(columnInfo)
     if (columnInfo.nullable) {
       const re = /^Nullable\((.*)\)$/
       const match = re.exec(dataType)
