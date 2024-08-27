@@ -2,7 +2,6 @@ import { BackupConfig } from "./models/BackupConfig";
 import { IConnection } from "@/common/interfaces/IConnection";
 import { IDbConnectionServerConfig } from "./types";
 import { SupportedBackupFeatures, Command, CommandSettingSection, CommandControlAction, CommandSettingControl, SupportedFeatures } from "./models";
-import platformInfo from "@/common/platform_info";
 import { TempFileManager } from "../TempFileManager";
 import Vue from "vue";
 
@@ -16,7 +15,7 @@ export abstract class BaseCommandClient {
   private tempFile: TempFileManager = null;
   protected readonly defaultFileType: string = '';
 
-  protected pathSep: string = !platformInfo.isWindows ? '/' : '\\';
+  protected pathSep: string = !window.platformInfo.isWindows ? '/' : '\\';
   protected mode: 'backup' | 'restore' = 'backup';
   // Backup Config
   protected _config: BackupConfig;
@@ -48,7 +47,7 @@ export abstract class BaseCommandClient {
 
   protected static _password?: string;
   static get quotedPassword() {
-    return `"${BaseCommandClient._password.replace(/"/g, platformInfo.isWindows ? `""` : `\\"`)}"`;
+    return `"${BaseCommandClient._password.replace(/"/g, window.platformInfo.isWindows ? `""` : `\\"`)}"`;
   }
 
   set connConfig(value: IConnection) {
@@ -77,7 +76,7 @@ export abstract class BaseCommandClient {
     if (!value) {
       // Clear everything but the connection details and the dumpToolPath
       const toolPath = this._config.dumpToolPath;
-      this._config = new BackupConfig({ outputPath: platformInfo.downloadsDirectory });
+      this._config = new BackupConfig({ outputPath: window.platformInfo.downloadsDirectory });
       this._config.dumpToolPath = toolPath;
       this._config.toolName = this.toolName;
     } else {
@@ -329,7 +328,7 @@ export abstract class BaseCommandClient {
   // end log file things
 
   protected get mainCommand() {
-    return platformInfo.isWindows ? `"${this._config.dumpToolPath}"` : this._config.dumpToolPath;
+    return window.platformInfo.isWindows ? `"${this._config.dumpToolPath}"` : this._config.dumpToolPath;
   }
 
 
@@ -366,7 +365,7 @@ export abstract class BaseCommandClient {
   }
 
   constructor(toolName?: string) {
-    this._config = new BackupConfig({ outputPath: platformInfo.downloadsDirectory });
+    this._config = new BackupConfig({ outputPath: window.platformInfo.downloadsDirectory });
     this.toolName = toolName;
     this.allowedTools = [this.toolName];
     // this._config.toolName = this.toolName;

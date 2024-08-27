@@ -7,7 +7,6 @@ import { State as RootState } from '../index'
 import { upsert } from './data/StoreHelpers';
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { CloudClient } from '@/lib/cloud/CloudClient';
-import platformInfo from '@/common/platform_info';
 
 interface State {
   licenses: LicenseKey[],
@@ -54,7 +53,7 @@ export const LicenseModule: Module<State, RootState>  = {
 
     async add(context, { email, key }) {
 
-      const result = await CloudClient.getLicense(platformInfo.cloudUrl, email, key)
+      const result = await CloudClient.getLicense(window.platformInfo.cloudUrl, email, key)
       // if we got here, license is good.
       const license = new LicenseKey()
       license.key = key
@@ -71,7 +70,7 @@ export const LicenseModule: Module<State, RootState>  = {
 
     async update(_context, license: LicenseKey) {
       try {
-        const data = await CloudClient.getLicense(platformInfo.cloudUrl, license.email, license.key)
+        const data = await CloudClient.getLicense(window.platformInfo.cloudUrl, license.email, license.key)
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
         await license.save()

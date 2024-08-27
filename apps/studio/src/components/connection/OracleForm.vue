@@ -1,6 +1,6 @@
 <template>
   <div class="with-connection-type oracledb-form">
-    <template v-if="oracleSupported">
+    <template v-if="$config.oracleSupported">
       <div class="advanced-connection-settings">
         <div class="flex flex-middle">
           <span
@@ -131,15 +131,13 @@ import Noty from 'noty'
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import SettingsInput from '../common/SettingsInput.vue'
-import platformInfo from '@/common/platform_info'
 import { mapState } from 'vuex'
+
 export default Vue.extend({
   components: { CommonServerInputs, CommonAdvanced, SettingsInput },
   props: ['config'],
   data: () => ({
-    isLinux: platformInfo.isLinux,
-    help: platformInfo.isLinux ? "Restart Beekeeper Studio after setting this value for Oracle connections to work" : null,
-    oracleSupported: platformInfo.oracleSupported,
+    help: null,
     oracleExpanded: true,
   }),
   computed: {
@@ -166,12 +164,14 @@ export default Vue.extend({
   },
   methods: {
     restart() {
-      if(platformInfo.isLinux) {
+      if(this.$config.isLinux) {
         this.restartNotification.show()
       }
     }
   },
   beforeMount() {
+
+    this.help = this.$config.isLinux ? "Restart Beekeeper Studio after setting this value for Oracle connections to work" : null
     if (this.config.host && this.config.id && !this.config.options.connectionMethod) {
       this.connectionMethod = 'manual'
     } else if (!this.connectionMethod) {

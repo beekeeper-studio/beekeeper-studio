@@ -86,16 +86,9 @@
   import ExportOptions from './ExportOptions.vue'
   import ExportConfirmation from './ExportConfirmation.vue'
 
-  import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
   import { ExportStatus } from '../../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
 
-  const ExportClassPicker = {
-    'csv': CsvExporter,
-    'json': JsonExporter,
-    'sql': SqlExporter,
-    'jsonl': JsonLineExporter
-  }
   export default {
     components: {
       Stepper,
@@ -182,31 +175,41 @@
       showFiles() {
         this.$native.files.open(this.tableOptions.filePath)
       },
-      startExport() {
+      async startExport() {
         this.tab.isRunning = true;
-        return this.listTables.map(async (exportTable) => {
+        this.$util.addListener()
+        const exporters = this.listTables.map(async (exportTable) => {
           await this.$store.dispatch('updateTableColumns', exportTable.table)
-          this.exportTable(exportTable)
-          this.exportSteps[2].stepperProps.exportsStarted = true
+          const exporterId = await this.addExport(exportTable)
+          this.$util.addListener(`onExportProgress/${exporterId}`, (progress) => {
+            this.$store.commit('exports/updateProgressFor', { id: exporterId, progress });
+          })
+          return exporterId;
         })
-      },
-      async exportTable(tableToExport) {
-        const tableOptions = this.tableOptions;
-        const exporter = new ExportClassPicker[tableOptions.exporter](
-          `${tableOptions.filePath}/${tableToExport.name}`,
-          this.connection,
-          tableToExport.table,
-          '',
-          '',
-          tableOptions.filters || [],
-          tableOptions.options,
-          tableOptions.outputOptions
-        );
-        exporter.managerNotify = false;
-        this.addExport(exporter);
-        await exporter.exportToFile();
 
-        if (exporter.status !== ExportStatus.Completed) return;
+        this.exportSteps[2].stepperProps.exportsStarted = true
+        this.$util.send('export/batch', { ids: exporters }).then(() => {
+          this.tab.isRunning = false;
+
+          exporters.forEach((id) => {
+            this.$util.removeListener(`onExportProgress/${id}`);
+          })
+        });
+      },
+      async addExport(tableToExport) {
+        const tableOptions = this.tableOptions;
+        const exporter = await this.$util.send('export/add', {
+          filePath: `${tableOptions.filePath}/${tableToExport.name}`,
+          table: tableToExport.table,
+          query: '',
+          queryName: '',
+          filters: tableOptions.filters || [],
+          options: tableOptions.options,
+          outputOptions: tableOptions.outputOptions,
+          managerNotify: false
+        })
+        this.addExport(exporter);
+        return exporter.id;
       },
       close() {
         this.$emit('close', this.tab);

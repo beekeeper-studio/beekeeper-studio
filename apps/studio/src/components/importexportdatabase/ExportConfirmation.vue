@@ -60,9 +60,9 @@
   import _ from 'lodash'
   import { mapGetters, mapState } from 'vuex'
   import { AppEvent } from '@/common/AppEvent'
-  import { Export } from '@/lib/export/export'
   import ExportStatus from './ExportStatus.vue'
   import Vue from 'vue';
+import { TransportExport } from '@/common/transport/TransportExport';
 
   export default Vue.extend({
     components: { ExportStatus },
@@ -107,14 +107,14 @@
       showFiles() {
         this.$native.files.open(this.tableOptions.filePath)
       },
-      getTableExport(table): Export {
+      getTableExport(table): TransportExport {
         const exportFile = `${this.tableOptions.filePath}/${table.name}`;
         const [exported] = this.exports.filter(f => f.filePath === exportFile);
         return exported;
       },
       async retryExportForTable(table) {
-        const tableExport: Export = this.getTableExport(table);
-        await this.$store.dispatch('exports/retryExportForTable', tableExport.id);
+        const tableExport: string = this.getTableExport(table);
+        await this.$store.dispatch('exports/retryExportForTable', tableExport);
       },
       handleCloseTab () {
         this.$root.$emit(AppEvent.closeTab)

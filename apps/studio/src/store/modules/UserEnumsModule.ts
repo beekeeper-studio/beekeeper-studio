@@ -1,7 +1,6 @@
 import { promises as fs, constants, FSWatcher, watch } from 'fs';
 import * as path from 'path';
 import { Module } from 'vuex';
-import platformInfo from '@/common/platform_info'
 import { State as RootState } from '../index'
 import { UserProvidedEnum } from '@/lib/UserProvidedEnum';
 
@@ -38,8 +37,8 @@ export const UserEnumsModule: Module<State, RootState> = {
   actions: {
     // TODO (day): Display an error when these fail?
     async init(context) {
-      if (!platformInfo.userDirectory || context.state.initialized) return;
-      const filename = path.join(platformInfo.userDirectory, 'enums.json');
+      if (!window.platformInfo.userDirectory || context.state.initialized) return;
+      const filename = path.join(window.platformInfo.userDirectory, 'enums.json');
       
       try {
         await fs.access(filename, constants.R_OK | constants.W_OK);
@@ -58,7 +57,7 @@ export const UserEnumsModule: Module<State, RootState> = {
     },
     async load(context) {
       const errorPrefix = 'ENUM LOADING ERROR: ';
-      const filename = path.join(platformInfo.userDirectory, 'enums.json');
+      const filename = path.join(window.platformInfo.userDirectory, 'enums.json');
       
       let enumsStr: string = null;
       try {

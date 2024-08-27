@@ -228,7 +228,7 @@
 
 <script>
 import _ from 'lodash'
-// import WorkspaceSidebar from './WorkspaceSidebar.vue'
+import WorkspaceSidebar from './WorkspaceSidebar.vue'
 import { mapState, mapGetters } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
@@ -242,7 +242,7 @@ import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 const log = rawLog.scope('connection-sidebar');
 
 export default {
-  components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons, WorkspaceSidebar: this.$components.WorkspaceSidebar },
+  components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons, WorkspaceSidebar },
   props: ['selectedConfig'],
   data: () => ({
     split: null,

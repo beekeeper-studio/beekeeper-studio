@@ -1,9 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
 import path from 'path';
-import fs, { readFileSync, WriteFileOptions, writeFileSync } from 'fs';
-import { Options } from 'yargs-parser';
-import yargs from 'yargs-parser';
+import fs from 'fs';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { homedir } from 'os';
 import tls, { SecureVersion } from 'tls';
@@ -33,9 +31,7 @@ function fileExistsSync(filename: string): boolean {
 export const api = {
   async requestPlatformInfo() {
     const platformInfo = await ipcRenderer.invoke('platformInfo')
-    // will this work?
     contextBridge.exposeInMainWorld('platformInfo', platformInfo);
-    // api.platformInfo = platformInfo;
   },
   isReady() {
     ipcRenderer.send('ready');
@@ -74,17 +70,8 @@ export const api = {
   join(...paths: string[]): string {
     return path.join(...paths);
   },
-  readFileSync(path: string, options: { encoding: string; flag?: string | undefined; } | string): string {
-    return readFileSync(path, options);
-  },
-  writeFileSync(path: string, text: string, options?: WriteFileOptions) {
-    return writeFileSync(path, text, options);
-  },
   basename(p: string, ext?: string): string {
     return path.basename(p, ext);
-  },
-  yargs(argv: string | string[], opts?: Options) {
-    return yargs(argv, opts);
   },
   readVimrc(pathToVimrc?: string): string[] {
     const vimrcPath = path.join(pathToVimrc ?? userDirectory, ".beekeeper.vimrc");

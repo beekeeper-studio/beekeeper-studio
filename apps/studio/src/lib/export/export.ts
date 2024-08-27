@@ -34,7 +34,6 @@ export abstract class Export {
     progress: Array<ProgressCallback>()
   }
 
-  managerNotify = true
   constructor(
     public filePath: string,
     public connection: BasicDatabaseClient<any>,
@@ -42,7 +41,8 @@ export abstract class Export {
     public query: string,
     public queryName: string,
     public filters: TableFilter[] | any[],
-    public options: ExportOptions
+    public options: ExportOptions,
+    public managerNotify = true
   ) {
     this.id = this.generateId()
   }

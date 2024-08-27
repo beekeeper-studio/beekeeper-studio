@@ -12,6 +12,12 @@ export interface Transport {
   version: number
 }
 
+export interface TransportCloudCredential extends Transport {
+  appId: string | null,
+  email: string | null,
+  token: string | null
+}
+
 export interface TransportPinnedConn extends Transport {
   position: number;
   connectionId: number;

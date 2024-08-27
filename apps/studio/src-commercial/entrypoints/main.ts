@@ -186,8 +186,8 @@ app.on('activate', async (_event, hasVisibleWindows) => {
 })
 
 // for sending ports to new windows
-app.on('browser-window-created', (event: electron.Event, window: electron.BrowserWindow) => {
-  log.log('window created!!!', event, window);
+app.on('browser-window-created', (_event: electron.Event, window: electron.BrowserWindow) => {
+  log.log('window created!!!');
 
   newWindows.push(window.id);
 })

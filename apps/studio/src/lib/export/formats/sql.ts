@@ -35,9 +35,10 @@ export class SqlExporter extends Export {
     queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
-    outputOptions: OutputOptionsSql
+    outputOptions: OutputOptionsSql,
+    managerNotify: boolean = true
   ) {
-    super(filePath, connection, table, query, queryName, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options, managerNotify)
     this.outputOptions = outputOptions
     if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
       throw new Error("SQL export not supported on connection type " + this.connection.connectionType)

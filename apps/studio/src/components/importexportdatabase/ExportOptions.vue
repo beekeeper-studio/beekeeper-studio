@@ -122,7 +122,6 @@ import { mapGetters, mapMutations, mapState } from "vuex"
 import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "../export/forms"
 import FilePicker from '../common/form/FilePicker.vue'
-import platformInfo from '../../common/platform_info'
 const log = rawlog.scope('export/multi-export-manager')
 
 const exportFormats = [
@@ -190,15 +189,13 @@ export default {
     defaultPath() {
       let previous = localStorage.getItem('export/directory')
       if (previous === 'undefined' || previous === 'null') previous = null
-      return previous || platformInfo.downloadsDirectory
+      return previous || this.$config.downloadsDirectory
     },
     fileFormatTooltip() {
       return `Format of Export File Names is ${this.filenameSchema}${this.optionalFileName}.${this.selectedExportFormat.key}`
     }
   },
   methods: {
-    ...mapMutations({ addExport: "exports/addExport" }),
-
     onNext() {
       this.error = null;
 

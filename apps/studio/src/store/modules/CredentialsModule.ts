@@ -1,6 +1,5 @@
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { IWorkspace, LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import platformInfo from "@/common/platform_info";
 import { CloudClient, CloudClientOptions } from "@/lib/cloud/CloudClient";
 import { uuidv4 } from "@/lib/uuid";
 import { Module } from "vuex";
@@ -31,7 +30,7 @@ interface State {
 
 async function credentialToBlob(c: CloudCredential): Promise<CredentialBlob> {
   const clientOptions: CloudClientOptions = {
-    app: c.appId, email: c.email, token: c.token, baseUrl: platformInfo.cloudUrl
+    app: c.appId, email: c.email, token: c.token, baseUrl: window.platformInfo.cloudUrl
   }
   const client = new CloudClient(clientOptions)
   try {
@@ -113,13 +112,13 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async login(context, { email, password }) {
-      const existing = await CloudCredential.findOne({ email })
-      const appId = (await CloudCredential.findOne())?.appId || genAppId()
+      const existing = await CloudCredential.findOneBy({ email })
+      const appId = (await CloudCredential.findOne({}))?.appId || genAppId()
       const cred = existing || new CloudCredential()
       cred.appId = appId
       cred.email = email
 
-      const token = await CloudClient.login(platformInfo.cloudUrl, email, password, appId )
+      const token = await CloudClient.login(window.platformInfo.cloudUrl, email, password, appId )
       cred.token = token
       await cred.save()
       const result = await credentialToBlob(cred)

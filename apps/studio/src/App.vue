@@ -48,6 +48,7 @@ import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 
+import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
 import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
@@ -69,7 +70,9 @@ export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone, UtilDiedModal
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
+    UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
+    EnterLicenseModal
   },
   data() {
     return {
@@ -81,7 +84,7 @@ export default Vue.extend({
   },
   computed: {
     activeLicense() {
-      return platformInfo.isDevelopment ||
+      return this.$config.isDevelopment ||
         (this.license && this.license.active)
     },
     ...mapState(['storeInitialized', 'connected', 'database']),

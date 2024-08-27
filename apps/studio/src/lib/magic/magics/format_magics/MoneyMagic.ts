@@ -2,14 +2,13 @@ import { Magic } from "../../Magic";
 import { MagicColumn } from "../../MagicColumn";
 import { CellComponent } from "tabulator-tables";
 import CurrencyCodes from "@shared/lib/CurrencyCodes";
-import platformInfo from '@/common/platform_info'
 
 const MoneyMagic: Magic = {
   name: "MoneyMagic",
   initializers: ['money', 'currency', 'dinero'],
   autocompleteHints: CurrencyCodes.map((cc) => cc.cc.toLowerCase()),
   render: function (args: string[]): MagicColumn {
-    const locale = platformInfo.locale
+    const locale = window.platformInfo.locale
     const currency = args[3]?.toUpperCase() || 'USD'
     const result = {
       title: args[0],

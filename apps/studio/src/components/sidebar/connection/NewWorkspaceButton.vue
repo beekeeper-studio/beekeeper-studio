@@ -23,7 +23,6 @@
 
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
-import platformInfo from '@/common/platform_info'
 import Vue from 'vue'
 import { mapState } from 'vuex'
 export default Vue.extend({
@@ -38,10 +37,10 @@ export default Vue.extend({
       this.$root.$emit(AppEvent.promptLogin)
     },
     createWorkspace() {
-      document.location.href = `${platformInfo.cloudUrl}/workspaces/new`
+      document.location.href = `${this.$config.cloudUrl}/workspaces/new`
     },
     signup() {
-      document.location.href = `${platformInfo.cloudUrl}/users/sign_up`
+      document.location.href = `${this.$config.cloudUrl}/users/sign_up`
     }
 
   }
