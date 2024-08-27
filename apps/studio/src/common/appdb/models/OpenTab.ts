@@ -13,15 +13,13 @@ const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tab
 
 @Entity({ name: 'tabs'})
 export class OpenTab extends ApplicationEntity {
-
-
-  constructor(init: TabType | TransportOpenTab) {
-    super()
+  withProps(init: TabType | TransportOpenTab): OpenTab {
     if (_.isString(init)) {
       this.tabType = init
-      return;
+      return this;
     }
     _.merge(this, init)
+    return this;
   }
 
   get type(): TabType {
@@ -105,7 +103,7 @@ export class OpenTab extends ApplicationEntity {
   }
 
   duplicate(): OpenTab {
-    const result = new OpenTab(this.tabType)
+    const result = new OpenTab().withProps(this.tabType);
     _.assign(result, _.pick(this, pickable))
     return result
   }
