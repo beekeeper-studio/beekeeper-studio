@@ -2,7 +2,7 @@ import { ConnectionsController } from '@/lib/cloud/controllers/ConnectionsContro
 import { AxiosInstance, AxiosRequestTransformer, AxiosResponseTransformer } from 'axios'
 import axios from 'axios'
 import _ from 'lodash';
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 import axiosRetry from 'axios-retry'
 
 import { res } from './ClientHelpers';
@@ -58,12 +58,7 @@ const staticAxios = (baseUrl) => axios.create({
 })
 
 
-
 export class CloudClient {
-
-
-
-
   static async login(baseUrl, email, password, app): Promise<string> {
     const cli = staticAxios(baseUrl)
 

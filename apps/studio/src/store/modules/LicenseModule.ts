@@ -1,15 +1,15 @@
-
 import _ from 'lodash'
-import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { Module } from "vuex";
 
 import { State as RootState } from '../index'
 import { upsert } from './data/StoreHelpers';
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { CloudClient } from '@/lib/cloud/CloudClient';
+import { TransportLicenseKey } from '@/common/transport';
+import Vue from "vue"
 
 interface State {
-  licenses: LicenseKey[],
+  licenses: TransportLicenseKey[],
   loading: boolean
   error: CloudError | Error | null
 }
@@ -25,7 +25,7 @@ export const LicenseModule: Module<State, RootState>  = {
   }),
   getters: {
     newestLicense(state) {
-      return _.orderBy(state.licenses, ['validUntil'], ['desc'])[0] || new LicenseKey()
+      return _.orderBy(state.licenses, ['validUntil'], ['desc'])[0] || {} as TransportLicenseKey
     },
     realLicenses(state) {
       return state.licenses.filter((l) => l.licenseType !== 'TrialLicense')
@@ -33,20 +33,20 @@ export const LicenseModule: Module<State, RootState>  = {
   },
 
   mutations: {
-    set(state, licenses: LicenseKey[]) {
+    set(state, licenses: TransportLicenseKey[]) {
       state.licenses = licenses
     },
-    add(state, license: LicenseKey) {
+    add(state, license: TransportLicenseKey) {
       upsert(state.licenses, license, (a, b) => a.key === b.key && a.email === b.email)
     },
 
-    remove(state, licenses: LicenseKey[]) {
+    remove(state, licenses: TransportLicenseKey[]) {
       state.licenses = _.without(state.licenses, ...licenses)
     }
   },
   actions: {
     async init(context) {
-      const licenses = await LicenseKey.find()
+      const licenses = await Vue.prototype.$util.send('appdb/license/find');
       context.commit('set', licenses)
       context.dispatch('updateAll')
     },
@@ -55,30 +55,30 @@ export const LicenseModule: Module<State, RootState>  = {
 
       const result = await CloudClient.getLicense(window.platformInfo.cloudUrl, email, key)
       // if we got here, license is good.
-      const license = new LicenseKey()
+      let license = {} as TransportLicenseKey
       license.key = key
       license.email = email
       license.validUntil = new Date(result.validUntil)
       license.supportUntil = new Date(result.supportUntil)
       license.licenseType = result.licenseType
       const others = context.getters.realLicenses
-      await license.save()
-      await LicenseKey.remove(others)
+      license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
+      await Vue.prototype.$util.send('appdb/license/remove', { obj: others });
       context.commit('add', license)
       context.commit('remove', others)
     },
 
-    async update(_context, license: LicenseKey) {
+    async update(_context, license: TransportLicenseKey) {
       try {
         const data = await CloudClient.getLicense(window.platformInfo.cloudUrl, license.email, license.key)
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
-        await license.save()
+        license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
       } catch (error) {
         if (error instanceof CloudError) {
           // eg 403, 404, license not valid
           license.validUntil = new Date()
-          license.save()
+          license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
         } else {
           // eg 500 errors
           // do nothing

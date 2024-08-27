@@ -18,6 +18,15 @@ export interface TransportCloudCredential extends Transport {
   token: string | null
 }
 
+export interface TransportLicenseKey extends Transport {
+  email: string,
+  key: string,
+  validUntil: Date,
+  supportUntil: Date,
+  licenseType: 'TrialLicense' | 'PersonalLicense' | 'BusinessLicense',
+  active: boolean
+}
+
 export interface TransportPinnedConn extends Transport {
   position: number;
   connectionId: number;

@@ -22,6 +22,12 @@ import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
+import { LicenseModule } from './modules/LicenseModule'
+import { CredentialsModule } from './modules/CredentialsModule'
+import { UserEnumsModule } from './modules/UserEnumsModule'
+import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
+import ImportStoreModule from './modules/imports/ImportStoreModule'
+import { BackupModule } from './modules/backup/BackupModule'
 
 const log = RawLog.scope('store/index')
 
@@ -69,8 +75,14 @@ const store = new Vuex.Store<State>({
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
+    licenses: LicenseModule,
+    credentials: CredentialsModule,
     hideEntities: HideEntityModule,
-    pinnedConnections: PinConnectionModule
+    userEnums: UserEnumsModule,
+    pinnedConnections: PinConnectionModule,
+    multiTableExports: MultiTableExportStoreModule,
+    imports: ImportStoreModule,
+    backups: BackupModule
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),

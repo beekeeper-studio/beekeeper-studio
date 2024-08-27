@@ -1,10 +1,11 @@
-import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { IWorkspace, LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { CloudClient, CloudClientOptions } from "@/lib/cloud/CloudClient";
 import { uuidv4 } from "@/lib/uuid";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import { upsert } from "./data/StoreHelpers";
+import Vue from "vue";
+import { TransportCloudCredential } from "@/common/transport";
 
 function genAppId() {
   return `beekeeper-app-${uuidv4()}`
@@ -17,7 +18,7 @@ export interface WSWithClient {
 
 export interface CredentialBlob {
   id: number
-  credential: CloudCredential
+  credential: TransportCloudCredential
   error?: Error
   client: CloudClient
   workspaces: IWorkspace[]
@@ -28,7 +29,7 @@ interface State {
   loading: boolean
 }
 
-async function credentialToBlob(c: CloudCredential): Promise<CredentialBlob> {
+async function credentialToBlob(c: TransportCloudCredential): Promise<CredentialBlob> {
   const clientOptions: CloudClientOptions = {
     app: c.appId, email: c.email, token: c.token, baseUrl: window.platformInfo.cloudUrl
   }
@@ -99,7 +100,7 @@ export const CredentialsModule: Module<State, RootState> = {
     async load(context) {
       context.commit('loading', true)
       try {
-        const creds = await CloudCredential.find()
+        const creds = await Vue.prototype.$util.send('appdb/credential/find');
         const results: CredentialBlob[] = []
         for (let index = 0; index < creds.length; index++) {
           const c = creds[index];
@@ -112,20 +113,24 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async login(context, { email, password }) {
-      const existing = await CloudCredential.findOneBy({ email })
-      const appId = (await CloudCredential.findOne({}))?.appId || genAppId()
-      const cred = existing || new CloudCredential()
+      const existing = await Vue.prototype.$util.send('appdb/credential/findOne', { email })
+      const appId = (await Vue.prototype.$util.send('appdb/credential/findOne', {}))?.appId || genAppId()
+      let cred: TransportCloudCredential = existing || {
+        appId: null,
+        email: null,
+        token: null
+      };
       cred.appId = appId
       cred.email = email
 
       const token = await CloudClient.login(window.platformInfo.cloudUrl, email, password, appId )
       cred.token = token
-      await cred.save()
+      cred = await Vue.prototype.$util.send('appdb/credential/save', { obj: cred })
       const result = await credentialToBlob(cred)
       context.commit('add', result)
     },
     async logout(context, blob: CredentialBlob) {
-      await blob.credential.remove()
+      await Vue.prototype.$util.send('appdb/credential/remove', { obj: blob.credential });
       await context.dispatch('load')
       await context.commit('workspaceId', -1, { root: true})
     }

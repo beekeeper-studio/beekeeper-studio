@@ -56,7 +56,6 @@
   </modal>
 </template>
 <script lang="ts">
-import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
@@ -83,7 +82,7 @@ export default Vue.extend({
   methods: {
     async openModal() {
       console.log("opening modal!")
-      this.connections = (await SavedConnection.find()).map((c) => {
+      this.connections = (await this.$util.send('appdb/saved/find')).map((c) => {
         return {
           ...c,
           checked: false
