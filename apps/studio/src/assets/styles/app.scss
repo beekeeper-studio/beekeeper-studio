@@ -16,12 +16,7 @@
 body.theme-system {
   @media (prefers-color-scheme: dark) {
     @import './app/mixins';
-    @import './components/content-placeholders.scss';
-    @import './components/context-menu.scss';
-    @import './components/quicksearch.scss';
-    @import './components/stepper.scss';
-    @import './components/grouped-tables.scss';
-    @import './components/dropzone.scss';
+    @import './components/all';
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/dark/theme.scss';
@@ -30,12 +25,7 @@ body.theme-system {
   @media (prefers-color-scheme: light) {
     @import './themes/light/variables.scss';
     @import './app/mixins';
-    @import './components/content-placeholders.scss';
-    @import './components/context-menu.scss';
-    @import './components/quicksearch.scss';
-    @import './components/stepper.scss';
-    @import './components/grouped-tables.scss';
-    @import './components/dropzone.scss';
+    @import './components/all';
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/light/theme.scss';
@@ -44,12 +34,7 @@ body.theme-system {
 
 body.theme-dark {
   @import './app/mixins';
-  @import './components/content-placeholders.scss';
-  @import './components/context-menu.scss';
-  @import './components/quicksearch.scss';
-  @import './components/stepper.scss';
-  @import './components/grouped-tables.scss';
-  @import './components/dropzone.scss';
+  @import './components/all';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/dark/theme.scss';
@@ -58,12 +43,8 @@ body.theme-dark {
 body.theme-light {
   @import './themes/light/variables.scss';
   @import './app/mixins';
-  @import './components/content-placeholders.scss';
-  @import './components/context-menu.scss';
-  @import './components/quicksearch.scss';
-  @import './components/stepper.scss';
-  @import './components/grouped-tables.scss';
-  @import './components/dropzone.scss';
+  @import './components/all';
+  @import './vendor.scss';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';

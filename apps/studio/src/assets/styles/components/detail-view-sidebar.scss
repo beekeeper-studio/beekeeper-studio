@@ -1,0 +1,53 @@
+div.sidebar.detail-view-sidebar {
+  overflow: hidden;
+  max-width: 100%;
+  width: auto;
+  flex-grow: 1;
+  border: 1px solid $border-color;
+  border-bottom: 0;
+  border-top-left-radius: 0.3rem;
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    padding-left: 1rem;
+    padding-right: 0.5rem;
+
+    .arrow-down-btn {
+      width: 2rem;
+      height: 2rem;
+
+      .material-icons {
+        font-size: 1.4rem;
+      }
+    }
+  }
+
+  .CodeMirror-widget:has(> .expand-btn) {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .expand-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 1.2rem;
+    width: 1.2rem;
+    height: 1.2rem;
+
+    .material-icons {
+      font-size: 1rem;
+      color: $text;
+    }
+
+    &:not(:hover) {
+      background-color: transparent;
+    }
+  }
+}
