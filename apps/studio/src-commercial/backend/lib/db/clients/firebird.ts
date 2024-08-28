@@ -6,7 +6,7 @@ import { identify } from "sql-query-identifier";
 import {
   DatabaseElement,
   IDbConnectionDatabase,
-} from "../types";
+} from "@/lib/db/types";
 import {
   CancelableQuery,
   NgQueryResult,
@@ -31,18 +31,18 @@ import {
   TableColumn,
   Routine,
   ImportScriptFunctions,
-} from "../models";
+} from "@/lib/db/models";
 import {
   BasicDatabaseClient,
   ExecutionContext,
   QueryLogOptions,
-} from "./BasicDatabaseClient";
+} from "@/lib/db/clients/BasicDatabaseClient";
 import _ from "lodash";
 import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildUpdateQueries } from "./utils";
+import { buildDeleteQueries, buildUpdateQueries } from "@/lib/db/clients/utils";
 import {
   Pool,
   Connection,
@@ -52,7 +52,7 @@ import {
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
-import { IDbConnectionServer } from "../backendTypes";
+import { IDbConnectionServer } from "@/lib/db/backendTypes";
 
 type FirebirdResult = {
   rows: any[];

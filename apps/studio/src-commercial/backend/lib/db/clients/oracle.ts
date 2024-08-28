@@ -3,8 +3,8 @@ import knexLib from 'knex';
 import oracle from 'oracledb'
 import _ from 'lodash'
 
-import { IDbConnectionDatabase, DatabaseElement } from "../types";
-import { BasicDatabaseClient, NoOpContextProvider } from "./BasicDatabaseClient";
+import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
+import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
@@ -25,7 +25,7 @@ import {
   TableProperties,
   TableResult,
   TableTrigger
-} from "../models";
+} from "@/lib/db/models";
 import {
   buildSelectQueriesFromUpdates,
   buildInsertQueries,
@@ -33,7 +33,7 @@ import {
   withClosable,
   buildDeleteQueries,
   applyChangesSql
-} from './utils';
+} from '@/lib/db/clients/utils';
 import rawLog from 'electron-log'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
@@ -43,7 +43,7 @@ import platformInfo from '@/common/platform_info';
 import { OracleCursor } from './oracle/OracleCursor';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
-import { IDbConnectionServer } from '../backendTypes';
+import { IDbConnectionServer } from '@/lib/db/backendTypes';
 
 const log = rawLog.scope('oracle')
 

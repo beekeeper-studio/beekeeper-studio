@@ -1,6 +1,6 @@
-import { BeeCursor } from "../../models";
+import { BeeCursor } from "@/lib/db/models";
 import rawLog from 'electron-log'
-import { waitFor } from "../base/wait"
+import { waitFor } from "@/lib/db/clients/base/wait"
 
 const log = rawLog.scope('cassandra:cursor');
 

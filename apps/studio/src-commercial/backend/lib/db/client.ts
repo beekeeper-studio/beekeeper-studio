@@ -9,11 +9,11 @@ import { TiDBClient } from '@/lib/db/clients/tidb';
 import { RedshiftClient } from '@/lib/db/clients/redshift';
 import { CockroachClient } from '@/lib/db/clients/cockroach';
 import { BigQueryClient } from '@/lib/db/clients/bigquery';
-import { FirebirdClient } from '@/lib/db/clients/firebird';
-import { OracleClient } from "@/lib/db/clients/oracle";
-import { CassandraClient } from "@/lib/db/clients/cassandra";
-import { LibSQLClient } from "@/lib/db/clients/libsql";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import { FirebirdClient } from "./clients/firebird";
+import { OracleClient } from "./clients/oracle";
+import { CassandraClient } from "./clients/cassandra";
+import { LibSQLClient } from "./clients/libsql";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],

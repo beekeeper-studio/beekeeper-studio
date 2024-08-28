@@ -1,9 +1,13 @@
-import { IBackupHandlers } from "@/handlers/backupHandlers";
-import { IConnectionHandlers } from "./connHandlers";
-import { IExportHandlers } from "@/handlers/exportHandlers";
 import { IFileHandlers } from "@/handlers/fileHandlers";
 import { IGeneratorHandlers } from "@/handlers/generatorHandlers";
 import { IQueryHandlers } from "@/handlers/queryHandlers";
+import { ITempHandlers } from "@/handlers/tempHandlers";
+
+// commercial
+import { IConnectionHandlers } from "./connHandlers";
+import { IExportHandlers } from "./exportHandlers";
+import { IBackupHandlers } from "./backupHandlers";
+import { IEnumHandlers } from "./enumHandlers";
 
 export interface Handlers extends
   IConnectionHandlers,
@@ -11,5 +15,7 @@ export interface Handlers extends
   IGeneratorHandlers,
   IExportHandlers,
   IBackupHandlers,
-  IFileHandlers
+  IFileHandlers,
+  IEnumHandlers,
+  ITempHandlers
    {};

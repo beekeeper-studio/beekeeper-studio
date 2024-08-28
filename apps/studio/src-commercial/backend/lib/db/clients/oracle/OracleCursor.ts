@@ -1,7 +1,7 @@
-import { BeeCursor } from "../../models";
+import { BeeCursor } from "@/lib/db/models";
 import oracle from 'oracledb'
 import rawLog from 'electron-log'
-import { waitFor } from "../base/wait";
+import { waitFor } from "@/lib/db/clients/base/wait";
 
 const log = rawLog.scope("oracle:cursor")
 

@@ -1,4 +1,4 @@
-import { BeeCursor, OrderBy, TableFilter } from "../../models";
+import { BeeCursor, OrderBy, TableFilter } from "@/lib/db/models";
 import rawLog from "electron-log";
 import { Connection } from "./NodeFirebirdWrapper";
 import Firebird from "node-firebird";

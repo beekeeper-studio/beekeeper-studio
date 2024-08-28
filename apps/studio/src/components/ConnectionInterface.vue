@@ -362,8 +362,7 @@ export default Vue.extend({
         }
       } as Split.Options)
     })
-      await this.$store.dispatch('credentials/load')
-      await this.$store.dispatch('loadUsedConfigs')
+    await this.$store.dispatch('credentials/load')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {

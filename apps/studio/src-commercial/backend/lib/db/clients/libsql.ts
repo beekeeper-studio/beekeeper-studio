@@ -1,14 +1,14 @@
 import _ from "lodash";
 import rawLog from "electron-log";
-import { SqliteClient, SqliteResult } from "./sqlite";
+import { SqliteClient, SqliteResult } from "@/lib/db/clients/sqlite";
 import Client_Libsql from "@libsql/knex-libsql";
-import { BasicDatabaseClient } from "./BasicDatabaseClient";
+import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import Database from "libsql";
 import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
-import { IDbConnectionDatabase } from "../types";
-import { SqliteCursor } from "./sqlite/SqliteCursor";
-import { createSQLiteKnex } from "./sqlite/utils";
-import { IDbConnectionServer } from "../backendTypes";
+import { IDbConnectionDatabase } from "@/lib/db/types";
+import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
+import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
+import { IDbConnectionServer } from "@/lib/db/backendTypes";
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);

@@ -1,8 +1,8 @@
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults } from "../models";
-import { DatabaseElement, IDbConnectionDatabase } from "../types";
-import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults } from "@/lib/db/models";
+import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs');
@@ -14,9 +14,9 @@ import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode } from "@shared/lib/dialects/cassandra";
-import { applyChangesSql } from "./utils";
+import { applyChangesSql } from "@/lib/db/clients/utils";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
-import { IDbConnectionServer } from "../backendTypes";
+import { IDbConnectionServer } from "@/lib/db/backendTypes";
 const log = rawLog.scope("cassandra");
 const logger = () => log;
 

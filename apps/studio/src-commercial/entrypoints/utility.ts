@@ -3,14 +3,16 @@ import rawLog from 'electron-log'
 import ORMConnection from '@/common/appdb/Connection'
 import platformInfo from '@/common/platform_info';
 import { AppDbHandlers } from '@/handlers/appDbHandlers';
-import { BackupHandlers } from '@/handlers/backupHandlers';
 import { ConnHandlers } from '../backend/handlers/connHandlers';
-import { ExportHandlers } from '@/handlers/exportHandlers';
 import { FileHandlers } from '@/handlers/fileHandlers';
 import { GeneratorHandlers } from '@/handlers/generatorHandlers';
 import { Handlers } from '../backend/handlers/handlers';
 import { newState, removeState, state } from '@/handlers/handlerState';
 import { QueryHandlers } from '@/handlers/queryHandlers';
+import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
+import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
+import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
+import { TempHandlers } from '@/handlers/tempHandlers';
 
 const log = rawLog.scope('UtilityProcess');
 
@@ -31,7 +33,9 @@ export let handlers: Handlers = {
   ...ExportHandlers,
   ...AppDbHandlers,
   ...BackupHandlers,
-  ...FileHandlers
+  ...FileHandlers,
+  ...EnumHandlers,
+  ...TempHandlers
 };
 
 process.parentPort.on('message', async ({ data, ports }) => {

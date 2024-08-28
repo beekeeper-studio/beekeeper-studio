@@ -1,4 +1,4 @@
-import { SqliteCursor } from "../sqlite/SqliteCursor";
+import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import Database from "libsql";
 
 export interface LibSQLCursorOptions {

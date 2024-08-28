@@ -1,7 +1,7 @@
 import { TableFilter, TableOrView } from "@/lib/db/models";
 import { CsvExporter, Export, JsonExporter, JsonLineExporter, SqlExporter } from "@/lib/export";
 import { ExportStatus } from "@/lib/export/models";
-import { checkConnection, errorMessages, state } from "./handlerState";
+import { checkConnection, errorMessages, state } from "@/handlers/handlerState";
 import { TransportExport } from "@/common/transport/TransportExport";
 
 interface StartExportOptions {

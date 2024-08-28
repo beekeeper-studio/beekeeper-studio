@@ -1,7 +1,7 @@
 import platformInfo from "@/common/platform_info";
 import { Command } from "@/lib/db/models";
 import { spawn } from "child_process";
-import { state } from "./handlerState";
+import { state } from "@/handlers/handlerState";
 
 const errorMessages = {
   nonZero: 'Command returned non-zero exit code'
