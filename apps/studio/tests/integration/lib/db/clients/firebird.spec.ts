@@ -6,7 +6,7 @@ import {
   Connection,
   createDatabase,
   Pool,
-} from "@/lib/db/clients/firebird/NodeFirebirdWrapper";
+} from "@commercial/backend/lib/db/clients/firebird/NodeFirebirdWrapper";
 import Firebird from "node-firebird";
 import _ from 'lodash';
 import { TableOrView } from "@/lib/db/models";
