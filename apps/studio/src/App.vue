@@ -123,7 +123,7 @@ export default Vue.extend({
       () => this.$store.dispatch('licenses/updateAll'),
       globals.licenseCheckInterval
     )
-    const query = querystring.parse(global.location.search, { parseBooleans: true })
+    const query = querystring.parse(window.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
       this.runningWayland = !!query.runningWayland

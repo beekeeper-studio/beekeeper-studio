@@ -1,5 +1,6 @@
+import platformInfo from '@/common/platform_info';
 import { state } from '@/handlers/handlerState';
-import { promises as fs, constants, watch } from 'fs';
+import { promises as fs, constants, watch, existsSync } from 'fs';
 import * as path from 'path';
 
 export interface IEnumHandlers {
@@ -9,8 +10,8 @@ export interface IEnumHandlers {
 
 export const EnumHandlers: IEnumHandlers = {
   'enum/init': async function({ sId }: { sId: string }) {
-    if (!window.platformInfo.userDirectory || state(sId).enumsInitialized) return;
-    const filename = path.join(window.platformInfo.userDirectory, 'enums.json');
+    if (!platformInfo.userDirectory || state(sId).enumsInitialized) return;
+    const filename = path.join(platformInfo.userDirectory, 'enums.json');
     
     try {
       await fs.access(filename, constants.R_OK | constants.W_OK);
@@ -27,7 +28,9 @@ export const EnumHandlers: IEnumHandlers = {
   },
   'enum/load': async function() {
     const errorPrefix = 'ENUM LOADING ERROR: ';
-    const filename = path.join(window.platformInfo.userDirectory, 'enums.json');
+    const filename = path.join(platformInfo.userDirectory, 'enums.json');
+
+    if (!existsSync(filename)) return [];
     
     let enumsStr: string = null;
     try {
@@ -36,7 +39,7 @@ export const EnumHandlers: IEnumHandlers = {
       throw new Error(`${errorPrefix} ${e}`)
     }
     
-    if (!enumsStr) return;
+    if (!enumsStr) return [];
 
     let json: Array<any>;
     try {
