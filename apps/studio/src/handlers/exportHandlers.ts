@@ -2,10 +2,7 @@ import { TableFilter, TableOrView } from "@/lib/db/models";
 import { CsvExporter, Export, JsonExporter, JsonLineExporter, SqlExporter } from "@/lib/export";
 import { ExportStatus } from "@/lib/export/models";
 import { checkConnection, errorMessages, state } from "./handlerState";
-import rawLog from 'electron-log';
 import { TransportExport } from "@/common/transport/TransportExport";
-
-const log = rawLog.scope('ExportHandler');
 
 interface StartExportOptions {
   table: TableOrView,

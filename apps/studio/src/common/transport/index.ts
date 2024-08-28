@@ -12,6 +12,11 @@ export interface Transport {
   version: number
 }
 
+export interface TransportTempFile {
+  id: string,
+  name: string
+}
+
 export interface TransportCloudCredential extends Transport {
   appId: string | null,
   email: string | null,

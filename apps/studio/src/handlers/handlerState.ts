@@ -6,6 +6,14 @@ import { Export } from "@/lib/export";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import { MessagePortMain } from "electron";
+import { FSWatcher } from "fs";
+import fs from "fs";
+import tmp from 'tmp';
+
+export interface TempFile {
+  fileObject: tmp.FileSyncObject,
+  fileHandle: fs.promises.FileHandle
+}
 
 class State {
   port: MessagePortMain = null
@@ -20,6 +28,19 @@ class State {
   backupProc: ChildProcessWithoutNullStreams = null;
 
   connectionAbortController: AbortController = null;
+
+  // enums
+  enumsInitialized: boolean = false;
+  
+  private enumWatcher: FSWatcher = null;
+
+  set watcher(value: FSWatcher) {
+    if (this.enumWatcher != null) this.enumWatcher.close();
+    this.enumWatcher = value;
+  }
+
+  // temp files
+  tempFiles: Map<string, TempFile> = new Map();
 }
 
 const states = new Map<string, State>();
