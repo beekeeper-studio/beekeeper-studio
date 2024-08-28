@@ -1,5 +1,5 @@
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
-import ConnectionProvider from '@commercial/backend/connection-provider';
+import ConnectionProvider from '@commercial/backend/lib/connection-provider';
 import { dbtimeout } from '../../../../lib/db'
 
 
