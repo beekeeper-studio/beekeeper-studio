@@ -9,6 +9,10 @@ const encrypt = new EncryptTransformer(loadEncryptionKey())
 @Entity({ name: 'cloud_credential'})
 export class CloudCredential extends ApplicationEntity {
 
+  withProps(props?: any): CloudCredential {
+    if (props) CloudCredential.merge(this, props);
+    return this;
+  }
 
   @Column({type: 'varchar', nullable: false})
   appId: string | null
