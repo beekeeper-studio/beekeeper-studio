@@ -15,12 +15,11 @@ type InitInput = {table?: DatabaseEntity, db?: string | null, saved?: IConnectio
 @Entity({ name: 'pins'})
 export class PinnedEntity extends ApplicationEntity {
 
-  constructor(input: InitInput | TransportPinnedEntity) {
-    super()
+  withProps(input: InitInput | TransportPinnedEntity): PinnedEntity {
     if (!input) return;
     if ("databaseName" in input) {
       PinnedEntity.merge(this, input);
-      return;
+      return this;
     }
     const { table, db, saved } = input;
     if (table) {
@@ -33,6 +32,7 @@ export class PinnedEntity extends ApplicationEntity {
       this.connectionId = saved.id
       this.workspaceId = saved.workspaceId
     }
+    return this;
   }
 
   matches(entity: DatabaseEntity, database?: string): boolean {
