@@ -533,7 +533,6 @@ export default Vue.extend({
           ]
 
           if (keyDatas?.length > 0) {
-            menu.push({ separator: true })
             keyDatas.forEach(keyData => {
               menu.push({
                 label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
@@ -987,7 +986,7 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: createMenuItem('See in detail view'),
+          label: createMenuItem('See details'),
           action: () => {
             const data = range.getRows()[0].getData()
             this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
@@ -997,7 +996,7 @@ export default Vue.extend({
             }))
             this.toggleOpenDetailView(true)
           },
-        }
+        },
       ]
     },
     setAsNullMenuItem(range: RangeComponent) {

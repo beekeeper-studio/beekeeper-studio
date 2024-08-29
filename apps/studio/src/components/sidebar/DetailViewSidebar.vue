@@ -24,7 +24,7 @@
       :read-only="true"
       :fold-gutter="true"
       :value="text || 'Click on a row to see details'"
-      :forced-value="text"
+      :forced-value="text || 'Click on a row to see details'"
       :mode="mode"
       :force-initizalize="reinitializeTextEditor"
       :bookmarks="bookmarks"

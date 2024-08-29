@@ -61,6 +61,8 @@ export default {
     "selection",
     "cursor",
     "initialized",
+    // Use forcedValue if you want to set the value programmatically and
+    // honestly, I forgot why do we need this.
     "forcedValue",
     "plugins",
     "lineNumbers",
@@ -95,7 +97,9 @@ export default {
   watch: {
     forcedValue() {
       this.foundRootFold = false;
+      const scrollInfo = this.editor.getScrollInfo()
       this.editor.setValue(this.forcedValue);
+      this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
     forceInitizalize() {
       this.initialize();
