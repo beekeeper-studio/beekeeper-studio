@@ -893,17 +893,17 @@ export class DBTestUtil {
         SET IDENTITY_INSERT [dbo].[jobs] OFF;
       `,
       firebird: `
-      MERGE INTO jobs AS target
+      MERGE INTO "jobs" AS target
       USING (
-        SELECT ${initialID} AS ID, 'Programmer' AS job_name, 41 AS hourly_rate FROM RDB$DATABASE
+        SELECT ${initialID} AS "ID", 'Programmer' AS "job_name", 41 AS "hourly_rate" FROM RDB$DATABASE
       ) AS source
-      ON (target.ID = source.ID)
+      ON (target."ID" = source."ID")
       WHEN MATCHED THEN
         UPDATE SET
-          job_name = source.job_name, hourly_rate = source.hourly_rate
+          "job_name" = source."job_name", "hourly_rate" = source."hourly_rate"
       WHEN NOT MATCHED THEN
-        INSERT (ID, job_name, hourly_rate) VALUES (source.ID, source.job_name, source.hourly_rate);
-      `,
+        INSERT ("ID", "job_name", "hourly_rate")
+      VALUES (source."ID", source."job_name", source."hourly_rate");`.trim(),
       oracle: `
       MERGE INTO "BEEKEEPER"."jobs" target
       USING (
@@ -961,6 +961,7 @@ export class DBTestUtil {
         VALUES (source."id", source."job_name", source."hourly_rate");`,
     }
 
+    console.log(this.fmt(upsertQuery))
     expect(insertQuery).toBe(expectedInsertQueries[this.dbType] ?? insertQuery)
     expect(this.fmt(upsertQuery)).toBe(this.fmt(expectedUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
     expect(this.fmt(multipleUpsertQuery)).toBe(this.fmt(expectedMultipleUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
