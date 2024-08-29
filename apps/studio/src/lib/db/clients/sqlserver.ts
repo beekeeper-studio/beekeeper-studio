@@ -477,9 +477,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const columns = `([${PK}], ${columnsWithoutPK.map(cpk => `[${cpk}]`).join(', ')})`
     const insertSQL = () => `
       INSERT ${columns}
-      VALUES (source.${PK}, ${columnsWithoutPK.map(cpk => `source.${cpk}`).join(', ')})
+      VALUES (source.[${PK}], ${columnsWithoutPK.map(cpk => `source.[${cpk}]`).join(', ')})
     `
-    const updateSet = () => `${columnsWithoutPK.map(cpk => `target.${cpk} = source.${cpk}`).join(', ')}`
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `target.[${cpk}] = source.[${cpk}]`).join(', ')}`
     const formatValue = (val) => _.isString(val) ? `'${val}'` : val
     const usingSQLStatement = data.map( (val) =>
       `(${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')})`

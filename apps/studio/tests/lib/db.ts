@@ -885,11 +885,11 @@ export class DBTestUtil {
         ON target.id = source.id
         WHEN MATCHED THEN
           UPDATE SET 
-            target.job_name = source.job_name, 
-            target.hourly_rate = source.hourly_rate 
+            target.[job_name] = source.[job_name], 
+            target.[hourly_rate] = source.[hourly_rate] 
         WHEN NOT MATCHED THEN
           INSERT ([id], [job_name], [hourly_rate])
-          VALUES (source.id, source.job_name, source.hourly_rate);
+          VALUES (source.[id], source.[job_name], source.[hourly_rate]);
         SET IDENTITY_INSERT [dbo].[jobs] OFF;
       `,
       firebird: `
@@ -915,7 +915,7 @@ export class DBTestUtil {
           target.job_name = source.job_name, target.hourly_rate = source.hourly_rate
       WHEN NOT MATCHED THEN
         INSERT (id, job_name, hourly_rate)
-        VALUES (source.id, source.job_name, source.hourly_rate);`.trim(),
+        VALUES (source.id, source.job_name, source.hourly_rate);`,
     }
     const expectedMultipleUpsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
@@ -936,11 +936,11 @@ export class DBTestUtil {
       ON target.id = source.id
       WHEN MATCHED THEN
         UPDATE SET 
-          target.job_name = source.job_name, 
-          target.hourly_rate = source.hourly_rate
+          target.[job_name] = source.[job_name], 
+          target.[hourly_rate] = source.[hourly_rate]
       WHEN NOT MATCHED THEN
         INSERT ([id], [job_name], [hourly_rate])
-        VALUES (source.id, source.job_name, source.hourly_rate);
+        VALUES (source.[id], source.[job_name], source.[hourly_rate]);
       SET IDENTITY_INSERT [dbo].[jobs] OFF;`,
       firebird: '',
       oracle: `
@@ -958,7 +958,7 @@ export class DBTestUtil {
           target.hourly_rate = source.hourly_rate
       WHEN NOT MATCHED THEN
         INSERT (id, job_name, hourly_rate)
-        VALUES (source.id, source.job_name, source.hourly_rate);`.trim(),
+        VALUES (source.id, source.job_name, source.hourly_rate);`,
     }
 
     expect(insertQuery).toBe(expectedInsertQueries[this.dbType] ?? insertQuery)
