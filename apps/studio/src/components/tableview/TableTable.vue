@@ -309,7 +309,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
-import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
@@ -321,6 +321,7 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import { ExpandablePath } from '@/lib/data/detail_view'
 
 const log = rawLog.scope('TableTable')
 
@@ -371,7 +372,8 @@ export default Vue.extend({
       /** This is true when we switch to minimal mode while TableTable is not active */
       enabledMinimalModeWhileInactive: false,
 
-      selectedRowData: null,
+      selectedRowData: {},
+      expandablePaths: {},
       split: null,
       openDetailView: false,
     };
@@ -696,12 +698,6 @@ export default Vue.extend({
       return results
     },
 
-    expandablePaths() {
-      if (!this.selectedRowData) return [];
-      return this.rawTableKeys
-        .map((key) => [key.fromColumn])
-        .filter((path) => !_.isObject(_.get(this.selectedRowData, path)));
-    },
     tableId() {
       // the id for a tabulator table
       if (!this.usedConfig.id) return null;
@@ -995,6 +991,10 @@ export default Vue.extend({
           action: () => {
             const data = range.getRows()[0].getData()
             this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+            this.expandablePaths = this.rawTableKeys.map((key) => ({
+              path: [key.fromColumn],
+              tableKey: key,
+            }))
             this.toggleOpenDetailView(true)
           },
         }
@@ -1711,9 +1711,8 @@ export default Vue.extend({
     },
     // FIXME rename to expandForeignKeys (with s at the end), and it should be able
     // to fetch multiple paths
-    async expandForeignKey(path: string[]) {
-      const column = path[0]
-      const key = this.rawTableKeys.find((key) => key.fromColumn === column)
+    async expandForeignKey(expandablePath: ExpandablePath) {
+      const key = expandablePath.tableKey
       const table = await this.connection.selectTop(
         key.toTable,
         0,
@@ -1722,11 +1721,23 @@ export default Vue.extend({
         [{
           field: key.toColumn,
           type: '=',
-          value: this.selectedRowData[column],
+          value: _.get(this.selectedRowData, expandablePath.path),
         }],
         key.toSchema
       )
-      this.selectedRowData[column] = table.result[0]
+      _.set(this.selectedRowData, expandablePath.path, table.result[0])
+
+      // Remove the path from the list of expandable paths
+      this.expandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
+
+      // Add new expandable paths for the new table
+      const tableKeys = await this.connection.getTableKeys(key.toTable, key.toSchema)
+      tableKeys.forEach((tableKey: TableKey) => {
+        this.expandablePaths.push({
+          path: [...expandablePath.path, tableKey.fromColumn],
+          tableKey,
+        })
+      })
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
