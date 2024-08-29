@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions, DatabaseEntity } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
@@ -90,7 +90,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // Connection *****************************************************************
-  async connect(_signal?: AbortSignal): Promise<void> {
+  async connect(): Promise<void> {
     /* eslint no-param-reassign: 0 */
     if (this.database.connecting) {
       throw new Error('There is already a connection in progress for this database. Aborting this new request.');
@@ -283,10 +283,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
-  getImportSQL(importedData: any[]): string | string[] {
+  getImportSQL(importedData: any[], primaryKeys: string[] = []): string | string[] {
     const queries = []
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
@@ -296,13 +295,18 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
+  /** Sync a database file to remote database. This is a LibSQL specific feature. */
   async syncDatabase(): Promise<void> {
     throw new Error("Not implemented");
   }
 
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
+  protected createUpsertFunc: ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string) | null = null
+
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert = false): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
-    return buildInsertQuery(this.knex, tableInsert, columns);
+    const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc });
   }
 
   abstract wrapIdentifier(value: string): string;

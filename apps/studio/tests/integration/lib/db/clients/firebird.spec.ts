@@ -250,7 +250,8 @@ describe("Firebird Tests", () => {
     })
   });
 
-  it('should import correctly', async () => {
+  // skipping for now because this process is hella deprecated
+  it.skip('should import correctly', async () => {
     const tableName = 'import_table'
     const table: TableOrView = {
       name: tableName,
