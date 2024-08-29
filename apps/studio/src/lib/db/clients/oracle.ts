@@ -120,25 +120,25 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     const [PK] = primaryKeys
     const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
     const insertSQL = () => `
-      INSERT (${PK}, ${columnsWithoutPK.map(cpk => cpk).join(', ')})
-      VALUES (source.${PK}, ${columnsWithoutPK.map(cpk => `source.${cpk}`).join(', ')})
+      INSERT ("${PK}", ${columnsWithoutPK.map(cpk => `"${cpk}"`).join(', ')})
+      VALUES (source."${PK}", ${columnsWithoutPK.map(cpk => `source."${cpk}"`).join(', ')})
     `
-    const updateSet = () => `${columnsWithoutPK.map(cpk => `target.${cpk} = source.${cpk}`).join(', ')}`
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `target."${cpk}" = source."${cpk}"`).join(', ')}`
     const formatValue = (val) => _.isString(val) ? `'${val}'` : val
     const usingSQLStatement = data.map( (val, idx) => {
       if (idx === 0) {
-        return `SELECT ${formatValue(val[PK])} AS '${PK}', ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS '${col}'`).join(', ')} FROM dual`
+        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM dual`
       }
       return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM dual`
     })
     .join(' UNION ALL ')
 
     return `
-      MERGE INTO ${schema}.${tableName} target
+      MERGE INTO "${schema}"."${tableName}" target
       USING (
         ${usingSQLStatement}
       ) source
-      ON (target.${PK} = source.${PK})
+      ON (target."${PK}" = source."${PK}")
       WHEN MATCHED THEN
         UPDATE SET
           ${updateSet()}
