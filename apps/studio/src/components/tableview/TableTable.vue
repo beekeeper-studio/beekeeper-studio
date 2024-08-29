@@ -34,6 +34,7 @@
           :value="selectedRowData"
           :hidden="!openDetailView"
           :expandablePaths="expandablePaths"
+          :rowId="selectedRowIndex"
           @expandPath="expandForeignKey"
           @close="toggleOpenDetailView(false)"
         />
@@ -372,6 +373,7 @@ export default Vue.extend({
       /** This is true when we switch to minimal mode while TableTable is not active */
       enabledMinimalModeWhileInactive: false,
 
+      selectedRowIndex: null,
       selectedRowData: {},
       expandablePaths: {},
       split: null,
@@ -989,6 +991,7 @@ export default Vue.extend({
           label: createMenuItem('See details'),
           action: () => {
             const data = range.getRows()[0].getData()
+            this.selectedRowIndex = data[this.internalIndexColumn]
             this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
             this.expandablePaths = this.rawTableKeys.map((key) => ({
               path: [key.fromColumn],
@@ -1711,32 +1714,39 @@ export default Vue.extend({
     // FIXME rename to expandForeignKeys (with s at the end), and it should be able
     // to fetch multiple paths
     async expandForeignKey(expandablePath: ExpandablePath) {
-      const key = expandablePath.tableKey
-      const table = await this.connection.selectTop(
-        key.toTable,
-        0,
-        1,
-        [],
-        [{
-          field: key.toColumn,
-          type: '=',
-          value: _.get(this.selectedRowData, expandablePath.path),
-        }],
-        key.toSchema
-      )
-      _.set(this.selectedRowData, expandablePath.path, table.result[0])
+      const { path, tableKey } = expandablePath
+      try {
+        const table = await this.connection.selectTop(
+          tableKey.toTable,
+          0,
+          1,
+          [],
+          [{
+            field: tableKey.toColumn,
+            type: '=',
+            value: _.get(this.selectedRowData, path),
+          }],
+          tableKey.toSchema
+        )
+
+        if (table.result.length > 0) {
+          _.set(this.selectedRowData, path, table.result[0])
+
+          // Add new expandable paths for the new table
+          const tableKeys = await this.connection.getTableKeys(tableKey.toTable, tableKey.toSchema)
+          tableKeys.forEach((key: TableKey) => {
+            this.expandablePaths.push({
+              path: [...path, key.fromColumn],
+              tableKey: key,
+            })
+          })
+        }
+      } catch (e) {
+        log.error(e)
+      }
 
       // Remove the path from the list of expandable paths
       this.expandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
-
-      // Add new expandable paths for the new table
-      const tableKeys = await this.connection.getTableKeys(key.toTable, key.toSchema)
-      tableKeys.forEach((tableKey: TableKey) => {
-        this.expandablePaths.push({
-          path: [...expandablePath.path, tableKey.fromColumn],
-          tableKey,
-        })
-      })
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)

@@ -22,6 +22,7 @@ import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = RawLog.scope('store/index')
 
@@ -57,6 +58,7 @@ export interface State {
   defaultSchema: string,
   versionString: string,
   connError: string
+  expandFKDetailsByDefault: boolean
 }
 
 Vue.use(Vuex)
@@ -102,7 +104,8 @@ const store = new Vuex.Store<State>({
     windowTitle: 'Beekeeper Studio',
     defaultSchema: null,
     versionString: null,
-    connError: null
+    connError: null,
+    expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
   },
 
   getters: {
@@ -193,6 +196,9 @@ const store = new Vuex.Store<State>({
     versionString(state) {
       return state.server.versionString();
     },
+    expandFKDetailsByDefault(state) {
+      return state.expandFKDetailsByDefault
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -323,7 +329,10 @@ const store = new Vuex.Store<State>({
     },
     setConnError(state, err: string) {
       state.connError = err;
-    }
+    },
+    expandFKDetailsByDefault(state, value: boolean) {
+      state.expandFKDetailsByDefault = value
+    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -507,6 +516,13 @@ const store = new Vuex.Store<State>({
       context.dispatch('data/connections/load')
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
+    },
+    async toggleExpandFKDetailsByDefault(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.expandFKDetailsByDefault
+      }
+      SmartLocalStorage.setBool('expandFKDetailsByDefault', value)
+      context.commit('expandFKDetailsByDefault', value)
     }
   },
   plugins: []

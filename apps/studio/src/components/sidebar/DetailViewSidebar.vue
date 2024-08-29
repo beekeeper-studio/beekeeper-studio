@@ -36,11 +36,16 @@
 import Vue from "vue";
 import Sidebar from "@/components/common/Sidebar.vue";
 import TextEditor from "@/components/common/texteditor/TextEditor.vue";
-import { ExpandablePath, findKeyPosition, createExpandBtn } from "@/lib/data/detail_view";
+import {
+  ExpandablePath,
+  findKeyPosition,
+  createExpandBtn,
+} from "@/lib/data/detail_view";
+import { mapGetters } from "vuex";
 
 export default Vue.extend({
   components: { Sidebar, TextEditor },
-  props: ["value", "hidden", "expandablePaths"],
+  props: ["value", "hidden", "expandablePaths", "rowId"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -50,6 +55,16 @@ export default Vue.extend({
   watch: {
     hidden() {
       if (!this.hidden) this.reinitializeTextEditor++;
+    },
+    rowId() {
+      if (this.expandFKDetailsByDefault) {
+        this.expandablePaths.forEach((expandablePath: ExpandablePath) => {
+          // Expand only the first level
+          if (expandablePath.path.length === 1) {
+            this.expandPath(expandablePath);
+          }
+        });
+      }
     },
   },
   computed: {
@@ -85,7 +100,7 @@ export default Vue.extend({
         const element = createExpandBtn();
         const onClick = () => {
           element.disabled = true;
-          this.$emit("expandPath", expandablePath);
+          this.expandPath(expandablePath);
         };
         return { line, ch, element, onClick };
       });
@@ -93,18 +108,22 @@ export default Vue.extend({
     lines() {
       return this.text?.split("\n") || [];
     },
+    ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
+    expandPath(path: ExpandablePath) {
+      this.$emit("expandPath", path);
+    },
     openMenu(event) {
       this.$bks.openMenu({
         event,
         options: [
           {
-            name: "Expand foreign keys by default",
+            name: "Expand FK by default",
             handler: () => {
-              // this should send to backend or save to local storage
-              throw new Error("Not implemented");
+              this.$store.dispatch("toggleExpandFKDetailsByDefault");
             },
+            icon: this.expandFKDetailsByDefault ? "done" : "",
           },
           {
             name: "Copy",
