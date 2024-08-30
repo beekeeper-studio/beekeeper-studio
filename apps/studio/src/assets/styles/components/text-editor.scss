@@ -11,4 +11,8 @@
       display: none;
     }
   }
+
+  .CodeMirror-guttermaker-subtle {
+    color: rgba($theme-base, 0.25);
+  }
 }

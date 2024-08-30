@@ -34,7 +34,6 @@ import "@/lib/editor/CodeMirrorDefinitions";
 import "codemirror/addon/merge/merge";
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
-
 import { EditorMarker } from "@/lib/editor/utils";
 import {
   setKeybindingsFromVimrc,
@@ -77,6 +76,7 @@ export default {
       editor: null,
       foundRootFold: false,
       bookmarkInstances: [],
+      markInstances: [],
     };
   },
   computed: {
@@ -97,7 +97,7 @@ export default {
   watch: {
     forcedValue() {
       this.foundRootFold = false;
-      const scrollInfo = this.editor.getScrollInfo()
+      const scrollInfo = this.editor.getScrollInfo();
       this.editor.setValue(this.forcedValue);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
@@ -138,20 +138,6 @@ export default {
         this.editor.refresh();
       }
     },
-    markers() {
-      this.editor.getAllMarks().forEach((mark: CodeMirror.TextMarker) => {
-        mark.clear();
-      });
-      this.markers.forEach((marker: EditorMarker) => {
-        if (marker.type === "error") {
-          this.editor.markText(marker.from, marker.to, { className: "error" });
-        } else if (marker.type === "highlight") {
-          this.editor.markText(marker.from, marker.to, {
-            className: "highlight",
-          });
-        }
-      });
-    },
     removeJsonRootBrackets() {
       if (this.removeJsonRootBrackets) {
         this.editor
@@ -162,6 +148,9 @@ export default {
           ?.getWrapperElement()
           .classList.remove("remove-json-root-brackets");
       }
+    },
+    markers() {
+      this.initializeMarkers();
     },
     bookmarks() {
       this.initializeBookmarks();
@@ -307,21 +296,53 @@ export default {
 
       this.editor = cm;
 
+      this.initializeMarkers();
       this.initializeBookmarks();
 
       this.$emit("update:initialized", true);
     },
-    initializeBookmarks() {
+    initializeMarkers() {
+      const markers = this.markers || [];
       if (!this.editor) return;
 
       // Cleanup existing bookmarks
-      this.bookmarkInstances.forEach((mark) => {
-        mark.clear();
-      });
+      this.markInstances.forEach((mark: TextMarker) => mark.clear());
+      this.markInstances = []
 
+      for (const marker of markers) {
+        let markInstance: TextMarker;
+        if (marker.type === "error") {
+          markInstance = this.editor.markText(marker.from, marker.to, {
+            className: "error",
+          });
+        } else if (marker.type === "highlight") {
+          markInstance = this.editor.markText(marker.from, marker.to, {
+            className: "highlight",
+          });
+        } else if (marker.type === "custom") {
+          markInstance = this.editor.markText(marker.from, marker.to, {
+            ...(marker.element && { replacedWith: marker.element }),
+          });
+          if (marker.element && marker.onClick) {
+            CodeMirror.on(marker.element, "click", marker.onClick);
+            markInstance.on("clear", () => {
+              CodeMirror.off(marker.element, "click", marker.onClick);
+              marker.element.remove();
+            });
+          }
+        }
+        this.markInstances.push(markInstance);
+      }
+    },
+    initializeBookmarks() {
+      const bookmarks = this.bookmarks || [];
+      if (!this.editor) return;
+
+      // Cleanup existing bookmarks
+      this.bookmarkInstances.forEach((mark) => mark.clear());
       this.bookmarkInstances = [];
 
-      for (const bookmark of this.bookmarks) {
+      for (const bookmark of bookmarks) {
         const { element, line, ch, onClick } = bookmark;
         const mark = this.editor.setBookmark(CodeMirror.Pos(line, ch), {
           widget: element,
@@ -332,6 +353,7 @@ export default {
           CodeMirror.on(element, "click", handleOnClick);
           mark.on("clear", () => {
             CodeMirror.off(element, "click", handleOnClick);
+            element.remove();
           });
         }
 

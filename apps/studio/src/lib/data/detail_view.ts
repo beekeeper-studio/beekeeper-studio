@@ -42,12 +42,27 @@ export function findKeyPosition(jsonStr: string, path: string[]) {
   return -1;
 }
 
-export function createExpandBtn() {
-  const expandBtn = document.createElement("button");
+export function createExpandableElement(text: string) {
+  const element = document.createElement("a");
+  element.classList.add("expandable-value")
+  element.innerText = text;
+
   const icon = document.createElement("i");
   icon.classList.add("material-icons");
-  icon.innerText = "unfold_more";
-  expandBtn.appendChild(icon);
-  expandBtn.classList.add("btn", "btn-flat", "btn-fab", "expand-btn");
-  return expandBtn;
+  icon.innerText = "keyboard_arrow_down";
+
+  element.appendChild(icon);
+
+  return element;
+}
+
+export function findValueInfo(line: string) {
+  const matches = line.match(/(^\s*".*":\s*)(.*?),?\s*$/);
+  if (!matches) return null;
+
+  const from = matches[1].length
+  const to = from + matches[2].length
+  const value = line.slice(from, to);
+
+  return { from, to, value };
 }

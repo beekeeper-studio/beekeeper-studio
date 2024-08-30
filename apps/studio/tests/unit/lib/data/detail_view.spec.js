@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { findKeyPosition } from "../../../../src/lib/data/detail_view";
+import { findKeyPosition, findValueInfo } from "../../../../src/lib/data/detail_view";
 
 const jsonStr = fs.readFileSync(
   path.resolve(__dirname, "./sample.json"),
@@ -17,4 +17,13 @@ describe("Detail View", () => {
     expect(findKeyPosition(jsonStr, ["staff_id", "address_id"])).toBe(62);
     expect(findKeyPosition(jsonStr, ["staff_id", "store_id"])).toBe(64);
   });
+
+  it("should find a value info in a line of JSON text", () => {
+    const lines = jsonStr.split("\n");
+    expect(findValueInfo(lines[15])).toStrictEqual({
+      from: 30,
+      to: 34,
+      value: "null",
+    })
+  })
 });

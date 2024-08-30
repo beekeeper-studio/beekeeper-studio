@@ -27,7 +27,7 @@
       :forced-value="text || 'Click on a row to see details'"
       :mode="mode"
       :force-initizalize="reinitializeTextEditor"
-      :bookmarks="bookmarks"
+      :markers="markers"
     />
   </div>
 </template>
@@ -39,9 +39,15 @@ import TextEditor from "@/components/common/texteditor/TextEditor.vue";
 import {
   ExpandablePath,
   findKeyPosition,
-  createExpandBtn,
+  findValueInfo,
+  createExpandableElement,
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
+import { EditorMarker } from "@/lib/editor/utils";
+import rawLog from "electron-log";
+import _ from "lodash";
+
+const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { Sidebar, TextEditor },
@@ -91,19 +97,30 @@ export default Vue.extend({
       }
       return JSON.stringify(this.value, null, 2);
     },
-    bookmarks() {
-      if (!this.text) return [];
-      return this.expandablePaths.map((expandablePath: ExpandablePath) => {
-        const line = findKeyPosition(this.text, expandablePath.path);
-        // Put the bookmark at the end of the line
-        const ch = this.lines[line].length;
-        const element = createExpandBtn();
-        const onClick = () => {
-          element.disabled = true;
-          this.expandPath(expandablePath);
-        };
-        return { line, ch, element, onClick };
+    markers() {
+      const markers: EditorMarker[] = [];
+      _.forEach(this.expandablePaths, (expandablePath: ExpandablePath) => {
+        try {
+          const line = findKeyPosition(this.text, expandablePath.path);
+          const { from, to, value } = findValueInfo(this.lines[line]);
+          const element = createExpandableElement(value);
+          const onClick = (_event) => {
+            console.log("mmomoasmdoasd");
+            this.expandPath(expandablePath);
+          };
+          markers.push({
+            type: "custom",
+            from: { line, ch: from },
+            to: { line, ch: to },
+            onClick,
+            element,
+          });
+        } catch (e) {
+          log.warn("Failed to find position for", expandablePath.path);
+          log.warn(e);
+        }
       });
+      return markers;
     },
     lines() {
       return this.text?.split("\n") || [];
