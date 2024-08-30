@@ -109,7 +109,6 @@ export interface IConnectionHandlers {
 }
 
 export const ConnHandlers: IConnectionHandlers = {
-  // wtf typescript, this is so fucking ugly
   'conn/create': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string}) {
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
@@ -122,7 +121,7 @@ export const ConnHandlers: IConnectionHandlers = {
       // need to single out saved connections here (this may change when used connections are fixed)
       if (config.id) {
         // we do this so any temp configs that the user did aren't saved, just the id
-        const conn = await SavedConnection.findOne(config.id);
+        const conn = await SavedConnection.findOneBy({ id: config.id });
         conn.authId = cache.id;
         conn.save();
       }

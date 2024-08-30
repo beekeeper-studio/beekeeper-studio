@@ -39,7 +39,6 @@ export const LicenseModule: Module<State, RootState>  = {
     add(state, license: TransportLicenseKey) {
       upsert(state.licenses, license, (a, b) => a.key === b.key && a.email === b.email)
     },
-
     remove(state, licenses: TransportLicenseKey[]) {
       state.licenses = _.without(state.licenses, ...licenses)
     }
