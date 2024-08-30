@@ -44,7 +44,7 @@ export function findKeyPosition(jsonStr: string, path: string[]) {
 
 export function createExpandableElement(text: string) {
   const element = document.createElement("a");
-  element.classList.add("expandable-value")
+  element.classList.add("expandable-value");
   element.innerText = text;
 
   const icon = document.createElement("i");
@@ -60,9 +60,42 @@ export function findValueInfo(line: string) {
   const matches = line.match(/(^\s*".*":\s*)(.*?),?\s*$/);
   if (!matches) return null;
 
-  const from = matches[1].length
-  const to = from + matches[2].length
+  const from = matches[1].length;
+  const to = from + matches[2].length;
   const value = line.slice(from, to);
 
   return { from, to, value };
+}
+
+/** Remove all properties that don't contain the given filter */
+export function deepFilterObjectProps(
+  obj: Record<string, any>,
+  filter: string
+) {
+  const filteredPaths = getPaths(obj).filter((path) =>
+    path.toLowerCase().includes(filter)
+  );
+  return _.pick(obj, filteredPaths);
+}
+
+/**
+ * Get all possible paths of an object excluding arrays.
+ *
+ * For example:
+ * ```js
+ * const obj = { a: { b: 0 }, c: [1, 2] }
+ * console.log(getPaths(obj)) // ["a", "c", "a.b"]
+ * ```
+ **/
+function getPaths(obj: Record<string, any>) {
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    if (_.isObject(obj[key]) && !_.isArray(obj[key])) {
+      const nestedKeys = getPaths(obj[key]).map(
+        (nestedKey) => `${key}.${nestedKey}`
+      );
+      keys.push(...nestedKeys);
+    }
+  }
+  return keys;
 }

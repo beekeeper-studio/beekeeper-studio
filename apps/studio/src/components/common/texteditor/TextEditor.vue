@@ -34,7 +34,6 @@ import "@/lib/editor/CodeMirrorDefinitions";
 import "codemirror/addon/merge/merge";
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
-import { EditorMarker } from "@/lib/editor/utils";
 import {
   setKeybindingsFromVimrc,
   applyConfig,
@@ -70,6 +69,8 @@ export default {
     "removeJsonRootBrackets",
     "forceInitizalize",
     "bookmarks",
+    "foldAll",
+    "unfoldAll",
   ],
   data() {
     return {
@@ -154,6 +155,14 @@ export default {
     },
     bookmarks() {
       this.initializeBookmarks();
+    },
+    foldAll() {
+      console.log('foldall', this.foldAll)
+      // this.editor.foldAll();
+      CodeMirror.commands.foldAll(this.editor)
+    },
+    unfoldAll() {
+      CodeMirror.commands.unfoldAll(this.editor)
     },
   },
   methods: {
@@ -307,7 +316,7 @@ export default {
 
       // Cleanup existing bookmarks
       this.markInstances.forEach((mark: TextMarker) => mark.clear());
-      this.markInstances = []
+      this.markInstances = [];
 
       for (const marker of markers) {
         let markInstance: TextMarker;
@@ -391,6 +400,7 @@ export default {
             },
             class: selectionDepClass,
             shortcut: this.ctrlOrCmd("x"),
+            write: true,
           },
           {
             name: "Copy",
@@ -413,6 +423,7 @@ export default {
               }
             },
             shortcut: this.ctrlOrCmd("v"),
+            write: true,
           },
           {
             name: "Delete",
@@ -420,6 +431,7 @@ export default {
               this.editor.replaceSelection("");
             },
             class: selectionDepClass,
+            write: true,
           },
           {
             name: "Select All",
@@ -444,6 +456,7 @@ export default {
               this.editor.execCommand("replace");
             },
             shortcut: this.ctrlOrCmd("r"),
+            write: true,
           },
           {
             name: "Replace All",
@@ -451,10 +464,15 @@ export default {
               this.editor.execCommand("replaceAll");
             },
             shortcut: this.ctrlOrCmd("shift+r"),
+            write: true,
           },
         ],
         event,
       };
+
+      if (this.readOnly) {
+        menu.options = menu.options.filter((option) => !option.write);
+      }
 
       const customOptions = this.contextMenuOptions
         ? this.contextMenuOptions(event, menu.options)

@@ -9,7 +9,7 @@
       <input
         class="form-control"
         type="text"
-        placeholder="Search fields"
+        placeholder="Filter fields"
         v-model="filter"
       />
       <span
@@ -23,6 +23,8 @@
     <text-editor
       :read-only="true"
       :fold-gutter="true"
+      :fold-all="foldAll"
+      :unfoldAll="unfoldAll"
       :value="text || 'Click on a row to see details'"
       :forced-value="text || 'Click on a row to see details'"
       :mode="mode"
@@ -41,6 +43,7 @@ import {
   findKeyPosition,
   findValueInfo,
   createExpandableElement,
+  deepFilterObjectProps,
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
@@ -56,6 +59,8 @@ export default Vue.extend({
     return {
       reinitializeTextEditor: 0,
       filter: "",
+      foldAll: 0,
+      unfoldAll: 0,
     };
   },
   watch: {
@@ -85,14 +90,7 @@ export default Vue.extend({
         return "";
       }
       if (this.filter) {
-        const filtered = {};
-        for (const key in this.value) {
-          const keySearch = key.toLowerCase();
-          const filterSearch = this.filter.toLowerCase();
-          if (keySearch.includes(filterSearch)) {
-            filtered[key] = this.value[key];
-          }
-        }
+        const filtered = deepFilterObjectProps(this.value, this.filter);
         return JSON.stringify(filtered, null, 2);
       }
       return JSON.stringify(this.value, null, 2);
@@ -105,7 +103,6 @@ export default Vue.extend({
           const { from, to, value } = findValueInfo(this.lines[line]);
           const element = createExpandableElement(value);
           const onClick = (_event) => {
-            console.log("mmomoasmdoasd");
             this.expandPath(expandablePath);
           };
           markers.push({
@@ -116,8 +113,8 @@ export default Vue.extend({
             element,
           });
         } catch (e) {
-          log.warn("Failed to find position for", expandablePath.path);
-          log.warn(e);
+          // log.warn("Failed to find position for", expandablePath.path);
+          // log.warn(e);
         }
       });
       return markers;
@@ -141,6 +138,18 @@ export default Vue.extend({
               this.$store.dispatch("toggleExpandFKDetailsByDefault");
             },
             icon: this.expandFKDetailsByDefault ? "done" : "",
+          },
+          {
+            name: "Fold all",
+            handler: () => {
+              this.foldAll++;
+            },
+          },
+          {
+            name: "Unfold all",
+            handler: () => {
+              this.unfoldAll++;
+            },
           },
           {
             name: "Copy",
