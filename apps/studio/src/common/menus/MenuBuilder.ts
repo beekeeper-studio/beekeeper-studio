@@ -18,7 +18,8 @@ export default class extends DefaultMenu {
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
         this.menuItems.sidebarToggle,
-        this.menuItems.minimalModeToggle,
+        // Disable this for now in favor of #2380
+        // this.menuItems.minimalModeToggle,
       ]
     }
     if (!platformInfo.isMac)
