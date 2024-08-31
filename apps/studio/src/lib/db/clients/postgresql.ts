@@ -415,14 +415,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         i.indisunique,
         i.indisprimary,
         ${supportedFeatures.indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
-        coalesce(a.attname,
-                  (('{' || pg_get_expr(
-                              i.indexprs,
-                              i.indrelid
-                          )
-                        || '}')::text[]
-                  )[k.i]
-                ) AS index_column,
+        coalesce(a.attname, pg_get_indexdef(i.indexrelid, k.i, false)) AS index_column,
         i.indoption[k.i - 1] = 0 AS ascending
       FROM pg_index i
         CROSS JOIN LATERAL (SELECT unnest(i.indkey), generate_subscripts(i.indkey, 1) + 1) AS k(attnum, i)
