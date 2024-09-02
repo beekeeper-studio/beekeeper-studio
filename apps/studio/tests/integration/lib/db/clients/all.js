@@ -73,7 +73,8 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("stream tests", async () => {
-      if (getUtil().dbType === 'cockroachdb') {
+      // ClickHouse doesn't support chunkSize for streaming
+      if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') {
         return
       }
       await getUtil().streamTests()

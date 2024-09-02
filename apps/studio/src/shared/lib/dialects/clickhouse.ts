@@ -84,5 +84,6 @@ export const ClickHouseData: DialectData = {
       renameSchema: true,
     },
     transactions: true,
+    chunkSizeStream: true,
   },
 }

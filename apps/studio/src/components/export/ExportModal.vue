@@ -115,7 +115,7 @@
                 v-model="outputOptions"
               />
               <div class="modal-form export-form export-advanced-options">
-                <div class="form-group row">
+                <div class="form-group row" v-if="!this.dialectData.disabledFeatures.chunkSizeStream">
                   <label title="How many records to read at once from the cursor">Chunk size</label>
                   <input
                     v-model="options.chunkSize"
@@ -168,7 +168,7 @@
 </template>
 <script>
 import dateFormat from 'dateformat'
-import { mapMutations } from "vuex"
+import { mapMutations, mapGetters } from "vuex"
 import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
 import FilePicker from '../common/form/FilePicker.vue'
@@ -291,6 +291,7 @@ export default {
     toggleIcon() {
       return this.advancedToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
     },
+    ...mapGetters(['dialectData']),
   },
   methods: {
     async submit() {
