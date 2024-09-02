@@ -44,7 +44,7 @@
       >
         <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
         <div
-          v-if="this.connection.connectionType === 'oracle'"
+          v-if="this.connectionType === 'oracle'"
           class="dialog-content"
           v-kbd-trap="true"
         >
