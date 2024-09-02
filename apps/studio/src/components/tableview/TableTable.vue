@@ -299,7 +299,7 @@ import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/uti
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 
@@ -807,7 +807,7 @@ export default Vue.extend({
     },
     copySelection() {
       if (!this.focusingTable()) return
-      copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
+      copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
     },
     pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
@@ -982,8 +982,8 @@ export default Vue.extend({
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       if (this.isEditorMenuDisabled(cell)) return
-      // FIXME maybe we can avoid calling child methods directly like this? 
-      // it should be done by calling an event using this.$modal.show(modalName) 
+      // FIXME maybe we can avoid calling child methods directly like this?
+      // it should be done by calling an event using this.$modal.show(modalName)
       // or this.$trigger(AppEvent.something) if possible
       this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
     },
