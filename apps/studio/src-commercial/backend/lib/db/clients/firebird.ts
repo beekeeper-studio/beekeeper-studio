@@ -31,6 +31,7 @@ import {
   TableColumn,
   Routine,
   ImportScriptFunctions,
+  ImportFuncOptions,
 } from "@/lib/db/models";
 import {
   BasicDatabaseClient,
@@ -1224,7 +1225,44 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     throw new Error("Method not implemented.");
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async importStepZero(_table: TableOrView): Promise<any> {
+    const connection = await this.pool.getConnection()
+    const transaction = await connection.transaction()
+
+    return {
+      connection,
+      transaction
+    }
+  }
+
+  async importTruncateCommand (table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    const { name } = table
+
+    return clientExtras.transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`)
+  }
+
+  async importLineReadCommand (_table: TableOrView, sqlString: string[], { clientExtras }: ImportFuncOptions): Promise<any> {
+    try {
+      const theStrings = sqlString.map(sql => clientExtras.transaction.query(`${sql};`))
+      return Promise.all(theStrings)
+    } catch(err) {
+      throw new Error(err)
+    }
+  }
+
+  async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.commit()
+  }
+
+  async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.rollback()
+  }
+
+  async importFinalCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.connection.release()
+  }
+
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name } = table
     let connection
     let transaction
@@ -1251,7 +1289,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  getImportSQL(importedData: TableInsert[]): string[] {
+  async getImportSQL(importedData: TableInsert[]): Promise<string[]> {
     return buildInsertQueries(this.knex, importedData)
   }
 

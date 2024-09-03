@@ -332,6 +332,11 @@ export interface CommandSettingSection {
   show?: (config: BackupConfig) => boolean;
 }
 
+export interface ImportFuncOptions {
+  clientExtras?: {[key: string]: any}
+  executeOptions?: {[key: string]: any}
+}
+
 export interface ImportScriptFunctions {
   step0?: (args?: any) => Promise<null|any>
   beginCommand: (args?: any) => Promise<null|any>

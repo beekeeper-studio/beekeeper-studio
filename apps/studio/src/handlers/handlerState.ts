@@ -64,7 +64,8 @@ export const errorMessages = {
   noDatabase: 'No database connection found',
   noServer: 'No server found',
   noQuery: 'Query not found',
-  noExport: 'Export not found'
+  noExport: 'Export not found',
+  noImport: 'Import not found'
 };
 
 export function getDriverHandler(name: string) {
