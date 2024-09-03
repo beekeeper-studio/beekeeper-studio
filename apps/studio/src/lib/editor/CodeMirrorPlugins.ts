@@ -3,6 +3,7 @@ import { removeQueryQuotes } from "@/lib/db/sql_tools";
 import MagicColumnBuilder from "@/lib/magic/MagicColumnBuilder";
 import electronLog from "electron-log";
 import { TableOrView } from "../db/models";
+import _ from "lodash";
 
 export function autoquoteHandler(
   instance: CodeMirror.Editor,

@@ -4,7 +4,9 @@
       v-if="isSupported"
       class="tabcontent"
     >
+      <upsell-content v-if="!hasActiveLicense"></upsell-content>
       <stepper
+        v-else
         :steps="importSteps"
         :button-portal-target="portalName"
         wrapper-class="import-export-wrapper"
@@ -104,6 +106,7 @@
   import ImportFile from './importtable/ImportFile.vue'
   import ImportMapper from './importtable/ImportMapper.vue'
   import ImportPreview from './importtable/ImportPreview.vue'
+  import UpsellContent from '@/components/connection/UpsellContent.vue'
   import { DialectTitles } from '@shared/lib/dialects/models'
   
   import { ExportStatus } from '../lib/export/models'
@@ -113,7 +116,8 @@
   export default {
     components: {
       Stepper,
-      StatusBar
+      StatusBar,
+      UpsellContent
     },
     props: {
       schema: {
@@ -187,6 +191,7 @@
     },
     computed: {
       ...mapGetters(['schemaTables', 'dialectData', 'dialect']),
+      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
       ...mapState(['tables', 'connection']),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
       portalName() {

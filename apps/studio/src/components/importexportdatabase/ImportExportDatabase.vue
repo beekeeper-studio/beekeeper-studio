@@ -1,7 +1,9 @@
 <template>
   <div class="import-export__wrapper tabcontent">
     <div class="import-export__container">
+      <upsell-content v-if="!hasActiveLicense"></upsell-content>
       <stepper
+        v-else
         :steps="exportSteps"
         @finished="startExport"
         :button-portal-target="portalName"
@@ -85,6 +87,7 @@
   import ExportObjects from './ExportObjects.vue'
   import ExportOptions from './ExportOptions.vue'
   import ExportConfirmation from './ExportConfirmation.vue'
+  import UpsellContent from '../connection/UpsellContent.vue'
 
   import { ExportStatus } from '../../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
@@ -92,7 +95,8 @@
   export default {
     components: {
       Stepper,
-      StatusBar
+      StatusBar,
+      UpsellContent
     },
     props: ['schema', 'tab'],
     data() {
@@ -142,7 +146,10 @@
       ...mapGetters('multiTableExports', ['isSelectTableComplete', 'isOptionsComplete']),
       ...mapState(['connection']),
       ...mapState('multiTableExports', ['tablesToExport', 'tableOptions', 'exportSchema']),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports'}),
+      ...mapGetters({
+        'hasRunningExports': 'exports/hasRunningExports',
+        'hasActiveLicense': 'licenses/hasActiveLicense'
+      }),
       selectedTables() {
         return this.tablesToExport.length;
       },

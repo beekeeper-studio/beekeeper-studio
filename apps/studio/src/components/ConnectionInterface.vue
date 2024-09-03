@@ -116,22 +116,22 @@
                   :testing="testing"
                 />
                 <firebird-form
-                  v-else-if="config.connectionType === 'firebird'"
+                  v-else-if="config.connectionType === 'firebird' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
                 <oracle-form
-                  v-if="config.connectionType === 'oracle'"
+                  v-if="config.connectionType === 'oracle' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
                 <cassandra-form
-                  v-if="config.connectionType === 'cassandra'"
+                  v-if="config.connectionType === 'cassandra' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
                 <lib-sql-form
-                  v-else-if="config.connectionType === 'libsql'"
+                  v-else-if="config.connectionType === 'libsql' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
@@ -239,7 +239,7 @@ import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
@@ -274,11 +274,12 @@ export default Vue.extend({
   computed: {
     ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (this.$config.isUltimate) return false
+      if (this.hasActiveLicense) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {

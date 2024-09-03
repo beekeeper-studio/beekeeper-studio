@@ -97,13 +97,13 @@
           :tab-id="tab.id"
         />
         <ImportExportDatabase
-          v-if="tab.type === 'import-export-database'"
+          v-if="tab.tabType === 'import-export-database'"
           :schema="tab.schemaName"
           :tab="tab"
           @close="close"
         />
         <DatabaseBackup
-          v-if="tab.type === 'backup'"
+          v-if="tab.tabType === 'backup'"
           :connection="connection"
           :is-restore="false"
           :active="activeTab === tab"
@@ -111,7 +111,7 @@
           @close="close"
         />
         <DatabaseBackup
-          v-if="tab.type === 'restore'"
+          v-if="tab.tabType === 'restore'"
           :connection="connection"
           :is-restore="true"
           :active="activeTab === tab"
@@ -119,7 +119,7 @@
           @close="close"
         />
         <ImportTable
-          v-if="tab.type === 'import-table'"
+          v-if="tab.tabType === 'import-table'"
           :tab="tab"
           :schema="tab.schemaName"
           :table="tab.tableName"

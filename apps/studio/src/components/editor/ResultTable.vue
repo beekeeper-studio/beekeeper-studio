@@ -21,7 +21,7 @@
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import globals from '@/common/globals'
   import Papa from 'papaparse'
-  import { mapState } from 'vuex'
+  import { mapState, mapGetters } from 'vuex'
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
@@ -66,6 +66,7 @@
     },
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType']),
+      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense'}),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -139,7 +140,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            ...magicStuff,
+            ...(this.hasActiveLicense ? magicStuff : {}),
           }
 
           if (column.dataType === 'INTERVAL') {

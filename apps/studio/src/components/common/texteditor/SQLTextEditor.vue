@@ -37,6 +37,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['defaultSchema', 'dialectData']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     ...mapState(["tables"]),
     hint() {
       // @ts-expect-error not fully typed
@@ -82,12 +83,16 @@ export default Vue.extend({
       };
     },
     plugins() {
-      return [
+      const editorPlugins = [
         plugins.autoquote,
         plugins.autoComplete,
         plugins.autoRemoveQueryQuotes(this.connectionType),
-        plugins.queryMagic(() => this.defaultSchema, () => this.tables),
       ];
+
+      if (this.hasActiveLicense) {
+        editorPlugins.push(plugins.queryMagic(() => this.defaultSchema, () => this.tables))
+      }
+      return editorPlugins;
     },
   },
   watch: {

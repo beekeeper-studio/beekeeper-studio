@@ -13,6 +13,9 @@
         </h3>
       </div>
     </div>
+    <div v-else-if="!hasActiveLicense">
+      <upsell-content></upsell-content>
+    </div>
     <Stepper
       v-else-if="!backupRunning"
       :steps="steps"
@@ -118,6 +121,7 @@ import BackupSettings from './backup/BackupSettings.vue';
 import BackupReview from './backup/BackupReview.vue';
 import BackupProgress from './backup/BackupProgress.vue';
 import Stepper from './stepper/Stepper.vue';
+import UpsellContent from '@/components/connection/UpsellContent.vue'
 import { Step } from './stepper/models';
 import { mapGetters, mapState } from 'vuex';
 import StatusBar from '@/components/common/StatusBar.vue';
@@ -126,7 +130,8 @@ export default Vue.extend({
   components: {
     Stepper,
     BackupProgress,
-    StatusBar
+    StatusBar,
+    UpsellContent
   },
   props: ['connection', 'tab', 'isRestore', 'active'],
   data() {
@@ -158,6 +163,7 @@ export default Vue.extend({
       'backupFeatures': 'backups/supportedFeatures',
       'logFile': 'backups/logFilePath',
       'dialect': 'dialect',
+      'hasActiveLicense': 'licenses/hasActiveLicense'
     }),
     ...mapState('backups', {
       'backupTables': 'backupTables',

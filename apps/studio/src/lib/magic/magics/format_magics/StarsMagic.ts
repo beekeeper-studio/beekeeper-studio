@@ -1,5 +1,6 @@
 import { Magic } from "../../Magic";
 import { MagicColumn } from "../../MagicColumn";
+import _ from "lodash";
 
 
 const StarsMagic: Magic = {

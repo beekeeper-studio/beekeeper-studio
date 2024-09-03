@@ -29,6 +29,9 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     realLicenses(state) {
       return state.licenses.filter((l) => l.licenseType !== 'TrialLicense')
+    },
+    hasActiveLicense(state) {
+      return state.licenses.some((l) => l.active);
     }
   },
 
