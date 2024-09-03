@@ -32,6 +32,9 @@ function parseConnectionType(t: Nullable<ConnectionType>) {
 }
 
 export class DbConnectionBase extends ApplicationEntity {
+  withProps(_props?: any): DbConnectionBase {
+    return this;
+  }
 
   _connectionType: Nullable<ConnectionType> = null
 
@@ -61,8 +64,6 @@ export class DbConnectionBase extends ApplicationEntity {
   public get port(): Nullable<number> {
     return this._port
   }
-
-
 
   public get defaultPort() : Nullable<number> {
     let port
@@ -215,10 +216,9 @@ export class DbConnectionBase extends ApplicationEntity {
 @Entity({ name: 'saved_connection' })
 export class SavedConnection extends DbConnectionBase implements IConnection {
 
-  constructor(props?: any) {
-    super();
-
+  withProps(props?: any): SavedConnection {
     if (props) SavedConnection.merge(this, props);
+    return this;
   }
 
   @Column("varchar")
