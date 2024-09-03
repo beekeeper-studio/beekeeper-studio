@@ -302,6 +302,7 @@ export default Vue.extend({
     tabIcon() {
       return {
         type: this.dbEntityType,
+        tabType: this.dbEntityType,
         entityType: this.dbEntityType
       }
     },
