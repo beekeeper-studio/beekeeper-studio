@@ -1,6 +1,7 @@
 import { TableOrView } from "@/lib/db/models";
 import { Magic } from "../Magic";
 import { MagicColumn } from "../MagicColumn";
+import _ from "lodash";
 
 
 const GoToMagic: Magic = {

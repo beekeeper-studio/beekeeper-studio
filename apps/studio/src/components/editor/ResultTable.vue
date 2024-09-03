@@ -117,6 +117,7 @@
           }
 
           const magicStuff = _.pick(magic, ['formatter', 'formatterParams', 'title'])
+          console.log('found magic stuff: ', magicStuff)
           const defaults = {
             formatter: this.cellFormatter,
           }

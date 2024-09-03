@@ -12,7 +12,6 @@ function magicFor(str: string, magicList: Magic[]) {
 }
 
 const MagicColumnBuilder = {
-
   /// [name, format] => FormatMagic
   // [name, format, link] => LinkMagic
   // [name] => null
@@ -39,7 +38,6 @@ const MagicColumnBuilder = {
   },
 
   suggestWords(currentWord: string, dbTables: TableOrView[], defaultSchema: string): string[] {
-
     // name__format__ => [name, format]
     // name__ => [name]
     // name__format__link => [name, format, link]
