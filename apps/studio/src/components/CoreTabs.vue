@@ -369,6 +369,8 @@ export default Vue.extend({
         'alt+7': this.handleAltNumberKeyPress,
         'alt+8': this.handleAltNumberKeyPress,
         'alt+9': this.handleAltNumberKeyPress,
+        'shift+meta+[':this.previousTab,
+        'shift+meta+]':this.nextTab,
       }
 
       return result
