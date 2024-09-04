@@ -69,11 +69,30 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().tableViewTests()
     })
 
-    test("stream tests", async () => {
-      if (getUtil().dbType === 'cockroachdb') {
-        return
-      }
-      await getUtil().streamTests()
+    describe("stream tests", () => {
+      beforeAll(async () => {
+        await getUtil().prepareStreamTests()
+      })
+
+      test("should get all columns", async () => {
+        await getUtil().streamColumnsTest()
+      })
+
+      test("should count exact number of rows", async () => {
+        await getUtil().streamCountTest()
+      })
+
+      test("should stop/cancel streaming", async () => {
+        await getUtil().streamStopTest()
+      })
+
+      test("should use custom chunk size", async () => {
+        await getUtil().streamChunkTest()
+      })
+
+      test("should read all rows", async () => {
+        await getUtil().streamReadTest()
+      })
     })
 
     test("query tests", async () => {
