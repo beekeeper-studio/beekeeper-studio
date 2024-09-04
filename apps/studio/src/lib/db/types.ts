@@ -1,4 +1,4 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
@@ -203,4 +203,12 @@ export interface IBasicDatabaseClient {
 
   getInsertQuery(tableInsert: TableInsert): Promise<string>
   syncDatabase(): Promise<void>
+
+  importStepZero(table: TableOrView): Promise<any>
+  importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importTruncateCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importLineReadCommand (table: TableOrView, sqlString: string|string[], importOptions?: ImportFuncOptions): Promise<any>
+  importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
 }

@@ -1,6 +1,6 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger } from "../db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
 
@@ -252,5 +252,33 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async azureSignOut(config: IConnection): Promise<void> {
     return await Vue.prototype.$util.send('conn/azureSignOut', { config });
+  }
+
+  async importStepZero(table: TableOrView): Promise<any> {
+    return await Vue.prototype.$util.send('conn/importStepZero', { table });
+  }
+  
+  async importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
+    return await Vue.prototype.$util.send('conn/importBeginCommand', { table, importOptions });
+  }
+  
+  async importTruncateCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
+    return await Vue.prototype.$util.send('conn/importTruncateCommand', { table, importOptions });
+  }
+  
+  async importLineReadCommand(table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions): Promise<any> {
+    return await Vue.prototype.$util.send('conn/importLineReadCommand', { table, sqlString, importOptions });
+  }
+  
+  async importCommitCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
+    return await Vue.prototype.$util.send('conn/importCommitCommand', { table, importOptions });
+  }
+  
+  async importRollbackCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
+    return await Vue.prototype.$util.send('conn/importRollbackCommand', { table, importOptions });
+  }
+  
+  async importFinalCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
+    return await Vue.prototype.$util.send('conn/importFinalCommand', { table, importOptions });
   }
 }
