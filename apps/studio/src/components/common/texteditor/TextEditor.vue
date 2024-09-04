@@ -54,6 +54,7 @@ export default {
     "initialized",
     "forcedValue",
     "plugins",
+    "autoFocus"
   ],
   data() {
     return {
@@ -130,7 +131,7 @@ export default {
   },
   methods: {
     focusEditor() {
-      if(this.editor){
+      if(this.editor && this.autoFocus){
          this.editor.focus();
        }
     },

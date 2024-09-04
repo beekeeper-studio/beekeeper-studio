@@ -11,6 +11,7 @@
     :context-menu-options="handleContextMenuOptions"
     :forced-value="dataForcedValue"
     :plugins="plugins"
+    auto-focus="true"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
     @update:cursorIndex="$emit('update:cursorIndex', $event)"
