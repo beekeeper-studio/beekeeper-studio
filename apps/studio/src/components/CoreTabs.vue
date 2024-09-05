@@ -96,6 +96,36 @@
           :tab="tab"
           :tab-id="tab.id"
         />
+        <ImportExportDatabase
+          v-if="tab.tabType === 'import-export-database'"
+          :schema="tab.schemaName"
+          :tab="tab"
+          @close="close"
+        />
+        <DatabaseBackup
+          v-if="tab.tabType === 'backup'"
+          :connection="connection"
+          :is-restore="false"
+          :active="activeTab === tab"
+          :tab="tab"
+          @close="close"
+        />
+        <DatabaseBackup
+          v-if="tab.tabType === 'restore'"
+          :connection="connection"
+          :is-restore="true"
+          :active="activeTab === tab"
+          :tab="tab"
+          @close="close"
+        />
+        <ImportTable
+          v-if="tab.tabType === 'import-table'"
+          :tab="tab"
+          :schema="tab.schemaName"
+          :table="tab.tableName"
+          :connection="connection"
+          @close="close"
+        />
       </div>
     </div>
     <portal to="modals">
@@ -227,11 +257,14 @@ import CoreTabHeader from './CoreTabHeader.vue'
 import TableTable from './tableview/TableTable.vue'
 import TableProperties from './TabTableProperties.vue'
 import TableBuilder from './TabTableBuilder.vue'
+import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
+import ImportTable from './TabImportTable.vue'
+import DatabaseBackup from './TabDatabaseBackup.vue'
 import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import { FormatterDialect } from '@shared/lib/dialects/models';
+import { FormatterDialect, DialectTitles } from '@shared/lib/dialects/models'
 import Vue from 'vue';
 import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
 import TabWithTable from './common/TabWithTable.vue';
@@ -247,20 +280,23 @@ import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 
-export default Vue.extend({
-  props: [],
-  components: {
-    Statusbar,
-    QueryEditor,
-    CoreTabHeader,
-    TableTable,
-    TableProperties,
-    Draggable,
-    ShortcutHints,
-    TableBuilder,
-    TabWithTable,
-    TabIcon,
-    PendingChangesButton,
+  export default Vue.extend({
+    props: [],
+    components: {
+      Statusbar,
+      QueryEditor,
+      CoreTabHeader,
+      TableTable,
+      TableProperties,
+      ImportExportDatabase,
+      ImportTable,
+      Draggable,
+      ShortcutHints,
+      TableBuilder,
+      TabWithTable,
+      TabIcon,
+      DatabaseBackup,
+      PendingChangesButton,
     ConfirmationModal,
     SqlFilesImportModal,
     },
@@ -343,7 +379,10 @@ export default Vue.extend({
         { event: AppEvent.duplicateDatabaseTable, handler: this.duplicateDatabaseTable },
         { event: AppEvent.dropzoneDrop, handler: this.handleDropzoneDrop },
         { event: AppEvent.promptQueryExport, handler: this.handlePromptQueryExport },
+        { event: AppEvent.exportTables, handler: this.importExportTables },
+        { event: AppEvent.backupDatabase, handler: this.backupDatabase },
         { event: AppEvent.beginImport, handler: this.beginImport },
+        { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
       ]
     },
     lastTab() {
@@ -402,6 +441,7 @@ export default Vue.extend({
               }, 500)
             }
 
+          // TODO (@day): is this right?
           if (this.dbAction.toLowerCase() === 'truncate') {
             await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema);
           }
@@ -595,8 +635,44 @@ export default Vue.extend({
 
       this.$modal.show(this.modalName)
     },
-    beginImport() {
-      this.showUpgradeModal()
+    importExportTables() {
+      // we want this to open a tab with the schema and tables open
+      const t = { tabType: 'import-export-database' }
+      t.title = `Data Export`
+      t.unsavedChanges = false
+      const existing = this.tabItems.find((tab) => matches(tab, t))
+      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+      this.addTab(t)
+    },
+    backupDatabase() {
+      const t = { tabType: 'backup' }
+      t.title = 'Backup';
+      t.unsavedChanges = false;
+      const existing = this.tabItems.find((tab) => matches(tab, t));
+      if (existing) return this.$store.dispatch('tabs/setActive', existing);
+      this.addTab(t);
+    },
+    beginImport({ table }) {
+      if (table.entityType !== 'table') {
+        this.$noty.error("You can only import data into a table")
+        return;
+      }
+      const t = { tabType: 'import-table' }
+      t.title = `Import Table: ${table.name}`
+      t.unsavedChanges = false
+      t.schemaName = table.schema
+      t.tableName = table.name
+      const existing = this.tabItems.find(tab => matches(tab, t))
+      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+      this.addTab(t)
+    },
+    restoreDatabase() {
+      const t = { tabType: 'restore' };
+      t.title = 'Restore';
+      t.unsavedChanges = false;
+      const existing = this.tabItems.find((tab) => matches(tab, t));
+      if (existing) return this.$store.dispatch('tabs/setActive', existing);
+      this.addTab(t);
     },
     duplicateDatabaseTable({ item: dbActionParams, action: dbAction }) {
       this.dbElement = dbActionParams.name
