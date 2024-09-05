@@ -8,38 +8,41 @@ export default class Import {
     this.options = options
     this.connection = connection
     this.table = table
-    this.sqlInserts = []
     this.logger = () => log
-  }
 
-  #sqlInserts = []
-
-  clearInsert() {
-    this.sqlInserts = []
+    this.importScriptOptions = {
+      executeOptions: { multiple: false }
+    }
   }
 
   setOptions(opt) {
     this.options = opt
-  }
-
-  addInsert(insertArr) {
-    insertArr.forEach(data => {
-      this.sqlInserts.push({
-        data: [data],
-        table: this.table.name,
-        schema: this.table.schema || null
-      })
-    })
+    this.table = opt.table
   }
   
   async buildSQL() {
-    await this.read(this.getImporterOptions({ preview: false }))
+    await this.read(this.getImporterOptions({ isPreview: false }))
     return this.connection.getImportSQL(this.sqlInserts, this.options.truncateTable)
   }
 
   async importFile() {
-    const sql = await this.buildSQL()
-    return await this.connection.importData(sql)
+    try {
+      this.importScriptOptions.clientExtras = await this.connection.importStepZero(this.table)
+      await this.connection.importBeginCommand(this.table, this.importScriptOptions)
+      if (this.options.truncateTable) {
+        await this.connection.importTruncateCommand(this.table, this.importScriptOptions)
+      }
+      
+      await this.read(this.getImporterOptions({ isPreview: false }))
+      
+      await this.connection.importCommitCommand(this.table, this.importScriptOptions)
+    } catch (err) {
+      this.logger().error('error importing data', err)
+      await this.connection.importRollbackCommand(this.table, this.importScriptOptions)
+      throw new Error(err)
+    } finally {
+      await this.connection.importFinalCommand(this.table, this.importScriptOptions)
+    }
   }
 
   /**
@@ -121,6 +124,25 @@ export default class Import {
     )
   }
 
+  /**
+   * Take the data to be put into the table and format it for the insertQueryBuilder function in client
+   * @param {String[]} data the raw data to be mapped when ready to write to the databse
+   * @returns {Object[]} An array of objeccts containing
+   * - `data` {Array} 
+   * - `table` {String}
+   * - `schema` {String|null}
+   */
+  buildDataObj (data) {
+    return this
+      .mapData(data)
+      .filter(v => v != null && v !== '')
+      .map(d => ({
+        data: [d],
+        table: this.table.name,
+        schema: this.table.schema || null 
+      }))
+  }
+
   allowChangeSettings() {
     return false
   }
@@ -148,5 +170,9 @@ export default class Import {
 
   validateFile() {
     throw new Error("Method 'validateFile()' must be implemented")
+  }
+
+  getSheets() {
+    throw new Error("Method 'getSheets()' must be implemented but is Excel only")
   }
 }

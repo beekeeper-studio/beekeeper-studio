@@ -4,7 +4,6 @@ import CSVImporter from "./formats/csv"
 import XSLXImporter from "./formats/xslx"
 
 export function getImporterClass (importOptions, connection, table) {
-  console.log(importOptions)
   const ImporterClass = {
     json: JSONImporter,
     csv: CSVImporter,
@@ -12,5 +11,5 @@ export function getImporterClass (importOptions, connection, table) {
     jsonl: JSONLineImporter
   }
 
-  return new ImporterClass[importOptions.fileType](importOptions.fileName, importOptions, connection, table)
+  return new ImporterClass[importOptions.fileType](importOptions.fileName, importOptions, connection, importOptions.table)
 }

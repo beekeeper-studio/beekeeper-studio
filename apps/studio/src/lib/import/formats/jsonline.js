@@ -1,4 +1,6 @@
 import fs from 'fs'
+import readline from 'readline'
+import { once } from 'events'
 import _ from 'lodash'
 import JSONImporter from "./json"
 
@@ -8,49 +10,91 @@ export default class extends JSONImporter {
     super(filePath, options, connection, table)
   }
 
-  read(options) {
-    this.clearInsert()
-    return new Promise((resolve, reject) => {
-      try {
-        const jsonStr = fs.readFileSync(this.fileName, 'utf-8')
-        const data = jsonStr
-          .split(/\r?\n|\r|\n/g)
-          .map(this.handleObjectParse)
-          .filter(v => v != null && v !== '')
-        const dataObj = {
-          meta: {
-            fields: Object.keys(data[0])
-          },
-          data
-        }
+  arrayHeaders = []
 
-        if (options.preview) {
-          resolve(dataObj)
-        } else {
-          this.addInsert(this.mapData(data))
-          resolve(dataObj)
-        }
+  async read(options) {
+    const isPreview = options.isPreview ?? false
+    let finalPreviewLines = []
 
-      } catch (e) {
-        this.logger().error('jsonline file read error', e.message)
-        reject (e.message)
+    try {
+      const readStream = fs.createReadStream(this.fileName)
+      const updatedImportScriptOptions = {
+        ...this.importScriptOptions,
+        executeOptions: { multiple: true }
       }
-    })
+      const rl = readline.createInterface({
+        input: readStream,
+        crlfDelay: Infinity
+      })
+
+      for await (const line of rl) {
+        try {
+          const lineData = this.handleObjectParse(line, finalPreviewLines.length)
+          if (lineData && finalPreviewLines.length <= 10) {
+            finalPreviewLines.push(lineData)
+          }
+          if (isPreview && finalPreviewLines.length === 10) {
+            break;
+          }
+          
+          if (!isPreview) {
+            const importData = this.buildDataObj([lineData])
+            const importSql = await this.connection.getImportSQL(importData)
+            await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
+          }
+        } catch (err) {
+          throw new Error(err)
+        }
+      }
+
+      if (isPreview && finalPreviewLines.length === 0) {
+        return {
+          meta: {
+            fields: []
+          },
+          data: []
+        }
+      }
+      if (isPreview) {
+        return {
+          meta: {
+            fields: Object.keys(finalPreviewLines[0])
+          },
+          data: finalPreviewLines
+        }
+      }
+
+      return {
+        meta: {
+          fields: Object.keys(finalPreviewLines[0])
+        },
+        data: finalPreviewLines
+      }
+    } catch (err) {
+      this.logger().error('error reading jsonline file')
+      throw new Error(err)
+    } finally {
+      finalPreviewLines = []
+    }
   }
 
-  handleObjectParse(val, index, arr) {
-    if (val === '') {
+  async getPreview() {
+    return await this.read(this.getImporterOptions({isPreview: true}))
+  }
+
+  handleObjectParse(val) {
+    if (!val || val === '') {
       return null
     }
 
     const parsedValue = JSON.parse(val)
-    if (_.isArray(parsedValue) && index === 0) {
+    if (_.isArray(parsedValue) && this.arrayHeaders.length === 0) {
+      this.arrayHeaders = parsedValue
       return null
     }
 
     if (_.isArray(parsedValue)) {
-      const headers = JSON.parse(arr[0])
-      return _.zipObject(headers, parsedValue)
+      return _.zipObject(this.arrayHeaders, parsedValue)
     } 
 
     return parsedValue

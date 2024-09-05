@@ -7,35 +7,35 @@ export default class extends Import {
     super(filePath, options, connection, table)
   }
 
-  read(options) {
-    this.clearInsert()
-    return new Promise((resolve, reject) => {
-      try {
-        const jsonStr = fs.readFileSync(this.fileName, 'utf-8')
-        const parsedData = JSON.parse(jsonStr) 
-        const data = Array.isArray(parsedData) ? parsedData : [parsedData]
-        const dataObj = {
-          meta: {
-            fields: Object.keys(data[0])
-          },
-          data
-        }
-
-        if (options.preview) {
-          resolve(dataObj)
-        } else {
-          this.addInsert(this.mapData(data))
-          resolve(dataObj)
-        }
-      } catch (e) {
-        this.logger().error('json file read error', e.message)
-        reject (e.message)
+  async read(options) {
+    try {
+      const jsonStr = fs.readFileSync(this.fileName, 'utf-8')
+      const parsedData = JSON.parse(jsonStr) 
+      const data = Array.isArray(parsedData) ? parsedData : [parsedData]
+      const updatedImportScriptOptions = {
+        ...this.importScriptOptions,
+        executeOptions: { multiple: true }
       }
-    })
+      const dataObj = {
+        meta: {
+          fields: Object.keys(data[0])
+        },
+        data
+      }
+
+      if (!options.isPreview) {
+        const importSql = await this.connection.getImportSQL(this.buildDataObj(data))
+        await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
+      }
+      return dataObj
+    } catch (e) {
+      this.logger().error('json file read error', e)
+      throw new Error(e)
+    }
   }
 
   async getPreview() {
-    const previewData = await this.read({preview: true})
+    const previewData = await this.read({ isPreview: true })
     previewData.data = previewData.data.slice(0, 10)
 
     return previewData

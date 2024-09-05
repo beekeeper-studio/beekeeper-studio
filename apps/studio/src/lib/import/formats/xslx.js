@@ -12,51 +12,46 @@ export default class extends Import {
       type: 'buffer',
       ...options
     }
+    const updatedImportScriptOptions = {
+      ...this.importScriptOptions,
+      executeOptions: { multiple: true }
+    }
     let file
-
-    this.clearInsert()
 
     try {
       file = await XSLX.readFile(this.fileName, readOptions)
-    } catch (e) {
+      if (options.bookSheets) {
+        return file.SheetNames
+      }
+      const sheetName = readOptions.sheet ?? file.SheetNames[0]
+      const parsedData = XSLX.utils.sheet_to_json(file.Sheets[sheetName])
+      const data = Array.isArray(parsedData) ? parsedData : [parsedData]
+      const dataObj = {
+        meta: {
+          fields: Object.keys(data[0])
+        },
+        data
+      }
+
+      
+      if (!options.isPreview) {
+        const importSql = await this.connection.getImportSQL(this.buildDataObj(data))
+        await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
+      }
+
+      return dataObj
+    } catch(e) {
       this.logger().error('xslx file read error', e)
       throw new Error(e)
     }
-
-    return new Promise((resolve, reject) => {
-      try {
-        if (options.bookSheets) {
-          resolve(file.SheetNames)
-        }
-        const sheetName = readOptions.sheet ?? file.SheetNames[0]
-        const parsedData = XSLX.utils.sheet_to_json(file.Sheets[sheetName])
-        const data = Array.isArray(parsedData) ? parsedData : [parsedData]
-        const dataObj = {
-          meta: {
-            fields: Object.keys(data[0])
-          },
-          data
-        }
-
-        if (options.preview) {
-          resolve(dataObj)
-        } else {
-          this.addInsert(this.mapData(data))
-          resolve(dataObj)
-        }
-      } catch(e) {
-        this.logger().error('csv file read error', e)
-        reject(e)
-      }
-    })
   }
 
   async getPreview(options = {}) {
-    return await this.read({ sheetRows: 11, preview: true, ...options})
+    return await this.read({ sheetRows: 11, isPreview: true, ...options})
   }
 
   async getSheets() {
-    return await this.read({ bookSheets: true, preview: true })
+    return await this.read({ bookSheets: true, isPreview: true })
   }
 
   async validateFile() {

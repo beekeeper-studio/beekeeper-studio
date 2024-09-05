@@ -5,9 +5,9 @@ export default class extends Import {
   constructor(filePath, options, connection, table) {
     super(filePath, options, connection, table)
   }
-  
+
   read(option) {
-    this.clearInsert()
+    // complete or error will tell the "importFile" function if it should commit or rollback
     try {
       return new Promise((complete, error) => {
         Papa.parse(fs.createReadStream(this.fileName), {...option, complete, error})
@@ -18,7 +18,7 @@ export default class extends Import {
   }
 
   async getPreview() {
-    return await this.read(this.getImporterOptions({isPreview: true}))
+    return await this.read(this.getImporterOptions({ isPreview: true }))
   }
 
   getImporterOptions({isPreview = false, isValidate = false}) {
@@ -34,7 +34,7 @@ export default class extends Import {
     if (isPreview) {
       options.preview = 10
     } else {
-      options.chunk = ({ data, errors }, _parser) => {
+      options.chunk = async ({ data, errors }, parser) => {
         if (errors && errors.length > 0) {
           this.logger().error('csv file read error', errors)
           if (Array.isArray(errors)) {
@@ -46,10 +46,27 @@ export default class extends Import {
           }
           throw new Error(errors)
         }
-        if (!isValidate) {
-          const rowData = this.mapData(data)
-          this.addInsert(rowData)
+
+        const importData = this
+          .mapData(data)
+          .map(d => ({
+            data: [d],
+            table: this.table.name,
+            schema: this.table.schema || null 
+          }))
+        
+        parser.pause()
+        try {
+          const updatedImportScriptOptions = {
+            ...this.importScriptOptions,
+            executeOptions: { multiple: true }
+          }
+          const importSQL = await this.connection.getImportSQL(importData)
+          await this.connection.importLineReadCommand(this.table, importSQL, updatedImportScriptOptions)
+        } catch (err) {
+          throw new Error(err)
         }
+        parser.resume()
       }
     }
 
