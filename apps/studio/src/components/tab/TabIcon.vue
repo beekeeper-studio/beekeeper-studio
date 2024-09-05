@@ -21,6 +21,10 @@
     class="material-icons item-icon table-builder-icon"
   >add</i>
   <i
+    v-else-if="tab.tabType ==='database'"
+    class="material-icons item-icon"
+  >storage</i>
+  <i
     v-else
     class="material-icons item-icon"
   >new_releases</i>

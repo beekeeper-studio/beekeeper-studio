@@ -34,6 +34,14 @@
       >
         <i class="material-icons">add</i>
       </a>
+      <a
+        v-if="dbs.length > 1"
+        class="refresh"
+        @click.prevent="$modal.show('drop-database')"
+        :title="'Drop Database'"
+      >
+        <i class="material-icons">delete_forever</i>
+      </a>
     </div>
     <portal to="modals">
       <modal
@@ -53,6 +61,37 @@
           />
         </div>
       </modal>
+      <modal
+        name="drop-database"
+        class="beekeeper-modal vue-dialog save-add-database"
+      >
+        <div v-kbd-trap="true">
+          <div class="dialog-content">
+            <div class="dialog-c-title">
+              Really Drop <span class="tab-like"><tab-icon
+                :tab="tabIcon"
+              /> {{ this.selectedDatabase }}</span>?
+            </div>
+            <p>This change cannot be undone</p>
+          </div>
+          <div class="vue-dialog-buttons">
+            <span class="expand" />
+            <button
+              ref="no"
+              @click.prevent="$modal.hide('drop-database')"
+              class="btn btn-sm btn-flat"
+            >
+              Cancel
+            </button>
+            <button
+              @click.prevent="completeDeleteAction"
+              class="btn btn-sm btn-primary"
+            >
+              Drop {{ this.selectedDatabase }}
+            </button>
+          </div>
+        </div>
+      </modal>
     </portal>
   </div>
 </template>
@@ -61,6 +100,7 @@
   import _ from 'lodash'
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
+  import TabIcon from '@/components/tab/TabIcon.vue'
   import AddDatabaseForm from "@/components/connection/AddDatabaseForm.vue"
   import { mapActions, mapState } from 'vuex'
 
@@ -76,7 +116,8 @@
     },
     components: {
       vSelect,
-      AddDatabaseForm
+      AddDatabaseForm,
+      TabIcon
     },
     methods: {
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
@@ -92,16 +133,27 @@
         }
         await this.refreshDatabases()
         this.selectedDatabase = db
+      },
+      async completeDeleteAction() {
+        this.$modal.hide('drop-database')
+        this.selectedDatabase = this.availableDatabases[0]
+        await this.refreshDatabases()
       }
     },
     async mounted() {
       this.selectedDatabase = this.currentDatabase
     },
     computed: {
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList'}),
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList'}),
+      tabIcon() {
+        return {
+          tabType: 'database',
+          entityType: 'database'
+        }
+      },
     },
     watch: {
       currentDatabase(newValue) {

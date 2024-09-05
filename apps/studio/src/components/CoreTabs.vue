@@ -394,11 +394,11 @@ export default Vue.extend({
             await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema);
             // timeout is more about aesthetics so it doesn't refresh the table right away.
 
-              setTimeout(() => {
-                this.$store.dispatch('updateTables')
-                this.$store.dispatch('updateRoutines')
-              }, 500)
-            }
+            setTimeout(() => {
+              this.$store.dispatch('updateTables')
+              this.$store.dispatch('updateRoutines')
+            }, 500)
+          }
 
           if (this.dbAction.toLowerCase() === 'truncate') {
             await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema);
