@@ -26,7 +26,7 @@
                 :key="index"
                 :value="index"
               >
-                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ window.main.pluralize('row',
+                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row',
                                                                                                  resultOption.rows.length, false) }}</option>
             </select>
           </div>
