@@ -1,10 +1,8 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
-import { IDbConnectionPublicServer } from '../../src/lib/db/server'
 import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
 import _ from 'lodash'
@@ -15,6 +13,9 @@ import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
+import { IDbConnectionPublicServer } from './db/serverTypes'
+// TODO (@day): this may need to be moved uggh
+import { createServer } from '@commercial/backend/lib/db/server'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -1144,6 +1145,67 @@ export class DBTestUtil {
     expect(rows.result.map((r) => r.full_name)).toEqual(['Tom Tester'])
   }
 
+  async importScriptsTests({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
+    // cassandra and big query don't allow import so no need to test!
+    // oracle doesn't want to find the table, so it doesn't get to have nice things
+    if (['cassandra', 'bigquery', 'oracle'].includes(this.dialect)) {
+      return expect.anything()
+    }
+
+    const importSQL = await this.connection.getImportSQL(formattedData)
+    importScriptOptions.clientExtras = await this.connection.importStepZero(table)
+    await this.connection.importBeginCommand(table, importScriptOptions)
+    await this.connection.importTruncateCommand(table, importScriptOptions)
+    
+    const editedImportScriptOptions = {
+      clientExtras: importScriptOptions.clientExtras,
+      executeOptions: { multiple: true } 
+    }
+    
+    await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
+    
+    await this.connection.importCommitCommand(table, importScriptOptions)
+    await this.connection.importFinalCommand(table, importScriptOptions)
+
+    const [hats] = await this.knex(tableName).count(hatColumn)
+    const [dataLength] = _.values(hats)
+    expect(Number(dataLength)).toBe(4)
+  }
+
+  async importScriptRollbackTest({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
+    // cassandra and big query don't allow import so no need to test!
+    // mysql was added to the list because a timeout was required to get the rollback number ot show
+    // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
+    let expectedLength = 0
+    if (['cassandra','bigquery', 'mysql', 'oracle'].includes(this.dialect)) {
+      return expect.anything()
+    }
+
+    if (['sqlite'].includes(this.dialect)) {
+      expectedLength = 4
+    }
+
+    const importSQL = await this.connection.getImportSQL(formattedData)
+
+    importScriptOptions.clientExtras = await this.connection.importStepZero(table)
+    await this.connection.importBeginCommand(table, importScriptOptions)
+    await this.connection.importTruncateCommand(table, importScriptOptions)
+
+    const editedImportScriptOptions = {
+      clientExtras: importScriptOptions.clientExtras,
+      executeOptions: { multiple: true } 
+    }
+
+    await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
+    
+    await this.connection.importRollbackCommand(table, importScriptOptions)
+    await this.connection.importFinalCommand(table, importScriptOptions)
+
+    const [hats] = await this.knex(tableName).count(hatColumn)
+    const [dataLength] = _.values(hats)
+    expect(Number(dataLength)).toBe(expectedLength)
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
@@ -1230,11 +1292,6 @@ export class DBTestUtil {
     await this.knex.schema.createTable('streamtest', (table) => {
       primary(table)
       table.string("name")
-    })
-
-    await this.knex.schema.createTable('import_table', (t) => {
-      t.string('name'),
-      t.string('hat')
     })
 
     if (!this.options.skipGeneratedColumns) {

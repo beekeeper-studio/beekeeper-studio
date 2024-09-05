@@ -1,0 +1,735 @@
+@import "codemirror/theme/solarized.css";
+
+
+// Global
+$badge-bg:                 rgba($theme-base, 0.1);
+
+// Sidebar
+$sidebar-list-icons:       $theme-primary;
+
+// Editor
+$tabs-heading:             rgba($theme-base, 0.08);
+$tab-link:                 $sbase4;
+$codemirror-hint-bg:       darken($theme-bg, 2%);
+
+// Table Editing
+$row-highlight:            darken($query-editor-bg, 3%);
+$row-add:                  $insertedGreen;
+$row-delete:               $removedRed;
+$row-error:                #F9B8B7;
+
+$cell-edited:              #EDDFA1;
+$cell-error:               $row-error;
+$cell-success:             $row-add;
+
+// Statusbar
+$editor-statusbar:         $theme-base;
+
+@mixin cell-shadow {
+  box-shadow: inset 1px 0 rgba(white, 0.4),
+              inset 0 -1px rgba(white, 0.4);
+}
+
+// Base Styles
+// -----------------------------------------
+& {
+  background: $theme-bg;
+  color: $text;
+}
+.material-icons {
+  // font-weight: 600;
+}
+select {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+  option {
+    &:hover {
+      color: white;
+      box-shadow: 0 0 10px 100px $brand-info inset;
+    }
+
+    &:checked {
+      color: inherit;
+      font-weight: bold;
+    }
+    &:disabled, &:disabled:hover, &:disabled:focus {
+      background: transparent!important;
+      color: $text-lighter!important;
+    }
+  }
+}
+::selection {
+  background: rgba($brand-info, 0.25);
+}
+
+x-buttons {
+  > x-button {
+    &.btn-primary {
+      &[menu] {
+        border-left: 1px solid $query-editor-bg;
+        &:hover {
+          border-left: 1px solid $query-editor-bg;
+        }
+      }
+    }
+  }
+}
+.btn {
+  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
+}
+.btn-link, .btn-fab {
+  box-shadow: none;
+}
+.btn-flat {
+  background: rgba($theme-base, 0.08);
+}
+.text-primary {
+  color: $theme-primary!important;
+}
+.list-group {
+  .list-item-btn {
+    color: $sbase01;
+    .actions {
+      i {
+        color: $text-light;
+      }
+      .btn-fab.pinned {
+        i {
+          color: $text-dark;
+        }
+      }
+    }
+  }
+}
+.badge {
+  background: $badge-bg;
+  color: $text-dark;
+  &.badge-info {
+    color: white;
+  }
+}
+.text-danger {
+  color: $brand-danger!important;
+}
+.connection-main {
+  .card-flat {
+    background: rgba($theme-base, 0.035);
+  }
+}
+.connection-interface {
+  .page-content:before {
+    top: 0;
+  }
+}
+
+// File-Menu
+// ---------------------------------------
+.flyout-nav {
+  > .menu-bar {
+    .top-menu-item {
+      > a {
+        > .label {
+          color: $text-light;
+        }
+      }
+    }
+  }
+}
+
+// Connection Label
+// -----------------------------------------
+.connection-label {
+  &.connection-label-color-yellow {
+    background-color: darken($theme-primary, 4%);
+    &:checked {
+      background-color: darken($theme-primary, 4%);
+    }
+  }
+}
+
+// Sidebar
+// ---------------------------------------
+.advanced-connection-settings {
+  background: rgba($theme-base, 0.05);
+}
+#sidebar {
+  position: relative;
+  .filter {
+    .filter-actions {
+      x-button {
+        &.btn-fab {
+        margin-right: 2px;
+        line-height: 22px;
+        height: 22px;
+        width: 22px;
+        min-width: 22px;
+        border-radius: 22px;
+        border: 0;
+        &.active {
+          background: rgba($theme-base, 0.1);
+          .material-icons {
+            color: $brand-info;
+          }
+        }
+      }
+
+      }
+    }
+  }
+  .global-items {
+    .nav-item.selectable {
+      &:hover {
+        &:before {
+          background: rgba($theme-base, 0.38);
+        }
+      }
+      &:hover, &.active, &.active:hover {
+        &:before {
+          width: 2px;
+        }
+      }
+    }
+  }
+}
+.list-heading {
+  .sub {
+    .badge {
+      &.active {
+        color: $brand-info;
+      }
+    }
+  }
+}
+.item-icon {
+  color: $theme-primary;
+}
+
+// Editor
+// ---------------------------------------
+.core-tabs {
+  .tabs-header {
+    background: $tabs-bg;
+  }
+  .nav-tabs {
+    .nav-link {
+      background: $tab-link;
+      &.active {
+        background: $query-editor-bg;
+        .tab-action {
+          background: linear-gradient(
+            90deg,
+            rgba($query-editor-bg,0) 0%,
+            rgba($query-editor-bg,1) 20%
+          );
+        }
+      }
+    }
+    .tab-action {
+      top: 1px;
+      right: 0;
+      bottom: 1px;
+      border-radius: 0 6px 0 0;
+      background: linear-gradient(
+        90deg,
+        rgba($tab-link,0) 0%,
+        rgba($tab-link,1) 20%
+      );
+    }
+    .tab-close {
+      .material-icons {
+        color: $sbase1;
+        &.close {
+          color: $text-dark;
+        }
+      }
+    }
+  }
+}
+
+// Tabulator
+// -------------------------------
+.tabulator-table {
+  .tabulator-row {
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      &.inserted,
+      &.inserted:hover {
+        background: $row-add!important;
+      }
+      &.deleted,
+      &.deleted:hover {
+        background: $row-delete!important;
+      }
+      &.edit-error {
+        background: $row-error!important;
+      }
+    }
+    .tabulator-cell {
+      &.edited,
+      &.edit-error,
+      &.edit-success {
+        @include cell-shadow;
+      }
+      &.edited {
+        background: $cell-edited;
+        &:hover {
+          background: darken($cell-edited, 5%);
+        }
+      }
+      &.edit-error {
+        background: $cell-error;
+        &:hover {
+          background: darken($cell-error, 5%);
+        }
+      }
+      &.edit-success {
+        background: $cell-success;
+        &:hover {
+          background: darken($cell-success, 5%);
+        }
+      }
+      &.foreign-key-button {
+        .material-icons {
+          &:hover {
+            color: $text-dark;
+          }
+        }
+      }
+      .null-value {
+        color: $text-light;
+      }
+    }
+  }
+}
+.tabulator {
+
+  .tabulator-loader {
+    .tabulator-loader-msg {
+      &.tabulator-loading {
+        background-color: $theme-bg;
+      }
+
+    }
+  }
+
+  .tabulator-header {
+    .tabulator-col {
+      &.foreign-key {
+        &:before {
+          color: darken($brand-primary, 6%);
+        }
+      }
+      .badge {
+        color: $text-light;
+      }
+    }
+  }
+}
+.tabulator-row {
+  &:nth-child(odd) {
+    background: rgba($theme-base, 0.025);
+  }
+}
+
+// Table Builder
+// -------------------------
+.table-builder .table-builder-wrap,
+.table-properties .table-properties-wrap {
+  .tabulator-row {
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      background: rgba($theme-base, 0.06);
+    }
+    &.inserted {
+      background: $row-add!important;
+    }
+  }
+}
+.table-builder {
+
+  .table-builder-header {
+    .form-group {
+      label {
+        color: $text-light;
+      }
+    }
+  }
+}
+
+// Schema Builder
+// ----------------------------------
+.schema-builder {
+
+  // Schema Header
+  .schema-header {
+    .table-title {
+      color: $text-light;
+    }
+  }
+
+  // Tabulator Header Row
+  .tabulator {
+    .tabulator-header {
+      .tabulator-col {
+        .tabulator-col-content {
+          .tabulator-col-title {
+            color: $text-lighter;
+          }
+        }
+      }
+    }
+  }
+
+  // Field Rows
+  .tabulator-row {
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      background: rgba($theme-base, 0.05);
+    }
+    .tabulator-cell {
+      color: $text-dark;
+      &.tabulator-editing {
+        box-shadow: inset 0 1px $theme-base;
+      }
+      &.no-edit-highlight {
+        &.tabulator-editing {
+          input {
+            &[type="checkbox"]:active,
+            &[type="checkbox"]:checked,
+            &[type="checkbox"]:checked:active {
+              background: rgba($theme-base, 0.5)!important;
+              color: $theme-bg!important;
+            }
+          }
+        }
+        &.edited {
+          input {
+            &[type="checkbox"]:active,
+            &[type="checkbox"]:checked,
+            &[type="checkbox"]:checked:active {
+              &:after {
+                color: white!important;
+              }
+            }
+          }
+        }
+      }
+      &.read-only {
+        input[type="checkbox"] {
+          &:active,
+          &:checked,
+          &:checked:active {
+            &:after {
+              color: $theme-base!important;
+            }
+          }
+        }
+        .tabulator-bks-checkbox {
+          input {
+            &:after {
+              color: $theme-primary;
+            }
+          }
+          &.editable {
+            input[type="checkbox"] {
+              box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2)!important;
+              cursor: pointer!important;
+              &:active,
+              &:checked,
+              &:checked:active {
+                background: $theme-base!important;
+                &:after {
+                  color: $theme-bg!important;
+                }
+              }
+              &:focus {
+                box-shadow: inset 0 0 0 2px $theme-base!important;
+              }
+            }
+          }
+        }
+      }
+
+      .material-icons.clear {
+        color: $text-light;
+        &:hover {
+          color: $text-dark;
+        }
+      }
+
+      // Remove Cell
+      &.remove-btn {
+        .material-icons {
+          color: $text-lighter;
+          &:hover {
+            color: $text-dark;
+          }
+        }
+      }
+      .null-value {
+        color: $text-lighter;
+      }
+    }
+  }
+
+  // Resize Handle
+  .tabulator-row {
+    .tabulator-frozen {
+      &.tabulator-row-handle {
+        .tabulator-row-handle-box {
+          .tabulator-row-handle-bar {
+            background: $border-color;
+          }
+        }
+      }
+    }
+  }
+  .tabulator-row {
+    &.tabulator-moving {
+      background: lighten($theme-bg, 15%)!important;
+    }
+  }
+}
+
+
+// CodeMirror
+// ----------------------------------
+.CodeMirror-hints {
+  background: darken($theme-bg, 5%)!important;
+  li {
+    &.CodeMirror-hint-active {
+      background: $brand-info;
+      color: white;
+    }
+  }
+}
+
+.cm-s-monokai {
+  span {
+    .cm-string {
+      color: $brand-success;
+    }
+  }
+  .CodeMirror-line {
+    .cm-number {
+      color: $brand-warning;
+    }
+  }
+}
+
+
+.cm-s-monokai {
+  font-weight: 500;
+  span.cm-keyword {
+    color: $brand-pink;
+  }
+  span.cm-variable-2 {
+    color: $brand-secondary;
+  }
+  div.CodeMirror-selected {
+    background: rgba($theme-secondary, 0.25);
+  }
+  .CodeMirror-linenumber {
+    color: rgba($theme-base, 0.25);
+  }
+  .CodeMirror-line .cm-number {
+    color: $brand-warning;
+  }
+  .CodeMirror-line .cm-string {
+    color: $brand-success;
+  }
+  .CodeMirror-cursor {
+    border-color: $text-dark;
+  }
+  span.cm-bracket {
+    color: $text;
+  }
+}
+
+// Noty
+.noty_theme__mint.noty_type__success {
+  color: darken($brand-success, 5%);
+}
+
+// Switch
+x-switch {
+  color: $theme-primary;
+}
+
+// Table Properties
+// -------------------------------
+.table-properties {
+  .nav-pills {
+    .nav-pill {
+      &.active {
+        color: $theme-secondary;
+        box-shadow: inset 0 -2px $theme-secondary;
+      }
+    }
+  }
+}
+
+// Quicksearch
+.quicksearch {
+  .quicksearch-bg {
+    background: rgba(darken($theme-bg, 8%), 0.5);
+  }
+}
+
+
+// Default Statusbar -- Invert text color
+.statusbar {
+
+  color: $sbase02;
+
+  .statusbar-item {
+    &.error {
+      color: $sbase02;
+      .material-icons {
+        color: $sbase02;
+      }
+    }
+  }
+
+  .connection-button > .btn {
+    color: $sbase4;
+  .connection-type {
+      color: inherit;
+    }
+
+  }
+
+
+
+  .btn {
+    &.btn-flat {
+      color: $sbase03;
+    }
+  }
+
+    .tabulator-paginator > div {
+      input[type="number"] {
+        color: $sbase03!important;
+        border-color: rgba($sbase03, 0.2);
+        &:hover, &:focus {
+          border-color: rgba($sbase03, 0.25);
+        }
+      }
+      a {
+        .material-icons {
+          color: rgba($sbase03, 0.68);
+          &:hover {
+            color: $sbase03;
+          }
+        }
+      }
+    }
+
+  &.default {
+    color: $text;
+    .statusbar-item {
+      &.error {
+        color: $statusbar-text-default;
+        .material-icons {
+          color: $statusbar-text-default;
+        }
+      }
+    }
+
+    .statusbar-actions .btn,
+    .connection-button > .btn {
+      color: $statusbar-text;
+    }
+    .connection-button {
+      .badge {
+        color: $statusbar-text;
+      }
+    }
+    .connection-type {
+      color: $statusbar-text;
+    }
+
+    .btn {
+      &.btn-flat {
+        background: rgba($statusbar-text, 0.05);
+        color: $statusbar-text;
+        &:hover {
+          background: rgba($statusbar-text, 0.1);
+        }
+      }
+      &.btn-primary {
+        background: rgba($statusbar-text, 0.2);
+        &:hover {
+          background: rgba($statusbar-text, 0.25);
+        }
+      }
+    }
+
+    .save-actions {
+      .btn {
+        &.btn-primary {
+          background: $theme-base;
+          &:hover {
+            background: rgba($theme-base, 0.87);
+          }
+        }
+      }
+
+    }
+
+    .select-wrap {
+      background: rgba($statusbar-text, 0.05);
+      &:hover {
+        background: rgba($statusbar-text, 0.1);
+      }
+      select {
+        color: $statusbar-text-default;
+        background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255,0.87'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+      }
+    }
+
+    .download-results,
+    .pending-changes {
+      background: $statusbar-text-default;
+      > .btn {
+        color: $statusbar-text;
+        &:hover, &:hover[expanded] {
+          background: rgba($statusbar-text-default, 0.25);
+        }
+        &[menu], &[menu]:hover {
+          border-left: 1px solid rgba($statusbar-text, 0.35);
+        }
+        .material-icons {
+          color: $statusbar-text;
+        }
+      }
+    }
+    &.tabulator-footer {
+      .tabulator-page {
+        color: $statusbar-text;
+        &.active {
+          background: rgba($statusbar-text, 0.2);
+        }
+      }
+    }
+
+    // New Pagination
+    .tabulator-paginator > div {
+      input[type="number"] {
+        color: $statusbar-text!important;
+        border-color: rgba($statusbar-text, 0.2);
+        &:hover, &:focus {
+          border-color: rgba($statusbar-text, 0.25);
+        }
+      }
+      a {
+        .material-icons {
+          color: rgba($statusbar-text, 0.68);
+          &:hover {
+            color: $statusbar-text;
+          }
+        }
+      }
+    }
+  }
+}
+
