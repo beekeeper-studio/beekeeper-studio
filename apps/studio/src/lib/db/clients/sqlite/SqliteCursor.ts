@@ -51,8 +51,8 @@ export class SqliteCursor extends BeeCursor {
     return results
   }
   async cancel(): Promise<void> {
+    this.iterator?.return()
     if(!this.usingExternalConnection) {
-      this.iterator?.return()
       this.database.close()
     }
   }
