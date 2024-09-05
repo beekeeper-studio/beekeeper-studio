@@ -19,7 +19,7 @@
                   <x-menuitem @click.prevent="importFromLocal">
                     <x-label>Import from local workspace</x-label>
                     <i
-                      v-if="$config.isCommunity"
+                      v-if="!hasActiveLicense"
                       class="material-icons menu-icon"
                     >stars</i>
                   </x-menuitem>
@@ -173,6 +173,7 @@ export default {
   computed: {
     ...mapGetters(['workspace', 'isCloud']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),

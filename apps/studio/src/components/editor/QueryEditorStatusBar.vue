@@ -96,7 +96,7 @@
             >
               <x-label>Download Full Resultset</x-label>
               <i
-                v-if="$config.isCommunity"
+                v-if="!hasActiveLicense"
                 class="material-icons menu-icon"
               >stars</i>
             </x-menuitem>
@@ -153,7 +153,7 @@
 <script>
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
-import { mapState } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -204,6 +204,7 @@ export default {
   },
   computed: {
     ...mapState('settings', ['settings']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;

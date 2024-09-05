@@ -22,7 +22,7 @@
               v-html="option.shortcut"
             />
             <i
-              v-if="option.ultimate && $config.isCommunity"
+              v-if="option.ultimate && !hasActiveLicense"
               class="material-icons menu-icon"
             >stars</i>
           </span>
@@ -36,6 +36,7 @@
 
 import { ContextOption } from '@/plugins/BeekeeperPlugin'
 import Vue from 'vue'
+import { mapGetters } from 'vuex'
 
 export default Vue.extend({
   name: 'ContextMenu',
@@ -49,6 +50,7 @@ export default Vue.extend({
   },
 
   computed: {
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     menuElements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))

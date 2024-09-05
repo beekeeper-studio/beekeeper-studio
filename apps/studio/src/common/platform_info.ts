@@ -97,8 +97,6 @@ if (isRenderer()) {
     appVersion: testMode ? 'test-mode' : e?.app.getVersion() ?? p.env.version,
     cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
     locale,
-    isCommunity: true,
-    isUltimate: false,
 
     // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }
