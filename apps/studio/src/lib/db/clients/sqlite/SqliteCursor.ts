@@ -6,8 +6,7 @@ export class SqliteCursor extends BeeCursor {
   protected database: Database
   protected statement: Statement
   protected iterator?: IterableIterator<any>;
-
-  private usingExternalConnection = false;
+  protected usingExternalConnection = false;
 
   constructor(
     database: string | Database,

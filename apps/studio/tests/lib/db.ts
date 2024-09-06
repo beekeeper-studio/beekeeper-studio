@@ -1171,7 +1171,7 @@ export class DBTestUtil {
   }
 
   async streamStopTest() {
-    const {cursor} = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
     await cursor.start()
     await cursor.read()
     await cursor.close()
@@ -1180,6 +1180,11 @@ export class DBTestUtil {
   }
 
   async streamChunkTest() {
+    // FIXME this is a hack to keep knex alive because of the STREAM_EXPIRED error
+    // see https://github.com/libsql/knex-libsql/issues/3
+    if (this.dbType === 'libsql') {
+      await this.knex.schema.raw("SELECT 1;")
+    }
     const chunkSize = 389
     const { cursor } = await this.connection.selectTopStream('organizations', [], [], chunkSize, this.defaultSchema)
     await cursor.start()
@@ -1189,8 +1194,13 @@ export class DBTestUtil {
   }
 
   async streamReadTest() {
+    // FIXME this is a hack to keep knex alive because of the STREAM_EXPIRED error
+    // see https://github.com/libsql/knex-libsql/issues/3
+    if (this.dbType === 'libsql') {
+      await this.knex.schema.raw("SELECT 1;")
+    }
     let count = 0;
-    const { cursor, totalRows } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
     await cursor.start()
     while (true) {
       const len = (await cursor.read()).length
