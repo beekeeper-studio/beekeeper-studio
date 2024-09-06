@@ -30,9 +30,10 @@ export class CsvExporter extends Export {
     queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
-    outputOptions: OutputOptionsCsv
+    outputOptions: OutputOptionsCsv,
+    managerNotify: boolean = true
   ) {
-    super(filePath, connection, table, query, queryName, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options, managerNotify)
     this.headerConfig = {
       header: table ? true : false, // dont know columns for query
       delimiter: outputOptions.delimiter,

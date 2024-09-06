@@ -187,7 +187,12 @@ export default {
         this.$emit("update:focus", true);
       });
 
-      cm.on("blur", () => {
+      cm.on("blur", (_cm, event) => {
+        // This isn't really a blur because the receiving element is inside
+        // the editor.
+        if ((event.relatedTarget as HTMLElement)?.id.includes('CodeMirror')) {
+          return
+        }
         this.$emit("update:focus", false);
       });
 
