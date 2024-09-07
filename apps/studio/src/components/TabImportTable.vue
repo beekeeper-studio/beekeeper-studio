@@ -4,7 +4,7 @@
       v-if="isSupported"
       class="tabcontent"
     >
-      <upsell-content v-if="!hasActiveLicense"></upsell-content>
+      <upsell-content v-if="!hasActiveLicense"/>
       <stepper
         v-else
         :steps="importSteps"
@@ -18,7 +18,9 @@
         v-if="importStarted"
       >
         <div class="import-progress-wrapper flex-col">
-          <i :class="[{error: this.importError !== null}, 'material-icons loading-icon']">{{ getProgressIcon }}</i>
+          <i :class="[{error: this.importError !== null, spinning: (this.importStarted && this.importError === null && this.timer === null)}, 'material-icons loading-icon']">
+            {{ getProgressIcon }}
+          </i>
           <div class="text-2x">
             {{ getProgressTitle }}
           </div>
@@ -62,11 +64,15 @@
                 v-clipboard:error="onCopyError"
                 class="btn btn-icon"
                 :class="copyClass"
-              ><span
-                class="material-icons"
-                :title="copyTitle"
-              >{{ copyIcon }}</span>{{ copyMessage }}</a>
-
+              >
+                <span
+                  class="material-icons"
+                  :title="copyTitle"
+                >
+                  {{ copyIcon }}
+                </span>
+                {{ copyMessage }}
+              </a>
             </span>
           </p>
         </div>
@@ -218,7 +224,7 @@
       },
       getProgressIcon () {
         if (this.importStarted && this.importError === null && this.timer === null) {
-          return 'pending'
+          return 'autorenew'
         }
         return this.importError !== null ? 'error' : 'check_circle'
       },
@@ -293,7 +299,7 @@
 }
 .import-error-message {
   display: block;
-  overflow-x:hidden;
+  overflow-x: hidden;
   max-height: 30vh;
 }
 a:hover {
@@ -307,5 +313,17 @@ a:hover {
 }
 .copy-btn {
   margin-top: 1rem;
+}
+.spinning {
+  animation: spin 5s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
