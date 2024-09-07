@@ -220,6 +220,7 @@
     },
     data() {
       return {
+        table: null,
         fileName: null,
         allowChangeSettings: false,
         columnDelimeter: null,
@@ -237,7 +238,6 @@
     },
     computed: {
       ...mapGetters(['schemaTables']),
-      ...mapState(['connection']),
       filePickerOptions() {
         return {
           filters: [
@@ -255,21 +255,26 @@
       async fileName () {
         const importOptions = {
           fileName: this.fileName,
-          fileType: this.fileType
+          fileType: this.fileType,
         }
-        this.importerClass = getImporterClass(importOptions, this.connection, this.table)
+
+        this.table = this.getTable()
+        await this.$store.dispatch('updateTableColumns', this.table)
+        importOptions.table = this.table
+
+        this.importerClass = await this.$util.send('import/init', { options: importOptions, table: this.table })
         this.tabulator = null
         this.isAutodetect = true
-        this.allowChangeSettings = this.importerClass.allowChangeSettings()
-        this.setAutodetectOptions()
+        this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerClass })
+        await this.setAutodetectOptions()
         if (importOptions.fileType === 'xlsx') {
           await this.setXSLX()
         }
         
         this.$emit('change', Boolean(this.fileName))
       },
-      isAutodetect() {
-        this.setAutodetectOptions()
+      async isAutodetect() {
+        await this.setAutodetectOptions()
       }
     },
     methods: {
@@ -278,28 +283,28 @@
         return `${schema}${this.stepperProps.table}`
       },
       async setXSLX() {
-        this.sheets = await this.importerClass.getSheets()
+        this.sheets = await this.$util.send('import/excel/getSheets', { id: this.importerClass })
         this.sheetSelected = this.sheets[0]
       },
       async previewFile() {
         const importOptions = {
           fileName: this.fileName,
-          fileType: this.fileType
-        }
-
-        this.importerClass = getImporterClass(importOptions, this.connection, this.table)
-        this.importerClass.setOptions({
+          fileType: this.fileType,
           columnDelimeter: this.columnDelimeter,
           quoteCharacter: this.quoteCharacter,
           escapeCharacter: this.escapeCharacter,
           newlineCharacter: this.newlineCharacter,
           nullableValues: this.nullableValues,
           trimWhitespaces: this.trimWhitespaces,
-          useHeaders: true,
-        })
+          useHeaders: true
+        }
 
-        const previewData = await this.importerClass.getPreview()
-        const { data, columns } = this.importerClass.mapRawData(previewData)
+        this.table = this.getTable()
+        await this.$store.dispatch('updateTableColumns', this.table)
+
+        importOptions.table = this.table
+        await this.$util.send('import/setOptions', { id: this.importerClass, options: importOptions })
+        const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerClass })
         const tableColumns = columns.map(column =>
           ({
             ...column,
@@ -320,9 +325,9 @@
           }
         })
       },
-      setAutodetectOptions() {
+      async setAutodetectOptions() {
         const isAutodetect = this.isAutodetect
-        const autodetectedFields = this.importerClass.autodetectedSettings()
+        const autodetectedFields = await this.$util.send('import/getAutodetectedSettings', { id: this.importerClass })
         // TODO: For different file types, might have to get from the importer class since ones that shouldn't be shown should be "null"
         const defaultFormat = {
           columnDelimeter: ',',
@@ -352,11 +357,9 @@
         return foundSchema.tables.find(t => t.name === this.stepperProps.table)
       },
       async onNext() {
-        const table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', table)
-
         const importData = {
           table: this.tableKey(),
+          importProcessId: this.importerClass,
           importOptions: {
             fileName: this.fileName,
             columnDelimeter: this.columnDelimeter,
@@ -367,9 +370,11 @@
             trimWhitespaces: this.trimWhitespaces,
             useHeaders: true,
             fileType: this.fileType,
-            table
+            table: this.table
           }
         }
+
+        await this.$util.send('import/setOptions', { id: this.importerClass, options: importData.importOptions })
         return await this.$store.commit('imports/upsertImport', importData)
       }
     }

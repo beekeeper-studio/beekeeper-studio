@@ -57,7 +57,6 @@ export default {
     ...mapGetters(['schemaTables']),
     ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
-    ...mapState(['connection']),
     importColumns () {
       const selectOptions = {
         values: {[this.ignoreText]: this.ignoreText, ...this.tableColumnNames}
@@ -123,7 +122,7 @@ export default {
       return `${schema}${this.stepperProps.table}`
     },
     async tableData(importedColumns) {
-      const { meta } = await this.importerClass.getPreview()
+      const { meta } = await this.$util.send('import/getFileAttributes', { id: this.importerClass })
       const importOptions = await this.getImportOptions(this.tableKey())
       const tableColumns = new Map()
 
@@ -223,19 +222,23 @@ export default {
     },
     async onNext() {
       const importOptions =  await this.tablesToImport.get(this.tableKey())
-      importOptions.importMap = this.importerClass.mapper(this.tabulator.getData())
+      importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerClass, dataToMap: this.tabulator.getData() })
       importOptions.truncateTable = this.truncateTable
 
       const importData = {
         table: this.tableKey(),
+        importProcessId: this.importerClass,
         importOptions
       }
       this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.tableKey())
-      const connection = await this.connection
       this.table = this.getTable(importOptions.table)
+      if (!this.table.columns) {
+        await this.$store.dispatch('updateTableColumns', this.table)
+        this.table = this.getTable(importOptions.table)
+      }
       const { tableColumnNames, nonNullableColumns } = this.table.columns.reduce((acc, column) => {
         const columnText = [column.columnName, ...this.getColumnAttributes(column)]
 
@@ -247,10 +250,14 @@ export default {
 
         return acc
       }, { tableColumnNames: {}, nonNullableColumns: []})
-      // this.table = importOptions.table
       this.tableColumnNames = tableColumnNames
       this.nonNullableColumns = nonNullableColumns
-      this.importerClass = getImporterClass(importOptions, connection, this.table)
+      if (!importOptions.importProcessId) {
+        this.importerClass = await this.$util.send('import/init', { options: importOptions })
+      } else {
+        this.importerClass = importOptions.importProcessId
+      }
+
       this.initTabulator()
     },
   },

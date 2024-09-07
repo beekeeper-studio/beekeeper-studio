@@ -107,9 +107,9 @@ export default class Import {
 
         if (columnData != null) {
           if (this.options.trimWhitespaces && _.isString(columnData)) {
-            importedValue = this.connection.escapeString(columnData).trim()
+            importedValue = columnData.trim()
           } else if (_.isString(columnData)) {
-            importedValue = this.connection.escapeString(columnData)
+            importedValue = columnData
           } else {
             importedValue = columnData
           }

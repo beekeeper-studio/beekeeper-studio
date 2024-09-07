@@ -111,7 +111,6 @@
   
   import { ExportStatus } from '../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
-  import { getImporterClass } from '../lib/import/utils'
 
   export default {
     components: {
@@ -192,7 +191,7 @@
     computed: {
       ...mapGetters(['schemaTables', 'dialectData', 'dialect']),
       ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
-      ...mapState(['tables', 'connection']),
+      ...mapState(['tables']),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
       portalName() {
         return `tab-import-table-statusbar-${this.tab.id}`
@@ -260,15 +259,19 @@
       },
       async handleImport() {
         const importOptions = await this.tablesToImport.get(this.tableKey)
-        const connection = await this.connection
-        const importerClass = getImporterClass(importOptions, connection, importOptions.table)
+        let importerClass
+        if (!importOptions.importProcessId) {
+          importerClass = await this.$util.send('import/init', { options: importOptions })
+        } else {
+          importerClass = importOptions.importProcessId
+        }
         const start = new Date()
         this.tab.isRunning = true
         this.importTable = importOptions.table
         this.importError = null
         try {
           this.importStarted = true
-          const data = await importerClass.importFile()
+          const data = await this.$util.send('import/importFile', { id: importerClass })
           this.timer = `${(new Date() - start) / 1000} seconds`
         } catch (err) {
           this.importError = err.message

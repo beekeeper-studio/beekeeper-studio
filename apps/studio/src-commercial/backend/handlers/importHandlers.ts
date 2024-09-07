@@ -77,7 +77,6 @@ export const ImportHandlers: IImportHandlers = {
 
   'import/getImportPreview': async function({ sId, id }: { sId: string, id: string}) {
     const importer = getImporter(id, sId)
-    // 
     const { data }: any = await importer.getPreview()
 
     return importer.mapData(data)
