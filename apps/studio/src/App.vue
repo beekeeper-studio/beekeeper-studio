@@ -34,6 +34,8 @@
     <import-connections-modal />
     <confirmation-modal-manager />
     <util-died-modal />
+    <trial-begin-modal />
+    <trial-end-modal />
   </div>
 </template>
 
@@ -61,6 +63,8 @@ import Noty from 'noty';
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
+import TrialBeginModal from '@/components/TrialBeginModal.vue'
+import TrialEndModal from '@/components/TrialEndModal.vue'
 
 import rawLog from 'electron-log'
 
@@ -72,7 +76,7 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal
+    EnterLicenseModal, TrialBeginModal, TrialEndModal,
   },
   data() {
     return {
@@ -89,7 +93,9 @@ export default Vue.extend({
     },
     ...mapState(['storeInitialized', 'connected', 'database']),
     ...mapGetters({
-      'license': 'licenses/newestLicense'
+      'license': 'licenses/newestLicense',
+      'isTrial': 'licenses/isTrial',
+      'trialLicense': 'licenses/trialLicense',
     }),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
@@ -97,15 +103,15 @@ export default Vue.extend({
     })
   },
   watch: {
-    title() {
-      document.title = this.title
-    },
     database() {
       log.info('database changed', this.database)
     },
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
-    }
+    },
+    isTrial() {
+      this.$store.dispatch('updateWindowTitle')
+    },
   },
   async beforeDestroy() {
     clearInterval(this.interval)
@@ -113,10 +119,6 @@ export default Vue.extend({
     await this.$store.commit('userEnums/setWatcher', null)
   },
   async mounted() {
-    await this.$store.dispatch('fetchUsername')
-    await this.$store.dispatch('licenses/init')
-    await this.$store.dispatch('userEnums/init')
-
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.licenseInterval = setInterval(
@@ -151,14 +153,10 @@ export default Vue.extend({
   methods: {
     notifyFreeTrial() {
       Noty.closeAll('trial')
-      if (this.license?.licenseType === 'TrialLicense' && this.license?.active) {
-
-        // we set the app title AND set a notification
-        document.title = `Beekeeper Studio Ultimate - free trial ends ${this.license.validUntil.toLocaleDateString()}`
-
+      if (this.isTrial) {
         const ta = new TimeAgo('en-US')
         const options = {
-          text: `Your free trial expires ${ta.format(this.license.validUntil)} (${this.license.validUntil.toLocaleDateString()})`,
+          text: `Your free trial expires ${ta.format(this.trialLicense.validUntil)} (${this.trialLicense.validUntil.toLocaleDateString()})`,
           type: 'warning',
           closeWith: ['button'],
           layout: 'bottomRight',

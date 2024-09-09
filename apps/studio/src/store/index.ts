@@ -28,6 +28,7 @@ import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
+import globals from '@/common/globals'
 
 const log = RawLog.scope('store/index')
 
@@ -353,10 +354,13 @@ const store = new Vuex.Store<State>({
     },
 
     updateWindowTitle(context, config: Nullable<IConnection>) {
-      const title = config
+      let title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
-
+      if (context.rootGetters['licenses/isTrial']) {
+        const days = context.rootGetters['licenses/trialDaysLeft']
+        title += ` - Free Trial (${days} ${days > 1 ? 'days' : 'day'} left)`
+      }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
     },
@@ -524,7 +528,17 @@ const store = new Vuex.Store<State>({
       context.dispatch('data/connections/load')
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
-    }
+    },
+    async initRootStates(context) {
+      await context.dispatch('fetchUsername')
+      await context.dispatch('licenses/init')
+      await context.dispatch('userEnums/init')
+      await context.dispatch('updateWindowTitle')
+      setInterval(
+        () => context.dispatch('licenses/updateDate'),
+        globals.licenseCheckInterval
+      )
+    },
   },
   plugins: []
 })

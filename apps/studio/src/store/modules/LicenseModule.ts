@@ -12,16 +12,19 @@ interface State {
   licenses: TransportLicenseKey[],
   loading: boolean
   error: CloudError | Error | null
+  date: Date
 }
 
 
+const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
 
 export const LicenseModule: Module<State, RootState>  = {
   namespaced: true,
   state: () => ({
     licenses: [],
     loading: false,
-    error: null
+    error: null,
+    date: new Date(),
   }),
   getters: {
     newestLicense(state) {
@@ -32,7 +35,23 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     hasActiveLicense(state) {
       return state.licenses.some((l) => l.active);
-    }
+    },
+    isTrial(state, getters) {
+      return getters.newestLicense.licenseType === 'TrialLicense'
+        && getters.trialLicense.validUntil > state.date
+    },
+    trialDaysLeft(state, getters) {
+      const validUntil = getters.trialLicense.validUntil.getTime()
+      const now = state.date.getTime()
+      return Math.round((validUntil - now) / oneDay);
+    },
+    trialLicense(state) {
+      const l = state.licenses.find((l) => l.licenseType === 'TrialLicense')
+      return {
+        ...l,
+        validUntil: new Date(new Date().getTime() + (10 * 1000)),
+      }
+    },
   },
 
   mutations: {
@@ -44,7 +63,10 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     remove(state, licenses: TransportLicenseKey[]) {
       state.licenses = _.without(state.licenses, ...licenses)
-    }
+    },
+    setDate(state, date: Date) {
+      state.date = date
+    },
   },
   actions: {
     async init(context) {
@@ -95,6 +117,11 @@ export const LicenseModule: Module<State, RootState>  = {
         const license = context.getters.realLicenses[index];
         await context.dispatch('update', license)
       }
-    }
+    },
+
+    /** Use this to update the trial getters */
+    updateDate(context) {
+      context.commit('setDate', new Date())
+    },
   }
 }
