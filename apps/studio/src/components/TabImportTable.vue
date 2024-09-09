@@ -251,14 +251,15 @@
           this.copyClass = "btn-flat copy-btn"
         }, 5000);
       },
-      getTable() {
-        return this.tab.findTable(this.tables)
-      },
       closeTab () {
         this.$root.$emit(AppEvent.closeTab)
       },
       viewData() {
-        this.$root.$emit(AppEvent.loadTable, { table: this.getTable() })
+        this.$root.$emit(AppEvent.loadTable, { table: {
+          entityType: 'table',
+          name: this.table,
+          schema: this.schema
+        } })
       },
       goBack() {
         this.importStarted = false
