@@ -105,7 +105,7 @@ export interface IConnectionHandlers {
   'conn/azureCancelAuth': ({ sId }: { sId: string }) => Promise<void>
   'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
-  'conn/azureGetAccountName': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
 
   // For Import ************************************************************
   'conn/importStepZero': ({ sId, table }: { sId: string, table: any }) => Promise<any>,
@@ -467,11 +467,11 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).connectionAbortController?.abort();
   },
 
-  'conn/azureGetAccountName': async function({ authId }: { authId: string }) {
+  'conn/azureGetAccountName': async function({ authId }: { authId: number }) {
     if (!authId) {
       throw new Error("authId is required");
     };
-    const cache = await TokenCache.findOne(authId)
+    const cache = await TokenCache.findOneBy({id: authId})
     if (!cache) return null
     return cache.name
   },
@@ -480,7 +480,7 @@ export const ConnHandlers: IConnectionHandlers = {
     await AzureAuthService.ssoSignOut(config.authId)
 
     // Clean up authId cause it's invalid after signing out
-    const savedConnection = await SavedConnection.findOne(config.id)
+    const savedConnection = await SavedConnection.findOneBy({id: config.id})
     savedConnection.authId = null
     await savedConnection.save()
     if (state(sId).usedConfig) {
