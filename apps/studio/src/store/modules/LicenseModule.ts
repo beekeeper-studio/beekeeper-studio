@@ -34,7 +34,13 @@ export const LicenseModule: Module<State, RootState>  = {
       return state.licenses.filter((l) => l.licenseType !== 'TrialLicense')
     },
     hasActiveLicense(state) {
-      return state.licenses.some((l) => l.active);
+      return state.licenses.some((l) => l.validUntil > state.date)
+    },
+    isUltimate(_state, getters) {
+      return getters.hasActiveLicense
+    },
+    isCommunity(_state, getters) {
+      return !getters.isUltimate
     },
     isTrial(state, getters) {
       return getters.newestLicense.licenseType === 'TrialLicense'
@@ -71,6 +77,8 @@ export const LicenseModule: Module<State, RootState>  = {
   actions: {
     async init(context) {
       const licenses = await Vue.prototype.$util.send('appdb/license/find');
+      licenses.find((l) => l.licenseType === 'TrialLicense').validUntil = new Date(new Date().getTime() + (10 * 1000));
+      licenses.find((l) => l.licenseType === 'TrialLicense').supportUntil = new Date(new Date().getTime() + (10 * 1000));
       context.commit('set', licenses)
       context.dispatch('updateAll')
     },

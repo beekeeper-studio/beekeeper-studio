@@ -96,7 +96,7 @@
             >
               <x-label>Download Full Resultset</x-label>
               <i
-                v-if="$config.isCommunity"
+                v-if="$store.getters.isCommunity"
                 class="material-icons menu-icon"
               >stars</i>
             </x-menuitem>

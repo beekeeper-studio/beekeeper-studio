@@ -22,7 +22,7 @@
               v-html="option.shortcut"
             />
             <i
-              v-if="option.ultimate && $config.isCommunity"
+              v-if="option.ultimate && $store.getters.isCommunity"
               class="material-icons menu-icon"
             >stars</i>
           </span>

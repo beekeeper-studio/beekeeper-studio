@@ -185,7 +185,7 @@
           this.azureAuthEnabled = false
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
-          if (this.$config.isCommunity) {
+          if (this.$store.getters.isCommunity) {
             // we want to display a modal
             this.$root.$emit(AppEvent.upgradeModal);
             this.authType = 'default'

@@ -145,7 +145,7 @@ export default {
   },
   methods: {
     showContextMenu(event) {
-      const ultimateCheck = this.$config.isUltimate
+      const ultimateCheck = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.config.connectionType)
 

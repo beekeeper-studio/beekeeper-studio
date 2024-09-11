@@ -3,7 +3,7 @@ export default {
   async run(runner) {
     const queries = [
       `INSERT INTO user_setting (key, defaultValue, valueType) VALUES
-          -- ('openBeginTrialModal', 'true', 5),
+          ('openBeginTrialModal', 'true', 5),
           ('openEndLicenseModal', 'true', 5)
       `,
     ];

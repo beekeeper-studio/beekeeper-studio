@@ -206,6 +206,12 @@ const store = new Vuex.Store<State>({
     versionString(state) {
       return state.server.versionString();
     },
+    isCommunity(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isCommunity']
+    },
+    isUltimate(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isUltimate']
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -357,6 +363,9 @@ const store = new Vuex.Store<State>({
       let title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
+      if (context.getters.isUltimate) {
+        title += ' Ultimate Edition'
+      }
       if (context.rootGetters['licenses/isTrial']) {
         const days = context.rootGetters['licenses/trialDaysLeft']
         title += ` - Free Trial (${days} ${days > 1 ? 'days' : 'day'} left)`
@@ -538,6 +547,9 @@ const store = new Vuex.Store<State>({
         () => context.dispatch('licenses/updateDate'),
         globals.licenseCheckInterval
       )
+    },
+    licenseEntered(context) {
+      context.dispatch('updateWindowTitle')
     },
   },
   plugins: []

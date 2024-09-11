@@ -4,7 +4,9 @@
       v-if="isSupported"
       class="tabcontent"
     >
-      <upsell-content v-if="!hasActiveLicense"></upsell-content>
+      <div v-if="isCommunity" style="padding: 0 1rem;">
+        <upsell-content />
+      </div>
       <stepper
         v-else
         :steps="importSteps"
@@ -80,7 +82,7 @@
         Beekeeper does not currently support Import from File for {{ this.dialectTitle }} ☹️
       </p>
     </div>
-    
+
     <status-bar>
       <div class="statusbar-info col flex expand">
         <span
@@ -108,7 +110,7 @@
   import ImportPreview from './importtable/ImportPreview.vue'
   import UpsellContent from '@/components/connection/UpsellContent.vue'
   import { DialectTitles } from '@shared/lib/dialects/models'
-  
+
   import { ExportStatus } from '../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
   import { getImporterClass } from '../lib/import/utils'
@@ -190,8 +192,7 @@
       }
     },
     computed: {
-      ...mapGetters(['schemaTables', 'dialectData', 'dialect']),
-      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+      ...mapGetters(['schemaTables', 'dialectData', 'dialect', 'isCommunity']),
       ...mapState(['tables', 'connection']),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
       portalName() {

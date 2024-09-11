@@ -19,7 +19,7 @@
                   <x-menuitem @click.prevent="importFromLocal">
                     <x-label>Import from local workspace</x-label>
                     <i
-                      v-if="$config.isCommunity"
+                      v-if="$store.getters.isCommunity"
                       class="material-icons menu-icon"
                     >stars</i>
                   </x-menuitem>

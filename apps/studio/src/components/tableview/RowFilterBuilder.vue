@@ -272,6 +272,9 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(["dialectData", "minimalMode"]),
+    ...mapGetters({
+      isCommunity: "licenses/isCommunity",
+    }),
     ...mapState(['connection']),
     additionalFilters() {
       const [_, ...additional] = this.filters;
@@ -329,7 +332,7 @@ export default Vue.extend({
       this.$nextTick(this.focusOnInput);
     },
     addFilter() {
-      if (this.$config.isCommunity) {
+      if (this.isCommunity) {
         if (this.filters.length >= 2) {
           this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use more than 2 filters")
           return;
@@ -401,7 +404,7 @@ export default Vue.extend({
     },
     externalFilters() {
       this.hideInMinimalMode = checkEmptyFilters(this.externalFilters)
-      if (this.$config.isCommunity) {
+      if (this.isCommunity) {
         this.filters = this.externalFilters?.slice(0, 2) || [];
       } else {
         this.filters = this.externalFilters || [];
