@@ -25,8 +25,9 @@
               class="material-icons menu-icon"
               v-if="option.icon"
             >{{ option.icon }}</i>
+            <!-- NOTE (@day): this is supposed to only appear when you don't have an ult license, but this component can't use the store -->
             <i
-              v-if="option.ultimate && !hasActiveLicense"
+              v-if="option.ultimate"
               class="material-icons menu-icon"
             >stars</i>
           </span>
@@ -38,9 +39,9 @@
 
 <script lang="ts">
 
+// NOTE (@day): we can't use the store here for some reason
 import { ContextOption } from '@/plugins/BeekeeperPlugin'
 import Vue from 'vue'
-import { mapGetters } from 'vuex'
 
 export default Vue.extend({
   name: 'ContextMenu',
@@ -54,7 +55,6 @@ export default Vue.extend({
   },
 
   computed: {
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     menuElements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))
