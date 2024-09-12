@@ -34,16 +34,12 @@ export default {
   computed: {
     modalName: () => "trial-end-modal",
     ...mapGetters({
-      'isTrial': 'licenses/isTrial',
+      'status': 'licenses/status',
     }),
   },
   watch: {
-    async isTrial() {
-      const openEndLicenseModal = await this.$util.send('appdb/setting/get', { key: 'openEndLicenseModal' });
-      if (!this.isTrial && openEndLicenseModal.value) {
-        this.$modal.show(this.modalName);
-      }
-    },
+    //   const openEndLicenseModal = await this.$util.send('appdb/setting/get', { key: 'openEndLicenseModal' });
+    // },
   },
   methods: {
     downgrade() {

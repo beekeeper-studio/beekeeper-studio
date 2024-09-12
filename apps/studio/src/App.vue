@@ -93,11 +93,7 @@ export default Vue.extend({
     },
     ...mapState(['storeInitialized', 'connected', 'database']),
     ...mapGetters({
-      'license': 'licenses/newestLicense',
-      'isTrial': 'licenses/isTrial',
-      'trialLicense': 'licenses/trialLicense',
-    }),
-    ...mapGetters({
+      'licenseStatus': 'licenses/status',
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'
     })
@@ -109,7 +105,7 @@ export default Vue.extend({
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
     },
-    isTrial() {
+    licenseStatus() {
       this.$store.dispatch('updateWindowTitle')
     },
   },
@@ -153,10 +149,11 @@ export default Vue.extend({
   methods: {
     notifyFreeTrial() {
       Noty.closeAll('trial')
-      if (this.isTrial) {
+      if (this.licenseStatus.license?.licenseType === 'TrialLicense' && this.licenseStatus.edition === 'ultimate') {
         const ta = new TimeAgo('en-US')
+        const validUntil = this.licenseStatus.license.validUntil
         const options = {
-          text: `Your free trial expires ${ta.format(this.trialLicense.validUntil)} (${this.trialLicense.validUntil.toLocaleDateString()})`,
+          text: `Your free trial expires ${ta.format(validUntil)} (${validUntil.toLocaleDateString()})`,
           type: 'warning',
           closeWith: ['button'],
           layout: 'bottomRight',

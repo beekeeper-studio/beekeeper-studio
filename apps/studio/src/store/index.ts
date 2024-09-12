@@ -366,8 +366,9 @@ const store = new Vuex.Store<State>({
       if (context.getters.isUltimate) {
         title += ' Ultimate Edition'
       }
-      if (context.rootGetters['licenses/isTrial']) {
-        const days = context.rootGetters['licenses/trialDaysLeft']
+      const status = context.rootGetters['licenses/status']
+      if (status.license.licenseType === 'TrialLicense' && status.edition === 'ultimate') {
+        const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${days} ${days > 1 ? 'days' : 'day'} left)`
       }
       context.commit('updateWindowTitle', title)

@@ -30,6 +30,7 @@ export interface IPlatformInfo {
   appDbPath: string,
   updatesDisabled: boolean,
   appVersion: string,
+  parsedAppVersion: { major: number, minor: number, patch: number },
   cloudUrl: string,
   locale: string,
   isCommunity: boolean,
