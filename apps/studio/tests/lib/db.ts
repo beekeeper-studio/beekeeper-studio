@@ -16,6 +16,10 @@ import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { IDbConnectionPublicServer } from './db/serverTypes'
 // TODO (@day): this may need to be moved uggh
 import { createServer } from '@commercial/backend/lib/db/server'
+import fs from 'fs'
+import path from 'path'
+import Papa from 'papaparse'
+import { FirebirdData } from '@/shared/lib/dialects/firebird'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -1087,47 +1091,126 @@ export class DBTestUtil {
 
   }
 
-  async streamTests() {
-    const names = [
-      { name: "Matthew" },
-      { name: "Nicoll" },
-      { name: "Gregory" },
-      { name: "Alex" },
-      { name: "Alethea" },
-      { name: "Elias" }
-    ]
+  async prepareStreamTests() {
+    return new Promise<void>(async (resolve, reject) => {
+      const fileLocation = path.join(__dirname, '../fixtures/organizations-100000.csv')
+      const fileStream = fs.createReadStream(fileLocation)
+      const promises = []
+      const useStep = !!this.dbType.match(/firebird|sqlserver/i)
 
-    if (this.dbType === 'firebird') {
-      for (const name of names) {
-        await this.knex('streamtest').insert(name)
+      let batch = []
+      const maxBatch = this.dbType === 'firebird' ? 255 : 233
+
+      if (this.dbType === 'sqlserver') {
+        await this.knex.schema.raw('SET IDENTITY_INSERT organizations ON')
       }
-    } else {
-      await this.knex('streamtest').insert(names)
-    }
-    const result = await this.connection.selectTopStream(
-      'streamtest',
-      [{ field: 'id', dir: 'ASC' }],
-      [],
-      5,
-      undefined,
-    )
-    expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
-    if (this.connection.connectionType !== 'tidb') {
-      // tiDB doesn't always update statistics, so this might not
-      // be correct
-      expect(result.totalRows).toBe(6)
-    }
-    const cursor = result.cursor
+
+      const execBatch = async (batch: Record<string, any>[]) => {
+        if (this.dbType === 'firebird') {
+          const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
+          await this.knex.schema.raw(`
+            EXECUTE BLOCK AS BEGIN
+              ${inserts}
+            END
+          `)
+        } else if (this.dbType === 'sqlserver') {
+          const { bindings, sql } = this.knex('organizations').insert(batch).toSQL()
+          await this.knex.raw(`
+            SET IDENTITY_INSERT organizations ON;
+              ${sql}
+            SET IDENTITY_INSERT organizations OFF;
+          `, bindings)
+        } else {
+          await this.knex('organizations').insert(batch)
+        }
+      }
+
+      Papa.parse(fileStream, {
+        header: true,
+        ...(useStep
+          ? {
+              step(results: { data: Record<string, any> }) {
+                batch.push(results.data);
+                if (batch.length >= maxBatch) {
+                  promises.push(execBatch(batch));
+                  batch = [];
+                }
+              },
+            }
+          : {
+              chunk(results: { data: Record<string, any>[] }) {
+                if (results.data.length === 0) {
+                  return;
+                }
+                promises.push(execBatch(results.data));
+              },
+            }),
+        complete() {
+          // Clear up the last batch
+          if (batch.length > 0) {
+            promises.push(execBatch(batch));
+            batch = [];
+          }
+          Promise.all(promises).then(() => resolve()).catch(reject);
+        },
+        error: (err) => reject(err),
+      });
+    })
+  }
+
+  async streamColumnsTest() {
+    const { columns } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    expect(columns.map(c => c.columnName.toLowerCase())).toMatchObject([
+      'id', 'organization_id', 'name', 'website', 'country', 'description', 'founded', 'industry', 'number_of_employees',
+    ])
+  }
+
+  async streamCountTest() {
+    const result = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    expect(result.totalRows).toBe(100_000)
+  }
+
+  async streamStopTest() {
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
     await cursor.start()
-    const b1 = await cursor.read()
-    expect(b1.length).toBe(5)
-    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
-    const b2 = await cursor.read()
-    expect(b2.length).toBe(1)
-    expect(b2[0][1]).toBe(names[names.length - 1].name)
-    const b3 = await cursor.read()
-    expect(b3).toMatchObject([])
+    await cursor.read()
     await cursor.close()
+    // If the test runs despite closing the cursor, it wasn't closed properly.
+    expect.anything()
+  }
+
+  async streamChunkTest() {
+    // FIXME this is a hack to keep knex alive because of the STREAM_EXPIRED error
+    // see https://github.com/libsql/knex-libsql/issues/3
+    if (this.dbType === 'libsql') {
+      await this.knex.schema.raw("SELECT 1;")
+    }
+    const chunkSize = 389
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], chunkSize, this.defaultSchema)
+    await cursor.start()
+    const rows = await cursor.read()
+    expect(rows.length).toBe(chunkSize)
+    await cursor.close()
+  }
+
+  async streamReadTest() {
+    // FIXME this is a hack to keep knex alive because of the STREAM_EXPIRED error
+    // see https://github.com/libsql/knex-libsql/issues/3
+    if (this.dbType === 'libsql') {
+      await this.knex.schema.raw("SELECT 1;")
+    }
+    let count = 0;
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    await cursor.start()
+    while (true) {
+      const len = (await cursor.read()).length
+      count += len
+      if (len === 0) {
+        break
+      }
+    }
+    await cursor.close()
+    expect(count).toBe(100_000)
   }
 
   async generatedColumnsTests() {
@@ -1156,14 +1239,14 @@ export class DBTestUtil {
     importScriptOptions.clientExtras = await this.connection.importStepZero(table)
     await this.connection.importBeginCommand(table, importScriptOptions)
     await this.connection.importTruncateCommand(table, importScriptOptions)
-    
+
     const editedImportScriptOptions = {
       clientExtras: importScriptOptions.clientExtras,
-      executeOptions: { multiple: true } 
+      executeOptions: { multiple: true }
     }
-    
+
     await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
-    
+
     await this.connection.importCommitCommand(table, importScriptOptions)
     await this.connection.importFinalCommand(table, importScriptOptions)
 
@@ -1193,11 +1276,11 @@ export class DBTestUtil {
 
     const editedImportScriptOptions = {
       clientExtras: importScriptOptions.clientExtras,
-      executeOptions: { multiple: true } 
+      executeOptions: { multiple: true }
     }
 
     await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
-    
+
     await this.connection.importRollbackCommand(table, importScriptOptions)
     await this.connection.importFinalCommand(table, importScriptOptions)
 
@@ -1289,10 +1372,17 @@ export class DBTestUtil {
       })
     }
 
-    await this.knex.schema.createTable('streamtest', (table) => {
+    await this.knex.schema.createTable('organizations', (table) => {
       primary(table)
-      table.string("name")
-    })
+      table.string('organization_id', 255).notNullable();
+      table.string('name', 255).notNullable();
+      table.string('website', 255).nullable(); // Since 'NA', '-', and 'NULL' appear in the website field
+      table.string('country', 255).notNullable();
+      table.string('description').notNullable();
+      table.integer('founded').notNullable();
+      table.string('industry', 255).notNullable();
+      table.integer('number_of_employees').notNullable();
+    });
 
     if (!this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird'> = {

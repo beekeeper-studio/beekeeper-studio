@@ -23,7 +23,7 @@ const knex = createSQLiteKnex(Client_Libsql);
  */
 export class LibSQLClient extends SqliteClient {
   private isRemote: boolean;
-  /** Use this connection when we need to sync to remote database */
+  /** Use this connection only when we need to sync to remote database */
   // @ts-expect-error not fully typed
   _rawConnection: Database.Database;
 

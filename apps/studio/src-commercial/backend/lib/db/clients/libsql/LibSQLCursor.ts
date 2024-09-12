@@ -56,4 +56,15 @@ export class LibSQLCursor extends SqliteCursor {
     }
     return results;
   }
+
+  async cancel(): Promise<void> {
+    // FIXME this is a hack to empty the iterator. A better way to do a clean
+    // up is by calling this.iterator.return() but LibSQL doesn't support this
+    // yet.
+    for (const _row of this.iterator) {}
+
+    if(!this.usingExternalConnection) {
+      this.database.close()
+    }
+  }
 }

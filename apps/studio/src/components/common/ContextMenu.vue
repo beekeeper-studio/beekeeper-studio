@@ -22,6 +22,10 @@
               v-html="option.shortcut"
             />
             <i
+              class="material-icons menu-icon"
+              v-if="option.icon"
+            >{{ option.icon }}</i>
+            <i
               v-if="option.ultimate && !hasActiveLicense"
               class="material-icons menu-icon"
             >stars</i>
