@@ -24,7 +24,7 @@
     "dev:esbuild": "./esbuild.mjs watch",
     "dev:vite": "vite dev"
   },
-  "main": "dist/background.js",
+  "main": "dist/main.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@azure/msal-node": "^2.12.0",

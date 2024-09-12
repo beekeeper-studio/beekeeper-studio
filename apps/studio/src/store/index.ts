@@ -5,7 +5,7 @@ import Vuex from 'vuex'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
-import { IDbConnectionPublicServer } from '../lib/db/server'
+import { IDbConnectionPublicServer } from '../lib/db/serverTypes'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
@@ -22,6 +22,16 @@ import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
+
+import { SmartLocalStorage } from '@/common/LocalStorage'
+
+import { LicenseModule } from './modules/LicenseModule'
+import { CredentialsModule } from './modules/CredentialsModule'
+import { UserEnumsModule } from './modules/UserEnumsModule'
+import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
+import ImportStoreModule from './modules/imports/ImportStoreModule'
+import { BackupModule } from './modules/backup/BackupModule'
+
 
 const log = RawLog.scope('store/index')
 
@@ -57,6 +67,7 @@ export interface State {
   defaultSchema: string,
   versionString: string,
   connError: string
+  expandFKDetailsByDefault: boolean
 }
 
 Vue.use(Vuex)
@@ -69,8 +80,14 @@ const store = new Vuex.Store<State>({
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
+    licenses: LicenseModule,
+    credentials: CredentialsModule,
     hideEntities: HideEntityModule,
-    pinnedConnections: PinConnectionModule
+    userEnums: UserEnumsModule,
+    pinnedConnections: PinConnectionModule,
+    multiTableExports: MultiTableExportStoreModule,
+    imports: ImportStoreModule,
+    backups: BackupModule
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -102,7 +119,8 @@ const store = new Vuex.Store<State>({
     windowTitle: 'Beekeeper Studio',
     defaultSchema: null,
     versionString: null,
-    connError: null
+    connError: null,
+    expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
   },
 
   getters: {
@@ -193,6 +211,9 @@ const store = new Vuex.Store<State>({
     versionString(state) {
       return state.server.versionString();
     },
+    expandFKDetailsByDefault(state) {
+      return state.expandFKDetailsByDefault
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -323,7 +344,10 @@ const store = new Vuex.Store<State>({
     },
     setConnError(state, err: string) {
       state.connError = err;
-    }
+    },
+    expandFKDetailsByDefault(state, value: boolean) {
+      state.expandFKDetailsByDefault = value
+    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -373,13 +397,18 @@ const store = new Vuex.Store<State>({
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
         context.commit('newConnection', config)
-        console.log('CONFIG: ', config)
 
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
         context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
+
+        if (supportedFeatures.backups) {
+          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+        }
+
       } else {
         throw "No username provided"
       }
@@ -507,6 +536,13 @@ const store = new Vuex.Store<State>({
       context.dispatch('data/connections/load')
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
+    },
+    async toggleExpandFKDetailsByDefault(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.expandFKDetailsByDefault
+      }
+      SmartLocalStorage.setBool('expandFKDetailsByDefault', value)
+      context.commit('expandFKDetailsByDefault', value)
     }
   },
   plugins: []

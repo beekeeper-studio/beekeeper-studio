@@ -74,6 +74,7 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   async cancel(): Promise<void> {
+    this.request?.cancel()
     return this.connection?.close()
   }
 
