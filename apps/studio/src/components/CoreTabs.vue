@@ -340,6 +340,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     tabIcon() {
       return {
         type: this.dbEntityType,
+        tabType: this.dbEntityType,
         entityType: this.dbEntityType
       }
     },
