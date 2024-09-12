@@ -69,7 +69,8 @@ const SettingStoreModule: Module<State, any> = {
       return state.settings.sortOrder.value
     },
     minimalMode(state) {
-      return state.settings.minimalMode.value
+      // Disable this for now in favor of #2380
+      return false && state.settings.minimalMode.value
     },
   }
 }
