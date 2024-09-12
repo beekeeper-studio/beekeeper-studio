@@ -51,8 +51,9 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           });
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
-        let dbObj: any = obj.id ? await cls.findOneBy(obj.id) : new cls().withProps(obj);
+        let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
         if (dbObj && obj.id) {
+          log.info(`FOUND EXISTING ${name}: `, dbObj)
           cls.merge(dbObj, obj);
         } else if (!dbObj) {
           dbObj = new cls().withProps(obj);
@@ -70,7 +71,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         });
         await cls.remove(dbEntities)
       } else {
-        const dbObj = await cls.findOneBy(obj.id);
+        const dbObj = await cls.findOneBy({ id: obj.id });
         log.info(`Removing ${name}: `, dbObj);
         await dbObj?.remove();
       }
