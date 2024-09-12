@@ -85,7 +85,7 @@ jobs:
           npx rimraf "apps\studio\dist\!(*.exe)"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
           path: apps/studio/dist
