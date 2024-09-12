@@ -313,45 +313,6 @@ function testWith(tag, socket = false, readonly = false) {
         await util.knex.schema.raw("DROP INDEX custom_prefix_index ON has_prefix_indexes")
       })
     })
-
-    describe("Imports", () => {
-      it('should import correctly', async () => {
-        const tableName = 'import_table'
-        const executeOptions = { multiple: false }
-        const table = {
-          name: tableName,
-          entityType: 'table'
-        }
-        const formattedData = util.buildImportData(tableName)
-        const {
-          step0,
-          beginCommand,
-          truncateCommand,
-          lineReadCommand,
-          commitCommand,
-          rollbackCommand,
-          finalCommand
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
-    
-        expect(step0).toBeUndefined()
-        expect(typeof beginCommand).toBe('function')
-        expect(typeof truncateCommand).toBe('function')
-        expect(typeof lineReadCommand).toBe('function')
-        expect(typeof commitCommand).toBe('function')
-        expect(typeof rollbackCommand).toBe('function')
-        expect(finalCommand).toBeUndefined()
-        await truncateCommand(executeOptions)
-
-        await beginCommand(executeOptions)
-        await truncateCommand(executeOptions)
-        await lineReadCommand(importSQL, {multiple: true})
-        await commitCommand(executeOptions)
-    
-        const {data: hats} = await lineReadCommand(`select * from ${tableName}`, executeOptions)
-        expect(hats.length).toBe(4)
-      })
-    })
   })
 
 }

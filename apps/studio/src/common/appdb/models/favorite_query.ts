@@ -5,6 +5,10 @@ import { QueryLike } from './base'
 
 @Entity({ name: 'favorite_query' })
 export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISavedQuery {
+  withProps(props?: any): FavoriteQuery {
+    if (props) FavoriteQuery.merge(this, props);
+    return this;
+  }
 
   @Column({type: "varchar", nullable: false})
   title!: string

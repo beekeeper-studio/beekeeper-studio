@@ -253,6 +253,90 @@ export interface CancelableQuery {
   cancel: () => Promise<void>;
 }
 
+// Backups
+export interface SelectControlOption {
+  name: string,
+  value: string
+}
+
+export type BackupFormat = SelectControlOption
+
+export interface SupportedBackupFeatures {
+  selectObjects: boolean,
+  settings: boolean,
+}
+
+export class Command {
+  isSql: boolean;
+  sql: string;
+  env: any;
+  mainCommand: string;
+  options: string[];
+  postCommand?: Command;
+
+  constructor(value: Partial<Command>) {
+    Object.assign(this, value);
+  }
+}
+
+export class BackupTable {
+  objectName: string;
+  schemaName: string;
+  included: boolean;
+
+  constructor(value: Partial<BackupTable>) {
+    Object.assign(this, value);
+  }
+}
+
+export class BackupSchema {
+  objectName: string;
+  included: boolean;
+
+  constructor(value: Partial<BackupSchema>) {
+    Object.assign(this, value);
+  }
+}
+
+export type ControlType = 'select' | 'checkbox' | 'filepicker' | 'input' | 'info' | 'textarea';
+
+export interface CommandSettingControl {
+  controlType: ControlType | ((config: BackupConfig) => ControlType);
+  settingName?: string;
+  settingDesc: string;
+  required?: boolean;
+  selectOptions?: SelectControlOption[];
+  placeholder?: string;
+  show?: (config: BackupConfig) => boolean;
+  controlOptions?: any;
+  valid?: (config: BackupConfig) => boolean;
+  infoLink?: string;
+  infoLinkText?: string;
+  infoTitle?: string;
+  onValueChange?: (config: BackupConfig) => void;
+  actions?: CommandControlAction[];
+}
+
+export interface CommandControlAction {
+  disabled: boolean | ((config: BackupConfig) => boolean);
+  value?: string | ((config: BackupConfig) => string);
+  icon?: string | ((config: BackupConfig) => string);
+  onClick?: (config: BackupConfig) => void;
+  show?: (config: BackupConfig) => boolean;
+  tooltip?: string | ((config: BackupConfig) => string);
+}
+
+export interface CommandSettingSection {
+  header: string;
+  controls: CommandSettingControl[];
+  show?: (config: BackupConfig) => boolean;
+}
+
+export interface ImportFuncOptions {
+  clientExtras?: {[key: string]: any}
+  executeOptions?: {[key: string]: any}
+}
+
 export interface ImportScriptFunctions {
   step0?: (args?: any) => Promise<null|any>
   beginCommand: (args?: any) => Promise<null|any>

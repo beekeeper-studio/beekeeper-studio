@@ -176,6 +176,7 @@
     components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList },
     data() {
       return {
+        isDev: window.platformInfo.isDevelopment,
         tableLoadError: null,
         allExpanded: null,
         allCollapsed: null,
@@ -188,6 +189,10 @@
       }
     },
     computed: {
+      ...mapGetters(['dialectData']),
+      createDisabled() {
+        return !!this.dialectData.disabledFeatures.createTable
+      },
       totalEntities() {
         return this.tables.length + this.routines.length - this.hiddenEntities.length
       },
@@ -354,6 +359,10 @@
   }
 </script>
 <style scoped>
+  .table-action-wrapper{
+    display: flex;
+    flex-direction: row;
+  }
   p.no-entities {
     width: 100%;
     white-space:normal;

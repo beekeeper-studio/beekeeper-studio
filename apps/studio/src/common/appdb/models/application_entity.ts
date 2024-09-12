@@ -2,11 +2,11 @@ import _ from 'lodash'
 import {VersionColumn, PrimaryGeneratedColumn, UpdateDateColumn, CreateDateColumn, BaseEntity} from 'typeorm'
 
 export abstract class ApplicationEntity extends BaseEntity {
-
-  constructor(props?: any) {
+  constructor() {
     super()
-    if (props) _.assign(this, props)
   }
+
+  abstract withProps(props: any): any;
 
   @PrimaryGeneratedColumn()
   id: Nullable<number> = null
