@@ -53,7 +53,6 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       } else {
         let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
         if (dbObj && obj.id) {
-          log.info(`FOUND EXISTING ${name}: `, dbObj)
           cls.merge(dbObj, obj);
         } else if (!dbObj) {
           dbObj = new cls().withProps(obj);
