@@ -270,11 +270,7 @@
 // }
 // FIXME (matthew) - Move Later
 .tabcontent {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  width: 100%;
   padding-bottom: $statusbar-height;
 
   .statusbar {
