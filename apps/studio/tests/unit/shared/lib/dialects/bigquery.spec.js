@@ -5,7 +5,7 @@ import { BigQueryData } from "@/shared/lib/dialects/bigquery"
 
 describe("bigquery DialectData", () => {
 
-  it.only("Should escape identifiers properly", () => {
+  it("Should escape identifiers properly", () => {
 
     const testSet = [
       ["foo\\bar", "`foo\\\\bar`"],
