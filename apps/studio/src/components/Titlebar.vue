@@ -78,18 +78,18 @@ export default {
   },
   mounted() {
     // FIXME This doesn't work after the refactor and needs fixing
-    this.getWindow()?.on('maximize', () => {
-      this.maximized = true
-    })
-    this.getWindow()?.on('unmaximize', () => {
-      this.maximized = false
-    })
-    this.getWindow()?.on('enter-full-screen', () => {
-      this.fullscreen = true
-    })
-    this.getWindow()?.on('leave-full-screen', () => {
-      this.fullscreen = false
-    })
+    //this.getWindow()?.on('maximize', () => {
+    //  this.maximized = true
+    //})
+    //this.getWindow()?.on('unmaximize', () => {
+    //  this.maximized = false
+    //})
+    //this.getWindow()?.on('enter-full-screen', () => {
+    //  this.fullscreen = true
+    //})
+    //this.getWindow()?.on('leave-full-screen', () => {
+    //  this.fullscreen = false
+    //})
   },
   methods: {
     async updateFlags() {

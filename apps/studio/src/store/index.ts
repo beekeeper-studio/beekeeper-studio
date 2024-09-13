@@ -385,6 +385,12 @@ const store = new Vuex.Store<State>({
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
+
+        if (supportedFeatures.backups) {
+          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+        }
+
         context.commit('defaultSchema', defaultSchema);
         context.commit('connectionType', config.connectionType);
         context.commit('connected', true);
@@ -397,11 +403,6 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateRoutines')
         await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
-
-        if (supportedFeatures.backups) {
-          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
-        }
 
       } else {
         throw "No username provided"

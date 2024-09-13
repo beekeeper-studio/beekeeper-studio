@@ -54,13 +54,14 @@ const SettingStoreModule: Module<State, any> = {
     settings(state) {
       return state.settings
     },
-    themeValue(state) {
+    themeValue(state, _getters, _rootState, rootGetters) {
       const theme = state.settings.theme ? state.settings.theme.value : null;
+      const hasActiveLicense = rootGetters['licenses/hasActiveLicense'];
       if (!theme) return null
-      if (['system', 'dark', 'light'].includes(theme as string)) {
+      if (!hasActiveLicense && ['system', 'dark', 'light'].includes(theme as string)) {
         return theme
       }
-      return 'system'
+      return hasActiveLicense ? theme : 'system';
     },
     menuStyle(state) {
       if (!state.settings.menuStyle) return 'native'
