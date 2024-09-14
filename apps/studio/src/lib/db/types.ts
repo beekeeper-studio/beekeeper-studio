@@ -32,6 +32,10 @@ export enum AzureAuthType {
   ServicePrincipalSecret
 }
 
+export const IamAuthTypes = [
+  { name: 'IAM Authentication', value: 'iam' }
+]
+
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [
   // Can't have 2FA, kinda redundant now
@@ -194,7 +198,7 @@ export interface IBasicDatabaseClient {
   getTableLength(table: string, schema?: string): Promise<number>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> 
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>
 
   queryStream(query: string, chunkSize: number): Promise<StreamResults>
 

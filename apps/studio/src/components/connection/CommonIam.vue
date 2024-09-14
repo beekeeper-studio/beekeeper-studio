@@ -1,16 +1,12 @@
 <template>
-  <div>
+  <div class="advanced-connection-settings">
     <h4
       class="advanced-heading flex"
-      :class="{ enabled: iamAuthenticationEnabled }"
     >
       <span class="expand">IAM Authentication</span>
-      <x-switch
-        @click.prevent="toggleIAMAuthentication"
-        :toggled="iamAuthenticationEnabled"
-      />
+
     </h4>
-    <div class="advanced-body" v-show="iamAuthenticationEnabled">
+    <div class="advanced-body">
       <div class="row gutter">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>

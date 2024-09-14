@@ -1280,11 +1280,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       });
 
       resolvedPw = await signer.getAuthToken();
-    }
 
+      console.log(resolvedPw)
+    }
+console.log(server.config)
     const config: PoolConfig = {
       host: server.config.host,
-      port: server.config.port || undefined,
+      port: 5432,//server.config.port || undefined,
       password: resolvedPw || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
@@ -1292,7 +1294,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       idleTimeoutMillis: globals.psqlIdleTimeout,
 
     };
+  console.log(redshiftOptions)
+    if (
+      server.config.client === "postgresql" &&
+      redshiftOptions?.iamAuthenticationEnabled
+    ){
+      server.config.ssl = true;
+    }
 
+  console.log(server.config)
     return this.configurePool(config, server, null);
   }
 
