@@ -1300,7 +1300,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       server.config.ssl = true;
     }
 
-  console.log(server.config)
     return this.configurePool(config, server, null);
   }
 
