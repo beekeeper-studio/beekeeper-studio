@@ -12,6 +12,26 @@ export interface Transport {
   version: number
 }
 
+export interface TransportTempFile {
+  id: string,
+  name: string
+}
+
+export interface TransportCloudCredential extends Transport {
+  appId: string | null,
+  email: string | null,
+  token: string | null
+}
+
+export interface TransportLicenseKey extends Transport {
+  email: string,
+  key: string,
+  validUntil: Date,
+  supportUntil: Date,
+  licenseType: 'TrialLicense' | 'PersonalLicense' | 'BusinessLicense',
+  active: boolean
+}
+
 export interface TransportPinnedConn extends Transport {
   position: number;
   connectionId: number;

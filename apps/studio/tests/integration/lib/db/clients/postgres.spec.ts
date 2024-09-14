@@ -2,7 +2,7 @@ import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
-import { TableInsert, TableOrView } from '../../../../../src/lib/db/models'
+import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -12,10 +12,10 @@ import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
 
 const TEST_VERSIONS = [
-  { version: '9.3', socket: false, readonly: false},
-  { version: '9.3', socket: false, readonly: true},
-  { version: '9.4', socket: false, readonly: false},
-  { version: '9.4', socket: false, readonly: true},
+  { version: '9.3', socket: false, readonly: false },
+  { version: '9.3', socket: false, readonly: true },
+  { version: '9.4', socket: false, readonly: false },
+  { version: '9.4', socket: false, readonly: true },
   { version: '16.4', socket: true, readonly: false },
   { version: '16.4', socket: false, readonly: true },
   { version: '16.4', socket: false, readonly: false },
@@ -171,6 +171,13 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         table.specificType('amount_of_time', 'interval')
       })
 
+      await util.knex.raw(`
+       CREATE TABLE public.test_pk_script (
+          first_key character varying(255) NOT NULL,
+          second_key character varying(255) NOT NULL,
+          PRIMARY KEY (first_key, second_key)
+        ); 
+      `)
     })
 
     afterAll(async () => {
@@ -199,37 +206,49 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       ]
 
       if (util.connection.readOnlyMode) {
-        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: []})).rejects.toThrow(errorMessages.readOnly)
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
       } else {
-        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
         expect(result).toMatchObject([
           { id: 1, names: [], normal: 'foo' }
         ])
       }
     })
 
-    it("Should be able to get a table create script without erroring", async() => {
+    it("Should be able to get a table create script without erroring", async () => {
       // checking that create table script with a custom type can be retrieved.
       const result = await util.connection.getTableCreateScript("moody_people")
       expect(result).not.toBeNull()
     })
 
+    it("Should be able to get a table create script with more than a column as primary key", async () => {
+      const result = await util.connection.getTableCreateScript("test_pk_script")
+
+      expect(result).not.toBeNull()
+      expect(result).toStrictEqual('CREATE TABLE public.test_pk_script (\n' +
+        '  first_key character varying(255) NOT NULL,\n' +
+        '  second_key character varying(255) NOT NULL\n' +
+        ');\n' +
+        '\n' +
+        'ALTER TABLE public.test_pk_script ADD CONSTRAINT test_pk_script_pkey PRIMARY KEY (first_key, second_key)')
+    });
+
     it("Should allow me to insert a row with an array", async () => {
       const newRow: TableInsert = {
-        table:'witharrays',
+        table: 'witharrays',
         schema: 'public',
         data: [
-          {names: [], id: 2, normal: 'xyz'}
+          { names: [], id: 2, normal: 'xyz' }
         ]
       }
 
       if (util.connection.readOnlyMode) {
         await expect(util.connection.applyChanges(
-          { updates: [], inserts: [newRow], deletes: []}
+          { updates: [], inserts: [newRow], deletes: [] }
         )).rejects.toThrow(errorMessages.readOnly)
       } else {
         const result = await util.connection.applyChanges(
-          { updates: [], inserts: [newRow], deletes: []}
+          { updates: [], inserts: [newRow], deletes: [] }
         )
         expect(result).not.toBeNull()
       }
@@ -244,7 +263,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         column: "names",
         columnObject: nameColumn,
         primaryKeys: [
-          { column: 'id', value: 1}
+          { column: 'id', value: 1 }
         ],
         columnType: "_text",
         table: "witharrays",
@@ -254,7 +273,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         table: 'witharrays',
         column: 'normal',
         primaryKeys: [
-          { column: 'id', value: 1}
+          { column: 'id', value: 1 }
         ],
         columnType: 'text',
       }
@@ -323,7 +342,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       console.log('retrieved data: ', retrievedData)
 
       // retrieved interval value should be the same interval (string) "00:15:00"
-      expect ( retrievedData ).toStrictEqual({
+      expect(retrievedData).toStrictEqual({
         id: 1,
         amount_of_time: insertedValue // should still be the string not an object
       })
@@ -340,7 +359,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
-      const tables = await util.connection.listTables({ schema: null});
+      const tables = await util.connection.listTables({ schema: null });
       const schema1 = tables.filter((t) => t.schema == "schema1");
       const schema2 = tables.filter((t) => t.schema == "schema2");
 
@@ -361,7 +380,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
     it("Inherited tables should NOT behave like partitioned tables", async () => {
       if (dockerTag == 'latest') {
-        const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child']});
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child'] });
         const partitions = await util.connection.listTablePartitions('parent');
         const parent = tables.find((value) => value.name == 'parent');
         const child = tables.find((value) => value.name == 'child');
@@ -374,7 +393,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     it("Partitions should have parenttype 'p'", async () => {
       if (dockerTag == 'latest') {
-        const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party']});
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party'] });
         const partition1 = tables.find((value) => value.name == 'partition_1');
         const another = tables.find((value) => value.name == 'another_partition');
         const party = tables.find((value) => value.name == 'party');
@@ -436,7 +455,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       };
       data['approved?'] = true;
       const newRow: TableInsert = {
-        table:'withquestionmark',
+        table: 'withquestionmark',
         schema: 'public',
         data: [
           data
@@ -453,7 +472,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
       await query.execute();
 
-      const payload = { updates: [], inserts: [newRow], deletes: []}
+      const payload = { updates: [], inserts: [newRow], deletes: [] }
       const result = await util.connection.applyChanges(payload)
       expect(result).not.toBeNull()
     })
@@ -508,69 +527,6 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         runCommonTests(() => util, { dbReadOnlyMode: readonly })
       }
     })
-
-    describe("Imports", () => {
-      it('should import correctly', async () => {
-        const tableName = 'import_table'
-        const executeOptions = { multiple: false }
-        const table = {
-          name: tableName,
-          schema: 'public',
-          entityType: 'table'
-        } as TableOrView
-        const formattedData = util.buildImportData(tableName)
-        const {
-          step0,
-          beginCommand,
-          truncateCommand,
-          lineReadCommand,
-          commitCommand,
-          rollbackCommand,
-          finalCommand
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
-
-        expect(step0).toBeUndefined()
-        expect(typeof beginCommand).toBe('function')
-        expect(typeof truncateCommand).toBe('function')
-        expect(typeof lineReadCommand).toBe('function')
-        expect(typeof commitCommand).toBe('function')
-        expect(typeof rollbackCommand).toBe('function')
-        expect(finalCommand).toBeUndefined()
-
-        await beginCommand(executeOptions)
-        await truncateCommand(executeOptions)
-        await lineReadCommand(importSQL, executeOptions)
-        await commitCommand(executeOptions)
-
-        const hats = await util.knex.select().table(tableName)
-        expect(hats.length).toBe(4)
-      })
-
-      it('should rollback', async () => {
-        const tableName = 'import_table'
-        const executeOptions = { multiple: false }
-        const table = {
-          name: tableName,
-          entityType: 'table'
-        } as TableOrView
-        const formattedData = util.buildImportData(tableName)
-        const {
-          beginCommand,
-          lineReadCommand,
-          rollbackCommand,
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
-        const hatsStart = await util.knex.select().table(tableName)
-        await beginCommand(executeOptions)
-        await lineReadCommand(importSQL, {multiple: true})
-        await rollbackCommand(executeOptions)
-
-        const hats = await util.knex.select().table(tableName)
-        expect(hats.length).toBe(hatsStart.length)
-      })
-    })
-
   })
 }
 

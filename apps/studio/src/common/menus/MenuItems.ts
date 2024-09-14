@@ -202,8 +202,41 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           label: "Dark",
           click: actionHandler.switchTheme,
           checked: settings.theme.value === 'dark'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized',
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'solarized'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized Dark',
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'solarized-dark'
         }
       ]
+    },
+    enterLicense: {
+      id: 'enter-license',
+      label: "Enter License Key",
+      click: actionHandler.enterLicense,
+
+    },
+    backupDatabase: {
+      id: 'backup-database',
+      label: "Create a Database Backup",
+      click: actionHandler.backupDatabase
+    },
+    restoreDatabase: {
+      id: 'restore-database',
+      label: "Restore a Database Backup",
+      click: actionHandler.restoreDatabase
+    },
+    exportTables: {
+      id: 'export-tables',
+      label: 'Export Data',
+      click: actionHandler.exportTables
     },
     minimalModeToggle: {
       id: "minimal-mode-toggle",

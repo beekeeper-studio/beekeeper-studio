@@ -5,8 +5,8 @@ import { IDbConnectionServerConfig } from "@/lib/db/types";
 import tmp from "tmp";
 import path from "path";
 import fs from "fs";
-import { LibSQLClient } from "@/lib/db/clients/libsql";
-import { createServer } from "@/lib/db";
+import { LibSQLClient } from "@commercial/backend/lib/db/clients/libsql";
+import { createServer } from "@commercial/backend/lib/db/server";
 import knex from "knex";
 import Client_Libsql from "@libsql/knex-libsql";
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
@@ -108,13 +108,10 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     afterAll(async () => {
       await util.disconnect()
       if (dbfile) {
-        console.log("removing dbfile callback")
         await dbfile.removeCallback();
       }
       if (container) {
-        console.log("stopping container...")
         await container.stop();
-        console.log("container stopped")
       }
     });
 
