@@ -100,8 +100,7 @@
         if (this.authType === 'default') {
           this.iamAuthenticationEnabled = false
         } else {
-          //CHANGE THE BELOW ---
-          if (!this.$config.isCommunity) {
+          if (this.$config.isCommunity) {
             // we want to display a modal
             this.$root.$emit(AppEvent.upgradeModal);
             this.authType = 'default'
