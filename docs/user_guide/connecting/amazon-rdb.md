@@ -5,7 +5,7 @@ Connecting to Amazon RDB requires you to set up an IAM user and ensure your secu
 To configure IAM DB access, ensure the DB in AWS is configured to allow IAM authentication. This can be done by modifying the DB instance and enabling IAM DB authentication.
 You will then need to create an IAM user and attach the `AmazonRDSFullAccess` policy to the user. This policy allows the user to connect to the RDS instance.
 
-You can also you a similar policy to the below:
+You can also use a similar policy to the below:
 
 ``
 {
