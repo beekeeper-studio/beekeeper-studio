@@ -408,8 +408,11 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         'alt+7': this.handleAltNumberKeyPress,
         'alt+8': this.handleAltNumberKeyPress,
         'alt+9': this.handleAltNumberKeyPress,
-        'shift+meta+[':this.previousTab,
-        'shift+meta+]':this.nextTab,
+      }
+
+      if(this.$config.isMac) {
+         result['shift+meta+['] = this.previousTab
+         result['shift+meta+]'] = this.nextTab
       }
 
       return result
