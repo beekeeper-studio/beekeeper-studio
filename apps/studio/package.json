@@ -50,7 +50,6 @@
     "electron-log": "^5.1.5",
     "electron-updater": "^6.3.0",
     "electron-util": "^0.14.1",
-    "esbuild-plugin-copy": "^2.1.1",
     "flexsearch": "beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d",
     "humanize-duration": "^3.23.1",
     "indent-string": "^4.0.0",
@@ -112,6 +111,7 @@
   "devDependencies": {
     "@aws-sdk/types": "^3.127.0",
     "@babel/core": "^7.24.7",
+    "esbuild-plugin-copy": "^2.1.1",
     "@babel/plugin-proposal-private-methods": "^7.18.6",
     "@babel/plugin-transform-private-methods": "^7.24.7",
     "@playwright/test": "^1.44.0",
