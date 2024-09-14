@@ -413,6 +413,11 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         'alt+9': this.handleAltNumberKeyPress,
       }
 
+      if(this.$config.isMac) {
+         result['shift+meta+['] = this.previousTab
+         result['shift+meta+]'] = this.nextTab
+      }
+
       return result
     },
   },
