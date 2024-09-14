@@ -42,6 +42,15 @@
           >
         </div>
         <div class="form-group">
+          <label for="database">Port</label>
+          <input
+            type="number"
+            class="form-control"
+            name="port"
+            v-model.number="config.port"
+          >
+        </div>
+        <div class="form-group">
           <label for="user">User</label>
           <input
             name="user"
@@ -100,7 +109,7 @@
         if (this.authType === 'default') {
           this.iamAuthenticationEnabled = false
         } else {
-          if (this.$config.isCommunity) {
+          if (!this.$config.isCommunity) {
             // we want to display a modal
             this.$root.$emit(AppEvent.upgradeModal);
             this.authType = 'default'

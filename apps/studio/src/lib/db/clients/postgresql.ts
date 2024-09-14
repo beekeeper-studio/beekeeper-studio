@@ -1275,7 +1275,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         credentials: nodeProviderChainCredentials,
         region: redshiftOptions?.awsRegion,
         hostname: server.config.host,
-        port: server.config.port,
+        port: server.config.port || 5432,
         username: server.config.user,
       });
 
