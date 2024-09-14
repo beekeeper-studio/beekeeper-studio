@@ -1,5 +1,7 @@
 <template>
   <div class="sidebar-wrap row">
+    <workspace-sidebar />
+
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
       <div class="btn-wrap quick-connect">
@@ -16,7 +18,7 @@
       <div class="fixed">
         <div class="filter">
           <div class="filter-wrap">
-            <input 
+            <input
               class="filter-input"
               type="text"
               placeholder="Filter"
@@ -39,7 +41,7 @@
         <!-- TODO (day): should probably make a class for pinned connections-->
         <div
           class="list saved-connection-list expand"
-          ref="pinnedConnectionList" 
+          ref="pinnedConnectionList"
           v-show="!noPins && !connFilter"
           >
           <div class="list-group">
@@ -226,6 +228,7 @@
 
 <script>
 import _ from 'lodash'
+import WorkspaceSidebar from './WorkspaceSidebar.vue'
 import { mapState, mapGetters } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
@@ -239,7 +242,7 @@ import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 const log = rawLog.scope('connection-sidebar');
 
 export default {
-  components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons },
+  components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons, WorkspaceSidebar },
   props: ['selectedConfig'],
   data: () => ({
     split: null,
@@ -262,7 +265,7 @@ export default {
     ...mapState('data/connections', {'connectionsLoading': 'loading', 'connectionsError': 'error', 'connectionFilter': 'filter'}),
     ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
     ...mapGetters({
-      'usedConfigs': 'orderedUsedConfigs',
+      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       'settings': 'settings/settings',
       'isCloud': 'isCloud',
       'activeWorkspaces': 'credentials/activeWorkspaces',
@@ -375,10 +378,7 @@ export default {
       this.$root.$emit(AppEvent.promptConnectionImport)
     },
     async refresh() {
-      this.$store.dispatch('data/connectionFolders/load')
-      this.$store.dispatch('data/connections/load')
-      await this.$store.dispatch('pinnedConnections/loadPins');
-      await this.$store.dispatch('pinnedConnections/reorder');
+      await this.$store.dispatch('refreshConnections')
     },
     edit(config) {
       this.$emit('edit', config)
@@ -393,7 +393,7 @@ export default {
       this.$emit('duplicate', config)
     },
     removeUsedConfig(config) {
-      this.$store.dispatch('removeUsedConfig', config)
+      this.$store.dispatch('data/usedconnections/remove', config)
     },
     getLabelClass(color) {
       return `label-${color}`

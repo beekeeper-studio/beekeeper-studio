@@ -1,11 +1,11 @@
 import DefaultMenu from './BaseMenuBuilder'
-import platformInfo from '../platform_info'
-import { IGroupedUserSettings } from '../appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
+import { IGroupedUserSettings } from '../transport/TransportUserSetting'
+import { IPlatformInfo } from '../IPlatformInfo'
 
 export default class extends DefaultMenu {
-  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler) {
-    super(settings, handler)
+  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo) {
+    super(settings, handler, platformInfo)
   }
 
   viewMenu(): Electron.MenuItemConstructorOptions {
@@ -21,16 +21,16 @@ export default class extends DefaultMenu {
         this.menuItems.minimalModeToggle,
       ]
     }
-    if (!platformInfo.isMac)
+    if (!this.platformInfo.isMac)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
-    if (platformInfo.isDevelopment)
+    if (this.platformInfo.isDevelopment)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
     return result
   }
 
   buildTemplate(): Electron.MenuItemConstructorOptions[] {
     const appMenu: Electron.MenuItemConstructorOptions[] = []
-    if (platformInfo.isMac) {
+    if (this.platformInfo.isMac) {
       appMenu.push({
         label: "Beekeeper Studio",
         submenu: [
@@ -59,7 +59,7 @@ export default class extends DefaultMenu {
 
     const windowMenu: Electron.MenuItemConstructorOptions[] = []
     console.log("Menu style", this.settings.menuStyle)
-    if ((platformInfo.isMac || this.settings.menuStyle?.stringValue === 'native') && !platformInfo.isWayland) {
+    if ((this.platformInfo.isMac || this.settings.menuStyle.value === 'native') && !this.platformInfo.isWayland) {
       windowMenu.push({
         label: 'Window',
         role: 'windowMenu'
@@ -82,11 +82,17 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
+        label: "Ultimate",
+        submenu: [
+          this.menuItems.enterLicense,
+        ]
+      },
+      {
         label: "Tools",
         submenu: [
-          this.menuItems.upgradeModal("Data Export"),
-          this.menuItems.upgradeModal("Create a Backup"),
-          this.menuItems.upgradeModal("Restore a Backup")
+          this.menuItems.backupDatabase,
+          this.menuItems.restoreDatabase,
+          this.menuItems.exportTables
         ]
       },
       ...windowMenu,

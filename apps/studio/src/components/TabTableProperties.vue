@@ -136,10 +136,9 @@ import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import TablePartitionsVue from './tableinfo/TablePartitions.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
-import platformInfo from '../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
 import { mapState } from 'vuex'
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 
 const log = rawLog.scope('TabTableProperties')
 export default {

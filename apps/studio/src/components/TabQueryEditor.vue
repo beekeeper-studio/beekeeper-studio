@@ -312,9 +312,7 @@
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
-  import pluralize from 'pluralize'
 
-  import platformInfo from '@/common/platform_info'
   import { splitQueries } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
@@ -327,8 +325,9 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
-  import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
-  import { OpenTab } from '@/common/appdb/models/OpenTab'
+  import { PropType } from 'vue'
+  import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
+  import { blankFavoriteQuery } from '@/common/transport'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -338,7 +337,7 @@
     // this.queryText holds the current editor value, always
     components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
     props: {
-      tab: OpenTab,
+      tab: Object as PropType<TransportOpenTab>,
       active: Boolean
     },
     data() {
@@ -373,7 +372,7 @@
         executeTime: 0,
         originalText: "",
         initialized: false,
-        blankQuery: new FavoriteQuery(),
+        blankQuery: blankFavoriteQuery(),
         dryRun: false,
         containerResizeObserver: null,
         focusElement: 'text-editor',
@@ -387,7 +386,7 @@
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = this.settings?.keymap?.value;
+          const value = this.settings?.keymap.value;
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -407,7 +406,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return this.tab.findQuery(this.savedQueries || []) || this.blankQuery
+        return findQuery(this.tab, this.savedQueries ?? []) ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
@@ -451,7 +450,7 @@
         return result.length ? result : null
       },
       runningText() {
-        return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
+        return `Running ${this.runningType} (${window.main.pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
@@ -816,7 +815,7 @@
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitQueryToFile() {
-        if (platformInfo.isCommunity) {
+        if (this.$config.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
@@ -828,7 +827,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
-        if (platformInfo.isCommunity) {
+        if (this.$config.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
@@ -978,7 +977,7 @@
         }
       },
     },
-    mounted() {
+    async mounted() {
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {

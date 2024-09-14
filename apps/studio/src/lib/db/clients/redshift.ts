@@ -1,13 +1,14 @@
 import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
-import { DatabaseElement, IDbConnectionServer } from "../types";
+import { DatabaseElement } from "../types";
 import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
 import { TableKey } from "@shared/lib/dialects/models";
+import { IDbConnectionServer } from "../backendTypes";
 
 export class RedshiftClient extends PostgresClient {
   async supportedFeatures(): Promise<SupportedFeatures> {

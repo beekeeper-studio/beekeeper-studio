@@ -40,6 +40,8 @@ class BeekeeperWindow {
     }
 
       log.info('constructing the window')
+    const preloadPath = path.join(__dirname, 'preload.js')
+    console.log("PRELOAD PATH:", preloadPath)
     this.win = new BrowserWindow({
       ...this.getWindowPosition(settings),
       minWidth: 800,
@@ -48,17 +50,19 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
+        preload: preloadPath,
+        nodeIntegration: false,
+        contextIsolation: true,
         spellcheck: false,
         sandbox: false,
       },
       icon: getIcon()
     })
 
-    const startUrl = 'app://./index.html'
-    // let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
-    const appUrl = startUrl
+    const devUrl = 'http://localhost:3003'
+    const startUrl = 'app://./renderer/index.html'
+    let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
+    // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     if (platformInfo.isWayland) {
@@ -66,7 +70,7 @@ class BeekeeperWindow {
     }
     const query = querystring.stringify(queryObj)
 
-    this.appUrl = query ? `${appUrl}?${query}` : appUrl
+    this.appUrl = query ? `${appUrl}?${query}` : `${appUrl}/`
     remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
 
@@ -201,6 +205,37 @@ class BeekeeperWindow {
     return !!this.win
   }
 
+  get focused() {
+    return !!this.win && this.win.isFocused();
+  }
+
+  isMaximized() {
+    return this.win?.isMaximized();
+  }
+
+  isFullscreen() {
+    return this.win?.isFullScreen();
+  }
+
+  setFullscreen(value: boolean) {
+    this.win?.setFullScreen(value);
+  }
+
+  minimizeWindow() {
+    this.win?.minimize();
+  }
+
+  unmaximizeWindow() {
+    this.win?.unmaximize();
+  }
+
+  maximizeWindow() {
+    this.win?.maximize();
+  }
+
+  closeWindow() {
+    this.win?.close();
+  }
 }
 
 export function getActiveWindows(): BeekeeperWindow[] {
@@ -209,4 +244,8 @@ export function getActiveWindows(): BeekeeperWindow[] {
 
 export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): void {
   windows.push(new BeekeeperWindow(settings, options || {}))
+}
+
+export function getCurrentWindow(): BeekeeperWindow {
+  return _.filter(windows, 'focused')[0]
 }

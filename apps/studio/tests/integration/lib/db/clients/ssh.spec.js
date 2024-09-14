@@ -1,5 +1,5 @@
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
-import ConnectionProvider from '../../../../../src/lib/connection-provider';
+import ConnectionProvider from '@commercial/backend/lib/connection-provider';
 import { dbtimeout } from '../../../../lib/db'
 
 
@@ -11,12 +11,12 @@ describe("SSH Tunnel Tests", () => {
   let connection
   let database
   let environment
-  // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
   beforeAll(async () => {
     const timeoutDefault = 5000
     environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
-      .withWaitStrategy(Wait.forHealthCheck())
+      .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
+      .withWaitStrategy('test_ssh', Wait.forListeningPorts())
       .up()
 
     container = environment.getContainer('test_ssh')
@@ -32,6 +32,10 @@ describe("SSH Tunnel Tests", () => {
       password: 'example',
       connectionType: 'postgresql'
     }
+
+    // NB: If this fails it's due to ipv4 vs ipv6 mixup.
+    // as of Node 17+ DNS defaults to v6 instead of v4.
+    let host = container.getHost()
     const config = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -52,6 +56,7 @@ describe("SSH Tunnel Tests", () => {
     await query.execute()
     await qdb.disconnect();
 
+    console.log("Starting SSH test with config", config)
     connection = ConnectionProvider.for(config)
     database = connection.createConnection('integration_test')
     await database.connect()

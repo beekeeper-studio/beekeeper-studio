@@ -66,11 +66,9 @@
   </div>
 </template>
 <script>
-import path from 'path'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
-import platformInfo from '@/common/platform_info'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 
 export default {
@@ -109,7 +107,7 @@ export default {
       if (this.savedConnection) {
         return this.savedConnection.name
       } else if (this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') {
-        return path.basename(this.config.defaultDatabase)
+        return window.main.basename(this.config.defaultDatabase)
       }
 
       return this.$bks.simpleConnectionString(this.config)
@@ -147,7 +145,7 @@ export default {
   },
   methods: {
     showContextMenu(event) {
-      const ultimateCheck = platformInfo.isUltimate
+      const ultimateCheck = this.$config.isUltimate
         ? true
         : !isUltimateType(this.config.connectionType)
 

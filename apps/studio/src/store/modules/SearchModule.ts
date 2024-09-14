@@ -1,9 +1,9 @@
-import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
+import { IConnection } from "@/common/interfaces/IConnection";
+import { TransportFavoriteQuery } from "@/common/transport";
 import { TableOrView } from "@/lib/db/models";
 import FlexSearch from "flexsearch";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
 
 interface FlexWorker {
   addAsync(id: any, item: string): Promise<void>
@@ -13,7 +13,7 @@ interface FlexWorker {
 
 interface IndexItem {
   title: string
-  item: FavoriteQuery | TableOrView | SavedConnection | string
+  item: TransportFavoriteQuery | TableOrView | IConnection | string
   type: 'query' | 'table' | 'connection' | 'database'
 }
 

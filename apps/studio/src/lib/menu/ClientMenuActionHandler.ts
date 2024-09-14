@@ -1,15 +1,14 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { ipcRenderer } from 'electron'
 import _ from 'lodash'
 import {AppEvent} from '../../common/AppEvent'
-import rawLog from 'electron-log'
+import rawLog from 'electron-log/renderer'
 
 const log = rawLog.scope("ClientMenuActionHandler")
 
 
 function send(name: string, arg?: any) {
   log.debug("Sending menu action to electron thread", name, arg)
-  ipcRenderer.send(AppEvent.menuClick, name, arg)
+  window.main.send(AppEvent.menuClick, name, arg);
 }
 
 export default class ClientMenuActionHandler implements IMenuActionHandler {

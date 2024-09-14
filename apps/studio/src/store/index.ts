@@ -1,20 +1,16 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import username from 'username'
-import electron from 'electron';
 
-import { UsedConnection } from '../common/appdb/models/used_connection'
-import { SavedConnection } from '../common/appdb/models/saved_connection'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
-import { IDbConnectionPublicServer } from '../lib/db/server'
+import { IDbConnectionPublicServer } from '../lib/db/serverTypes'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
-import RawLog from 'electron-log'
+import RawLog from 'electron-log/renderer'
 import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
@@ -25,8 +21,17 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
-import { ElectronUtilityConnectionClient } from '@/lib/ElectronUtilityConnectionClient'
-import { TokenCache } from '@/common/appdb/models/token_cache'
+import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
+
+import { SmartLocalStorage } from '@/common/LocalStorage'
+
+import { LicenseModule } from './modules/LicenseModule'
+import { CredentialsModule } from './modules/CredentialsModule'
+import { UserEnumsModule } from './modules/UserEnumsModule'
+import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
+import ImportStoreModule from './modules/imports/ImportStoreModule'
+import { BackupModule } from './modules/backup/BackupModule'
+
 
 const log = RawLog.scope('store/index')
 
@@ -40,7 +45,6 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
 export interface State {
   connection: ElectronUtilityConnectionClient,
   usedConfig: Nullable<IConnection>,
-  usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
   connected: boolean,
   connectionType: Nullable<string>,
@@ -53,7 +57,6 @@ export interface State {
   columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
-  connectionConfigs: UsedConnection[],
   username: Nullable<string>,
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
@@ -64,6 +67,7 @@ export interface State {
   defaultSchema: string,
   versionString: string,
   connError: string
+  expandFKDetailsByDefault: boolean
 }
 
 Vue.use(Vuex)
@@ -76,13 +80,18 @@ const store = new Vuex.Store<State>({
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
+    licenses: LicenseModule,
+    credentials: CredentialsModule,
     hideEntities: HideEntityModule,
-    pinnedConnections: PinConnectionModule
+    userEnums: UserEnumsModule,
+    pinnedConnections: PinConnectionModule,
+    multiTableExports: MultiTableExportStoreModule,
+    imports: ImportStoreModule,
+    backups: BackupModule
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
     usedConfig: null,
-    usedConfigs: [],
     server: null,
     connected: false,
     connectionType: null,
@@ -101,7 +110,6 @@ const store = new Vuex.Store<State>({
     tablesLoading: null,
     columnsLoading: null,
     tablesInitialLoaded: false,
-    connectionConfigs: [],
     username: null,
     menuActive: false,
     activeTab: null,
@@ -111,7 +119,8 @@ const store = new Vuex.Store<State>({
     windowTitle: 'Beekeeper Studio',
     defaultSchema: null,
     versionString: null,
-    connError: null
+    connError: null,
+    expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
   },
 
   getters: {
@@ -145,9 +154,6 @@ const store = new Vuex.Store<State>({
     },
     selectedSidebarItem(state) {
       return state.selectedSidebarItem
-    },
-    orderedUsedConfigs(state) {
-      return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
     },
     filteredTables(state) {
       return entityFilter(state.tables, state.entityFilter);
@@ -205,6 +211,9 @@ const store = new Vuex.Store<State>({
     versionString(state) {
       return state.server.versionString();
     },
+    expandFKDetailsByDefault(state) {
+      return state.expandFKDetailsByDefault
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -315,23 +324,6 @@ const store = new Vuex.Store<State>({
     tablesLoading(state, value: string) {
       state.tablesLoading = value
     },
-    config(state, newConfig) {
-      if (!state.connectionConfigs.includes(newConfig)) {
-        state.connectionConfigs.push(newConfig)
-      }
-    },
-    removeConfig(state, config) {
-      state.connectionConfigs = _.without(state.connectionConfigs, config)
-    },
-    removeUsedConfig(state, config) {
-      state.usedConfigs = _.without(state.usedConfigs, config)
-    },
-    configs(state, configs: UsedConnection[]){
-      Vue.set(state, 'connectionConfigs', configs)
-    },
-    usedConfigs(state, configs: UsedConnection[]) {
-      Vue.set(state, 'usedConfigs', configs)
-    },
     updateWindowTitle(state, title: string) {
       state.windowTitle = title
     },
@@ -352,25 +344,24 @@ const store = new Vuex.Store<State>({
     },
     setConnError(state, err: string) {
       state.connError = err;
-    }
+    },
+    expandFKDetailsByDefault(state, value: boolean) {
+      state.expandFKDetailsByDefault = value
+    },
   },
   actions: {
-    async test(context, config: SavedConnection) {
+    async test(context, config: IConnection) {
       await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },
 
     async fetchUsername(context) {
-      const name = await username()
+      const name = await window.main.fetchUsername();
       context.commit('setUsername', name)
     },
 
     async openUrl(context, url: string) {
-      const conn = new SavedConnection();
-      if (!conn.parse(url)) {
-        throw `Unable to parse ${url}`
-      } else {
-        await context.dispatch('connect', conn)
-      }
+      const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
+      await context.dispatch('connect', conn)
     },
 
     updateWindowTitle(context, config: Nullable<IConnection>) {
@@ -379,7 +370,7 @@ const store = new Vuex.Store<State>({
         : 'Beekeeper Studio'
 
       context.commit('updateWindowTitle', title)
-      electron.ipcRenderer.send('setWindowTitle', title)
+      window.main.setWindowTitle(title);
     },
 
     async saveConnection(context, config: IConnection) {
@@ -390,7 +381,7 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
-        // HACK (@day): this is just to fix some issues with the typeorm models moving to the utility process. 
+        // HACK (@day): this is just to fix some issues with the typeorm models moving to the utility process.
         // this should be removed once the appdb handlers have been merged.
         const tConfig = JSON.parse(JSON.stringify(config));
         tConfig.port = config.port;
@@ -407,12 +398,17 @@ const store = new Vuex.Store<State>({
         context.commit('versionString', versionString);
         context.commit('newConnection', config)
 
-        context.commit('newConnection', config)
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('recordUsedConfig', config) // TODO (@day): needs to be a utility call (actually maybe just make this part of the conn/create handler??)
+        context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
+
+        if (supportedFeatures.backups) {
+          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+        }
+
       } else {
         throw "No username provided"
       }
@@ -422,31 +418,12 @@ const store = new Vuex.Store<State>({
         await context.state.connection.connect();
       }
     },
-    async recordUsedConfig(context, config: IConnection) {
-
-      log.info("finding last used connection", config)
-      const lastUsedConnection = context.state.usedConfigs.find(c => {
-        return config.id &&
-          config.workspaceId &&
-          c.connectionId === config.id &&
-          c.workspaceId === config.workspaceId
-      })
-      log.debug("Found used config", lastUsedConnection)
-      if (!lastUsedConnection) {
-        const usedConfig = new UsedConnection(config)
-        log.info("logging used connection", usedConfig, config)
-        await usedConfig.save()
-        context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
-      } else {
-        lastUsedConnection.updatedAt = new Date()
-        await lastUsedConnection.save()
-      }
-    },
     async disconnect(context) {
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
       context.dispatch('updateWindowTitle', null)
+      context.dispatch('refreshConnections')
     },
     async syncDatabase(context) {
       await context.state.connection.syncDatabase();
@@ -548,29 +525,24 @@ const store = new Vuex.Store<State>({
       routine.pinned = true
       context.commit('addPinned', routine)
     },
-    async removeUsedConfig(context, config) {
-      if (config.azureAuthOptions?.authId) {
-        const cache = await TokenCache.findOne(config.azureAuthOptions.authId);
-        cache.remove();
-      }
-      await config.remove()
-      context.commit('removeUsedConfig', config)
-    },
-    async loadUsedConfigs(context) {
-      const configs = await UsedConnection.find(
-        {
-          take: 10,
-          order: {createdAt: 'DESC'},
-          where: { workspaceId: context.state.workspaceId}
-        }
-      )
-      context.commit('usedConfigs', configs)
-    },
     async menuActive(context, value) {
       context.commit('menuActive', value)
     },
     async tabActive(context, value: CoreTab) {
       context.commit('tabActive', value)
+    },
+    async refreshConnections(context) {
+      context.dispatch('data/connectionFolders/load')
+      context.dispatch('data/connections/load')
+      await context.dispatch('pinnedConnections/loadPins');
+      await context.dispatch('pinnedConnections/reorder');
+    },
+    async toggleExpandFKDetailsByDefault(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.expandFKDetailsByDefault
+      }
+      SmartLocalStorage.setBool('expandFKDetailsByDefault', value)
+      context.commit('expandFKDetailsByDefault', value)
     }
   },
   plugins: []

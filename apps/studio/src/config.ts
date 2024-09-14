@@ -1,31 +1,47 @@
-import { execSync } from 'child_process'
-import platformInfo from './common/platform_info'
-import { loadEncryptionKey } from './common/encryption_key'
-import { ConnectionTypes, keymapTypes } from './common/appdb/models/saved_connection'
+import { IPlatformInfo } from './common/IPlatformInfo';
+import { ConnectionTypes, keymapTypes } from './lib/db/types'
 
-const userDirectory = platformInfo.userDirectory
-
-if (platformInfo.debugEnabled && localStorage) {
-  localStorage.debug = platformInfo.DEBUG
-}
+let platformInfo: IPlatformInfo;
+let userDirectory: string;
+let snapSshPlug: boolean;
 
 function hasSshKeysPlug() {
   if (!platformInfo.isSnap) return false;
 
   try {
-    const code = execSync('snapctl is-connected ssh-keys')
+    const code = window.main.hasSshKeysPlug();
     return Number(code) === 0
   } catch (error) {
     return false
   }
 }
 
+export function buildConfig(platInfo: IPlatformInfo) {
+  platformInfo = platInfo;
+  userDirectory = platformInfo.userDirectory
+  snapSshPlug = hasSshKeysPlug();
+
+  if (platformInfo.debugEnabled && localStorage) {
+    localStorage.debug = platformInfo.DEBUG
+  }
+
+  return {
+    ...platformInfo,
+    snapSshPlug,
+    defaults: {
+      connectionTypes: ConnectionTypes,
+      keymapTypes: keymapTypes,
+    },
+    maxResults: 50000
+  }
+  
+}
+
 // this is available in vue as `this.$config`
 export default {
-  ...platformInfo,
+  ...window.platformInfo,
   userDirectory,
-  encryptionKey: loadEncryptionKey(),
-  snapSshPlug: hasSshKeysPlug(),
+  snapSshPlug,
 
   defaults: {
     connectionTypes: ConnectionTypes,

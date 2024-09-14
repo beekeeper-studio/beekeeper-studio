@@ -44,6 +44,36 @@
       >
         <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
         <div
+          v-if="this.connectionType === 'oracle'"
+          class="dialog-content"
+          v-kbd-trap="true"
+        >
+          <p>
+            Oracle has a lot of <a
+              class="external-link"
+              href="https://docs.oracle.com/cd/B19306_01/server.102/b14231/create.htm#i1008760"
+            >configuration requirements to create a new database</a> which makes it difficult for Beekeeper to do automatically.
+          </p>
+          <p>Beekeeper can generate you some boilerplate code to get you started if you like.</p>
+          <div class="vue-dialog-buttons">
+            <button
+              class="btn btn-flat"
+              type="button"
+              @click.prevent="$modal.hide('config-add-database')"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click.prevent="createDatabaseSQL"
+            >
+              Generate Create Database Boilerplate
+            </button>
+          </div>
+        </div>
+        <div
+          v-else
           class="dialog-content"
           v-kbd-trap="true"
         >
@@ -59,7 +89,6 @@
 
 <script type="text/javascript">
   import _ from 'lodash'
-  import { ipcRenderer } from 'electron'
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
   import AddDatabaseForm from "@/components/connection/AddDatabaseForm.vue"
@@ -89,10 +118,14 @@
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
-          return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url })
+          return window.main.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()
         this.selectedDatabase = db
+      },
+      createDatabaseSQL() {
+        this.$root.$emit(AppEvent.newTab, this.connection.createDatabaseSQL())
+        this.$modal.hide('config-add-database')
       }
     },
     async mounted() {
@@ -126,5 +159,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     padding-left: 0.75rem;
+  }
+
+  .external-link {
+    text-decoration: underline;
+    & :hover {
+      text-decoration: none;
+    }
   }
 </style>

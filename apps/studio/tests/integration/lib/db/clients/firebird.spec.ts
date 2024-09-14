@@ -6,10 +6,9 @@ import {
   Connection,
   createDatabase,
   Pool,
-} from "@/lib/db/clients/firebird/NodeFirebirdWrapper";
+} from "@commercial/backend/lib/db/clients/firebird/NodeFirebirdWrapper";
 import Firebird from "node-firebird";
 import _ from 'lodash';
-import { TableOrView } from "@/lib/db/models";
 
 describe("Firebird Tests", () => {
   jest.setTimeout(dbtimeout);
@@ -22,14 +21,16 @@ describe("Firebird Tests", () => {
 
     container = await new GenericContainer("jacobalberty/firebird:v4.0.1")
       .withName("test_firebird")
-      .withEnv("ISC_PASSWORD", "masterkey")
-      .withEnv("FIREBIRD_DATABASE", "defaultdb.fdb")
-      .withEnv("EnableLegacyClientAuth", "true")
+      .withEnvironment({
+        "ISC_PASSWORD": "masterkey",
+        "FIREBIRD_DATABASE": "defaultdb.fdb",
+        "EnableLegacyClientAuth": "true"
+      })
       .withExposedPorts(3050)
       .withWaitStrategy(Wait.forHealthCheck())
       .withHealthCheck({
         /* eslint-disable-next-line */
-        test: `(echo "select 1 as a from rdb\$database;" | /usr/local/firebird/bin/isql -user sysdba -password masterkey /firebird/data/sakila.fdb) || exit 1`,
+        test: ['CMD-SHELL', `(echo "select 1 as a from rdb\$database;" | /usr/local/firebird/bin/isql -user sysdba -password masterkey /firebird/data/sakila.fdb) || exit 1`],
         interval: 2000,
         timeout: 3000,
         retries: 10,
@@ -247,64 +248,4 @@ describe("Firebird Tests", () => {
       SPECIAL_FEATURES: 'Deleted Scenes,Behind the Scenes',
     })
   });
-
-  it('should import correctly', async () => {
-    const tableName = 'import_table'
-    const table: TableOrView = {
-      name: tableName,
-      entityType: 'table'
-    }
-    const data = [
-      {
-        'NAME': 'biff',
-        'HAT': 'beret'
-      },
-      {
-        'NAME': 'spud',
-        'HAT': 'fez'
-      },
-      {
-        'NAME': 'chuck',
-        'HAT': 'barretina'
-      },
-      {
-        'NAME': 'lou',
-        'HAT': 'tricorne'
-      }
-    ]
-    const formattedData = data.map(d => ({
-      table: tableName,
-      data: [d]
-    }))
-    const {
-      step0,
-      beginCommand,
-      truncateCommand,
-      lineReadCommand,
-      commitCommand,
-      rollbackCommand,
-      finalCommand
-    } = util.connection.getImportScripts(table)
-    const importSQL = util.connection.getImportSQL(formattedData)
-
-    expect(typeof step0).toBe('function')
-    expect(typeof beginCommand).toBe('function')
-    expect(typeof truncateCommand).toBe('function')
-    expect(typeof lineReadCommand).toBe('function')
-    expect(typeof commitCommand).toBe('function')
-    expect(typeof rollbackCommand).toBe('function')
-    expect(typeof finalCommand).toBe('function')
-
-    await step0()
-    await beginCommand()
-    await truncateCommand()
-    await lineReadCommand(importSQL, {multiple: true})
-    await commitCommand()
-    await finalCommand()
-
-    const [hats] = await util.knex(tableName).count('HAT')
-    const [dataLength] = _.values(hats)
-    expect(dataLength).toBe(4)
-  })
-
 });

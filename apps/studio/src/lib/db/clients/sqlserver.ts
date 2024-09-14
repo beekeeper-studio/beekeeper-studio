@@ -6,7 +6,7 @@ import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
 
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types"
+import { DatabaseElement, IDbConnectionDatabase } from "../types"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -28,9 +28,10 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions, ImportFuncOptions } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
+import { IDbConnectionServer } from '../backendTypes';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -833,7 +834,38 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query);
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async importStepZero(_table: TableOrView): Promise<any> {
+    const transaction = new sql.Transaction(this.pool)
+
+    return {
+      transaction,
+      request: new sql.Request(transaction)
+    }
+  }
+
+  async importBeginCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.begin()
+  }
+
+  async importTruncateCommand (table: TableOrView, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+    return clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
+  }
+
+  async importLineReadCommand (_table: TableOrView, sqlString: string, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
+    return clientExtras.request.query(sqlString, executeOptions)
+  }
+
+  async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.commit()
+  }
+
+  async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.rollback()
+  }
+
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name, schema } = table
     const transaction = new sql.Transaction(this.pool)
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
@@ -854,10 +886,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   /* helper functions and settings below! */
 
-  async connect(): Promise<void> {
+  async connect(signal?: AbortSignal): Promise<void> {
     await super.connect();
 
-    this.dbConfig = await this.configDatabase(this.server, this.database)
+    this.dbConfig = await this.configDatabase(this.server, this.database, signal)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
 
     this.pool.on('error', (err) => {
@@ -873,7 +905,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async disconnect(): Promise<void> {
-    this.authService?.cancel();
     await this.pool.close();
 
     await super.disconnect();
@@ -923,9 +954,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   wrapIdentifier(value: string) {
-    if (_.isString(value)) {
-      return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
-    } return value
+    return SqlServerData.wrapIdentifier(value)
   }
 
   getBuilder(table: string, schema?: string) {
@@ -978,7 +1007,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<any> { // changed to any for now, might need to make some changes
+  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
     const config: any = {
       server: server.config.host,
       database: database.database,
@@ -998,7 +1027,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         userName: server.config.user,
         tenantId: server.config.azureAuthOptions.tenantId,
         clientSecret: server.config.azureAuthOptions.clientSecret,
-        msiEndpoint: server.config.azureAuthOptions.msiEndpoint
+        msiEndpoint: server.config.azureAuthOptions.msiEndpoint,
+        signal,
       };
 
       config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);

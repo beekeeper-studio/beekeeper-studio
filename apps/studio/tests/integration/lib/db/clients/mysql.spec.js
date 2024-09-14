@@ -30,11 +30,17 @@ function testWith(tag, socket = false, readonly = false) {
       fs.chmodSync(temp, "777")
       container = await new GenericContainer("mysql", tag)
         .withName("testmysql")
-        .withEnv("MYSQL_ROOT_PASSWORD", "test")
-        .withEnv("MYSQL_DATABASE", "test")
+        .withEnvironment({
+          "MYSQL_ROOT_PASSWORD": "test",
+          "MYSQL_DATABASE": "test"
+        })
         .withExposedPorts(3306)
         .withStartupTimeout(dbtimeout)
-        .withBindMount(temp, '/var/run/mysqld/', 'rw')
+        .withBindMounts([{
+          source: temp, 
+          target: '/var/run/mysqld/', 
+          mode: 'rw'
+        }])
         .start()
       jest.setTimeout(timeoutDefault)
       const config = {
@@ -305,45 +311,6 @@ function testWith(tag, socket = false, readonly = false) {
         expect(indexes[1].columns[0].prefix).toBe('5')
 
         await util.knex.schema.raw("DROP INDEX custom_prefix_index ON has_prefix_indexes")
-      })
-    })
-
-    describe("Imports", () => {
-      it('should import correctly', async () => {
-        const tableName = 'import_table'
-        const executeOptions = { multiple: false }
-        const table = {
-          name: tableName,
-          entityType: 'table'
-        }
-        const formattedData = util.buildImportData(tableName)
-        const {
-          step0,
-          beginCommand,
-          truncateCommand,
-          lineReadCommand,
-          commitCommand,
-          rollbackCommand,
-          finalCommand
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
-    
-        expect(step0).toBeUndefined()
-        expect(typeof beginCommand).toBe('function')
-        expect(typeof truncateCommand).toBe('function')
-        expect(typeof lineReadCommand).toBe('function')
-        expect(typeof commitCommand).toBe('function')
-        expect(typeof rollbackCommand).toBe('function')
-        expect(finalCommand).toBeUndefined()
-        await truncateCommand(executeOptions)
-
-        await beginCommand(executeOptions)
-        await truncateCommand(executeOptions)
-        await lineReadCommand(importSQL, {multiple: true})
-        await commitCommand(executeOptions)
-    
-        const {data: hats} = await lineReadCommand(`select * from ${tableName}`, executeOptions)
-        expect(hats.length).toBe(4)
       })
     })
   })

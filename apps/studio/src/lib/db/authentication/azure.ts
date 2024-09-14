@@ -4,26 +4,9 @@ import { wait } from '@shared/lib/wait';
 import rawLog from 'electron-log';
 import { TokenCache } from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
+import { AzureAuthType } from '../types';
 
 const log = rawLog.scope('auth/azure');
-
-export enum AzureAuthType {
-  Default, // This actually may not work at all, might need to just give up on it
-  Password,
-  AccessToken,
-  MSIVM,
-  ServicePrincipalSecret
-}
-
-// supported auth types that actually work :roll_eyes: default i'm looking at you
-export const AzureAuthTypes = [
-  // Can't have 2FA, kinda redundant now
-  // { name: 'Password', value: AzureAuthType.Password },
-  { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
-  // This may be reactivated when we move to client server architecture
-  // { name: 'MSI VM', value: AzureAuthType.MSIVM },
-  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
-];
 
 type CloudTokenResponse = {
   cloud_token: CloudToken,
@@ -34,7 +17,7 @@ type CloudTokenResponse = {
 
 type Response = AxiosResponse<CloudTokenResponse, any>;
 
-export interface CloudToken { 
+export interface CloudToken {
   id: string,
   created_at: string,
   updated_at: string,
@@ -63,6 +46,7 @@ export interface AuthOptions {
   tenantId?: string,
   msiEndpoint?: string,
   clientSecret?: string
+  signal?: AbortSignal
 }
 
 let localCache: TokenCache;
@@ -81,9 +65,8 @@ const cachePlugin = {
 
 export class AzureAuthService {
   private pca: msal.PublicClientApplication;
-  private start: number = null;
 
-  private cancelFulfillment = false;
+  private signal?: AbortSignal;
 
   public async init(authId: number) {
     if (!authId) {
@@ -106,6 +89,7 @@ export class AzureAuthService {
   }
 
   public async auth(authType: AzureAuthType, options: AuthOptions): Promise<AuthConfig> {
+    this.signal = options.signal;
     switch (authType) {
       case AzureAuthType.AccessToken:
         return await this.accessToken();
@@ -119,6 +103,12 @@ export class AzureAuthService {
       default:
         return this.default();
     }
+  }
+
+  public static async ssoSignOut(authId: number) {
+    const service = new AzureAuthService();
+    await service.init(authId);
+    await service.signOut();
   }
 
   private servicePrincipal(options: AuthOptions): AuthConfig {
@@ -181,9 +171,9 @@ export class AzureAuthService {
     const authUrl = await this.pca.getAuthCodeUrl(authCodeUrlParams);
 
     log.debug('Getting auth code')
-    window.location.href = authUrl;
 
-    this.start = Date.now();
+    process.parentPort.postMessage({ type: 'openExternal', url: authUrl });
+
     const result = await this.checkStatus(beekeeperCloudToken.url);
     if (!result || result?.data?.cloud_token?.status !== 'fulfilled') {
       throw new Error(`Looks like you didn't sign in on your browser. Please try again.`);
@@ -204,6 +194,7 @@ export class AzureAuthService {
       const tokenResponse = await this.pca.acquireTokenByCode(tokenRequest)
 
       localCache.homeId = tokenResponse.account.homeAccountId;
+      localCache.name = tokenResponse.account.name;
       localCache.save();
       return {
         type: 'azure-active-directory-access-token',
@@ -214,8 +205,11 @@ export class AzureAuthService {
     }
   }
 
-  public cancel(): void {
-    this.cancelFulfillment = true;
+  public async signOut() {
+    const tokenCache = this.pca.getTokenCache();
+    const account = await tokenCache.getAccountByHomeId(localCache.homeId);
+    await this.pca.signOut({ account })
+    await localCache.remove()
   }
 
   private async tryRefresh(): Promise<AuthConfig | null> {
@@ -250,18 +244,22 @@ export class AzureAuthService {
 
     return null;
   }
-  
+
   private async checkStatus(url: string): Promise<Response> {
-    const timedOut = Date.now() - this.start >= globals.pollingTimeout;
-    if (this.cancelFulfillment || timedOut) {
-      return null;
-    }
+    this.checkAbortSignal();
     const result = await axios.get(url) as Response;
     if (result?.data?.cloud_token?.status !== 'fulfilled') {
       await wait(2000);
       return await this.checkStatus(url);
     } else {
       return result;
+    }
+  }
+
+  private checkAbortSignal() {
+    if (!this.signal) return;
+    if (this.signal.aborted) {
+      throw new Error("Aborted");
     }
   }
 }

@@ -1,16 +1,18 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions, ImportFuncOptions } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
-import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase, IDbConnectionServer } from '../types';
+import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
+import { IDbConnectionServer } from '../backendTypes';
 
-const log = rawLog.scope('db');
+const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
+
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -88,7 +90,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // Connection *****************************************************************
-  async connect(): Promise<void> {
+  async connect(_signal?: AbortSignal): Promise<void> {
     /* eslint no-param-reassign: 0 */
     if (this.database.connecting) {
       throw new Error('There is already a connection in progress for this database. Aborting this new request.');
@@ -109,6 +111,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
         this.server.config.localHost = this.server.sshTunnel.localHost
         this.server.config.localPort = this.server.sshTunnel.localPort
+
+
+
       }
 
     } catch (err) {
@@ -266,7 +271,35 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  getImportScripts(_table: TableOrView): ImportScriptFunctions {
+  async importStepZero(_table: TableOrView): Promise<any> {
+    return null
+  }
+  async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importTruncateCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importLineReadCommand (_table: TableOrView, _sqlString: string|string[], _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importCommitCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importRollbackCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importFinalCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+  
+  // getImportScripts can be deleted
+  async getImportScripts(_table: TableOrView): Promise<ImportScriptFunctions> {
     return {
       step0: (): Promise<any|null> => null,
       beginCommand: (_executeOptions: any): any => null,
@@ -278,20 +311,19 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
-  getImportSQL(importedData: any[]): string | string[] {
+  async getImportSQL(importedData: any[]): Promise<string | string[]> {
     const queries = []
-    
+
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
-  
+
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
-  /** Sync a database file to remote database. This is a LibSQL specific feature. */
   async syncDatabase(): Promise<void> {
     throw new Error("Not implemented");
   }
@@ -327,7 +359,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       columns,
       totalRows
     }
-  } 
+  }
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
@@ -367,7 +399,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
-    
+
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;

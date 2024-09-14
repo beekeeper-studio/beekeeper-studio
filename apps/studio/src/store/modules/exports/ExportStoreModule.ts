@@ -1,10 +1,11 @@
+import { TransportExport } from '@/common/transport/TransportExport';
+import { ExportProgress } from '@/lib/export/models';
 import _ from 'lodash'
 import Vue from 'vue';
 import { Module } from 'vuex'
-import { Export } from '../../../lib/export/export'
 
 interface State {
-  exports: string[]
+  exports: TransportExport[]
 }
 
 const ExportStoreModule: Module<State, any> = {
@@ -20,26 +21,34 @@ const ExportStoreModule: Module<State, any> = {
     async removeExport(context, id): Promise<void> {
       await Vue.prototype.$util.send('export/remove', {id});
       context.commit('removeExport', id);
+    },
+    async retryExportForTable(_context, id) {
+      await Vue.prototype.$util.send('export/start', { id });
+    },
+    async retryFailedExports() {
+      await Vue.prototype.$util.send('export/retryFailed');
     }
   },
   mutations: {
-    addExport(state, exportId: string): void {
-      console.log('adding export: ', exportId);
-      state.exports.push(exportId)
+    addExport(state, exp: TransportExport): void {
+      state.exports.push(exp)
     },
-    setExports(state, exports: string[]) {
+    setExports(state, exports: TransportExport[]) {
       state.exports = exports;
     },
-    removeExport(state, id: string): void {
-      state.exports = _.without(state.exports, id);
+    removeExport(state, exp: TransportExport): void {
+      state.exports = _.without(state.exports, exp);
     },
+    updateProgressFor(state: State, { id, progress }: { id: string, progress: ExportProgress}): void {
+      state.exports.find((value) => value.id === id).percentComplete = progress.percentComplete;
+    }
   },
   getters: {
-    exports(state): string[] {
+    exports(state): TransportExport[] {
       return state.exports;
     },
     // not sure either of these are useful anymore
-    runningExports(_state): Export[] {
+    runningExports(_state): string[] {
       return []
       // return _.filter(state.exports, { 'status': ExportStatus.Exporting })
     },
