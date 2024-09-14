@@ -33,7 +33,7 @@ export enum AzureAuthType {
 }
 
 export const IamAuthTypes = [
-  { name: 'IAM Authentication', value: 'iam' }
+  { name: 'IAM Authentication Using Credentials File', value: 'iam' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
