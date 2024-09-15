@@ -11,12 +11,12 @@
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>
-            Use AWS IAM authentication to connect with temporary cluster
+            Use AWS IAM authentication using credential file to connect with temporary cluster
             credentials.
             <a
               href="https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html"
-            >Read More</a
-            >
+            >Amazon Docs</a
+            > - <a href="https://https://docs.beekeeperstudio.io//user_guide/connecting/amazon-rdb">Beekeeper Docs</a>
           </div>
         </div>
       </div>
