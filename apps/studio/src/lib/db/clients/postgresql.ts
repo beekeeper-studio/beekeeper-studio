@@ -319,7 +319,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     // if you provide table, you have to provide schema
-    const clause = table ? "WHERE c.table_schema = $1 AND c.table_name = $2" : "";
+    const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : "";
     const params = table ? [schema, table] : [];
     if (table && !schema) {
       throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`);
@@ -327,32 +327,32 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const sql = `
       SELECT
-        c.table_schema,
-        c.table_name,
-        c.column_name,
-        c.is_nullable,
-        ${this.version.number > 120_000 ? "c.is_generated," : ""}
-        c.ordinal_position,
-        c.column_default,
+        table_schema,
+        table_name,
+        column_name,
+        is_nullable,
+        ${this.version.number > 120_000 ? "is_generated," : ""}
+        ordinal_position,
+        column_default,
         CASE
-          WHEN c.character_maximum_length is not null  and c.udt_name != 'text'
-            THEN c.udt_name || '(' || c.character_maximum_length::varchar(255) || ')'
-          WHEN c.numeric_precision is not null and c.numeric_scale is not null
-            THEN c.udt_name || '(' || c.numeric_precision::varchar(255) || ',' || c.numeric_scale::varchar(255) || ')'
-          WHEN c.numeric_precision is not null and c.numeric_scale is null
-            THEN c.udt_name || '(' || c.numeric_precision::varchar(255) || ')'
-          WHEN c.datetime_precision is not null AND c.udt_name != 'date' THEN
-            c.udt_name || '(' || c.datetime_precision::varchar(255) || ')'
-          ELSE c.udt_name
+          WHEN character_maximum_length is not null  and udt_name != 'text'
+            THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
+          WHEN numeric_precision is not null and numeric_scale is not null
+            THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
+          WHEN numeric_precision is not null and numeric_scale is null
+            THEN udt_name || '(' || numeric_precision::varchar(255) || ')'
+          WHEN datetime_precision is not null AND udt_name != 'date' THEN
+            udt_name || '(' || datetime_precision::varchar(255) || ')'
+          ELSE udt_name
         END as data_type,
         CASE
-          WHEN c.data_type = 'ARRAY' THEN 'YES'
+          WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
         END as is_array,
-        pg_catalog.col_description(format('%s.%s', c.table_schema, c.table_name)::regclass::oid, c.ordinal_position) as column_comment
-      FROM information_schema.columns c
+        pg_catalog.col_description(format('%s.%s', table_schema, table_name)::regclass::oid, ordinal_position) as column_comment
+      FROM information_schema.columns
       ${clause}
-      ORDER BY c.table_schema, c.table_name, c.ordinal_position
+      ORDER BY table_schema, table_name, ordinal_position
     `;
 
     const data = await this.driverExecuteSingle(sql, { params });
