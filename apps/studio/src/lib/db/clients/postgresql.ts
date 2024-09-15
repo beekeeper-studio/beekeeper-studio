@@ -349,7 +349,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
         END as is_array,
-        pg_catalog.col_description(format('%s.%s', table_schema, table_name)::regclass::oid, ordinal_position) as column_comment
+        pg_catalog.col_description(format('%I.%I', table_schema, table_name)::regclass::oid, ordinal_position) as column_comment
       FROM information_schema.columns
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position
