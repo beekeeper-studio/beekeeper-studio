@@ -289,7 +289,6 @@ export default Vue.extend({
       this.filters = [createTableFilter(this.filters[0].field)]
     },
     submit() {
-      console.log('filter object submit received!', this.filters)
       let filters: TableFilter[] | string | null
       if (this.filterMode === RAW) {
         filters = this.filterRaw || null

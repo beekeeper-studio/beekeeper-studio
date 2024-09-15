@@ -75,7 +75,6 @@ export default {
     filter: {
       deep: true,
       handler() {
-        console.log("filter object changed in filter", this.index, this.filter.value)
         this.$emit('changed', this.index, this.filter)
       }
     }
