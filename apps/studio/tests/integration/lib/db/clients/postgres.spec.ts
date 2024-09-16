@@ -176,8 +176,25 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           first_key character varying(255) NOT NULL,
           second_key character varying(255) NOT NULL,
           PRIMARY KEY (first_key, second_key)
-        ); 
+        );
       `)
+
+
+      await util.knex.raw(`
+        CREATE TABLE public.test_indexes (
+          first_name text NOT NULL,
+          last_name text NOT NULL,
+          data jsonb NOT NULL DEFAULT '{"a": {"b": ["foo", "bar"]}}'::jsonb
+        );
+
+        CREATE INDEX single_column ON test_indexes (first_name);
+        CREATE INDEX multi_column ON test_indexes (first_name, last_name);
+        CREATE INDEX single_expression ON test_indexes (lower(first_name));
+        CREATE INDEX multi_expression ON test_indexes (lower(first_name), lower(last_name));
+        CREATE INDEX expression_with_comma ON test_indexes ((lower(first_name) || ', ' || lower(last_name)));
+        CREATE INDEX expression_with_double_quote ON test_indexes (('"' || first_name));
+        CREATE INDEX expression_with_jsonb_operator ON test_indexes ((data #>> '{a,b,1}'));
+      `);
     })
 
     afterAll(async () => {
@@ -508,6 +525,11 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(arrayColumn.array).toBeTruthy()
       expect(enumColumn.array).toBeFalsy()
       expect(enumArrayColumn.array).toBeTruthy()
+    })
+
+    it("should be able to list basic indexes", async () => {
+      const indexes = await util.connection.listTableIndexes('test_indexes')
+      expect(indexes.length).toBe(7)
     })
 
     if (dockerTag === 'latest') {
