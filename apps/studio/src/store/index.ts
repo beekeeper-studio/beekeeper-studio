@@ -212,6 +212,9 @@ const store = new Vuex.Store<State>({
     isUltimate(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/isUltimate']
     },
+    isTrial(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/status'].license?.licenseType === "TrialLicense"
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -250,9 +253,9 @@ const store = new Vuex.Store<State>({
     setUsername(state, name) {
       state.username = name
     },
-    newConnection(state, config: IConnection) {
+    newConnection(state, config: Nullable<IConnection>) {
       state.usedConfig = config
-      state.database = config.defaultDatabase
+      state.database = config?.defaultDatabase
     },
     // this shouldn't be used at all
     clearConnection(state) {
@@ -359,7 +362,8 @@ const store = new Vuex.Store<State>({
       await context.dispatch('connect', conn)
     },
 
-    updateWindowTitle(context, config: Nullable<IConnection>) {
+    updateWindowTitle(context) {
+      const config = context.state.usedConfig
       let title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
@@ -367,7 +371,7 @@ const store = new Vuex.Store<State>({
         title += ' Ultimate Edition'
       }
       const status = context.rootGetters['licenses/status']
-      if (status.license.licenseType === 'TrialLicense' && status.edition === 'ultimate') {
+      if (status.license?.licenseType === 'TrialLicense' && status.edition === 'ultimate') {
         const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${days} ${days > 1 ? 'days' : 'day'} left)`
       }
@@ -424,7 +428,8 @@ const store = new Vuex.Store<State>({
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
-      context.dispatch('updateWindowTitle', null)
+      context.commit('newConnection', null)
+      context.dispatch('updateWindowTitle')
       context.dispatch('refreshConnections')
     },
     async syncDatabase(context) {

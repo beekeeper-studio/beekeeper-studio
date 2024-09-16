@@ -9,6 +9,7 @@ import { TransportLicenseKey } from '@/common/transport';
 import Vue from "vue"
 
 interface State {
+  initialized: boolean
   licenses: TransportLicenseKey[],
   loading: boolean
   error: CloudError | Error | null
@@ -37,6 +38,7 @@ function isAppVersionLessThanOrEqual(target: { major: number, minor: number, pat
 export const LicenseModule: Module<State, RootState>  = {
   namespaced: true,
   state: () => ({
+    initialized: false,
     licenses: [],
     loading: false,
     error: null,
@@ -61,7 +63,7 @@ export const LicenseModule: Module<State, RootState>  = {
       const license = getters.newestLicense
 
       // Is the license not valid?
-      if (state.now > license.valid_until) {
+      if (state.now > license.validUntil) {
         return {
           license,
           edition: 'community',
@@ -117,6 +119,9 @@ export const LicenseModule: Module<State, RootState>  = {
     remove(state, licenses: TransportLicenseKey[]) {
       state.licenses = _.without(state.licenses, ...licenses)
     },
+    setInitialized(state, b: boolean) {
+      state.initialized = b
+    },
     setNow(state, date: Date) {
       state.now = date
     },
@@ -124,10 +129,9 @@ export const LicenseModule: Module<State, RootState>  = {
   actions: {
     async init(context) {
       const licenses = await Vue.prototype.$util.send('appdb/license/find');
-      licenses.find((l) => l.licenseType === 'TrialLicense').validUntil = new Date(new Date().getTime() + (10 * 1000));
-      licenses.find((l) => l.licenseType === 'TrialLicense').supportUntil = new Date(new Date().getTime() + (10 * 1000));
       context.commit('set', licenses)
-      context.dispatch('updateAll')
+      await context.dispatch('updateAll')
+      context.commit('setInitialized', true)
     },
 
     async add(context, { email, key }) {
@@ -140,11 +144,13 @@ export const LicenseModule: Module<State, RootState>  = {
       license.email = email
       license.validUntil = new Date(result.validUntil)
       license.supportUntil = new Date(result.supportUntil)
-      license.maxAllowedAppVersion = tagName ? parseTagVersion(result.maxAllowedAppRelease.tagName) : null
+      license.maxAllowedAppVersion = tagName ? parseTagVersion(tagName) : null
       license.licenseType = result.licenseType
       const others = context.getters.realLicenses
       license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
       await Vue.prototype.$util.send('appdb/license/remove', { obj: others });
+      // allow showing expired license modal next time
+      await Vue.prototype.$util.send('appdb/setting/set', { key: 'openExpiredLicenseModal', value: true });
       context.commit('add', license)
       context.commit('remove', others)
     },
@@ -155,7 +161,7 @@ export const LicenseModule: Module<State, RootState>  = {
         const tagName = data.maxAllowedAppRelease.tagName
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
-        license.maxAllowedAppVersion = tagName ? parseTagVersion(data.maxAllowedAppRelease.tagName) : null
+        license.maxAllowedAppVersion = tagName ? parseTagVersion(tagName) : null
         license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
       } catch (error) {
         if (error instanceof CloudError) {

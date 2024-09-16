@@ -1,6 +1,6 @@
 <template>
   <portal to="modals">
-    <modal class="vue-dialog beekeeper-modal" :name="modalName">
+    <modal class="vue-dialog beekeeper-modal" :name="modalName" @before-close="beforeClose">
       <div class="dialog-content">
         <div class="dialog-c-title">[TRIAL MODAL]</div>
         <div>
@@ -24,14 +24,19 @@ export default {
     modalName: () => "trial-begin-modal",
   },
   methods: {
-    close() {
+    beforeClose() {
       this.$util.send('appdb/setting/set', { key: 'openBeginTrialModal', value: false });
+    },
+    close() {
       this.$modal.hide(this.modalName);
+    },
+    async isOpeningModalAllowed() {
+      const openBeginTrialModal = await this.$util.send('appdb/setting/get', { key: 'openBeginTrialModal' });
+      return openBeginTrialModal.value
     },
   },
   async mounted() {
-    const openBeginTrialModal = await this.$util.send('appdb/setting/get', { key: 'openBeginTrialModal' });
-    if (!openBeginTrialModal.value) return
+    if (!await this.isOpeningModalAllowed()) return;
     await this.$nextTick();
     this.$modal.show(this.modalName);
   },

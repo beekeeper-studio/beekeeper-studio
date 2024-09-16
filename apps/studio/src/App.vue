@@ -34,8 +34,10 @@
     <import-connections-modal />
     <confirmation-modal-manager />
     <util-died-modal />
-    <trial-begin-modal />
-    <trial-end-modal />
+    <template v-if="$store.state.licenses.initialized">
+      <trial-begin-modal />
+      <license-expired-modal />
+    </template>
   </div>
 </template>
 
@@ -64,7 +66,7 @@ import ConfirmationModalManager from '@/components/common/modals/ConfirmationMod
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialBeginModal from '@/components/TrialBeginModal.vue'
-import TrialEndModal from '@/components/TrialEndModal.vue'
+import LicenseExpiredModal from '@/components/LicenseExpiredModal.vue'
 
 import rawLog from 'electron-log'
 
@@ -76,7 +78,7 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, TrialBeginModal, TrialEndModal,
+    EnterLicenseModal, TrialBeginModal, LicenseExpiredModal,
   },
   data() {
     return {
@@ -105,8 +107,12 @@ export default Vue.extend({
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
     },
-    licenseStatus() {
+    licenseStatus(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
+
+      if (prev.edition === "ultimate" && curr.edition === "community" && curr.condition === "License expired") {
+        this.$root.$emit(AppEvent.licenseExpired, curr.license)
+      }
     },
   },
   async beforeDestroy() {

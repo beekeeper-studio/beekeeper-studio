@@ -33,6 +33,4 @@ export interface IPlatformInfo {
   parsedAppVersion: { major: number, minor: number, patch: number },
   cloudUrl: string,
   locale: string,
-  isCommunity: boolean,
-  isUltimate: boolean
 };
