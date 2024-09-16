@@ -13,7 +13,7 @@ import rawLog from "electron-log";
 import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
-import { dataTypesToMatchTypeCode } from "@shared/lib/dialects/cassandra";
+import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { applyChangesSql } from "@/lib/db/clients/utils";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
@@ -494,10 +494,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   wrapIdentifier(value: string): string {
-    if (value === '*') return value;
-    const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
-    if (matched) return this.wrapIdentifier(matched[1]) + matched[2];
-    return `"${value.replace(/"/g, '\\"')}"`;
+    return D.wrapIdentifier(value)
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<CassandraResult | CassandraResult[]> {
@@ -620,7 +617,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       logger().error(err)
       throw err
     }
-  }  
+  }
 
   private insertRows(rows) {
     return rows.map(row => {
@@ -642,7 +639,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       }
     })
   }
-   
+
   private async updateValues(updates) {
     return updates.map(update => {
       const value = update.value
@@ -746,7 +743,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       ${allowFilter}
       `
     return {query: sql, countQuery: countSQL, params: filterParams}
-  }  
+  }
 
   private buildFilterString(filters, options: any = {}) {
     const inlineParams = options.inlineParams
@@ -785,5 +782,5 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return keyspace && keyspace.length ?
       `${this.wrapIdentifier(keyspace)}.${this.wrapIdentifier(table)}` :
       this.wrapIdentifier(table)
-  }  
+  }
 }

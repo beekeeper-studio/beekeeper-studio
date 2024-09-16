@@ -1,0 +1,73 @@
+{
+  "rental_id": 1,
+  "rental_date": "2005-05-24 22:53:30",
+  "inventory_id": {
+    "inventory_id": 367,
+    "film_id": {
+      "film_id": 80,
+      "title": "BLANKET BEVERLY",
+      "description": "A Emotional Documentary of a Student And a Girl who must Build a Boat in Nigeria",
+      "release_year": 2006,
+      "language_id": {
+        "language_id": 1,
+        "name": "English             ",
+        "last_update": "2006-02-15 05:02:19"
+      },
+      "original_language_id": null,
+      "rental_duration": 7,
+      "rental_rate": "2.99",
+      "length": 148,
+      "replacement_cost": "21.99",
+      "rating": "G",
+      "last_update": "2006-02-15 05:03:42",
+      "special_features": [
+        "Trailers"
+      ],
+      "fulltext": "'bever':2 'blanket':1 'boat':16 'build':14 'documentari':5 'emot':4 'girl':11 'must':13 'nigeria':18 'student':8"
+    },
+    "store_id": {
+      "store_id": 1,
+      "manager_staff_id": {
+        "staff_id": 1,
+        "first_name": "Mike",
+        "last_name": "Hillyer",
+        "address_id": 3,
+        "email": "Mike.Hillyer@sakilastaff.com",
+        "store_id": 1,
+        "active": true,
+        "username": "Mike",
+        "password": "8cb2237d0679ca88db6464eac60da96345513964",
+        "last_update": "2006-02-15 04:57:16",
+        "picture": null
+      },
+      "address_id": {
+        "address_id": 1,
+        "address": "47 MySakila Drive",
+        "address2": null,
+        "district": " ",
+        "city_id": 300,
+        "postal_code": null,
+        "phone": " ",
+        "last_update": "2006-02-15 04:45:30"
+      },
+      "last_update": "2006-02-15 04:57:12"
+    },
+    "last_update": "2006-02-15 05:09:17"
+  },
+  "customer_id": 130,
+  "return_date": "2005-05-26 22:04:30",
+  "staff_id": {
+    "staff_id": 1,
+    "first_name": "Mike",
+    "last_name": "Hillyer",
+    "address_id": 3,
+    "email": "Mike.Hillyer@sakilastaff.com",
+    "store_id": 1,
+    "active": true,
+    "username": "Mike",
+    "password": "8cb2237d0679ca88db6464eac60da96345513964",
+    "last_update": "2006-02-15 04:57:16",
+    "picture": null
+  },
+  "last_update": "2006-02-15 21:30:53"
+}
