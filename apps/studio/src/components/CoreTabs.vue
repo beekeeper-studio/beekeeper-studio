@@ -340,6 +340,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     tabIcon() {
       return {
         type: this.dbEntityType,
+        tabType: this.dbEntityType,
         entityType: this.dbEntityType
       }
     },
@@ -410,6 +411,11 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         'alt+7': this.handleAltNumberKeyPress,
         'alt+8': this.handleAltNumberKeyPress,
         'alt+9': this.handleAltNumberKeyPress,
+      }
+
+      if(this.$config.isMac) {
+         result['shift+meta+['] = this.previousTab
+         result['shift+meta+]'] = this.nextTab
       }
 
       return result

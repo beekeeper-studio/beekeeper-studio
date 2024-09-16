@@ -316,7 +316,7 @@ import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/uti
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
@@ -523,6 +523,7 @@ export default Vue.extend({
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
             { separator: true },
+            this.quickFilterMenuItem(cell),
             ...copyActionsMenu({
               range,
               table: this.table.name,
@@ -730,6 +731,9 @@ export default Vue.extend({
   },
 
   watch: {
+    filters() {
+      this.tabulator?.setData()
+    },
     allColumnsSelected() {
       this.resetPendingChanges()
     },
@@ -833,7 +837,7 @@ export default Vue.extend({
     },
     copySelection() {
       if (!this.focusingTable()) return
-      copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
+      copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
     },
     pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
@@ -1026,6 +1030,26 @@ export default Vue.extend({
       // it should be done by calling an event using this.$modal.show(modalName)
       // or this.$trigger(AppEvent.something) if possible
       this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+    },
+    quickFilterMenuItem(cell: CellComponent) {
+      const me = this
+      const symbols = [
+        '=', '!=', '<', '<=', '>', '>='
+      ]
+      return {
+        label: createMenuItem("Quick Filter"),
+        disabled: _.isNil(cell.getValue()),
+        menu: symbols.map((s) => {
+          return {
+            label: createMenuItem(`${cell.getField()} ${s} value`),
+            action: async (e, cell: CellComponent) => {
+              const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
+              this.tableFilters = newFilter
+              this.triggerFilter(this.tableFilters)
+            }
+          }
+        })
+      }
     },
     openEditorMenu(cell: CellComponent) {
       return {
@@ -1490,7 +1514,6 @@ export default Vue.extend({
         return;
       }
       this.filters = filters
-      this.tabulator?.setData()
     },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API

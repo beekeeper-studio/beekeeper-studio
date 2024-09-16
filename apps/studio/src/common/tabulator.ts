@@ -55,13 +55,15 @@ export function tabulatorForTableData(
       formatter: "rownum",
       formatterParams: { relativeToPage: true },
       contextMenu: (_e, cell) => {
-        const range: RangeComponent = _.last(cell.getRanges())
-        return copyActionsMenu({ range, table, schema });
+        return copyActionsMenu({ ranges: cell.getRanges(), table, schema });
       },
       headerContextMenu: (_e, column) => {
-        const range: RangeComponent = _.last(column.getTable().getRanges());
         return [
-          ...copyActionsMenu({ range, table, schema }),
+          ...copyActionsMenu({
+            ranges: column.getTable().getRanges(),
+            table,
+            schema,
+          }),
           { separator: true },
           resizeAllColumnsToFitContent,
           resizeAllColumnsToFixedWidth,

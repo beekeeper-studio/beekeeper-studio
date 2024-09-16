@@ -2,7 +2,6 @@
   <div
     v-hotkey="keymap"
     class="table-filter"
-    v-if="!minimalMode || !hideInMinimalMode"
   >
     <form
       @submit.prevent="submit"
@@ -93,72 +92,23 @@
           class="middle-section multiple-filter"
           ref="multipleFilters"
         >
-          <div
+          <!-- <div
             v-for="(filter, index) in filters"
             :key="index"
             class="filter-container"
           >
-            <div class="select-wrap">
-              <select
-                name="Filter Field"
-                class="form-control"
-                v-model="filter.field"
-              >
-                <option
-                  v-for="column in columns"
-                  :key="column.columnName"
-                  :value="column.columnName"
-                >
-                  {{ column.columnName }}
-                </option>
-              </select>
-            </div>
-            <div class="select-wrap">
-              <select
-                name="Filter Type"
-                class="form-control"
-                v-model="filter.type"
-                @change="clearInput(filter)"
-              >
-                <option
-                  v-for="(v, k) in filterTypes"
-                  :key="k"
-                  :value="v"
-                >
-                  {{ k }}
-                </option>
-              </select>
-            </div>
-            <div class="expand filter">
-              <div class="filter-wrap">
-                <input
-                  class="form-control filter-value"
-                  :class="{ 'disabled-input': isNullFilter(filter) }"
-                  type="text"
-                  ref="filterInputs"
-                  v-model="filter.value"
-                  @blur="updateMinimalModeByFilters"
-                  :disabled="isNullFilter(filter)"
-                  :title="isNullFilter(filter) ?
-                    'You cannot provide a comparison value when checking for NULL or NOT NULL' :
-                    ''"
-                  :placeholder="
-                    filter.type === 'in'
-                      ? `Enter values separated by comma, eg: foo,bar`
-                      : 'Enter Value'
-                  "
-                >
-                <button
-                  v-if="!isNullFilter(filter)"
-                  type="button"
-                  class="clear btn-link"
-                  @click.prevent="filter.value = ''"
-                >
-                  <i class="material-icons">cancel</i>
-                </button>
-              </div>
-            </div>
-          </div>
+
+          </div> -->
+          <builder-filter
+            v-for="(filter, index) in filters"
+            :key="index"
+            :filter="filter"
+            :index="index"
+            :columns="columns"
+            @changed="singleFilterChanged"
+            @blur="updateMinimalModeByFilters"
+          >
+        </builder-filter>
         </div>
         <div class="right-section">
           <div class="ghost-add-apply">
@@ -241,27 +191,17 @@ import { joinFilters, normalizeFilters, createTableFilter, checkEmptyFilters } f
 import { mapGetters, mapState } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
 import _ from 'lodash';
+import BuilderFilter from "./filter/BuilderFilter.vue";
 
 const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
+  components: { BuilderFilter },
   props: ["columns", "reactiveFilters"],
   data() {
     return {
       hideInMinimalMode: true,
-      filterTypes: {
-        equals: "=",
-        "does not equal": "!=",
-        like: "like",
-        "less than": "<",
-        "less than or equal": "<=",
-        "greater than": ">",
-        "greater than or equal": ">=",
-        in: "in",
-        "is null": "is",
-        "is not null": "is not"
-      },
       filters: this.reactiveFilters,
       filterRaw: "",
       filterMode: BUILDER,
@@ -288,14 +228,12 @@ export default Vue.extend({
     },
   },
   methods: {
-    clearInput(filter: any) {
-      if (filter.type.includes('is')) {
-        filter.value = null
-      }
+    singleFilterChanged(index, filter) {
+      const updated = [...this.filters]
+      updated[index] = filter
+      this.filters = updated
     },
-    isNullFilter(filter) {
-      return filter.type.includes('is')
-    },
+
     focusOnInput() {
       if (this.filterMode === RAW) this.$refs.valueInput.focus();
       else this.$refs.multipleFilters.querySelector('.filter-value')?.focus();
@@ -407,6 +345,7 @@ export default Vue.extend({
       } else {
         this.filters = this.externalFilters || [];
       }
+      this.submittedWithEmptyValue = false
     },
   },
 });

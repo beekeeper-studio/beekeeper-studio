@@ -12,6 +12,8 @@ const TEST_VERSIONS = [
   // { version: '2019-latest', readonly: true },
   // { version: '2022-latest', readonly: false },
   // { version: '2022-latest', readonly: true },
+
+
   { version: '2019-CU27-ubuntu-20.04', readonly: false },
   { version: '2019-CU27-ubuntu-20.04', readonly: true },
   { version: '2022-CU13-ubuntu-22.04', readonly: false },
@@ -43,10 +45,10 @@ function testWith(dockerTag: string, readonly: boolean) {
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
           test: ["CMD-SHELL", `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
-          interval: 2000,
+          interval: 5000,
           timeout: 3000,
           retries: 10,
-          startPeriod: 5000,
+          startPeriod: 7000,
         })
         .withStartupTimeout(dbtimeout)
         .start()
@@ -68,6 +70,8 @@ function testWith(dockerTag: string, readonly: boolean) {
       await util.knex.schema.raw("CREATE TABLE hello.world(id int, name varchar(255))")
       await util.knex.schema.raw("INSERT INTO hello.world(id, name) VALUES(1, 'spiderman')")
       await util.knex.schema.raw("CREATE TABLE withbits(id int, bitcol bit NOT NULL)");
+      await util.knex.schema.raw("CREATE TABLE [my[socks]]](id int, name varchar(20))");
+      await util.knex.schema.raw("INSERT INTO [my[socks]]](id, name) VALUES (1, 'blue')");
     })
 
     afterAll(async () => {
@@ -83,6 +87,11 @@ function testWith(dockerTag: string, readonly: boolean) {
       } else {
         runCommonTests(getUtil, { dbReadOnlyMode: readonly })
       }
+    })
+
+    it("Can select top from table with square brackets in name", async () => {
+      const top = await util.connection.selectTop("my[socks]", 0, 1, [{dir: 'ASC', field: 'id'}], [])
+      expect(top.result.length).toBe(1)
     })
 
     describe("Multi schema", () => {
