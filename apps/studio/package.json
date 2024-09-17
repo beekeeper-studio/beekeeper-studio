@@ -161,7 +161,7 @@
     "testcontainers": "~9.12.0",
     "ts-jest": "^29.1.5",
     "typescript": "~4.3.0",
-    "vite": "^5.3.5",
+    "vite": "^5.3.6",
     "vite-plugin-commonjs": "^0.10.1",
     "vue-template-compiler": "^2.7.16",
     "xvfb-maybe": "^0.2.1"
