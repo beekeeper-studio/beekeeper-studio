@@ -243,5 +243,35 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Toggle Minimal Mode",
       click: actionHandler.toggleMinimalMode,
     },
+    licenseState: {
+      id: "license-state",
+      label: "DEV Switch License State",
+      submenu: [
+        {
+          label: "First time install, no license, no trial.",
+          click: actionHandler.switchLicenseState,
+        },
+        {
+          label: "On a trial license",
+          click: actionHandler.switchLicenseState,
+        },
+        {
+          label: "Trial expired",
+          click: actionHandler.switchLicenseState,
+        },
+        {
+          label: "On an active paid license",
+          click: actionHandler.switchLicenseState,
+        },
+        {
+          label: "On an expired, lifetime license that still covers this version",
+          click: actionHandler.switchLicenseState,
+        },
+        {
+          label: "On an expire, lifetime license, that covers an earlier version",
+          click: actionHandler.switchLicenseState,
+        },
+      ],
+    }
   }
 }

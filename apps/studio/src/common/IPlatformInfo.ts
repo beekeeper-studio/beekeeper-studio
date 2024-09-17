@@ -1,3 +1,5 @@
+import type { Version } from '@/lib/license';
+
 export interface IPlatformInfo {
   isWindows: boolean,
   isMac: boolean,
@@ -30,7 +32,7 @@ export interface IPlatformInfo {
   appDbPath: string,
   updatesDisabled: boolean,
   appVersion: string,
-  parsedAppVersion: { major: number, minor: number, patch: number },
+  parsedAppVersion: Version,
   cloudUrl: string,
   locale: string,
 };

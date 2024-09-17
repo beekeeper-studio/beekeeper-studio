@@ -189,4 +189,9 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
       window.send(AppEvent.settingsChanged)
     })
   }
+
+  switchLicenseState = async (menuItemOrLabel: Electron.MenuItem | string) => {
+    if (typeof menuItemOrLabel !== 'string') return
+    await Vue.prototype.$util.send('dev/switchLicenseState', { label: menuItemOrLabel })
+  }
 }

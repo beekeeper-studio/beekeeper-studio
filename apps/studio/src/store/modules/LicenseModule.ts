@@ -7,6 +7,7 @@ import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { CloudClient } from '@/lib/cloud/CloudClient';
 import { TransportLicenseKey } from '@/common/transport';
 import Vue from "vue"
+import { getLicenseStatus, parseTagVersion } from '@/lib/license';
 
 interface State {
   initialized: boolean
@@ -17,23 +18,6 @@ interface State {
 }
 
 const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-
-function parseTagVersion(version: string) {
-  const VERSION_TAG = /^v(\d+)\.(\d+)\.(\d+)$/
-  const match = VERSION_TAG.exec(version)
-  const major = match ? parseInt(match[1]) : 0
-  const minor = match ? parseInt(match[2]) : 0
-  const patch = match ? parseInt(match[3]) : 0
-  return { major, minor, patch }
-}
-
-function isAppVersionLessThanOrEqual(target: { major: number, minor: number, patch: number }) {
-  const app = window.platformInfo.parsedAppVersion
-  if (app.major > target.major) return false
-  if (app.minor > target.minor) return false
-  if (app.patch > target.patch) return false
-  return true
-}
 
 export const LicenseModule: Module<State, RootState>  = {
   namespaced: true,
@@ -51,50 +35,12 @@ export const LicenseModule: Module<State, RootState>  = {
     realLicenses(state) {
       return state.licenses.filter((l) => l.licenseType !== 'TrialLicense')
     },
-    status(state, getters) {
-      // Do they have a license at all?
-      if (state.licenses.length === 0) {
-        return {
-          edition: 'community',
-          condition: 'No license found',
-        }
-      }
-
-      const license = getters.newestLicense
-
-      // Is the license not valid?
-      if (state.now > license.validUntil) {
-        return {
-          license,
-          edition: 'community',
-          condition: 'License expired',
-        }
-      }
-
-      // From here, we know that the license is still valid.
-      // Is maxAllowedAppVersion nullish?
-      if (_.isNil(license.maxAllowedAppVersion)) {
-        return {
-          license,
-          edition: 'ultimate',
-          condition: 'No app version restriction',
-        }
-      }
-
-      // Does the license allow the current app version?
-      if (isAppVersionLessThanOrEqual(license.maxAllowedAppVersion)) {
-        return {
-          license,
-          edition: 'ultimate',
-          condition: 'App version allowed',
-        }
-      }
-
-      return {
-        license,
-        edition: 'community',
-        condition: 'App version not allowed',
-      }
+    status(state) {
+      return getLicenseStatus({
+        licenses: state.licenses,
+        currentDate: state.now,
+        currentVersion: window.platformInfo.parsedAppVersion,
+      })
     },
     isUltimate(_state, getters) {
       return getters.status.edition === 'ultimate'

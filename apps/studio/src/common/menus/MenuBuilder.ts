@@ -24,7 +24,7 @@ export default class extends DefaultMenu {
     if (!this.platformInfo.isMac)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
     if (this.platformInfo.isDevelopment)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
+      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload, this.menuItems.licenseState)
     return result
   }
 
