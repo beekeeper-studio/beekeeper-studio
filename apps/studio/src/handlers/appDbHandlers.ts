@@ -81,7 +81,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       })
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
-      return transform(await cls.findOneBy(options), cls)
+      return transform(await cls.findOne(options), cls)
     }
   }
 }

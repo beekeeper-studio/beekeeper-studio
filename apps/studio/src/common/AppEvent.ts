@@ -45,6 +45,7 @@ export enum AppEvent {
   createConfirmModal = 'createConfirmModal',
   showConfirmModal = 'showConfirmModal',
   licenseExpired = 'licenseExpired',
+  switchLicenseState = 'switchLicenseState'
 }
 
 export interface RootBinding {
