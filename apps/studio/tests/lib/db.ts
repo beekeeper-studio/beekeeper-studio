@@ -822,7 +822,15 @@ export class DBTestUtil {
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
       if (this.supportsArrayMode) {
-        expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
+        let expected = [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}]
+
+        // FYI node-oracledb 5+ renames duplicate columns for reasons I can't explain,
+        // so we need to do a special check here
+        if (this.dbType === 'oracle') {
+          expected = [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }]
+        }
+
+        expect(fields).toMatchObject(expected)
       } else {
         expect(fields).toMatchObject([{id: 'c0', name: 'total'}])
       }
