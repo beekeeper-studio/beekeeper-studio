@@ -31,6 +31,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['workspaceId', 'usedConfig']),
     ...mapGetters(['workspace']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     importantTabStuff() {
       if (!this.activeTab) return []
@@ -69,9 +70,9 @@ export default Vue.extend({
       })
     },
     mountAndRefresh() {
-      console.log('mount and refresh')
+      console.log('mount and refresh: ', this.workspace)
       if (!this.workspace) return
-      const scope = 'local'
+      const scope = this.hasActiveLicense ? this.workspace.type : 'local'
       DataModules.forEach((module) => {
         const choice = module[scope]
         if (!choice) throw new Error(`No module defined for ${scope} - ${module.path}`)
