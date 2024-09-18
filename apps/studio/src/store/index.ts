@@ -26,11 +26,12 @@ import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityCo
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
 import { LicenseModule } from './modules/LicenseModule'
-import { CredentialsModule } from './modules/CredentialsModule'
+import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
+import { CloudClient } from '@/lib/cloud/CloudClient'
 
 
 const log = RawLog.scope('store/index')
@@ -127,8 +128,14 @@ const store = new Vuex.Store<State>({
     defaultSchema(state) {
       return state.defaultSchema;
     },
-    workspace(): IWorkspace {
-      return LocalWorkspace
+    workspace(state, getters): IWorkspace {
+      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
+
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
+
+      if (!result) return LocalWorkspace
+      return result.workspace
     },
     isCloud(state: State) {
       return state.workspaceId !== LocalWorkspace.id
@@ -141,6 +148,15 @@ const store = new Vuex.Store<State>({
         const pollError = state[module.path]['pollError']
         return pollError || null
       }).find((e) => !!e)
+    },
+    cloudClient(state: State, getters): CloudClient | null {
+      if (state.workspaceId === LocalWorkspace.id) return null
+
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
+      if (!result) return null
+      return result.client.cloneWithWorkspace(result.workspace.id)
+
     },
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
