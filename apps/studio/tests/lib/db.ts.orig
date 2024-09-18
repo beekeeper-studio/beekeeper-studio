@@ -549,7 +549,7 @@ export class DBTestUtil {
     expect(simpleResult.find((c) => c.columnName?.toLowerCase() === 'family_name')).toBeTruthy()
 
 
-    // only databases that can actually change things past this point.
+    // only databases t can actually change things past this point.
     if (this.data.disabledFeatures?.alter?.alterColumn) return
 
     await this.knex.schema.dropTableIfExists("alter_test")
@@ -821,11 +821,27 @@ export class DBTestUtil {
       }
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
+<<<<<<< HEAD
+
+      let expected = [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}]
+
+      // FYI node-oracledb 5+ renames duplicate columns for reasons I can't explain,
+      // so we need to do a special check here
+      if (this.dbType === 'oracle') {
+        expected = [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }]
+      }
+
+       expect(fields).toMatchObject(expected)
+
+||||||| c9824f28
+      expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
+=======
       if (this.supportsArrayMode) {
         expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
       } else {
         expect(fields).toMatchObject([{id: 'c0', name: 'total'}])
       }
+>>>>>>> community-4
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex
@@ -1100,6 +1116,7 @@ export class DBTestUtil {
 
   }
 
+<<<<<<< HEAD
   async prepareStreamTests() {
     return new Promise<void>(async (resolve, reject) => {
       const fileLocation = path.join(__dirname, '../fixtures/organizations-100000.csv')
@@ -1112,7 +1129,38 @@ export class DBTestUtil {
 
       if (this.dbType === 'sqlserver') {
         await this.knex.schema.raw('SET IDENTITY_INSERT organizations ON')
+||||||| c9824f28
+  async streamTests() {
+    const names = [
+      { name: "Matthew" },
+      { name: "Nicoll" },
+      { name: "Gregory" },
+      { name: "Alex" },
+      { name: "Alethea" },
+      { name: "Elias" }
+    ]
+
+    if (this.dbType === 'firebird') {
+      for (const name of names) {
+        await this.knex('streamtest').insert(name)
+=======
+  async streamTests() {
+    const names = [
+      { name: "Matthew" },
+      { name: "Nicoll" },
+      { name: "Gregory" },
+      { name: "Alex" },
+      { name: "Alethea" },
+      { name: "Elias" }
+    ]
+    const columnsExpected = ['id', 'name']
+    
+    if (this.dbType === 'firebird') {
+      for (const name of names) {
+        await this.knex('streamtest').insert(name)
+>>>>>>> community-4
       }
+<<<<<<< HEAD
 
       const execBatch = async (batch: Record<string, any>[]) => {
         if (this.dbType === 'firebird') {
@@ -1181,6 +1229,52 @@ export class DBTestUtil {
 
   async streamStopTest() {
     const { cursor } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+||||||| c9824f28
+    } else {
+      await this.knex('streamtest').insert(names)
+    }
+    const result = await this.connection.selectTopStream(
+      'streamtest',
+      [{ field: 'id', dir: 'ASC' }],
+      [],
+      5,
+      undefined,
+    )
+    expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
+    if (this.connection.connectionType !== 'tidb') {
+      // tiDB doesn't always update statistics, so this might not
+      // be correct
+      expect(result.totalRows).toBe(6)
+    }
+    const cursor = result.cursor
+=======
+    } else {
+      await this.knex('streamtest').insert(names)
+    }
+    const result = await this.connection.selectTopStream(
+      'streamtest',
+      [{ field: 'id', dir: 'ASC' }],
+      [],
+      5,
+      undefined,
+    )
+    expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(columnsExpected)
+    if (this.connection.connectionType !== 'tidb') {
+      // tiDB doesn't always update statistics, so this might not
+      // be correct
+      expect(result.totalRows).toBe(6)
+    }
+
+    const selectSql = await this.knex('streamtest').select().toQuery()
+
+    const {columns, totalRows} = await this.connection.getColumnsAndTotalRows(selectSql)
+    const columnsActual = columns.map(v => v.columnName.toLowerCase())
+    expect(totalRows).toBe(6)
+    // dataType isn't really a necessary field and some knex inserts where showing undefined, user-defined, and a few others. Truly the column name is the important part 
+    // Also, stick with "toEqual" instead of "toStrictEqual" Save yourself. Save your sooooooul 
+    expect(columnsActual).toEqual(columnsExpected)
+    const cursor = result.cursor
+>>>>>>> community-4
     await cursor.start()
     await cursor.read()
     await cursor.close()

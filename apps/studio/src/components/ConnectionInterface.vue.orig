@@ -242,7 +242,12 @@ import rawLog from 'electron-log'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
+<<<<<<< HEAD
 import { AzureAuthType } from '@/lib/db/types'
+||||||| c9824f28
+=======
+import { AzureAuthType } from '@/lib/db/authentication/azure'
+>>>>>>> community-4
 import UpsellContent from './connection/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -253,7 +258,13 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
+<<<<<<< HEAD
   components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
+||||||| c9824f28
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm },
+=======
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
+>>>>>>> community-4
 
   data() {
     return {
@@ -267,8 +278,16 @@ export default Vue.extend({
       url: null,
       importError: null,
       sidebarShown: true,
+<<<<<<< HEAD
       loadingSSOModalOpened: false,
       version: this.$config.appVersion
+||||||| c9824f28
+      version: platformInfo.appVersion
+=======
+      version: platformInfo.appVersion,
+      loadingSSOModalOpened: false,
+      abortController: null,
+>>>>>>> community-4
     }
   },
   computed: {
@@ -395,6 +414,7 @@ export default Vue.extend({
     },
     edit(config) {
       this.config = _.clone(config)
+      console.log('EDITING: ', this.config)
       this.errors = null
       this.connectionError = null
     },
@@ -430,18 +450,39 @@ export default Vue.extend({
         return
       }
 
+<<<<<<< HEAD
       this.beforeConnect()
+||||||| c9824f28
+=======
+      this._beforeConnect()
+      this.abortController = new AbortController()
+>>>>>>> community-4
       this.connectionError = null
       try {
+<<<<<<< HEAD
         this.connecting = true
         await this.$store.dispatch('connect', this.config)
+||||||| c9824f28
+        await this.$store.dispatch('connect', this.config)
+=======
+        const abortSignal = this.abortController.signal
+        this.connecting = true
+        await this.$store.dispatch('connectWithAbort', { config: this.config, abortSignal })
+>>>>>>> community-4
       } catch (ex) {
         this.connectionError = ex
         this.$noty.error("Error establishing a connection")
         log.error(ex)
+<<<<<<< HEAD
       } finally {
         this.connecting = false
         this.afterConnect()
+||||||| c9824f28
+=======
+      } finally {
+        this.connecting = false
+        this._afterConnect()
+>>>>>>> community-4
       }
     },
     async handleConnect(config) {
@@ -453,12 +494,20 @@ export default Vue.extend({
         return
       }
 
+<<<<<<< HEAD
       this.beforeConnect()
 
+||||||| c9824f28
+=======
+      this._beforeConnect()
+      this.abortController = new AbortController()
+
+>>>>>>> community-4
       try {
         this.testing = true
         this.connectionError = null
-        await this.$store.dispatch('test', this.config)
+        const abortSignal = this.abortController.signal
+        await this.$store.dispatch('testWithAbort', { config: this.config, abortSignal })
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {
@@ -466,7 +515,12 @@ export default Vue.extend({
         this.$noty.error("Error establishing a connection")
       } finally {
         this.testing = false
+<<<<<<< HEAD
         this.afterConnect()
+||||||| c9824f28
+=======
+        this._afterConnect()
+>>>>>>> community-4
       }
     },
     async save() {
@@ -497,6 +551,7 @@ export default Vue.extend({
       } else {
         this.errors = null
       }
+<<<<<<< HEAD
     },
     // Before running connect/test method
     beforeConnect() {
@@ -515,6 +570,28 @@ export default Vue.extend({
     loadingSSOCanceled() {
       this.connection.azureCancelAuth();
     },
+||||||| c9824f28
+    }
+=======
+    },
+    // Before running connect/test method
+    _beforeConnect() {
+      if (
+        this.config.connectionType === 'sqlserver' &&
+        this.config.azureAuthOptions.azureAuthEnabled &&
+        this.config.azureAuthOptions.azureAuthType === AzureAuthType.AccessToken
+      ) {
+        this.loadingSSOModalOpened = true
+      }
+    },
+    // After running connect/test method, success or fail
+    _afterConnect() {
+      this.loadingSSOModalOpened = false
+    },
+    loadingSSOCanceled() {
+      this.abortController.abort()
+    },
+>>>>>>> community-4
   },
 })
 </script>

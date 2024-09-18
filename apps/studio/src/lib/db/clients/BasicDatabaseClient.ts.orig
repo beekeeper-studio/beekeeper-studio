@@ -8,7 +8,12 @@ import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
+<<<<<<< HEAD
 import { IDbConnectionServer } from '../backendTypes';
+||||||| c9824f28
+=======
+import platformInfo from '@/common/platform_info';
+>>>>>>> community-4
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -92,7 +97,13 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // Connection *****************************************************************
+<<<<<<< HEAD
   async connect(_signal?: AbortSignal): Promise<void> {
+||||||| c9824f28
+  async connect(): Promise<void> {
+=======
+  async connect(_abortSignal?: AbortSignal): Promise<void> {
+>>>>>>> community-4
     /* eslint no-param-reassign: 0 */
     if (this.database.connecting) {
       throw new Error('There is already a connection in progress for this database. Aborting this new request.');
@@ -113,6 +124,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
         this.server.config.localHost = this.server.sshTunnel.localHost
         this.server.config.localPort = this.server.sshTunnel.localPort
+
+
+
       }
 
     } catch (err) {
@@ -323,7 +337,6 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
-  /** Sync a database file to remote database. This is a LibSQL specific feature. */
   async syncDatabase(): Promise<void> {
     throw new Error("Not implemented");
   }

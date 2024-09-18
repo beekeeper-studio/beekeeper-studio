@@ -5,11 +5,21 @@ import Client_Libsql from "@libsql/knex-libsql";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import Database from "libsql";
 import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
+<<<<<<< HEAD:apps/studio/src-commercial/backend/lib/db/clients/libsql.ts
 import { IDbConnectionDatabase } from "@/lib/db/types";
 import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+||||||| c9824f28:apps/studio/src/lib/db/clients/libsql.ts
+import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { SqliteCursor } from "./sqlite/SqliteCursor";
+import { createSQLiteKnex } from "./sqlite/utils";
+=======
+import { IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { SqliteCursor } from "./sqlite/SqliteCursor";
+import { createSQLiteKnex } from "./sqlite/utils";
 import { NgQueryResult } from "../models";
+>>>>>>> community-4:apps/studio/src/lib/db/clients/libsql.ts
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);
