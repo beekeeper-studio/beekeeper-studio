@@ -9,6 +9,7 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
+import platformInfo from '@/common/platform_info';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
