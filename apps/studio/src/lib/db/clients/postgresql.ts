@@ -411,7 +411,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
     const supportedFeatures = await this.supportedFeatures();
     const sql = `
-    SELECT i.indexrelid::regclass AS indexname,
+    SELECT (SELECT relname FROM pg_class c WHERE c.oid = i.indexrelid) as indexname,
         k.i AS index_order,
         i.indexrelid as id,
         i.indisunique,

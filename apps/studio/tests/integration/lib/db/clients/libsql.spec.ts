@@ -13,14 +13,15 @@ import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
 
 const timeoutDefault = 5000
 
+// FIXME (azmi): remove arrayMode from utilOpions once it's fixed
 const TEST_VERSIONS = [
-  { mode: "memory", readOnly: false },
-  { mode: "file", readOnly: false },
-  { mode: "file", readOnly: true },
-  { mode: "remote", readOnly: true },
-  { mode: "remote", readOnly: false },
-  { mode: "replica", readOnly: false },
-  { mode: "replica", readOnly: true },
+  { mode: "memory", readOnly: false, arrayMode: true },
+  { mode: "file", readOnly: false, arrayMode: true },
+  { mode: "file", readOnly: true, arrayMode: true },
+  { mode: "remote", readOnly: true, arrayMode: false },
+  { mode: "remote", readOnly: false, arrayMode: false },
+  { mode: "replica", readOnly: false, arrayMode: true },
+  { mode: "replica", readOnly: true, arrayMode: true },
 ] as const;
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
@@ -39,7 +40,10 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     beforeAll(async () => {
       let dbPath: string;
       let knexFilename: string;
-      const utilOptions: Options = { dialect: "sqlite" };
+      const utilOptions: Options = {
+        dialect: "sqlite",
+        supportsArrayMode: options.arrayMode,
+      };
       const config = {
         client: "libsql",
         readOnlyMode: options.readOnly,
