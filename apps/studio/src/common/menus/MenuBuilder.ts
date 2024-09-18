@@ -21,8 +21,6 @@ export default class extends DefaultMenu {
         this.menuItems.minimalModeToggle,
       ]
     }
-    if (!this.platformInfo.isMac)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
     if (this.platformInfo.isDevelopment)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
     return result
@@ -58,8 +56,7 @@ export default class extends DefaultMenu {
     }
 
     const windowMenu: Electron.MenuItemConstructorOptions[] = []
-    console.log("Menu style", this.settings.menuStyle)
-    if ((this.platformInfo.isMac || this.settings.menuStyle.value === 'native') && !this.platformInfo.isWayland) {
+    if (this.platformInfo.isMac) {
       windowMenu.push({
         label: 'Window',
         role: 'windowMenu'

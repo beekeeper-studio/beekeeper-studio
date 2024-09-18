@@ -145,15 +145,6 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
-  switchMenuStyle = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.menuStyle.value = label.toLowerCase()
-    await this.settings.menuStyle.save()
-    getActiveWindows().forEach( window => {
-      window.send(AppEvent.menuStyleChanged)
-    })
-  }
-
   toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.toggleSidebar)
   }

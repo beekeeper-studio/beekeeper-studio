@@ -161,26 +161,6 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       accelerator: "Alt+S",
       click: actionHandler.toggleSidebar,
     },
-    menuStyleToggle: {
-      id: 'menu-style-toggle-menu',
-      label: "Menu Style",
-      submenu: [
-        {
-          id: "ms-native",
-          type: 'radio',
-          label: 'Native',
-          click: actionHandler.switchMenuStyle,
-          checked: settings.menuStyle.value === 'native'
-        },
-        {
-          id: "ms-client",
-          type: 'radio',
-          label: 'Client',
-          click: actionHandler.switchMenuStyle,
-          checked: settings.menuStyle.value === 'client'
-        }
-      ]
-    },
     themeToggle: {
       id: "theme-toggle-menu",
       label: "Theme",
