@@ -132,7 +132,7 @@ We have you covered, read our [guide to contributing in 10 minutes without codin
 Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
 
 ```bash
-# First: Install NodeJS 16, NPM, and Yarn
+# First: Install NodeJS 20, NPM, and Yarn
 # ...
 
 # 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)
