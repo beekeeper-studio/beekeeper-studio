@@ -9,6 +9,15 @@ on:
 jobs:
 
   create_draft_release:
+    strategy:
+      matrix:
+        edition:
+          - name: community
+            owner: beekeeper-studio
+            repo: beekeeper-studio
+          - name: ultimate
+            owner: beekeeper-studio
+            repo: ultimate-releases
     runs-on: "ubuntu-20.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -18,29 +27,39 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
-      - name: Get publish repository
-        id: extract_repo
-        run: |
-          repository=$(jq -r '.repository' apps/studio/package.json)
-          owner_repo=$(echo "$repository" | sed -E 's#(git@github.com:|https://github.com/)([^/]+)/([^/]+).git#\2/\3#')
-          echo "repository=$owner_repo" >> $GITHUB_OUTPUT
+
+        # Requires us to use a github token with more power (to create drafts on another repo)
       - name: Create or check draft release
         id: create_release
         uses: actions/github-script@v7
         env:
           TAG_NAME: ${{ github.ref_name }}
-          RELEASE_REPO: ${{ steps.extract_repo.outputs.repository}}
+          OWNER: ${{matrix.edition.owner}}
+          REPO: ${{matrix.edition.repo}}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const script = require('./.github/scripts/create_draft_release.js')
-            await script({github, context, core}, process.env.RELEASE_REPO, process.env.TAG_NAME)
+            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+  # electron-builder comes built in with channels -- latest, beta, alpha.
+  # To support these for deb, rpm, and snap, we need to extract the channel from the package version
+  identify_channel:
+    runs-on: "ubuntu-20.04"
+    outputs:
+      channel: ${{steps.extract_channel.outputs.channel}}
+      deb_codename: ${{steps.extract_channel.outputs.codename}}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+      - name: Extract Channel from package.json
+        id: extract_channel
+        run: bash ./.github/scripts/extract_channel.sh
 
   release:
-    runs-on: ${{ matrix.os }}
-    needs: create_draft_release
+    runs-on: ${{ matrix.os.name }}
+    needs: [create_draft_release, identify_channel]
     outputs:
-      mac_x86_64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
+      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
@@ -48,67 +67,103 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        edition:
+          - name: community
+            owner: beekeeper-studio
+            repo: beekeeper-studio
+          - name: ultimate
+            owner: beekeeper-studio
+            repo: ultimate-releases
+        os:
+          - name: ubuntu-20.04
+            arch: x64
+            type: linux
+            setup_python: true
+          - name: windows-2019
+            arch: x64
+            type: windows
+            setup_python: true
+          - name: ubuntu-arm64
+            arch: arm64
+            type: linux
+          - name: macos-13
+            arch: x64
+            type: macos
+          - name: macos-14
+            arch: arm64
+            type: macos
         # macos-13 is Intel, macos-14 is arm (obviously)
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-        os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
+        # os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
         # os: [macos-13, macos-14 ]
 
     steps:
-      # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
-      # together to create one cohesive update file.
-      # Note that this works differently to linux, which has a linux-latest.yml and a linux-latest-arm.yml, oy.
-      - name: Check architecture
-        id: mac_arch
-        if: startsWith(matrix.os, 'mac')
-        run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
-
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v3
         with:
           gpg-private-key: ${{ secrets.gpg_key }}
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os.type == 'linux'
 
       - name: Install dotnet
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '6.0.x'
-        if: startsWith(matrix.os, 'windows')
+        if: matrix.os.type == 'linux'
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
-        if: startsWith(matrix.os, 'windows')
+        if: matrix.os.type == 'windows'
 
       - name: Check out Git repository
         uses: actions/checkout@v1
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7
-        if: startsWith(matrix.os, 'ubuntu-20.04')
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
+
+      - name: Update repository based on the edition we're publishing
+        env:
+          OWNER: ${{matrix.edition.owner}}
+          REPO: ${{matrix.edition.repo}}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const githubUrl = `git@github.com/${process.env.OWNER}/${process.env.repo}.git`
+
+            const packageJson = JSON.parse(fs.readFileSync(path, 'utf8'));
+
+            // Update the 'repository' field
+            packageJson.repository = githubUrl;
+
+            // Write the updated package.json back to the file
+            fs.writeFileSync(path, JSON.stringify(packageJson, null, 2) + '\n');
+
 
       - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: startsWith(matrix.os, 'ubuntu-20.04')
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
           vs-version: '16.11.14'
-        if: startsWith(matrix.os, 'windows')
+        if: matrix.os.type == 'windows'
 
       - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: startsWith(matrix.os, 'ubuntu-20.04')
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
 
       - name: "Install python 3.8 (NOT Mac, NOT Ubuntu-arm)"
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
-        if: ${{!startsWith(matrix.os, 'macos') && (matrix.os != 'ubuntu-arm64')}}
+        if: matrix.os.setup_python
 
       - name: Install python 3.8 (mac arm64)
-        if: startsWith(matrix.os, 'macos')
+        if: matrix.os.type == 'macos'
         id: mac_python
         env:
-          ARCH: ${{ steps.mac_arch.outputs.arch}}
+          ARCH: ${{ matrix.os.arch }}
         run: |
           brew install python@3.8
           if [ "$ARCH" = "arm64" ]; then
@@ -126,7 +181,7 @@ jobs:
           fi
 
       - name: Verify Python Version
-        if: startsWith(matrix.os, 'windows')
+        if: matrix.os.type == 'windows'
         run: |
           $PYTHON_VERSION = python --version | Out-String
           Write-Output "Installed Python version: $PYTHON_VERSION"
@@ -136,8 +191,9 @@ jobs:
           }
         shell: powershell
 
+        # Verify on everything except windows and ubuntu arm
       - name: Verify Python Version
-        if: ${{!startsWith(matrix.os, 'windows') && (matrix.os != 'ubuntu-arm64')}}
+        if: matrix.os.type != 'windows' && !(matrix.os.type != 'linux' && matrix.os.arch == 'arm64')
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
@@ -154,9 +210,9 @@ jobs:
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os.type == 'linux'
         with:
-          skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
+          skip_install: ${{matrix.os.arch == 'arm64'}}
 
       # We manage snapcraft ourselves on the arm box
       # and it could have old credentials
@@ -164,7 +220,7 @@ jobs:
       # key defined at the top of this file.
       - name: Snapcraft - logout
         run: "snapcraft logout"
-        if: startsWith(matrix.os, 'ubuntu-arm64')
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
         continue-on-error: true
 
       - name: Clean cache
@@ -184,13 +240,15 @@ jobs:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Remove dist directory
-        if: ${{!startsWith(matrix.os, 'windows')}}
+        if: matrix.os.type == 'windows'
         run: rm -rf ./apps/studio/dist_electron
+
       - name: Remove dist directory windows
-        if: startsWith(matrix.os, 'windows')
+        if: matrix.os.type == 'windows'
         run: Remove-Item dist_electron -Recurse -ErrorAction Ignore
+
       - name: Prepare for app notarization
-        if: startsWith(matrix.os, 'macos')
+        if: matrix.os.type == 'macos'
         # Import Apple API key for app notarization on macOS
         run: |
           mkdir -p ~/private_keys/
@@ -198,7 +256,7 @@ jobs:
 
       - name: Build and Publish (ARM Linux)
         run: cd apps/studio && ./build/arm-publish.sh
-        if: startsWith(matrix.os, 'ubuntu-arm64')
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
         env:
           GH_TOKEN: ${{ secrets.github_token }}
           BT_TOKEN: ${{ secrets.bintray_apikey }}
@@ -206,13 +264,13 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: host
 
       - name: Build and Publish
-        if: ${{!startsWith(matrix.os, 'ubuntu-arm64')}}
+        if: ${{!startsWith(matrix.os.name, 'ubuntu-arm64')}}
         uses: samuelmeuli/action-electron-builder@v1
         with:
           package_root: apps/studio
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
-          github_token: ${{ secrets.github_token }}
+          github_token: ${{ secrets.GH_DEPLOY_TOKEN }}
           skip_build: true
           use_vue_cli: true
           max_attempts: 2
@@ -228,14 +286,14 @@ jobs:
           APPLE_TEAM_ID: "7KK583U8H2"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
+          PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
 
         # this only works becuase the m1 build is faster, so the m1 build deletes
         # it's latest-mac.yml before the intel build finishes, so it doesnt crash
         # and can continue.
       - name: Delete latest-mac.yml
-        if: startsWith(matrix.os, 'mac')
+        if: matrix.os.type == 'macos'
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
@@ -243,13 +301,15 @@ jobs:
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
             const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
-            await script({ github, core, context }, assetsUrl)
+            const channel = '${{needs.identify_channel.outputs.channel}}'
+            await script({ github, core, context }, assetsUrl, channel)
 
       - name: Publish DEB to S3
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os.type == 'linux'
         run: |
           deb-s3 upload apps/studio/dist_electron/*.deb \
             --bucket=deb.beekeeperstudio.io \
+            --codename=${{needs.identify_channel.outputs.deb_codename}} \
             --lock \
             --sign=${{steps.import_gpg.outputs.keyid}} \
             --preserve-versions
@@ -258,7 +318,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Invalidate cloudfront cache
-        if: startsWith(matrix.os, 'ubuntu')
+        if: startsWith(matrix.os.name, 'ubuntu')
         run: |
           aws cloudfront create-invalidation \
           --distribution "$DISTRIBUTION" \
@@ -269,31 +329,32 @@ jobs:
           DISTRIBUTION: ${{secrets.cloudfront_distribution}}
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Cleanup artifacts
-        if: ${{!startsWith(matrix.os, 'windows')}}
+        if: ${{!startsWith(matrix.os.name, 'windows')}}
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml)"
       - name: Cleanup artifacts Win
-        if: startsWith(matrix.os, 'windows')
+        if: startsWith(matrix.os.name, 'windows')
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
         continue-on-error: true
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os.name }}
           path: apps/studio/dist_electron
 
       - name: Set yaml files
         id: set_yaml
-        if: startsWith(matrix.os, 'mac')
+        if: matrix.os.type == 'macos'
         uses: actions/github-script@v7
         env:
-          ARCH: ${{ steps.mac_arch.outputs.arch }}
+          ARCH: ${{ matrix.os.arch }}
+          CHANNEL: ${{needs.identify_channel.outputs.channel}}
         with:
           script: |
             const fs = require('fs')
-            const content = fs.readFileSync('apps/studio/dist_electron/latest-mac.yml', 'utf8')
+            const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.CHANNEL}-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
   post-release:
-    needs: [release, create_draft_release]
+    needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v3
@@ -303,7 +364,7 @@ jobs:
       - name: Merge yml files
         uses: actions/github-script@v7
         env:
-          INTEL_YML: ${{ needs.release.outputs.mac_x86_64_yml }}
+          INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
           ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -336,13 +397,13 @@ jobs:
             };
 
             const merge = mergeFiles();
-            fs.writeFileSync('latest-mac.yml', merge, 'utf8');
-      - name: Upload fixed latest-mac.yml
+            fs.writeFileSync('mac.yml', merge, 'utf8');
+      - name: Upload fixed mac yml
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
         with:
           upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
-          asset_path: './latest-mac.yml'
-          asset_name: 'latest-mac.yml'
+          asset_path: "./mac.yml"
+          asset_name: "${{needs.identify_channel.outputs.channel}}-mac.yml"
           asset_content_type: 'application/octet-stream'
