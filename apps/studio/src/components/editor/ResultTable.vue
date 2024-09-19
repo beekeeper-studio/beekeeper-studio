@@ -65,7 +65,7 @@
       },
     },
     computed: {
-      ...mapState(['usedConfig', 'defaultSchema', 'connectionType']),
+      ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
       ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense'}),
       keymap() {
         const result = {}
