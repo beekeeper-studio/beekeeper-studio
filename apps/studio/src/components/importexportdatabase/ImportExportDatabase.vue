@@ -236,8 +236,8 @@
       },
     },
     async mounted() {
-      this.$store.dispatch('multiTableExports/reset')
-      this.$store.commit('exports/removeInactive')
+      await this.$store.dispatch('multiTableExports/reset')
+      await this.$store.dispatch('exports/removeInactive')
     }
   }
 </script>
