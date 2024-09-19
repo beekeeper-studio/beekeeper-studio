@@ -178,21 +178,20 @@
       }
     },
     methods: {
-      ...mapMutations({ addExport: 'exports/addExport' }),
+      ...mapMutations({ addExportToStore: 'exports/addExport' }),
       showFiles() {
         this.$native.files.open(this.tableOptions.filePath)
       },
       async startExport() {
         this.tab.isRunning = true;
-        this.$util.addListener()
-        const exporters = this.listTables.map(async (exportTable) => {
+        const exporters = await Promise.all(this.listTables.map(async (exportTable) => {
           await this.$store.dispatch('updateTableColumns', exportTable.table)
           const exporterId = await this.addExport(exportTable)
           this.$util.addListener(`onExportProgress/${exporterId}`, (progress) => {
             this.$store.commit('exports/updateProgressFor', { id: exporterId, progress });
           })
           return exporterId;
-        })
+        }))
 
         this.exportSteps[2].stepperProps.exportsStarted = true
         this.$util.send('export/batch', { ids: exporters }).then(() => {
@@ -205,17 +204,20 @@
       },
       async addExport(tableToExport) {
         const tableOptions = this.tableOptions;
-        const exporter = await this.$util.send('export/add', {
-          filePath: `${tableOptions.filePath}/${tableToExport.name}`,
-          table: tableToExport.table,
-          query: '',
-          queryName: '',
-          filters: tableOptions.filters || [],
-          options: tableOptions.options,
-          outputOptions: tableOptions.outputOptions,
-          managerNotify: false
+        const exporter = await this.$util.send('export/add', { 
+          options: {
+            filePath: `${tableOptions.filePath}/${tableToExport.name}`,
+            table: tableToExport.table,
+            query: '',
+            queryName: '',
+            filters: tableOptions.filters || [],
+            options: tableOptions.options,
+            outputOptions: tableOptions.outputOptions,
+            managerNotify: false,
+            exporter: tableOptions.exporter
+          }
         })
-        this.addExport(exporter);
+        this.addExportToStore(exporter);
         return exporter.id;
       },
       close() {
