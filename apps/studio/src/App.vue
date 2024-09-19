@@ -110,7 +110,6 @@ export default Vue.extend({
   async beforeDestroy() {
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
-    await this.$store.commit('userEnums/setWatcher', null)
   },
   async mounted() {
     await this.$store.dispatch('fetchUsername')
