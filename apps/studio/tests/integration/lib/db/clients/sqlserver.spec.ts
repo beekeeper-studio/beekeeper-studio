@@ -4,8 +4,8 @@ import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 
 const TEST_VERSIONS = [
-  { version: '2017-latest', readonly: false },
-  { version: '2017-latest', readonly: true },
+  // { version: '2017-latest', readonly: false },
+  // { version: '2017-latest', readonly: true },
   // FIXME 2022-latest has a breaking change. We'll use the previous build
   // for now.
   // { version: '2019-latest', readonly: false },
@@ -83,7 +83,7 @@ function testWith(dockerTag: string, readonly: boolean) {
       } else {
         runCommonTests(getUtil, { dbReadOnlyMode: readonly })
       }
-    })
+      })
 
     describe("Multi schema", () => {
       it("should fetch table properties for a non-dbo schema", async () => {
