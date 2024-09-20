@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "master"
+      - "community-4"
     paths-ignore:
       - 'apps/sqltools/**'
 
