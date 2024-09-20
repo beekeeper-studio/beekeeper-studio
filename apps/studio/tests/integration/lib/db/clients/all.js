@@ -61,6 +61,11 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().listTableTests()
     })
 
+    test("list indexes should work", async () => {
+      if (getUtil().data.disabledFeatures?.createIndex) return
+      await getUtil().listIndexTests()
+    })
+
     test("column tests", async() => {
       await getUtil().tableColumnsTests()
     })
@@ -103,7 +108,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("query tests", async () => {
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
-      } else if (getUtil().dbType !== 'libsql'){
+      } else {
         await getUtil().queryTests()
       }
     })

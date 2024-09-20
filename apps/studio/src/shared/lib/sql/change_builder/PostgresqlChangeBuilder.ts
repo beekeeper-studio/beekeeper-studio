@@ -1,4 +1,4 @@
-import { Dialect, PartitionExpressionChange, PartitionItem } from "@shared/lib/dialects/models";
+import { Dialect, DropIndexSpec, PartitionExpressionChange, PartitionItem } from "@shared/lib/dialects/models";
 import { PostgresData } from "@shared/lib/dialects/postgresql";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
 
@@ -56,5 +56,17 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   alterPartitions(alterations: PartitionExpressionChange[]) {
     if (!alterations?.length) return null;
     return alterations.map((alter) => this.alterPartition(alter)).join(';');
+  }
+
+  dropIndexes(drops: DropIndexSpec[]): string | null {
+    if (!drops?.length) return null
+
+    const names = drops.map((spec) => {
+      if (this.schema) {
+        return `${this.dialectData.wrapIdentifier(this.schema)}.${this.dialectData.wrapIdentifier(spec.name)}`
+      }
+      return this.dialectData.wrapIdentifier(spec.name)
+    }).join(",")
+    return names.length ? `DROP INDEX ${names}` : null
   }
 }
