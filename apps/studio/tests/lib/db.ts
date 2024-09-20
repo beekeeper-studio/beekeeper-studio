@@ -74,6 +74,7 @@ export interface Options {
   /** Skip creation of table with generated columns and the tests */
   skipGeneratedColumns?: boolean
   skipCreateDatabase?: boolean
+  supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
   knex?: Knex
 }
@@ -97,6 +98,10 @@ export class DBTestUtil {
 
   get expectedTables() {
     return this.extraTables + 8
+  }
+
+  get supportsArrayMode() {
+    return this.options.supportsArrayMode == undefined || this.options.supportsArrayMode
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options) {
@@ -387,6 +392,11 @@ export class DBTestUtil {
     expect(columns.length).toBe(7)
   }
 
+  async listIndexTests() {
+    const indexes = await this.connection.listTableIndexes("has_index", this.defaultSchema)
+    expect(indexes.find((i) => i.name.toLowerCase() === 'has_index_foo_idx')).toBeDefined()
+  }
+
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
@@ -539,7 +549,7 @@ export class DBTestUtil {
     expect(simpleResult.find((c) => c.columnName?.toLowerCase() === 'family_name')).toBeTruthy()
 
 
-    // only databases t can actually change things past this point.
+    // only databases that can actually change things past this point.
     if (this.data.disabledFeatures?.alter?.alterColumn) return
 
     await this.knex.schema.dropTableIfExists("alter_test")
@@ -803,20 +813,27 @@ export class DBTestUtil {
     try {
       const result = await q.execute()
 
-      expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
+      // FIXME (azmi): we need this until array mode is fixed in libsql
+      if (this.supportsArrayMode) {
+        expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
+      } else {
+        expect(result[0].rows).toMatchObject([{ c0: "b" }])
+      }
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
+      if (this.supportsArrayMode) {
+        let expected = [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}]
 
-      let expected = [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}]
+        // FYI node-oracledb 5+ renames duplicate columns for reasons I can't explain,
+        // so we need to do a special check here
+        if (this.dbType === 'oracle') {
+          expected = [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }]
+        }
 
-      // FYI node-oracledb 5+ renames duplicate columns for reasons I can't explain,
-      // so we need to do a special check here
-      if (this.dbType === 'oracle') {
-        expected = [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }]
+        expect(fields).toMatchObject(expected)
+      } else {
+        expect(fields).toMatchObject([{id: 'c0', name: 'total'}])
       }
-
-       expect(fields).toMatchObject(expected)
-
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex

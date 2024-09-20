@@ -395,7 +395,6 @@ export default Vue.extend({
     },
     edit(config) {
       this.config = _.clone(config)
-      console.log('EDITING: ', this.config)
       this.errors = null
       this.connectionError = null
     },
