@@ -6,7 +6,14 @@ function dec28bits(num: any): string {
   return ("00000000" + num.toString(2)).slice(-8);
 }
 
+// https://stackoverflow.com/a/40031979/10012118
+function buf2hex(buffer: ArrayBuffer) {
+  return [...new Uint8Array(buffer)]
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
+}
 
+// Tabulator Mutator
 export const Mutators = {
 
   resolveTabulatorMutator(dataType?: string, dialect?: Dialect): (v: any) => JsonFriendly {
@@ -49,6 +56,7 @@ export const Mutators = {
   genericMutator(value: any, preserveComplex = false): JsonFriendly {
     const mutate = Mutators.genericMutator
     if (_.isBuffer(value)) return value.toString('hex')
+    if (_.isArrayBuffer(value)) return buf2hex(value)
     if (_.isDate(value)) return value.toISOString()
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
@@ -101,4 +109,24 @@ export const Mutators = {
     if (_.isString(value) || _.isNull(value)) return value
     return JSON.stringify(value)
   },
+}
+
+// Tabulator Accessor
+export const Accessors = {
+  resolveTabulatorAccessor(dataType?: string, dialect?: Dialect) {
+    const mutator = this.resolveDataAccessor(dataType, dialect)
+    return (v: any) => mutator(v)
+  },
+
+  resolveDataAccessor(dataType?: string, dialect?: Dialect): (v: any) => any {
+    dataType = dataType?.toLowerCase() || ''
+    if (dataType.match(/binary|varbinary|bytea|blob/i)) {
+      return (v) => this.binaryAccessor(v, dialect)
+    }
+    return (v) => v
+  },
+
+  binaryAccessor(value: any, _dialect?: Dialect) {
+    return Buffer.from(value, 'hex')
+  }
 }
