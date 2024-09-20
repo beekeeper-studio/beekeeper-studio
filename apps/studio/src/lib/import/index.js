@@ -18,31 +18,11 @@ export default class Import {
   setOptions(opt) {
     this.options = opt
     this.table = opt.table
+    this.importScriptOptions.userImportOptions = opt
   }
   
-  async buildSQL() {
-    await this.read(this.getImporterOptions({ isPreview: false }))
-    return this.connection.getImportSQL(this.sqlInserts, this.options.truncateTable)
-  }
-
   async importFile() {
-    try {
-      this.importScriptOptions.clientExtras = await this.connection.importStepZero(this.table)
-      await this.connection.importBeginCommand(this.table, this.importScriptOptions)
-      if (this.options.truncateTable) {
-        await this.connection.importTruncateCommand(this.table, this.importScriptOptions)
-      }
-      
-      await this.read(this.getImporterOptions({ isPreview: false }))
-      
-      await this.connection.importCommitCommand(this.table, this.importScriptOptions)
-    } catch (err) {
-      this.logger().error('error importing data', err)
-      await this.connection.importRollbackCommand(this.table, this.importScriptOptions)
-      throw new Error(err)
-    } finally {
-      await this.connection.importFinalCommand(this.table, this.importScriptOptions)
-    }
+    return await this.connection.importFile()
   }
 
   /**
@@ -151,11 +131,11 @@ export default class Import {
     return opt
   }
 
-  read() {
+  async read() {
     throw new Error("Method 'read()' must be implemented.")
   }
 
-  getPreview() {
+  async getPreview() {
     throw new Error("Method 'getPreview()' must be implemented.")
   }
 
@@ -172,7 +152,7 @@ export default class Import {
     throw new Error("Method 'validateFile()' must be implemented")
   }
 
-  getSheets() {
+  async getSheets() {
     throw new Error("Method 'getSheets()' must be implemented but is Excel only")
   }
 }

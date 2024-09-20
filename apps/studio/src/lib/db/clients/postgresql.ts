@@ -1041,6 +1041,39 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
+  async importFile(
+    table: TableOrView,
+    importScriptOptions: ImportFuncOptions,
+    readStream: (b: {[key: string]: any}) => Promise<any>
+  ) {
+    const {
+      executeOptions,
+      importerSettings,
+      importOptions
+    } = importScriptOptions
+
+    return await this.runWithConnection(async (connection) => {
+      executeOptions.connection = connection
+      try {
+        importScriptOptions.clientExtras = await this.importStepZero(table)
+        await this.importBeginCommand(table, importScriptOptions)
+        if (importOptions.truncateTable) {
+          await this.importTruncateCommand(table, importScriptOptions)
+        }
+        
+        await readStream(importerSettings)
+        
+        await this.importCommitCommand(table, importScriptOptions)
+      } catch (err) {
+        log.error('error importing data', err)
+        await this.importRollbackCommand(table, importScriptOptions)
+        throw new Error(err)
+      } finally {
+        await this.importFinalCommand(table, importScriptOptions)
+      }
+    })
+  }
+
   async importBeginCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('BEGIN;', importOptions.executeOptions)
   }
