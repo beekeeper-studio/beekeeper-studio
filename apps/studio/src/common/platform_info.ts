@@ -67,12 +67,8 @@ if (isRenderer()) {
   }
 
   const appVersion = testMode ? 'test-mode' : e?.app.getVersion() ?? p.env.version
-  const parsedAppVersion = appVersion.split('.').reduce((acc, v, i) => {
-    if (i === 0) return { ...acc, major: Number(v) }
-    if (i === 1) return { ...acc, minor: Number(v) }
-    if (i === 2) return { ...acc, patch: Number(v) }
-    return acc
-  }, {})
+  const [major, minor, patch] = appVersion.split('.')
+  const parsedAppVersion = { major, minor, patch }
 
   platformInfo = {
     isWindows, isMac, isArm, oracleSupported,
