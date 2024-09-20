@@ -8,6 +8,10 @@ export interface IDevHandlers {
 
 export const DevHandlers: IDevHandlers = {
   "dev/switchLicenseState": async function ({ type }: { type: DevLicenseState; sId: string; }) {
+    if (!platformInfo.isDevelopment) {
+      throw new Error("Not allowed");
+    }
+
     const yesterday = new Date(new Date().setDate(new Date().getDate() - 1));
     const nextMonth = new Date(new Date().setMonth(new Date().getMonth() + 1));
     switch (type) {
