@@ -2,16 +2,17 @@
   <portal to="modals">
     <modal class="vue-dialog beekeeper-modal" :name="modalName" @before-close="beforeClose">
       <div class="dialog-content">
-        <div class="dialog-c-title">[TRIAL MODAL]</div>
+        <div class="dialog-c-title">Start Your Ultimate Edition Trial?</div>
         <div>
-          [TRIAL STARTS. Lorem ipsum dolor sit amet, consectetur adipiscing
-          elit, sed do eiusmod tempor incididunt ut labore et dolore magna
-          aliqua.]
+          You’re about to unlock the full features of the Ultimate Edition! Would you like to start a free trial and experience everything we offer? Or, you can continue using the Community Edition with access to free features only.
         </div>
       </div>
       <div class="vue-dialog-buttons">
+        <button class="btn btn-flat" type="button" @click.prevent="startFreeTrial">
+          Start Free Trial
+        </button>
         <button class="btn btn-flat" type="button" @click.prevent="close">
-          Close
+          Continue with Community Edition
         </button>
       </div>
     </modal>
@@ -25,18 +26,17 @@ export default {
   },
   methods: {
     beforeClose() {
-      this.$util.send('appdb/setting/set', { key: 'openBeginTrialModal', value: false });
+      this.$store.dispatch('toggleShowBeginTrialModal', false)
     },
     close() {
       this.$modal.hide(this.modalName);
     },
-    async isOpeningModalAllowed() {
-      const openBeginTrialModal = await this.$util.send('appdb/setting/get', { key: 'openBeginTrialModal' });
-      return openBeginTrialModal.value
+    startFreeTrial() {
+      this.close();
     },
   },
   async mounted() {
-    if (!await this.isOpeningModalAllowed()) return;
+    if (!this.$store.getters.showBeginTrialModal) return;
     await this.$nextTick();
     this.$modal.show(this.modalName);
   },

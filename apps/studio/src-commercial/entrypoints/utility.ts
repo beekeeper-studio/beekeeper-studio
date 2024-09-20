@@ -13,6 +13,8 @@ import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
+import { DevHandlers } from '@/handlers/devHandlers';
+import { LicenseHandlers } from '@/handlers/licenseHandlers';
 
 const log = rawLog.scope('UtilityProcess');
 
@@ -35,7 +37,9 @@ export let handlers: Handlers = {
   ...BackupHandlers,
   ...FileHandlers,
   ...EnumHandlers,
-  ...TempHandlers
+  ...TempHandlers,
+  ...LicenseHandlers,
+  ...(platformInfo.isDevelopment && DevHandlers),
 };
 
 process.parentPort.on('message', async ({ data, ports }) => {

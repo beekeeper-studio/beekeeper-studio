@@ -247,6 +247,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: "license-state",
       label: "DEV Switch License State",
       submenu: [
+        { label: ">>> BEWARE: ALL LICENSES WILL BE LOST! <<<" },
         {
           label: "First time install, no license, no trial.",
           click: actionHandler.switchLicenseState,
@@ -264,11 +265,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: actionHandler.switchLicenseState,
         },
         {
-          label: "On an expired, lifetime license that still covers this version",
+          label: "On an expired, lifetime license, that covers this version",
           click: actionHandler.switchLicenseState,
         },
         {
-          label: "On an expire, lifetime license, that covers an earlier version",
+          label: "On an expired, lifetime license, that covers an earlier version",
           click: actionHandler.switchLicenseState,
         },
       ],

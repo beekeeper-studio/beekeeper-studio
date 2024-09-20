@@ -69,6 +69,8 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
+  showBeginTrialModal: boolean
+  showExpiredLicenseModal: boolean
 }
 
 Vue.use(Vuex)
@@ -122,6 +124,8 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
+    showBeginTrialModal: SmartLocalStorage.getBool('showBeginTrialModal', true),
+    showExpiredLicenseModal: SmartLocalStorage.getBool('showExpiredLicenseModal', true),
   },
 
   getters: {
@@ -223,7 +227,13 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
-    }
+    },
+    showBeginTrialModal(state, _getters, _rootState, rootGetters) {
+      return state.showBeginTrialModal && rootGetters['licenses/noLicensesFound']
+    },
+    showExpiredLicenseModal(state) {
+      return state.showExpiredLicenseModal
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -357,6 +367,12 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
+    },
+    showBeginTrialModal(state, value: boolean) {
+      state.showBeginTrialModal = value
+    },
+    showExpiredLicenseModal(state, value: boolean) {
+      state.showExpiredLicenseModal = value
     },
   },
   actions: {
@@ -569,13 +585,27 @@ const store = new Vuex.Store<State>({
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')
     },
-    async toggleExpandFKDetailsByDefault(context, value?: boolean) {
+    toggleFlag(context, { flag, value }: { flag: string, value?: boolean }) {
       if (typeof value === 'undefined') {
-        value = !context.state.expandFKDetailsByDefault
+        value = !context.state[flag]
       }
-      SmartLocalStorage.setBool('expandFKDetailsByDefault', value)
-      context.commit('expandFKDetailsByDefault', value)
-    }
+      SmartLocalStorage.setBool(flag, value)
+      context.commit(flag, value)
+      return value
+    },
+    toggleExpandFKDetailsByDefault(context, value?: boolean) {
+      context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    toggleShowBeginTrialModal(context, value?: boolean) {
+      context.dispatch('toggleFlag', { flag: 'showBeginTrialModal', value })
+    },
+    toggleShowExpiredLicenseModal(context, value?: boolean) {
+      context.dispatch('toggleFlag', { flag: 'showExpiredLicenseModal', value })
+    },
+    resetLicenseModals(context) {
+      context.dispatch('toggleShowBeginTrialModal', true)
+      context.dispatch('toggleShowExpiredLicenseModal', true)
+    },
   },
   plugins: []
 })

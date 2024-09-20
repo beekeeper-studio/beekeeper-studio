@@ -30,7 +30,7 @@ export interface TransportLicenseKey extends Transport {
   supportUntil: Date,
   licenseType: 'TrialLicense' | 'PersonalLicense' | 'BusinessLicense',
   active: boolean
-  maxAllowedAppVersion: { major: number, minor: number, patch: number } | null
+  maxAllowedAppRelease: { tagName: string } | null
 }
 
 export interface TransportPinnedConn extends Transport {

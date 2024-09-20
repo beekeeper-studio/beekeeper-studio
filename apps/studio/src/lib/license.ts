@@ -51,8 +51,8 @@ export function getLicenseStatus(options: {
   }
 
   // From here, we know that the license is still valid.
-  // Is maxAllowedAppVersion nullish?
-  if (_.isNil(currentLicense.maxAllowedAppVersion)) {
+  // Is maxAllowedAppRelease nullish?
+  if (_.isNil(currentLicense.maxAllowedAppRelease)) {
     return {
       license: currentLicense,
       edition: "ultimate",
@@ -64,7 +64,7 @@ export function getLicenseStatus(options: {
   if (
     isVersionLessThanOrEqual(
       currentVersion,
-      currentLicense.maxAllowedAppVersion
+      parseTagVersion(currentLicense.maxAllowedAppRelease.tagName)
     )
   ) {
     return {

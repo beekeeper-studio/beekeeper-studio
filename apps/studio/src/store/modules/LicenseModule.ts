@@ -7,7 +7,8 @@ import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { CloudClient } from '@/lib/cloud/CloudClient';
 import { TransportLicenseKey } from '@/common/transport';
 import Vue from "vue"
-import { getLicenseStatus, parseTagVersion } from '@/lib/license';
+import { getLicenseStatus } from '@/lib/license';
+import { SmartLocalStorage } from '@/common/LocalStorage';
 
 interface State {
   initialized: boolean
@@ -53,6 +54,9 @@ export const LicenseModule: Module<State, RootState>  = {
       const now = state.now.getTime()
       return Math.round((validUntil - now) / oneDay);
     },
+    noLicensesFound(state) {
+      return state.licenses.length === 0
+    },
   },
 
   mutations: {
@@ -74,6 +78,7 @@ export const LicenseModule: Module<State, RootState>  = {
   },
   actions: {
     async init(context) {
+      await Vue.prototype.$util.addListener('licenseStatusSwitched', () => {})
       const licenses = await Vue.prototype.$util.send('appdb/license/find');
       context.commit('set', licenses)
       await context.dispatch('updateAll')
@@ -83,20 +88,19 @@ export const LicenseModule: Module<State, RootState>  = {
     async add(context, { email, key }) {
 
       const result = await CloudClient.getLicense(window.platformInfo.cloudUrl, email, key)
-      const tagName = result.maxAllowedAppRelease.tagName
       // if we got here, license is good.
       let license = {} as TransportLicenseKey
       license.key = key
       license.email = email
       license.validUntil = new Date(result.validUntil)
       license.supportUntil = new Date(result.supportUntil)
-      license.maxAllowedAppVersion = tagName ? parseTagVersion(tagName) : null
+      license.maxAllowedAppRelease = result.maxAllowedAppRelease
       license.licenseType = result.licenseType
       const others = context.getters.realLicenses
       license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
       await Vue.prototype.$util.send('appdb/license/remove', { obj: others });
       // allow showing expired license modal next time
-      await Vue.prototype.$util.send('appdb/setting/set', { key: 'openExpiredLicenseModal', value: true });
+      SmartLocalStorage.setBool('showExpiredLicenseModal', true)
       context.commit('add', license)
       context.commit('remove', others)
     },
@@ -104,10 +108,9 @@ export const LicenseModule: Module<State, RootState>  = {
     async update(_context, license: TransportLicenseKey) {
       try {
         const data = await CloudClient.getLicense(window.platformInfo.cloudUrl, license.email, license.key)
-        const tagName = data.maxAllowedAppRelease.tagName
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
-        license.maxAllowedAppVersion = tagName ? parseTagVersion(tagName) : null
+        license.maxAllowedAppRelease = data.maxAllowedAppRelease
         license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
       } catch (error) {
         if (error instanceof CloudError) {

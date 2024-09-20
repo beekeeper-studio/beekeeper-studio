@@ -6,7 +6,5 @@ export interface ILicenseKey {
   supportUntil: string
   licenseType: 'PersonalLicense' | 'BusinessLicense'
   createdAt: string
-  maxAllowedAppRelease: {
-    tagName: string
-  } | null
+  maxAllowedAppRelease: { tagName: string } | null
 }

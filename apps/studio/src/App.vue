@@ -36,6 +36,7 @@
     <util-died-modal />
     <template v-if="$store.state.licenses.initialized">
       <trial-begin-modal />
+      <trial-expired-modal />
       <license-expired-modal />
     </template>
   </div>
@@ -65,8 +66,9 @@ import Noty from 'noty';
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
-import TrialBeginModal from '@/components/TrialBeginModal.vue'
-import LicenseExpiredModal from '@/components/LicenseExpiredModal.vue'
+import TrialBeginModal from '@/components/license/TrialBeginModal.vue'
+import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
+import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 
 import rawLog from 'electron-log'
 
@@ -78,7 +80,7 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, TrialBeginModal, LicenseExpiredModal,
+    EnterLicenseModal, TrialBeginModal, TrialExpiredModal, LicenseExpiredModal,
   },
   data() {
     return {
@@ -178,9 +180,6 @@ export default Vue.extend({
         const n = new Noty(options)
         n.show()
       }
-    },
-    licenseModal() {
-      this.$root.$emit(AppEvent.enterLicense)
     },
     databaseSelected(_db) {
       // TODO: do something here if needed

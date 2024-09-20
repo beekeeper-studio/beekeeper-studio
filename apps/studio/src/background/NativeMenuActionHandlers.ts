@@ -7,7 +7,6 @@ import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
-import Vue from 'vue';
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 

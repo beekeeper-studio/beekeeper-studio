@@ -60,7 +60,7 @@ describe("License", () => {
         licenses: [
           {
             validUntil: new Date("17-Sep-2024"),
-            maxAllowedAppVersion: null,
+            maxAllowedAppRelease: null,
           } as TransportLicenseKey,
         ],
         currentDate: new Date("16-Sep-2024"),
@@ -76,7 +76,21 @@ describe("License", () => {
         licenses: [
           {
             validUntil: new Date("17-Sep-2024"),
-            maxAllowedAppVersion: v`1.0.0`,
+            maxAllowedAppRelease: { tagName: 'v1.0.1' },
+          } as TransportLicenseKey,
+        ],
+        currentDate: new Date("16-Sep-2024"),
+        currentVersion: v`1.0.1`,
+      }).toEqual({
+        edition: "ultimate",
+        condition: "App version allowed",
+      });
+
+      expectStatus({
+        licenses: [
+          {
+            validUntil: new Date("17-Sep-2024"),
+            maxAllowedAppRelease: { tagName: 'v1.0.1' },
           } as TransportLicenseKey,
         ],
         currentDate: new Date("16-Sep-2024"),
@@ -92,7 +106,7 @@ describe("License", () => {
         licenses: [
           {
             validUntil: new Date("17-Sep-2024"),
-            maxAllowedAppVersion: v`1.0.0`,
+            maxAllowedAppRelease: { tagName: 'v1.0.0' },
           } as TransportLicenseKey,
         ],
         currentDate: new Date("16-Sep-2024"),
