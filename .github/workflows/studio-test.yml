@@ -7,6 +7,8 @@ on:
     branches:
       - main
       - master
+      - community-4
+      - ultimate-4
     paths-ignore:
       - apps/sqltools/**
   pull_request:
