@@ -1,6 +1,6 @@
 import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
-import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger } from "../models";
+import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
@@ -24,6 +24,61 @@ export class CockroachClient extends PostgresClient {
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     return [];
+  }
+
+  async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+    // if you provide table, you have to provide schema
+    const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : "";
+    const params = table ? [schema, table] : [];
+    if (table && !schema) {
+      throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`);
+    }
+
+    const sql = `
+      SELECT
+        table_schema,
+        table_name,
+        column_name,
+        is_nullable,
+        ${this.version.number > 120_000 ? "is_generated," : ""}
+        ordinal_position,
+        column_default,
+        CASE
+          WHEN character_maximum_length is not null  and udt_name != 'text'
+            THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
+          WHEN numeric_precision is not null and numeric_scale is not null
+            THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
+          WHEN numeric_precision is not null and numeric_scale is null
+            THEN udt_name || '(' || numeric_precision::varchar(255) || ')'
+          WHEN datetime_precision is not null AND udt_name != 'date' THEN
+            udt_name || '(' || datetime_precision::varchar(255) || ')'
+          ELSE udt_name
+        END as data_type,
+        CASE
+          WHEN data_type = 'ARRAY' THEN 'YES'
+          ELSE 'NO'
+        END as is_array,
+        column_comment
+      FROM information_schema.columns
+      ${clause}
+      ORDER BY table_schema, table_name, ordinal_position
+    `;
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    return data.rows.map((row: any) => ({
+      schemaName: row.table_schema,
+      tableName: row.table_name,
+      columnName: row.column_name,
+      dataType: row.data_type,
+      nullable: row.is_nullable === "YES",
+      defaultValue: row.column_default,
+      ordinalPosition: Number(row.ordinal_position),
+      hasDefault: !_.isNil(row.column_default),
+      generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
+      array: row.is_array === "YES",
+      comment: row.column_comment || null,
+    }));
   }
 
   async listTablePartitions(_table: string, _schema: string): Promise<TablePartition[]> {
