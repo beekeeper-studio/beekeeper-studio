@@ -54,6 +54,16 @@ jobs:
         # os: [macos-13, macos-14 ]
 
     steps:
+      - name: Setup environment
+        # Ubuntu 18.04 has a GLib version too old for nodejs20 or later,
+        # so, in order to do the tests, we must allow to use an older version.
+        # https://github.com/actions/checkout/issues/1590
+        # In that thread, Flamefire proposed this same solution:
+        # https://github.com/boostorg/nowide/commit/d4aa719f21149de8960247403435e9b794a01255
+        if: startsWith(matrix.os, 'ubuntu-arm64')
+        run: |
+          echo "GHA_USE_NODE_20=false" >> $GITHUB_ENV
+          echo "ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true" >> $GITHUB_ENV
       # Mac nonsense -- we have to do separate builds for both architectures, then MERGE the latest-mac.yml files
       # together to create one cohesive update file.
       # Note that this works differently to linux, which has a linux-latest.yml and a linux-latest-arm.yml, oy.
