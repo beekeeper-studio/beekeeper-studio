@@ -426,7 +426,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -449,7 +449,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
 

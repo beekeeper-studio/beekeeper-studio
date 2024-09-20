@@ -32,6 +32,6 @@ export interface IPlatformInfo {
   appVersion: string,
   cloudUrl: string,
   locale: string,
-  isCommunity: boolean,
-  isUltimate: boolean
+  // isCommunity: boolean,
+  // isUltimate: boolean
 };
