@@ -6,11 +6,13 @@ export default class extends Import {
     super(filePath, options, connection, table)
   }
 
-  read(option) {
+  read(option, fileToImport = null) {
     // complete or error will tell the "importFile" function if it should commit or rollback
+    const fileName = fileToImport ?? this.fileName
+
     try {
       return new Promise((complete, error) => {
-        Papa.parse(fs.createReadStream(this.fileName), {...option, complete, error})
+        Papa.parse(fs.createReadStream(fileName), {...option, complete, error})
       })
     } catch (err) {
       throw new Error(err)
@@ -21,14 +23,14 @@ export default class extends Import {
     return await this.read(this.getImporterOptions({ isPreview: true }))
   }
 
-  getImporterOptions({isPreview = false, isValidate = false}) {
+  getImporterOptions({ isPreview = false, isValidate = false, connection = null }) {
     const options = {
       delimiter: this.options.columnDelimeter,
       quoteChar: this.options.quoteCharacter,
       escapeChar: this.options.escapeCharacter,
       newline: this.options.newlineCharacter,
       header: this.options.useHeaders,
-      skipEmptyLines: true,
+      skipEmptyLines: true
     }
 
     if (isPreview) {
@@ -59,9 +61,13 @@ export default class extends Import {
         try {
           const updatedImportScriptOptions = {
             ...this.importScriptOptions,
-            executeOptions: { multiple: true }
+            executeOptions: {
+              multiple: true,
+              connection
+            }
           }
           const importSQL = await this.connection.getImportSQL(importData)
+          console.log('got importSQL')
           await this.connection.importLineReadCommand(this.table, importSQL, updatedImportScriptOptions)
         } catch (err) {
           throw new Error(err)

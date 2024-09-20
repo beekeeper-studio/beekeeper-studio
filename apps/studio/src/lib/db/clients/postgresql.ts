@@ -1056,12 +1056,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async importFile(
     table: TableOrView,
     importScriptOptions: ImportFuncOptions,
-    readStream: (b: {[key: string]: any}) => Promise<any>
+    readStream: (b: {[key: string]: any}, c?: string) => Promise<any>
   ) {
     const {
       executeOptions,
-      importerSettings,
-      importOptions
+      importerOptions,
+      storeValues
     } = importScriptOptions
 
     return await this.runWithConnection(async (connection) => {
@@ -1069,12 +1069,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       try {
         importScriptOptions.clientExtras = await this.importStepZero(table)
         await this.importBeginCommand(table, importScriptOptions)
-        if (importOptions.truncateTable) {
+        if (storeValues.truncateTable) {
           await this.importTruncateCommand(table, importScriptOptions)
         }
         
-        await readStream(importerSettings)
-        
+        await readStream(importerOptions, storeValues.fileName)
         await this.importCommitCommand(table, importScriptOptions)
       } catch (err) {
         log.error('error importing data', err)
@@ -1096,7 +1095,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async importLineReadCommand(_table: TableOrView, sqlString: string, importOptions: ImportFuncOptions): Promise<any> {
-    return this.rawExecuteQuery(sqlString, importOptions.executeOptions)
+    return await this.rawExecuteQuery(sqlString, importOptions.executeOptions)
   }
 
   async importCommitCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {

@@ -22,7 +22,10 @@ export default class Import {
   }
   
   async importFile() {
-    return await this.connection.importFile()
+    this.importScriptOptions.importerOptions = this.getImporterOptions({ isPreview: false })
+    this.importScriptOptions.storeValues = { ...this.options }
+
+    return await this.connection.importFile(this.table, this.importScriptOptions, this.read)
   }
 
   /**
