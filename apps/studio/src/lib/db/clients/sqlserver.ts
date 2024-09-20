@@ -864,7 +864,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
     return clientExtras.transaction.rollback()
   }
-  
+
   async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name, schema } = table
     const transaction = new sql.Transaction(this.pool)
@@ -954,9 +954,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   wrapIdentifier(value: string) {
-    if (_.isString(value)) {
-      return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
-    } return value
+    return SqlServerData.wrapIdentifier(value)
   }
 
   getBuilder(table: string, schema?: string) {

@@ -61,6 +61,11 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().listTableTests()
     })
 
+    test("list indexes should work", async () => {
+      if (getUtil().data.disabledFeatures?.createIndex) return
+      await getUtil().listIndexTests()
+    })
+
     test("column tests", async() => {
       await getUtil().tableColumnsTests()
     })
@@ -69,17 +74,41 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().tableViewTests()
     })
 
-    test("stream tests", async () => {
-      if (getUtil().dbType === 'cockroachdb') {
-        return
-      }
-      await getUtil().streamTests()
+    describe("stream tests", () => {
+      beforeAll(async () => {
+        await getUtil().prepareStreamTests()
+      })
+
+      test("should get all columns", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamColumnsTest()
+      })
+
+      test("should count exact number of rows", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamCountTest()
+      })
+
+      test("should stop/cancel streaming", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamStopTest()
+      })
+
+      test("should use custom chunk size", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamChunkTest()
+      })
+
+      test("should read all rows", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamReadTest()
+      })
     })
 
     test("query tests", async () => {
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
-      } else if (getUtil().dbType !== 'libsql'){
+      } else {
         await getUtil().queryTests()
       }
     })
@@ -902,7 +931,7 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
 export async function prepareImportTests (util) {
   const dialect = util().dialect
   let tableName = 'importstuff'
-  
+
   const importScriptOptions = {
     executeOptions: { multiple: false }
   }

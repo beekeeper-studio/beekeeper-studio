@@ -22,12 +22,17 @@ import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
+
+import { SmartLocalStorage } from '@/common/LocalStorage'
+
 import { LicenseModule } from './modules/LicenseModule'
-import { CredentialsModule } from './modules/CredentialsModule'
+import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
+import { CloudClient } from '@/lib/cloud/CloudClient'
+
 
 const log = RawLog.scope('store/index')
 
@@ -63,6 +68,7 @@ export interface State {
   defaultSchema: string,
   versionString: string,
   connError: string
+  expandFKDetailsByDefault: boolean
 }
 
 Vue.use(Vuex)
@@ -114,15 +120,22 @@ const store = new Vuex.Store<State>({
     windowTitle: 'Beekeeper Studio',
     defaultSchema: null,
     versionString: null,
-    connError: null
+    connError: null,
+    expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
   },
 
   getters: {
     defaultSchema(state) {
       return state.defaultSchema;
     },
-    workspace(): IWorkspace {
-      return LocalWorkspace
+    workspace(state, getters): IWorkspace {
+      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
+
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
+
+      if (!result) return LocalWorkspace
+      return result.workspace
     },
     isCloud(state: State) {
       return state.workspaceId !== LocalWorkspace.id
@@ -135,6 +148,15 @@ const store = new Vuex.Store<State>({
         const pollError = state[module.path]['pollError']
         return pollError || null
       }).find((e) => !!e)
+    },
+    cloudClient(state: State, getters): CloudClient | null {
+      if (state.workspaceId === LocalWorkspace.id) return null
+
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
+      if (!result) return null
+      return result.client.cloneWithWorkspace(result.workspace.id)
+
     },
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
@@ -205,6 +227,9 @@ const store = new Vuex.Store<State>({
     versionString(state) {
       return state.server.versionString();
     },
+    expandFKDetailsByDefault(state) {
+      return state.expandFKDetailsByDefault
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -335,7 +360,10 @@ const store = new Vuex.Store<State>({
     },
     setConnError(state, err: string) {
       state.connError = err;
-    }
+    },
+    expandFKDetailsByDefault(state, value: boolean) {
+      state.expandFKDetailsByDefault = value
+    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -524,6 +552,13 @@ const store = new Vuex.Store<State>({
       context.dispatch('data/connections/load')
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
+    },
+    async toggleExpandFKDetailsByDefault(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.expandFKDetailsByDefault
+      }
+      SmartLocalStorage.setBool('expandFKDetailsByDefault', value)
+      context.commit('expandFKDetailsByDefault', value)
     }
   },
   plugins: []

@@ -1,5 +1,5 @@
 import fs from 'fs'
-import * as XSLX from 'xlsx'
+import XSLX from 'xlsx'
 import Import from "../"
 
 export default class extends Import {
@@ -8,7 +8,7 @@ export default class extends Import {
   }
 
   async read(options) {
-    const readOptions = { 
+    const readOptions = {
       type: 'buffer',
       ...options
     }

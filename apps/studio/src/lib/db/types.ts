@@ -24,6 +24,20 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ]
 
+export const TableFilterSymbols = [
+  { value: '=', label: 'equals' },
+  { value: '!=', label: 'does not equal'},
+  { value: 'like', label: 'like' },
+  { value: '<', label: 'less than' },
+  { label: 'less than or equal', value: '<=' },
+  { value: '>', label: 'greater than'},
+  { label: "greater than or equal", value:">=" },
+  { label: 'in', value:"in", arrayInput: true },
+  { label: "is null", value: "is", nullOnly: true },
+  { label: "is not null", value: "is not", nullOnly: true }
+
+]
+
 export enum AzureAuthType {
   Default, // This actually may not work at all, might need to just give up on it
   Password,
@@ -194,7 +208,7 @@ export interface IBasicDatabaseClient {
   getTableLength(table: string, schema?: string): Promise<number>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> 
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>
 
   queryStream(query: string, chunkSize: number): Promise<StreamResults>
 
