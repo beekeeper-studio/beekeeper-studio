@@ -66,8 +66,8 @@ export default class {
     this.vueApp.$noty.success("Restart Beekeeper for the change to take effect")
   }
 
-  async switchLicenseState(_event, label) {
-    await this.vueApp.$util.send('dev/switchLicenseState', { label })
+  async switchLicenseState(_event, type) {
+    await this.vueApp.$util.send('dev/switchLicenseState', { type })
     this.vueApp.$store.dispatch("resetLicenseModals")
     window.location.reload(true)
   }

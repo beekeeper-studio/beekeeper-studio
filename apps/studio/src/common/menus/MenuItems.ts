@@ -1,4 +1,5 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
+import { DevLicenseState } from '@/lib/license';
 import { IPlatformInfo } from '../IPlatformInfo';
 import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
@@ -250,27 +251,27 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
         { label: ">>> BEWARE: ALL LICENSES WILL BE LOST! <<<" },
         {
           label: "First time install, no license, no trial.",
-          click: actionHandler.switchLicenseState,
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.firstInstall),
         },
         {
           label: "On a trial license",
-          click: actionHandler.switchLicenseState,
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
         },
         {
           label: "Trial expired",
-          click: actionHandler.switchLicenseState,
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
         },
         {
           label: "On an active paid license",
-          click: actionHandler.switchLicenseState,
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.activePaidLicense),
         },
         {
           label: "On an expired, lifetime license, that covers this version",
-          click: actionHandler.switchLicenseState,
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.lifetimeCoversThisVersion),
         },
         {
           label: "On an expired, lifetime license, that covers an earlier version",
-          click: actionHandler.switchLicenseState,
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.lifetimeCoversEarlierVersion),
         },
       ],
     }

@@ -7,12 +7,19 @@ export interface Version {
   patch: number;
 }
 
+export enum DevLicenseState {
+  firstInstall,
+  onTrial,
+  trialExpired,
+  activePaidLicense,
+  lifetimeCoversThisVersion,
+  lifetimeCoversEarlierVersion,
+}
+
 export function parseTagVersion(version: string) {
-  const VERSION_TAG = /^v(\d+)\.(\d+)\.(\d+)$/;
-  const match = VERSION_TAG.exec(version);
-  const major = match ? parseInt(match[1]) : 0;
-  const minor = match ? parseInt(match[2]) : 0;
-  const patch = match ? parseInt(match[3]) : 0;
+  const versionTagRegex = /^v(\d+)\.(\d+)\.(\d+)$/;
+  const match = versionTagRegex.exec(version) || [];
+  const [major, minor, patch] = _.tail(match).map((x) => parseInt(x));
   return { major, minor, patch };
 }
 

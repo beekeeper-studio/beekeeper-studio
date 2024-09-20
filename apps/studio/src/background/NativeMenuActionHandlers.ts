@@ -7,6 +7,7 @@ import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
+import { DevLicenseState } from '@/lib/license';
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -180,8 +181,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  switchLicenseState = async (menuItemOrLabel: Electron.MenuItem | string, win: ElectronWindow) => {
-    if (typeof menuItemOrLabel !== 'string') return
-    if (win) win.webContents.send(AppEvent.switchLicenseState, menuItemOrLabel)
+  switchLicenseState = async (type: DevLicenseState, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.switchLicenseState, type)
   }
 }

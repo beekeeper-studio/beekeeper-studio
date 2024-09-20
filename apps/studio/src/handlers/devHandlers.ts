@@ -1,23 +1,24 @@
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from "@/common/platform_info";
+import { DevLicenseState } from "@/lib/license";
 
 export interface IDevHandlers {
-  "dev/switchLicenseState": ({ label, sId }: { label: string; sId: string; }) => Promise<void>;
+  "dev/switchLicenseState": ({ type, sId }: { type: DevLicenseState; sId: string; }) => Promise<void>;
 }
 
 export const DevHandlers: IDevHandlers = {
-  "dev/switchLicenseState": async function ({ label, sId }: { label: string; sId: string; }) {
+  "dev/switchLicenseState": async function ({ type }: { type: DevLicenseState; sId: string; }) {
     const yesterday = new Date(new Date().setDate(new Date().getDate() - 1));
     const nextMonth = new Date(new Date().setMonth(new Date().getMonth() + 1));
-    switch (label) {
-      case "First time install, no license, no trial.":
+    switch (type) {
+      case DevLicenseState.firstInstall:
         await LicenseKey.clear();
         break;
-      case "On a trial license":
+      case DevLicenseState.onTrial:
         await LicenseKey.clear();
         await LicenseKey.createTrialLicense();
         break;
-      case "Trial expired": {
+      case DevLicenseState.trialExpired: {
         await LicenseKey.clear();
         const license = await LicenseKey.createTrialLicense();
         license.validUntil = yesterday;
@@ -25,7 +26,7 @@ export const DevHandlers: IDevHandlers = {
         await license.save();
         break;
       }
-      case "On an active paid license": {
+      case DevLicenseState.activePaidLicense: {
         await LicenseKey.clear();
         const license = new LicenseKey();
         license.email = "fake_email";
@@ -36,7 +37,7 @@ export const DevHandlers: IDevHandlers = {
         await license.save();
         break;
       }
-      case "On an expired, lifetime license, that covers this version": {
+      case DevLicenseState.lifetimeCoversThisVersion: {
         await LicenseKey.clear();
         const license = new LicenseKey();
         license.email = "fake_email";
@@ -50,7 +51,7 @@ export const DevHandlers: IDevHandlers = {
         await license.save();
         break;
       }
-      case "On an expired, lifetime license, that covers an earlier version": {
+      case DevLicenseState.lifetimeCoversEarlierVersion: {
         await LicenseKey.clear();
         const license = new LicenseKey();
         license.email = "fake_email";
