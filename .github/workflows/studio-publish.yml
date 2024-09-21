@@ -285,11 +285,6 @@ jobs:
         if: startsWith(matrix.os, 'windows')
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
         continue-on-error: true
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}
-          path: apps/studio/dist_electron
 
       - name: Set yaml files
         id: set_yaml
