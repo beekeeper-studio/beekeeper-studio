@@ -540,7 +540,16 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
-  
+
+  async runWithConnection<T>(child: (c: any) => Promise<T>): Promise<T> {
+    const connection = this.acquireConnection();
+    try {
+      return await child(connection);
+    } finally {
+      connection.close();
+    }
+  }
+
   async importTruncateCommand (table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     const { name } = table
     return this.rawExecuteQuery(`Delete from ${SD.wrapIdentifier(name)}`, executeOptions)
@@ -548,17 +557,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async importLineReadCommand (_table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery(sqlString, executeOptions)
-  }
-  
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name } = table
-    return {
-      beginCommand: (_executeOptions: any): Promise<any> => null,
-      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`Delete from ${SD.wrapIdentifier(name)}`, executeOptions),
-      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
-      commitCommand: (_executeOptions: any): Promise<any> => null,
-      rollbackCommand: (_executeOptions: any): Promise<any> => null
-    }
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult | SqliteResult[]> {

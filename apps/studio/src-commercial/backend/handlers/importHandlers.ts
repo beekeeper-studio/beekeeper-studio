@@ -101,6 +101,6 @@ export const ImportHandlers: IImportHandlers = {
 
   'import/importFile': async function({ sId, id }: { options: any, sId: string, id: string}) {
     const importer = getImporter(id, sId)
-    return importer.importFile()
+    return await importer.importFile()
   }
 }

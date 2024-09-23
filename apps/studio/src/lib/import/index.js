@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import logRaw from 'electron-log'
+import rawLog from 'electron-log'
+const log = rawLog.scope('import-file')
 
 export default class Import {
   constructor(fileName, options, connection, table) {
-    const log = logRaw.scope('import-file')
     this.fileName = fileName
     this.options = options
     this.connection = connection
@@ -22,10 +22,10 @@ export default class Import {
   }
   
   async importFile() {
-    this.importScriptOptions.importerOptions = this.getImporterOptions({ isPreview: false })
-    this.importScriptOptions.storeValues = { ...this.options }
+    this.importScriptOptions.importerOptions = this.getImporterOptions({ isPreview: false });
+    this.importScriptOptions.storeValues = { ...this.options };
 
-    return await this.connection.importFile(this.table, this.importScriptOptions, this.read)
+    await this.connection.importFile(this.table, this.importScriptOptions, this.read.bind(this))
   }
 
   /**
@@ -110,20 +110,19 @@ export default class Import {
   /**
    * Take the data to be put into the table and format it for the insertQueryBuilder function in client
    * @param {String[]} data the raw data to be mapped when ready to write to the databse
-   * @returns {Object[]} An array of objeccts containing
+   * @returns {Object} A table insert containing
    * - `data` {Array} 
    * - `table` {String}
    * - `schema` {String|null}
    */
   buildDataObj (data) {
-    return this
-      .mapData(data)
-      .filter(v => v != null && v !== '')
-      .map(d => ({
-        data: [d],
-        table: this.table.name,
-        schema: this.table.schema || null 
-      }))
+    return {
+      data: this
+        .mapData(data)
+        .filter(v => v != null && v !== ''),
+      table: this.table.name,
+      schema: this.table.schema || null
+    }
   }
 
   allowChangeSettings() {
@@ -134,7 +133,7 @@ export default class Import {
     return opt
   }
 
-  async read() {
+  async read(options, connection, fileToImport = null) {
     throw new Error("Method 'read()' must be implemented.")
   }
 

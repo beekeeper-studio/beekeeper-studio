@@ -1,6 +1,5 @@
 import fs from 'fs'
 import readline from 'readline'
-import { once } from 'events'
 import _ from 'lodash'
 import JSONImporter from "./json"
 
@@ -12,7 +11,7 @@ export default class extends JSONImporter {
 
   arrayHeaders = []
 
-  async read(options) {
+  async read(options, connection?: any) {
     const isPreview = options.isPreview ?? false
     let finalPreviewLines = []
 
@@ -20,7 +19,10 @@ export default class extends JSONImporter {
       const readStream = fs.createReadStream(this.fileName)
       const updatedImportScriptOptions = {
         ...this.importScriptOptions,
-        executeOptions: { multiple: true }
+        executeOptions: { 
+          multiple: true,
+          connection
+        }
       }
       const rl = readline.createInterface({
         input: readStream,
@@ -29,7 +31,7 @@ export default class extends JSONImporter {
 
       for await (const line of rl) {
         try {
-          const lineData = this.handleObjectParse(line, finalPreviewLines.length)
+          const lineData = this.handleObjectParse(line)
           if (lineData && finalPreviewLines.length <= 10) {
             finalPreviewLines.push(lineData)
           }
@@ -39,7 +41,7 @@ export default class extends JSONImporter {
           
           if (!isPreview) {
             const importData = this.buildDataObj([lineData])
-            const importSql = await this.connection.getImportSQL(importData)
+            const importSql = await this.connection.getImportSQL([importData])
             await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
           }
         } catch (err) {

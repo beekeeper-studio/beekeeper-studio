@@ -7,14 +7,17 @@ export default class extends Import {
     super(filePath, options, connection, table)
   }
 
-  async read(options) {
+  async read(options, connection?: any, _fileToImport = null): Promise<any> {
     try {
       const jsonStr = fs.readFileSync(this.fileName, 'utf-8')
       const parsedData = JSON.parse(jsonStr) 
       const data = Array.isArray(parsedData) ? parsedData : [parsedData]
       const updatedImportScriptOptions = {
         ...this.importScriptOptions,
-        executeOptions: { multiple: true }
+        executeOptions: { 
+          multiple: true,
+          connection
+        }
       }
       const dataObj = {
         meta: {
@@ -24,7 +27,7 @@ export default class extends Import {
       }
 
       if (!options.isPreview) {
-        const importSql = await this.connection.getImportSQL(this.buildDataObj(data))
+        const importSql = await this.connection.getImportSQL([this.buildDataObj(data)])
         await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
       }
       return dataObj

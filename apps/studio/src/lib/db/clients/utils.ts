@@ -220,6 +220,11 @@ export function buildInsertQueries(knex, inserts) {
   return inserts.map(insert => buildInsertQuery(knex, insert))
 }
 
+// export function buildMultiRecordInsertQuery(knex, inserts) {
+//   if (!inserts) return []
+//   return buildInsertQuery(knex, inserts)
+// }
+
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {
   if (!updates) return []
 

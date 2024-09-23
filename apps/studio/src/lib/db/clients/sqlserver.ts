@@ -484,6 +484,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     throw new Error("Method not implemented.");
   }
 
+  protected async runWithConnection(child: (connection: Request) => Promise<any>):  Promise<any> {
+    return await child(null);
+  }
+
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
     this.logger().info('RUNNING', q, options);
 
@@ -863,25 +867,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
     return clientExtras.transaction.rollback()
-  }
-
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name, schema } = table
-    const transaction = new sql.Transaction(this.pool)
-    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-    let request
-
-    return {
-      step0: async(): Promise<null> => {
-        request = new sql.Request(transaction)
-        return null
-      },
-      beginCommand: (_executeOptions: any): Promise<any> => transaction.begin(),
-      truncateCommand: (executeOptions: any): Promise<any> => request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sqlString: string, executeOptions: any): Promise<any> => request.query(sqlString, executeOptions),
-      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
-      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback()
-    }
   }
 
   /* helper functions and settings below! */

@@ -118,17 +118,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
   }
-  
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { schema, name } = table
-    return {
-      beginCommand: (_executeOptions: any): Promise<any> => null,
-      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
-      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
-      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
-    }
-  }
 
   async createDatabaseSQL() {
     return `
@@ -786,6 +775,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       allRows.push(nuRow)
     })
     return allRows
+  }
+
+  protected async runWithConnection(child: (c: oracle.Connection) => Promise<any>): Promise<any> {
+    const c = await this.pool.getConnection();
+    try {
+      return await child(c);
+    } finally {
+      await c.close()
+    }
   }
 
   protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {

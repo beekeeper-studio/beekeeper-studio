@@ -282,6 +282,7 @@
           this.timer = `${(new Date() - start) / 1000} seconds`
         } catch (err) {
           this.importError = err.message
+          console.log('SET IMPORT ERROR', err)
         } finally {
           this.tab.isRunning = false
         }

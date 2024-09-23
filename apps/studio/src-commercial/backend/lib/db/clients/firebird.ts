@@ -1262,33 +1262,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return clientExtras.connection.release()
   }
 
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name } = table
-    let connection
-    let transaction
-
-    return {
-      step0: async(): Promise<any|null> => {
-        connection = await this.pool.getConnection()
-        transaction = await connection.transaction()
-      },
-      beginCommand: (_executeOptions: any): any => null,
-      truncateCommand: (): Promise<any> => transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`),
-      lineReadCommand: (sqlString: string[]): Promise<any> => {
-        // firebird doesn't do multiple commands at once so you have to split it up
-        try {
-          const theStrings = sqlString.map(sql => transaction.query(`${sql};`))
-          return Promise.all(theStrings)
-        } catch(err) {
-          throw new Error(err)
-        }
-      },
-      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
-      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback(),
-      finalCommand: (_executeOptions: any): Promise<any> => connection.release()
-    }
-  }
-
   async getImportSQL(importedData: TableInsert[]): Promise<string[]> {
     return buildInsertQueries(this.knex, importedData)
   }

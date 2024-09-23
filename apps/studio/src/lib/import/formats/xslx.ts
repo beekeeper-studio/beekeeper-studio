@@ -1,4 +1,3 @@
-import fs from 'fs'
 import XSLX from 'xlsx'
 import Import from "../"
 
@@ -7,19 +6,22 @@ export default class extends Import {
     super(filePath, options, connection, table)
   }
 
-  async read(options) {
+  async read(options, connection?: any) {
     const readOptions = {
       type: 'buffer',
       ...options
     }
     const updatedImportScriptOptions = {
       ...this.importScriptOptions,
-      executeOptions: { multiple: true }
+      executeOptions: { 
+        multiple: true,
+        connection
+      }
     }
     let file
 
     try {
-      file = await XSLX.readFile(this.fileName, readOptions)
+      file = XSLX.readFile(this.fileName, readOptions)
       if (options.bookSheets) {
         return file.SheetNames
       }
@@ -35,7 +37,7 @@ export default class extends Import {
 
       
       if (!options.isPreview) {
-        const importSql = await this.connection.getImportSQL(this.buildDataObj(data))
+        const importSql = await this.connection.getImportSQL([this.buildDataObj(data)])
         await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
       }
 
