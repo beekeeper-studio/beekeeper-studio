@@ -18,7 +18,8 @@ export default class extends DefaultMenu {
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
         this.menuItems.sidebarToggle,
-        this.menuItems.minimalModeToggle,
+        // Disable this for now in favor of #2380
+        // this.menuItems.minimalModeToggle,
       ]
     }
     if (!this.platformInfo.isMac)
@@ -82,11 +83,17 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
+        label: "Ultimate",
+        submenu: [
+          this.menuItems.enterLicense,
+        ]
+      },
+      {
         label: "Tools",
         submenu: [
-          this.menuItems.upgradeModal("Data Export"),
-          this.menuItems.upgradeModal("Create a Backup"),
-          this.menuItems.upgradeModal("Restore a Backup")
+          this.menuItems.backupDatabase,
+          this.menuItems.restoreDatabase,
+          this.menuItems.exportTables
         ]
       },
       ...windowMenu,

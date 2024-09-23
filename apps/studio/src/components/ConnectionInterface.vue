@@ -63,7 +63,7 @@
                   <option
                     disabled
                     hidden
-                    value="undefined"
+                    value="null"
                   >
                     Select a connection type...
                   </option>
@@ -88,9 +88,6 @@
                   v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
-                  @save="save"
-                  @test="testConnection"
-                  @connect="submit"
                 />
                 <postgres-form
                   v-else-if="config.connectionType === 'postgresql'"
@@ -119,12 +116,22 @@
                   :testing="testing"
                 />
                 <firebird-form
-                  v-else-if="config.connectionType === 'firebird'"
+                  v-else-if="config.connectionType === 'firebird' && hasActiveLicense"
+                  :config="config"
+                  :testing="testing"
+                />
+                <oracle-form
+                  v-if="config.connectionType === 'oracle' && hasActiveLicense"
+                  :config="config"
+                  :testing="testing"
+                />
+                <cassandra-form
+                  v-if="config.connectionType === 'cassandra' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
                 <lib-sql-form
-                  v-else-if="config.connectionType === 'libsql'"
+                  v-else-if="config.connectionType === 'libsql' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
@@ -134,7 +141,23 @@
                   :testing="testing"
                 />
 
-
+                <!-- Set the database up in read only mode (or not, your choice) -->
+                <div class="form-group">
+                  <label
+                    class="checkbox-group"
+                    for="readOnlyMode"
+                  >
+                    <input
+                      class="form-control"
+                      id="readOnlyMode"
+                      type="checkbox"
+                      name="readOnlyMode"
+                      v-model="config.readOnlyMode"
+                    >
+                    <span>Read Only Mode</span>
+                    <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
+                  </label>
+                </div>
                 <!-- TEST AND CONNECT -->
                 <div
                   v-if="!shouldUpsell"
@@ -214,13 +237,15 @@ import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
 import DuckDBForm from './connection/DuckDBForm.vue'
+import CassandraForm from './connection/CassandraForm.vue'
+import OracleForm from './connection/OracleForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
@@ -234,7 +259,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm, DuckDbForm: DuckDBForm, LoadingSsoModal: LoadingSSOModal },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, DuckDbForm: DuckDBForm, LoadingSsoModal: LoadingSSOModal },
 
   data() {
     return {
@@ -255,11 +280,12 @@ export default Vue.extend({
   computed: {
     ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (this.$config.isUltimate) return false
+      if (this.hasActiveLicense) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -343,6 +369,7 @@ export default Vue.extend({
         }
       } as Split.Options)
     })
+    await this.$store.dispatch('credentials/load')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
@@ -405,7 +432,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -428,7 +455,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -461,8 +488,11 @@ export default Vue.extend({
           this.config.authId = cacheId;
         }
 
-        await this.$store.dispatch('data/connections/save', this.config)
+        const id = await this.$store.dispatch('data/connections/save', this.config)
         this.$noty.success("Connection Saved")
+        // we want to fetch the saved one in case it's changed
+        const connection = this.connections.find((c) => c.id === id)
+        this.edit(connection)
       } catch (ex) {
         console.error(ex)
         this.errors = [ex.message]

@@ -33,7 +33,7 @@ export const SqlServerData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],
   wrapIdentifier: (value) =>   _.isString(value) ?
-    (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
+    (value !== '*' ? `[${value.replace(/\]/g, ']]')}]` : '*') : value,
   editorFriendlyIdentifier: (s) => s,
   wrapLiteral: defaultWrapLiteral,
   requireDataset: false,

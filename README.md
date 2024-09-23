@@ -29,7 +29,7 @@ We publish binaries for MacOS, Windows, and Linux.
 | [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ Full Support             |    ✅     |    ✅    |    [Features](https://beekeeperstudio.io/db/google-big-query-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
 | [Oracle Database](https://www.oracle.com/database/)      | ⭐ Full Support              |           |    ✅    |      [Features](https://beekeeperstudio.io/db/oracle-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
 | [Cassandra](http://cassandra.apache.org/)                | ⭐ Full Support              |           |    ✅    |   [Features](https://beekeeperstudio.io/db/cassandra-client) |
-| [Firebird](https://firebirdsql.org/)                     | 🅱 Beta Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client) |
+| [Firebird](https://firebirdsql.org/)                     | 🅱 Beta Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
 | [LibSQL](https://libsql.org/)                            | 🅱 Beta Support               |           |    ✅    |      [Features](https://beekeeperstudio.io/db/libsql-client) |
 | [ClickHouse](https://clickhouse.tech/)                   | ⏳ Coming Soon                |           |    ✅    |  -- |
 | [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
@@ -132,7 +132,7 @@ We have you covered, read our [guide to contributing in 10 minutes without codin
 Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
 
 ```bash
-# First: Install NodeJS 16, NPM, and Yarn
+# First: Install NodeJS 20, NPM, and Yarn
 # ...
 
 # 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)

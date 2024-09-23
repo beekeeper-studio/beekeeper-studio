@@ -4,9 +4,9 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportScriptFunctions } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportScriptFunctions, ImportFuncOptions } from "../models";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
-import { ClientError, joinQueries } from "./utils";
+import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
 import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
@@ -538,8 +538,17 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
+  
+  async importTruncateCommand (table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
+    const { name } = table
+    return this.rawExecuteQuery(`Delete from ${SD.wrapIdentifier(name)}`, executeOptions)
+  }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async importLineReadCommand (_table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery(sqlString, executeOptions)
+  }
+  
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name } = table
     return {
       beginCommand: (_executeOptions: any): Promise<any> => null,

@@ -15,12 +15,11 @@ type InitInput = { table?: DatabaseEntity, db?: string | null, saved?: IConnecti
 @Entity({ name: 'hidden_entities'})
 export class HiddenEntity extends ApplicationEntity {
 
-  constructor(input: InitInput | TransportHiddenEntity) {
-    super()
+  withProps(input: InitInput | TransportHiddenEntity): HiddenEntity {
     if (!input) return;
     if ("databaseName" in input) {
-      HiddenEntity.merge(this, input);
-      return;
+      HiddenEntity.merge(this, input as any);
+      return this;
     }
     const { table, db, saved } = input;
     if (table) {
@@ -33,6 +32,7 @@ export class HiddenEntity extends ApplicationEntity {
       this.connectionId = saved.id
       this.workspaceId = saved.workspaceId
     }
+    return this;
   }
 
   matches(entity: DatabaseEntity, database?: string): boolean {

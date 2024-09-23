@@ -1,4 +1,4 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql' | 'duckdb';
@@ -23,6 +23,20 @@ export const ConnectionTypes = [
 export const keymapTypes = [
   { name: "Default", value: "default" },
   { name: "Vim", value: "vim" }
+]
+
+export const TableFilterSymbols = [
+  { value: '=', label: 'equals' },
+  { value: '!=', label: 'does not equal'},
+  { value: 'like', label: 'like' },
+  { value: '<', label: 'less than' },
+  { label: 'less than or equal', value: '<=' },
+  { value: '>', label: 'greater than'},
+  { label: "greater than or equal", value:">=" },
+  { label: 'in', value:"in", arrayInput: true },
+  { label: "is null", value: "is", nullOnly: true },
+  { label: "is not null", value: "is not", nullOnly: true }
+
 ]
 
 export enum AzureAuthType {
@@ -195,7 +209,7 @@ export interface IBasicDatabaseClient {
   getTableLength(table: string, schema?: string): Promise<number>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> 
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>
 
   queryStream(query: string, chunkSize: number): Promise<StreamResults>
 
@@ -204,4 +218,12 @@ export interface IBasicDatabaseClient {
 
   getInsertQuery(tableInsert: TableInsert): Promise<string>
   syncDatabase(): Promise<void>
+
+  importStepZero(table: TableOrView): Promise<any>
+  importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importTruncateCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importLineReadCommand (table: TableOrView, sqlString: string|string[], importOptions?: ImportFuncOptions): Promise<any>
+  importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
 }

@@ -170,12 +170,14 @@
   import { AppEvent } from '@/common/AppEvent'
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
+import { matches } from '@/common/transport/TransportPinnedEntity'
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
     components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList },
     data() {
       return {
+        isDev: window.platformInfo.isDevelopment,
         tableLoadError: null,
         allExpanded: null,
         allCollapsed: null,
@@ -188,6 +190,10 @@
       }
     },
     computed: {
+      ...mapGetters(['dialectData']),
+      createDisabled() {
+        return !!this.dialectData.disabledFeatures.createTable
+      },
       totalEntities() {
         return this.tables.length + this.routines.length - this.hiddenEntities.length
       },
@@ -289,7 +295,7 @@
       },
       refreshPinnedColumns() {
         this.orderedPins.forEach((p) => {
-          const t = this.tables.find((table) => p.matches(table))
+          const t = this.tables.find((table) => matches(p, table))
           if (t) {
             this.$store.dispatch('updateTableColumns', t)
           }
@@ -354,6 +360,10 @@
   }
 </script>
 <style scoped>
+  .table-action-wrapper{
+    display: flex;
+    flex-direction: row;
+  }
   p.no-entities {
     width: 100%;
     white-space:normal;

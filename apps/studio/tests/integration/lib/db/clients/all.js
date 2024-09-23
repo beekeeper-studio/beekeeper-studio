@@ -61,6 +61,11 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().listTableTests()
     })
 
+    test("list indexes should work", async () => {
+      if (getUtil().data.disabledFeatures?.createIndex) return
+      await getUtil().listIndexTests()
+    })
+
     test("column tests", async() => {
       await getUtil().tableColumnsTests()
     })
@@ -69,17 +74,41 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().tableViewTests()
     })
 
-    test("stream tests", async () => {
-      if (getUtil().dbType === 'cockroachdb') {
-        return
-      }
-      await getUtil().streamTests()
+    describe("stream tests", () => {
+      beforeAll(async () => {
+        await getUtil().prepareStreamTests()
+      })
+
+      test("should get all columns", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamColumnsTest()
+      })
+
+      test("should count exact number of rows", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamCountTest()
+      })
+
+      test("should stop/cancel streaming", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamStopTest()
+      })
+
+      test("should use custom chunk size", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamChunkTest()
+      })
+
+      test("should read all rows", async () => {
+        if (getUtil().dbType === 'cockroachdb') return
+        await getUtil().streamReadTest()
+      })
     })
 
     test("query tests", async () => {
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
-      } else if (getUtil().dbType !== 'libsql'){
+      } else {
         await getUtil().queryTests()
       }
     })
@@ -194,6 +223,20 @@ export function runCommonTests(getUtil, opts = {}) {
     test("Should print the duplicate table query", async () => {
       if (getUtil().dbType === 'firebird') return
       await getUtil().duplicateTableSqlTests()
+    })
+  })
+
+  describe("Import Scripts", () => {
+    beforeEach(async() => {
+      await prepareImportTable(getUtil())
+    })
+    test("Import data", async ()=> {
+      const importScriptConfig = await prepareImportTests(getUtil)
+      await getUtil().importScriptsTests(importScriptConfig)
+    })
+    test("Rollback data", async ()=> {
+      const importScriptConfig = await prepareImportTests(getUtil)
+      await getUtil().importScriptRollbackTest(importScriptConfig)
     })
   })
 
@@ -355,6 +398,17 @@ const prepareTestTable = async function(util) {
     table.integer("id").primary().notNullable()
     table.specificType("first_name", "varchar(255)")
     table.specificType("last_name", "varchar(255)")
+  })
+}
+
+const prepareImportTable = async function(util) {
+
+  const tableName = (['firebird'].includes(util.dbType)) ? 'IMPORTSTUFF' : 'importstuff'
+
+  await util.knex.schema.dropTableIfExists(tableName)
+  await util.knex.schema.createTable(tableName, (t) => {
+    t.string('name'),
+    t.string('hat')
   })
 }
 
@@ -872,4 +926,71 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
   expect(sql.includes('test_inserts'));
   expect(sql.includes('jane'));
   expect(sql.includes('testy'));
+}
+
+export async function prepareImportTests (util) {
+  const dialect = util().dialect
+  let tableName = 'importstuff'
+
+  const importScriptOptions = {
+    executeOptions: { multiple: false }
+  }
+
+  let data = []
+  let hatColumn = 'hat'
+
+  if (['firebird', 'oracle'].includes(dialect)) {
+    tableName = 'IMPORTSTUFF'
+    data = [
+      {
+        'NAME': 'biff',
+        'HAT': 'beret'
+      },
+      {
+        'NAME': 'spud',
+        'HAT': 'fez'
+      },
+      {
+        'NAME': 'chuck',
+        'HAT': 'barretina'
+      },
+      {
+        'NAME': 'lou',
+        'HAT': 'tricorne'
+      }
+    ]
+    hatColumn = 'HAT'
+  } else {
+    data = [
+      {
+        'name': 'biff',
+        'hat': 'beret'
+      },
+      {
+        'name': 'spud',
+        'hat': 'fez'
+      },
+      {
+        'name': 'chuck',
+        'hat': 'barretina'
+      },
+      {
+        'name': 'lou',
+        'hat': 'tricorne'
+      }
+    ]
+  }
+  const table = {
+    schema: util().defaultSchema ?? null,
+    name: tableName,
+    entityType: 'table'
+  }
+  const formattedData = data.map(d => ({
+    table: tableName,
+    data: [d]
+  }))
+
+  return {
+    tableName, table, formattedData, importScriptOptions, hatColumn
+  }
 }

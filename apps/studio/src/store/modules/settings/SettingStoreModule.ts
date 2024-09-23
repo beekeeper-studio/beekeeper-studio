@@ -45,7 +45,8 @@ const SettingStoreModule: Module<State, any> = {
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
       setValue(setting, value);
       setting.key = key
-      await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+      const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+      _.merge(setting, newSetting);
       context.commit(M.ADD, setting)
     }
   },
@@ -53,13 +54,14 @@ const SettingStoreModule: Module<State, any> = {
     settings(state) {
       return state.settings
     },
-    themeValue(state) {
+    themeValue(state, _getters, _rootState, rootGetters) {
       const theme = state.settings.theme ? state.settings.theme.value : null;
+      const hasActiveLicense = rootGetters['licenses/hasActiveLicense'];
       if (!theme) return null
-      if (['system', 'dark', 'light'].includes(theme as string)) {
+      if (!hasActiveLicense && ['system', 'dark', 'light'].includes(theme as string)) {
         return theme
       }
-      return 'system'
+      return hasActiveLicense ? theme : 'system';
     },
     menuStyle(state) {
       if (!state.settings.menuStyle) return 'native'

@@ -24,7 +24,7 @@ try {
 
 const externals = ['better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
-        'cassandra-driver', 'mysql2', 'ssh2', 'bks-oracledb', 'mysql',
+        'cassandra-driver', 'mysql2', 'ssh2', 'mysql',
         'oracledb', '@electron/remote', "@google-cloud/bigquery",
         'pg-query-stream', 'electron', 'duckdb',
 
@@ -76,7 +76,7 @@ const commonArgs = {
 
   const mainArgs = {
     ...commonArgs,
-    entryPoints: ['src/background.ts', 'src/utility.ts', 'src/preload.ts'],
+    entryPoints: ['src-commercial/entrypoints/main.ts', 'src-commercial/entrypoints/utility.ts', 'src-commercial/entrypoints/preload.ts'],
     plugins: [getElectronPlugin("Main")]
   }
 
