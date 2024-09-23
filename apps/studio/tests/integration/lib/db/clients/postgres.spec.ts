@@ -10,6 +10,7 @@ import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
+import { createServer } from '@/lib/db'
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false},
@@ -575,3 +576,64 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+
+describe(`Postgres (custom socket port connection)`, () => {
+  jest.setTimeout(dbtimeout)
+
+  let temp: string;
+  let container: StartedTestContainer;
+  beforeAll(async () => {
+      const startupTimeout = dbtimeout * 2;
+      temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
+      container = await new GenericContainer(`postgres`)
+        .withEnvironment({ "POSTGRES_PASSWORD": "example" })
+        .withHealthCheck({
+          test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d banana > /dev/null"],
+          interval: 2000,
+          timeout: 3000,
+          retries: 10,
+          startPeriod: 5000,
+        })
+        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
+        // .withWaitStrategy(Wait.forHealthCheck())
+        .withBindMounts([{
+          source: path.join(temp, "postgresql"),
+          target: "/var/run/postgresql",
+          mode: "rw"
+        }])
+        .withStartupTimeout(startupTimeout)
+        .withExposedPorts(5433)
+        .withCommand(['postgres', '-p', '5433'])
+        .start()
+  })
+
+  afterAll(async () => {
+    await container?.stop()
+  })
+
+  it("should be able to connect", async () => {
+    const server = createServer({
+      client: 'postgresql',
+      host: 'notarealhost',
+      port: 5433,
+      user: 'postgres',
+      password: 'example',
+      osUser: 'foo',
+      ssh: null,
+      sslCaFile: null,
+      sslCertFile: null,
+      sslKeyFile: null,
+      sslRejectUnauthorized: false,
+      ssl: false,
+      domain: null,
+      socketPath: path.join(temp, "postgresql"),
+      socketPathEnabled: true,
+      readOnlyMode: false,
+    })
+    const connection = server.createConnection()
+    await connection.connect()
+    const results = await connection.executeQuery("SELECT 1 as a")
+    expect(results[0].rows[0]).toEqual({ a: 1 })
+    await connection.disconnect()
+  })
+})
