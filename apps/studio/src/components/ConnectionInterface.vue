@@ -426,7 +426,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -449,7 +449,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -482,8 +482,11 @@ export default Vue.extend({
           this.config.authId = cacheId;
         }
 
-        await this.$store.dispatch('data/connections/save', this.config)
+        const id = await this.$store.dispatch('data/connections/save', this.config)
         this.$noty.success("Connection Saved")
+        // we want to fetch the saved one in case it's changed
+        const connection = this.connections.find((c) => c.id === id)
+        this.edit(connection)
       } catch (ex) {
         console.error(ex)
         this.errors = [ex.message]

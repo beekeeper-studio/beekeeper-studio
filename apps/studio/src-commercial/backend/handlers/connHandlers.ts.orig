@@ -105,7 +105,31 @@ export interface IConnectionHandlers {
   'conn/azureCancelAuth': ({ sId }: { sId: string }) => Promise<void>
   'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
+<<<<<<< HEAD
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
+||||||| 1572e942
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
+
+  // For Import ************************************************************
+  'conn/importStepZero': ({ sId, table }: { sId: string, table: any }) => Promise<any>,
+  'conn/importBeginCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importTruncateCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importLineReadCommand': ({ sId, table, sqlString, importOptions  }: { sId: string, table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importCommitCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importRollbackCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importFinalCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>
+=======
   'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
+
+  // For Import ************************************************************
+  'conn/importStepZero': ({ sId, table }: { sId: string, table: any }) => Promise<any>,
+  'conn/importBeginCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importTruncateCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importLineReadCommand': ({ sId, table, sqlString, importOptions  }: { sId: string, table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importCommitCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importRollbackCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
+  'conn/importFinalCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>
+>>>>>>> master
 }
 
 export const ConnHandlers: IConnectionHandlers = {

@@ -45,8 +45,26 @@ body.theme-light {
   @import './app/mixins';
   @import './components/all';
   @import './vendor.scss';
-  @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';
 }
 
+body.theme-solarized-dark {
+  @import './themes/solarized-dark/variables.scss';
+  @import './app/mixins';
+  @import './components/all';
+  @import './vendor.scss';
+  @import './app/_all.scss';
+  @import './themes/solarized-dark/theme.scss';
+}
+
+
+
+body.theme-solarized {
+  @import './themes/solarized-light/variables.scss';
+  @import './app/mixins';
+  @import './components/all';
+  @import './vendor.scss';
+  @import './app/_all.scss';
+  @import './themes/solarized-light/theme.scss';
+}

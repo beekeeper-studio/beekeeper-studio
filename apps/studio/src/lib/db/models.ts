@@ -1,4 +1,5 @@
 import { IndexColumn, SchemaItem, TableKey } from "@shared/lib/dialects/models";
+import { BackupConfig } from "./models/BackupConfig";
 
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
