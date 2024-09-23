@@ -12,8 +12,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-duckdb-electron:
+    uses: ./.github/workflows/duckdb-electron-build.yml
+
   masterbuild:
     runs-on: ${{ matrix.os }}
+    needs: [check-electron-version]
 
     strategy:
       matrix:

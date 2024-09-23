@@ -1,0 +1,33 @@
+name: Check Electron Build for DuckDB
+
+on:
+  workflow_call: # Makes this workflow reusable
+
+jobs:
+  check-duckdb-electron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+
+
+      - name: Get Electron version from package.json
+        id: get-electron-version
+        run: |
+          electron_version=$(cat apps/studio/package.json | jq -r '.devDependencies.electron')
+          echo "::set-output name=version::$electron_version"
+
+      - name: Check electron version from duckdb-node
+
+        id: check-electron
+        run: |
+          electron_version=${{ steps.get-electron-version.outputs.version }}
+          response=$(curl -s https://raw.githubusercontent.com/beekeeper-studio/duckdb-node/electron-build/scripts/electron-build-versions.json)
+          if echo "$response" | grep -q "$electron_version"; then
+            echo "Electron version $electron_version found!"
+          else
+            echo "DuckDB doesn't have a build for Electron version $electron_version. Please update it in the beekeeper-studio/duckdb-node repo."
+            exit 1
+          fi
+
+

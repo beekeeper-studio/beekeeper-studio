@@ -14,6 +14,9 @@ on:
       - apps/sqltools/**
 
 jobs:
+  check-duckdb-electron:
+    uses: ./.github/workflows/duckdb-electron-build.yml
+
   setup:
     runs-on: ubuntu-latest
     outputs:
@@ -32,6 +35,7 @@ jobs:
   unit:
     name: Non-terrible tests
     runs-on: ubuntu-latest
+    needs: [check-electron-version]
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
@@ -66,8 +70,7 @@ jobs:
   integration:
     name: 🥞 ${{ matrix.chunk[0] }}
     runs-on: ubuntu-latest
-    needs:
-      - setup
+    needs: [check-electron-version, setup]
     strategy:
       fail-fast: false
       matrix:

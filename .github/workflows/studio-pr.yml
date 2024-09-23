@@ -7,8 +7,12 @@ on:
       - docs/**
 
 jobs:
+  check-duckdb-electron:
+    uses: ./.github/workflows/duckdb-electron-build.yml
+
   build:
     runs-on: ${{ matrix.os }}
+    needs: [check-electron-version]
 
     strategy:
       matrix:
