@@ -218,6 +218,15 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   withProps(props?: any): SavedConnection {
     if (props) SavedConnection.merge(this, props);
+
+    if (!this.createdAt) {
+      this.createdAt = new Date();
+    }
+
+    if (!this.updatedAt) {
+      this.updatedAt = new Date();
+    }
+
     return this;
   }
 

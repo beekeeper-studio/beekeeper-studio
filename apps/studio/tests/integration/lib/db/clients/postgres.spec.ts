@@ -510,6 +510,22 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(enumArrayColumn.array).toBeTruthy()
     })
 
+    it("Should be able to add comments to columns and retrieve them", async () => {
+      // Create a test table with column comments
+      await util.knex.schema.createTable('comment_test', (table) => {
+        table.integer("id").primary().comment('Primary key');
+        table.string("name").comment('Name of the person');
+      });
+
+      // Retrieve the columns and check for comments
+      const columns = await util.connection.listTableColumns('comment_test', 'public');
+      const idColumn = columns.find((col) => col.columnName === 'id');
+      const nameColumn = columns.find((col) => col.columnName === 'name');
+
+      expect(idColumn.comment).toBe('Primary key');
+      expect(nameColumn.comment).toBe('Name of the person');
+    });
+
     if (dockerTag === 'latest') {
       it("should list indexes with info", async () => {
         await util.knex.schema.createTable('has_indexes_2', (table) => {

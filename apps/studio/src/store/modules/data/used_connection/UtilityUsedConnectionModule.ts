@@ -19,6 +19,7 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   mutations: mutationsFor<IConnection>(),
   actions: utilActionsFor<IConnection>('used', {
     async recordUsed(context, config: IConnection) {
+      log.debug("Recording used config for: ", config)
       const lastUsedConnection = context.state.items.find(c => {
         return config.id &&
           config.workspaceId &&

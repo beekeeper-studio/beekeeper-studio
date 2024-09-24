@@ -3,21 +3,27 @@ import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 
+// SQL Server testing policy:
+// We test against SQL Server until it leaves mainstream support
+//
+
 const TEST_VERSIONS = [
-  { version: '2017-latest', readonly: false },
-  { version: '2017-latest', readonly: true },
+  // In July 2024 Microsoft released images that moved the bin location of sqlcmd:
+  // https://github.com/elastic/apm-agent-nodejs/issues/4147
+  // Microsoft's response to this:
+  // https://github.com/microsoft/mssql-docker/issues/892#issuecomment-2249029917
   // FIXME 2022-latest has a breaking change. We'll use the previous build
-  // for now.
-  // { version: '2019-latest', readonly: false },
-  // { version: '2019-latest', readonly: true },
-  // { version: '2022-latest', readonly: false },
-  // { version: '2022-latest', readonly: true },
+  // 2017 crashes. I don't know why
+  // { version: '2017-CU31-GDR2-ubuntu-18.04', readonly: false },
+  // { version: '2017-CU30-ubuntu-18.04', readonly: true },
 
+  // FYI - this might break when mssql-tools upgrades to version 19, as it affects the path
+  // of sqlcmd
+  { version: '2019-latest', readonly: false },
+  { version: '2019-latest', readonly: true },
+  { version: '2022-latest', readonly: false },
+  { version: '2022-latest', readonly: true },
 
-  { version: '2019-CU27-ubuntu-20.04', readonly: false },
-  { version: '2019-CU27-ubuntu-20.04', readonly: true },
-  { version: '2022-CU13-ubuntu-22.04', readonly: false },
-  { version: '2022-CU13-ubuntu-22.04', readonly: true },
 ]
 
 function testWith(dockerTag: string, readonly: boolean) {
@@ -33,8 +39,10 @@ function testWith(dockerTag: string, readonly: boolean) {
     beforeAll(async () => {
       const timeoutDefault = 5000
 
+      const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
+
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
-        .withName(`mssql-${dockerTag}`)
+        // .withResourcesQuota({ memory: 2, cpu: 1 })
         .withEnvironment({
           "MSSQL_PID": "Express",
           "SA_PASSWORD": "Example*1",
@@ -44,7 +52,7 @@ function testWith(dockerTag: string, readonly: boolean) {
         .withExposedPorts(1433)
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
-          test: ["CMD-SHELL", `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
+          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
           interval: 5000,
           timeout: 3000,
           retries: 10,

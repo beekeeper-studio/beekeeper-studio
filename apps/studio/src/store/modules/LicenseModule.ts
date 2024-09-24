@@ -34,7 +34,6 @@ export const LicenseModule: Module<State, RootState>  = {
       return state.licenses.some((l) => l.active);
     }
   },
-
   mutations: {
     set(state, licenses: TransportLicenseKey[]) {
       state.licenses = licenses
