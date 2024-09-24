@@ -12,7 +12,6 @@ import {
   FieldDescriptor,
   FilterOptions,
   ImportFuncOptions,
-  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -791,8 +790,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
       // TODO - use `executeMany` if no SELECT queries are present
       // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
-      const c = await this.pool.getConnection()
-      return await withClosable(c, async (c: oracle.Connection) => {
+
+      const c = options.connection ?? await this.pool.getConnection();
+      const runQuery = async (c: oracle.Connection) => {
         const results: DriverResult[] = []
         for (let qi = 0; qi < infos.length; qi++) {
           const q: IdentifyResult = infos[qi];
@@ -805,7 +805,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         }
         await c.commit()
         return results
-      })
+      };
+      return options.connection ? await runQuery(c) : await withClosable(c, runQuery)
   }
 
   private identify(query: string): IdentifyResult[] {
