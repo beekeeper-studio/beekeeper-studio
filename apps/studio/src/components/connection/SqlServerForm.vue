@@ -159,7 +159,7 @@
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
-  import { mapState } from 'vuex'
+  import { mapState, mapGetters } from 'vuex'
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
@@ -208,6 +208,7 @@
     },
     computed: {
       ...mapState(['connection']),
+      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
       showUser() {
         return [AzureAuthType.Password].includes(this.authType)
       },

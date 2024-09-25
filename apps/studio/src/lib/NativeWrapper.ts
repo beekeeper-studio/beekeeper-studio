@@ -29,7 +29,6 @@ export interface NativePlugin {
     showItemInFolder(path: string): void
   },
 
-  getCurrentWindow(): Electron.BrowserWindow | null
   openLink(link: string): void
   dialog: IWindowDialog
 
@@ -44,9 +43,6 @@ export const ElectronPlugin: NativePlugin = {
   },
   openLink(link: string) {
     window.main.openLink(link);
-  },
-  getCurrentWindow() {
-    return window.main.getCurrentWindow()
   },
   clipboard: {
     writeText(rawText: any, notify = true) {

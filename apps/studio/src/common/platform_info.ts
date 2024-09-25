@@ -100,7 +100,8 @@ if (isRenderer()) {
     updatesDisabled,
     appVersion,
     parsedAppVersion,
-    cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
+    // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
+    cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
 
     // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'

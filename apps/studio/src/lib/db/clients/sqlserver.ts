@@ -894,10 +894,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     this.pool.on('error', (err) => {
       if (err instanceof ConnectionError) {
-        log.log('IS INSTANCE OF')
+        log.error('Pool ConnectionError', err.message)
       }
       log.error("Pool event: connection error:", err.name, err.message);
     });
+
 
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()

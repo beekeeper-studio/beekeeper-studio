@@ -1,5 +1,5 @@
 <template>
-  <div 
+  <div
     class="list-item"
     :title="title"
     @contextmenu.stop.prevent="showContextMenu"
@@ -14,7 +14,7 @@
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">{{ label }}</div>
-        <div class="subtitle"> 
+        <div class="subtitle">
           <span
             class="bastion"
             v-if="this.config.sshBastionHost"
@@ -83,6 +83,7 @@ export default {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     moveToOptions() {
       return this.folders
         .filter((folder) => folder.id !== this.config.connectionFolderId)
@@ -134,7 +135,7 @@ export default {
       if (this.isRecentList) {
         if (!this.config.connectionId || !this.config.workspaceId) return null
 
-        return this.connectionConfigs.find((c) => 
+        return this.connectionConfigs.find((c) =>
           c.id === this.config.connectionId &&
           c.workspaceId === this.config.workspaceId
         )

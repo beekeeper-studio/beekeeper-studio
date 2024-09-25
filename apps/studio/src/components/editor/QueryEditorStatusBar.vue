@@ -153,8 +153,7 @@
 <script>
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
-import { mapState } from 'vuex';
-import pluralize from 'pluralize';
+import { mapState, mapGetters } from 'vuex';
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -205,6 +204,7 @@ export default {
   },
   computed: {
     ...mapState('settings', ['settings']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;
@@ -244,7 +244,7 @@ export default {
         return null
       }
       const executeTime = this.executeTime || 0
-      
+
       return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
     },
     executionTimeTitle() {

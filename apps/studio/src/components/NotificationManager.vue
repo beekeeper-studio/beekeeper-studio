@@ -3,6 +3,7 @@
 </template>
 <script lang="ts">
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import { mapGetters } from 'vuex'
 import Vue from 'vue'
 import Noty from 'noty'
 
@@ -22,6 +23,9 @@ export default Vue.extend({
         ]
       })
     }
+  },
+  computed: {
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
   },
   mounted() {
     if (this.$store.getters.isCommunity) {

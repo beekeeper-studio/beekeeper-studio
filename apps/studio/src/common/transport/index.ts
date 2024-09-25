@@ -1,7 +1,4 @@
-import { DatabaseEntity } from "@/lib/db/models";
 import { IConnection } from "../interfaces/IConnection";
-
-
 
 // anything that is transferred to the utility process should implement this interface
 // may need to add more in the future, this is just to make type stuff
@@ -38,18 +35,6 @@ export interface TransportPinnedConn extends Transport {
   connectionId: number;
   workspaceId: number;
   connection: IConnection;
-}
-
-export interface TransportPinnedEntity extends Transport {
-  databaseName: string,
-  schemaName?: string,
-  entityName: string,
-  entityType: 'table' | 'view' | 'routine' | 'materialized-view',
-  open: boolean,
-  position: number,
-  connectionId: number,
-  workspaceId: number,
-  entity: DatabaseEntity
 }
 
 export interface TransportFavoriteQuery extends Transport {

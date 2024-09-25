@@ -58,7 +58,6 @@ export const LicenseModule: Module<State, RootState>  = {
       return state.licenses.length === 0
     },
   },
-
   mutations: {
     set(state, licenses: TransportLicenseKey[]) {
       state.licenses = licenses
