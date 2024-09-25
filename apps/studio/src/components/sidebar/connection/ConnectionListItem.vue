@@ -83,6 +83,7 @@ export default {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     moveToOptions() {
       return this.folders
         .filter((folder) => folder.id !== this.config.connectionFolderId)
@@ -145,7 +146,7 @@ export default {
   },
   methods: {
     showContextMenu(event) {
-      const ultimateCheck = this.$config.isUltimate
+      const ultimateCheck = this.hasActiveLicense
         ? true
         : !isUltimateType(this.config.connectionType)
 

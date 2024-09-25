@@ -24,6 +24,20 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ]
 
+export const TableFilterSymbols = [
+  { value: '=', label: 'equals' },
+  { value: '!=', label: 'does not equal'},
+  { value: 'like', label: 'like' },
+  { value: '<', label: 'less than' },
+  { label: 'less than or equal', value: '<=' },
+  { value: '>', label: 'greater than'},
+  { label: "greater than or equal", value:">=" },
+  { label: 'in', value:"in", arrayInput: true },
+  { label: "is null", value: "is", nullOnly: true },
+  { label: "is not null", value: "is not", nullOnly: true }
+
+]
+
 export enum AzureAuthType {
   Default, // This actually may not work at all, might need to just give up on it
   Password,

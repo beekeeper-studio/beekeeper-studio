@@ -131,15 +131,21 @@ export function createTableFilter(field: string): TableFilter {
   return { op: "AND", field, type: "=", value: "" }
 }
 
+// isEmpty(1) returns true, we don't want that!
+// https://stackoverflow.com/questions/36691125/lodash-isblank
+export function isBlank(value) {
+  return _.isEmpty(value) && !_.isNumber(value) || _.isNaN(value);
+}
+
 /** Check if an array of filters is considered empty */
 export function checkEmptyFilters(filters: TableFilter[]): boolean {
   if (filters.length === 0) {
     return true
   }
   if (filters.length === 1) {
-    return _.isEmpty(filters[0].value)
+    return isBlank(filters[0].value)
   }
-  return filters.every(filter => _.isEmpty(filter.value));
+  return filters.every(filter => isBlank(filter.value));
 }
 
 /** Useful for identifying an entity item in table list */

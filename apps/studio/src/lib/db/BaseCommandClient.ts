@@ -165,7 +165,7 @@ export abstract class BaseCommandClient {
         return !this.toolName || (config.dumpToolPath && config.dumpToolPath.includes(this.toolName));
       },
       controls: [
-        isRestore && BaseCommandClient._conn.supportedFeatures().backDirFormat ? {
+        isRestore && BaseCommandClient._supportedFeatures.backDirFormat ? {
           controlType: 'checkbox',
           settingName: 'isDir',
           settingDesc: 'Restore a "directory" backup',
@@ -314,15 +314,15 @@ export abstract class BaseCommandClient {
   }
 
   public async writeToLog(content: string) {
-    await this.tempFile.write(content);
+    await this.tempFile?.write(content);
   }
 
   public deleteLogFile() {
-    this.tempFile.deleteFile();
+    this.tempFile?.deleteFile();
   }
 
   public get logPath() {
-    return this.tempFile.path;
+    return this.tempFile?.path;
   }
 
   // end log file things
