@@ -23,6 +23,7 @@ function isUtility() {
 let platformInfo: IPlatformInfo & { isUltimate: boolean, isCommunity: boolean };
 
 async function updateLicenseStatus() {
+  if (platformInfo.testMode) return
   const status = getLicenseStatus({
     licenses: await LicenseKey.find(),
     currentDate: new Date(),
