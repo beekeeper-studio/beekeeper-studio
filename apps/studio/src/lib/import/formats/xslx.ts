@@ -6,7 +6,7 @@ export default class extends Import {
     super(filePath, options, connection, table)
   }
 
-  async read(options, connection?: any) {
+  async read(options, executeOptions?: any) {
     const readOptions = {
       type: 'buffer',
       ...options
@@ -15,7 +15,7 @@ export default class extends Import {
       ...this.importScriptOptions,
       executeOptions: { 
         multiple: true,
-        connection
+        ...executeOptions
       }
     }
     let file

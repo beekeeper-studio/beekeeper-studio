@@ -1,4 +1,5 @@
 import Firebird from "node-firebird";
+import _ from "lodash";
 
 export interface Result {
   rows: any[];
@@ -83,8 +84,17 @@ export class Connection {
   }
 
   query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const database = this.database;
+      const transaction: Firebird.Transaction = await new Promise((resolve, reject) => {
+        this.database.transaction(Firebird.ISOLATION_READ_COMMITTED, (err, transaction) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(transaction)
+        })
+      });
 
       function callback(
         err: any,
@@ -100,18 +110,58 @@ export class Connection {
         if (!result) result = [];
         if (!meta) meta = [];
         if (!Array.isArray(result)) result = [result];
+        const arrBlob = []
+        // for blob columns
+        result.map((value) => {
+          Object.keys(value).map((c) => {
+            if (_.isFunction(value[c])) {
+              value[c] = new Promise((resBlob, rejBlob) => {
+                value[c](transaction, (error, name, event, row) => {
+                  if (error) {
+                    return rejBlob(error);
+                  }
 
-        resolve({ rows: result, meta, isSelect });
+                  // reading data
+                  let val = '';
+                  event.on('data', (chunk) => {
+                    val += chunk.toString('binary');
+                  });
+                  event.on('end', () => {
+                    resBlob({ value: val, column: name, row });
+                  });
+                });
+              });
+              arrBlob.push(value[c])
+            }
+          })
+        })
+
+        if (arrBlob.length > 0) {
+          Promise.all(arrBlob)
+            .then((blobs) => {
+              for (const blob of blobs) {
+                result[blob.row][blob.column] = blob.value;
+              }
+
+              resolve({ rows: result, meta, isSelect });
+            })
+        } else {
+          resolve({ rows: result, meta, isSelect });
+        }
       }
 
-      if (rowAsArray) {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        database.execute(query, params, callback);
-      } else {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        database.query(query, params, callback);
+      try {
+        if (rowAsArray) {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          database.execute(query, params, callback);
+        } else {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          database.query(query, params, callback);
+        }
+      } catch (e) {
+        reject(e?.message ?? e);
       }
     });
   }
@@ -135,7 +185,7 @@ export class Transaction {
   constructor(private transaction: Firebird.Transaction) {}
 
   query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const transaction = this.transaction;
 
       function callback(
@@ -152,18 +202,59 @@ export class Transaction {
         if (!result) result = [];
         if (!meta) meta = [];
         if (!Array.isArray(result)) result = [result];
+        const arrBlob = [];
+        // for blob columns
+        result.map((value) => {
+          Object.keys(value).map((c) => {
+            if (_.isFunction(value[c])) {
+              value[c] = new Promise((resBlob, rejBlob) => {
+                value[c](transaction, (error, name, event, row) => {
+                  if (error) {
+                    return rejBlob(error);
+                  }
 
-        resolve({ rows: result, meta, isSelect });
+                  // reading data
+                  let val = '';
+                  event.on('data', (chunk) => {
+                    val += chunk.toString('binary');
+                  });
+                  event.on('end', () => {
+                    resBlob({ value: val, column: name, row });
+                  });
+                });
+              });
+              arrBlob.push(value[c])
+            }
+          })
+        })
+
+        if (arrBlob.length > 0) {
+          Promise.all(arrBlob)
+            .then((blobs) => {
+              for (const blob of blobs) {
+                result[blob.row][blob.column] = blob.value;
+              }
+
+              resolve({ rows: result, meta, isSelect });
+            })
+        } else {
+          resolve({ rows: result, meta, isSelect });
+        }
+
       }
 
-      if (rowAsArray) {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        transaction.execute(query, params, callback);
-      } else {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        transaction.query(query, params, callback);
+      try {
+        if (rowAsArray) {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          transaction.execute(query, params, callback);
+        } else {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          transaction.query(query, params, callback);
+        }
+      } catch (e) {
+        reject(e?.message ?? e);
       }
     });
   }

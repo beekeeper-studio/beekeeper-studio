@@ -133,7 +133,7 @@ export default class Import {
     return opt
   }
 
-  async read(options, connection, fileToImport = null) {
+  async read(options, executeOptions, fileToImport = null) {
     throw new Error("Method 'read()' must be implemented.")
   }
 

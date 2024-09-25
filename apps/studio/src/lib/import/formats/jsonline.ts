@@ -11,7 +11,7 @@ export default class extends JSONImporter {
 
   arrayHeaders = []
 
-  async read(options, connection?: any) {
+  async read(options, executeOptions?: any) {
     const isPreview = options.isPreview ?? false
     let finalPreviewLines = []
 
@@ -21,7 +21,7 @@ export default class extends JSONImporter {
         ...this.importScriptOptions,
         executeOptions: { 
           multiple: true,
-          connection
+          ...executeOptions
         }
       }
       const rl = readline.createInterface({

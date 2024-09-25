@@ -271,7 +271,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  async importStepZero(_table: TableOrView): Promise<any> {
+  async importStepZero(_table: TableOrView, _options?: { connection: any }): Promise<any> {
     return null
   }
   async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
@@ -316,13 +316,17 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     return await this.runWithConnection(async (connection) => {
       try {
         executeOptions.connection = connection
-        importScriptOptions.clientExtras = await this.importStepZero(table)
+        importScriptOptions.clientExtras = await this.importStepZero(table, { connection })
         await this.importBeginCommand(table, importScriptOptions)
         if (storeValues.truncateTable) {
           await this.importTruncateCommand(table, importScriptOptions)
         }
     
-        const result = await readStream(importerOptions, connection, storeValues.fileName)
+        const readOptions = {
+          connection,
+          ...importScriptOptions.clientExtras
+        };
+        const result = await readStream(importerOptions, readOptions, storeValues.fileName)
         if (result.aborted) {
           throw new Error(`Import aborted: ${result.error}`);
         }

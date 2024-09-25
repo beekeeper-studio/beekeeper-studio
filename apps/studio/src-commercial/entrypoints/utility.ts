@@ -40,6 +40,10 @@ export let handlers: Handlers = {
   ...TempHandlers
 };
 
+process.on('uncaughtException', (error) => {
+  log.error(error);
+});
+
 process.parentPort.on('message', async ({ data, ports }) => {
   const { type, sId } = data;
   switch (type) {
@@ -81,7 +85,12 @@ async function runHandler(id: string, name: string, args: any) {
     replyArgs.error = `Invalid handler name: ${name}`;
   }
 
-  state(args.sId).port.postMessage(replyArgs);
+  try {
+    
+    state(args.sId).port.postMessage(replyArgs);
+  } catch (e) {
+    log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+  }
 }
 
 async function initState(sId: string, port: MessagePortMain) {

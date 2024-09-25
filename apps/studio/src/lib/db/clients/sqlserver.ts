@@ -28,7 +28,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions, ImportFuncOptions } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
@@ -484,6 +484,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     throw new Error("Method not implemented.");
   }
 
+  // ONLY USED FOR IMPORT
   protected async runWithConnection(child: (connection: Request) => Promise<any>):  Promise<any> {
     return await child(null);
   }
@@ -857,8 +858,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
   }
 
-  async importLineReadCommand (_table: TableOrView, sqlString: string, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
-    return clientExtras.request.query(sqlString, executeOptions)
+  async importLineReadCommand (_table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return executeOptions.request.query(sqlString, executeOptions)
   }
 
   async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
