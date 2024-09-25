@@ -1,19 +1,16 @@
-import {
-  DatabaseElement,
-  IDbConnectionDatabase,
-  IDbConnectionServer,
-} from "../types";
+import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import {
   BasicDatabaseClient,
   ExecutionContext,
   QueryLogOptions,
-} from "./BasicDatabaseClient";
+} from "@/lib/db/clients/BasicDatabaseClient";
 import {
   buildInsertQueries,
   buildDeleteQueries,
   applyChangesSql,
   buildSchemaFilter,
-} from "./utils";
+} from "@/lib/db/clients/utils";
 import knexlib from "knex";
 import _ from "lodash";
 import rawLog from "electron-log";
@@ -196,7 +193,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return new DuckDBChangeBuilder(table, schema);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: false,
       comments: true,
@@ -210,7 +207,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     };
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version;
   }
 
@@ -246,7 +243,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     await this.databaseInstance.close();
   }
 
-  query(queryText: string, options?: any): CancelableQuery {
+  async query(queryText: string, options?: any): Promise<CancelableQuery> {
     return {
       execute: async () => {
         return await this.executeQuery(queryText, options);
@@ -322,7 +319,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     };
   }
 
-  getQuerySelectTop(table: string, limit: number, schema: string): string {
+  async getQuerySelectTop(table: string, limit: number, schema: string): Promise<string> {
     schema = DuckDBData.wrapLiteral(schema);
     table = DuckDBData.wrapIdentifier(table);
     return `SELECT * FROM ${schema}.${table} LIMIT ${limit}`;
@@ -452,7 +449,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         WHERE table_name = ?
           AND schema_name = ?
       `,
-      { params: [table, schema || this.defaultSchema()] }
+      { params: [table, schema || await this.defaultSchema()] }
     );
 
     return data.map((row) => ({
@@ -569,7 +566,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         rc.update_rule,
         rc.delete_rule;
     `,
-      { params: [schema || this.defaultSchema(), table] }
+      { params: [schema || await this.defaultSchema(), table] }
     );
 
     return data.map((row) => ({
@@ -585,7 +582,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     }));
   }
 
-  defaultSchema(): string {
+  async defaultSchema(): Promise<string> {
     return "main";
   }
 
@@ -694,7 +691,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     await database.close();
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
@@ -732,7 +729,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return [];
   }
 
-  applyChangesSql(changes: TableChanges): string {
+  async applyChangesSql(changes: TableChanges): Promise<string> {
     return applyChangesSql(changes, this.knex);
   }
 
@@ -782,12 +779,12 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return result.description;
   }
 
-  setElementNameSql(
+  async setElementNameSql(
     elementName: string,
     newElementName: string,
     typeOfElement: DatabaseElement,
     schema?: string
-  ): string {
+  ): Promise<string> {
     if (
       typeOfElement === DatabaseElement.TABLE ||
       typeOfElement === DatabaseElement.VIEW ||
@@ -806,11 +803,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return "";
   }
 
-  truncateElementSql(
+  async truncateElementSql(
     elementName: string,
     typeOfElement: DatabaseElement,
     schema?: string
-  ): string {
+  ): Promise<string> {
     if (typeOfElement === DatabaseElement.TABLE) {
       return schema
         ? `TRUNCATE ${DuckDBData.wrapIdentifier(
@@ -1004,15 +1001,15 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     duplicateTableName: string,
     schema: string
   ): Promise<void> {
-    const query = this.duplicateTableSql(tableName, duplicateTableName, schema);
+    const query = await this.duplicateTableSql(tableName, duplicateTableName, schema);
     await this.driverExecuteSingle(query);
   }
 
-  duplicateTableSql(
+  async duplicateTableSql(
     tableName: string,
     duplicateTableName: string,
     schema?: string
-  ): string {
+  ): Promise<string> {
     tableName = DuckDBData.wrapIdentifier(tableName);
     duplicateTableName = DuckDBData.wrapIdentifier(duplicateTableName);
     schema = DuckDBData.wrapIdentifier(schema);

@@ -55,6 +55,10 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         // information whether a column is generated or not. Be aware that we
         // can get the definition of it from the default value.
         skipGeneratedColumns: true,
+
+        // FIXME duckdb doesn't support array mode but it returns the columns
+        // correctly https://github.com/duckdb/duckdb-node/issues/122
+        supportsArrayMode: false,
       };
 
       util = new DBTestUtil(config, filepath, options);

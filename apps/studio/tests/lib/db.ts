@@ -839,7 +839,7 @@ export class DBTestUtil {
         expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
       }
 
-      // FIXME (azmi): we need this until array mode is fixed in libsql
+      // FIXME (azmi): we need this until array mode is fixed in libsql and duckdb
       if (this.supportsArrayMode) {
         expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
       } else {
@@ -858,7 +858,15 @@ export class DBTestUtil {
 
         expect(fields).toMatchObject(expected)
       } else {
-        expect(fields).toMatchObject([{id: 'c0', name: 'total'}])
+        let expected = [{id: 'c0', name: 'total'}]
+
+        // FIXME duckdb doesn't support array mode but it returns the columns
+        // correctly https://github.com/duckdb/duckdb-node/issues/122
+        if (this.dbType === 'duckdb') {
+          expected = [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}]
+        }
+
+        expect(fields).toMatchObject(expected)
       }
     } catch (ex) {
       console.error("QUERY FAILED", ex)
@@ -1164,8 +1172,12 @@ export class DBTestUtil {
   }
 
   async prepareStreamTests() {
+    const fileLocation = path.join(__dirname, '../fixtures/organizations-100000.csv')
+    if (this.dbType === 'duckdb') {
+      await this.knex.schema.raw(`INSERT INTO organizations SELECT * FROM read_csv('${fileLocation}');`)
+      return
+    }
     return new Promise<void>(async (resolve, reject) => {
-      const fileLocation = path.join(__dirname, '../fixtures/organizations-100000.csv')
       const fileStream = fs.createReadStream(fileLocation)
       const promises = []
       const useStep = !!this.dbType.match(/firebird|sqlserver/i)
@@ -1214,6 +1226,7 @@ export class DBTestUtil {
                 if (results.data.length === 0) {
                   return;
                 }
+          console.log('momo inserting', results.data.length)
                 promises.push(execBatch(results.data));
               },
             }),
@@ -1448,7 +1461,7 @@ export class DBTestUtil {
     }
 
     await this.knex.schema.createTable('organizations', (table) => {
-      primary(table)
+      table.integer("id").notNullable();
       table.string('organization_id', 255).notNullable();
       table.string('name', 255).notNullable();
       table.string('website', 255).nullable(); // Since 'NA', '-', and 'NULL' appear in the website field
