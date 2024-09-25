@@ -967,6 +967,8 @@ export default Vue.extend({
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
+      this.tabulator.on("cellMouseUp", this.updateDetailViewByFirstRange);
+      this.tabulator.on("headerMouseUp", this.updateDetailViewByFirstRange);
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
@@ -995,12 +997,7 @@ export default Vue.extend({
           label: createMenuItem('See details'),
           action: () => {
             const data = range.getRows()[0].getData()
-            this.selectedRowIndex = data[this.internalIndexColumn]
-            this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
-            this.expandablePaths = this.rawTableKeys.map((key) => ({
-              path: [key.fromColumn],
-              tableKey: key,
-            }))
+            this.updateDetailView(data)
             this.toggleOpenDetailView(true)
           },
         },
@@ -1665,6 +1662,19 @@ export default Vue.extend({
       }
 
       this.openDetailView = open
+    },
+    updateDetailView(data: Record<string, any>) {
+      this.selectedRowIndex = data[this.internalIndexColumn]
+      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      this.expandablePaths = this.rawTableKeys.map((key) => ({
+        path: [key.fromColumn],
+        tableKey: key,
+      }))
+    },
+    updateDetailViewByFirstRange() {
+      const range = this.tabulator.getRanges()[0]
+      const data = range.getRows()[0].getData()
+      this.updateDetailView(data)
     },
     initializeSplit() {
       const components = this.$refs.tableViewWrapper.children
