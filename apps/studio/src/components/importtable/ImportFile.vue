@@ -229,7 +229,7 @@
         newlineCharacter: null,
         nullableValues: [''],
         trimWhitespaces: true,
-        importerClass: null,
+        importerId: null,
         isAutodetect: true,
         tabulator: null,
         sheetSelected: null,
@@ -262,10 +262,10 @@
         await this.$store.dispatch('updateTableColumns', this.table)
         importOptions.table = this.table
 
-        this.importerClass = await this.$util.send('import/init', { options: importOptions, table: this.table })
+        this.importerId = await this.$util.send('import/init', { options: importOptions, table: this.table })
         this.tabulator = null
         this.isAutodetect = true
-        this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerClass })
+        this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerId })
         await this.setAutodetectOptions()
         if (importOptions.fileType === 'xlsx') {
           await this.setXSLX()
@@ -283,7 +283,7 @@
         return `${schema}${this.stepperProps.table}`
       },
       async setXSLX() {
-        this.sheets = await this.$util.send('import/excel/getSheets', { id: this.importerClass })
+        this.sheets = await this.$util.send('import/excel/getSheets', { id: this.importerId })
         this.sheetSelected = this.sheets[0]
       },
       async previewFile() {
@@ -303,8 +303,8 @@
         await this.$store.dispatch('updateTableColumns', this.table)
 
         importOptions.table = this.table
-        await this.$util.send('import/setOptions', { id: this.importerClass, options: importOptions })
-        const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerClass })
+        await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
+        const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
         const tableColumns = columns.map(column =>
           ({
             ...column,
@@ -327,7 +327,7 @@
       },
       async setAutodetectOptions() {
         const isAutodetect = this.isAutodetect
-        const autodetectedFields = await this.$util.send('import/getAutodetectedSettings', { id: this.importerClass })
+        const autodetectedFields = await this.$util.send('import/getAutodetectedSettings', { id: this.importerId })
         // TODO: For different file types, might have to get from the importer class since ones that shouldn't be shown should be "null"
         const defaultFormat = {
           columnDelimeter: ',',
@@ -359,7 +359,7 @@
       async onNext() {
         const importData = {
           table: this.tableKey(),
-          importProcessId: this.importerClass,
+          importProcessId: this.importerId,
           importOptions: {
             fileName: this.fileName,
             columnDelimeter: this.columnDelimeter,
@@ -374,7 +374,7 @@
           }
         }
 
-        await this.$util.send('import/setOptions', { id: this.importerClass, options: importData.importOptions })
+        await this.$util.send('import/setOptions', { id: this.importerId, options: importData.importOptions })
         return await this.$store.commit('imports/upsertImport', importData)
       }
     }

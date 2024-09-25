@@ -43,7 +43,7 @@ export default {
   mixins: [Mutators],
   data() {
     return {
-      importerClass: null,
+      importerId: null,
       table: null,
       tabulator: null,
       tableColumnNames: {},
@@ -122,7 +122,7 @@ export default {
       return `${schema}${this.stepperProps.table}`
     },
     async tableData(importedColumns) {
-      const { meta } = await this.$util.send('import/getFileAttributes', { id: this.importerClass })
+      const { meta } = await this.$util.send('import/getFileAttributes', { id: this.importerId })
       const importOptions = await this.getImportOptions(this.tableKey())
       const tableColumns = new Map()
 
@@ -179,7 +179,7 @@ export default {
     },
     async onFocus () {
       const importOptions = await this.tablesToImport.get(this.tableKey())
-      if (importOptions.importMap && this.importerClass && this.tabulator) {
+      if (importOptions.importMap && this.importerId && this.tabulator) {
         this.tabulator.redraw()
       } else {
         this.initialize()
@@ -222,12 +222,12 @@ export default {
     },
     async onNext() {
       const importOptions =  await this.tablesToImport.get(this.tableKey())
-      importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerClass, dataToMap: this.tabulator.getData() })
+      importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
       importOptions.truncateTable = this.truncateTable
 
       const importData = {
         table: this.tableKey(),
-        importProcessId: this.importerClass,
+        importProcessId: this.importerId,
         importOptions
       }
       this.$store.commit('imports/upsertImport', importData)
@@ -253,9 +253,9 @@ export default {
       this.tableColumnNames = tableColumnNames
       this.nonNullableColumns = nonNullableColumns
       if (!importOptions.importProcessId) {
-        this.importerClass = await this.$util.send('import/init', { options: importOptions })
+        this.importerId = await this.$util.send('import/init', { options: importOptions })
       } else {
-        this.importerClass = importOptions.importProcessId
+        this.importerId = importOptions.importProcessId
       }
 
       this.initTabulator()

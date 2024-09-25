@@ -933,7 +933,10 @@ export async function prepareImportTests (util) {
   let tableName = 'importstuff'
 
   const importScriptOptions = {
-    executeOptions: { multiple: false }
+    executeOptions: { multiple: false },
+    storeValues: {
+      truncateTable: false
+    }
   }
 
   let data = []

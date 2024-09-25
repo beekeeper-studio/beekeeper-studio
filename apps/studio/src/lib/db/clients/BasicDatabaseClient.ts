@@ -305,7 +305,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   async importFile(
     table: TableOrView,
     importScriptOptions: ImportFuncOptions,
-    readStream: (b: {[key: string]: any}, connection?: any, c?: string) => Promise<any>,
+    readStream: (b: {[key: string]: any}, executeOptions?: any, c?: string) => Promise<any>,
   ) {
     const {
       executeOptions,

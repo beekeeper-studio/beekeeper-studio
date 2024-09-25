@@ -18,7 +18,7 @@
         v-if="importStarted"
       >
         <div class="import-progress-wrapper flex-col">
-          <i :class="[{error: this.importError !== null, spinning: (this.importStarted && this.importError === null && this.timer === null)}, 'material-icons loading-icon']">
+          <i :class="[{error: this.importError !== null, spinning: isSpinning}, 'material-icons loading-icon']">
             {{ getProgressIcon }}
           </i>
           <div class="text-2x">
@@ -199,6 +199,9 @@
       ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
       ...mapState(['tables']),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
+      isSpinning() {
+        return this.importStarted && this.importError === null && this.timer === null;
+      },
       portalName() {
         return `tab-import-table-statusbar-${this.tab.id}`
       },

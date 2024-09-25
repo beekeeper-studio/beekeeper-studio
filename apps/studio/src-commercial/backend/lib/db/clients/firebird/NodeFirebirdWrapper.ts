@@ -143,9 +143,16 @@ export class Connection {
                 result[blob.row][blob.column] = blob.value;
               }
 
-              resolve({ rows: result, meta, isSelect });
+
+              transaction.commit((err) => {
+                if (err) {
+                  return reject(err)
+                }
+                resolve({ rows: result, meta, isSelect });
+              });
             })
         } else {
+          transaction.commit();
           resolve({ rows: result, meta, isSelect });
         }
       }

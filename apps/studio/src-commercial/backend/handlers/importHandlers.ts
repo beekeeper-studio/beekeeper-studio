@@ -25,7 +25,6 @@ interface PreviewData {
 
 export interface IImportHandlers {
   'import/init': ({ sId, options }: { sId: string, options: ImportOptions }) => Promise<string>,
-  'import/get': ({ sId, id }: { sId: string, id: string }) => Promise<any>,
   'import/allowChangeSettings': ({ sId, id }: { sId: string, id: string }) => Promise<any>,
   'import/excel/getSheets': ({ sId, id }: { sId: string, id: string }) => Promise<any>,
   'import/setOptions': ({ sId, id, options }: { sId: string, id: string, options: ImportOptions }) => Promise<any>,
@@ -47,10 +46,6 @@ export const ImportHandlers: IImportHandlers = {
     state(sId).imports.set(processId, importer);
 
     return processId;
-  },
-
-  'import/get': async function({ sId, id }: { sId: string, id: string }) {
-    return getImporter(id, sId)
   },
 
   'import/allowChangeSettings': async function({ sId, id }: {sId: string, id: string}) {
