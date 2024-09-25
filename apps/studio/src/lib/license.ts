@@ -1,6 +1,12 @@
 import { TransportLicenseKey } from "@/common/transport";
 import _ from "lodash";
 
+interface Status {
+  edition: "community" | "ultimate"
+  condition: string
+  license?: TransportLicenseKey
+}
+
 export interface Version {
   major: number;
   minor: number;
@@ -35,7 +41,7 @@ export function getLicenseStatus(options: {
   licenses: TransportLicenseKey[];
   currentDate: Date;
   currentVersion: Version;
-}) {
+}): Status {
   const { licenses, currentDate, currentVersion } = options;
 
   // Do they have a license at all?
