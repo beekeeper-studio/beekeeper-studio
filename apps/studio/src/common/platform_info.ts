@@ -1,6 +1,3 @@
-import { getLicenseStatus } from "@/lib/license"
-import { LicenseKey } from "./appdb/models/LicenseKey"
-import globals from "./globals"
 import { IPlatformInfo } from "./IPlatformInfo"
 
 function isRenderer() {
@@ -20,18 +17,7 @@ function isUtility() {
   return process.type === 'utility'
 }
 
-let platformInfo: IPlatformInfo & { isUltimate: boolean, isCommunity: boolean };
-
-async function updateLicenseStatus() {
-  if (platformInfo.testMode) return
-  const status = getLicenseStatus({
-    licenses: await LicenseKey.find(),
-    currentDate: new Date(),
-    currentVersion: platformInfo.parsedAppVersion,
-  })
-  platformInfo.isUltimate = status.edition === 'ultimate'
-  platformInfo.isCommunity = status.edition === 'community'
-}
+let platformInfo: IPlatformInfo;
 
 if (isRenderer()) {
   throw new Error('PlatformInfo cannot be used in the renderer')
@@ -117,14 +103,9 @@ if (isRenderer()) {
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
     cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
-    isUltimate: false,
-    isCommunity: true,
 
     // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }
-
-  updateLicenseStatus()
-  setInterval(updateLicenseStatus, globals.licenseCheckInterval)
 }
 
 export default platformInfo

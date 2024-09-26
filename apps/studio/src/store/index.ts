@@ -239,7 +239,7 @@ const store = new Vuex.Store<State>({
       return rootGetters['licenses/isUltimate']
     },
     isTrial(_state, _getters, _rootState, rootGetters) {
-      return rootGetters['licenses/status'].license?.licenseType === "TrialLicense"
+      return rootGetters['licenses/isTrial']
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
@@ -414,8 +414,7 @@ const store = new Vuex.Store<State>({
       if (context.getters.isUltimate) {
         title += ' Ultimate Edition'
       }
-      const status = context.rootGetters['licenses/status']
-      if (status.license?.licenseType === 'TrialLicense' && status.edition === 'ultimate') {
+      if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${days} ${window.main.pluralize('day', days, true)} left)`
       }
@@ -589,7 +588,7 @@ const store = new Vuex.Store<State>({
       await context.dispatch('userEnums/init')
       await context.dispatch('updateWindowTitle')
       setInterval(
-        () => context.dispatch('licenses/updateDate'),
+        () => context.dispatch('licenses/sync'),
         globals.licenseCheckInterval
       )
     },

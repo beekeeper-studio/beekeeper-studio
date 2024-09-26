@@ -67,16 +67,12 @@
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import Vue from 'vue'
-import { mapGetters } from 'vuex'
 
 export default Vue.extend({
   data() {
     return {
       message: null
     }
-  },
-  computed: {
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
   },
   methods: {
     showModal(message) {

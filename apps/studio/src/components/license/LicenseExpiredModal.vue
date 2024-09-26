@@ -25,12 +25,10 @@
 </template>
 
 <script lang="ts">
-import { mapGetters } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
 
 export default {
   computed: {
-    ...mapGetters({ status: "licenses/status" }),
     modalName: () => "license-expired-modal",
   },
   methods: {
@@ -55,8 +53,9 @@ export default {
     },
   },
   mounted() {
-    if (this.status.edition === "community" && this.status.condition === "License expired") {
-      this.onLicenseExpired(this.status.license);
+    const status = this.$store.state.licenses.status;
+    if (status.isCommunity && status.condition === "License expired") {
+      this.onLicenseExpired(status.license);
     }
     this.registerHandlers(this.rootBindings);
   },

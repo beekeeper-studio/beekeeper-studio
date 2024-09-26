@@ -1,12 +1,6 @@
 import { TransportLicenseKey } from "@/common/transport";
 import _ from "lodash";
 
-interface Status {
-  edition: "community" | "ultimate"
-  condition: string
-  license?: TransportLicenseKey
-}
-
 export interface Version {
   major: number;
   minor: number;
@@ -37,40 +31,55 @@ export function isVersionLessThanOrEqual(a: Version, b: Version) {
   return true;
 }
 
+export class LicenseStatus {
+  edition: "community" | "ultimate"
+  condition: string
+  license?: TransportLicenseKey
+
+  get isUltimate() {
+    return this.edition === "ultimate";
+  }
+
+  get isCommunity() {
+    return this.edition === "community";
+  }
+
+  get isTrial() {
+    return this.license?.licenseType === "TrialLicense";
+  }
+}
+
 export function getLicenseStatus(options: {
   licenses: TransportLicenseKey[];
   currentDate: Date;
   currentVersion: Version;
-}): Status {
+}): LicenseStatus {
   const { licenses, currentDate, currentVersion } = options;
+  const status = new LicenseStatus();
 
   // Do they have a license at all?
   if (licenses.length === 0) {
-    return {
-      edition: "community",
-      condition: "No license found",
-    };
+    status.edition = "community";
+    status.condition = "No license found";
+    return status;
   }
 
   const currentLicense = _.orderBy(licenses, ["validUntil"], ["desc"])[0];
+  status.license = currentLicense;
 
   // Is the license not valid?
   if (currentDate > currentLicense.validUntil) {
-    return {
-      license: currentLicense,
-      edition: "community",
-      condition: "License expired",
-    };
+    status.edition = "community";
+    status.condition = "License expired";
+    return status;
   }
 
   // From here, we know that the license is still valid.
   // Is maxAllowedAppRelease nullish?
   if (_.isNil(currentLicense.maxAllowedAppRelease)) {
-    return {
-      license: currentLicense,
-      edition: "ultimate",
-      condition: "No app version restriction",
-    };
+    status.edition = "community";
+    status.condition = "No app version restriction";
+    return status;
   }
 
   // Does the license allow the current app version?
@@ -80,16 +89,12 @@ export function getLicenseStatus(options: {
       parseTagVersion(currentLicense.maxAllowedAppRelease.tagName)
     )
   ) {
-    return {
-      license: currentLicense,
-      edition: "ultimate",
-      condition: "App version allowed",
-    };
+    status.edition = "ultimate";
+    status.condition = "App version allowed";
+    return status;
   }
 
-  return {
-    license: currentLicense,
-    edition: "community",
-    condition: "App version not allowed",
-  };
+  status.edition = "community";
+  status.condition = "App version not allowed";
+  return status;
 }

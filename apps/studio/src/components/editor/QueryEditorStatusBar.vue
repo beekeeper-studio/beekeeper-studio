@@ -204,7 +204,6 @@ export default {
   },
   computed: {
     ...mapState('settings', ['settings']),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;

@@ -208,7 +208,6 @@
     },
     computed: {
       ...mapState(['connection']),
-      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
       showUser() {
         return [AzureAuthType.Password].includes(this.authType)
       },

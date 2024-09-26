@@ -1,4 +1,6 @@
-import { Column, Entity } from "typeorm";
+import platformInfo from "@/common/platform_info";
+import { LicenseStatus, getLicenseStatus } from "@/lib/license";
+import { Column, Entity, Not } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 
 @Entity({ name: 'license_keys' })
@@ -25,6 +27,24 @@ export class LicenseKey extends ApplicationEntity {
 
   @Column({ type: 'json', nullable: true })
   maxAllowedAppRelease: { tagName: string }
+
+  /** Get all licenses except trial */
+  static async all() {
+    return await LicenseKey.findBy({ licenseType: Not("TrialLicense" as const) });
+  }
+
+  /** Delete all licenses except trial */
+  static async wipe() {
+    await LicenseKey.delete({ licenseType: Not("TrialLicense" as const) });
+  }
+
+  static async getLicenseStatus(): Promise<LicenseStatus> {
+    return getLicenseStatus({
+      licenses: await LicenseKey.find(),
+      currentDate: new Date(),
+      currentVersion: platformInfo.parsedAppVersion,
+    })
+  }
 
   public get active() : boolean {
     return this.validUntil && this.validUntil > new Date()

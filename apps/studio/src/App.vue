@@ -96,8 +96,10 @@ export default Vue.extend({
         (this.license && this.license.active)
     },
     ...mapState(['storeInitialized', 'connected', 'database']),
+    ...mapState('licenses', ['status']),
     ...mapGetters({
-      'licenseStatus': 'licenses/status',
+      'isTrial': 'isTrial',
+      'isUltimate': 'isUltimate',
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'
     })
@@ -109,10 +111,10 @@ export default Vue.extend({
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
     },
-    licenseStatus(curr, prev) {
+    status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
 
-      if (prev.edition === "ultimate" && curr.edition === "community" && curr.condition === "License expired") {
+      if (prev.isUltimate && curr.isCommunity && curr.condition === "License expired") {
         this.$root.$emit(AppEvent.licenseExpired, curr.license)
       }
     },
@@ -125,10 +127,6 @@ export default Vue.extend({
   async mounted() {
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
-    this.licenseInterval = setInterval(
-      () => this.$store.dispatch('licenses/updateAll'),
-      globals.licenseCheckInterval
-    )
     const query = querystring.parse(window.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
@@ -157,9 +155,9 @@ export default Vue.extend({
   methods: {
     notifyFreeTrial() {
       Noty.closeAll('trial')
-      if (this.licenseStatus.license?.licenseType === 'TrialLicense' && this.licenseStatus.edition === 'ultimate') {
+      if (this.isTrial && this.isUltimate) {
         const ta = new TimeAgo('en-US')
-        const validUntil = this.licenseStatus.license.validUntil
+        const validUntil = this.status.license.validUntil
         const options = {
           text: `Your free trial expires ${ta.format(validUntil)} (${validUntil.toLocaleDateString()})`,
           type: 'warning',
