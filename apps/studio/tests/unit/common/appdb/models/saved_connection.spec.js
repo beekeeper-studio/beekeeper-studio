@@ -27,7 +27,7 @@ describe("Saved Connection", () => {
 
   })
 
-  it.only("demonstrating new databases for each test", async () => {
+  it("demonstrating new databases for each test", async () => {
     const count = await SavedConnection.count()
     expect(count).toBe(0)
   })
