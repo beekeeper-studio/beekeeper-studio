@@ -13,7 +13,7 @@
     "build:vite": "vite build",
     "build": "concurrently -n esbuild,vite \"yarn build:esbuild\" \"yarn build:vite\"",
     "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
-    "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
+    "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.config.js",
     "test:e2e": "xvfb-maybe yar playwright test e2e/*",
     "lint": "eslint",
     "electron:build": "yarn build && yarn electron-builder --config ./electron-builder-config.js",
