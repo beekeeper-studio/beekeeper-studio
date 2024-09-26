@@ -46,6 +46,10 @@ export enum AzureAuthType {
   ServicePrincipalSecret
 }
 
+export const IamAuthTypes = [
+  { name: 'IAM Authentication Using Credentials File', value: 'iam' }
+]
+
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [
   // Can't have 2FA, kinda redundant now
