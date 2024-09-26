@@ -21,7 +21,6 @@
 import { mapGetters, mapState } from 'vuex'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import Mutators, { emptyResult, buildNullValue } from '../../mixins/data_mutators'
-import { getImporterClass } from '../../lib/import/utils'
 import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'

@@ -1,5 +1,5 @@
 import XSLX from 'xlsx'
-import Import from "../"
+import Import from "@/lib/import"
 
 export default class extends Import {
   constructor(filePath, options, connection, table) {

@@ -1,4 +1,4 @@
-import { TableOrView } from "../db/models"
+import { TableOrView } from "@/lib/db/models"
 
 export interface ImportMap {
   fileColumn: string

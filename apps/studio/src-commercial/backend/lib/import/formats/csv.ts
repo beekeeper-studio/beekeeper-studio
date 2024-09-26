@@ -1,6 +1,6 @@
 import fs from 'fs'
 import Papa, { ParseLocalConfig, ParseResult } from 'papaparse'
-import Import from "../"
+import Import from "@/lib/import"
 import rawLog from 'electron-log'
 const log = rawLog.scope('CSVImporter')
 

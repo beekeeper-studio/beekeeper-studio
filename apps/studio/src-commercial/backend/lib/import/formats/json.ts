@@ -1,5 +1,5 @@
 import fs from 'fs'
-import Import from "../"
+import Import from "@/lib/import"
 
 export default class extends Import {
 

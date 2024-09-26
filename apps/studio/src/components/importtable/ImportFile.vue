@@ -199,7 +199,6 @@
   import { mapGetters, mapState } from 'vuex'
   import { Tabulator, TabulatorFull } from 'tabulator-tables'
   import FilePicker from '@/components/common/form/FilePicker.vue'
-  import { getImporterClass } from '../../lib/import/utils'
   import Mutators from '../../mixins/data_mutators'
   import ToggleFormArea from '../common/ToggleFormArea.vue'
   export default {

@@ -25,7 +25,6 @@ import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import Mutators from '../../mixins/data_mutators'
 import { AppEvent } from '@/common/AppEvent'
 import { FormatterDialect } from '@shared/lib/dialects/models'
-import { getImporterClass } from '../../lib/import/utils'
 
 export default {
   components: {
