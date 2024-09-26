@@ -110,6 +110,7 @@ export const CredentialsModule: Module<State, RootState> = {
         context.commit('replace', results)
       } finally {
         context.commit('loading', false)
+        context.dispatch('setUserWorkspace')
       }
     },
     async login(context, { email, password }) {
@@ -128,11 +129,20 @@ export const CredentialsModule: Module<State, RootState> = {
       cred = await Vue.prototype.$util.send('appdb/credential/save', { obj: cred })
       const result = await credentialToBlob(cred)
       context.commit('add', result)
+      context.dispatch('setUserWorkspace')
     },
     async logout(context, blob: CredentialBlob) {
       await Vue.prototype.$util.send('appdb/credential/remove', { obj: blob.credential });
       await context.dispatch('load')
-      await context.commit('workspaceId', -1, { root: true})
-    }
+      await context.commit('workspaceId', -1, { root: true })
+    },
+    async setUserWorkspace(context) {
+      const { value: lastUsedWorkspace } = context.rootGetters['settings/lastUsedWorkspace']
+      const { workspaces } = context.getters
+
+      if (lastUsedWorkspace !== -1 && workspaces.length > 1) {
+        if (workspaces.filter(v => v?.workspace?.id === lastUsedWorkspace) != null) context.commit('workspaceId', lastUsedWorkspace, { root: true })
+      }
+    },
   }
 }
