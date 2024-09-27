@@ -20,8 +20,6 @@ import fs from 'fs'
 import path from 'path'
 import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
-import { TestOrmConnection } from './TestOrmConnection'
-import { LicenseKey } from '@/common/appdb/models/LicenseKey'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -208,8 +206,6 @@ export class DBTestUtil {
   }
 
   async setupdb() {
-    await TestOrmConnection.connect();
-    await LicenseKey.createTrialLicense()
     await this.connection.connect()
     await this.createTables()
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')

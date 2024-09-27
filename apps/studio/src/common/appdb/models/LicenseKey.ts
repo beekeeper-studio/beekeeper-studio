@@ -40,10 +40,17 @@ export class LicenseKey extends ApplicationEntity {
   }
 
   static async getLicenseStatus(): Promise<LicenseStatus> {
+    const status = new LicenseStatus();
+
+    if (platformInfo.testMode) {
+      status.edition = "ultimate";
+      status.condition = "Test mode";
+      return status;
+    }
+
     const licenses = await LicenseKey.find();
     const currentDate = new Date();
     const currentVersion = platformInfo.parsedAppVersion;
-    const status = new LicenseStatus();
 
     // Do they have a license at all?
     if (licenses.length === 0) {
