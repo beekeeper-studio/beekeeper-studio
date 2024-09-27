@@ -1,4 +1,5 @@
 import XLSX from 'xlsx';
+import fs from 'fs';
 import Import from '@/lib/import';
 import _ from 'lodash';
 
@@ -8,6 +9,7 @@ export default class extends Import {
   }
 
   async read(options, executeOptions?: any) {
+    XLSX.set_fs(fs);
     const readOptions = {
       type: 'buffer',
       ...options
@@ -19,7 +21,7 @@ export default class extends Import {
         ...executeOptions
       }
     }
-    let file
+    let file: XLSX.WorkBook;
 
     try {
       file = XLSX.readFile(this.fileName, readOptions)
@@ -27,7 +29,9 @@ export default class extends Import {
         return file.SheetNames
       }
       const sheetName = readOptions.sheet ?? file.SheetNames[0]
-      const parsedData = XLSX.utils.sheet_to_json(file.Sheets[sheetName])
+      const parsedData = XLSX.utils.sheet_to_json(file.Sheets[sheetName], { raw: false })
+      // const parsedCSV = XLSX.utils.sheet_to_csv(file.Sheets[sheetName]);
+      fs.writeFileSync("/home/notnight/dev/parsedData.json", JSON.stringify(parsedData))
       const data = Array.isArray(parsedData) ? parsedData : [parsedData]
       const dataObj = {
         meta: {

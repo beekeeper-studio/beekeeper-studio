@@ -1,8 +1,17 @@
 import _ from 'lodash'
 import rawLog from 'electron-log'
+import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient';
+import { TableOrView } from '../db/models';
 const log = rawLog.scope('import-file')
 
 export default class Import {
+  fileName: string;
+  options: any;
+  connection: BasicDatabaseClient<any>;
+  table: TableOrView;
+  logger: () => rawLog.LogFunctions;
+  importScriptOptions: any;
+
   constructor(fileName, options, connection, table) {
     this.fileName = fileName
     this.options = options
@@ -133,11 +142,11 @@ export default class Import {
     return opt
   }
 
-  async read(options, executeOptions, fileToImport = null) {
+  async read(_options?: any, _executeOptions?: any, _fileToImport: string = null): Promise<any> {
     throw new Error("Method 'read()' must be implemented.")
   }
 
-  async getPreview() {
+  async getPreview(_options?: any): Promise<any> {
     throw new Error("Method 'getPreview()' must be implemented.")
   }
 
@@ -154,7 +163,7 @@ export default class Import {
     throw new Error("Method 'validateFile()' must be implemented")
   }
 
-  async getSheets() {
+  async getSheets(): Promise<any> {
     throw new Error("Method 'getSheets()' must be implemented but is Excel only")
   }
 }
