@@ -1,4 +1,5 @@
 import CodeMirror from "codemirror";
+import "codemirror/mode/sql/sql";
 
 CodeMirror.defineMIME("text/x-pgsql", {
   // eslint-disable-next-line

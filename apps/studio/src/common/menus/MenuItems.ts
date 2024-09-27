@@ -1,10 +1,9 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
-import platformInfo from "../platform_info";
-import { getValue, IGroupedUserSettings } from '../transport/TransportUserSetting';
+import { IPlatformInfo } from '../IPlatformInfo';
+import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
 
-
-export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings) {
+export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings, platformInfo: IPlatformInfo) {
   return {
     upgradeModal: (label: string) => {
       return {
@@ -171,14 +170,14 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: 'Native',
           click: actionHandler.switchMenuStyle,
-          checked: getValue(settings.menuStyle) === 'native'
+          checked: settings.menuStyle.value === 'native'
         },
         {
           id: "ms-client",
           type: 'radio',
           label: 'Client',
           click: actionHandler.switchMenuStyle,
-          checked: getValue(settings.menuStyle) === 'client'
+          checked: settings.menuStyle.value === 'client'
         }
       ]
     },
@@ -190,21 +189,54 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: "System",
           click: actionHandler.switchTheme,
-          checked: getValue(settings.theme) === 'system'
+          checked: settings.theme.value === 'system'
         },
         {
           type: "radio",
           label: "Light",
           click: actionHandler.switchTheme,
-          checked: getValue(settings.theme) === 'light'
+          checked: settings.theme.value === 'light'
         },
         {
           type: 'radio',
           label: "Dark",
           click: actionHandler.switchTheme,
-          checked: getValue(settings.theme) === 'dark'
+          checked: settings.theme.value === 'dark'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized',
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'solarized'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized Dark',
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'solarized-dark'
         }
       ]
+    },
+    enterLicense: {
+      id: 'enter-license',
+      label: "Enter License Key",
+      click: actionHandler.enterLicense,
+
+    },
+    backupDatabase: {
+      id: 'backup-database',
+      label: "Create a Database Backup",
+      click: actionHandler.backupDatabase
+    },
+    restoreDatabase: {
+      id: 'restore-database',
+      label: "Restore a Database Backup",
+      click: actionHandler.restoreDatabase
+    },
+    exportTables: {
+      id: 'export-tables',
+      label: 'Export Data',
+      click: actionHandler.exportTables
     },
     minimalModeToggle: {
       id: "minimal-mode-toggle",

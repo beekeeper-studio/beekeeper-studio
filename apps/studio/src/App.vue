@@ -28,6 +28,10 @@
     />
     <dropzone />
     <data-manager />
+    <enter-license-modal />
+    <workspace-sign-in-modal />
+    <import-queries-modal />
+    <import-connections-modal />
     <confirmation-modal-manager />
     <util-died-modal />
   </div>
@@ -43,13 +47,22 @@ import AutoUpdater from './components/AutoUpdater.vue'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
-import NotificationManager from './components/NotificationManager.vue'
+
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
+import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
+import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
+import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
+import TimeAgo from 'javascript-time-ago'
+import EnterLicenseModal from './components/ultimate/EnterLicenseModal.vue'
+import { AppEvent } from './common/AppEvent'
+import globals from './common/globals'
+import NotificationManager from './components/NotificationManager.vue'
+import Noty from 'noty';
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
 
-import rawLog from 'electron-log/renderer'
+import rawLog from 'electron-log'
 
 const log = rawLog.scope('app.vue')
 
@@ -57,22 +70,36 @@ export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone, UtilDiedModal
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
+    UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
+    EnterLicenseModal
   },
   data() {
     return {
       url: null,
-      runningWayland: false
+      interval: null,
+      licenseInterval: null,
+      runningWayland: false,
     }
   },
   computed: {
-    ...mapState(['storeInitialized', 'database', 'connected']),
+    activeLicense() {
+      return this.$config.isDevelopment ||
+        (this.license && this.license.active)
+    },
+    ...mapState(['storeInitialized', 'connected', 'database']),
+    ...mapGetters({
+      'license': 'licenses/newestLicense'
+    }),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'
     })
   },
   watch: {
+    title() {
+      document.title = this.title
+    },
     database() {
       log.info('database changed', this.database)
     },
@@ -80,14 +107,28 @@ export default Vue.extend({
       document.body.className = `theme-${this.themeValue}`
     }
   },
+  async beforeDestroy() {
+    clearInterval(this.interval)
+    clearInterval(this.licenseInterval)
+    await this.$store.commit('userEnums/setWatcher', null)
+  },
   async mounted() {
     await this.$store.dispatch('fetchUsername')
+    await this.$store.dispatch('licenses/init')
+    await this.$store.dispatch('userEnums/init')
 
+    this.notifyFreeTrial()
+    this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
+    this.licenseInterval = setInterval(
+      () => this.$store.dispatch('licenses/updateAll'),
+      globals.licenseCheckInterval
+    )
     const query = querystring.parse(window.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
       this.runningWayland = !!query.runningWayland
     }
+
 
     this.$nextTick(() => {
       window.main.isReady();
@@ -106,9 +147,40 @@ export default Vue.extend({
       }
     }
 
-
   },
   methods: {
+    notifyFreeTrial() {
+      Noty.closeAll('trial')
+      if (this.license?.licenseType === 'TrialLicense' && this.license?.active) {
+
+        // we set the app title AND set a notification
+        document.title = `Beekeeper Studio Ultimate - free trial ends ${this.license.validUntil.toLocaleDateString()}`
+
+        const ta = new TimeAgo('en-US')
+        const options = {
+          text: `Your free trial expires ${ta.format(this.license.validUntil)} (${this.license.validUntil.toLocaleDateString()})`,
+          type: 'warning',
+          closeWith: ['button'],
+          layout: 'bottomRight',
+          timeout: false,
+          queue: 'trial',
+          buttons: [
+            Noty.button('Buy a License', 'btn btn-flat', () => {
+              window.location.href = "https://beekeeperstudio.io/pricing"
+            }),
+            Noty.button('Enter License', 'btn btn-primary', () => {
+              this.$root.$emit(AppEvent.enterLicense)
+            })
+          ]
+        }
+        // @ts-ignore
+        const n = new Noty(options)
+        n.show()
+      }
+    },
+    licenseModal() {
+      this.$root.$emit(AppEvent.enterLicense)
+    },
     databaseSelected(_db) {
       // TODO: do something here if needed
     },

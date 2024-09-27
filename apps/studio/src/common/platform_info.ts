@@ -1,3 +1,4 @@
+import { IPlatformInfo } from "./IPlatformInfo"
 
 function isRenderer() {
   // running in a web browser
@@ -16,16 +17,16 @@ function isUtility() {
   return process.type === 'utility'
 }
 
-let platformInfo;
+let platformInfo: IPlatformInfo;
 
 if (isRenderer()) {
-  platformInfo = window?.main?.platformInfo();
+  throw new Error('PlatformInfo cannot be used in the renderer')
 } else {
   let e
   const p = process;
   const { resolve, join } = require('path');
   const yargs = require('yargs-parser');
-  
+
   if (!isUtility()) {
     e = require('electron')
   }
@@ -94,10 +95,9 @@ if (isRenderer()) {
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     updatesDisabled,
     appVersion: testMode ? 'test-mode' : e?.app.getVersion() ?? p.env.version,
-    cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
+    // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
+    cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
-    isCommunity: true,
-    isUltimate: false,
 
     // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }

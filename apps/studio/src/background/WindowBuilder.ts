@@ -40,6 +40,8 @@ class BeekeeperWindow {
     }
 
       log.info('constructing the window')
+    const preloadPath = path.join(__dirname, 'preload.js')
+    console.log("PRELOAD PATH:", preloadPath)
     this.win = new BrowserWindow({
       ...this.getWindowPosition(settings),
       minWidth: 800,
@@ -48,7 +50,7 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
+        preload: preloadPath,
         nodeIntegration: false,
         contextIsolation: true,
         spellcheck: false,
@@ -57,9 +59,10 @@ class BeekeeperWindow {
       icon: getIcon()
     })
 
-    const startUrl = 'app://./index.html'
-    // let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
-    const appUrl = startUrl
+    const devUrl = 'http://localhost:3003'
+    const startUrl = 'app://./renderer/index.html'
+    let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
+    // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     if (platformInfo.isWayland) {
@@ -67,7 +70,7 @@ class BeekeeperWindow {
     }
     const query = querystring.stringify(queryObj)
 
-    this.appUrl = query ? `${appUrl}?${query}` : appUrl
+    this.appUrl = query ? `${appUrl}?${query}` : `${appUrl}/`
     remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
 

@@ -26,8 +26,8 @@
                 :key="index"
                 :value="index"
               >
-                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ window.main.pluralize('row',
-                                                                                                 resultOption.rows.length, false) }}</option>
+                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row', resultOption.rows.length, false) }}
+              </option>
             </select>
           </div>
         </span>
@@ -96,7 +96,7 @@
             >
               <x-label>Download Full Resultset</x-label>
               <i
-                v-if="$config.isCommunity"
+                v-if="!hasActiveLicense"
                 class="material-icons menu-icon"
               >stars</i>
             </x-menuitem>
@@ -153,8 +153,7 @@
 <script>
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
-import { mapState } from 'vuex';
-import { getValue } from '@/common/transport/TransportUserSetting'
+import { mapState, mapGetters } from 'vuex';
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -178,7 +177,7 @@ export default {
   data() {
     return {
       showHint: false,
-      selectedResult: 0,
+      selectedResult: 0
     }
   },
 
@@ -205,9 +204,10 @@ export default {
   },
   computed: {
     ...mapState('settings', ['settings']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     userKeymap: {
       get() {
-        const value = getValue(this.settings?.keymap);
+        const value = this.settings?.keymap.value;
         return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
       },
       set(value) {
@@ -220,7 +220,7 @@ export default {
     },
     hasUsedDropdown: {
       get() {
-        return getValue(this.settings?.hideResultsDropdown) ?? false
+        return this.settings?.hideResultsDropdown.value ?? false
       },
       set(value) {
         this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
@@ -244,7 +244,8 @@ export default {
         return null
       }
       const executeTime = this.executeTime || 0
-      return shortEnglishHumanizer(executeTime)
+      
+      return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
     },
     executionTimeTitle() {
       if (!this.executeTime) {

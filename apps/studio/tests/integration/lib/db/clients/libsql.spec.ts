@@ -5,22 +5,23 @@ import { IDbConnectionServerConfig } from "@/lib/db/types";
 import tmp from "tmp";
 import path from "path";
 import fs from "fs";
-import { LibSQLClient } from "@/lib/db/clients/libsql";
-import { createServer } from "@/lib/db";
+import { LibSQLClient } from "@commercial/backend/lib/db/clients/libsql";
+import { createServer } from "@commercial/backend/lib/db/server";
 import knex from "knex";
 import Client_Libsql from "@libsql/knex-libsql";
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
 
 const timeoutDefault = 5000
 
+// FIXME (azmi): remove arrayMode from utilOpions once it's fixed
 const TEST_VERSIONS = [
-  { mode: "memory", readOnly: false },
-  { mode: "file", readOnly: false },
-  { mode: "file", readOnly: true },
-  { mode: "remote", readOnly: true },
-  { mode: "remote", readOnly: false },
-  { mode: "replica", readOnly: false },
-  { mode: "replica", readOnly: true },
+  { mode: "memory", readOnly: false, arrayMode: true },
+  { mode: "file", readOnly: false, arrayMode: true },
+  { mode: "file", readOnly: true, arrayMode: true },
+  { mode: "remote", readOnly: true, arrayMode: false },
+  { mode: "remote", readOnly: false, arrayMode: false },
+  { mode: "replica", readOnly: false, arrayMode: true },
+  { mode: "replica", readOnly: true, arrayMode: true },
 ] as const;
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
@@ -39,7 +40,10 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     beforeAll(async () => {
       let dbPath: string;
       let knexFilename: string;
-      const utilOptions: Options = { dialect: "sqlite" };
+      const utilOptions: Options = {
+        dialect: "sqlite",
+        supportsArrayMode: options.arrayMode,
+      };
       const config = {
         client: "libsql",
         readOnlyMode: options.readOnly,
@@ -108,13 +112,10 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     afterAll(async () => {
       await util.disconnect()
       if (dbfile) {
-        console.log("removing dbfile callback")
         await dbfile.removeCallback();
       }
       if (container) {
-        console.log("stopping container...")
         await container.stop();
-        console.log("container stopped")
       }
     });
 

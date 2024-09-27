@@ -54,12 +54,12 @@
           <x-button
             v-if="showDryRun"
             class="btn btn-flat btn-small"
-            :disabled="$config.isCommunity"
+            :disabled="!hasActiveLicense"
             @click="dryRun = !dryRun"
           >
             <x-label>Dry Run</x-label>
             <i
-              v-if="$config.isCommunity"
+              v-if="!hasActiveLicense"
               class="material-icons menu-icon"
             >stars</i>
             <input
@@ -101,7 +101,7 @@
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
-                    v-if="$config.isCommunity"
+                    v-if="!hasActiveLicense"
                     class="material-icons menu-icon"
                   >
                     stars
@@ -110,7 +110,7 @@
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
                   <x-label>Run Current to File</x-label>
                   <i
-                    v-if="$config.isCommunity"
+                    v-if="!hasActiveLicense"
                     class="material-icons menu-icon "
                   >
                     stars
@@ -313,7 +313,6 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import platformInfo from '@/common/platform_info'
   import { splitQueries } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
@@ -329,7 +328,6 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
-  import { getValue } from '@/common/transport/TransportUserSetting'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -382,13 +380,14 @@
     },
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
+      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = getValue(this.settings?.keymap);
+          const value = this.settings?.keymap.value;
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -817,7 +816,7 @@
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitQueryToFile() {
-        if (platformInfo.isCommunity) {
+        if (!this.hasActiveLicense) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
@@ -829,7 +828,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
-        if (platformInfo.isCommunity) {
+        if (!this.hasActiveLicense) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }

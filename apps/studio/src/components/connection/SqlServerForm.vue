@@ -1,5 +1,5 @@
 <template>
-  <div class="with-connection-type">
+  <div class="with-connection-type sql-server-form">
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
@@ -81,6 +81,20 @@
             v-model="config.defaultDatabase"
           >
         </div>
+        <div class="advanced-connection-settings signed-in-as" v-if="hasAccessTokenCache">
+          <div class="advanced-body">
+            <span class="info">Signed in{{ accountName ? ` as ${accountName}` : '' }}</span>
+            <button
+              class="btn btn-flat btn-icon"
+              type="button"
+              @click.prevent="signOut"
+              :disabled="signingOut"
+            >
+              <i class="material-icons">logout</i>
+              Sign out
+            </button>
+          </div>
+        </div>
         <div class="form-group" v-show="showUser">
           <label for="user">User</label>
           <input
@@ -142,9 +156,10 @@
 <script>
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
-  import platformInfo from '@/common/platform_info'
-  import { AppEvent } from '@/common/AppEvent'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
+  import { AppEvent } from '@/common/AppEvent'
+  import _ from 'lodash'
+  import { mapState, mapGetters } from 'vuex'
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
@@ -157,17 +172,20 @@
       return {
         azureAuthEnabled: false,
         authType: 'default',
-        authTypes: AzureAuthTypes
+        authTypes: AzureAuthTypes,
+        accountName: null,
+        signingOut: false,
+        errorSigningOut: null,
       }
     },
     watch: {
-      authType() {
+      async authType() {
         if (this.authType === 'default') {
           // this is good
           this.azureAuthEnabled = false
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
-          if (platformInfo.isCommunity) {
+          if (!this.hasActiveLicense) {
             // we want to display a modal
             this.$root.$emit(AppEvent.upgradeModal);
             this.authType = 'default'
@@ -176,12 +194,21 @@
             this.config.azureAuthOptions.azureAuthType = this.authType
           }
         }
+
+        const authId = this.config.azureAuthOptions?.authId || this.config?.authId
+        if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
+          this.accountName = await this.connection.azureGetAccountName(authId);
+        } else {
+          this.accountName = null
+        }
       },
       azureAuthEnabled() {
         this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
       }
     },
     computed: {
+      ...mapState(['connection']),
+      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
       showUser() {
         return [AzureAuthType.Password].includes(this.authType)
       },
@@ -198,8 +225,24 @@
       showMsiEndpoint() {
         return [AzureAuthType.MSIVM].includes(this.authType)
       },
+      hasAccessTokenCache() {
+        return Boolean(this.accountName)
+      },
     },
     methods: {
+      async signOut() {
+        try {
+          this.signingOut = true
+          await this.connection.azureSignOut(this.config);
+          this.config.authId = null
+          this.accountName = null
+        } catch (e) {
+          this.errorSigningOut = e
+          this.$emit('error', e)
+        } finally {
+          this.signingOut = false
+        }
+      },
     }
   }
 </script>

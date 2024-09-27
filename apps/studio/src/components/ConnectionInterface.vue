@@ -63,7 +63,7 @@
                   <option
                     disabled
                     hidden
-                    value="undefined"
+                    value="null"
                   >
                     Select a connection type...
                   </option>
@@ -88,9 +88,6 @@
                   v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
-                  @save="save"
-                  @test="testConnection"
-                  @connect="submit"
                 />
                 <postgres-form
                   v-else-if="config.connectionType === 'postgresql'"
@@ -111,6 +108,7 @@
                   v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
+                  @error="connectionError = $event"
                 />
                 <big-query-form
                   v-else-if="config.connectionType === 'bigquery'"
@@ -118,17 +116,43 @@
                   :testing="testing"
                 />
                 <firebird-form
-                  v-else-if="config.connectionType === 'firebird'"
+                  v-else-if="config.connectionType === 'firebird' && hasActiveLicense"
+                  :config="config"
+                  :testing="testing"
+                />
+                <oracle-form
+                  v-if="config.connectionType === 'oracle' && hasActiveLicense"
+                  :config="config"
+                  :testing="testing"
+                />
+                <cassandra-form
+                  v-if="config.connectionType === 'cassandra' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
                 <lib-sql-form
-                  v-else-if="config.connectionType === 'libsql'"
+                  v-else-if="config.connectionType === 'libsql' && hasActiveLicense"
                   :config="config"
                   :testing="testing"
                 />
 
-
+                <!-- Set the database up in read only mode (or not, your choice) -->
+                <div class="form-group">
+                  <label
+                    class="checkbox-group"
+                    for="readOnlyMode"
+                  >
+                    <input
+                      class="form-control"
+                      id="readOnlyMode"
+                      type="checkbox"
+                      name="readOnlyMode"
+                      v-model="config.readOnlyMode"
+                    >
+                    <span>Read Only Mode</span>
+                    <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
+                  </label>
+                </div>
                 <!-- TEST AND CONNECT -->
                 <div
                   v-if="!shouldUpsell"
@@ -137,7 +161,7 @@
                   <span class="expand" />
                   <div class="btn-group">
                     <button
-                      :disabled="testing"
+                      :disabled="testing || connecting"
                       class="btn btn-flat"
                       type="button"
                       @click.prevent="testConnection"
@@ -145,7 +169,7 @@
                       Test
                     </button>
                     <button
-                      :disabled="testing"
+                      :disabled="testing || connecting"
                       class="btn btn-primary"
                       type="submit"
                       @click.prevent="submit"
@@ -191,6 +215,7 @@
         }}</a></small>
       </div>
     </div>
+    <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
   </div>
 </template>
 
@@ -206,15 +231,18 @@ import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
+import CassandraForm from './connection/CassandraForm.vue'
+import OracleForm from './connection/OracleForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
+import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
-import platformInfo from '@/common/platform_info'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from 'electron-log'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
+import { AzureAuthType } from '@/lib/db/types'
 import UpsellContent from './connection/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -225,7 +253,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, BigQueryForm, FirebirdForm, LibSqlForm: LibSQLForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
 
   data() {
     return {
@@ -234,21 +262,24 @@ export default Vue.extend({
       connectionError: null,
       errorHelp: null,
       testing: false,
+      connecting: false,
       split: null,
       url: null,
       importError: null,
       sidebarShown: true,
-      version: platformInfo.appVersion
+      loadingSSOModalOpened: false,
+      version: this.$config.appVersion
     }
   },
   computed: {
-    ...mapState(['workspaceId']),
+    ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (platformInfo.isUltimate) return false
+      if (this.hasActiveLicense) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -332,6 +363,7 @@ export default Vue.extend({
         }
       } as Split.Options)
     })
+    await this.$store.dispatch('credentials/load')
     this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
@@ -394,17 +426,22 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
 
+      this.beforeConnect()
       this.connectionError = null
       try {
+        this.connecting = true
         await this.$store.dispatch('connect', this.config)
       } catch (ex) {
         this.connectionError = ex
         this.$noty.error("Error establishing a connection")
         log.error(ex)
+      } finally {
+        this.connecting = false
+        this.afterConnect()
       }
     },
     async handleConnect(config) {
@@ -412,9 +449,11 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!platformInfo.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
         return
       }
+
+      this.beforeConnect()
 
       try {
         this.testing = true
@@ -427,6 +466,7 @@ export default Vue.extend({
         this.$noty.error("Error establishing a connection")
       } finally {
         this.testing = false
+        this.afterConnect()
       }
     },
     async save() {
@@ -442,8 +482,11 @@ export default Vue.extend({
           this.config.authId = cacheId;
         }
 
-        await this.$store.dispatch('data/connections/save', this.config)
+        const id = await this.$store.dispatch('data/connections/save', this.config)
         this.$noty.success("Connection Saved")
+        // we want to fetch the saved one in case it's changed
+        const connection = this.connections.find((c) => c.id === id)
+        this.edit(connection)
       } catch (ex) {
         console.error(ex)
         this.errors = [ex.message]
@@ -457,7 +500,24 @@ export default Vue.extend({
       } else {
         this.errors = null
       }
-    }
+    },
+    // Before running connect/test method
+    beforeConnect() {
+      if (
+        this.config.connectionType === 'sqlserver' &&
+        this.config.azureAuthOptions.azureAuthEnabled &&
+        this.config.azureAuthOptions.azureAuthType === AzureAuthType.AccessToken
+      ) {
+        this.loadingSSOModalOpened = true
+      }
+    },
+    // After running connect/test method, success or fail
+    afterConnect() {
+      this.loadingSSOModalOpened = false
+    },
+    loadingSSOCanceled() {
+      this.connection.azureCancelAuth();
+    },
   },
 })
 </script>

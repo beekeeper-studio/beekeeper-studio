@@ -1,5 +1,5 @@
 
-import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, getValue, setValue } from '../../../common/transport/TransportUserSetting'
+import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, setValue } from '../../../common/transport/TransportUserSetting'
 import _ from 'lodash'
 import Vue from 'vue'
 import { Module } from 'vuex'
@@ -45,7 +45,8 @@ const SettingStoreModule: Module<State, any> = {
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
       setValue(setting, value);
       setting.key = key
-      await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+      const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+      _.merge(setting, newSetting);
       context.commit(M.ADD, setting)
     }
   },
@@ -53,25 +54,26 @@ const SettingStoreModule: Module<State, any> = {
     settings(state) {
       return state.settings
     },
-    themeValue(state) {
-      const theme = state.settings.theme ? getValue(state.settings.theme) : null;
+    themeValue(state, _getters, _rootState, rootGetters) {
+      const theme = state.settings.theme ? state.settings.theme.value : null;
+      const hasActiveLicense = rootGetters['licenses/hasActiveLicense'];
       if (!theme) return null
-      if (['system', 'dark', 'light'].includes(theme as string)) {
+      if (!hasActiveLicense && ['system', 'dark', 'light'].includes(theme as string)) {
         return theme
       }
-      return 'system'
+      return hasActiveLicense ? theme : 'system';
     },
     menuStyle(state) {
       if (!state.settings.menuStyle) return 'native'
-      return getValue(state.settings.menuStyle)
+      return state.settings.menuStyle.value
     },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'
-      return getValue(state.settings.sortOrder)
+      return state.settings.sortOrder.value
     },
     minimalMode(state) {
       if (!state.settings.minimalMode) return false;
-      return getValue(state.settings.minimalMode)
+      return state.settings.minimalMode.value
     },
   }
 }

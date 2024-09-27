@@ -149,7 +149,7 @@
           <button
             class="btn btn-flat btn-icon"
             type="button"
-            @click.prevent="upgradeModal"
+            @click.prevent="importExportTables"
           >
             <i class="material-icons">tab</i>
             Export multiple tables
@@ -172,7 +172,6 @@ import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
 import FilePicker from '../common/form/FilePicker.vue'
-import platformInfo from '../../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
 const log = rawlog.scope('export/export-modal')
 
@@ -272,7 +271,7 @@ export default {
     defaultPath() {
       let previous = localStorage.getItem('export/directory')
       if (previous === 'undefined' || previous === 'null') previous = null
-      return previous || platformInfo.downloadsDirectory
+      return previous || this.$config.downloadsDirectory
     },
     filterTooltip() {
       if (!this.hasFilters) {
@@ -317,7 +316,11 @@ export default {
       this.$emit('export', payload) // handled by ExportManager
       this.$modal.hide('export-modal')
     },
-    closeModal () {
+    importExportTables() {
+      this.$root.$emit(AppEvent.exportTables);
+      this.closeModal();
+    },
+    closeModal() {
       this.$modal.hide('export-modal')
     },
     upgradeModal() {

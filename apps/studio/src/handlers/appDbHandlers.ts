@@ -2,8 +2,8 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
-import { Transport, TransportFavoriteQuery, TransportPinnedConn, TransportPinnedEntity, TransportUsedQuery } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, SaveOptions } from "typeorm";
+import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportPinnedEntity, TransportUsedQuery } from "@/common/transport";
+import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
 import rawLog from 'electron-log';
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
@@ -17,21 +17,29 @@ import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
+import { CloudCredential } from "@/common/appdb/models/CloudCredential";
+import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 
 const log = rawLog.scope('Appdb handlers');
 
-function handlersFor<T extends Transport>(name: string, cls: any) {
+function defaultTransform<T extends Transport>(obj: T, cls: any) {
+  const newObj = {} as unknown as T;
+  return cls.merge(newObj, obj);
+}
+
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => T = defaultTransform) {
 
   return {
     // this is so we can get defaults on objects
     [`appdb/${name}/new`]: async function({ init }: { init?: any }) {
-      return new cls(init);
+      return transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
-      console.log('RECEIVED: ', obj)
       if (_.isArray(obj)) {
           const ids = obj.map((e) => e.id);
-          const dbEntities = await cls.findByIds(ids);
+          const dbEntities = await cls.findBy({
+            id: In(ids)
+          });
           const newEnts = obj.map((e) => {
             const dbEnt = dbEntities.find((v) => v.id === e.id);
 
@@ -39,44 +47,58 @@ function handlersFor<T extends Transport>(name: string, cls: any) {
               return cls.merge(dbEnt, e);
             }
 
-            return new cls(e);
+            return new cls().withProps(e);
           });
-          return await cls.save(newEnts, options);
+          return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
-        let dbObj: any = obj.id ? await cls.findOne(obj.id) : new cls(obj);
+        let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
         if (dbObj && obj.id) {
           cls.merge(dbObj, obj);
         } else if (!dbObj) {
-          dbObj = new cls(obj);
+          dbObj = new cls().withProps(obj);
         }
         log.info(`Saving ${name}: `, dbObj);
         await dbObj.save();
-        return dbObj;
+        return transform(dbObj, cls);
       }
     },
     [`appdb/${name}/remove`]: async function({ obj }: { obj: T | T[] }) {
       if (_.isArray(obj)) {
         const ids = obj.map((e) => e.id);
-        const dbEntities = await cls.findByIds(ids);
-        return await cls.remove(dbEntities)
+        const dbEntities = await cls.findBy({
+          id: In(ids)
+        });
+        await cls.remove(dbEntities)
       } else {
-        const dbObj = await cls.findOne(obj.id);
+        const dbObj = await cls.findOneBy({ id: obj.id });
         log.info(`Removing ${name}: `, dbObj);
         await dbObj?.remove();
       }
     },
-    [`appdb/${name}/find`]: async function({ options }: { options: FindManyOptions<any> }) {
+    [`appdb/${name}/find`]: async function({ options }: { options?: FindManyOptions<any> }) {
       return (await cls.find(options)).map((value) => {
-        const obj = {} as unknown as T;
-        return cls.merge(obj, value);
+        return transform(value, cls);
       })
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
-      return await cls.findOne(options)
+      return transform(await cls.findOneBy(options), cls)
     }
   }
 }
 
+function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+  return {
+    ...obj,
+    value: obj.value
+  };
+}
+
+function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
+  return {
+    ...obj,
+    active: obj.active
+  };
+}
 
 export const AppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection),
@@ -88,7 +110,9 @@ export const AppDbHandlers = {
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
   ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
-  ...handlersFor<TransportUserSetting>('setting', UserSetting),
+  ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
+  ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
+  ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
@@ -97,7 +121,7 @@ export const AppDbHandlers = {
     return conn;
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
-    let existing = await UserSetting.findOne({ key });
+    let existing = await UserSetting.findOneBy({ key });
     if (!existing) {
       existing = new UserSetting();
       existing.key = key;
@@ -107,10 +131,10 @@ export const AppDbHandlers = {
     await existing.save();
   },
   'appdb/setting/get': async function({ key }: { key: string }) {
-    return await UserSetting.findOne({key});
+    return transformSetting(await UserSetting.findOneBy({key}), UserSetting);
   },
   'appdb/cache/remove': async function({ authId }: { authId: number }) {
-    const cache = await TokenCache.findOne(authId);
+    const cache = await TokenCache.findOneBy({ id: authId });
     await cache.remove();
   },
   'appdb/cache/new': async function() {

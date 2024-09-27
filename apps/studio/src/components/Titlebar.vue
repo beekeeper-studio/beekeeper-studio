@@ -13,7 +13,7 @@
         class="titlebar-icon"
         v-if="!$config.isMac"
       >
-        <img src="assets/logo.svg">
+        <img src="@/assets/logo.svg">
         <AppMenu />
       </div>
       <div class="titlebar-title noselect">
@@ -65,7 +65,6 @@
 <script>
 import { mapState } from 'vuex'
 import AppMenu from './menu/NewAppMenu.vue'
-import platformInfo from '@/common/platform_info'
 export default {
   components: { AppMenu },
   data() {
@@ -78,6 +77,19 @@ export default {
     ...mapState(['windowTitle'])
   },
   mounted() {
+    // FIXME This doesn't work after the refactor and needs fixing
+    //this.getWindow()?.on('maximize', () => {
+    //  this.maximized = true
+    //})
+    //this.getWindow()?.on('unmaximize', () => {
+    //  this.maximized = false
+    //})
+    //this.getWindow()?.on('enter-full-screen', () => {
+    //  this.fullscreen = true
+    //})
+    //this.getWindow()?.on('leave-full-screen', () => {
+    //  this.fullscreen = false
+    //})
   },
   methods: {
     async updateFlags() {

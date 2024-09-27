@@ -1,0 +1,18 @@
+.with-table-wrapper {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+
+  .table-slot-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .table-slot-wrapper {
+    width: 100%;
+  }
+}

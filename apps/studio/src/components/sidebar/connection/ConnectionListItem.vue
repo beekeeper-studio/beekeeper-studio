@@ -69,7 +69,6 @@
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
-import platformInfo from '@/common/platform_info'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 
 export default {
@@ -84,6 +83,7 @@ export default {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
+    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     moveToOptions() {
       return this.folders
         .filter((folder) => folder.id !== this.config.connectionFolderId)
@@ -146,7 +146,7 @@ export default {
   },
   methods: {
     showContextMenu(event) {
-      const ultimateCheck = platformInfo.isUltimate
+      const ultimateCheck = this.hasActiveLicense
         ? true
         : !isUltimateType(this.config.connectionType)
 

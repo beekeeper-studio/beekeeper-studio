@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions, ImportFuncOptions } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
@@ -9,9 +9,11 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
+import platformInfo from '@/common/platform_info';
 
-const log = rawLog.scope('db');
+const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
+
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -57,6 +59,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
+  allowReadOnly = false;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
@@ -71,6 +74,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
+    this.allowReadOnly = platformInfo.isUltimate || platformInfo.testMode;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -89,7 +93,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // Connection *****************************************************************
-  async connect(): Promise<void> {
+  async connect(_signal?: AbortSignal): Promise<void> {
     /* eslint no-param-reassign: 0 */
     if (this.database.connecting) {
       throw new Error('There is already a connection in progress for this database. Aborting this new request.');
@@ -267,7 +271,35 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  getImportScripts(_table: TableOrView): ImportScriptFunctions {
+  async importStepZero(_table: TableOrView): Promise<any> {
+    return null
+  }
+  async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importTruncateCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importLineReadCommand (_table: TableOrView, _sqlString: string|string[], _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importCommitCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importRollbackCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importFinalCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+  
+  // getImportScripts can be deleted
+  async getImportScripts(_table: TableOrView): Promise<ImportScriptFunctions> {
     return {
       step0: (): Promise<any|null> => null,
       beginCommand: (_executeOptions: any): any => null,
@@ -279,14 +311,14 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
-  getImportSQL(importedData: any[]): string | string[] {
+  async getImportSQL(importedData: any[]): Promise<string | string[]> {
     const queries = []
-    
+
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
-  
+
   // Duplicate Table ************************************************************
   abstract duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>;
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
@@ -328,11 +360,11 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       columns,
       totalRows
     }
-  } 
+  }
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -365,10 +397,10 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (!isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
       throw new Error(errorMessages.readOnly);
     }
-    
+
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
