@@ -849,25 +849,28 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async importBeginCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.begin()
+    await clientExtras.transaction.begin()
   }
 
   async importTruncateCommand (table: TableOrView, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
     const { name, schema } = table
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-    return clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
+    await clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
   }
 
-  async importLineReadCommand (_table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
-    return executeOptions.request.query(sqlString, executeOptions)
+  async importLineReadCommand (table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+    const query = `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} ON; ${sqlString}; SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} OFF;`;
+    return await executeOptions.request.query(query, executeOptions)
   }
 
   async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.commit()
+    return await clientExtras.transaction.commit()
   }
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.rollback()
+    return await clientExtras.transaction.rollback()
   }
 
   /* helper functions and settings below! */
