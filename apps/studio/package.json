@@ -120,7 +120,7 @@
     "@types/dateformat": "^3.0.1",
     "@types/electron-devtools-installer": "^2.2.0",
     "@types/javascript-time-ago": "^2.0.1",
-    "@types/jest": "^24.0.19",
+    "@types/jest": "^29.5.13",
     "@types/jquery": "^3.5.1",
     "@types/lodash": "^4.14.159",
     "@types/mkdirp": "^1.0.1",

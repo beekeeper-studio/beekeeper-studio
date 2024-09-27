@@ -1,7 +1,8 @@
 import platformInfo from "@/common/platform_info";
-import { LicenseStatus, getLicenseStatus } from "@/lib/license";
+import { LicenseStatus, isVersionLessThanOrEqual, parseTagVersion } from "@/lib/license";
 import { Column, Entity, Not } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
+import _ from 'lodash';
 
 @Entity({ name: 'license_keys' })
 export class LicenseKey extends ApplicationEntity {
@@ -39,11 +40,51 @@ export class LicenseKey extends ApplicationEntity {
   }
 
   static async getLicenseStatus(): Promise<LicenseStatus> {
-    return getLicenseStatus({
-      licenses: await LicenseKey.find(),
-      currentDate: new Date(),
-      currentVersion: platformInfo.parsedAppVersion,
-    })
+    const licenses = await LicenseKey.find();
+    const currentDate = new Date();
+    const currentVersion = platformInfo.parsedAppVersion;
+    const status = new LicenseStatus();
+
+    // Do they have a license at all?
+    if (licenses.length === 0) {
+      status.edition = "community";
+      status.condition = "No license found";
+      return status;
+    }
+
+    const currentLicense = _.orderBy(licenses, ["validUntil"], ["desc"])[0];
+    status.license = currentLicense;
+
+    // Is the license not valid?
+    if (currentDate > currentLicense.validUntil) {
+      status.edition = "community";
+      status.condition = "License expired";
+      return status;
+    }
+
+    // From here, we know that the license is still valid.
+    // Is maxAllowedAppRelease nullish?
+    if (_.isNil(currentLicense.maxAllowedAppRelease)) {
+      status.edition = "ultimate";
+      status.condition = "No app version restriction";
+      return status;
+    }
+
+    // Does the license allow the current app version?
+    if (
+      isVersionLessThanOrEqual(
+        currentVersion,
+        parseTagVersion(currentLicense.maxAllowedAppRelease.tagName)
+      )
+    ) {
+      status.edition = "ultimate";
+      status.condition = "App version allowed";
+      return status;
+    }
+
+    status.edition = "community";
+    status.condition = "App version not allowed";
+    return status;
   }
 
   public get active() : boolean {

@@ -13,7 +13,7 @@ describe("Saved Connection", () => {
     await TestOrmConnection.disconnect()
   })
 
-  it.only("should let me save and retrieve", async () => {
+  it("should let me save and retrieve", async () => {
     const conn = new SavedConnection()
     conn.connectionType = 'sqlite'
     conn.defaultDatabase = ':memory:'
