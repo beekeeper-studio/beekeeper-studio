@@ -36,8 +36,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapGetters(['defaultSchema', 'dialectData']),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+    ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
     hint() {
       // @ts-expect-error not fully typed
@@ -89,7 +88,7 @@ export default Vue.extend({
         plugins.autoRemoveQueryQuotes(this.connectionType),
       ];
 
-      if (this.hasActiveLicense) {
+      if (this.isUltimate) {
         editorPlugins.push(plugins.queryMagic(() => this.defaultSchema, () => this.tables))
       }
       return editorPlugins;
