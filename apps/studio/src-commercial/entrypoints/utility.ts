@@ -121,12 +121,12 @@ async function updateLicenses() {
       license.validUntil = new Date(data.validUntil)
       license.supportUntil = new Date(data.supportUntil)
       license.maxAllowedAppRelease = data.maxAllowedAppRelease
-      license.save()
+      await license.save()
     } catch (error) {
       if (error instanceof CloudError) {
         // eg 403, 404, license not valid
         license.validUntil = new Date()
-        license.save()
+        await license.save()
       } else {
         // eg 500 errors
         // do nothing
