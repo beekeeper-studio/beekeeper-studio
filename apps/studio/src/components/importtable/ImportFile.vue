@@ -267,7 +267,7 @@
         this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerId })
         await this.setAutodetectOptions()
         if (importOptions.fileType === 'xlsx') {
-          await this.setXSLX()
+          await this.setXLSX()
         }
         
         this.$emit('change', Boolean(this.fileName))
@@ -281,7 +281,7 @@
         const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
         return `${schema}${this.stepperProps.table}`
       },
-      async setXSLX() {
+      async setXLSX() {
         this.sheets = await this.$util.send('import/excel/getSheets', { id: this.importerId })
         this.sheetSelected = this.sheets[0]
       },

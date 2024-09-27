@@ -1,5 +1,6 @@
-import fs from 'fs'
-import Import from "@/lib/import"
+import fs from 'fs';
+import Import from '@/lib/import';
+import _ from 'lodash';
 
 export default class extends Import {
 
@@ -27,8 +28,15 @@ export default class extends Import {
       }
 
       if (!options.isPreview) {
-        const importSql = await this.connection.getImportSQL([this.buildDataObj(data)])
-        await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
+        // This is because currently, we just load the entirety of the file into memory, 
+        // and then import it. So we need to manually chunk the data or the drivers will yell at us
+        const chunkSize = 1000;
+        for (let i = 0; i < data.length; i += chunkSize) {
+          const chunkEnd = i + chunkSize;
+          const slice = _.slice(data, i, chunkEnd > data.length ? data.length  : chunkEnd);
+          const importSql = await this.connection.getImportSQL([this.buildDataObj(slice)])
+          await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
+        }
       }
       return dataObj
     } catch (e) {
