@@ -30,6 +30,11 @@ import { AppEvent } from "@/common/AppEvent";
 export default {
   computed: {
     modalName: () => "license-expired-modal",
+    rootBindings() {
+      return [
+        { event: AppEvent.licenseExpired, handler: this.onLicenseExpired },
+      ]
+    },
   },
   methods: {
     beforeClose() {
@@ -45,11 +50,6 @@ export default {
     async onLicenseExpired(_license) {
       if (!this.$store.getters.showExpiredLicenseModal) return;
       this.$modal.show(this.modalName);
-    },
-    rootBindings() {
-      return [
-        { event: AppEvent.licenseExpired, handler: this.onLicenseExpired },
-      ]
     },
   },
   mounted() {

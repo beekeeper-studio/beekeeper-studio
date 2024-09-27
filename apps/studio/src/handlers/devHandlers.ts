@@ -3,18 +3,18 @@ import platformInfo from "@/common/platform_info";
 import { DevLicenseState } from "@/lib/license";
 
 export interface IDevHandlers {
-  "dev/switchLicenseState": ({ type, sId }: { type: DevLicenseState; sId: string; }) => Promise<void>;
+  "dev/switchLicenseState": ({ state, sId }: { state: DevLicenseState; sId: string; }) => Promise<void>;
 }
 
 export const DevHandlers: IDevHandlers = {
-  "dev/switchLicenseState": async function ({ type }: { type: DevLicenseState; sId: string; }) {
+  "dev/switchLicenseState": async function ({ state }: { state: DevLicenseState; sId: string; }) {
     if (!platformInfo.isDevelopment) {
       throw new Error("Not allowed");
     }
 
     const yesterday = new Date(new Date().setDate(new Date().getDate() - 1));
     const nextMonth = new Date(new Date().setMonth(new Date().getMonth() + 1));
-    switch (type) {
+    switch (state) {
       case DevLicenseState.firstInstall:
         await LicenseKey.clear();
         break;

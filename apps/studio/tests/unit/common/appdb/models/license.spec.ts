@@ -1,8 +1,5 @@
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import {
-  isVersionLessThanOrEqual,
-  parseTagVersion,
-} from "@/lib/license";
+import { isVersionLessThanOrEqual, parseTagVersion } from "@/lib/license";
 import _ from "lodash";
 import platformInfo from "@/common/platform_info";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
@@ -19,7 +16,38 @@ function v(strings: TemplateStringsArray) {
   };
 }
 
-// jest.mock('@/common/platform_info')
+function expectStatus() {
+  return expect(
+    LicenseKey.getLicenseStatus().then((s) => _.omit(s, ["license"]))
+  ).resolves;
+}
+
+async function createLicense(options: {
+  validUntil: string;
+  maxAllowedAppRelease: Nullable<{ tagName: string }>;
+}) {
+  const license = new LicenseKey();
+  license.validUntil = new Date(options.validUntil);
+  license.supportUntil = new Date(options.validUntil);
+  license.licenseType = "PersonalLicense";
+  license.email = "fake-email";
+  license.key = "fake-key";
+  license.maxAllowedAppRelease = options.maxAllowedAppRelease;
+  return await license.save();
+}
+
+function currentTime(date: string) {
+  jest.useFakeTimers({ now: new Date(date).getTime() });
+}
+
+function currentVersion(version: string) {
+  const [major, minor, patch] = version.split(".");
+  platformInfo.parsedAppVersion = {
+    major: parseInt(major),
+    minor: parseInt(minor),
+    patch: parseInt(patch),
+  };
+}
 
 describe("License", () => {
   it("parse tag version correctly", () => {
@@ -40,39 +68,6 @@ describe("License", () => {
 
   describe("License status", () => {
     const origParsedAppVersion = platformInfo.parsedAppVersion;
-
-    function expectStatus() {
-      return expect(
-        LicenseKey.getLicenseStatus().then((s) => _.omit(s, ["license"]))
-      ).resolves;
-    }
-
-    async function createLicense(options: {
-      validUntil: string;
-      maxAllowedAppRelease: Nullable<{ tagName: string }>;
-    }) {
-      const license = new LicenseKey();
-      license.validUntil = new Date(options.validUntil);
-      license.supportUntil = new Date(options.validUntil);
-      license.licenseType = "PersonalLicense";
-      license.email = "fake-email";
-      license.key = "fake-key";
-      license.maxAllowedAppRelease = options.maxAllowedAppRelease;
-      return await license.save();
-    }
-
-    function currentTime(date: string) {
-      jest.useFakeTimers({ now: new Date(date).getTime() });
-    }
-
-    function currentVersion(version: string) {
-      const [major, minor, patch] = version.split(".");
-      platformInfo.parsedAppVersion = {
-        major: parseInt(major),
-        minor: parseInt(minor),
-        patch: parseInt(patch),
-      };
-    }
 
     beforeEach(async () => {
       await TestOrmConnection.connect();
