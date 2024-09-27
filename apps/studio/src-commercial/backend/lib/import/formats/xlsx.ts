@@ -30,8 +30,6 @@ export default class extends Import {
       }
       const sheetName = readOptions.sheet ?? file.SheetNames[0]
       const parsedData = XLSX.utils.sheet_to_json(file.Sheets[sheetName], { raw: false })
-      // const parsedCSV = XLSX.utils.sheet_to_csv(file.Sheets[sheetName]);
-      fs.writeFileSync("/home/notnight/dev/parsedData.json", JSON.stringify(parsedData))
       const data = Array.isArray(parsedData) ? parsedData : [parsedData]
       const dataObj = {
         meta: {
