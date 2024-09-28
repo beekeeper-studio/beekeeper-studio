@@ -13,7 +13,7 @@
         </h3>
       </div>
     </div>
-    <div v-else-if="!hasActiveLicense">
+    <div v-else-if="isCommunity">
       <upsell-content></upsell-content>
     </div>
     <Stepper
@@ -163,7 +163,7 @@ export default Vue.extend({
       'backupFeatures': 'backups/supportedFeatures',
       'logFile': 'backups/logFilePath',
       'dialect': 'dialect',
-      'hasActiveLicense': 'licenses/hasActiveLicense'
+      'isCommunity': 'isCommunity',
     }),
     ...mapState('backups', {
       'backupTables': 'backupTables',

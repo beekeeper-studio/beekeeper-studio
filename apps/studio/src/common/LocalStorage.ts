@@ -1,4 +1,4 @@
-
+import _ from 'lodash'
 
 export const SmartLocalStorage = {
   addItem(key:string, value:any): void{
@@ -14,9 +14,10 @@ export const SmartLocalStorage = {
   setBool(key: string, value: boolean): void {
     localStorage.setItem(key, JSON.stringify(value))
   },
-  getBool(key: string): boolean {
+  getBool(key: string, defaultVal: boolean = false): boolean {
     const result = localStorage.getItem(key)
-    return result && result === "true"
+    if (_.isNil(result)) return defaultVal
+    return result === "true"
   },
   getDate(key: string): Date | null {
     const item = localStorage.getItem(key)

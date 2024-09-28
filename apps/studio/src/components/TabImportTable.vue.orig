@@ -4,9 +4,15 @@
       v-if="isSupported"
       class="tabcontent"
     >
+<<<<<<< HEAD
+      <upsell-content v-if="!hasActiveLicense"/>
+||||||| 5ce9364b
+      <upsell-content v-if="!hasActiveLicense"></upsell-content>
+=======
       <div v-if="isCommunity" style="padding: 0 1rem;">
         <upsell-content />
       </div>
+>>>>>>> master
       <stepper
         v-else
         :steps="importSteps"
@@ -197,8 +203,18 @@
       }
     },
     computed: {
+<<<<<<< HEAD
+      ...mapGetters(['schemaTables', 'dialectData', 'dialect']),
+      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+      ...mapState(['tables']),
+||||||| 5ce9364b
+      ...mapGetters(['schemaTables', 'dialectData', 'dialect']),
+      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+      ...mapState(['tables', 'connection']),
+=======
       ...mapGetters(['schemaTables', 'dialectData', 'dialect', 'isCommunity']),
       ...mapState(['tables', 'connection']),
+>>>>>>> master
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
       isSpinning() {
         return this.importStarted && this.importError === null && this.timer === null;
@@ -255,9 +271,6 @@
           this.copyClass = "btn-flat copy-btn"
         }, 5000);
       },
-      getTable() {
-        return this.tab.findTable(this.tables)
-      },
       closeTab () {
         this.$root.$emit(AppEvent.closeTab)
       },
@@ -289,6 +302,7 @@
           this.timer = `${(new Date() - start) / 1000} seconds`
         } catch (err) {
           this.importError = err.message
+          console.log('SET IMPORT ERROR', err)
         } finally {
           this.tab.isRunning = false
         }
