@@ -81,24 +81,33 @@ async function runHandler(id: string, name: string, args: any) {
   };
 
   if (handlers[name]) {
-    try {
-      replyArgs.data = await handlers[name](args)
-    } catch (e) {
-      replyArgs.type = 'error';
-      replyArgs.stack = e?.stack
-      replyArgs.error = e?.message ?? e
-    }
+    return handlers[name](args)
+      .then((data) => {
+        replyArgs.data = data;
+      })
+      .catch((e) => {
+        replyArgs.type = 'error';
+        replyArgs.stack = e?.stack;
+        replyArgs.error = e?.message ?? e;
+      })
+      .finally(() => {
+        try {
+          state(args.sId).port.postMessage(replyArgs);
+        } catch (e) {
+          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+        }
+      });
   } else {
     replyArgs.type = 'error';
     replyArgs.error = `Invalid handler name: ${name}`;
+
+    try {
+      state(args.sId).port.postMessage(replyArgs);
+    } catch (e) {
+      log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+    }
   }
 
-  try {
-    
-    state(args.sId).port.postMessage(replyArgs);
-  } catch (e) {
-    log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
-  }
 }
 
 async function initState(sId: string, port: MessagePortMain) {
