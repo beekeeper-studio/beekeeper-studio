@@ -591,17 +591,21 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   ): Promise<StreamResults> {
     const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
     const columns = await this.listTableColumns(table);
-    const rowCount = await this.getTableLength(table);
+    const rowCount = await this.driverExecuteSingle(qs.countQuery);
     // TODO: DEBUG HERE
     const { query, params } = qs;
 
     return {
-      totalRows: rowCount,
+      totalRows: Number(rowCount.data[0].total),
       columns,
       cursor: new MysqlCursor(this.conn, query, params, chunkSize),
     };
   }
 
+  /**
+   * Get quick and approximate record count. For slow and precise count, use
+   * `SELECT COUNT(*)`.
+   **/
   async getTableLength(table: string, _schema?: string): Promise<number> {
     const tableCheck =
       "SELECT TABLE_TYPE as tt FROM INFORMATION_SCHEMA.TABLES where table_schema = database() and TABLE_NAME = ?";

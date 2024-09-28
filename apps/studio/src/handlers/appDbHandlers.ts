@@ -51,7 +51,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           });
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
-        let dbObj: any = obj.id ? await cls.findOneBy(obj.id) : new cls().withProps(obj);
+        let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
         if (dbObj && obj.id) {
           cls.merge(dbObj, obj);
         } else if (!dbObj) {
@@ -70,7 +70,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         });
         await cls.remove(dbEntities)
       } else {
-        const dbObj = await cls.findOneBy(obj.id);
+        const dbObj = await cls.findOneBy({ id: obj.id });
         log.info(`Removing ${name}: `, dbObj);
         await dbObj?.remove();
       }
@@ -81,7 +81,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       })
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
-      return transform(await cls.findOneBy(options), cls)
+      return transform(await cls.findOne(options), cls)
     }
   }
 }

@@ -38,6 +38,7 @@
         @click.prevent="showUpgradeModal"
         class="btn btn-brand btn-icon btn-upgrade"
         v-tooltip="'Upgrade for: backup/restore, import from CSV, larger query results, and more!'"
+        v-if="$store.getters.isCommunity"
       >
         <i class="material-icons">stars</i> Upgrade
       </a>
@@ -276,6 +277,7 @@ import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
+import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
@@ -299,6 +301,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       PendingChangesButton,
     ConfirmationModal,
     SqlFilesImportModal,
+    DetailViewSidebar,
     },
     data() {
       return {
@@ -338,6 +341,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     tabIcon() {
       return {
         type: this.dbEntityType,
+        tabType: this.dbEntityType,
         entityType: this.dbEntityType
       }
     },
@@ -408,6 +412,11 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         'alt+7': this.handleAltNumberKeyPress,
         'alt+8': this.handleAltNumberKeyPress,
         'alt+9': this.handleAltNumberKeyPress,
+      }
+
+      if(this.$config.isMac) {
+         result['shift+meta+['] = this.previousTab
+         result['shift+meta+]'] = this.nextTab
       }
 
       return result

@@ -116,22 +116,22 @@
                   :testing="testing"
                 />
                 <firebird-form
-                  v-else-if="config.connectionType === 'firebird' && hasActiveLicense"
+                  v-else-if="config.connectionType === 'firebird' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
                 <oracle-form
-                  v-if="config.connectionType === 'oracle' && hasActiveLicense"
+                  v-if="config.connectionType === 'oracle' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
                 <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && hasActiveLicense"
+                  v-if="config.connectionType === 'cassandra' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
                 <lib-sql-form
-                  v-else-if="config.connectionType === 'libsql' && hasActiveLicense"
+                  v-else-if="config.connectionType === 'libsql' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
@@ -274,12 +274,12 @@ export default Vue.extend({
   computed: {
     ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+    ...mapGetters(['isUltimate']),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (this.hasActiveLicense) return false
+      if (this.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -395,7 +395,6 @@ export default Vue.extend({
     },
     edit(config) {
       this.config = _.clone(config)
-      console.log('EDITING: ', this.config)
       this.errors = null
       this.connectionError = null
     },
@@ -427,7 +426,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -450,7 +449,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -483,8 +482,11 @@ export default Vue.extend({
           this.config.authId = cacheId;
         }
 
-        await this.$store.dispatch('data/connections/save', this.config)
+        const id = await this.$store.dispatch('data/connections/save', this.config)
         this.$noty.success("Connection Saved")
+        // we want to fetch the saved one in case it's changed
+        const connection = this.connections.find((c) => c.id === id)
+        this.edit(connection)
       } catch (ex) {
         console.error(ex)
         this.errors = [ex.message]

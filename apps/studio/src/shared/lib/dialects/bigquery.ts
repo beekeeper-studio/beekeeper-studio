@@ -10,7 +10,16 @@ const supportsLength = [];
 export const BigQueryData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
-  wrapIdentifier: (id: string) => id ? `\`${id.replaceAll(/`/g, '\\`')}\`` : null,
+  wrapIdentifier: (id: string) => {
+    if (id) {
+      // Escape backticks and backslashes
+      // should escape \ and `
+      // eg: foo`bar => foo\`bar
+      // eg: foo\bar => foo\\bar
+      return `\`${id.replace(/\\/g, '\\\\').replace(/`/g, '\\`')}\``;
+    }
+    return null;
+  },
   editorFriendlyIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,

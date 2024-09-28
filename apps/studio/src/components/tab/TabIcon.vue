@@ -5,6 +5,10 @@
     :table="tab"
   />
   <i
+    v-else-if="tab.tabType === 'view'"
+    class="material-icons item-icon view-icon"
+  >grid_on</i>
+  <i
     v-else-if="tab.tabType === 'query'"
     class="material-icons item-icon query"
   >code</i>
