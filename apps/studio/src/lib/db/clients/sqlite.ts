@@ -495,6 +495,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+    if (typeOfElement === 'DATABASE') {
+      throw new Error('Cannot drop databases')
+    }
     const sql = `DROP ${SD.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql);

@@ -820,6 +820,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     typeOfElement: DatabaseElement,
     _schema?: string
   ): Promise<void> {
+    if (typeOfElement === 'DATABASE') {
+      throw new Error('Firefird does not support a drop database command')
+    } 
     await this.driverExecuteSingle(`DROP ${typeOfElement} ${elementName}`);
   }
 

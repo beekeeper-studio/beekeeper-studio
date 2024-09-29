@@ -393,6 +393,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+    if (typeOfElement === 'DATABASE') {
+      throw new Error('Firefird does not support a drop database command')
+    }
+
     const sql = `DROP ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
 
     await this.driverExecuteSingle(sql);

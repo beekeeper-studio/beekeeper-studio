@@ -883,10 +883,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<void> {
     await this.runWithConnection(async (connection) => {
-      const sql = `
-        DROP ${MysqlData.wrapLiteral(typeOfElement)}
-          ${this.wrapIdentifier(elementName)}
-      `;
+      const sql = typeOfElement === 'DATABASE' ?
+        `DROP DATABASE ${this.wrapIdentifier(elementName)}`:
+        `DROP ${MysqlData.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`;
+
       await this.driverExecuteSingle(sql, { connection });
     });
   }

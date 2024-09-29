@@ -452,7 +452,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
-    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+    const sql = typeOfElement === 'DATABASE' ?
+      `DROP DATABASE ${this.wrapIdentifier(elementName)}`:
+      `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+
     await this.driverExecuteSingle(sql)
   }
 

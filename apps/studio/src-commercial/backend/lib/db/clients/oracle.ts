@@ -614,7 +614,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
-    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+    const sql = typeOfElement === 'DATABASE' ?
+      `DROP DATABASE ${this.wrapIdentifier(elementName)}`:
+      `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
