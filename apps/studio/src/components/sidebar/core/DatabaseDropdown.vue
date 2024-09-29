@@ -164,10 +164,22 @@
         await this.refreshDatabases()
         this.selectedDatabase = db
       },
-      async completeDeleteAction() {
+      completeDeleteAction() {
+        const databaseToDelete = this.selectedDatabase
         this.$modal.hide('drop-database')
         this.selectedDatabase = this.availableDatabases[0]
-        await this.refreshDatabases()
+        this.$nextTick(async () => {
+          try {
+            await this.$util.send("conn/dropElement", {
+              elementName: databaseToDelete,
+              typeOfElement: "DATABASE"
+            });
+            await this.refreshDatabases()
+            this.$noty.success(`${databaseToDelete} Database dropped successfully`)
+          } catch (ex) {
+            this.$noty.error(`Error dropping database: ${ex.message}`)
+          }
+        })
       },
       createDatabaseSQL() {
         this.$root.$emit(AppEvent.newTab, this.connection.createDatabaseSQL())
