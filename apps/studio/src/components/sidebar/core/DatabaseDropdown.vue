@@ -102,7 +102,7 @@
                 :tab="tabIcon"
               /> {{ this.selectedDatabase }}</span>?
             </div>
-            <p>This change cannot be undone</p>
+            <p>Dropping a database is serious business. Make sure you really want to do this. This change cannot be undone.</p>
           </div>
           <div class="vue-dialog-buttons">
             <span class="expand" />
