@@ -66,6 +66,10 @@ if (isRenderer()) {
       sessionType === 'wayland' && !isWindows && !isMac
   }
 
+  const appVersion = testMode ? 'test-mode' : e?.app.getVersion() ?? p.env.version
+  const [major, minor, patch] = appVersion.split('.')
+  const parsedAppVersion = { major, minor, patch }
+
   platformInfo = {
     isWindows, isMac, isArm, oracleSupported,
     parsedArgs,
@@ -94,7 +98,8 @@ if (isRenderer()) {
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     updatesDisabled,
-    appVersion: testMode ? 'test-mode' : e?.app.getVersion() ?? p.env.version,
+    appVersion,
+    parsedAppVersion,
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
     cloudUrl: 'https://app.beekeeperstudio.io',
     locale,

@@ -41,7 +41,9 @@ import tokenCache from './20240430_add_token_cache'
 import minimalMode from './20240514_user_settings_minimal_mode'
 import libsqlOptions from './20240528_add_libsql_options'
 import nameTokenCache from './20240715_add_name_to_token_cache'
+import maxAllowedAppRelease from './20240920_add_max_allowed_app_release'
 import lastUsedWorkspace from './20240923_user_settings_default_workspace'
+
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
@@ -65,8 +67,8 @@ const realMigrations = [
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   firebirdConnection, exportPath, UserSettingsWindowPosition,
-  demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache,lastUsedWorkspace,
-
+  demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
+  maxAllowedAppRelease,
 ]
 
 // fixtures require the models

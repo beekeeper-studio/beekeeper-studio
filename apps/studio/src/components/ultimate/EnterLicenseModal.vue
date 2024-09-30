@@ -119,6 +119,7 @@ export default Vue.extend({
         await this.$store.dispatch('licenses/add', { email: this.email, key: this.key })
         this.$noty.success("License registered, thanks for supporting Beekeeper Studio.")
         this.$modal.hide('license')
+        this.$store.dispatch('licenseEntered')
       } catch (error) {
         this.error = error
       }

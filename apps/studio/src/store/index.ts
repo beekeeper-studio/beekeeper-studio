@@ -31,6 +31,7 @@ import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
+import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 
 
@@ -69,6 +70,8 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
+  showBeginTrialModal: boolean
+  showExpiredLicenseModal: boolean
 }
 
 Vue.use(Vuex)
@@ -122,6 +125,8 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
+    showBeginTrialModal: SmartLocalStorage.getBool('showBeginTrialModal', true),
+    showExpiredLicenseModal: SmartLocalStorage.getBool('showExpiredLicenseModal', true),
   },
 
   getters: {
@@ -227,9 +232,24 @@ const store = new Vuex.Store<State>({
     versionString(state) {
       return state.server.versionString();
     },
+    isCommunity(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isCommunity']
+    },
+    isUltimate(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isUltimate']
+    },
+    isTrial(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isTrial']
+    },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
-    }
+    },
+    showBeginTrialModal(state, _getters, _rootState, rootGetters) {
+      return state.showBeginTrialModal && rootGetters['licenses/noLicensesFound']
+    },
+    showExpiredLicenseModal(state) {
+      return state.showExpiredLicenseModal
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -268,9 +288,9 @@ const store = new Vuex.Store<State>({
     setUsername(state, name) {
       state.username = name
     },
-    newConnection(state, config: IConnection) {
+    newConnection(state, config: Nullable<IConnection>) {
       state.usedConfig = config
-      state.database = config.defaultDatabase
+      state.database = config?.defaultDatabase
     },
     // this shouldn't be used at all
     clearConnection(state) {
@@ -364,6 +384,12 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
+    showBeginTrialModal(state, value: boolean) {
+      state.showBeginTrialModal = value
+    },
+    showExpiredLicenseModal(state, value: boolean) {
+      state.showExpiredLicenseModal = value
+    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -380,11 +406,18 @@ const store = new Vuex.Store<State>({
       await context.dispatch('connect', conn)
     },
 
-    updateWindowTitle(context, config: Nullable<IConnection>) {
-      const title = config
+    updateWindowTitle(context) {
+      const config = context.state.usedConfig
+      let title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
-
+      if (context.getters.isUltimate) {
+        title += ' Ultimate Edition'
+      }
+      if (context.getters.isTrial && context.getters.isUltimate) {
+        const days = context.rootGetters['licenses/licenseDaysLeft']
+        title += ` - Free Trial (${days} ${window.main.pluralize('day', days, true)} left)`
+      }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
     },
@@ -433,7 +466,8 @@ const store = new Vuex.Store<State>({
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
-      context.dispatch('updateWindowTitle', null)
+      context.commit('newConnection', null)
+      context.dispatch('updateWindowTitle')
       context.dispatch('refreshConnections')
     },
     async syncDatabase(context) {
@@ -548,13 +582,40 @@ const store = new Vuex.Store<State>({
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
     },
-    async toggleExpandFKDetailsByDefault(context, value?: boolean) {
+    async initRootStates(context) {
+      await context.dispatch('fetchUsername')
+      await context.dispatch('licenses/init')
+      await context.dispatch('userEnums/init')
+      await context.dispatch('updateWindowTitle')
+      setInterval(
+        () => context.dispatch('licenses/sync'),
+        globals.licenseCheckInterval
+      )
+    },
+    licenseEntered(context) {
+      context.dispatch('updateWindowTitle')
+    },
+    toggleFlag(context, { flag, value }: { flag: string, value?: boolean }) {
       if (typeof value === 'undefined') {
-        value = !context.state.expandFKDetailsByDefault
+        value = !context.state[flag]
       }
-      SmartLocalStorage.setBool('expandFKDetailsByDefault', value)
-      context.commit('expandFKDetailsByDefault', value)
-    }
+      SmartLocalStorage.setBool(flag, value)
+      context.commit(flag, value)
+      return value
+    },
+    toggleExpandFKDetailsByDefault(context, value?: boolean) {
+      context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    toggleShowBeginTrialModal(context, value?: boolean) {
+      context.dispatch('toggleFlag', { flag: 'showBeginTrialModal', value })
+    },
+    toggleShowExpiredLicenseModal(context, value?: boolean) {
+      context.dispatch('toggleFlag', { flag: 'showExpiredLicenseModal', value })
+    },
+    resetLicenseModals(context) {
+      context.dispatch('toggleShowBeginTrialModal', true)
+      context.dispatch('toggleShowExpiredLicenseModal', true)
+    },
   },
   plugins: []
 })
