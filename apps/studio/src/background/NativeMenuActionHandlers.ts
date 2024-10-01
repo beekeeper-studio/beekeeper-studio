@@ -7,7 +7,7 @@ import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
-import Vue from 'vue';
+import { DevLicenseState } from '@/lib/license';
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -133,15 +133,6 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
-    const existing = await Vue.prototype.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
-    if (!existing) {
-      const nu = {} as any;
-      nu.connectionType = 'sqlite'
-      nu.defaultDatabase = platformInfo.appDbPath
-      nu.name = "Beekeeper's Database"
-      nu.labelColor = 'orange'
-      await Vue.prototype.$util.send('appdb/saved/save', { obj: nu });
-    }
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
@@ -188,5 +179,9 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     getActiveWindows().forEach( window => {
       window.send(AppEvent.settingsChanged)
     })
+  }
+
+  switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.switchLicenseState, state)
   }
 }

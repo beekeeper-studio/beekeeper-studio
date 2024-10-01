@@ -1,0 +1,8 @@
+.import-table-wrapper {
+  @include small-wrap;
+  padding: 0 1.5rem 3rem;
+  overflow: hidden;
+  overflow-y: auto;
+
+  margin: 2rem auto 0 auto;
+}

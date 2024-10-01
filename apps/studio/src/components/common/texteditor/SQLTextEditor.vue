@@ -36,7 +36,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapGetters(['defaultSchema', 'dialectData']),
+    ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
     hint() {
       // @ts-expect-error not fully typed
@@ -82,11 +82,16 @@ export default Vue.extend({
       };
     },
     plugins() {
-      return [
+      const editorPlugins = [
         plugins.autoquote,
         plugins.autoComplete,
         plugins.autoRemoveQueryQuotes(this.connectionType),
       ];
+
+      if (this.isUltimate) {
+        editorPlugins.push(plugins.queryMagic(() => this.defaultSchema, () => this.tables))
+      }
+      return editorPlugins;
     },
   },
   watch: {

@@ -14,6 +14,10 @@
   border: 0!important;
   background: $query-editor-bg!important;
 }
+.CodeMirror-foldmarker {
+  color: $brand-primary;
+  text-shadow: none;
+}
 
 // Monokai
 // ---------------------------------------

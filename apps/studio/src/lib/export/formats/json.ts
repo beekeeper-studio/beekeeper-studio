@@ -22,9 +22,10 @@ export class JsonExporter extends Export {
     queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
-    outputOptions: OutputOptionsJson
+    outputOptions: OutputOptionsJson,
+    managerNotify: boolean = true
   ) {
-    super(filePath, connection, table, query, queryName, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options, managerNotify)
     this.outputOptions = outputOptions
   }
 

@@ -149,7 +149,7 @@
           <button
             class="btn btn-flat btn-icon"
             type="button"
-            @click.prevent="upgradeModal"
+            @click.prevent="importExportTables"
           >
             <i class="material-icons">tab</i>
             Export multiple tables
@@ -317,7 +317,11 @@ export default {
       this.$emit('export', payload) // handled by ExportManager
       this.$modal.hide('export-modal')
     },
-    closeModal () {
+    importExportTables() {
+      this.$root.$emit(AppEvent.exportTables);
+      this.closeModal();
+    },
+    closeModal() {
       this.$modal.hide('export-modal')
     },
     upgradeModal() {

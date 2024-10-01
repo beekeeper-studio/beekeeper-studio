@@ -1,5 +1,5 @@
 <template>
-  <div 
+  <div
     class="list-item"
     :title="title"
     @contextmenu.stop.prevent="showContextMenu"
@@ -14,7 +14,7 @@
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">{{ label }}</div>
-        <div class="subtitle"> 
+        <div class="subtitle">
           <span
             class="bastion"
             v-if="this.config.sshBastionHost"
@@ -134,7 +134,7 @@ export default {
       if (this.isRecentList) {
         if (!this.config.connectionId || !this.config.workspaceId) return null
 
-        return this.connectionConfigs.find((c) => 
+        return this.connectionConfigs.find((c) =>
           c.id === this.config.connectionId &&
           c.workspaceId === this.config.workspaceId
         )
@@ -145,7 +145,7 @@ export default {
   },
   methods: {
     showContextMenu(event) {
-      const ultimateCheck = this.$config.isUltimate
+      const ultimateCheck = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.config.connectionType)
 

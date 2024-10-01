@@ -6,8 +6,7 @@ import { DbConnectionBase } from './saved_connection'
 @Entity({ name: 'used_connection' })
 export class UsedConnection extends DbConnectionBase implements ISimpleConnection {
 
-  constructor(other: IConnection) {
-    super()
+  withProps(other: IConnection): UsedConnection {
     if (other) {
       this.connectionType = other.connectionType
       this.defaultDatabase = other.defaultDatabase
@@ -39,8 +38,10 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       // TEMP (@day): this is just till we fix the used conn duplication issue
       this.authId = other.authId
       this.libsqlOptions = other.libsqlOptions
+
     }
 
+    return this;
   }
 
   @Column({type: 'int', nullable: true})

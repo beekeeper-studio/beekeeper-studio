@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions, ImportFuncOptions } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
@@ -9,6 +9,8 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
+import platformInfo from '@/common/platform_info';
+import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const log = rawLog.scope('BasicDatabaseClient');
@@ -75,6 +77,11 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     this.connectionType = this.server?.config.client;
   }
 
+  async checkAllowReadOnly() {
+    const status = await LicenseKey.getLicenseStatus()
+    return status.isUltimate || platformInfo.testMode;
+  }
+
   set connectionHandler(fn: (msg: string) => void) {
     this.connErrHandler = fn;
   }
@@ -112,9 +119,6 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
         this.server.config.localHost = this.server.sshTunnel.localHost
         this.server.config.localPort = this.server.sshTunnel.localPort
-
-
-
       }
 
     } catch (err) {
@@ -272,7 +276,35 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  getImportScripts(_table: TableOrView): ImportScriptFunctions {
+  async importStepZero(_table: TableOrView): Promise<any> {
+    return null
+  }
+  async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importTruncateCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importLineReadCommand (_table: TableOrView, _sqlString: string|string[], _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importCommitCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importRollbackCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+
+  async importFinalCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    return null
+  }
+  
+  // getImportScripts can be deleted
+  async getImportScripts(_table: TableOrView): Promise<ImportScriptFunctions> {
     return {
       step0: (): Promise<any|null> => null,
       beginCommand: (_executeOptions: any): any => null,
@@ -284,7 +316,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
-  getImportSQL(importedData: any[]): string | string[] {
+  async getImportSQL(importedData: any[]): Promise<string | string[]> {
     const queries = []
 
     queries.push(buildInsertQueries(this.knex, importedData).join(';'))
@@ -297,6 +329,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>;
   // ****************************************************************************
 
+  /** Sync a database file to remote database. This is a LibSQL specific feature. */
   async syncDatabase(): Promise<void> {
     throw new Error("Not implemented");
   }

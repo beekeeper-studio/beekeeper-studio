@@ -1,4 +1,4 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse'] as const
@@ -26,6 +26,20 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ]
 
+export const TableFilterSymbols = [
+  { value: '=', label: 'equals' },
+  { value: '!=', label: 'does not equal'},
+  { value: 'like', label: 'like' },
+  { value: '<', label: 'less than' },
+  { label: 'less than or equal', value: '<=' },
+  { value: '>', label: 'greater than'},
+  { label: "greater than or equal", value:">=" },
+  { label: 'in', value:"in", arrayInput: true },
+  { label: "is null", value: "is", nullOnly: true },
+  { label: "is not null", value: "is not", nullOnly: true }
+
+]
+
 export enum AzureAuthType {
   Default, // This actually may not work at all, might need to just give up on it
   Password,
@@ -33,6 +47,10 @@ export enum AzureAuthType {
   MSIVM,
   ServicePrincipalSecret
 }
+
+export const IamAuthTypes = [
+  { name: 'IAM Authentication Using Credentials File', value: 'iam' }
+]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [
@@ -206,4 +224,12 @@ export interface IBasicDatabaseClient {
 
   getInsertQuery(tableInsert: TableInsert): Promise<string>
   syncDatabase(): Promise<void>
+
+  importStepZero(table: TableOrView): Promise<any>
+  importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importTruncateCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importLineReadCommand (table: TableOrView, sqlString: string|string[], importOptions?: ImportFuncOptions): Promise<any>
+  importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
 }

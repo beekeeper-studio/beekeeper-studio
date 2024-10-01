@@ -1,4 +1,5 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
+import { DevLicenseState } from '@/lib/license';
 import { IPlatformInfo } from '../IPlatformInfo';
 import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
@@ -202,13 +203,77 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           label: "Dark",
           click: actionHandler.switchTheme,
           checked: settings.theme.value === 'dark'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized',
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'solarized'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized Dark',
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'solarized-dark'
         }
       ]
+    },
+    enterLicense: {
+      id: 'enter-license',
+      label: "Enter License Key",
+      click: actionHandler.enterLicense,
+
+    },
+    backupDatabase: {
+      id: 'backup-database',
+      label: "Create a Database Backup",
+      click: actionHandler.backupDatabase
+    },
+    restoreDatabase: {
+      id: 'restore-database',
+      label: "Restore a Database Backup",
+      click: actionHandler.restoreDatabase
+    },
+    exportTables: {
+      id: 'export-tables',
+      label: 'Export Data',
+      click: actionHandler.exportTables
     },
     minimalModeToggle: {
       id: "minimal-mode-toggle",
       label: "Toggle Minimal Mode",
       click: actionHandler.toggleMinimalMode,
     },
+    licenseState: {
+      id: "license-state",
+      label: "DEV Switch License State",
+      submenu: [
+        { label: ">>> BEWARE: ALL LICENSES WILL BE LOST! <<<" },
+        {
+          label: "First time install, no license, no trial.",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.firstInstall),
+        },
+        {
+          label: "On a trial license",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
+        },
+        {
+          label: "Trial expired",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
+        },
+        {
+          label: "On an active paid license",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.activePaidLicense),
+        },
+        {
+          label: "On an expired, lifetime license, that covers this version",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.lifetimeCoversThisVersion),
+        },
+        {
+          label: "On an expired, lifetime license, that covers an earlier version",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.lifetimeCoversEarlierVersion),
+        },
+      ],
+    }
   }
 }

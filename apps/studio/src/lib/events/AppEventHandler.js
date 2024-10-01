@@ -15,10 +15,15 @@ export default class {
     window.main.on(AppEvent.menuStyleChanged, this.menuStyle.bind(this))
     window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
+    window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.toggleSidebar)
     this.forward(AppEvent.quickSearch)
+    this.forward(AppEvent.enterLicense)
+    this.forward(AppEvent.backupDatabase);
+    this.forward(AppEvent.restoreDatabase);
+    this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
   }
@@ -35,7 +40,16 @@ export default class {
     this.vueApp.$emit(AppEvent.closeTab)
   }
 
-  addBeekeeper() {
+  async addBeekeeper() {
+    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
+    if (!existing) {
+      const nu = {};
+      nu.connectionType = 'sqlite'
+      nu.defaultDatabase = platformInfo.appDbPath
+      nu.name = "Beekeeper's Database"
+      nu.labelColor = 'orange'
+      await this.vueApp.$util.send('appdb/saved/save', { obj: nu });
+    }
     this.vueApp.$noty.success("Beekeeper's Database has been added to your Saved Connections")
     this.vueApp.$store.dispatch('data/connections/load')
   }
@@ -50,5 +64,11 @@ export default class {
 
   menuStyle() {
     this.vueApp.$noty.success("Restart Beekeeper for the change to take effect")
+  }
+
+  async switchLicenseState(_event, state) {
+    await this.vueApp.$util.send('dev/switchLicenseState', { state })
+    this.vueApp.$store.dispatch("resetLicenseModals")
+    window.location.reload(true)
   }
 }
