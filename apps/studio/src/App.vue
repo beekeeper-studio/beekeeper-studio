@@ -193,7 +193,7 @@ export default Vue.extend({
     databaseSelected(_db) {
       // TODO: do something here if needed
     },
-    validateLicenseExpiry(prev?: LicenseStatus, curr?: LicenseStatus) {
+    validateLicenseExpiry(curr?: LicenseStatus, prev?: LicenseStatus) {
       if (SmartLocalStorage.getBool('expiredLicenseEventsEmitted', false)) return
 
       const compare = prev && curr
