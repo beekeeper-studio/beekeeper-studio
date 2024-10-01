@@ -23,6 +23,8 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicD
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import { IDbConnectionServer } from '../backendTypes';
+import { Signer } from "@aws-sdk/rds-signer";
+import { fromIni } from "@aws-sdk/credential-providers";
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -1259,17 +1261,46 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result.rows[0]?.tableowner;
   }
 
-  protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
+  protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
+
+    let resolvedPw = null;
+    const redshiftOptions = server.config.redshiftOptions;
+
+    if (
+      server.config.client === "postgresql" &&
+      redshiftOptions?.iamAuthenticationEnabled
+    ) {
+      const nodeProviderChainCredentials = fromIni({
+        profile: redshiftOptions.awsProfile ?? "default",
+      });
+      const signer = new Signer({
+        credentials: nodeProviderChainCredentials,
+        region: redshiftOptions?.awsRegion,
+        hostname: server.config.host,
+        port: server.config.port || 5432,
+        username: server.config.user,
+      });
+
+      resolvedPw = await signer.getAuthToken();
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: server.config.password || undefined,
+      password: resolvedPw || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
 
     };
+
+    if (
+      server.config.client === "postgresql" &&
+      redshiftOptions?.iamAuthenticationEnabled
+    ){
+      server.config.ssl = true;
+    }
 
     return this.configurePool(config, server, null);
   }

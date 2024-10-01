@@ -52,6 +52,7 @@ import { WSWithClient } from '@/store/modules/CredentialsModule'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import NewWorkspaceButton from './connection/NewWorkspaceButton.vue'
+import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
 components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentPlaceholderImg, ContentPlaceholder },
@@ -85,9 +86,17 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
       return result.join(" ")
     },
     refresh() {
+      if (this.$store.getters.isCommunity) {
+        this.$root.$emit(AppEvent.upgradeModal)
+        return
+      }
       this.$store.dispatch('credentials/load')
     },
     click(blob: { workspace: IWorkspace, client: CloudClient}) {
+      if (this.$store.getters.isCommunity) {
+        this.$root.$emit(AppEvent.upgradeModal)
+        return
+      }
       this.$store.commit('workspaceId', blob.workspace.id)
     }
   },

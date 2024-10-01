@@ -96,7 +96,7 @@
             >
               <x-label>Download Full Resultset</x-label>
               <i
-                v-if="!hasActiveLicense"
+                v-if="$store.getters.isCommunity"
                 class="material-icons menu-icon"
               >stars</i>
             </x-menuitem>
@@ -204,7 +204,6 @@ export default {
   },
   computed: {
     ...mapState('settings', ['settings']),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;
@@ -244,7 +243,7 @@ export default {
         return null
       }
       const executeTime = this.executeTime || 0
-      
+
       return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
     },
     executionTimeTitle() {
