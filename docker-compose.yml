@@ -109,7 +109,7 @@ services:
       SA_PASSWORD: "Example@1"
     ports:
       - 1433:1433
-    # command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
+    command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
   sqlserverlatin:
     image: 'mcr.microsoft.com/mssql/server:2017-latest-ubuntu'
     volumes:
