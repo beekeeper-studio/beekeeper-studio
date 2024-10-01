@@ -4,13 +4,10 @@
     :class="{disabled: !credentials.length}"
     v-tooltip="title"
   >
-    <x-button class="nav-item">
+    <x-button class="nav-item" @click="onClick">
       <span class="avatar-btn-link"><i class="material-icons">add</i></span>
-      <x-menu v-if="credentials.length">
-        <x-menuitem
-          v-if="credentials.length"
-          @click.prevent="createWorkspace"
-        >
+      <x-menu v-if="credentials.length && $store.getters.isUltimate">
+        <x-menuitem @click.prevent="createWorkspace">
           <x-label>Create a new workspace</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="addWorkspace">
@@ -41,8 +38,12 @@ export default Vue.extend({
     },
     signup() {
       document.location.href = `${this.$config.cloudUrl}/users/sign_up`
-    }
-
+    },
+    onClick() {
+      if (this.$store.getters.isCommunity) {
+        this.$root.$emit(AppEvent.upgradeModal)
+      }
+    },
   }
 })
 </script>

@@ -1,7 +1,7 @@
 <template>
   <div class="import-export__wrapper tabcontent">
     <div class="import-export__container">
-      <upsell-content v-if="!hasActiveLicense"></upsell-content>
+      <upsell-content v-if="isCommunity" />
       <stepper
         v-else
         :steps="exportSteps"
@@ -148,7 +148,7 @@
       ...mapState('multiTableExports', ['tablesToExport', 'tableOptions', 'exportSchema']),
       ...mapGetters({
         'hasRunningExports': 'exports/hasRunningExports',
-        'hasActiveLicense': 'licenses/hasActiveLicense'
+        'isCommunity': 'isCommunity',
       }),
       selectedTables() {
         return this.tablesToExport.length;
