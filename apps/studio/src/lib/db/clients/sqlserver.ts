@@ -839,12 +839,32 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query);
   }
 
-  async importStepZero(_table: TableOrView): Promise<any> {
+  async hasIdentityColumn(table: TableOrView): Promise<boolean> {
+    const sql = `
+      SELECT
+        c.name AS ColumnName,
+        t.name AS TableName,
+        s.name AS SchemaName,
+        c.is_identity
+      FROM sys.columns c
+      JOIN sys.tables t ON c.object_id = t.object_id
+      JOIN sys.schemas s ON t.schema_id = s.schema_id
+      WHERE t.name = ${this.wrapValue(table.name)}
+      AND s.name = ${this.wrapValue(table.schema)}
+      AND c.is_identity = 1;
+    `;
+
+    const { data } = await this.driverExecuteSingle(sql);
+    return data.recordset && data.recordset.length > 0;
+  }
+
+  async importStepZero(table: TableOrView): Promise<any> {
     const transaction = new sql.Transaction(this.pool)
 
     return {
       transaction,
-      request: new sql.Request(transaction)
+      request: new sql.Request(transaction),
+      hasIdentityColumn: await this.hasIdentityColumn(table)
     }
   }
 
@@ -861,7 +881,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async importLineReadCommand (table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
     const { name, schema } = table
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-    const query = `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} ON; ${sqlString}; SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} OFF;`;
+    const identOn = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} ON;` : '';
+
+    const identOff = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} OFF;` : '';
+    const query = `${identOn}${sqlString};${identOff}`;
     return await executeOptions.request.query(query, executeOptions)
   }
 
