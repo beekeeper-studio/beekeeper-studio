@@ -24,7 +24,7 @@
       :read-only="true"
       :fold-gutter="true"
       :fold-all="foldAll"
-      :unfoldAll="unfoldAll"
+      :unfold-all="unfoldAll"
       :value="text || 'Click on a row to see details'"
       :forced-value="text || 'Click on a row to see details'"
       :mode="mode"
@@ -35,6 +35,9 @@
 </template>
 
 <script lang="ts">
+/**
+ * dataId:  use this to update the component with new data.
+ */
 import Vue from "vue";
 import Sidebar from "@/components/common/Sidebar.vue";
 import TextEditor from "@/components/common/texteditor/TextEditor.vue";
@@ -54,7 +57,7 @@ const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { Sidebar, TextEditor },
-  props: ["value", "hidden", "expandablePaths", "rowId"],
+  props: ["value", "hidden", "expandablePaths", "dataId"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -67,7 +70,7 @@ export default Vue.extend({
     hidden() {
       if (!this.hidden) this.reinitializeTextEditor++;
     },
-    rowId() {
+    dataId() {
       if (this.expandFKDetailsByDefault) {
         this.expandablePaths.forEach((expandablePath: ExpandablePath) => {
           // Expand only the first level

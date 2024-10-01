@@ -33,8 +33,8 @@
         <detail-view-sidebar
           :value="selectedRowData"
           :hidden="!openDetailView"
-          :expandablePaths="expandablePaths"
-          :rowId="selectedRowIndex"
+          :expandable-paths="expandablePaths"
+          :data-id="selectedRowIndex"
           @expandPath="expandForeignKey"
           @close="toggleOpenDetailView(false)"
         />
@@ -969,6 +969,7 @@ export default Vue.extend({
       })
       this.tabulator.on("cellMouseUp", this.updateDetailViewByFirstRange);
       this.tabulator.on("headerMouseUp", this.updateDetailViewByFirstRange);
+      this.tabulator.on("keyNavigate", this.updateDetailViewByFirstRange);
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
@@ -1664,6 +1665,9 @@ export default Vue.extend({
       this.openDetailView = open
     },
     updateDetailView(data: Record<string, any>) {
+      const selectedRowIndex = data[this.internalIndexColumn]
+      if (selectedRowIndex === this.selectedRowIndex) return
+
       this.selectedRowIndex = data[this.internalIndexColumn]
       this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
       this.expandablePaths = this.rawTableKeys.map((key) => ({
