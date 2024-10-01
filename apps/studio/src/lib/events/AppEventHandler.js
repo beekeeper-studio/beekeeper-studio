@@ -1,5 +1,6 @@
 import { AppEvent } from "../../common/AppEvent"
 import rawLog from 'electron-log/renderer'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope("AppEventHandler")
 
@@ -68,7 +69,8 @@ export default class {
 
   async switchLicenseState(_event, state) {
     await this.vueApp.$util.send('dev/switchLicenseState', { state })
-    this.vueApp.$store.dispatch("resetLicenseModals")
+    this.vueApp.$store.dispatch("toggleShowBeginTrialModal", true)
+    SmartLocalStorage.setBool('expiredLicenseEventsEmitted', false)
     window.location.reload(true)
   }
 }

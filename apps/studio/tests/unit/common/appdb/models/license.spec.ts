@@ -68,10 +68,8 @@ describe("License", () => {
 
   describe("License status", () => {
     const origParsedAppVersion = platformInfo.parsedAppVersion;
-    const origTestMode = platformInfo.testMode;
 
     beforeEach(async () => {
-      platformInfo.testMode = false;
       await TestOrmConnection.connect();
     });
 
@@ -79,7 +77,6 @@ describe("License", () => {
       jest.useRealTimers();
       await TestOrmConnection.disconnect();
       platformInfo.parsedAppVersion = origParsedAppVersion;
-      platformInfo.testMode = origTestMode;
     });
 
     it("Community - No license found", async () => {

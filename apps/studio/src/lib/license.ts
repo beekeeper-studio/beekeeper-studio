@@ -12,8 +12,8 @@ export enum DevLicenseState {
   onTrial,
   trialExpired,
   activePaidLicense,
-  lifetimeCoversThisVersion,
-  lifetimeCoversEarlierVersion,
+  expiredLifetimeCoversThisVersion,
+  expiredLifetimeCoversEarlierVersion,
 }
 
 export function parseTagVersion(version: string) {
@@ -33,7 +33,7 @@ export function isVersionLessThanOrEqual(a: Version, b: Version) {
 
 export class LicenseStatus {
   edition: "community" | "ultimate"
-  condition: string
+  condition: string[]
   license?: TransportLicenseKey
 
   get isUltimate() {
@@ -46,5 +46,17 @@ export class LicenseStatus {
 
   get isTrial() {
     return this.license?.licenseType === "TrialLicense";
+  }
+
+  get isValidDateExpired() {
+    return this.condition.includes("Expired valid date");
+  }
+
+  get isSupportDateExpired() {
+    return this.condition.includes("Expired support date");
+  }
+
+  get maxAllowedVersion() {
+    return parseTagVersion(this.license?.maxAllowedAppRelease?.tagName ?? 'v0.0.0');
   }
 }

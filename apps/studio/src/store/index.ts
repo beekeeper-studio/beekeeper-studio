@@ -71,7 +71,6 @@ export interface State {
   connError: string
   expandFKDetailsByDefault: boolean
   showBeginTrialModal: boolean
-  showExpiredLicenseModal: boolean
 }
 
 Vue.use(Vuex)
@@ -126,7 +125,6 @@ const store = new Vuex.Store<State>({
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
     showBeginTrialModal: SmartLocalStorage.getBool('showBeginTrialModal', true),
-    showExpiredLicenseModal: SmartLocalStorage.getBool('showExpiredLicenseModal', true),
   },
 
   getters: {
@@ -246,9 +244,6 @@ const store = new Vuex.Store<State>({
     },
     showBeginTrialModal(state, _getters, _rootState, rootGetters) {
       return state.showBeginTrialModal && rootGetters['licenses/noLicensesFound']
-    },
-    showExpiredLicenseModal(state) {
-      return state.showExpiredLicenseModal
     },
   },
   mutations: {
@@ -387,9 +382,6 @@ const store = new Vuex.Store<State>({
     showBeginTrialModal(state, value: boolean) {
       state.showBeginTrialModal = value
     },
-    showExpiredLicenseModal(state, value: boolean) {
-      state.showExpiredLicenseModal = value
-    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -416,7 +408,7 @@ const store = new Vuex.Store<State>({
       }
       if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
-        title += ` - Free Trial (${days} ${window.main.pluralize('day', days, true)} left)`
+        title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
       }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
@@ -608,13 +600,6 @@ const store = new Vuex.Store<State>({
     },
     toggleShowBeginTrialModal(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'showBeginTrialModal', value })
-    },
-    toggleShowExpiredLicenseModal(context, value?: boolean) {
-      context.dispatch('toggleFlag', { flag: 'showExpiredLicenseModal', value })
-    },
-    resetLicenseModals(context) {
-      context.dispatch('toggleShowBeginTrialModal', true)
-      context.dispatch('toggleShowExpiredLicenseModal', true)
     },
   },
   plugins: []

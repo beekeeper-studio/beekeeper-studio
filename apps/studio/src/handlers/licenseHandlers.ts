@@ -22,6 +22,9 @@ export const LicenseHandlers: ILicenseHandlers = {
       isUltimate: status.isUltimate,
       isCommunity: status.isCommunity,
       isTrial: status.isTrial,
+      isValidDateExpired: status.isValidDateExpired,
+      isSupportDateExpired: status.isSupportDateExpired,
+      maxAllowedVersion: status.maxAllowedVersion,
     };
   },
   "license/add": async function ({ email, key }: { email: string; key: string; }) {
