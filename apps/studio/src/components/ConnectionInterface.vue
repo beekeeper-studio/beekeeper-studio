@@ -132,6 +132,9 @@
                 />
                 <click-house-form
                   v-else-if="config.connectionType === 'clickhouse' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
                 <lib-sql-form
                   v-else-if="config.connectionType === 'libsql' && isUltimate"
                   :config="config"

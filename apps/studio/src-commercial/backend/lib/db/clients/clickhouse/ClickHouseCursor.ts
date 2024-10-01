@@ -1,8 +1,8 @@
-import { BeeCursor } from "../../models";
+import { BeeCursor } from "@/lib/db/models";
 import rawlog from "electron-log";
 import type { ClickHouseClient, Row, StreamReadable } from "@clickhouse/client";
 import { uuidv4 } from "@/lib/uuid";
-import { waitFor } from "../base/wait";
+import { waitFor } from "@/lib/db/clients/base/wait";
 
 interface CursorOptions {
   query: string;

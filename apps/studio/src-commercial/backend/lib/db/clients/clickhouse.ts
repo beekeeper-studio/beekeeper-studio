@@ -1,10 +1,10 @@
 import rawLog from "electron-log";
-import { DatabaseElement, IDbConnectionDatabase } from "../types";
+import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import {
   BasicDatabaseClient,
   ExecutionContext,
   QueryLogOptions,
-} from "./BasicDatabaseClient";
+} from "@/lib/db/clients/BasicDatabaseClient";
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import knexlib from "knex";
 import {
@@ -36,7 +36,7 @@ import {
   TableTrigger,
   TableUpdate,
   TableUpdateResult,
-} from "../models";
+} from "@/lib/db/models";
 import { ClickHouseData } from "@shared/lib/dialects/clickhouse";
 import _ from "lodash";
 import {
@@ -57,10 +57,10 @@ import {
   buildDeleteQueries,
   buildSelectQueriesFromUpdates,
   buildUpdateQueries,
-} from "./utils";
+} from "@/lib/db/clients/utils";
 import { uuidv4 } from "@/lib/uuid";
 import { errors } from "@/lib/errors";
-import { IDbConnectionServer } from "../backendTypes";
+import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
 

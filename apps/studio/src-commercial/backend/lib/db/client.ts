@@ -15,7 +15,6 @@ import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
 import { LibSQLClient } from "./clients/libsql";
 import { ClickHouseClient } from "./clients/clickhouse";
-import { IDbConnectionServer } from "./backendTypes";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
