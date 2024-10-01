@@ -10,7 +10,7 @@ import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportScriptFunctions, ImportFuncOptions } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -23,6 +23,8 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicD
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import { IDbConnectionServer } from '../backendTypes';
+import { Signer } from "@aws-sdk/rds-signer";
+import { fromIni } from "@aws-sdk/credential-providers";
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -319,10 +321,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     // if you provide table, you have to provide schema
-    const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
-    const params = table ? [schema, table] : []
+    const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : "";
+    const params = table ? [schema, table] : [];
     if (table && !schema) {
-      throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
+      throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`);
     }
 
     const sql = `
@@ -331,14 +333,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         table_name,
         column_name,
         is_nullable,
-        ${this.version.number > 120_000 ? 'is_generated,' : ''}
+        ${this.version.number > 120_000 ? "is_generated," : ""}
         ordinal_position,
         column_default,
         CASE
           WHEN character_maximum_length is not null  and udt_name != 'text'
             THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
           WHEN numeric_precision is not null and numeric_scale is not null
-          	THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
+            THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
           WHEN numeric_precision is not null and numeric_scale is null
             THEN udt_name || '(' || numeric_precision::varchar(255) || ')'
           WHEN datetime_precision is not null AND udt_name != 'date' THEN
@@ -348,7 +350,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         CASE
           WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
-        END as is_array
+        END as is_array,
+        pg_catalog.col_description(format('%I.%I', table_schema, table_name)::regclass::oid, ordinal_position) as column_comment
       FROM information_schema.columns
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position
@@ -361,12 +364,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       tableName: row.table_name,
       columnName: row.column_name,
       dataType: row.data_type,
-      nullable: row.is_nullable === 'YES',
+      nullable: row.is_nullable === "YES",
       defaultValue: row.column_default,
       ordinalPosition: Number(row.ordinal_position),
       hasDefault: !_.isNil(row.column_default),
-      generated: row.is_generated === 'ALWAYS' || row.is_generated === 'YES',
-      array: row.is_array === 'YES',
+      generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
+      array: row.is_array === "YES",
+      comment: row.column_comment || null,
     }));
   }
 
@@ -1257,17 +1261,46 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return result.rows[0]?.tableowner;
   }
 
-  protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
+  protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
+
+    let resolvedPw = null;
+    const redshiftOptions = server.config.redshiftOptions;
+
+    if (
+      server.config.client === "postgresql" &&
+      redshiftOptions?.iamAuthenticationEnabled
+    ) {
+      const nodeProviderChainCredentials = fromIni({
+        profile: redshiftOptions.awsProfile ?? "default",
+      });
+      const signer = new Signer({
+        credentials: nodeProviderChainCredentials,
+        region: redshiftOptions?.awsRegion,
+        hostname: server.config.host,
+        port: server.config.port || 5432,
+        username: server.config.user,
+      });
+
+      resolvedPw = await signer.getAuthToken();
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: server.config.password || undefined,
+      password: resolvedPw || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
 
     };
+
+    if (
+      server.config.client === "postgresql" &&
+      redshiftOptions?.iamAuthenticationEnabled
+    ){
+      server.config.ssl = true;
+    }
 
     return this.configurePool(config, server, null);
   }

@@ -66,7 +66,7 @@
     },
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
-      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense'}),
+      ...mapGetters(['isUltimate']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -140,7 +140,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            ...(this.hasActiveLicense ? magicStuff : {}),
+            ...(this.isUltimate ? magicStuff : {}),
           }
 
           if (column.dataType === 'INTERVAL') {
