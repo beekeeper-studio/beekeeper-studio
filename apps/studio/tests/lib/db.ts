@@ -74,6 +74,7 @@ export interface Options {
   /** Skip creation of table with generated columns and the tests */
   skipGeneratedColumns?: boolean
   skipCreateDatabase?: boolean
+  supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
   knex?: Knex
   nullDateTime?: any
@@ -846,10 +847,11 @@ export class DBTestUtil {
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
       const expectedResults = {
         common: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
+        noArrayMode: [{ id: 'c0', name: 'total' }],
         clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
         oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
       }
-      expect(fields).toMatchObject(expectedResults[this.dialect] || expectedResults.common)
+      expect(fields).toMatchObject(expectedResults[this.dialect] || (this.supportsArrayMode ? expectedResults.common : expectedResults.noArrayMode))
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex
@@ -1429,7 +1431,7 @@ export class DBTestUtil {
       table.integer('number_of_employees').notNullable();
     });
 
-    if (!this.options.skipGeneratedColumns) {
+    if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
