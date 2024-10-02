@@ -79,6 +79,7 @@ export function runCommonTests(getUtil, opts = {}) {
 
     describe("stream tests", () => {
       beforeAll(async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().prepareStreamTests()
       })
 
@@ -416,7 +417,7 @@ const prepareImportTable = async function(util) {
 
   await util.knex.schema.dropTableIfExists(tableName)
   await util.knex.schema.createTable(tableName, (t) => {
-    t.string('name'),
+    t.string('name').primary().notNullable(),
     t.string('hat')
   })
 }
