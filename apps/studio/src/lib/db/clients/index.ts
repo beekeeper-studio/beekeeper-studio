@@ -175,5 +175,13 @@ export const CLIENTS: ClientConfig[] = [
       'scriptCreateTable',
       'cancelQuery',
     ],
+  },
+  {
+    key: 'clickhouse',
+    name: 'ClickHouse',
+    defaultPort: 8123,
+    disabledFeatures: [
+      'server:socketPath',
+    ],
   }
 ];

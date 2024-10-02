@@ -2,6 +2,7 @@ import platformInfo from '@/common/platform_info';
 import { state } from '@/handlers/handlerState';
 import { promises as fs, constants, watch, existsSync } from 'fs';
 import * as path from 'path';
+import _ from 'lodash';
 
 export interface IEnumHandlers {
   'enum/init': ({ sId }: { sId: string }) => Promise<void>,

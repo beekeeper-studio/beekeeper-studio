@@ -130,6 +130,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <click-house-form
+                  v-else-if="config.connectionType === 'clickhouse' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
                 <lib-sql-form
                   v-else-if="config.connectionType === 'libsql' && isUltimate"
                   :config="config"
@@ -230,6 +235,7 @@ import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
+import ClickHouseForm from './connection/ClickHouseForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
 import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
@@ -253,7 +259,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm },
 
   data() {
     return {
@@ -477,7 +483,7 @@ export default Vue.extend({
           throw new Error("Name is required")
         }
         // create token cache for azure auth
-        if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.authId) {
+        if (this.config.azureAuthOptions?.azureAuthEnabled && !this.config.authId) {
           const cacheId = await this.$util.send('appdb/cache/new');
           this.config.authId = cacheId;
         }
