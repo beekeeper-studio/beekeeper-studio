@@ -25,6 +25,31 @@ div.sidebar.detail-view-sidebar {
         font-size: 1.4rem;
       }
     }
+
+    .filter-wrap {
+      position: relative;
+      width: 100%;
+      .clear {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        border: 0;
+        line-height: 0;
+        color: rgba($theme-base, 0.5);
+        background: transparent;
+        transform: translateY(-50%);
+        visibility: hidden;
+        &:hover {
+          color: $text-dark;
+        }
+        i {
+          font-size: 1.15rem;
+        }
+      }
+      &:hover .clear {
+        visibility: visible;
+      }
+    }
   }
 
   .CodeMirror-line [role=presentation] > span:not(.cm-property) {

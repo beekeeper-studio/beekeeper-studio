@@ -5,13 +5,21 @@
     v-show="!hidden"
   >
     <div class="header">
-      <!-- <div class="sub">Detail view</div> -->
-      <input
-        class="form-control"
-        type="text"
-        placeholder="Filter fields"
-        v-model="filter"
-      />
+      <div class="filter-wrap">
+        <input
+          class="form-control"
+          type="text"
+          placeholder="Filter fields"
+          v-model="debouncedFilter"
+        />
+        <button
+          type="button"
+          class="clear btn-link"
+          @click="filter = ''"
+        >
+          <i class="material-icons">cancel</i>
+        </button>
+      </div>
       <span
         class="arrow-down-btn btn btn-fab"
         @click.prevent="openMenu"
@@ -97,6 +105,14 @@ export default Vue.extend({
         return JSON.stringify(filtered, null, 2);
       }
       return JSON.stringify(this.value, null, 2);
+    },
+    debouncedFilter: {
+      get() {
+        return this.filter;
+      },
+      set: _.debounce(function (value) {
+        this.filter = value;
+      }, 500),
     },
     markers() {
       const markers: EditorMarker[] = [];
