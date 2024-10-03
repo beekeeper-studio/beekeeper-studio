@@ -5,38 +5,62 @@
     v-show="!hidden"
   >
     <div class="header">
-      <div class="filter-wrap">
-        <input
-          class="form-control"
-          type="text"
-          placeholder="Filter fields"
-          v-model="debouncedFilter"
-        />
+      <div class="header-group">
+        <span>{{ sidebarTitle }}</span>
         <button
-          type="button"
-          class="clear btn-link"
-          @click="filter = ''"
+          class="close-btn btn btn-fab"
+          @click="close"
         >
-          <i class="material-icons">cancel</i>
+          <i class="material-icons">close</i>
         </button>
       </div>
-      <span
-        class="arrow-down-btn btn btn-fab"
-        @click.prevent="openMenu"
-        tabindex="0"
+      <div
+        class="header-group"
+        v-show="!empty"
       >
-        <i class="material-icons">keyboard_arrow_down</i>
-      </span>
+        <div class="filter-wrap">
+          <input
+            class="form-control"
+            type="text"
+            placeholder="Filter fields"
+            v-model="debouncedFilter"
+          />
+          <button
+            type="button"
+            class="clear btn-link"
+            @click="filter = ''"
+          >
+            <i class="material-icons">cancel</i>
+          </button>
+        </div>
+        <x-button
+          class="menu-btn btn btn-fab"
+          tabindex="0"
+        >
+          <i class="material-icons">more_vert</i>
+          <x-menu style="--target-align:right;">
+            <x-menuitem
+              v-for="option in menuOptions"
+              :key="option.name"
+              :toggled="option.checked"
+              togglable
+              @click.prevent="option.handler"
+            >
+              <x-label>{{ option.name }}</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
+      </div>
     </div>
     <text-editor
       :read-only="true"
       :fold-gutter="true"
       :fold-all="foldAll"
       :unfold-all="unfoldAll"
-      :value="text || 'Click on a row to see details'"
-      :forced-value="text || 'Click on a row to see details'"
+      :value="text"
+      :forced-value="text"
       :mode="mode"
-      :force-initizalize="reinitializeTextEditor"
+      :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
     />
   </div>
@@ -44,6 +68,8 @@
 
 <script lang="ts">
 /**
+ * hidden:  it's recommended to use `hidden` prop instead of v-show so that
+ *          the text editor can be reinitialized.
  * dataId:  use this to update the component with new data.
  */
 import Vue from "vue";
@@ -65,7 +91,7 @@ const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { Sidebar, TextEditor },
-  props: ["value", "hidden", "expandablePaths", "dataId"],
+  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -90,6 +116,12 @@ export default Vue.extend({
     },
   },
   computed: {
+    sidebarTitle() {
+      return this.title ?? "Detail View Sidebar"
+    },
+    empty() {
+      return _.isEmpty(this.value);
+    },
     mode() {
       if (!this.value) {
         return null;
@@ -97,7 +129,7 @@ export default Vue.extend({
       return { name: "javascript", json: true };
     },
     text() {
-      if (!this.value) {
+      if (this.empty) {
         return "";
       }
       if (this.filter) {
@@ -141,47 +173,47 @@ export default Vue.extend({
     lines() {
       return this.text?.split("\n") || [];
     },
+    menuOptions() {
+      return [
+        {
+          name: "Expand FK by default",
+          handler: () => {
+            this.$store.dispatch("toggleExpandFKDetailsByDefault");
+          },
+          checked: this.expandFKDetailsByDefault,
+        },
+        {
+          name: "Fold all",
+          handler: () => {
+            this.foldAll++;
+          },
+        },
+        {
+          name: "Unfold all",
+          handler: () => {
+            this.unfoldAll++;
+          },
+        },
+        {
+          name: "Copy",
+          handler: () => {
+            this.$native.clipboard.writeText(this.text);
+          },
+        },
+        {
+          name: "Close",
+          handler: this.close,
+        },
+      ]
+    },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
     },
-    openMenu(event) {
-      this.$bks.openMenu({
-        event,
-        options: [
-          {
-            name: "Expand FK by default",
-            handler: () => {
-              this.$store.dispatch("toggleExpandFKDetailsByDefault");
-            },
-            icon: this.expandFKDetailsByDefault ? "done" : "",
-          },
-          {
-            name: "Fold all",
-            handler: () => {
-              this.foldAll++;
-            },
-          },
-          {
-            name: "Unfold all",
-            handler: () => {
-              this.unfoldAll++;
-            },
-          },
-          {
-            name: "Copy",
-            handler: () => {
-              this.$native.clipboard.writeText(this.text);
-            },
-          },
-          {
-            name: "Close",
-            handler: () => this.$emit("close"),
-          },
-        ],
-      });
+    close() {
+      this.$emit("close")
     },
   },
 });

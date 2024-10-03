@@ -390,11 +390,13 @@ export default {
             name: "Undo",
             handler: () => this.editor.execCommand("undo"),
             shortcut: this.ctrlOrCmd("z"),
+            write: true,
           },
           {
             name: "Redo",
             handler: () => this.editor.execCommand("redo"),
             shortcut: this.ctrlOrCmd("shift+z"),
+            write: true,
           },
           {
             name: "Cut",

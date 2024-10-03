@@ -8,6 +8,15 @@ export const SmartLocalStorage = {
     const value = localStorage.getItem(key)
     return value
   },
+  getJSON(key: string, fallback?: any): any {
+    const item = localStorage.getItem(key)
+    if (!item) return fallback
+    try {
+      return JSON.parse(item)
+    } catch {
+      return fallback
+    }
+  },
   removeItem(key: string): void {
     localStorage.removeItem(key)
   },

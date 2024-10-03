@@ -1,29 +1,44 @@
 div.sidebar.detail-view-sidebar {
   overflow: hidden;
   max-width: 100%;
+  min-width: 11rem;
   width: auto;
   flex-grow: 1;
   border: 1px solid $border-color;
   border-bottom: 0;
-  border-top-left-radius: 0.3rem;
+  background-color: $theme-bg;
 
   .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     width: 100%;
-    gap: 0.5rem;
-    padding-top: 1rem;
+    padding-top: 0.5rem;
     padding-left: 1rem;
     padding-right: 0.5rem;
 
-    .arrow-down-btn {
-      width: 2rem;
-      height: 2rem;
+    .header-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
 
-      .material-icons {
-        font-size: 1.4rem;
+      &:first-child {
+        margin-bottom: 0.5rem;
       }
+    }
+
+    .close-btn, .menu-btn {
+      i.material-icons {
+        color: $text;
+      }
+
+      &:not(:hover) {
+        background-color: transparent;
+      }
+    }
+
+    .menu-btn x-menuitem {
+      --checkmark-margin: 0 0.3rem 0 0;
+      --checkmark-height: 1.4rem;
+      --checkmark-width: 1.4rem;
     }
 
     .filter-wrap {
@@ -52,9 +67,27 @@ div.sidebar.detail-view-sidebar {
     }
   }
 
-  .CodeMirror-line [role=presentation] > span:not(.cm-property) {
-    color: $text-dark;
+  .CodeMirror.text-editor {
+    margin-left: -1rem;
+
+    &, .CodeMirror-gutters {
+      background-color: $theme-bg !important;
+    }
+
+    .CodeMirror-dialog.CodeMirror-dialog-top {
+      margin-left: 1rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .CodeMirror-line [role=presentation] > span:not(.cm-property) {
+      color: $text-dark;
+    }
+
+    .CodeMirror-linenumber {
+      visibility: hidden;
+    }
   }
+
 
   .expandable-value {
     display: inline-flex;
