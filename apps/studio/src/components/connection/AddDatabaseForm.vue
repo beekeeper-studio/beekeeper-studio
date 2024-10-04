@@ -5,7 +5,7 @@
   >
     <h3
       class="dialog-c-title"
-      v-if="this.connection.server.config.client === 'cassandra'"
+      v-if="this.connectionType === 'cassandra'"
     >
       Add Keyspace
     </h3>
@@ -39,7 +39,7 @@
     >
       <label
         for="addDatabaseCharset"
-        v-if="this.connection.server.config.client === 'cassandra'"
+        v-if="this.connectionType === 'cassandra'"
       >
         Select Replication Strategy
       </label>
@@ -108,7 +108,7 @@
       }
     },
     computed: {
-      ...mapState(['connection'])
+      ...mapState(['connection', 'connectionType'])
     },
     async mounted(){
       this.charsets = await this.connection.listCharsets();

@@ -38,7 +38,7 @@ export const LicenseHandlers: ILicenseHandlers = {
     license.supportUntil = new Date(result.supportUntil);
     license.maxAllowedAppRelease = result.maxAllowedAppRelease;
     license.licenseType = result.licenseType;
-    license.save();
+    await license.save();
     return license;
   },
   "license/get": async function () {

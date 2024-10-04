@@ -70,6 +70,8 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
+  openDetailView: boolean
+  tableTableSplitSizes: number[]
   showBeginTrialModal: boolean
 }
 
@@ -124,6 +126,8 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
+    openDetailView: SmartLocalStorage.getBool('openDetailView'),
+    tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
     showBeginTrialModal: SmartLocalStorage.getBool('showBeginTrialModal', true),
   },
 
@@ -241,6 +245,9 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
+    },
+    openDetailView(state) {
+      return state.openDetailView
     },
     showBeginTrialModal(state, _getters, _rootState, rootGetters) {
       return state.showBeginTrialModal && rootGetters['licenses/noLicensesFound']
@@ -378,6 +385,12 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
+    },
+    openDetailView(state, value: boolean) {
+      state.openDetailView = value
+    },
+    tableTableSplitSizes(state, value: number[]) {
+      state.tableTableSplitSizes = value
     },
     showBeginTrialModal(state, value: boolean) {
       state.showBeginTrialModal = value
@@ -594,6 +607,18 @@ const store = new Vuex.Store<State>({
       SmartLocalStorage.setBool(flag, value)
       context.commit(flag, value)
       return value
+    },
+    toggleOpenDetailView(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.openDetailView
+      }
+      SmartLocalStorage.setBool('openDetailView', value)
+      context.commit('openDetailView', value)
+      return value
+    },
+    setTableTableSplitSizes(context, value: number[]) {
+      SmartLocalStorage.addItem('tableTableSplitSizes', value)
+      context.commit('tableTableSplitSizes', value)
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })

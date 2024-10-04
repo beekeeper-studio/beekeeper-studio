@@ -24,10 +24,7 @@ export const DevHandlers: IDevHandlers = {
         break;
       case DevLicenseState.trialExpired: {
         await LicenseKey.clear();
-        const license = await LicenseKey.createTrialLicense();
-        license.validUntil = yesterday;
-        license.supportUntil = yesterday;
-        await license.save();
+        await LicenseKey.createTrialLicense(yesterday, yesterday);
         break;
       }
       case DevLicenseState.activePaidLicense: {
@@ -63,8 +60,8 @@ export const DevHandlers: IDevHandlers = {
         license.validUntil = nextMonth;
         license.supportUntil = yesterday;
         license.licenseType = "PersonalLicense";
-        const version = platformInfo.parsedAppVersion;
-        const tagName = `v${version.major - 1}.${version.minor}.${version.patch}`;
+
+        const tagName = 'v0.0.1'
         license.maxAllowedAppRelease = { tagName };
         await license.save();
         break;

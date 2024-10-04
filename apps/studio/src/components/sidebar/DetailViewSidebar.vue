@@ -5,36 +5,73 @@
     v-show="!hidden"
   >
     <div class="header">
-      <!-- <div class="sub">Detail view</div> -->
-      <input
-        class="form-control"
-        type="text"
-        placeholder="Filter fields"
-        v-model="filter"
-      />
-      <span
-        class="arrow-down-btn btn btn-fab"
-        @click.prevent="openMenu"
-        tabindex="0"
+      <div class="header-group">
+        <span>{{ sidebarTitle }}</span>
+        <button
+          class="close-btn btn btn-fab"
+          @click="close"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div
+        class="header-group"
+        v-show="!empty"
       >
-        <i class="material-icons">keyboard_arrow_down</i>
-      </span>
+        <div class="filter-wrap">
+          <input
+            class="form-control"
+            type="text"
+            placeholder="Filter fields"
+            v-model="debouncedFilter"
+          />
+          <button
+            type="button"
+            class="clear btn-link"
+            @click="filter = ''"
+          >
+            <i class="material-icons">cancel</i>
+          </button>
+        </div>
+        <x-button
+          class="menu-btn btn btn-fab"
+          tabindex="0"
+        >
+          <i class="material-icons">more_vert</i>
+          <x-menu style="--target-align:right;">
+            <x-menuitem
+              v-for="option in menuOptions"
+              :key="option.name"
+              :toggled="option.checked"
+              togglable
+              @click.prevent="option.handler"
+            >
+              <x-label>{{ option.name }}</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
+      </div>
     </div>
     <text-editor
       :read-only="true"
       :fold-gutter="true"
       :fold-all="foldAll"
-      :unfoldAll="unfoldAll"
-      :value="text || 'Click on a row to see details'"
-      :forced-value="text || 'Click on a row to see details'"
+      :unfold-all="unfoldAll"
+      :value="text"
+      :forced-value="text"
       :mode="mode"
-      :force-initizalize="reinitializeTextEditor"
+      :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
     />
   </div>
 </template>
 
 <script lang="ts">
+/**
+ * hidden:  it's recommended to use `hidden` prop instead of v-show so that
+ *          the text editor can be reinitialized.
+ * dataId:  use this to update the component with new data.
+ */
 import Vue from "vue";
 import Sidebar from "@/components/common/Sidebar.vue";
 import TextEditor from "@/components/common/texteditor/TextEditor.vue";
@@ -43,31 +80,36 @@ import {
   findKeyPosition,
   findValueInfo,
   createExpandableElement,
+  createTruncatableElement,
   deepFilterObjectProps,
+  getPaths,
+  eachPaths,
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
 import rawLog from "electron-log";
 import _ from "lodash";
+import globals from '@/common/globals'
 
 const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { Sidebar, TextEditor },
-  props: ["value", "hidden", "expandablePaths", "rowId"],
+  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {
       reinitializeTextEditor: 0,
       filter: "",
       foldAll: 0,
       unfoldAll: 0,
+      restoredTruncatedPaths: [],
     };
   },
   watch: {
     hidden() {
       if (!this.hidden) this.reinitializeTextEditor++;
     },
-    rowId() {
+    dataId() {
       if (this.expandFKDetailsByDefault) {
         this.expandablePaths.forEach((expandablePath: ExpandablePath) => {
           // Expand only the first level
@@ -79,6 +121,12 @@ export default Vue.extend({
     },
   },
   computed: {
+    sidebarTitle() {
+      return this.title ?? "Detail View Sidebar"
+    },
+    empty() {
+      return _.isEmpty(this.value);
+    },
     mode() {
       if (!this.value) {
         return null;
@@ -86,14 +134,46 @@ export default Vue.extend({
       return { name: "javascript", json: true };
     },
     text() {
-      if (!this.value) {
+      if (this.empty) {
         return "";
       }
       if (this.filter) {
-        const filtered = deepFilterObjectProps(this.value, this.filter);
+        const filtered = deepFilterObjectProps(this.processedValue, this.filter);
         return JSON.stringify(filtered, null, 2);
       }
-      return JSON.stringify(this.value, null, 2);
+      return JSON.stringify(this.processedValue, null, 2);
+    },
+    debouncedFilter: {
+      get() {
+        return this.filter;
+      },
+      set: _.debounce(function (value) {
+        this.filter = value;
+      }, 500),
+    },
+    processedValue() {
+      const clonedValue = _.cloneDeep(this.value)
+      eachPaths(clonedValue, (path, value: string) => {
+        if (this.truncatedPaths.includes(path)) {
+          _.set(clonedValue, path, value.slice(0, globals.maxDetailViewTextLength))
+        }
+      })
+      return clonedValue
+    },
+    truncatablePaths() {
+      return getPaths(this.value).filter((path) => {
+        const val = _.get(this.value, path)
+        if (
+          typeof val === "string" &&
+          val.length > globals.maxDetailViewTextLength
+        ) {
+          return true
+        }
+        return false
+      })
+    },
+    truncatedPaths() {
+      return _.difference(this.truncatablePaths, this.restoredTruncatedPaths)
     },
     markers() {
       const markers: EditorMarker[] = [];
@@ -113,14 +193,73 @@ export default Vue.extend({
             element,
           });
         } catch (e) {
-          // log.warn("Failed to find position for", expandablePath.path);
-          // log.warn(e);
+          log.warn("Failed to mark expandable path", expandablePath);
+          log.warn(e);
         }
       });
+      _.forEach(this.truncatedPaths, (path) => {
+        // Avoid conflicts with expandable paths
+        if (this.expandablePaths.includes(path)) {
+          return
+        }
+        try {
+          const line = findKeyPosition(this.text, path.split("."));
+          const { from, to, value } = findValueInfo(this.lines[line]);
+          const element = createTruncatableElement(value);
+          const onClick = async () => {
+            this.restoredTruncatedPaths.push(path)
+            await this.$nextTick()
+            this.reinitializeTextEditor++
+          }
+          markers.push({
+            type: "custom",
+            from: { line, ch: from },
+            to: { line, ch: to },
+            onClick,
+            element,
+          });
+        } catch (e) {
+          log.warn("Failed to mark truncated path", path);
+          log.warn(e);
+        }
+      })
       return markers;
     },
     lines() {
       return this.text?.split("\n") || [];
+    },
+    menuOptions() {
+      return [
+        {
+          name: "Expand FK by default",
+          handler: () => {
+            this.$store.dispatch("toggleExpandFKDetailsByDefault");
+          },
+          checked: this.expandFKDetailsByDefault,
+        },
+        {
+          name: "Fold all",
+          handler: () => {
+            this.foldAll++;
+          },
+        },
+        {
+          name: "Unfold all",
+          handler: () => {
+            this.unfoldAll++;
+          },
+        },
+        {
+          name: "Copy",
+          handler: () => {
+            this.$native.clipboard.writeText(this.text);
+          },
+        },
+        {
+          name: "Close",
+          handler: this.close,
+        },
+      ]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
@@ -128,41 +267,8 @@ export default Vue.extend({
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
     },
-    openMenu(event) {
-      this.$bks.openMenu({
-        event,
-        options: [
-          {
-            name: "Expand FK by default",
-            handler: () => {
-              this.$store.dispatch("toggleExpandFKDetailsByDefault");
-            },
-            icon: this.expandFKDetailsByDefault ? "done" : "",
-          },
-          {
-            name: "Fold all",
-            handler: () => {
-              this.foldAll++;
-            },
-          },
-          {
-            name: "Unfold all",
-            handler: () => {
-              this.unfoldAll++;
-            },
-          },
-          {
-            name: "Copy",
-            handler: () => {
-              this.$native.clipboard.writeText(this.text);
-            },
-          },
-          {
-            name: "Close",
-            handler: () => this.$emit("close"),
-          },
-        ],
-      });
+    close() {
+      this.$emit("close")
     },
   },
 });

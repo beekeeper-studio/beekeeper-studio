@@ -16,12 +16,13 @@
     <div v-else-if="isCommunity">
       <upsell-content></upsell-content>
     </div>
-    <Stepper
-      v-else-if="!backupRunning"
-      :steps="steps"
-      :button-portal-target="isRestore ? 'restore-stepper-buttons' : 'backup-stepper-buttons'"
-      @finished="runBackup"
-    />
+    <div v-else-if="!backupRunning" class="backup-stepper-wrapper">
+      <Stepper
+        :steps="steps"
+        :button-portal-target="isRestore ? 'restore-stepper-buttons' : 'backup-stepper-buttons'"
+        @finished="runBackup"
+      />
+    </div>
     <div
       v-else
       class="backup-tab-progress"
