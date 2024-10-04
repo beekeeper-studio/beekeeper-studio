@@ -3,9 +3,17 @@ import { LicenseStatus, isVersionLessThanOrEqual, parseTagVersion } from "@/lib/
 import { Column, Entity, Not } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash';
+import globals from "@/common/globals";
+
+
+function daysInFuture(days: number = 14) {
+  return new Date(new Date().setDate(new Date().getDate() + days))
+}
+
 
 @Entity({ name: 'license_keys' })
 export class LicenseKey extends ApplicationEntity {
+
   withProps(props: any) {
     if (props) LicenseKey.merge(this, props);
     return this;
@@ -98,17 +106,16 @@ export class LicenseKey extends ApplicationEntity {
     return this.validUntil && this.validUntil > new Date()
   }
 
-  public static async createTrialLicense() {
+  public static async createTrialLicense(validUntil = daysInFuture(globals.freeTrialDays), supportUntil = validUntil) {
     if ((await LicenseKey.count()) !== 0) {
       throw new Error("Not allowed");
     }
 
-    const validUntil = new Date(new Date().setDate(new Date().getDate() + 14));
     const trialLicense = new LicenseKey();
     trialLicense.email = "trial_user";
     trialLicense.key = "fake";
     trialLicense.validUntil = validUntil;
-    trialLicense.supportUntil = validUntil;
+    trialLicense.supportUntil = supportUntil;
     trialLicense.licenseType = "TrialLicense";
     await trialLicense.save();
     return trialLicense;
