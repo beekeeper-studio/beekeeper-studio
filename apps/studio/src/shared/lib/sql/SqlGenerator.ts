@@ -7,6 +7,7 @@ const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
 import knexFirebirdDialect from "knex-firebird-dialect"
 import { identify } from 'sql-query-identifier'
+import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 
 interface GeneratorConnection {
   dbConfig: any
@@ -31,7 +32,7 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird'].includes(v)
+    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse'].includes(v)
     this.createKnexLib()
   }
 
@@ -146,6 +147,8 @@ export class SqlGenerator {
           apiEndpoint
         } as any
       })
+    } else if (this.dialect === 'clickhouse') {
+      this.knex = knexlib({ client: ClickhouseKnexClient });
     }
   }
 

@@ -135,6 +135,9 @@ import App from '@/App.vue'
     const app = new Vue({
       render: h => h(App),
       store,
+      beforeMount() {
+        store.dispatch('initRootStates')
+      },
     })
 
     Vue.prototype.$util = new UtilityConnection();

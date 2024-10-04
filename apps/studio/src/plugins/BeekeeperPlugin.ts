@@ -3,6 +3,7 @@ import Vue from 'vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
+import store from '@/store'
 
 export interface ContextOption {
   name: string,
@@ -37,6 +38,7 @@ export const BeekeeperPlugin = {
   openMenu(args: MenuProps): void {
     const ContextComponent = Vue.extend(ContextMenu)
     const cMenu = new ContextComponent({
+      store,
       propsData: args
     })
     cMenu.$on('close', () => {

@@ -80,7 +80,12 @@ export const idColumn: TemplatedSchemaItem = {
       dataType: 'int64',
       nullable: false,
       primaryKey: true
-    }
+    },
+    clickhouse: {
+      dataType: 'Integer',
+      nullable: false,
+      primaryKey: true,
+    },
   }
 }
 
@@ -119,7 +124,11 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
     bigquery: {
       dataType: 'timestamp',
       defaultValue: 'CURRENT_TIMESTAMP'
-    }
+    },
+    clickhouse: {
+      dataType: 'timestamp',
+      defaultValue: 'now()',
+    },
   }
 })
 

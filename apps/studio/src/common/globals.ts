@@ -16,7 +16,8 @@ export default {
   workspaceCheckInterval: 5000, // 5 seconds
   dataCheckInterval: 1000 * 30, // 30 secs
   trialNotificationInterval: 1000 * 60 * 60 * 12, // 12 hours
-  licenseCheckInterval: 1000 * 60 * 60, // once per hour
+  licenseCheckInterval: 1000 * 10, // once per 1 minute
+  licenseUtilityCheckInterval: 1000 * 10 * 10, // once per 10 minutes
   errorNoticeTimeout: 60 * 1000, // 1 minute
   tableListItemHeight: 22.8, // in pixels
   // for azure auth

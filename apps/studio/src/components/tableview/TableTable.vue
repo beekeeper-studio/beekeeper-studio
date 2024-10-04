@@ -1376,7 +1376,7 @@ export default Vue.extend({
         const changes = {
           inserts: this.buildPendingInserts(),
           updates: this.buildPendingUpdates(),
-          deletes: this.builudPendingDeletes()
+          deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
