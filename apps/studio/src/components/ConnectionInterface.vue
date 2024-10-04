@@ -116,22 +116,27 @@
                   :testing="testing"
                 />
                 <firebird-form
-                  v-else-if="config.connectionType === 'firebird' && hasActiveLicense"
+                  v-else-if="config.connectionType === 'firebird' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
                 <oracle-form
-                  v-if="config.connectionType === 'oracle' && hasActiveLicense"
+                  v-if="config.connectionType === 'oracle' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
                 <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && hasActiveLicense"
+                  v-if="config.connectionType === 'cassandra' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
+                <click-house-form
+                  v-else-if="config.connectionType === 'clickhouse' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
                 <lib-sql-form
-                  v-else-if="config.connectionType === 'libsql' && hasActiveLicense"
+                  v-else-if="config.connectionType === 'libsql' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
@@ -230,6 +235,7 @@ import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
+import ClickHouseForm from './connection/ClickHouseForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
 import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
@@ -253,7 +259,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm },
 
   data() {
     return {
@@ -274,12 +280,12 @@ export default Vue.extend({
   computed: {
     ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+    ...mapGetters(['isUltimate']),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
     shouldUpsell() {
-      if (this.hasActiveLicense) return false
+      if (this.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -395,7 +401,6 @@ export default Vue.extend({
     },
     edit(config) {
       this.config = _.clone(config)
-      console.log('EDITING: ', this.config)
       this.errors = null
       this.connectionError = null
     },
@@ -427,7 +432,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -450,7 +455,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!this.$config.isUltimate && isUltimateType(this.config.connectionType)) {
+      if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -478,13 +483,16 @@ export default Vue.extend({
           throw new Error("Name is required")
         }
         // create token cache for azure auth
-        if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.authId) {
+        if (this.config.azureAuthOptions?.azureAuthEnabled && !this.config.authId) {
           const cacheId = await this.$util.send('appdb/cache/new');
           this.config.authId = cacheId;
         }
 
-        await this.$store.dispatch('data/connections/save', this.config)
+        const id = await this.$store.dispatch('data/connections/save', this.config)
         this.$noty.success("Connection Saved")
+        // we want to fetch the saved one in case it's changed
+        const connection = this.connections.find((c) => c.id === id)
+        this.edit(connection)
       } catch (ex) {
         console.error(ex)
         this.errors = [ex.message]

@@ -1,16 +1,23 @@
+.backup-stepper-wrapper {
+  max-height: 90vh;
+  overflow-y: scroll;
+}
+
 .backup-wrapper {
   @include layout-center;
   flex-direction: column;
   padding: 0 1.5rem 3rem;
   overflow: hidden;
   overflow-y: auto;
+  /* this is around the height of a tab */
+  height: calc(100vh - $statusbar-height - $tab-height - $titlebar-actions-height - 5rem);
 
   & > div {
     width: 100%;
   }
 
   .backup-header {
-    height: 5%;
+    height: 3.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;

@@ -1,4 +1,5 @@
 import { IndexColumn, SchemaItem, TableKey } from "@shared/lib/dialects/models";
+import { BackupConfig } from "./models/BackupConfig";
 
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
@@ -42,6 +43,7 @@ export interface TableOrView extends DatabaseEntity {
   partitions?: TablePartition[];
   tabletype?: string | null
   parenttype?: string | null
+  engine?: string
 }
 
 export interface TableIndex {
@@ -230,6 +232,7 @@ export interface SupportedFeatures {
   backDirFormat: boolean;
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
+  transactions: boolean;
 }
 
 export interface FieldDescriptor {

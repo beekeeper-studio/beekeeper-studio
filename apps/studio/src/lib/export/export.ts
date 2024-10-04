@@ -137,34 +137,23 @@ export abstract class Export {
         this.options.chunkSize,
         this.table.schema,
       )
-      this.columns = results.columns
-      this.cursor = results.cursor
-
-      this.countTotal = results.totalRows
-      await this.cursor?.start()
-      const header = await this.getHeader(results.columns)
-
-      if (header) {
-        await this.fileHandle.write(header)
-      }
     }
     else {
-      // string sql query, not table
       results = await this.connection.queryStream(
         this.query,
         this.options.chunkSize,
       )
-      this.columns = results.columns
-      this.cursor = results.cursor
+    }
 
-      this.countTotal = results.totalRows
-      await this.cursor?.start()
-      const header = await this.getHeader(results.columns)
+    this.columns = results.columns
+    this.cursor = results.cursor
 
-      if (header) {
-        await this.fileHandle.write(header)
-      }
+    this.countTotal = results.totalRows
+    await this.cursor?.start()
+    const header = await this.getHeader(results.columns)
 
+    if (header) {
+      await this.fileHandle.write(header)
     }
   }
 

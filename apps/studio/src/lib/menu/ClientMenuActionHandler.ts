@@ -56,4 +56,5 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   checkForUpdates = () => send('checkForUpdates')
   importSqlFiles = () => send('importSqlFiles')
   toggleMinimalMode = () => send('toggleMinimalMode')
+  switchLicenseState = (_menuItem, _win, type) => send('switchLicenseState', type)
 }

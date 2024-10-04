@@ -44,6 +44,8 @@ export enum AppEvent {
   dropzoneDrop = 'dropzoneDrop',
   createConfirmModal = 'createConfirmModal',
   showConfirmModal = 'showConfirmModal',
+  licenseExpired = 'licenseExpired',
+  switchLicenseState = 'switchLicenseState'
 }
 
 export interface RootBinding {

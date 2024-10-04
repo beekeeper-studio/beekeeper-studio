@@ -25,8 +25,9 @@
               class="material-icons menu-icon"
               v-if="option.icon"
             >{{ option.icon }}</i>
+            <!-- NOTE (@day): this is supposed to only appear when you don't have an ult license, but this component can't use the store -->
             <i
-              v-if="option.ultimate && $config.isCommunity"
+              v-if="option.ultimate && $store.getters.isCommunity"
               class="material-icons menu-icon"
             >stars</i>
           </span>
@@ -38,6 +39,7 @@
 
 <script lang="ts">
 
+// NOTE (@day): we can't use the store here for some reason
 import { ContextOption } from '@/plugins/BeekeeperPlugin'
 import Vue from 'vue'
 

@@ -42,7 +42,7 @@ export default class NativeMenuBuilder {
         log.debug("Received Menu Click, event", actionName, arg, window)
         if (window) {
           const func = this.handler[actionName].bind(this.handler)
-          func(arg || null, window)
+          func(arg ?? null, window)
         }
       } catch (e) {
         console.error(`Couldn't trigger action ${actionName}(${arg || ""}), ${e.message}`)

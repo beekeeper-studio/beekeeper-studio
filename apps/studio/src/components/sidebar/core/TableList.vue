@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex-col expand"
+    class="flex-col expand table-list-component"
     ref="wrapper"
   >
     <!-- Filter -->
@@ -170,6 +170,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
+import { matches } from '@/common/transport/TransportPinnedEntity'
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
@@ -294,7 +295,7 @@
       },
       refreshPinnedColumns() {
         this.orderedPins.forEach((p) => {
-          const t = this.tables.find((table) => p.matches(table))
+          const t = this.tables.find((table) => matches(p, table))
           if (t) {
             this.$store.dispatch('updateTableColumns', t)
           }
