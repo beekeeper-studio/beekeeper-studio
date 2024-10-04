@@ -10,10 +10,16 @@ import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData, rowHeaderField } from "@/common/utils";
 import { escapeHtml } from "@shared/lib/tabulator";
-// ?? not sure about this but :shrug: 
-import Vue from 'vue';
+import _ from "lodash";
+// ?? not sure about this but :shrug:
+import Vue from "vue";
 
 type ColumnMenuItem = MenuObject<ColumnComponent>;
+type RangeData = Record<string, any>[];
+interface ExtractedData {
+  data: RangeData;
+  sources: RangeComponent[];
+}
 
 export const sortAscending: ColumnMenuItem = {
   label: createMenuItem("Sort ascending"),
@@ -103,29 +109,31 @@ export function createMenuItem(label: string, shortcut = "") {
   return `<x-menuitem>${label}${shortcut}</x-menuitem>`;
 }
 
-export async function copyRange(options: {
-  range: RangeComponent;
+export async function copyRanges(options: {
+  ranges: RangeComponent[];
   type: "plain" | "tsv" | "json" | "markdown";
 }): Promise<void>;
-export async function copyRange(options: {
-  range: RangeComponent;
+export async function copyRanges(options: {
+  ranges: RangeComponent[];
   type: "sql";
   table: string;
   schema?: string;
 }): Promise<void>;
-export async function copyRange(options: {
-  range: RangeComponent;
+export async function copyRanges(options: {
+  ranges: RangeComponent[];
   type: "plain" | "tsv" | "json" | "markdown" | "sql";
   table?: string;
   schema?: string;
 }) {
   let text = "";
-  const rangeData: any = options.range.getData();
+
+  const extractedData = extractRanges(options.ranges);
+  const rangeData = extractedData.data;
   const stringifiedRangeData = stringifyRangeData(rangeData);
 
   switch (options.type) {
     case "plain": {
-      if (options.range.getCells().flat().length === 1) {
+      if (countCellsFromData(rangeData) === 1) {
         const key = Object.keys(stringifiedRangeData[0])[0];
         text = stringifiedRangeData[0][key];
       } else {
@@ -158,11 +166,81 @@ export async function copyRange(options: {
       break;
     }
     case "sql":
-      text = await Vue.prototype.$util.send('conn/getInsertQuery', { tableInsert: { table: options.table, schema: options.schema, data: rangeData }})
+      text = await Vue.prototype.$util.send("conn/getInsertQuery", {
+        tableInsert: {
+          table: options.table,
+          schema: options.schema,
+          data: rangeData,
+        },
+      });
       break;
   }
   ElectronPlugin.clipboard.writeText(text);
-  (options.range.getElement() as HTMLElement).classList.add("copied");
+  extractedData.sources.forEach((range) => {
+    (range.getElement() as HTMLElement).classList.add("copied");
+  });
+}
+
+function extractRanges(ranges: RangeComponent[]): ExtractedData {
+  if (ranges.length === 0) return;
+
+  if (ranges.length === 1) {
+    return {
+      data: ranges[0].getData() as RangeData,
+      sources: [ranges[0]],
+    };
+  }
+
+  let sameColumns = true;
+  let sameRows = true;
+  const firstCols = ranges[0].getColumns();
+  const firstRows = ranges[0].getRows();
+
+  for (let i = 1; i < ranges.length; i++) {
+    if (!_.isMatch(firstCols, ranges[i].getColumns())) {
+      sameColumns = false;
+    }
+
+    if (!_.isMatch(firstRows, ranges[i].getRows())) {
+      sameRows = false;
+    }
+
+    if (!sameColumns && !sameRows) break;
+  }
+
+  if (sameColumns) {
+    return {
+      data: ranges.reduce((data, range) => data.concat(range.getData()), []),
+      sources: ranges,
+    };
+  }
+
+  if (sameRows) {
+    const sorted = _.sortBy(ranges, (range) => range.getLeftEdge());
+    const rows = sorted[0].getData() as RangeData;
+    for (let i = 1; i < sorted.length; i++) {
+      const data = sorted[i].getData() as RangeData;
+      for (let i = 0; i < data.length; i++) {
+        _.forEach(data[i], (value, key) => {
+          rows[i][key] = value;
+        });
+      }
+    }
+    return {
+      data: rows,
+      sources: ranges,
+    };
+  }
+
+  const source = _.first(ranges);
+  return {
+    data: source.getData() as RangeData,
+    sources: [source],
+  };
+}
+
+function countCellsFromData(data: RangeData) {
+  return data.reduce((acc, row) => acc + Object.keys(row).length, 0);
 }
 
 export function pasteRange(range: RangeComponent) {
@@ -179,8 +257,10 @@ export function pasteRange(range: RangeComponent) {
     setCellValue(cell, text);
   } else {
     const table = range.getRows()[0].getTable();
-    const rows = table.getRows('active').slice(range.getTopEdge());
-    const columns = table.getColumns(false).filter((col) => col.isVisible())
+    const rows = table.getRows("active").slice(range.getTopEdge());
+    const columns = table
+      .getColumns(false)
+      .filter((col) => col.isVisible())
       .slice(range.getLeftEdge());
     const cells: CellComponent[][] = rows.map((row) => {
       const arr = [];
@@ -210,33 +290,33 @@ export function setCellValue(cell: CellComponent, value: string) {
 }
 
 export function copyActionsMenu(options: {
-  range: RangeComponent;
+  ranges: RangeComponent[];
   table?: string;
   schema?: string;
 }) {
-  const { range, table, schema } = options;
+  const { ranges, table, schema } = options;
   return [
     {
       label: createMenuItem("Copy", "Control+C"),
-      action: () => copyRange({ range, type: "plain" }),
+      action: () => copyRanges({ ranges, type: "plain" }),
     },
     {
       label: createMenuItem("Copy as TSV for Excel"),
-      action: () => copyRange({ range, type: "tsv" }),
+      action: () => copyRanges({ ranges, type: "tsv" }),
     },
     {
       label: createMenuItem("Copy as JSON"),
-      action: () => copyRange({ range, type: "json" }),
+      action: () => copyRanges({ ranges, type: "json" }),
     },
     {
       label: createMenuItem("Copy as Markdown"),
-      action: () => copyRange({ range, type: "markdown" }),
+      action: () => copyRanges({ ranges, type: "markdown" }),
     },
     {
       label: createMenuItem("Copy as SQL"),
       action: () =>
-        copyRange({
-          range,
+        copyRanges({
+          ranges,
           type: "sql",
           table,
           schema,

@@ -17,18 +17,20 @@
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml } from '@shared/lib/tabulator'
   import { dialectFor } from '@shared/lib/dialects/models'
+  import { FkLinkMixin } from '@/mixins/fk_click'
+  import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import globals from '@/common/globals'
   import Papa from 'papaparse'
-  import { mapState } from 'vuex'
+  import { mapState, mapGetters } from 'vuex'
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRange, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
 
   export default {
-    mixins: [Converter, Mutators],
+    mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
         tabulator: null,
@@ -63,7 +65,8 @@
       },
     },
     computed: {
-      ...mapState(['usedConfig', 'defaultSchema', 'connectionType']),
+      ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
+      ...mapGetters(['isUltimate']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -98,9 +101,28 @@
           ]
         }
 
-        const columns = this.result.fields.map((column, index) => {
-          const title = column.name || `Result ${index}`
+        const columns = this.result.fields.flatMap((column, index) => {
+          const results = []
+          const magic = MagicColumnBuilder.build(column.name) || {}
+          const title = magic?.title ?? column.name ?? `Result ${index}`
+
+          let cssClass = 'hide-header-menu-icon'
+
+          if (magic.cssClass) {
+            cssClass += ` ${magic.cssClass}`
+          }
+
+          if (magic.formatterParams?.fk) {
+            magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
+          }
+
+          const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
+          const defaults = {
+            formatter: this.cellFormatter,
+          }
+
           const result = {
+            ...defaults,
             title,
             titleFormatter() {
               return `<span class="title">${escapeHtml(title)}</span>`
@@ -117,13 +139,22 @@
             headerContextMenu: columnMenu,
             headerMenu: columnMenu,
             resizable: 'header',
-            cssClass: 'hide-header-menu-icon',
+            cssClass,
+            ...(this.isUltimate ? magicStuff : {}),
           }
+
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
             result['sorter'] = this.intervalSorter;
           }
-          return result;
+
+          results.push(result)
+
+          if (magic && magic.tableLink) {
+            const fkCol = this.fkColumn(result, [magic.tableLink])
+            results.push(fkCol)
+          }
+          return results;
         })
 
         return columns
@@ -171,7 +202,7 @@
       },
       copySelection() {
         if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
-        copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
+        copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]

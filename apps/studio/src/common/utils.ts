@@ -6,6 +6,7 @@ import { format } from 'sql-formatter';
 import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
+import type { Stream } from 'stream';
 
 export function parseIndexColumn(str: string): IndexColumn {
   str = str.trim()
@@ -82,6 +83,9 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100): any
     discard() {
       discarded = true;
     },
+    get canceled() {
+      return canceled;
+    }
   };
 }
 
@@ -131,15 +135,21 @@ export function createTableFilter(field: string): TableFilter {
   return { op: "AND", field, type: "=", value: "" }
 }
 
+// isEmpty(1) returns true, we don't want that!
+// https://stackoverflow.com/questions/36691125/lodash-isblank
+export function isBlank(value) {
+  return _.isEmpty(value) && !_.isNumber(value) || _.isNaN(value);
+}
+
 /** Check if an array of filters is considered empty */
 export function checkEmptyFilters(filters: TableFilter[]): boolean {
   if (filters.length === 0) {
     return true
   }
   if (filters.length === 1) {
-    return _.isEmpty(filters[0].value)
+    return isBlank(filters[0].value)
   }
-  return filters.every(filter => _.isEmpty(filter.value));
+  return filters.every(filter => isBlank(filter.value));
 }
 
 /** Useful for identifying an entity item in table list */
@@ -187,4 +197,22 @@ export function isBksInternalColumn(field: string) {
   return field.endsWith('--bks')
     || field.startsWith('__beekeeper_internal')
     || field === rowHeaderField;
+}
+
+export function streamToString(stream: Stream): Promise<string> {
+  const chunks = [];
+  return new Promise((resolve, reject) => {
+    stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on("error", (err) => reject(err));
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+  });
+}
+
+export function streamToBuffer(stream: Stream): Promise<Buffer> {
+  const chunks = [];
+  return new Promise((resolve, reject) => {
+    stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on("error", (err) => reject(err));
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+  });
 }

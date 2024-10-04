@@ -1,0 +1,99 @@
+@import 'codemirror/theme/solarized';
+
+
+// SOLARIZED COLORS
+$sbase4:    #004052;
+$sbase3:    #002b36;
+$sbase2:    #073642;
+$sbase1:    #586e75;
+
+$sbase0:    #657b83;
+$sbase00:     #839496;
+
+$sbase01:     #93a1a1;
+$sbase02:     #eee8d5;
+$sbase03:     #fdf6e3;
+$sbase04:     #ddd6c1;
+$sbase05:     #d3cbb7;
+
+
+$syellow:    #b58900;
+$sorange:    #cb4b16;
+$sred:       #dc322f;
+$smagenta:   #d33682;
+$sviolet:    #6c71c4;
+$sblue:      #268bd2;
+$scyan:      #2aa198;
+$sgreen:     #859900;
+
+$insertedGreen: #104633;
+$removedRed: #8A3937;
+
+@mixin rebase($rebase03,$rebase02,$rebase01,$rebase00,$rebase0,$rebase1,$rebase2,$rebase3)
+{
+    background-color:$rebase03;
+    color:$rebase0;
+    * { color:$rebase0; }
+    h1,h2,h3,h4,h5,h6 { color:$rebase1; border-color: $rebase0; }
+    a, a:active, a:visited { color: $rebase1; }
+}
+@mixin accentize($accent) {
+    a, a:active, a:visited, code.url { color: $accent; }
+    h1,h2,h3,h4,h5,h6 {color:$accent}
+}
+html { @include rebase($sbase3,$sbase2,$sbase1,$sbase0,$sbase00,$sbase01,$sbase02,$sbase03)}
+html * {
+    color-profile: sRGB;
+    rendering-intent: auto;
+}
+
+
+
+
+// Theme
+// -----------------------------
+$theme-bg:           $sbase2;
+$theme-base:         $sbase02;
+$theme-primary:      $syellow;
+$theme-secondary:    $sblue;
+
+// Colors
+// -----------------------------
+$text-dark:          $sbase01;
+$text:               $theme-base;
+$text-light:         $sbase0;
+$text-lighter:       $sbase1;
+$text-hint:          $syellow;
+$text-disabled:      $sbase03;
+
+$brand-info:         $sblue;
+$brand-success:      $sgreen;
+$brand-warning:      $syellow;
+$brand-danger:       $sred;
+$brand-default:      rgba($theme-base, 0.57);
+$brand-purple:       $sviolet;
+$brand-pink:         $smagenta;
+$brand-primary:      $theme-primary;
+$brand-secondary:    $theme-secondary;
+
+// App
+$border-color:              rgba($theme-base, 0.15);
+$link-color:                $text-dark;
+$placeholder:               $text-hint;
+$selection:                 rgba($theme-primary, 0.2);
+$input-highlight:           rgba($theme-base, 0.27);
+
+$db-select-text:            $sbase3;
+$query-editor-bg:           $sbase3;
+
+$titlebar-bg:               $sbase2;
+$global-sidebar-bg:         transparent;
+$sidebar-bg:                $sbase2;
+$sidebar-heading-bg:        $theme-bg;
+$tabs-bg:                   transparent;
+$statusbar-bg:              rgba($theme-base, 0.1);
+// $statusbar-bg:             rgba($theme-primary, 0.4);
+$statusbar-text:            $text-dark;
+
+$grouped-tables-base: lighten($theme-bg, 2%);
+$grouped-tables-light: lighten($grouped-tables-base, 2%);

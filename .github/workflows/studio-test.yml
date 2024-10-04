@@ -53,6 +53,9 @@ jobs:
       - name: Check for bad files
         run: bin/check-for-only-tests.sh
 
+      - name: Check for license-breaking includes
+        run: bin/check-for-src-commercial.sh
+
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
