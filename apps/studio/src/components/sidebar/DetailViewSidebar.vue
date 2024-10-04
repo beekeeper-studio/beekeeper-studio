@@ -80,12 +80,16 @@ import {
   findKeyPosition,
   findValueInfo,
   createExpandableElement,
+  createTruncatableElement,
   deepFilterObjectProps,
+  getPaths,
+  eachPaths,
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
 import rawLog from "electron-log";
 import _ from "lodash";
+import globals from '@/common/globals'
 
 const log = rawLog.scope("detail-view-sidebar");
 
@@ -98,6 +102,7 @@ export default Vue.extend({
       filter: "",
       foldAll: 0,
       unfoldAll: 0,
+      restoredTruncatedPaths: [],
     };
   },
   watch: {
@@ -133,10 +138,10 @@ export default Vue.extend({
         return "";
       }
       if (this.filter) {
-        const filtered = deepFilterObjectProps(this.value, this.filter);
+        const filtered = deepFilterObjectProps(this.processedValue, this.filter);
         return JSON.stringify(filtered, null, 2);
       }
-      return JSON.stringify(this.value, null, 2);
+      return JSON.stringify(this.processedValue, null, 2);
     },
     debouncedFilter: {
       get() {
@@ -145,6 +150,30 @@ export default Vue.extend({
       set: _.debounce(function (value) {
         this.filter = value;
       }, 500),
+    },
+    processedValue() {
+      const clonedValue = _.cloneDeep(this.value)
+      eachPaths(clonedValue, (path, value: string) => {
+        if (this.truncatedPaths.includes(path)) {
+          _.set(clonedValue, path, value.slice(0, globals.maxDetailViewTextLength))
+        }
+      })
+      return clonedValue
+    },
+    truncatablePaths() {
+      return getPaths(this.value).filter((path) => {
+        const val = _.get(this.value, path)
+        if (
+          typeof val === "string" &&
+          val.length > globals.maxDetailViewTextLength
+        ) {
+          return true
+        }
+        return false
+      })
+    },
+    truncatedPaths() {
+      return _.difference(this.truncatablePaths, this.restoredTruncatedPaths)
     },
     markers() {
       const markers: EditorMarker[] = [];
@@ -164,10 +193,36 @@ export default Vue.extend({
             element,
           });
         } catch (e) {
-          // log.warn("Failed to find position for", expandablePath.path);
-          // log.warn(e);
+          log.warn("Failed to mark expandable path", expandablePath);
+          log.warn(e);
         }
       });
+      _.forEach(this.truncatedPaths, (path) => {
+        // Avoid conflicts with expandable paths
+        if (this.expandablePaths.includes(path)) {
+          return
+        }
+        try {
+          const line = findKeyPosition(this.text, path.split("."));
+          const { from, to, value } = findValueInfo(this.lines[line]);
+          const element = createTruncatableElement(value);
+          const onClick = async () => {
+            this.restoredTruncatedPaths.push(path)
+            await this.$nextTick()
+            this.reinitializeTextEditor++
+          }
+          markers.push({
+            type: "custom",
+            from: { line, ch: from },
+            to: { line, ch: to },
+            onClick,
+            element,
+          });
+        } catch (e) {
+          log.warn("Failed to mark truncated path", path);
+          log.warn(e);
+        }
+      })
       return markers;
     },
     lines() {

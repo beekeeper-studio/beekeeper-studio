@@ -10,6 +10,7 @@ export default {
   minColumnWidth: 100,
   maxInitialWidth: 500,
   defaultTableTableSplitSizes: [75, 25],
+  maxDetailViewTextLength: 30,
   bigTableColumnWidth: 125,
   maxColumnWidthTableInfo: 300,
   workspaceCheckInterval: 5000, // 5 seconds
