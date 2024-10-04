@@ -43,6 +43,7 @@ export default {
       this.$modal.hide(this.modalName);
     },
     startFreeTrial() {
+      this.$store.dispatch('licenses/add', { trial: true })
       this.close();
     },
   },

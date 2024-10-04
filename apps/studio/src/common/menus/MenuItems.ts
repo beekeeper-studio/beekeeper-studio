@@ -267,11 +267,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
         },
         {
           label: "On an expired, lifetime license, that covers this version",
-          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.lifetimeCoversThisVersion),
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversThisVersion),
         },
         {
           label: "On an expired, lifetime license, that covers an earlier version",
-          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.lifetimeCoversEarlierVersion),
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversEarlierVersion),
         },
       ],
     }

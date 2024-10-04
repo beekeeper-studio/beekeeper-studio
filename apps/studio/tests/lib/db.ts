@@ -20,6 +20,8 @@ import fs from 'fs'
 import path from 'path'
 import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
+import { LicenseKey } from '@/common/appdb/models/LicenseKey'
+import { TestOrmConnection } from './TestOrmConnection'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -165,6 +167,7 @@ export class DBTestUtil {
     if (this.connection) await this.connection.disconnect();
     // https://github.com/jestjs/jest/issues/11463
     if (this.knex) await this.knex.destroy();
+    await TestOrmConnection.disconnect()
   }
 
   maybeArrayToObject(items, key) {
@@ -212,6 +215,8 @@ export class DBTestUtil {
   }
 
   async setupdb() {
+    await TestOrmConnection.connect()
+    await LicenseKey.createTrialLicense()
     await this.connection.connect()
     await this.createTables()
 

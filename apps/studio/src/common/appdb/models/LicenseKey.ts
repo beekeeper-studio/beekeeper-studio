@@ -49,12 +49,7 @@ export class LicenseKey extends ApplicationEntity {
 
   static async getLicenseStatus(): Promise<LicenseStatus> {
     const status = new LicenseStatus();
-
-    if (platformInfo.testMode) {
-      status.edition = "ultimate";
-      status.condition = "Test mode";
-      return status;
-    }
+    status.condition = []
 
     const licenses = await LicenseKey.find();
     const currentDate = new Date();
@@ -63,17 +58,21 @@ export class LicenseKey extends ApplicationEntity {
     // Do they have a license at all?
     if (licenses.length === 0) {
       status.edition = "community";
-      status.condition = "No license found";
+      status.condition.push("No license found");
       return status;
     }
 
     const currentLicense = _.orderBy(licenses, ["validUntil"], ["desc"])[0];
     status.license = currentLicense;
 
+    if (currentDate > currentLicense.supportUntil) {
+      status.condition.push("Expired support date");
+    }
+
     // Is the license not valid?
     if (currentDate > currentLicense.validUntil) {
       status.edition = "community";
-      status.condition = "License expired";
+      status.condition.push("Expired valid date");
       return status;
     }
 
@@ -81,24 +80,19 @@ export class LicenseKey extends ApplicationEntity {
     // Is maxAllowedAppRelease nullish?
     if (_.isNil(currentLicense.maxAllowedAppRelease)) {
       status.edition = "ultimate";
-      status.condition = "No app version restriction";
+      status.condition.push("No app version restriction");
       return status;
     }
 
     // Does the license allow the current app version?
-    if (
-      isVersionLessThanOrEqual(
-        currentVersion,
-        parseTagVersion(currentLicense.maxAllowedAppRelease.tagName)
-      )
-    ) {
+    if (isVersionLessThanOrEqual(currentVersion, status.maxAllowedVersion)) {
       status.edition = "ultimate";
-      status.condition = "App version allowed";
+      status.condition.push("App version allowed");
       return status;
     }
 
     status.edition = "community";
-    status.condition = "App version not allowed";
+    status.condition.push("App version not allowed");
     return status;
   }
 

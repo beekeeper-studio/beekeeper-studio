@@ -6,6 +6,7 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 
 const ANY_VERSION = "1.0.0";
 const ANY_VERSION_TAG = "v1.0.0";
+const EARLY_VERSION_TAG = "v0.9.0";
 
 function v(strings: TemplateStringsArray) {
   const [major, minor, patch] = strings[0].split(".");
@@ -24,11 +25,13 @@ function expectStatus() {
 
 async function createLicense(options: {
   validUntil: string;
+  supportUntil?: string;
   maxAllowedAppRelease: Nullable<{ tagName: string }>;
 }) {
+  await LicenseKey.delete({});
   const license = new LicenseKey();
   license.validUntil = new Date(options.validUntil);
-  license.supportUntil = new Date(options.validUntil);
+  license.supportUntil = new Date(options.supportUntil ?? options.validUntil);
   license.licenseType = "PersonalLicense";
   license.email = "fake-email";
   license.key = "fake-key";
@@ -68,10 +71,8 @@ describe("License", () => {
 
   describe("License status", () => {
     const origParsedAppVersion = platformInfo.parsedAppVersion;
-    const origTestMode = platformInfo.testMode;
 
     beforeEach(async () => {
-      platformInfo.testMode = false;
       await TestOrmConnection.connect();
     });
 
@@ -79,26 +80,27 @@ describe("License", () => {
       jest.useRealTimers();
       await TestOrmConnection.disconnect();
       platformInfo.parsedAppVersion = origParsedAppVersion;
-      platformInfo.testMode = origTestMode;
     });
 
     it("Community - No license found", async () => {
       expectStatus().toEqual({
         edition: "community",
-        condition: "No license found",
+        condition: ["No license found"],
       });
     });
 
     it("Community - License expired", async () => {
       currentTime("18-Sep-2024");
       currentVersion(ANY_VERSION);
+
       await createLicense({
         validUntil: "17-Sep-2024",
+        supportUntil: "17-Sep-2024",
         maxAllowedAppRelease: { tagName: ANY_VERSION_TAG },
       });
       expectStatus().toEqual({
         edition: "community",
-        condition: "License expired",
+        condition: ["Expired support date", "Expired valid date"],
       });
     });
 
@@ -111,7 +113,7 @@ describe("License", () => {
       });
       expectStatus().toEqual({
         edition: "ultimate",
-        condition: "No app version restriction",
+        condition: ["No app version restriction"],
       });
     });
 
@@ -124,27 +126,42 @@ describe("License", () => {
       });
       await expectStatus().toEqual({
         edition: "ultimate",
-        condition: "App version allowed",
+        condition: ["App version allowed"],
       });
 
       currentVersion("1.0.0");
       expectStatus().toEqual({
         edition: "ultimate",
-        condition: "App version allowed",
+        condition: ["App version allowed"],
       });
     });
 
-    it("Community - App version not allowed", async () => {
-      currentTime("16-Sep-2024");
-      currentVersion("1.0.1");
+    it("Ultimate - Lifetime license, App version allowed, license expired", async () => {
+      currentTime("18-Sep-2024");
+      currentVersion(ANY_VERSION);
       await createLicense({
-        validUntil: "17-Sep-2024",
-        maxAllowedAppRelease: { tagName: "v1.0.0" },
+        validUntil: "18-Sep-2024",
+        supportUntil: "17-Sep-2024",
+        maxAllowedAppRelease: { tagName: ANY_VERSION_TAG },
+      });
+      expectStatus().toEqual({
+        edition: "ultimate",
+        condition: ["Expired support date", "App version allowed"],
+      });
+    })
+
+    it("Community - Lifetime license, App version not allowed, license expired", async () => {
+      currentTime("18-Sep-2024");
+      currentVersion(ANY_VERSION);
+      await createLicense({
+        validUntil: "18-Sep-2024",
+        supportUntil: "17-Sep-2024",
+        maxAllowedAppRelease: { tagName: EARLY_VERSION_TAG },
       });
       expectStatus().toEqual({
         edition: "community",
-        condition: "App version not allowed",
+        condition: ["Expired support date", "App version not allowed"],
       });
-    });
+    })
   });
 });
