@@ -45,7 +45,10 @@ export function runReadOnlyTests(getUtil) {
   })
 }
 
-/** @param {() => DBTestUtil} getUtil */
+/**
+ * @param {() => DBTestUtil} getUtil
+ * @param {{readOnly?: boolean, dbReadOnlyMode?: boolean}} opts?
+ * */
 export function runCommonTests(getUtil, opts = {}) {
   const {
     readOnly = false,
@@ -76,31 +79,32 @@ export function runCommonTests(getUtil, opts = {}) {
 
     describe("stream tests", () => {
       beforeAll(async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().prepareStreamTests()
       })
 
       test("should get all columns", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamColumnsTest()
       })
 
       test("should count exact number of rows", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamCountTest()
       })
 
       test("should stop/cancel streaming", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamStopTest()
       })
 
       test("should use custom chunk size", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamChunkTest()
       })
 
       test("should read all rows", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamReadTest()
       })
     })
@@ -123,6 +127,7 @@ export function runCommonTests(getUtil, opts = {}) {
 
 
     test("table triggers", async () => {
+      if (getUtil().data.disabledFeatures?.triggers) return
       await getUtil().triggerTests()
     })
 
@@ -136,6 +141,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should list generated columns", async () => {
+        if (getUtil().data.disabledFeatures?.generatedColumns || getUtil().options.skipGeneratedColumns) return
         await getUtil().generatedColumnsTests()
       })
     })
@@ -310,6 +316,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not insert bad data", async () => {
+        if (getUtil().data.disabledFeatures?.transactions) return
         await itShouldNotInsertBadData(getUtil())
       })
 
@@ -322,6 +329,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not commit on change error", async () => {
+        if (getUtil().data.disabledFeatures?.transactions) return
         if (dbReadOnlyMode) {
           await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -345,6 +353,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not insert bad data", async () => {
+      if (getUtil().data.disabledFeatures?.transactions) return
       await itShouldNotInsertBadDataCompositePK(getUtil())
     })
 
@@ -357,6 +366,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not commit on change error", async () => {
+      if (getUtil().data.disabledFeatures?.transactions) return
       if (dbReadOnlyMode) {
         await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
       } else {
@@ -407,7 +417,7 @@ const prepareImportTable = async function(util) {
 
   await util.knex.schema.dropTableIfExists(tableName)
   await util.knex.schema.createTable(tableName, (t) => {
-    t.string('name'),
+    t.string('name').primary().notNullable(),
     t.string('hat')
   })
 }
@@ -437,7 +447,8 @@ export const itShouldInsertGoodData = async function(util) {
   ]
   await util.connection.applyChanges({ inserts: inserts })
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 }
 
@@ -520,7 +531,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
 
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(1)
   const firstResult = { ...results[0] }
   // hack for cockroachdb
@@ -690,6 +702,7 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
   expect(results.length).toBe(0)
 }
 
+/** @param {DBTestUtil} util */
 export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
 
   const changes = {
@@ -761,7 +774,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
 
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts_composite_pk')
+  const _results = await util.knex.select().table('test_inserts_composite_pk').orderBy('id1', 'asc')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 
   const firstResult = { ...results[0] }

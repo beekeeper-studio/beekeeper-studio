@@ -2302,6 +2302,28 @@
   resolved "https://registry.yarnpkg.com/@bufbuild/protobuf/-/protobuf-1.9.0.tgz#fffac3183059a41ceef5311e07e3724d426a95c4"
   integrity sha512-W7gp8Q/v1NlCZLsv8pQ3Y0uCu/SHgXOVFK+eUluUKWXmsb6VHkpNx0apdOWWcDbB9sJoKeP8uPrjmehJz6xETQ==
 
+"@cleverbrush/async@^1.1.10":
+  version "1.1.10"
+  resolved "https://registry.yarnpkg.com/@cleverbrush/async/-/async-1.1.10.tgz#6206152518af7fc01d68dc14a5c9af819133ba70"
+  integrity sha512-Ig8rGsQGWFckwZvhNc0xw9sg03MDEXHjB/zNeeCoHhMc/1UqutfxbGvUOpkl4cdrpQTkf4oxFHvGK8mdEcNG1Q==
+
+"@cleverbrush/deep@^1.1.10":
+  version "1.1.10"
+  resolved "https://registry.yarnpkg.com/@cleverbrush/deep/-/deep-1.1.10.tgz#9dfb24355e2d325b040d9cd643edfe02d19e8178"
+  integrity sha512-Cw5Ev1TfbJRm/YCZbAFYzo0gNGX2VwKWxcIJiRmanefGPYVt7YZXKHBIj5iMbEfl0J6kWcGxam777Sg/76o1WQ==
+
+"@clickhouse/client-common@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@clickhouse/client-common/-/client-common-1.2.0.tgz#8845d373a14c6076d59118a0cb58afad84687372"
+  integrity sha512-VfA/C/tVJ2eNe72CaQ7eXmai+yqFEvZjQZiNtvJoOMLP+Vtb6DzqH9nfkgsiHHMhUhhclvt2mFh6+euk1Ea5wA==
+
+"@clickhouse/client@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@clickhouse/client/-/client-1.2.0.tgz#83aa3b69635e19c94a975ee7ec9a68843915b94b"
+  integrity sha512-zMp2EhMfp1IrFKr/NjDwNiLsf7nq68nW8lGKszwFe7Iglc6Z5PY9ZA9Hd0XqAk75Q1NmFrkGCP1r3JCM1Nm1Bw==
+  dependencies:
+    "@clickhouse/client-common" "1.2.0"
+
 "@develar/schema-utils@~2.6.5":
   version "2.6.5"
   resolved "https://registry.yarnpkg.com/@develar/schema-utils/-/schema-utils-2.6.5.tgz#3ece22c5838402419a6e0425f85742b961d9b6c6"
@@ -5582,11 +5604,6 @@ commander@^5.0.0:
   resolved "https://registry.yarnpkg.com/commander/-/commander-5.1.0.tgz#46abbd1652f8e059bddaef99bbdcb2ad9cf179ae"
   integrity sha512-P0CysNDQ7rtVw4QIQtm+MRxV66vKFSvlsQvGYXZWR3qFU0jlMKHZZZgw8e+8DSah4UDKMqnknRDQz+xuQXQ/Zg==
 
-commander@^9.1.0:
-  version "9.4.0"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-9.4.0.tgz#bc4a40918fefe52e22450c111ecd6b7acce6f11c"
-  integrity sha512-sRPT+umqkz90UA8M1yqYfnHlZA7fF6nSphDtxeywPZ49ysjxDQybzk13CL+mXekDRG92skbcqCLVovuCusNmFw==
-
 compare-version@^0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/compare-version/-/compare-version-0.1.2.tgz#0162ec2d9351f5ddd59a9202cba935366a725080"
@@ -8391,12 +8408,12 @@ knex-firebird-dialect@1.4.6:
     lodash "^4.17.21"
 
 knex@^2.4.1:
-  version "2.4.2"
-  resolved "https://registry.yarnpkg.com/knex/-/knex-2.4.2.tgz#a34a289d38406dc19a0447a78eeaf2d16ebedd61"
-  integrity sha512-tMI1M7a+xwHhPxjbl/H9K1kHX+VncEYcvCx5K00M16bWvpYPKAZd6QrCu68PtHAdIZNQPWZn0GVhqVBEthGWCg==
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/knex/-/knex-2.5.1.tgz#a6c6b449866cf4229f070c17411f23871ba52ef9"
+  integrity sha512-z78DgGKUr4SE/6cm7ku+jHvFT0X97aERh/f0MUKAKgFnwCYBEW4TFBqtHWFYiJFid7fMrtpZ/gxJthvz5mEByA==
   dependencies:
     colorette "2.0.19"
-    commander "^9.1.0"
+    commander "^10.0.0"
     debug "4.3.4"
     escalade "^3.1.1"
     esm "^3.2.25"
@@ -8404,7 +8421,7 @@ knex@^2.4.1:
     getopts "2.3.0"
     interpret "^2.2.0"
     lodash "^4.17.21"
-    pg-connection-string "2.5.0"
+    pg-connection-string "2.6.1"
     rechoir "^0.8.0"
     resolve-from "^5.0.0"
     tarn "^3.0.2"
@@ -9591,10 +9608,10 @@ pg-cloudflare@^1.1.1:
   resolved "https://registry.yarnpkg.com/pg-cloudflare/-/pg-cloudflare-1.1.1.tgz#e6d5833015b170e23ae819e8c5d7eaedb472ca98"
   integrity sha512-xWPagP/4B6BgFO+EKz3JONXv3YDgvkbVrGw2mTo3D6tVDQRh1e7cqVGvyR3BE+eQgAvx1XhW/iEASj4/jCWl3Q==
 
-pg-connection-string@2.5.0:
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/pg-connection-string/-/pg-connection-string-2.5.0.tgz#538cadd0f7e603fc09a12590f3b8a452c2c0cf34"
-  integrity sha512-r5o/V/ORTA6TmUnyWZR9nCj1klXCO2CEKNRlVuJptZe85QuhFayC7WeMic7ndayT5IRIR0S0xFxFi2ousartlQ==
+pg-connection-string@2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/pg-connection-string/-/pg-connection-string-2.6.1.tgz#78c23c21a35dd116f48e12e23c0965e8d9e2cbfb"
+  integrity sha512-w6ZzNu6oMmIzEAYVw+RLK0+nqHPt8K3ZnknKi+g48Ak2pr3dtljJW3o+D/n2zzCG07Zoe9VOX3aiKpj+BN0pjg==
 
 pg-connection-string@^2.6.2:
   version "2.6.2"

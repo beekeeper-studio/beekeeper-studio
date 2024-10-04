@@ -27,12 +27,12 @@ export interface IConnectionHandlers {
   'conn/getDefaultCharset': ({ sId }: { sId: string}) => Promise<string>,
   'conn/listCollations': ({ charset, sId }: { charset: string, sId: string }) => Promise<string[]>,
 
-  
+
   // Connection *****************************************************************
   'conn/connect': ({ sId }: { sId: string}) => Promise<void>,
   'conn/disconnect': ({ sId }: { sId: string}) => Promise<void>,
 
-  
+
   // List schema information ****************************************************
   'conn/listTables': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/listViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
@@ -123,7 +123,7 @@ export const ConnHandlers: IConnectionHandlers = {
       throw new Error(errorMessages.noUsername);
     }
 
-    if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
       let cache = new TokenCache();
       cache = await cache.save();
       config.authId = cache.id;
@@ -250,7 +250,7 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/listTableIndexes': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
-    checkConnection(sId);  
+    checkConnection(sId);
     return await state(sId).connection.listTableIndexes(table, schema);
   },
 

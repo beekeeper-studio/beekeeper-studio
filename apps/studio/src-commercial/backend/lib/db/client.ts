@@ -14,6 +14,7 @@ import { FirebirdClient } from "./clients/firebird";
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
 import { LibSQLClient } from "./clients/libsql";
+import { ClickHouseClient } from "./clients/clickhouse";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -29,7 +30,8 @@ const clients = new Map<ConnectionType, any>([
   ['oracle', OracleClient],
   ['cassandra', CassandraClient],
   ['libsql', LibSQLClient],
-],);
+  ['clickhouse', ClickHouseClient],
+], );
 
 
 class FriendlyErrorClient {
@@ -38,7 +40,15 @@ class FriendlyErrorClient {
   }
 }
 
-export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+export class ClientError extends Error {
+  helpLink = null
+  constructor(message: string, helpLink: string) {
+    super(message)
+    this.helpLink = helpLink
+  }
+}
+
+export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase ) {
   /**
    * Database public API
    */
