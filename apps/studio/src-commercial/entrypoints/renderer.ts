@@ -26,6 +26,7 @@ import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
 import rawLog from 'electron-log/renderer'
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
+import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
@@ -68,7 +69,7 @@ import App from '@/App.vue'
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule]);
+    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
 
     (window as any).$ = $;
@@ -134,6 +135,9 @@ import App from '@/App.vue'
     const app = new Vue({
       render: h => h(App),
       store,
+      beforeMount() {
+        store.dispatch('initRootStates')
+      },
     })
 
     Vue.prototype.$util = new UtilityConnection();

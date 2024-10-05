@@ -1,3 +1,8 @@
+.backup-stepper-wrapper {
+  max-height: 90vh;
+  overflow-y: scroll;
+}
+
 .backup-wrapper {
   @include layout-center;
   flex-direction: column;

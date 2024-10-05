@@ -16,9 +16,6 @@ export default {
           "version" integer NOT NULL DEFAULT 0
         )
       `,
-      `INSERT INTO license_keys(email, key, validUntil, supportUntil, licenseType)
-       VALUES('trial_user','fake', datetime('now', '14 days'), datetime('now', '14 days'), 'TrialLicense')
-      `,
       `
       CREATE TRIGGER testtable_trigger
       BEFORE UPDATE OF key, validUntil, supportUntil ON license_keys

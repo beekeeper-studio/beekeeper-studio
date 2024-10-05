@@ -10,6 +10,7 @@ import { createServer } from "@commercial/backend/lib/db/server";
 import knex from "knex";
 import Client_Libsql from "@libsql/knex-libsql";
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
+import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 
 const timeoutDefault = 5000
 
@@ -330,11 +331,14 @@ function testReplica(readOnly = false) {
       },
     }).createConnection(path.join(replicaDir.name, "test.db")) as LibSQLClient;
 
+    await TestOrmConnection.connect()
+
     await remoteClient.connect();
     await replicaClient.connect();
   });
 
   afterAll(async () => {
+    await TestOrmConnection.disconnect()
     await remoteClient.disconnect();
     await replicaClient.disconnect();
     await container.stop();
