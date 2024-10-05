@@ -58,7 +58,8 @@ export default {
   ],
   data() {
     return {
-      editor: null
+      editor: null,
+      wasEditorFocused: false
     };
   },
   computed: {
@@ -131,9 +132,16 @@ export default {
   },
   methods: {
     focusEditor() {
-      if(this.editor && this.autoFocus){
-         this.editor.focus();
+      if(this.editor && this.autoFocus && this.wasEditorFocused){
+        this.editor.focus();
+        this.wasEditorFocused = false;
        }
+    },
+    handleBlur(){
+      const activeElement = document.activeElement;
+      if(activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder"){
+        this.wasEditorFocused = true;
+      }
     },
     async initialize() {
       this.destroyEditor();
@@ -366,9 +374,11 @@ export default {
   mounted() {
     this.initialize();
     window.addEventListener('focus', this.focusEditor);
+    window.addEventListener('blur', this.handleBlur);
   },
   beforeDestroy() {
     window.removeEventListener('focus', this.focusEditor);
+    window.removeEventListener('blur', this.handleBlur);
     this.destroyEditor();
   },
 };
