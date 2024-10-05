@@ -2,21 +2,28 @@ import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
-import { TableOrView } from '@/lib/db/models'
+
+// SQL Server testing policy:
+// We test against SQL Server until it leaves mainstream support
+//
 
 const TEST_VERSIONS = [
-  { version: '2017-latest', readonly: false },
-  { version: '2017-latest', readonly: true },
+  // In July 2024 Microsoft released images that moved the bin location of sqlcmd:
+  // https://github.com/elastic/apm-agent-nodejs/issues/4147
+  // Microsoft's response to this:
+  // https://github.com/microsoft/mssql-docker/issues/892#issuecomment-2249029917
   // FIXME 2022-latest has a breaking change. We'll use the previous build
-  // for now.
-  // { version: '2019-latest', readonly: false },
-  // { version: '2019-latest', readonly: true },
-  // { version: '2022-latest', readonly: false },
-  // { version: '2022-latest', readonly: true },
-  { version: '2019-CU27-ubuntu-20.04', readonly: false },
-  { version: '2019-CU27-ubuntu-20.04', readonly: true },
-  { version: '2022-CU13-ubuntu-22.04', readonly: false },
-  { version: '2022-CU13-ubuntu-22.04', readonly: true },
+  // 2017 crashes. I don't know why
+  // { version: '2017-CU31-GDR2-ubuntu-18.04', readonly: false },
+  // { version: '2017-CU30-ubuntu-18.04', readonly: true },
+
+  // FYI - this might break when mssql-tools upgrades to version 19, as it affects the path
+  // of sqlcmd
+  { version: '2019-latest', readonly: false },
+  { version: '2019-latest', readonly: true },
+  { version: '2022-latest', readonly: false },
+  { version: '2022-latest', readonly: true },
+
 ]
 
 function testWith(dockerTag: string, readonly: boolean) {
@@ -32,8 +39,10 @@ function testWith(dockerTag: string, readonly: boolean) {
     beforeAll(async () => {
       const timeoutDefault = 5000
 
+      const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
+
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
-        .withName(`mssql-${dockerTag}`)
+        // .withResourcesQuota({ memory: 2, cpu: 1 })
         .withEnvironment({
           "MSSQL_PID": "Express",
           "SA_PASSWORD": "Example*1",
@@ -43,11 +52,11 @@ function testWith(dockerTag: string, readonly: boolean) {
         .withExposedPorts(1433)
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
-          test: ["CMD-SHELL", `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
-          interval: 2000,
+          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
+          interval: 5000,
           timeout: 3000,
           retries: 10,
-          startPeriod: 5000,
+          startPeriod: 7000,
         })
         .withStartupTimeout(dbtimeout)
         .start()
@@ -69,6 +78,8 @@ function testWith(dockerTag: string, readonly: boolean) {
       await util.knex.schema.raw("CREATE TABLE hello.world(id int, name varchar(255))")
       await util.knex.schema.raw("INSERT INTO hello.world(id, name) VALUES(1, 'spiderman')")
       await util.knex.schema.raw("CREATE TABLE withbits(id int, bitcol bit NOT NULL)");
+      await util.knex.schema.raw("CREATE TABLE [my[socks]]](id int, name varchar(20))");
+      await util.knex.schema.raw("INSERT INTO [my[socks]]](id, name) VALUES (1, 'blue')");
     })
 
     afterAll(async () => {
@@ -84,6 +95,11 @@ function testWith(dockerTag: string, readonly: boolean) {
       } else {
         runCommonTests(getUtil, { dbReadOnlyMode: readonly })
       }
+    })
+
+    it("Can select top from table with square brackets in name", async () => {
+      const top = await util.connection.selectTop("my[socks]", 0, 1, [{dir: 'ASC', field: 'id'}], [])
+      expect(top.result.length).toBe(1)
     })
 
     describe("Multi schema", () => {
@@ -136,71 +152,6 @@ function testWith(dockerTag: string, readonly: boolean) {
       expect(secondResult).toStrictEqual({
         id: 2,
         bitcol: true
-      })
-    })
-
-    // import tests keep timing out for some reason, but they do work in ultimate when running
-    // Not sure what's up with that
-    describe.skip("Imports", () => {
-      it('should import correctly', async () => {
-        const tableName = 'import_table'
-        const executeOptions = { multiple: false }
-        const table = {
-          name: tableName,
-          schema: 'public',
-          entityType: 'table'
-        } as TableOrView
-        const {
-          step0,
-          beginCommand,
-          truncateCommand,
-          lineReadCommand,
-          commitCommand,
-          rollbackCommand,
-          finalCommand
-          } = util.connection.getImportScripts(table)
-        const formattedData = util.buildImportData(tableName)
-        const importSQL = util.connection.getImportSQL(formattedData)
-
-        expect(typeof step0).toBe('function')
-        expect(typeof beginCommand).toBe('function')
-        expect(typeof truncateCommand).toBe('function')
-        expect(typeof lineReadCommand).toBe('function')
-        expect(typeof commitCommand).toBe('function')
-        expect(typeof rollbackCommand).toBe('function')
-        expect(finalCommand).toBeUndefined()
-
-        await step0(executeOptions)
-        await beginCommand(executeOptions)
-        await truncateCommand(executeOptions)
-        await lineReadCommand(importSQL, {multiple: true})
-        await commitCommand(executeOptions)
-
-        const hats = await util.knex.select().table(tableName)
-        expect(hats.length).toBe(4)
-      })
-
-      it('should rollback', async () => {
-        const tableName = 'import_table'
-        const executeOptions = { multiple: false }
-        const table = {
-          name: tableName,
-          entityType: 'table'
-        } as TableOrView
-        const formattedData = util.buildImportData(tableName)
-        const {
-          beginCommand,
-          lineReadCommand,
-          rollbackCommand,
-        } = util.connection.getImportScripts(table)
-        const importSQL = util.connection.getImportSQL(formattedData)
-        const hatsStart = await util.knex.select().table(tableName)
-        await beginCommand(executeOptions)
-        await lineReadCommand(importSQL, {multiple: true})
-        await rollbackCommand(executeOptions)
-
-        const hats = await util.knex.select().table(tableName)
-        expect(hats.length).toBe(hatsStart.length)
       })
     })
   })

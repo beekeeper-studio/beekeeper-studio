@@ -171,5 +171,11 @@ services:
     #   - SQLD_NODE=primary
     # volumes:
     #   - ./dev/docker_libsql:/var/lib/sqld
-
-
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    ports:
+      - 8123:8123
+    environment:
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1

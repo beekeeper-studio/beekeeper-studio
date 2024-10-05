@@ -9,7 +9,6 @@
       @export="startExport"
       @closed="handleDeadModal"
     />
-    <!-- TODO (@day): the exports will just be an array of ids -->
     <ExportNotification
       v-for="exportId in exports"
       :key="exportId"
@@ -58,34 +57,39 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-      const id = await this.$util.send('export/add', {options});
-      this.addExport(id);
+      try {
+        const exp = await this.$util.send('export/add', {options});
+        this.addExport(exp);
 
-      const exportName = options.table ? options.table.name : options.queryName;
+        const exportName = options.table ? options.table.name : options.queryName;
 
-      await this.$util.send('export/start', {id});
-      const status = await this.$util.send('export/status', {id});
+        await this.$util.send('export/start', { id: exp.id });
+        const status = await this.$util.send('export/status', { id: exp.id });
 
-      if (status == ExportStatus.Error) {
-        const error = this.$util.send('export/error', {id});
-        const error_notice = this.$noty.error(`Export of ${exportName} failed: ${error}`, {
+        if (status == ExportStatus.Error) {
+          const error = this.$util.send('export/error', { id: exp.id });
+          const error_notice = this.$noty.error(`Export of ${exportName} failed: ${error}`, {
+            buttons: [
+              Noty.button('Close', "btn btn-primary", () => {
+                error_notice.close()
+              })
+            ]
+          }).setTimeout(globals.errorNoticeTimeout)
+          return
+        }
+        if (status !== ExportStatus.Completed) return;
+        const n = this.$noty.success(`Export of ${exportName} complete`, {
           buttons: [
-            Noty.button('Close', "btn btn-primary", () => {
-              error_notice.close()
+            Noty.button('Show', "btn btn-primary", () => {
+              this.$native.files.showItemInFolder(options.filePath)
+              n.close()
             })
           ]
-        }).setTimeout(globals.errorNoticeTimeout)
-        return
+        })
+      } catch (e) {
+        this.$noty.error(`Failed to export: ${e?.message ?? e}`, {
+        })
       }
-      if (status !== ExportStatus.Completed) return;
-      const n = this.$noty.success(`Export of ${exportName} complete`, {
-        buttons: [
-          Noty.button('Show', "btn btn-primary", () => {
-            this.$native.files.showItemInFolder(options.filePath)
-            n.close()
-          })
-        ]
-      })
     },
     handleExportRequest(options?: ExportTriggerOptions): void {
       this.table = options?.table

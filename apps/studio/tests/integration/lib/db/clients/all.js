@@ -45,7 +45,10 @@ export function runReadOnlyTests(getUtil) {
   })
 }
 
-/** @param {() => DBTestUtil} getUtil */
+/**
+ * @param {() => DBTestUtil} getUtil
+ * @param {{readOnly?: boolean, dbReadOnlyMode?: boolean}} opts?
+ * */
 export function runCommonTests(getUtil, opts = {}) {
   const {
     readOnly = false,
@@ -61,6 +64,11 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().listTableTests()
     })
 
+    test("list indexes should work", async () => {
+      if (getUtil().data.disabledFeatures?.createIndex) return
+      await getUtil().listIndexTests()
+    })
+
     test("column tests", async() => {
       await getUtil().tableColumnsTests()
     })
@@ -69,17 +77,42 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().tableViewTests()
     })
 
-    test("stream tests", async () => {
-      if (getUtil().dbType === 'cockroachdb') {
-        return
-      }
-      await getUtil().streamTests()
+    describe("stream tests", () => {
+      beforeAll(async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        await getUtil().prepareStreamTests()
+      })
+
+      test("should get all columns", async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        await getUtil().streamColumnsTest()
+      })
+
+      test("should count exact number of rows", async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        await getUtil().streamCountTest()
+      })
+
+      test("should stop/cancel streaming", async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        await getUtil().streamStopTest()
+      })
+
+      test("should use custom chunk size", async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        await getUtil().streamChunkTest()
+      })
+
+      test("should read all rows", async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        await getUtil().streamReadTest()
+      })
     })
 
     test("query tests", async () => {
       if (dbReadOnlyMode) {
         await expect(getUtil().queryTests()).rejects.toThrow(errorMessages.readOnly)
-      } else if (getUtil().dbType !== 'libsql'){
+      } else {
         await getUtil().queryTests()
       }
     })
@@ -94,6 +127,7 @@ export function runCommonTests(getUtil, opts = {}) {
 
 
     test("table triggers", async () => {
+      if (getUtil().data.disabledFeatures?.triggers) return
       await getUtil().triggerTests()
     })
 
@@ -107,6 +141,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should list generated columns", async () => {
+        if (getUtil().data.disabledFeatures?.generatedColumns || getUtil().options.skipGeneratedColumns) return
         await getUtil().generatedColumnsTests()
       })
     })
@@ -197,6 +232,20 @@ export function runCommonTests(getUtil, opts = {}) {
     })
   })
 
+  describe("Import Scripts", () => {
+    beforeEach(async() => {
+      await prepareImportTable(getUtil())
+    })
+    test("Import data", async ()=> {
+      const importScriptConfig = await prepareImportTests(getUtil)
+      await getUtil().importScriptsTests(importScriptConfig)
+    })
+    test("Rollback data", async ()=> {
+      const importScriptConfig = await prepareImportTests(getUtil)
+      await getUtil().importScriptRollbackTest(importScriptConfig)
+    })
+  })
+
 
   // press f for oracle.
   const f = readOnly ? describe.skip : describe
@@ -267,6 +316,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not insert bad data", async () => {
+        if (getUtil().data.disabledFeatures?.transactions) return
         await itShouldNotInsertBadData(getUtil())
       })
 
@@ -279,6 +329,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not commit on change error", async () => {
+        if (getUtil().data.disabledFeatures?.transactions) return
         if (dbReadOnlyMode) {
           await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -302,6 +353,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not insert bad data", async () => {
+      if (getUtil().data.disabledFeatures?.transactions) return
       await itShouldNotInsertBadDataCompositePK(getUtil())
     })
 
@@ -314,6 +366,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not commit on change error", async () => {
+      if (getUtil().data.disabledFeatures?.transactions) return
       if (dbReadOnlyMode) {
         await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
       } else {
@@ -358,6 +411,17 @@ const prepareTestTable = async function(util) {
   })
 }
 
+const prepareImportTable = async function(util) {
+
+  const tableName = (['firebird'].includes(util.dbType)) ? 'IMPORTSTUFF' : 'importstuff'
+
+  await util.knex.schema.dropTableIfExists(tableName)
+  await util.knex.schema.createTable(tableName, (t) => {
+    t.string('name').primary().notNullable(),
+    t.string('hat')
+  })
+}
+
 
 export const itShouldInsertGoodData = async function(util) {
 
@@ -383,7 +447,8 @@ export const itShouldInsertGoodData = async function(util) {
   ]
   await util.connection.applyChanges({ inserts: inserts })
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 }
 
@@ -466,7 +531,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
 
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(1)
   const firstResult = { ...results[0] }
   // hack for cockroachdb
@@ -636,6 +702,7 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
   expect(results.length).toBe(0)
 }
 
+/** @param {DBTestUtil} util */
 export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
 
   const changes = {
@@ -707,7 +774,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
 
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts_composite_pk')
+  const _results = await util.knex.select().table('test_inserts_composite_pk').orderBy('id1', 'asc')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 
   const firstResult = { ...results[0] }
@@ -872,4 +940,71 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
   expect(sql.includes('test_inserts'));
   expect(sql.includes('jane'));
   expect(sql.includes('testy'));
+}
+
+export async function prepareImportTests (util) {
+  const dialect = util().dialect
+  let tableName = 'importstuff'
+
+  const importScriptOptions = {
+    executeOptions: { multiple: false }
+  }
+
+  let data = []
+  let hatColumn = 'hat'
+
+  if (['firebird', 'oracle'].includes(dialect)) {
+    tableName = 'IMPORTSTUFF'
+    data = [
+      {
+        'NAME': 'biff',
+        'HAT': 'beret'
+      },
+      {
+        'NAME': 'spud',
+        'HAT': 'fez'
+      },
+      {
+        'NAME': 'chuck',
+        'HAT': 'barretina'
+      },
+      {
+        'NAME': 'lou',
+        'HAT': 'tricorne'
+      }
+    ]
+    hatColumn = 'HAT'
+  } else {
+    data = [
+      {
+        'name': 'biff',
+        'hat': 'beret'
+      },
+      {
+        'name': 'spud',
+        'hat': 'fez'
+      },
+      {
+        'name': 'chuck',
+        'hat': 'barretina'
+      },
+      {
+        'name': 'lou',
+        'hat': 'tricorne'
+      }
+    ]
+  }
+  const table = {
+    schema: util().defaultSchema ?? null,
+    name: tableName,
+    entityType: 'table'
+  }
+  const formattedData = data.map(d => ({
+    table: tableName,
+    data: [d]
+  }))
+
+  return {
+    tableName, table, formattedData, importScriptOptions, hatColumn
+  }
 }

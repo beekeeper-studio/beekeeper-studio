@@ -3,7 +3,16 @@
     class="save-connection expand"
     @submit.prevent="save"
   >
-    <h3 class="dialog-c-title">
+    <h3
+      class="dialog-c-title"
+      v-if="this.connectionType === 'cassandra'"
+    >
+      Add Keyspace
+    </h3>
+    <h3
+      class="dialog-c-title"
+      v-else
+    >
       Add database
     </h3>
 
@@ -28,7 +37,16 @@
       class="form-group"
       v-if="charsets.length > 0"
     >
-      <select v-model="selectedCharset">
+      <label
+        for="addDatabaseCharset"
+        v-if="this.connectionType === 'cassandra'"
+      >
+        Select Replication Strategy
+      </label>
+      <select
+        v-model="selectedCharset"
+        id="addDatabaseCollation"
+      >
         <option
           v-for="charset in charsets"
           :key="charset"
@@ -58,6 +76,7 @@
     <div class="save-actions">
       <button
         class="btn btn-flat"
+        type="button"
         @click.prevent="$emit('cancel')"
       >
         Cancel
@@ -65,6 +84,7 @@
       <button
         class="btn btn-primary save"
         type="submit"
+        :disabled="!databaseName"
       >
         Add
       </button>
@@ -88,7 +108,7 @@
       }
     },
     computed: {
-      ...mapState(['connection'])
+      ...mapState(['connection', 'connectionType'])
     },
     async mounted(){
       this.charsets = await this.connection.listCharsets();

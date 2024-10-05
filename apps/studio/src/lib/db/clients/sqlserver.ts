@@ -28,7 +28,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions, ImportFuncOptions } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
@@ -834,7 +834,38 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query);
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async importStepZero(_table: TableOrView): Promise<any> {
+    const transaction = new sql.Transaction(this.pool)
+
+    return {
+      transaction,
+      request: new sql.Request(transaction)
+    }
+  }
+
+  async importBeginCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.begin()
+  }
+
+  async importTruncateCommand (table: TableOrView, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+    return clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
+  }
+
+  async importLineReadCommand (_table: TableOrView, sqlString: string, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
+    return clientExtras.request.query(sqlString, executeOptions)
+  }
+
+  async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.commit()
+  }
+
+  async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return clientExtras.transaction.rollback()
+  }
+
+  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name, schema } = table
     const transaction = new sql.Transaction(this.pool)
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
@@ -863,10 +894,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     this.pool.on('error', (err) => {
       if (err instanceof ConnectionError) {
-        log.log('IS INSTANCE OF')
+        log.error('Pool ConnectionError', err.message)
       }
       log.error("Pool event: connection error:", err.name, err.message);
     });
+
 
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
@@ -923,9 +955,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   wrapIdentifier(value: string) {
-    if (_.isString(value)) {
-      return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
-    } return value
+    return SqlServerData.wrapIdentifier(value)
   }
 
   getBuilder(table: string, schema?: string) {

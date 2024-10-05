@@ -1,8 +1,6 @@
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType } from "@/lib/db/types"
 import { Transport } from "../transport"
 
-const ConnectionTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql'] as const
-export type ConnectionType = typeof ConnectionTypes[number]
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
 export function isUltimateType(s: ConnectionType) {
@@ -11,6 +9,7 @@ export function isUltimateType(s: ConnectionType) {
     'firebird',
     'cassandra',
     'libsql',
+    'clickhouse',
   ]
   return types.includes(s)
 }

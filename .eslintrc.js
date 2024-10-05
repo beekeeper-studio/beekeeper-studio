@@ -13,8 +13,6 @@ module.exports = {
     "plugin:vue/essential",
     "plugin:vue/strongly-recommended",
     "plugin:@typescript-eslint/recommended",
-    "@vue/typescript",
-    "@vue/eslint-config-typescript"
   ],
   "rules": {
     "no-console": "off",
