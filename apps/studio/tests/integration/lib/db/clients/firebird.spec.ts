@@ -160,6 +160,22 @@ describe("Firebird Tests", () => {
 
       expect(result.rows[0].DESCRIPTION).toBe(blobValue);
     })
+
+    it("should correctly parse blob columns in a transaction", async () => {
+      const connection = await Connection.attach(config);
+      const transaction = await connection.transaction();
+      const blobValue = 'THIS SHOULD BE A BLOB COLUMN THAT IS PARSED CORRECTLY BY THE WRAPPER IN A TRANSACTION...';
+
+      await transaction.query(`INSERT INTO blobTest values (2, '${blobValue}')`);
+
+      const result = await transaction.query(`
+        SELECT * FROM blobTest WHERE ID = 2;
+      `);
+
+      await transaction.commit();
+
+      expect(result.rows[0].DESCRIPTION).toBe(blobValue);
+    })
   });
 
   it("should fetch routines correctly", async () => {
