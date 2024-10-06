@@ -12,7 +12,6 @@ import {
   FieldDescriptor,
   FilterOptions,
   ImportFuncOptions,
-  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -117,17 +116,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
-  }
-  
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { schema, name } = table
-    return {
-      beginCommand: (_executeOptions: any): Promise<any> => null,
-      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
-      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
-      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
-    }
   }
 
   async createDatabaseSQL() {
@@ -788,13 +776,23 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return allRows
   }
 
+  protected async runWithConnection(child: (c: oracle.Connection) => Promise<any>): Promise<any> {
+    const c = await this.pool.getConnection();
+    try {
+      return await child(c);
+    } finally {
+      await c.close()
+    }
+  }
+
   protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {
       const realQueries: string[] = _.isArray(query) ? query : [query]
       const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
       // TODO - use `executeMany` if no SELECT queries are present
       // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
-      const c = await this.pool.getConnection()
-      return await withClosable(c, async (c: oracle.Connection) => {
+
+      const c = options.connection ?? await this.pool.getConnection();
+      const runQuery = async (c: oracle.Connection) => {
         const results: DriverResult[] = []
         for (let qi = 0; qi < infos.length; qi++) {
           const q: IdentifyResult = infos[qi];
@@ -807,7 +805,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         }
         await c.commit()
         return results
-      })
+      };
+      return options.connection ? await runQuery(c) : await withClosable(c, runQuery)
   }
 
   private identify(query: string): IdentifyResult[] {

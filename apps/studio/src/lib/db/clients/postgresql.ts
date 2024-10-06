@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportScriptFunctions, ImportFuncOptions } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -1058,36 +1058,24 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async importBeginCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
-    return this.rawExecuteQuery('BEGIN;', importOptions.executeOptions)
+    return await this.rawExecuteQuery('BEGIN;', importOptions.executeOptions)
   }
 
   async importTruncateCommand(table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
     const { name, schema } = table
-    return this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, importOptions.executeOptions)
+    return await this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, importOptions.executeOptions)
   }
 
   async importLineReadCommand(_table: TableOrView, sqlString: string, importOptions: ImportFuncOptions): Promise<any> {
-    return this.rawExecuteQuery(sqlString, importOptions.executeOptions)
+    return await this.rawExecuteQuery(sqlString, importOptions.executeOptions)
   }
 
   async importCommitCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
-    return this.rawExecuteQuery('COMMIT;', importOptions.executeOptions)
+    return await this.rawExecuteQuery('COMMIT;', importOptions.executeOptions)
   }
 
   async importRollbackCommand(_table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
-    return this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
-  }
-
-  // get rid of at some point please and thanks
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name, schema } = table
-    return {
-      beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('BEGIN;', executeOptions),
-      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
-      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
-      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
-    }
+    return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
   }
 
   protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
@@ -1096,6 +1084,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (options.connection) {
       return await this.runQuery(options.connection, q, options)
     } else {
+      log.info('Acquiring new connection for: ', q)
       // the simple case where we manage the connection ourselves
       return await this.runWithConnection(async (connection) => {
         return await this.runQuery(connection, q, options)

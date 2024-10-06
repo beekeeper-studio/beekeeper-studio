@@ -9,6 +9,7 @@ import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
+import _ from "lodash";
 
 export class RedshiftClient extends PostgresClient {
   async supportedFeatures(): Promise<SupportedFeatures> {

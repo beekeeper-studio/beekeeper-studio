@@ -338,6 +338,8 @@ export interface CommandSettingSection {
 export interface ImportFuncOptions {
   clientExtras?: {[key: string]: any}
   executeOptions?: {[key: string]: any}
+  importerOptions?: {[key: string]: any}
+  storeValues?: {[key: string]: any}
 }
 
 export interface ImportScriptFunctions {

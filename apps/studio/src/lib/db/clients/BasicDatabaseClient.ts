@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions, ImportFuncOptions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
@@ -276,7 +276,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  async importStepZero(_table: TableOrView): Promise<any> {
+  async importStepZero(_table: TableOrView, _options?: { connection: any }): Promise<any> {
     return null
   }
   async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
@@ -302,18 +302,48 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   async importFinalCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     return null
   }
-  
-  // getImportScripts can be deleted
-  async getImportScripts(_table: TableOrView): Promise<ImportScriptFunctions> {
-    return {
-      step0: (): Promise<any|null> => null,
-      beginCommand: (_executeOptions: any): any => null,
-      truncateCommand: (): Promise<any> => null,
-      lineReadCommand: (_sqlString: string[]): Promise<any> => null,
-      commitCommand: (_executeOptions: any): Promise<any> => null,
-      rollbackCommand: (_executeOptions: any): Promise<any> => null,
-      finalCommand: (_executeOptions: any): Promise<any> => null
-    }
+
+  protected async runWithConnection<T>(_child: (c: any) => Promise<T>): Promise<T> {
+    throw new Error(`runWithConnection not implemented for ${this.dialect}`);
+  }
+
+  async importFile(
+    table: TableOrView,
+    importScriptOptions: ImportFuncOptions,
+    readStream: (b: {[key: string]: any}, executeOptions?: any, c?: string) => Promise<any>,
+  ) {
+    const {
+      executeOptions,
+      importerOptions,
+      storeValues
+    } = importScriptOptions;
+
+    return await this.runWithConnection(async (connection) => {
+      try {
+        executeOptions.connection = connection
+        importScriptOptions.clientExtras = await this.importStepZero(table, { connection })
+        await this.importBeginCommand(table, importScriptOptions)
+        if (storeValues.truncateTable) {
+          await this.importTruncateCommand(table, importScriptOptions)
+        }
+    
+        const readOptions = {
+          connection,
+          ...importScriptOptions.clientExtras
+        };
+        const result = await readStream(importerOptions, readOptions, storeValues.fileName)
+        if (result.aborted) {
+          throw new Error(`Import aborted: ${result.error}`);
+        }
+        await this.importCommitCommand(table, importScriptOptions)
+      } catch (err) {
+        log.error('Error importing data: ', err)
+        await this.importRollbackCommand(table, importScriptOptions)
+        throw err;
+      } finally {
+        await this.importFinalCommand(table, importScriptOptions)
+      }
+    })
   }
 
   async getImportSQL(importedData: any[]): Promise<string | string[]> {

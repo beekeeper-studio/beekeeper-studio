@@ -36,7 +36,6 @@ import {
   ExtendedTableColumn,
   FilterOptions,
   ImportFuncOptions,
-  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -1340,21 +1339,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
-  }
-  
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name } = table
-    
-    return {
-      beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('START TRANSACTION;', executeOptions),
-      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
-      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
-      rollbackCommand: (executeOptions: any): Promise<any> => {
-        console.log('in rollback')
-        return this.rawExecuteQuery('ROLLBACK;', executeOptions)
-      }
-    }
   }
 }
 
