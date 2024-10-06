@@ -3,9 +3,17 @@ import { LicenseStatus, isVersionLessThanOrEqual, parseTagVersion } from "@/lib/
 import { Column, Entity, Not } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash';
+import globals from "@/common/globals";
+
+
+function daysInFuture(days: number = 14) {
+  return new Date(new Date().setDate(new Date().getDate() + days))
+}
+
 
 @Entity({ name: 'license_keys' })
 export class LicenseKey extends ApplicationEntity {
+
   withProps(props: any) {
     if (props) LicenseKey.merge(this, props);
     return this;
@@ -41,12 +49,7 @@ export class LicenseKey extends ApplicationEntity {
 
   static async getLicenseStatus(): Promise<LicenseStatus> {
     const status = new LicenseStatus();
-
-    if (platformInfo.testMode) {
-      status.edition = "ultimate";
-      status.condition = "Test mode";
-      return status;
-    }
+    status.condition = []
 
     const licenses = await LicenseKey.find();
     const currentDate = new Date();
@@ -55,17 +58,21 @@ export class LicenseKey extends ApplicationEntity {
     // Do they have a license at all?
     if (licenses.length === 0) {
       status.edition = "community";
-      status.condition = "No license found";
+      status.condition.push("No license found");
       return status;
     }
 
     const currentLicense = _.orderBy(licenses, ["validUntil"], ["desc"])[0];
     status.license = currentLicense;
 
+    if (currentDate > currentLicense.supportUntil) {
+      status.condition.push("Expired support date");
+    }
+
     // Is the license not valid?
     if (currentDate > currentLicense.validUntil) {
       status.edition = "community";
-      status.condition = "License expired";
+      status.condition.push("Expired valid date");
       return status;
     }
 
@@ -73,24 +80,19 @@ export class LicenseKey extends ApplicationEntity {
     // Is maxAllowedAppRelease nullish?
     if (_.isNil(currentLicense.maxAllowedAppRelease)) {
       status.edition = "ultimate";
-      status.condition = "No app version restriction";
+      status.condition.push("No app version restriction");
       return status;
     }
 
     // Does the license allow the current app version?
-    if (
-      isVersionLessThanOrEqual(
-        currentVersion,
-        parseTagVersion(currentLicense.maxAllowedAppRelease.tagName)
-      )
-    ) {
+    if (isVersionLessThanOrEqual(currentVersion, status.maxAllowedVersion)) {
       status.edition = "ultimate";
-      status.condition = "App version allowed";
+      status.condition.push("App version allowed");
       return status;
     }
 
     status.edition = "community";
-    status.condition = "App version not allowed";
+    status.condition.push("App version not allowed");
     return status;
   }
 
@@ -98,17 +100,16 @@ export class LicenseKey extends ApplicationEntity {
     return this.validUntil && this.validUntil > new Date()
   }
 
-  public static async createTrialLicense() {
+  public static async createTrialLicense(validUntil = daysInFuture(globals.freeTrialDays), supportUntil = validUntil) {
     if ((await LicenseKey.count()) !== 0) {
       throw new Error("Not allowed");
     }
 
-    const validUntil = new Date(new Date().setDate(new Date().getDate() + 14));
     const trialLicense = new LicenseKey();
     trialLicense.email = "trial_user";
     trialLicense.key = "fake";
     trialLicense.validUntil = validUntil;
-    trialLicense.supportUntil = validUntil;
+    trialLicense.supportUntil = supportUntil;
     trialLicense.licenseType = "TrialLicense";
     await trialLicense.save();
     return trialLicense;

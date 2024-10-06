@@ -85,10 +85,14 @@ export const LicenseModule: Module<State, RootState>  = {
       setInterval(() => context.dispatch('sync'), globals.licenseCheckInterval)
       context.commit('setInitialized', true)
     },
-    async add(context, { email, key }) {
-      await Vue.prototype.$util.send('license/add', { email, key })
-      // allow showing expired license modal next time
-      SmartLocalStorage.setBool('showExpiredLicenseModal', true)
+    async add(context, { email, key, trial }) {
+      if (trial) {
+        await Vue.prototype.$util.send('license/createTrialLicense')
+      } else {
+        await Vue.prototype.$util.send('license/add', { email, key })
+      }
+      // allow emitting expired license events next time
+      SmartLocalStorage.setBool('expiredLicenseEventsEmitted', false)
       await context.dispatch('sync')
     },
     async update() {

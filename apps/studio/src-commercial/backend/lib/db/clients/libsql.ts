@@ -9,7 +9,7 @@ import { IDbConnectionDatabase } from "@/lib/db/types";
 import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { NgQueryResult } from "../models";
+import { NgQueryResult } from "@/lib/db/models";
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);

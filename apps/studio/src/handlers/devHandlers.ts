@@ -24,10 +24,7 @@ export const DevHandlers: IDevHandlers = {
         break;
       case DevLicenseState.trialExpired: {
         await LicenseKey.clear();
-        const license = await LicenseKey.createTrialLicense();
-        license.validUntil = yesterday;
-        license.supportUntil = yesterday;
-        await license.save();
+        await LicenseKey.createTrialLicense(yesterday, yesterday);
         break;
       }
       case DevLicenseState.activePaidLicense: {
@@ -41,13 +38,13 @@ export const DevHandlers: IDevHandlers = {
         await license.save();
         break;
       }
-      case DevLicenseState.lifetimeCoversThisVersion: {
+      case DevLicenseState.expiredLifetimeCoversThisVersion: {
         await LicenseKey.clear();
         const license = new LicenseKey();
         license.email = "fake_email";
         license.key = "fake_key";
         license.validUntil = nextMonth;
-        license.supportUntil = nextMonth;
+        license.supportUntil = yesterday;
         license.licenseType = "PersonalLicense";
         license.maxAllowedAppRelease = {
           tagName: `v${platformInfo.appVersion}`,
@@ -55,16 +52,16 @@ export const DevHandlers: IDevHandlers = {
         await license.save();
         break;
       }
-      case DevLicenseState.lifetimeCoversEarlierVersion: {
+      case DevLicenseState.expiredLifetimeCoversEarlierVersion: {
         await LicenseKey.clear();
         const license = new LicenseKey();
         license.email = "fake_email";
         license.key = "fake_key";
         license.validUntil = nextMonth;
-        license.supportUntil = nextMonth;
+        license.supportUntil = yesterday;
         license.licenseType = "PersonalLicense";
-        const version = platformInfo.parsedAppVersion;
-        const tagName = `v${version.major - 1}.${version.minor}.${version.patch}`;
+
+        const tagName = 'v0.0.1'
         license.maxAllowedAppRelease = { tagName };
         await license.save();
         break;

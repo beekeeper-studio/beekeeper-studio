@@ -34,10 +34,11 @@
     <import-connections-modal />
     <confirmation-modal-manager />
     <util-died-modal />
-    <template v-if="$store.state.licenses.initialized">
+    <template v-if="licensesInitialized">
       <trial-begin-modal />
       <trial-expired-modal />
       <license-expired-modal />
+      <lifetime-license-expired-modal />
     </template>
   </div>
 </template>
@@ -69,6 +70,9 @@ import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialBeginModal from '@/components/license/TrialBeginModal.vue'
 import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
+import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import type { LicenseStatus } from "@/lib/license";
+import { SmartLocalStorage } from '@/common/LocalStorage';
 
 import rawLog from 'electron-log'
 
@@ -81,6 +85,7 @@ export default Vue.extend({
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialBeginModal, TrialExpiredModal, LicenseExpiredModal,
+    LifetimeLicenseExpiredModal,
   },
   data() {
     return {
@@ -96,7 +101,10 @@ export default Vue.extend({
         (this.license && this.license.active)
     },
     ...mapState(['storeInitialized', 'connected', 'database']),
-    ...mapState('licenses', ['status']),
+    ...mapState('licenses', {
+      status: (state) => state.status,
+      licensesInitialized: (state) => state.initialized,
+    }),
     ...mapGetters({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
@@ -113,16 +121,18 @@ export default Vue.extend({
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
-
-      if (prev.isUltimate && curr.isCommunity && curr.condition === "License expired") {
-        this.$root.$emit(AppEvent.licenseExpired, curr.license)
+      this.validateLicenseExpiry(curr, prev)
+    },
+    async licensesInitialized(initialized) {
+      if (initialized) {
+        await this.$nextTick()
+        this.validateLicenseExpiry()
       }
     },
   },
   async beforeDestroy() {
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
-    await this.$store.commit('userEnums/setWatcher', null)
   },
   async mounted() {
     this.notifyFreeTrial()
@@ -182,6 +192,27 @@ export default Vue.extend({
     databaseSelected(_db) {
       // TODO: do something here if needed
     },
+    validateLicenseExpiry(curr?: LicenseStatus, prev?: LicenseStatus) {
+      if (SmartLocalStorage.getBool('expiredLicenseEventsEmitted', false)) return
+
+      const compare = prev && curr
+      const isValidDateExpired = compare ? !prev.isValidDateExpired && curr.isValidDateExpired : this.status.isValidDateExpired
+      const isSupportDateExpired = compare ? !prev.isSupportDateExpired && curr.isSupportDateExpired : this.status.isSupportDateExpired
+      const status = compare ? curr : this.status
+
+      if (isValidDateExpired) {
+        this.$root.$emit(AppEvent.licenseValidDateExpired, status)
+      }
+
+      if (isSupportDateExpired) {
+        this.$root.$emit(AppEvent.licenseSupportDateExpired, status)
+      }
+
+      if (isValidDateExpired || isSupportDateExpired) {
+        this.$root.$emit(AppEvent.licenseExpired, status)
+        SmartLocalStorage.setBool('expiredLicenseEventsEmitted', true)
+      }
+    }
   }
 })
 </script>

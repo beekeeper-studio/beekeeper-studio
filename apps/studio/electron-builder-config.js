@@ -9,6 +9,7 @@ module.exports = {
   releaseInfo: {
     releaseNotesFile: "build/release-notes.md"
   },
+  generateUpdatesFilesForAllChannels: true,
   directories: {
     output: "dist_electron"
   },

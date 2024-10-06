@@ -74,6 +74,10 @@ const SettingStoreModule: Module<State, any> = {
       if (!state.settings.minimalMode) return false;
       return state.settings.minimalMode.value
     },
+    lastUsedWorkspace(state) {
+      if (!state.settings.lastUsedWorkspace) return null;
+      return state.settings.lastUsedWorkspace
+    }
   }
 }
 

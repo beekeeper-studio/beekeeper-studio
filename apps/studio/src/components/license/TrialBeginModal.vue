@@ -2,25 +2,32 @@
   <portal to="modals">
     <modal class="vue-dialog beekeeper-modal" :name="modalName" @before-close="beforeClose">
       <div class="dialog-content">
-        <div class="dialog-c-title">Start Your Ultimate Edition Trial?</div>
+        <div class="dialog-c-title">Welcome to Beekeeper Studio</div>
         <div>
-          You’re about to unlock the full features of the Ultimate Edition! Would you like to start a free trial and experience everything we offer? Or, you can continue using the Community Edition with access to free features only.
+          <p>Let's get started. You can use Beekeeper Studio's <strong>Ultimate Edition</strong> features free for {{ trialPeriod }} days.</p>
         </div>
       </div>
       <div class="vue-dialog-buttons">
+        <a class="small text-muted" type="button" @click.prevent="enterLicense">
+          Enter license
+        </a>
+        <span class="expand"></span>
         <button class="btn btn-flat" type="button" @click.prevent="startFreeTrial">
-          Start Free Trial
-        </button>
-        <button class="btn btn-flat" type="button" @click.prevent="close">
-          Continue with Community Edition
+          Start Trial
         </button>
       </div>
     </modal>
   </portal>
 </template>
 
-<script lang="ts">
+<script lang="js">
+import { AppEvent } from '@/common/AppEvent';
+import globals from '@/common/globals';
+
 export default {
+  data: () => ({
+    trialPeriod: globals.freeTrialDays
+  }),
   computed: {
     modalName: () => "trial-begin-modal",
   },
@@ -28,10 +35,15 @@ export default {
     beforeClose() {
       this.$store.dispatch('toggleShowBeginTrialModal', false)
     },
+    enterLicense() {
+      this.close()
+      this.$root.$emit(AppEvent.enterLicense)
+    },
     close() {
       this.$modal.hide(this.modalName);
     },
     startFreeTrial() {
+      this.$store.dispatch('licenses/add', { trial: true })
       this.close();
     },
   },

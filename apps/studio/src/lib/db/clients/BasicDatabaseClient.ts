@@ -11,6 +11,7 @@ import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -85,7 +86,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     this.connErrHandler = fn;
   }
 
-  abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
+  abstract getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase>;
 
   // DB Metadata ****************************************************************
   abstract supportedFeatures(): Promise<SupportedFeatures>;
@@ -186,7 +187,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // all of these can be handled by the change builder, which we can get for any connection
   async alterTableSql(change: AlterTableSpec): Promise<string> {
     const { table, schema } = change
-    const builder = this.getBuilder(table, schema)
+    const builder = await this.getBuilder(table, schema)
     return builder.alterTable(change)
   }
 
@@ -197,7 +198,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async alterIndexSql(changes: IndexAlterations): Promise<string | null> {
     const { table, schema, additions, drops } = changes
-    const changeBuilder = this.getBuilder(table, schema)
+    const changeBuilder = await this.getBuilder(table, schema)
     const newIndexes = changeBuilder.createIndexes(additions)
     const droppers = changeBuilder.dropIndexes(drops)
     return [newIndexes, droppers].filter((f) => !!f).join(";")
@@ -210,7 +211,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async alterRelationSql(changes: RelationAlterations): Promise<string | null> {
     const { table, schema } = changes
-    const builder = this.getBuilder(table, schema)
+    const builder = await this.getBuilder(table, schema)
     const creates = builder.createRelations(changes.additions)
     const drops = builder.dropRelations(changes.drops)
     return [creates, drops].filter((f) => !!f).join(";")
@@ -396,15 +397,20 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
+  protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
+    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly
+  }
+
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
-    const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (await this.checkAllowReadOnly() && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    const statements = identify(q, { strict: false, dialect: this.dialect });
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
+    options['statements'] = statements
     try {
         const result = await this.rawExecuteQuery(q, options) as RawResultType
         return _.isArray(result) ? result[0] : result
@@ -430,14 +436,15 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
-    const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (await this.checkAllowReadOnly() && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    const statements = identify(q, { strict: false, dialect: this.dialect });
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
+    options['statements'] = statements
     try {
       const result = await this.rawExecuteQuery(q, options) as RawResultType[]
       return result

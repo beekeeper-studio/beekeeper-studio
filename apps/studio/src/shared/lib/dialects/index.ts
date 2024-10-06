@@ -8,6 +8,7 @@ import { PostgresData } from "./postgresql";
 import { SqliteData } from "./sqlite";
 import { SqlServerData } from "./sqlserver";
 import { CassandraData } from './cassandra'
+import { ClickHouseData } from "./clickhouse";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -29,6 +30,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return BigQueryData
     case 'firebird':
       return FirebirdData
+    case 'clickhouse':
+      return ClickHouseData
     default:
       return SqliteData
   }

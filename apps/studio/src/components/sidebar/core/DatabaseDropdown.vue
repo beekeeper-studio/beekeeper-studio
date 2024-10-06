@@ -114,7 +114,7 @@
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
         // FIXME: move this comparison to the DialectData
-        if (this.connectionType.match(/sqlite|firebird/)) {
+        if (['sqlite', 'firebird'].includes(this.connectionType)) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`

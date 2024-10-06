@@ -3,6 +3,7 @@ import { Magic } from '../../Magic';
 import { MagicColumn } from '../../MagicColumn';
 import store from '@/store'
 import { UserProvidedEnum } from '@/lib/UserProvidedEnum';
+import _ from 'lodash';
 
 function enumFormatter(cell: CellComponent, params: any, _onRendered): string {
   const value = (params.userEnum as UserProvidedEnum).findMatch(cell.getValue());
