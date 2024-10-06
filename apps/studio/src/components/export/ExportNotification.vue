@@ -70,7 +70,7 @@ export default {
   async mounted() {
     const status = await this.$util.send('export/status', { id: this.exportId });
     this.exportName = await this.$util.send('export/name', { id: this.exportId });
-    if (status === ExportStatus.Exporting ) {
+    if (status === ExportStatus.Exporting) {
       this.$util.addListener(`onExportProgress/${this.exportId}`, this.updateProgress.bind(this));
       this.notification.show();
     }

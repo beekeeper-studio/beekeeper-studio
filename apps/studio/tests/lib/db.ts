@@ -20,6 +20,8 @@ import fs from 'fs'
 import path from 'path'
 import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
+import { LicenseKey } from '@/common/appdb/models/LicenseKey'
+import { TestOrmConnection } from './TestOrmConnection'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -165,6 +167,7 @@ export class DBTestUtil {
     if (this.connection) await this.connection.disconnect();
     // https://github.com/jestjs/jest/issues/11463
     if (this.knex) await this.knex.destroy();
+    await TestOrmConnection.disconnect()
   }
 
   maybeArrayToObject(items, key) {
@@ -212,6 +215,8 @@ export class DBTestUtil {
   }
 
   async setupdb() {
+    await TestOrmConnection.connect()
+    await LicenseKey.createTrialLicense()
     await this.connection.connect()
     await this.createTables()
 
@@ -1280,20 +1285,20 @@ export class DBTestUtil {
       return expect.anything()
     }
 
-    const importSQL = await this.connection.getImportSQL(formattedData)
-    importScriptOptions.clientExtras = await this.connection.importStepZero(table)
-    await this.connection.importBeginCommand(table, importScriptOptions)
-    await this.connection.importTruncateCommand(table, importScriptOptions)
-
-    const editedImportScriptOptions = {
-      clientExtras: importScriptOptions.clientExtras,
-      executeOptions: { multiple: true }
+    const read = async (_options: any, executeOptions: any) => {
+      const updatedImportScriptOptions = {
+        ...importScriptOptions,
+        executeOptions: {
+          multiple: true,
+          ...executeOptions
+        }
+      };
+      const importSQL = await this.connection.getImportSQL(formattedData);
+      await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
+      return { aborted: false }
     }
 
-    await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
-
-    await this.connection.importCommitCommand(table, importScriptOptions)
-    await this.connection.importFinalCommand(table, importScriptOptions)
+    await this.connection.importFile(table, importScriptOptions, read)
 
     const [hats] = await this.knex(tableName).count(hatColumn)
     const [dataLength] = _.values(hats)
@@ -1312,22 +1317,24 @@ export class DBTestUtil {
     if (['sqlite'].includes(this.dialect)) {
       expectedLength = 4
     }
-
-    const importSQL = await this.connection.getImportSQL(formattedData)
-
-    importScriptOptions.clientExtras = await this.connection.importStepZero(table)
-    await this.connection.importBeginCommand(table, importScriptOptions)
-    await this.connection.importTruncateCommand(table, importScriptOptions)
-
-    const editedImportScriptOptions = {
-      clientExtras: importScriptOptions.clientExtras,
-      executeOptions: { multiple: true }
+    const read = async (_options: any, executeOptions: any) => {
+      const updatedImportScriptOptions = {
+        ...importScriptOptions,
+        executeOptions: {
+          multiple: true,
+          ...executeOptions
+        }
+      };
+      const importSQL = await this.connection.getImportSQL(formattedData);
+      await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
+      return { aborted: true, error: "Forced abort" }
     }
 
-    await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
-
-    await this.connection.importRollbackCommand(table, importScriptOptions)
-    await this.connection.importFinalCommand(table, importScriptOptions)
+    try {
+      await this.connection.importFile(table, importScriptOptions, read)
+    } catch {
+      // empty on purpose
+    }
 
     const [hats] = await this.knex(tableName).count(hatColumn)
     const [dataLength] = _.values(hats)

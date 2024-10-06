@@ -94,12 +94,26 @@ export default {
     hasSelectedText() {
       return this.editorInitialized ? !!this.editor.getSelection() : false;
     },
+    heightAndStatus() {
+      return {
+        height: this.height,
+        status: this.editor != null
+      }
+    },
+    valueAndStatus() {
+      return {
+        value: this.forcedValue,
+        status: this.editor != null
+      }
+    }
   },
   watch: {
-    forcedValue() {
+    valueAndStatus() {
+      const { value, status } = this.valueAndStatus;
+      if (!status) return;
       this.foundRootFold = false;
       const scrollInfo = this.editor.getScrollInfo();
-      this.editor.setValue(this.forcedValue);
+      this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
     forceInitizalize() {
@@ -120,8 +134,10 @@ export default {
     hintOptions() {
       this.editor.setOption("hintOptions", this.hintOptions);
     },
-    height() {
-      this.editor.setSize(null, this.height);
+    heightAndStatus() {
+      const { height, status } = this.heightAndStatus;
+      if (!status) return;
+      this.editor.setSize(null, height);
       this.editor.refresh();
     },
     readOnly() {
@@ -390,11 +406,13 @@ export default {
             name: "Undo",
             handler: () => this.editor.execCommand("undo"),
             shortcut: this.ctrlOrCmd("z"),
+            write: true,
           },
           {
             name: "Redo",
             handler: () => this.editor.execCommand("redo"),
             shortcut: this.ctrlOrCmd("shift+z"),
+            write: true,
           },
           {
             name: "Cut",

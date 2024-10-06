@@ -63,7 +63,6 @@ export const ExportHandlers: IExportHandlers = {
       options.outputOptions,
       options.managerNotify
     );
-    exporter.id
     state(sId).exports.set(exporter.id, exporter);
 
     return {

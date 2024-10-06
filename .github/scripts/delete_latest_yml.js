@@ -1,6 +1,6 @@
 
-module.exports = async ({ github, core }, assetsUrl) => {
-  const assetName = 'latest-mac.yml';
+module.exports = async ({ github, core }, assetsUrl, channel) => {
+  const assetName = `${channel}-mac.yml`;
 
   async function findAssetByName(assets, name) {
     for (const asset of assets) {

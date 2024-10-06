@@ -44,7 +44,7 @@
                 <li>Cloud sync</li>
                 <li>Read-only mode</li>
                 <li>SQLite Extensions</li>
-                <li>Import from CSV</li>
+                <li>Import from file</li>
               </ul>
             </div>
           </div>

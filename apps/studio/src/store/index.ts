@@ -70,8 +70,9 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
+  openDetailView: boolean
+  tableTableSplitSizes: number[]
   showBeginTrialModal: boolean
-  showExpiredLicenseModal: boolean
 }
 
 Vue.use(Vuex)
@@ -125,8 +126,9 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
+    openDetailView: SmartLocalStorage.getBool('openDetailView'),
+    tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
     showBeginTrialModal: SmartLocalStorage.getBool('showBeginTrialModal', true),
-    showExpiredLicenseModal: SmartLocalStorage.getBool('showExpiredLicenseModal', true),
   },
 
   getters: {
@@ -244,11 +246,11 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
+    openDetailView(state) {
+      return state.openDetailView
+    },
     showBeginTrialModal(state, _getters, _rootState, rootGetters) {
       return state.showBeginTrialModal && rootGetters['licenses/noLicensesFound']
-    },
-    showExpiredLicenseModal(state) {
-      return state.showExpiredLicenseModal
     },
   },
   mutations: {
@@ -384,11 +386,14 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
+    openDetailView(state, value: boolean) {
+      state.openDetailView = value
+    },
+    tableTableSplitSizes(state, value: number[]) {
+      state.tableTableSplitSizes = value
+    },
     showBeginTrialModal(state, value: boolean) {
       state.showBeginTrialModal = value
-    },
-    showExpiredLicenseModal(state, value: boolean) {
-      state.showExpiredLicenseModal = value
     },
   },
   actions: {
@@ -416,7 +421,7 @@ const store = new Vuex.Store<State>({
       }
       if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
-        title += ` - Free Trial (${days} ${window.main.pluralize('day', days, true)} left)`
+        title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
       }
       if (context.getters.isCommunity) {
         title += ' - Free Version'
@@ -606,18 +611,23 @@ const store = new Vuex.Store<State>({
       context.commit(flag, value)
       return value
     },
+    toggleOpenDetailView(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.openDetailView
+      }
+      SmartLocalStorage.setBool('openDetailView', value)
+      context.commit('openDetailView', value)
+      return value
+    },
+    setTableTableSplitSizes(context, value: number[]) {
+      SmartLocalStorage.addItem('tableTableSplitSizes', value)
+      context.commit('tableTableSplitSizes', value)
+    },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
     },
     toggleShowBeginTrialModal(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'showBeginTrialModal', value })
-    },
-    toggleShowExpiredLicenseModal(context, value?: boolean) {
-      context.dispatch('toggleFlag', { flag: 'showExpiredLicenseModal', value })
-    },
-    resetLicenseModals(context) {
-      context.dispatch('toggleShowBeginTrialModal', true)
-      context.dispatch('toggleShowExpiredLicenseModal', true)
     },
   },
   plugins: []

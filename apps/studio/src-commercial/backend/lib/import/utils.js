@@ -1,16 +1,15 @@
 import JSONImporter from "./formats/json"
 import JSONLineImporter from "./formats/jsonline"
 import CSVImporter from "./formats/csv"
-import XSLXImporter from "./formats/xslx"
+import XLSXImporter from "./formats/xlsx"
 
 export function getImporterClass (importOptions, connection, table) {
-  console.log(importOptions)
   const ImporterClass = {
     json: JSONImporter,
     csv: CSVImporter,
-    xlsx: XSLXImporter,
+    xlsx: XLSXImporter,
     jsonl: JSONLineImporter
   }
 
-  return new ImporterClass[importOptions.fileType](importOptions.fileName, importOptions, connection, table)
+  return new ImporterClass[importOptions.fileType](importOptions.fileName, importOptions, connection, importOptions.table)
 }

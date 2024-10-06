@@ -30,7 +30,6 @@ import {
   StreamResults,
   TableColumn,
   Routine,
-  ImportScriptFunctions,
   ImportFuncOptions,
 } from "@/lib/db/models";
 import {
@@ -1225,12 +1224,20 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     throw new Error("Method not implemented.");
   }
 
-  async importStepZero(_table: TableOrView): Promise<any> {
-    const connection = await this.pool.getConnection()
-    const transaction = await connection.transaction()
+  protected async runWithConnection(child: (connection: Connection) => Promise<any>):  Promise<any> {
+    const connection = await this.pool.getConnection();
+
+    try {
+      return await child(connection);
+    } finally {
+      await connection.release()
+    }
+  }
+
+  async importStepZero(_table: TableOrView, options: { connection: Connection }): Promise<any> {
+    const transaction = await options.connection.transaction()
 
     return {
-      connection,
       transaction
     }
   }
@@ -1238,55 +1245,22 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   async importTruncateCommand (table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
     const { name } = table
 
-    return clientExtras.transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`)
+    return await clientExtras.transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`)
   }
 
-  async importLineReadCommand (_table: TableOrView, sqlString: string[], { clientExtras }: ImportFuncOptions): Promise<any> {
-    try {
-      const theStrings = sqlString.map(sql => clientExtras.transaction.query(`${sql};`))
-      return Promise.all(theStrings)
-    } catch(err) {
-      throw new Error(err)
-    }
+  async importLineReadCommand (_table: TableOrView, sqlString: string[], { executeOptions }: ImportFuncOptions): Promise<any> {
+    return await Promise.all(sqlString.map(async (sql) => {
+      await executeOptions.transaction.query(`${sql};`);
+    }))
   }
 
   async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.commit()
+    // NOTE (@day): this seems to be crashing
+    return await clientExtras.transaction.commit()
   }
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.rollback()
-  }
-
-  async importFinalCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.connection.release()
-  }
-
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name } = table
-    let connection
-    let transaction
-
-    return {
-      step0: async(): Promise<any|null> => {
-        connection = await this.pool.getConnection()
-        transaction = await connection.transaction()
-      },
-      beginCommand: (_executeOptions: any): any => null,
-      truncateCommand: (): Promise<any> => transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`),
-      lineReadCommand: (sqlString: string[]): Promise<any> => {
-        // firebird doesn't do multiple commands at once so you have to split it up
-        try {
-          const theStrings = sqlString.map(sql => transaction.query(`${sql};`))
-          return Promise.all(theStrings)
-        } catch(err) {
-          throw new Error(err)
-        }
-      },
-      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
-      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback(),
-      finalCommand: (_executeOptions: any): Promise<any> => connection.release()
-    }
+    return await clientExtras.transaction.rollback()
   }
 
   async getImportSQL(importedData: TableInsert[]): Promise<string[]> {

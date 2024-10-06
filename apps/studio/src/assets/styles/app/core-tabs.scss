@@ -236,39 +236,6 @@
   padding-right: 5px;
 }
 
-.import-export {
-  height: 100%;
-  position: relative;
-
-  &__container {
-    height: 100%;
-    position: relative;
-  }
-
-}
-
-// FIXME (matthew) - Move later
-// .import-export {
-
-
-  // &__container {
-  //   overflow-y: scroll;
-  //   max-height: 90vh;
-  //   padding: 0 2rem;
-  //   margin-bottom: $statusbar-height;
-  // }
-
-  // &__footer {
-  //   width: 100%;
-  //   position: fixed;
-  //   bottom: 0;
-
-  //   & .portal-stepper-buttons {
-  //     width: 70%;
-  //   }
-  // }
-// }
-// FIXME (matthew) - Move Later
 .tabcontent {
   width: 100%;
   padding-bottom: $statusbar-height;
