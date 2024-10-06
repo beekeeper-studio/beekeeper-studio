@@ -86,6 +86,8 @@ export class Connection {
   query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
     return new Promise(async (resolve, reject) => {
       const database = this.database;
+      // Firebird requires a transaction to parse blob columns, so we create it here so we use the
+      // same transaction for every cell that needs to be parsed.
       const transaction: Firebird.Transaction = await new Promise((resolve, reject) => {
         this.database.transaction(Firebird.ISOLATION_READ_COMMITTED, (err, transaction) => {
           if (err) {
@@ -115,6 +117,7 @@ export class Connection {
         result.map((value) => {
           Object.keys(value).map((c) => {
             if (_.isFunction(value[c])) {
+              // create a promise for every blob and run the parsing function
               value[c] = new Promise((resBlob, rejBlob) => {
                 value[c](transaction, (error, name, event, row) => {
                   if (error) {
@@ -137,6 +140,8 @@ export class Connection {
         })
 
         if (arrBlob.length > 0) {
+          // wait for the promises to resolve, and then resolve the main promise
+          // returned from this function
           Promise.all(arrBlob)
             .then((blobs) => {
               for (const blob of blobs) {
@@ -152,6 +157,8 @@ export class Connection {
               });
             })
         } else {
+          // we still need to commit, even if we haven't used the transaction
+          // as that's the only way to get rid of the reference to it.
           transaction.commit();
           resolve({ rows: result, meta, isSelect });
         }
