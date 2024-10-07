@@ -116,6 +116,7 @@ export interface DialectData {
       renameSchema?: boolean
       renameTable?: boolean
       renameView?: boolean
+      reorderColumn?: boolean
     },
     triggers?: boolean,
     relations?: boolean,

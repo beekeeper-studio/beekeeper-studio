@@ -68,7 +68,7 @@ export const CassandraData: DialectData = {
       multiStatement: true,
       renameSchema: true,
       renameTable: true,
-      renameView: true,
+      renameView: true
     },
     triggers: true,
     relations: true,

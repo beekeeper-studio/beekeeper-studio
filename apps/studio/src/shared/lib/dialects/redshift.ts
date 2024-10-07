@@ -34,7 +34,8 @@ export const RedshiftData: DialectData = {
   textEditorMode: "text/x-pgsql",
   disabledFeatures: {
     alter: {
-      multiStatement: true
+      multiStatement: true,
+      reorderColumn: true
     },
     informationSchema: {
       extra: true
