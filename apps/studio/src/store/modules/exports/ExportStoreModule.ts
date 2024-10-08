@@ -1,5 +1,5 @@
 import { TransportExport } from '@/common/transport/TransportExport';
-import { ExportProgress } from '@/lib/export/models';
+import { ExportProgress, ExportStatus } from '@/lib/export/models';
 import _ from 'lodash'
 import Vue from 'vue';
 import { Module } from 'vuex'
@@ -40,17 +40,17 @@ const ExportStoreModule: Module<State, any> = {
       state.exports = _.without(state.exports, exp);
     },
     updateProgressFor(state: State, { id, progress }: { id: string, progress: ExportProgress}): void {
-      state.exports.find((value) => value.id === id).percentComplete = progress.percentComplete;
+      const exp = state.exports.find((value) => value.id === id);
+      exp.percentComplete = progress.percentComplete;
+      exp.status = progress.status;
     }
   },
   getters: {
     exports(state): TransportExport[] {
       return state.exports;
     },
-    // not sure either of these are useful anymore
-    runningExports(_state): string[] {
-      return []
-      // return _.filter(state.exports, { 'status': ExportStatus.Exporting })
+    runningExports(state)  {
+      return _.filter(state.exports, { 'status': ExportStatus.Exporting })
     },
     hasRunningExports(_state, getters): boolean {
       return getters.runningExports.length > 0

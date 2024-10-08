@@ -4,7 +4,9 @@
       v-if="isSupported"
       class="tabcontent"
     >
-      <upsell-content v-if="!hasActiveLicense"></upsell-content>
+      <div v-if="isCommunity" style="padding: 0 1rem;">
+        <upsell-content />
+      </div>
       <stepper
         v-else
         :steps="importSteps"
@@ -18,7 +20,9 @@
         v-if="importStarted"
       >
         <div class="import-progress-wrapper flex-col">
-          <i :class="[{error: this.importError !== null}, 'material-icons loading-icon']">{{ getProgressIcon }}</i>
+          <i :class="[{error: this.importError !== null, spinning: isSpinning}, 'material-icons loading-icon']">
+            {{ getProgressIcon }}
+          </i>
           <div class="text-2x">
             {{ getProgressTitle }}
           </div>
@@ -62,11 +66,15 @@
                 v-clipboard:error="onCopyError"
                 class="btn btn-icon"
                 :class="copyClass"
-              ><span
-                class="material-icons"
-                :title="copyTitle"
-              >{{ copyIcon }}</span>{{ copyMessage }}</a>
-
+              >
+                <span
+                  class="material-icons"
+                  :title="copyTitle"
+                >
+                  {{ copyIcon }}
+                </span>
+                {{ copyMessage }}
+              </a>
             </span>
           </p>
         </div>
@@ -80,7 +88,7 @@
         Beekeeper does not currently support Import from File for {{ this.dialectTitle }} ☹️
       </p>
     </div>
-    
+
     <status-bar>
       <div class="statusbar-info col flex expand">
         <span
@@ -108,10 +116,9 @@
   import ImportPreview from './importtable/ImportPreview.vue'
   import UpsellContent from '@/components/connection/UpsellContent.vue'
   import { DialectTitles } from '@shared/lib/dialects/models'
-  
+
   import { ExportStatus } from '../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
-  import { getImporterClass } from '../lib/import/utils'
 
   export default {
     components: {
@@ -190,10 +197,12 @@
       }
     },
     computed: {
-      ...mapGetters(['schemaTables', 'dialectData', 'dialect']),
-      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+      ...mapGetters(['schemaTables', 'dialectData', 'dialect', 'isCommunity']),
       ...mapState(['tables', 'connection']),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
+      isSpinning() {
+        return this.importStarted && this.importError === null && this.timer === null;
+      },
       portalName() {
         return `tab-import-table-statusbar-${this.tab.id}`
       },
@@ -219,7 +228,7 @@
       },
       getProgressIcon () {
         if (this.importStarted && this.importError === null && this.timer === null) {
-          return 'pending'
+          return 'autorenew'
         }
         return this.importError !== null ? 'error' : 'check_circle'
       },
@@ -253,22 +262,30 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       viewData() {
-        this.$root.$emit(AppEvent.loadTable, { table: this.getTable() })
+        this.$root.$emit(AppEvent.loadTable, { table: {
+          entityType: 'table',
+          name: this.table,
+          schema: this.schema
+        } })
       },
       goBack() {
         this.importStarted = false
       },
       async handleImport() {
         const importOptions = await this.tablesToImport.get(this.tableKey)
-        const connection = await this.connection
-        const importerClass = getImporterClass(importOptions, connection, importOptions.table)
+        let importerClass
+        if (!importOptions.importProcessId) {
+          importerClass = await this.$util.send('import/init', { options: importOptions })
+        } else {
+          importerClass = importOptions.importProcessId
+        }
         const start = new Date()
         this.tab.isRunning = true
         this.importTable = importOptions.table
         this.importError = null
         try {
           this.importStarted = true
-          const data = await importerClass.importFile()
+          const data = await this.$util.send('import/importFile', { id: importerClass })
           this.timer = `${(new Date() - start) / 1000} seconds`
         } catch (err) {
           this.importError = err.message
@@ -290,7 +307,7 @@
 }
 .import-error-message {
   display: block;
-  overflow-x:hidden;
+  overflow-x: hidden;
   max-height: 30vh;
 }
 a:hover {
@@ -304,5 +321,17 @@ a:hover {
 }
 .copy-btn {
   margin-top: 1rem;
+}
+.spinning {
+  animation: spin 5s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

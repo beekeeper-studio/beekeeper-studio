@@ -43,6 +43,7 @@ export interface TableOrView extends DatabaseEntity {
   partitions?: TablePartition[];
   tabletype?: string | null
   parenttype?: string | null
+  engine?: string
 }
 
 export interface TableIndex {
@@ -231,6 +232,7 @@ export interface SupportedFeatures {
   backDirFormat: boolean;
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
+  transactions: boolean;
 }
 
 export interface FieldDescriptor {
@@ -336,6 +338,8 @@ export interface CommandSettingSection {
 export interface ImportFuncOptions {
   clientExtras?: {[key: string]: any}
   executeOptions?: {[key: string]: any}
+  importerOptions?: {[key: string]: any}
+  storeValues?: {[key: string]: any}
 }
 
 export interface ImportScriptFunctions {

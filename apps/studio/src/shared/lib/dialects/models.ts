@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'duckdb'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'duckdb'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -41,6 +41,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   firebird: "Firebird",
   oracle: "Oracle Database",
   duckdb: "DuckDB",
+  clickhouse: "ClickHouse"
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -145,6 +146,9 @@ export interface DialectData {
     }
     schema?: boolean
     multipleDatabase?: boolean
+    generatedColumns?: boolean
+    transactions?: boolean
+    chunkSizeStream?: boolean
   },
   notices?: {
     infoSchema?: string

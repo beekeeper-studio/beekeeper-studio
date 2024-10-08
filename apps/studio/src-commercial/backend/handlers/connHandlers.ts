@@ -27,12 +27,12 @@ export interface IConnectionHandlers {
   'conn/getDefaultCharset': ({ sId }: { sId: string}) => Promise<string>,
   'conn/listCollations': ({ charset, sId }: { charset: string, sId: string }) => Promise<string[]>,
 
-  
+
   // Connection *****************************************************************
   'conn/connect': ({ sId }: { sId: string}) => Promise<void>,
   'conn/disconnect': ({ sId }: { sId: string}) => Promise<void>,
 
-  
+
   // List schema information ****************************************************
   'conn/listTables': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/listViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
@@ -106,15 +106,6 @@ export interface IConnectionHandlers {
   'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
   'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
-
-  // For Import ************************************************************
-  'conn/importStepZero': ({ sId, table }: { sId: string, table: any }) => Promise<any>,
-  'conn/importBeginCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importTruncateCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importLineReadCommand': ({ sId, table, sqlString, importOptions  }: { sId: string, table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importCommitCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importRollbackCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importFinalCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -250,7 +241,7 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/listTableIndexes': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
-    checkConnection(sId);  
+    checkConnection(sId);
     return await state(sId).connection.listTableIndexes(table, schema);
   },
 
@@ -486,40 +477,5 @@ export const ConnHandlers: IConnectionHandlers = {
     if (state(sId).usedConfig) {
       state(sId).usedConfig.authId = null
     }
-  },
-
-  'conn/importStepZero': async function({ sId, table }: { sId: string, table: any }) {
-    checkConnection(sId)
-    return await state(sId).connection.importStepZero(table)
-  },
-
-  'conn/importBeginCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importBeginCommand(table, importOptions)
-  },
-
-  'conn/importTruncateCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importTruncateCommand(table, importOptions)
-  },
-
-  'conn/importLineReadCommand': async function({ sId, table, sqlString, importOptions }: { sId: string, table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importLineReadCommand(table, sqlString, importOptions)
-  },
-
-  'conn/importCommitCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importCommitCommand(table, importOptions)
-  },
-
-  'conn/importRollbackCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importRollbackCommand(table, importOptions)
-  },
-
-  'conn/importFinalCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importFinalCommand(table, importOptions)
   }
 }

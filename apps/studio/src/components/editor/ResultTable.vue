@@ -65,8 +65,8 @@
       },
     },
     computed: {
-      ...mapState(['usedConfig', 'defaultSchema', 'connectionType']),
-      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense'}),
+      ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
+      ...mapGetters(['isUltimate']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -102,9 +102,9 @@
         }
 
         const columns = this.result.fields.flatMap((column, index) => {
-          const title = column.name || `Result ${index}`
           const results = []
           const magic = MagicColumnBuilder.build(column.name) || {}
+          const title = magic?.title ?? column.name ?? `Result ${index}`
 
           let cssClass = 'hide-header-menu-icon'
 
@@ -116,8 +116,7 @@
             magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
           }
 
-          const magicStuff = _.pick(magic, ['formatter', 'formatterParams', 'title'])
-          console.log('found magic stuff: ', magicStuff)
+          const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
           const defaults = {
             formatter: this.cellFormatter,
           }
@@ -141,7 +140,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            ...(this.hasActiveLicense ? magicStuff : {}),
+            ...(this.isUltimate ? magicStuff : {}),
           }
 
           if (column.dataType === 'INTERVAL') {

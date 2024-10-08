@@ -24,9 +24,17 @@ export default class extends DefaultMenu {
     }
     if (!this.platformInfo.isMac)
       (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
-    if (this.platformInfo.isDevelopment)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
     return result
+  }
+
+  devMenu() {
+    return {
+      label: 'Dev',
+      submenu: [
+        this.menuItems.reload,
+        this.menuItems.licenseState,
+      ],
+    }
   }
 
   buildTemplate(): Electron.MenuItemConstructorOptions[] {
@@ -67,7 +75,7 @@ export default class extends DefaultMenu {
       })
     }
 
-    return [
+    const menu = [
       ...appMenu,
       fileMenu,
       {
@@ -108,5 +116,11 @@ export default class extends DefaultMenu {
         ]
       }
     ]
+
+    if (this.platformInfo.isDevelopment) {
+      menu.push(this.devMenu())
+    }
+
+    return menu
   }
 }

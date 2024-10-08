@@ -21,6 +21,8 @@ import fs from 'fs'
 import path from 'path'
 import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
+import { LicenseKey } from '@/common/appdb/models/LicenseKey'
+import { TestOrmConnection } from './TestOrmConnection'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -88,6 +90,7 @@ export interface Options {
    **/
   singleClient?: boolean
   knex?: Knex
+  nullDateTime?: any
 }
 
 export class DBTestUtil {
@@ -95,7 +98,7 @@ export class DBTestUtil {
   public server: IDbConnectionPublicServer
   public connection: BasicDatabaseClient<any>
   public extraTables = 0
-  private options: Options
+  public options: Options
   private dbType: ConnectionType | 'generic'
 
   private dialect: Dialect
@@ -125,6 +128,11 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
+
+    if (_.isUndefined(options.nullDateTime)) {
+      options.nullDateTime = null
+    }
+
     if (options.knex) {
       this.knex = options.knex
     } else if (config.client === 'sqlite' || config.client === 'duckdb') {
@@ -170,6 +178,7 @@ export class DBTestUtil {
     if (this.connection) await this.connection.disconnect();
     // https://github.com/jestjs/jest/issues/11463
     if (this.knex) await this.knex.destroy();
+    await TestOrmConnection.disconnect()
   }
 
   maybeArrayToObject(items, key) {
@@ -217,6 +226,8 @@ export class DBTestUtil {
   }
 
   async setupdb() {
+    await TestOrmConnection.connect()
+    await LicenseKey.createTrialLicense()
     await this.connection.connect()
     if (this.options.singleClient) {
       this.knex = this.connection.knex
@@ -224,11 +235,17 @@ export class DBTestUtil {
 
     await this.options.beforeCreatingTables?.()
     await this.createTables()
+
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
     const isOracle = this.connection.connectionType === 'oracle'
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
-    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
-    const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
+    let people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
+    let jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
+
+    if (this.dialect === 'clickhouse') {
+      people = (await this.knex("people").select("id").where({email: "foo@bar.com"}))[0]
+      jobs = (await this.knex("jobs").select("id").where({job_name: "Programmer"}))[0]
+    }
 
     // Oracle or Knex has decided in its infinite wisdom to return the ids as strings, so make em numbers for the id because that's what they are in the table itself.
     this.jobId = isOracle ? Number(jobs[0].id) : jobs[0].id
@@ -239,7 +256,7 @@ export class DBTestUtil {
     // await this.knex("foo.bar").insert({ id: 1, name: "Dots are evil" });
 
 
-    if (!this.options.skipGeneratedColumns) {
+    if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
       ])
@@ -295,7 +312,7 @@ export class DBTestUtil {
 
   async badCreateDatabaseTests() {
     // sqlserver seems impervious to bad database names or bad charsets or anything.
-    if (this.dbType === 'sqlserver') {
+    if (this.dbType === 'sqlserver' || this.dbType === 'clickhouse') {
       return expect.anything()
     }
 
@@ -316,7 +333,12 @@ export class DBTestUtil {
     const initialRowCount = await this.knex.select().from('group_table')
 
     await this.connection.truncateElement('group_table', DatabaseElement.TABLE, this.defaultSchema)
-    const newRowCount = await this.knex.select().from('group_table')
+    let newRowCount = await this.knex.select().from('group_table')
+    // For whatever reason clickhouse knex returns the whole meta info instead
+    // of just the row data like normal knex
+    if (this.dbType === 'clickhouse') {
+      newRowCount = newRowCount[0]
+    }
 
     expect(newRowCount.length).toBe(0)
     expect(initialRowCount.length).toBeGreaterThan(newRowCount.length)
@@ -540,7 +562,7 @@ export class DBTestUtil {
 
     await this.knex.schema.dropTableIfExists("alter_test")
     await this.knex.schema.createTable("alter_test", (table) => {
-      table.specificType("id", 'varchar(255)').notNullable()
+      table.specificType("id", 'varchar(255)').notNullable().primary()
       table.specificType("first_name", "varchar(255)").nullable()
       table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rathbone')
       table.specificType("age", "varchar(255)").defaultTo('8').nullable()
@@ -576,7 +598,7 @@ export class DBTestUtil {
         table.specificType('last_name', "VARCHAR(255) DEFAULT 'Rath''bone' NOT NULL")
         table.specificType('age', "VARCHAR(255) DEFAULT '8'")
       } else {
-        table.specificType("id", 'varchar(255)').notNullable()
+        table.specificType("id", 'varchar(255)').notNullable().primary()
         table.specificType("first_name", "varchar(255)").nullable()
         table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rath\'bone')
         table.specificType("age", "varchar(255)").defaultTo('8').nullable()
@@ -596,7 +618,7 @@ export class DBTestUtil {
         {
           columnName: 'first_name',
           changeType: 'dataType',
-          newValue: 'varchar(256)'
+          newValue: this.dialect === 'clickhouse' ? 'Nullable(String)' : 'varchar(256)'
         },
         {
           columnName: 'first_name',
@@ -627,7 +649,7 @@ export class DBTestUtil {
       columnName: string
       dataType: string,
       nullable: boolean,
-      defaultValue: string,
+      defaultValue: string | number,
     }
     const rawResult: MiniColumn[] = schema.map((c) =>
       _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType') as any
@@ -645,6 +667,7 @@ export class DBTestUtil {
       if (this.dbType === 'cockroachdb') return `e'${s.replaceAll("'", "\\'")}':::STRING`
       if (this.dialect === 'postgresql') return `'${s.toString().replaceAll("'", "''")}'::character varying`
       if (this.dialect === 'sqlserver') return `('${s.toString().replaceAll("'", "''")}')`
+      if (this.dialect === 'clickhouse') return `'${s.toString().replaceAll("'", "\\'")}'`
       if (/oracle|firebird|duckdb/.test(this.dialect)) return `'${s.toString().replaceAll("'", "''")}'`
       return s.toString()
     }
@@ -656,6 +679,10 @@ export class DBTestUtil {
       if (this.dbType === 'firebird') {
         columnName = columnName.toUpperCase()
         dataType = dataType.toUpperCase()
+      } else if (this.dialect === 'oracle') {
+        dataType = dataType.replace('varchar', 'VARCHAR2')
+      } else if (this.dialect === 'clickhouse') {
+        dataType = o.nullable ? 'Nullable(String)' : 'String'
       }
 
 
@@ -680,25 +707,25 @@ export class DBTestUtil {
     const expected = [
       tbl({
         columnName: 'id',
-        dataType: varchar(255),
+        dataType: 'varchar(255)',
         nullable: false,
         defaultValue: null,
       }),
       tbl({
         columnName: 'first_name',
-        dataType: varchar(256),
+        dataType: 'varchar(256)',
         nullable: true,
         defaultValue: "Foo'bar",
       }),
       tbl({
         columnName: 'family_name',
-        dataType: varchar(255),
+        dataType: 'varchar(255)',
         nullable: false,
         defaultValue: 'Rath\'bone',
       }),
       tbl({
         columnName: 'age',
-        dataType: varchar(256),
+        dataType: 'varchar(256)',
         nullable: false,
         defaultValue: 99,
       }),
@@ -720,7 +747,7 @@ export class DBTestUtil {
     if (!this.data.disabledFeatures?.alter?.renameTable) {
       await this.knex.schema.dropTableIfExists("rename_table")
       await this.knex.schema.createTable("rename_table", (table) => {
-        table.specificType("id", 'varchar(255)')
+        table.increments('id').primary()
       })
 
       await this.connection.setElementName('rename_table', 'renamed_table', DatabaseElement.TABLE, this.defaultSchema)
@@ -779,8 +806,8 @@ export class DBTestUtil {
       // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
       person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
       job_id: this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId,
-      created_at: null,
-      updated_at: null,
+      created_at: this.options.nullDateTime,
+      updated_at: this.options.nullDateTime,
     }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
@@ -816,18 +843,20 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    await this.connection.executeQuery('create table one_record(one integer)')
+    await this.connection.executeQuery('create table one_record(one integer primary key)')
     await this.connection.executeQuery('insert into one_record values(1)')
 
     const tables = await this.connection.listTables({ schema: this.defaultSchema})
 
     expect(tables.map((t) => t.name.toLowerCase())).toContain('one_record')
 
-    const q = await this.connection.query(
-      this.dbType === 'firebird' ?
-        "select trim('a') as total, trim('b') as total from rdb$database" :
-        "select 'a' as total, 'b' as total from one_record"
-    )
+    const sql1 = {
+      common: "select 'a' as total, 'b' as total from one_record",
+      firebird: "select trim('a') as total, trim('b') as total from rdb$database",
+      // Clickhouse doesn't support same column name
+      clickhouse: "select 'a' as total, 'b' as total2 from one_record",
+    }
+    const q = await this.connection.query(sql1[this.dialect] || sql1.common)
     if(!q) throw new Error("no query result")
     try {
       const result = await q.execute()
@@ -847,30 +876,20 @@ export class DBTestUtil {
       }
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
-      if (this.supportsArrayMode) {
-        let expected = [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}]
-
-        // FYI node-oracledb 5+ renames duplicate columns for reasons I can't explain,
-        // so we need to do a special check here
-        if (this.dbType === 'oracle') {
-          expected = [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }]
-        }
-
-        expect(fields).toMatchObject(expected)
-      } else {
-        let expected = [{id: 'c0', name: 'total'}]
-
-        // FIXME duckdb doesn't support array mode but it returns the columns
-        // correctly https://github.com/duckdb/duckdb-node/issues/122
-        if (this.dbType === 'duckdb') {
-          expected = [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}]
-        }
-
-        expect(fields).toMatchObject(expected)
+      const expectedResults = {
+        common: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
+        noArrayMode: [{ id: 'c0', name: 'total' }],
+        clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
+        oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
       }
+      expect(fields).toMatchObject(expectedResults[this.dialect] || (this.supportsArrayMode ? expectedResults.common : expectedResults.noArrayMode))
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex
+    }
+
+    if (this.data.disabledFeatures?.alter?.multiStatement) {
+      return;
     }
 
     const q2 = await this.connection.query(
@@ -903,6 +922,7 @@ export class DBTestUtil {
       firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
       oracle: `insert into "BEEKEEPER"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       duckdb: `insert into "main"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      clickhouse: `insert into "jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
     }
 
     expect(insertQuery).toBe(expectedQueries[this.dbType])
@@ -932,6 +952,7 @@ export class DBTestUtil {
       firebird: `create table test_table (id integer not null primary key);alter table test_table add constraint test_table_pkey primary key (id)`,
       oracle: `create table "test_table" ("id" integer not null); DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE ('CREATE SEQUENCE "test_table_seq"'); SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = 'P'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = 'test_table';  execute immediate ('create or replace trigger "test_table_autoinc_trg"  BEFORE INSERT on "test_table"  for each row  declare  checking number := 1;  begin    if (:new."' || PK_NAME || '" is null) then      while checking >= 1 loop        select "test_table_seq".nextval into :new."' || PK_NAME || '" from dual;        select count("' || PK_NAME || '") into checking from "test_table"        where "' || PK_NAME || '" = :new."' || PK_NAME || '";      end loop;    end if;  end;'); END; alter table "test_table" add constraint "test_table_pkey" primary key ("id")`,
       duckdb: `create table "test_table" ("id" integer not null, primary key ("id")); create sequence "test_table_seq_id" start 1; alter table "test_table" alter column "id" set default nextval('test_table_seq_id')`,
+      clickhouse: `create table "my_database"."test_table" ("id" integer, primary key ("id")) engine = MergeTree()`,
     }
     const expectedQuery = expectedQueries[this.dbType] || expectedQueries[this.dialect]
     expect(this.fmt(query)).toBe(this.fmt(expectedQuery))
@@ -956,6 +977,7 @@ export class DBTestUtil {
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE job_name IN ('Programmer','Surgeon''s Assistant') ORDER BY hourly_rate ASC",
       oracle: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
       duckdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
+      clickhouse: `SELECT * FROM "jobs" WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
     }
     const expectedQuery = expectedQueries[this.dbType] || expectedQueries[this.dialect]
     expect(this.fmt(query)) .toBe(this.fmt(expectedQuery))
@@ -1017,20 +1039,13 @@ export class DBTestUtil {
         ORDER BY hourly_rate ASC
       `,
       oracle: `
-        SELECT
-          *
-        FROM
-          "public"."jobs"
-        WHERE
-          "job_name" IN ('Programmer', 'Surgeon''s Assistant')
+        SELECT * FROM "public"."jobs"
+        WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant')
           AND "hourly_rate" >= '41'
           OR "hourly_rate" >= '31'
-        ORDER BY
-          "hourly_rate" ASC
-        OFFSET
-          0 ROWS
-        FETCH NEXT
-          100 ROWS ONLY
+        ORDER BY "hourly_rate" ASC
+        OFFSET 0 ROWS
+        FETCH NEXT 100 ROWS ONLY
       `,
       duckdb: `
         SELECT * FROM "public"."jobs"
@@ -1038,6 +1053,14 @@ export class DBTestUtil {
             AND "hourly_rate" >= '41'
             OR "hourly_rate" >= '31'
         ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0
+      `,
+      clickhouse: `
+        SELECT * FROM "jobs"
+        WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant')
+          AND "hourly_rate" >= '41'
+          OR "hourly_rate" >= '31'
+        ORDER BY "hourly_rate" ASC
+        LIMIT 100 OFFSET 0
       `,
     }
     const expectedFiltersQuery = expectedFiltersQueries[this.dbType] || expectedFiltersQueries[this.dialect]
@@ -1064,6 +1087,7 @@ export class DBTestUtil {
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NULL",
       oracle: `SELECT * FROM "BEEKEEPER"."jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
       duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      clickhouse: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNull = expectedQueriesIsNull[this.dbType] || expectedQueriesIsNull[this.dialect]
     expect(this.fmt(queryIsNull)).toBe(this.fmt(expectedQueryIsNull))
@@ -1089,6 +1113,7 @@ export class DBTestUtil {
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NOT NULL",
       oracle: `SELECT * FROM "BEEKEEPER"."jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
       duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      clickhouse: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNotNull = expectedQueriesIsNotNull[this.dbType] || expectedQueriesIsNotNull[this.dialect]
     expect(this.fmt(queryIsNotNull)).toBe(this.fmt(expectedQueryIsNotNull))
@@ -1316,24 +1341,24 @@ export class DBTestUtil {
   async importScriptsTests({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
     // cassandra and big query don't allow import so no need to test!
     // oracle doesn't want to find the table, so it doesn't get to have nice things
-    if (['cassandra', 'bigquery', 'oracle'].includes(this.dialect)) {
+    if (['cassandra', 'bigquery', 'oracle', 'clickhouse'].includes(this.dialect)) {
       return expect.anything()
     }
 
-    const importSQL = await this.connection.getImportSQL(formattedData)
-    importScriptOptions.clientExtras = await this.connection.importStepZero(table)
-    await this.connection.importBeginCommand(table, importScriptOptions)
-    await this.connection.importTruncateCommand(table, importScriptOptions)
-
-    const editedImportScriptOptions = {
-      clientExtras: importScriptOptions.clientExtras,
-      executeOptions: { multiple: true }
+    const read = async (_options: any, executeOptions: any) => {
+      const updatedImportScriptOptions = {
+        ...importScriptOptions,
+        executeOptions: {
+          multiple: true,
+          ...executeOptions
+        }
+      };
+      const importSQL = await this.connection.getImportSQL(formattedData);
+      await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
+      return { aborted: false }
     }
 
-    await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
-
-    await this.connection.importCommitCommand(table, importScriptOptions)
-    await this.connection.importFinalCommand(table, importScriptOptions)
+    await this.connection.importFile(table, importScriptOptions, read)
 
     const [hats] = await this.knex(tableName).count(hatColumn)
     const [dataLength] = _.values(hats)
@@ -1345,29 +1370,31 @@ export class DBTestUtil {
     // mysql was added to the list because a timeout was required to get the rollback number ot show
     // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
     let expectedLength = 0
-    if (['cassandra','bigquery', 'mysql', 'oracle'].includes(this.dialect)) {
+    if (['cassandra','bigquery', 'mysql', 'oracle', 'clickhouse'].includes(this.dialect)) {
       return expect.anything()
     }
 
     if (['sqlite'].includes(this.dialect)) {
       expectedLength = 4
     }
-
-    const importSQL = await this.connection.getImportSQL(formattedData)
-
-    importScriptOptions.clientExtras = await this.connection.importStepZero(table)
-    await this.connection.importBeginCommand(table, importScriptOptions)
-    await this.connection.importTruncateCommand(table, importScriptOptions)
-
-    const editedImportScriptOptions = {
-      clientExtras: importScriptOptions.clientExtras,
-      executeOptions: { multiple: true }
+    const read = async (_options: any, executeOptions: any) => {
+      const updatedImportScriptOptions = {
+        ...importScriptOptions,
+        executeOptions: {
+          multiple: true,
+          ...executeOptions
+        }
+      };
+      const importSQL = await this.connection.getImportSQL(formattedData);
+      await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
+      return { aborted: true, error: "Forced abort" }
     }
 
-    await this.connection.importLineReadCommand(table, importSQL, editedImportScriptOptions)
-
-    await this.connection.importRollbackCommand(table, importScriptOptions)
-    await this.connection.importFinalCommand(table, importScriptOptions)
+    try {
+      await this.connection.importFile(table, importScriptOptions, read)
+    } catch {
+      // empty on purpose
+    }
 
     const [hats] = await this.knex(tableName).count(hatColumn)
     const [dataLength] = _.values(hats)
@@ -1376,12 +1403,10 @@ export class DBTestUtil {
 
   private async createTables() {
 
-    // TODO we dont need this if we update firebird knex's .increments
-    const autoIncrementingPK = async (table: Knex.CreateTableBuilder, tableName: string) => {
-      if (typeof this.options.autoIncrementingPKType === 'function') {
-        table.specificType('id', this.options.autoIncrementingPKType(tableName))
-      } else if (typeof this.options.autoIncrementingPKType === 'string') {
-        table.specificType('id', this.options.autoIncrementingPKType)
+    const primary = (table: Knex.CreateTableBuilder) => {
+      if (this.dbType === 'firebird') {
+        // FIXME can we do this from knex internally?
+        table.specificType('id', 'integer generated by default as identity primary key')
       } else {
         table.increments().primary()
       }
@@ -1432,6 +1457,7 @@ export class DBTestUtil {
     })
 
     await this.knex.schema.createTable('has_index', (table) => {
+      primary(table)
       table.integer('foo')
       if (!this.data.disabledFeatures?.createIndex) {
         table.index('foo', 'has_index_foo_idx')
@@ -1472,8 +1498,8 @@ export class DBTestUtil {
       table.integer('number_of_employees').notNullable();
     });
 
-    if (!this.options.skipGeneratedColumns) {
-      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird'> = {
+    if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
+      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
         tidb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",

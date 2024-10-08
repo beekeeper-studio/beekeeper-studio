@@ -8,6 +8,7 @@ import { BigQueryClient } from '../knex-bigquery'
 import knexFirebirdDialect from "knex-firebird-dialect"
 import { identify } from 'sql-query-identifier'
 import { Client_DuckDB } from '@shared/lib/knex-duckdb'
+import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 
 interface GeneratorConnection {
   dbConfig: any
@@ -32,7 +33,7 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'duckdb'].includes(v)
+    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse', 'duckdb'].includes(v)
     this.createKnexLib()
   }
 
@@ -151,6 +152,8 @@ export class SqlGenerator {
           apiEndpoint
         } as any
       })
+    } else if (this.dialect === 'clickhouse') {
+      this.knex = knexlib({ client: ClickhouseKnexClient });
     }
   }
 

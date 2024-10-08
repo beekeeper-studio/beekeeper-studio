@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex-col expand"
+    class="flex-col expand table-list-component"
     ref="wrapper"
   >
     <!-- Filter -->

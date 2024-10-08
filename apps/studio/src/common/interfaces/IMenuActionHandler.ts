@@ -1,5 +1,7 @@
 // import { OpenOptions } from "@/background/WindowBuilder"
 
+import { DevLicenseState } from "@/lib/license";
+
 type ElectronWindow = Electron.BrowserWindow | undefined
 
 
@@ -37,4 +39,5 @@ export interface IMenuActionHandler {
   checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
 }

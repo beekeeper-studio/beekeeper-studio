@@ -1,4 +1,5 @@
 import Firebird from "node-firebird";
+import _ from "lodash";
 
 export interface Result {
   rows: any[];
@@ -83,8 +84,19 @@ export class Connection {
   }
 
   query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const database = this.database;
+      // Firebird requires a transaction to parse blob columns, so we create it here so we use the
+      // same transaction for every cell that needs to be parsed.
+      const transaction: Firebird.Transaction = await new Promise((resolve, reject) => {
+        this.database.transaction(Firebird.ISOLATION_READ_COMMITTED, (err, transaction) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(transaction)
+        })
+      });
 
       function callback(
         err: any,
@@ -100,18 +112,70 @@ export class Connection {
         if (!result) result = [];
         if (!meta) meta = [];
         if (!Array.isArray(result)) result = [result];
+        const arrBlob = []
+        // for blob columns
+        result.map((value) => {
+          Object.keys(value).map((c) => {
+            if (_.isFunction(value[c])) {
+              // create a promise for every blob and run the parsing function
+              value[c] = new Promise((resBlob, rejBlob) => {
+                value[c](transaction, (error, name, event, row) => {
+                  if (error) {
+                    return rejBlob(error);
+                  }
 
-        resolve({ rows: result, meta, isSelect });
+                  // reading data
+                  let val = '';
+                  event.on('data', (chunk) => {
+                    val += chunk.toString('binary');
+                  });
+                  event.on('end', () => {
+                    resBlob({ value: val, column: name, row });
+                  });
+                });
+              });
+              arrBlob.push(value[c])
+            }
+          })
+        })
+
+        if (arrBlob.length > 0) {
+          // wait for the promises to resolve, and then resolve the main promise
+          // returned from this function
+          Promise.all(arrBlob)
+            .then((blobs) => {
+              for (const blob of blobs) {
+                result[blob.row][blob.column] = blob.value;
+              }
+
+
+              transaction.commit((err) => {
+                if (err) {
+                  return reject(err)
+                }
+                resolve({ rows: result, meta, isSelect });
+              });
+            })
+        } else {
+          // we still need to commit, even if we haven't used the transaction
+          // as that's the only way to get rid of the reference to it.
+          transaction.commit();
+          resolve({ rows: result, meta, isSelect });
+        }
       }
 
-      if (rowAsArray) {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        database.execute(query, params, callback);
-      } else {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        database.query(query, params, callback);
+      try {
+        if (rowAsArray) {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          database.execute(query, params, callback);
+        } else {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          database.query(query, params, callback);
+        }
+      } catch (e) {
+        reject(e?.message ?? e);
       }
     });
   }
@@ -135,7 +199,7 @@ export class Transaction {
   constructor(private transaction: Firebird.Transaction) {}
 
   query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const transaction = this.transaction;
 
       function callback(
@@ -152,18 +216,59 @@ export class Transaction {
         if (!result) result = [];
         if (!meta) meta = [];
         if (!Array.isArray(result)) result = [result];
+        const arrBlob = [];
+        // for blob columns
+        result.map((value) => {
+          Object.keys(value).map((c) => {
+            if (_.isFunction(value[c])) {
+              value[c] = new Promise((resBlob, rejBlob) => {
+                value[c](transaction, (error, name, event, row) => {
+                  if (error) {
+                    return rejBlob(error);
+                  }
 
-        resolve({ rows: result, meta, isSelect });
+                  // reading data
+                  let val = '';
+                  event.on('data', (chunk) => {
+                    val += chunk.toString('binary');
+                  });
+                  event.on('end', () => {
+                    resBlob({ value: val, column: name, row });
+                  });
+                });
+              });
+              arrBlob.push(value[c])
+            }
+          })
+        })
+
+        if (arrBlob.length > 0) {
+          Promise.all(arrBlob)
+            .then((blobs) => {
+              for (const blob of blobs) {
+                result[blob.row][blob.column] = blob.value;
+              }
+
+              resolve({ rows: result, meta, isSelect });
+            })
+        } else {
+          resolve({ rows: result, meta, isSelect });
+        }
+
       }
 
-      if (rowAsArray) {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        transaction.execute(query, params, callback);
-      } else {
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        transaction.query(query, params, callback);
+      try {
+        if (rowAsArray) {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          transaction.execute(query, params, callback);
+        } else {
+          /* eslint-disable-next-line */
+          // @ts-ignore
+          transaction.query(query, params, callback);
+        }
+      } catch (e) {
+        reject(e?.message ?? e);
       }
     });
   }

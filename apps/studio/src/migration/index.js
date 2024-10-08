@@ -10,6 +10,7 @@ import dev2 from './dev-2'
 import dev3 from './dev-3'
 import dev4 from './dev-4'
 import dev5 from './dev-5'
+import dev6 from './dev-6'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -41,6 +42,9 @@ import tokenCache from './20240430_add_token_cache'
 import minimalMode from './20240514_user_settings_minimal_mode'
 import libsqlOptions from './20240528_add_libsql_options'
 import nameTokenCache from './20240715_add_name_to_token_cache'
+import maxAllowedAppRelease from './20240920_add_max_allowed_app_release'
+import lastUsedWorkspace from './20240923_user_settings_default_workspace'
+
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
@@ -64,8 +68,8 @@ const realMigrations = [
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   firebirdConnection, exportPath, UserSettingsWindowPosition,
-  demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache,
-
+  demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
+  maxAllowedAppRelease,
 ]
 
 // fixtures require the models
@@ -74,7 +78,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3, dev4, dev5,
+  dev1, dev2, dev3, dev4, dev5, dev6,
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

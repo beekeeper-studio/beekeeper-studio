@@ -44,7 +44,7 @@
                 <li>Cloud sync</li>
                 <li>Read-only mode</li>
                 <li>SQLite Extensions</li>
-                <li>Import from CSV</li>
+                <li>Import from file</li>
               </ul>
             </div>
           </div>
@@ -67,7 +67,6 @@
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import Vue from 'vue'
-import { mapGetters } from 'vuex'
 
 export default Vue.extend({
   data() {
@@ -75,12 +74,9 @@ export default Vue.extend({
       message: null
     }
   },
-  computed: {
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
-  },
   methods: {
     showModal(message) {
-      if (!this.hasActiveLicense) {
+      if (this.$store.getters.isCommunity) {
         this.message = message
         this.$modal.show('upgrade-modal')
       }

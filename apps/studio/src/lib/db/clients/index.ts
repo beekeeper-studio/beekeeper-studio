@@ -193,4 +193,12 @@ export const CLIENTS: ClientConfig[] = [
       'cancelQuery', // TODO how to do this?
     ],
   },
+  {
+    key: 'clickhouse',
+    name: 'ClickHouse',
+    defaultPort: 8123,
+    disabledFeatures: [
+      'server:socketPath',
+    ],
+  }
 ];
