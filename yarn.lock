@@ -6113,16 +6113,16 @@ dotenv@^8.2.0:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-8.6.0.tgz#061af664d19f7f4d8fc6e4ff9b584ce237adcb8b"
   integrity sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g==
 
-duckdb-async@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/duckdb-async/-/duckdb-async-1.0.0.tgz#0dd51f03404cec4a1ab0e8fa5941c756479122f4"
-  integrity sha512-1UTAZ2LVk9s4NPMiLnB9L2DI716I/LqtDYL8I7RFEP981/fo0SaqcRQFwtgPPz8MyEPcx8QPPmAWEsal5q68xQ==
+duckdb-async@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/duckdb-async/-/duckdb-async-1.1.1.tgz#b6d0c30ff707acd650e555e436b733dc5eb9119e"
+  integrity sha512-9ITQNzG+96sL6OWid+BTkRKGFTImk70MWrTeHRAtY5zf0Hdg4qDwEsi5BVQQATMiJQQw4RzNBCXEjhecFzoOug==
   dependencies:
-    duckdb "1.0.0"
+    duckdb "1.1.1"
 
-duckdb@1.0.0, duckdb@beekeeper-studio/duckdb-node#27bbc4c60a6a32300df2947e83d499f0cde2318a:
-  version "1.0.0-bks18"
-  resolved "https://codeload.github.com/beekeeper-studio/duckdb-node/tar.gz/27bbc4c60a6a32300df2947e83d499f0cde2318a"
+duckdb@1.1.1, duckdb@beekeeper-studio/duckdb-node#d4e11988c54627c74720212700c4ce5a2d49ca07:
+  version "1.1.1-bks1"
+  resolved "https://codeload.github.com/beekeeper-studio/duckdb-node/tar.gz/d4e11988c54627c74720212700c4ce5a2d49ca07"
   dependencies:
     "@mapbox/node-pre-gyp" "^1.0.0"
     node-addon-api "^7.0.0"
@@ -9132,11 +9132,6 @@ nan@^2.19.0:
   version "2.20.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.20.0.tgz#08c5ea813dd54ed16e5bd6505bf42af4f7838ca3"
   integrity sha512-bk3gXBZDGILuuo/6sKtr0DQmSThYHLtNCdSdXk9YkxD/jK6X2vmCyyXBBxyqZ4XcnzTyYEAThfX3DCEnLf6igw==
-nanoid@^3.3.4:
-  version "3.3.4"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.4.tgz#730b67e3cd09e2deacf03c027c81c9d9dbc5e8ab"
-  integrity sha512-MqBkQh/OHTS2egovRtLk45wEyNXwF+cokD+1YPf9u5VfJiRdAiRwB2froX5Co9Rh20xs4siNPm8naNotSD6RBw==
-
 
 nanoid@^3.3.7:
   version "3.3.7"

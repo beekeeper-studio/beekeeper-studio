@@ -51,7 +51,7 @@
     "core-js": "^3",
     "dateformat": "^3.0.3",
     "diff-match-patch": "^1.0.5",
-    "duckdb-async": "^1.0.0",
+    "duckdb-async": "^1.1.1",
     "electron-devtools-installer": "^3.2.0",
     "electron-log": "^5.1.5",
     "electron-updater": "^6.3.0",
@@ -187,6 +187,6 @@
   ],
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "resolutions": {
-    "duckdb": "beekeeper-studio/duckdb-node#27bbc4c60a6a32300df2947e83d499f0cde2318a"
+    "duckdb": "beekeeper-studio/duckdb-node#d4e11988c54627c74720212700c4ce5a2d49ca07"
   }
 }
