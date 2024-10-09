@@ -70,9 +70,11 @@ const SettingStoreModule: Module<State, any> = {
       if (!state.settings.sortOrder) return 'id'
       return state.settings.sortOrder.value
     },
-    minimalMode(state) {
-      if (!state.settings.minimalMode) return false;
-      return state.settings.minimalMode.value
+    minimalMode(_state) {
+      // Disable minimal mode in favor of #2380
+      return false
+      // if (!state.settings.minimalMode) return false;
+      // return state.settings.minimalMode.value
     },
     lastUsedWorkspace(state) {
       if (!state.settings.lastUsedWorkspace) return null;
