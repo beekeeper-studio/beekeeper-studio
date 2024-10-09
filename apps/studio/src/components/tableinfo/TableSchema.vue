@@ -164,7 +164,7 @@ export default Vue.extend({
       editedCells: [],
       newRows: [],
       removedRows: [],
-      error: null,
+      error: null
     }
   },
   watch: {
@@ -470,6 +470,9 @@ export default Vue.extend({
         this.editedCells = _.without(this.editedCells, ...undoEdits)
       }
     },
+    movedRows () {
+      console.log('a row moved, duuuude')
+    },
     cellEdited(cell: CellComponent) {
       const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow())
       const existingCell: CellComponent = this.editedCells.find((c) => c === cell)
@@ -485,11 +488,19 @@ export default Vue.extend({
     },
     initializeTabulator() {
       log.info('initializing tabulator, (editable, columns)', this.editable, this.tableColumns)
+      const canMoveRows = !this.dialectData.disabledFeatures?.alter?.reorderColumn
+      const tableColumns = (canMoveRows)?
+        [
+          { rowHandle:true, formatter:"handle", width:30, frozen: true, minWidth:30, resizable: false },
+          ...this.tableColumns
+        ]:
+        this.tableColumns
       if (this.tabulator) this.tabulator.destroy()
       // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
-        columns: this.tableColumns,
+        columns: tableColumns,
         layout: 'fitColumns',
+        movableRows: canMoveRows,
         columnDefaults: {
           title: '',
           tooltip: true,
@@ -499,6 +510,8 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
+
+    this.tabulator.on('rowMoved', () => this.movedRows())
     },
     columnNameCellClick(_e: any, cell: CellComponent) {
       if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {
