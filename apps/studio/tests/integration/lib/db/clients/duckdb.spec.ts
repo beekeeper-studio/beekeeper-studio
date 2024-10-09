@@ -6,10 +6,14 @@ import path from "path";
 import fs from "fs";
 import _ from "lodash";
 
-const TEST_VERSIONS = [{ readOnly: false }, { readOnly: true }] as const;
+const TEST_VERSIONS = [
+  { mode: 'file', readOnly: false },
+  { mode: 'file', readOnly: true },
+  { mode: 'memory', readOnly: false },
+];
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
-  describe(`DuckDB [read-only mode? ${options.readOnly}]`, () => {
+  describe(`DuckDB [${options.mode} - read-only mode? ${options.readOnly}]`, () => {
     let dbfile: any;
     let dbdir: any;
     let filepath: string;
@@ -24,28 +28,9 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         client: "duckdb",
       };
 
-      const options: DBTestUtil["options"] = {
+      const dbOptions: DBTestUtil["options"] = {
         dialect: "duckdb",
         defaultSchema: "main",
-        async beforeCreatingTables() {
-          const sequences = [
-            "seq_addresses_id",
-            "seq_MixedCase_id",
-            "seq_group_table_id",
-            "seq_people_id",
-            "seq_streamtest_id",
-            "seq_jobs_id",
-            "seq_add_drop_test_id",
-            "seq_index_test_id",
-          ];
-          const query = sequences
-            .map((seq) => `CREATE SEQUENCE ${seq} START 1`)
-            .join(";");
-          await util.knex.schema.raw(query);
-        },
-        autoIncrementingPKType(tableName) {
-          return `INTEGER PRIMARY KEY DEFAULT nextval('seq_${tableName}_id')`;
-        },
 
         // There should be only one process that can both read and write to
         // the database.
@@ -61,7 +46,11 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         supportsArrayMode: false,
       };
 
-      util = new DBTestUtil(config, filepath, options);
+      util = new DBTestUtil(
+        config,
+        options.mode === 'memory' ? ':memory:' : filepath,
+        dbOptions
+      );
       await util.setupdb();
     });
 

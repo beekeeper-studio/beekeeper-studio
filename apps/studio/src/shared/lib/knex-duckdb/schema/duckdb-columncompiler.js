@@ -7,8 +7,8 @@ class ColumnCompiler_DuckDB extends ColumnCompiler_SQLite3 {
     const sequence = `${this.tableCompiler.tableNameRaw}_seq_id`;
     const sql =
       `create sequence ${this.formatter.wrap(sequence)} start 1;` +
-      `alter table ${this.formatter.wrap(this.tableCompiler.tableNameRaw)}` +
-      `alter column ${this.formatter.wrap(this.getColumnName())}` +
+      `alter table ${this.formatter.wrap(this.tableCompiler.tableNameRaw)} ` +
+      `alter column ${this.formatter.wrap(this.getColumnName())} ` +
       `set default nextval('${sequence}')`;
     this.pushAdditional(function () {
       this.pushQuery(sql);

@@ -204,6 +204,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: false,
     };
   }
 
@@ -230,9 +231,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       },
     });
 
-    const result = await this.driverExecuteSingle("SELECT version()");
+    const result = await this.driverExecuteSingle("SELECT version() as version");
 
-    this.version = result.data[0]["version()"];
+    this.version = result.data[0]["version"];
   }
 
   async disconnect(): Promise<void> {

@@ -80,7 +80,6 @@ export interface Options {
   skipCreateDatabase?: boolean
   supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
-  autoIncrementingPKType?: string | ((tableName: string) => string)
   beforeCreatingTables?: () => void | Promise<void>
   /**
    * If this is true, then tests will use knex instance from the client class.
@@ -683,8 +682,9 @@ export class DBTestUtil {
         dataType = dataType.replace('varchar', 'VARCHAR2')
       } else if (this.dialect === 'clickhouse') {
         dataType = o.nullable ? 'Nullable(String)' : 'String'
+      } else if (this.dialect === 'duckdb' && o.dataType.includes('varchar')) {
+        dataType = 'VARCHAR'
       }
-
 
       return {
         columnName,
@@ -694,15 +694,6 @@ export class DBTestUtil {
       }
     }
 
-
-    const varchar = (length: number) => {
-      if (this.dialect === 'duckdb') {
-        // In duckdb, the maximum length has no effect and is only provided for compatibility.
-        return 'VARCHAR'
-      }
-      const str = this.dialect === 'oracle' ? 'VARCHAR2' : 'varchar'
-      return `${str}(${length})`
-    }
 
     const expected = [
       tbl({
@@ -881,6 +872,7 @@ export class DBTestUtil {
         noArrayMode: [{ id: 'c0', name: 'total' }],
         clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
         oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
+        duckdb: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
       }
       expect(fields).toMatchObject(expectedResults[this.dialect] || (this.supportsArrayMode ? expectedResults.common : expectedResults.noArrayMode))
     } catch (ex) {
@@ -1341,7 +1333,8 @@ export class DBTestUtil {
   async importScriptsTests({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
     // cassandra and big query don't allow import so no need to test!
     // oracle doesn't want to find the table, so it doesn't get to have nice things
-    if (['cassandra', 'bigquery', 'oracle', 'clickhouse'].includes(this.dialect)) {
+    // clickhouse and duckdb have its own import command we don't support yet
+    if (['cassandra', 'bigquery', 'oracle', 'clickhouse', 'duckdb'].includes(this.dialect)) {
       return expect.anything()
     }
 
@@ -1413,7 +1406,7 @@ export class DBTestUtil {
     }
 
     await this.knex.schema.createTable('addresses', (table) => {
-      autoIncrementingPK(table, 'addresses')
+      primary(table)
       table.timestamps(true)
       table.string("street")
       table.string("city")
@@ -1430,17 +1423,17 @@ export class DBTestUtil {
     // })
 
     await this.knex.schema.createTable('MixedCase', (table) => {
-      autoIncrementingPK(table, 'MixedCase')
+      primary(table)
       table.string("bananas")
     })
 
     await this.knex.schema.createTable('group_table', (table) => {
-      autoIncrementingPK(table, 'group_table')
+      primary(table)
       table.string("select_col")
     })
 
     await this.knex.schema.createTable("people", (table) => {
-      autoIncrementingPK(table, 'people')
+      primary(table)
       table.timestamps(true)
       table.string("firstname")
       table.string("lastname")
@@ -1450,7 +1443,7 @@ export class DBTestUtil {
     })
 
     await this.knex.schema.createTable("jobs", (table) => {
-      autoIncrementingPK(table, 'jobs')
+      primary(table)
       table.timestamps(true)
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
