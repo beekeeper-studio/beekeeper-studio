@@ -7,6 +7,17 @@ div.sidebar.detail-view-sidebar {
   border: 1px solid $border-color;
   border-bottom: 0;
   background-color: $theme-bg;
+  position: relative;
+
+  .close-btn, .menu-btn {
+    i.material-icons {
+      color: $text;
+    }
+
+    &:not(:hover) {
+      background-color: transparent;
+    }
+  }
 
   .header {
     width: 100%;
@@ -22,16 +33,6 @@ div.sidebar.detail-view-sidebar {
 
       &:first-child {
         margin-bottom: 0.5rem;
-      }
-    }
-
-    .close-btn, .menu-btn {
-      i.material-icons {
-        color: $text;
-      }
-
-      &:not(:hover) {
-        background-color: transparent;
       }
     }
 
@@ -102,6 +103,40 @@ div.sidebar.detail-view-sidebar {
     .material-icons {
       font-size: 1rem;
       color: $text;
+    }
+  }
+
+  .community-overlay {
+    position: absolute;
+    z-index: 999;
+    inset: 0;
+    backdrop-filter: blur(6px);
+    background-color: rgba($theme-bg, 0.5);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+
+    .title {
+      font-weight: 700;
+    }
+
+    .body {
+      line-height: 1.25;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: end;
+      margin-top: 1rem;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
     }
   }
 }
