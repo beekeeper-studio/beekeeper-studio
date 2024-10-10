@@ -1,0 +1,52 @@
+name: Dependencies Check
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - docs/**
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - docs/**
+
+jobs:
+  check-duckdb-electron-builds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download electron-versions.json from duckdb-node
+        run: |
+          curl -o electron-versions.json https://raw.githubusercontent.com/beekeeper-studio/duckdb-node/refs/heads/electron-build/scripts/electron-versions.json
+          echo "Downloaded electron-versions.json"
+
+      - name: Check DuckDB builds
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+
+            const packageJson = JSON.parse(fs.readFileSync("apps/studio/package.json", "utf8"));
+            const electronBuilds = JSON.parse(fs.readFileSync("electron-versions.json", "utf8"));
+
+            const electronVersion = packageJson.dependencies.electron || packageJson.devDependencies.electron;
+
+            const [major, minor] = electronVersion.split(".");
+
+            const isVersionFound = electronBuilds.some(build => {
+              const [buildMajor, buildMinor] = build.electron.split(".");
+              return major === buildMajor && minor === buildMinor;
+
+            });
+
+            if (isVersionFound) {
+              console.log("Electron version found!");
+              process.exit(0); // Success
+            } else {
+              console.error(`Electron version not found! Looks like duckdb builds for electron ${electronVersion} are not available yet. Please fix this by adding electron ${electronVersion} to beekeeper-studio/duckdb-node repo.`);
+              process.exit(1); // Fail the workflow
+            }
+

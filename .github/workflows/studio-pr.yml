@@ -5,6 +5,10 @@ on:
     paths-ignore:
       - apps/sqltools/**
       - docs/**
+  workflow_run:
+    workflows: ["Dependencies Check"]
+    types:
+      - completed
 
 jobs:
   build:
