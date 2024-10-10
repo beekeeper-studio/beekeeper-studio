@@ -8,6 +8,7 @@ import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
 import { DevLicenseState } from '@/lib/license';
+import { setAllowBeta } from './update_manager'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -87,7 +88,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     shell.openExternal("https://docs.beekeeperstudio.io/")
   }
 
-  checkForUpdates(menuItem: Electron.MenuItem, win: Electron.BrowserWindow): void {
+  checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {
     autoUpdater.checkForUpdates()
   }
 
@@ -136,15 +137,6 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
-  switchMenuStyle = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.menuStyle.value = label.toLowerCase()
-    await this.settings.menuStyle.save()
-    getActiveWindows().forEach( window => {
-      window.send(AppEvent.menuStyleChanged)
-    })
-  }
-
   toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.toggleSidebar)
   }
@@ -183,5 +175,15 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.switchLicenseState, state)
+  }
+
+  toggleBeta = async (_menuItem: Electron.MenuItem): Promise<void> => {
+    this.settings.useBeta.userValue = !this.settings.useBeta.value;
+    await this.settings.useBeta.save()
+    getActiveWindows().forEach( window => {
+      window.send(AppEvent.settingsChanged)
+    })
+    setAllowBeta(this.settings.useBeta.value as boolean);
+    autoUpdater.checkForUpdates();
   }
 }

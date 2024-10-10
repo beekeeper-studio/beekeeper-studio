@@ -62,10 +62,6 @@ const SettingStoreModule: Module<State, any> = {
       }
       return rootGetters.isUltimate ? theme : 'system';
     },
-    menuStyle(state) {
-      if (!state.settings.menuStyle) return 'native'
-      return state.settings.menuStyle.value
-    },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'
       return state.settings.sortOrder.value
