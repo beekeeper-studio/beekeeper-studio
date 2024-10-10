@@ -39,8 +39,6 @@ function testWith(dockerTag: string, readonly: boolean) {
     beforeAll(async () => {
       const timeoutDefault = 5000
 
-      const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
-
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
         // .withResourcesQuota({ memory: 2, cpu: 1 })
         .withEnvironment({
@@ -52,7 +50,7 @@ function testWith(dockerTag: string, readonly: boolean) {
         .withExposedPorts(1433)
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
-          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
+          test: ["CMD-SHELL", `/opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
           interval: 5000,
           timeout: 3000,
           retries: 10,

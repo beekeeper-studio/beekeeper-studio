@@ -48,7 +48,7 @@ export class SqlGenerator {
 
   public buildSql(schema: Schema): string {
     let k
-    if (!['cassandra', 'bigquery', 'firebird'].includes(this._dialect)) {
+    if (this.isNativeKnex) {
       k = schema.schema ? this.knex.schema.withSchema(schema.schema) : this.knex.schema
     } else {
       k = this.knex.schema.withSchema(schema.schema ? schema.schema : this._connection.dbName)

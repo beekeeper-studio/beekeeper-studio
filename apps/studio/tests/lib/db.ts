@@ -852,13 +852,6 @@ export class DBTestUtil {
     try {
       const result = await q.execute()
 
-      if (this.dbType === 'duckdb') {
-        // FIXME duckdb cannot get results with the same field names
-        expect(result[0].rows).toMatchObject([{ c1: "b" }])
-      } else {
-        expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
-      }
-
       // FIXME (azmi): we need this until array mode is fixed in libsql and duckdb
       if (this.supportsArrayMode) {
         expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
@@ -1243,7 +1236,6 @@ export class DBTestUtil {
                 if (results.data.length === 0) {
                   return;
                 }
-          console.log('momo inserting', results.data.length)
                 promises.push(execBatch(results.data));
               },
             }),
@@ -1480,7 +1472,7 @@ export class DBTestUtil {
     }
 
     await this.knex.schema.createTable('organizations', (table) => {
-      table.integer("id").notNullable();
+      primary(table)
       table.string('organization_id', 255).notNullable();
       table.string('name', 255).notNullable();
       table.string('website', 255).nullable(); // Since 'NA', '-', and 'NULL' appear in the website field
