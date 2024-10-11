@@ -62,6 +62,8 @@ export const FirebirdData: DialectData = {
       renameTable: true,
       renameView: true,
     },
+    multipleDatabase: true,
+    schema: true,
     generatedColumns: true,
   },
   notices: {},

@@ -125,6 +125,10 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
       dataType: 'timestamp',
       defaultValue: 'CURRENT_TIMESTAMP'
     },
+    duckdb: {
+      dataType: 'timestamp',
+      defaultValue: 'current_timestamp'
+    },
     clickhouse: {
       dataType: 'timestamp',
       defaultValue: 'now()',

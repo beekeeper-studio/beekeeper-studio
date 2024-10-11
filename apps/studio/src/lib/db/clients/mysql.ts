@@ -242,8 +242,6 @@ function filterDatabase(
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
-  connectionBaseType = 'mysql' as const;
-
   versionInfo: {
     versionString: string;
     version: number;

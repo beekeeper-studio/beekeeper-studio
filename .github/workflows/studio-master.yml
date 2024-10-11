@@ -6,6 +6,10 @@ on:
       - "master"
     paths-ignore:
       - 'apps/sqltools/**'
+  workflow_run:
+    workflows: ["Dependencies Check"]
+    types:
+      - completed
 
 concurrency:
   group: master-build

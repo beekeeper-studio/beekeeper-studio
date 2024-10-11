@@ -51,6 +51,7 @@
     "core-js": "^3",
     "dateformat": "^3.0.3",
     "diff-match-patch": "^1.0.5",
+    "duckdb-async": "^1.1.1",
     "electron-devtools-installer": "^3.2.0",
     "electron-log": "^5.1.5",
     "electron-updater": "^6.3.0",
@@ -68,8 +69,11 @@
     "marked": "^4.0.10",
     "material-icons": "^1.13.3",
     "mkdirp": "^1.0.4",
+    "mock-aws-s3": "^4.0.2",
+    "module-alias": "^2.2.3",
     "mssql": "^11.0.1",
     "mysql2": "~3.11.2",
+    "nock": "^12.0.3",
     "node-firebird": "^1.1.8",
     "noty": "beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6",
     "oracledb": "~6.6.0",
@@ -183,6 +187,6 @@
   ],
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "resolutions": {
-    "cpu-features": "file:./.yarn/packages/empty-package"
+    "duckdb": "beekeeper-studio/duckdb-node#d4e11988c54627c74720212700c4ce5a2d49ca07"
   }
 }
