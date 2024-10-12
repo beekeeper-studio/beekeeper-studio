@@ -4,13 +4,16 @@
 <script lang="ts">
 import Vue from 'vue'
 import Noty from 'noty'
+import { mapGetters } from 'vuex'
 
 export default Vue.extend({
   data: () => {
     return {
+      notificationInterval: null,
+      timeoutID: null,
       upsellNotificationOptions: {
         text: "👋 Beekeeper Studio is run by a small team. Buy the full version of Beekeeper Studio to support development and get more features. Thank you ♥",
-        timeout: 10000,
+        timeout: 1000 * 60 * 5,
         queue: "upsell",
         killer: 'upsell',
         layout: 'bottomRight',
@@ -22,13 +25,42 @@ export default Vue.extend({
       }
     }
   },
-  mounted() {
-    const intervalTime = 1000 * 60 * 5
-    if (this.$store.getters.isCommunity) {
-      setInterval(() => {
+  computed: {
+    ...mapGetters({
+      'isCommunity': 'isCommunity',
+    })
+  },
+  watch: {
+    isCommunity() {
+      this.initNotifyInterval()
+    }
+  },
+  methods: {
+    initNotifyInterval() {
+      const intervalTime = 1000 * 60 * 60 * 3
+      if (this.notificationInterval) {
+        this.notificationInterval = null
+        clearInterval(this.notificationInterval)
+      }
+      if (this.timeoutID) {
+        this.timeoutID = null
+        clearTimeout(this.timeoutID)
+      }
+      if (!this.isCommunity) { 
+        return
+      }
+
+      this.notificationInterval = setInterval(() => {
         new Noty(this.upsellNotificationOptions).show()
       }, intervalTime)
+
+      this.timeoutID = setTimeout(() => {
+        new Noty(this.upsellNotificationOptions).show()
+      }, 1000 * 60 * 5)
     }
+  },
+  mounted() {
+    this.initNotifyInterval()
   }
 })
 </script>
