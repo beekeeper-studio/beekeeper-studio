@@ -60,6 +60,8 @@ import {
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
+import {fromIni} from "@aws-sdk/credential-providers";
+import {Signer} from "@aws-sdk/rds-signer";
 
 type ResultType = {
   data: any[];
@@ -98,15 +100,33 @@ function getRealError(conn, err) {
   return err;
 }
 
-function configDatabase(
+async function configDatabase(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase
 ): mysql.PoolOptions {
+
+  let resolvedPw = ''
+  const redshiftOptions = server.config.redshiftOptions
+
+  if(redshiftOptions?.iamAuthenticationEnabled){
+    const nodeProviderChainCredentials = fromIni({
+      profile: redshiftOptions.awsProfile ?? "default",
+    });
+    const signer = new Signer({
+      credentials: nodeProviderChainCredentials,
+      region: redshiftOptions?.awsRegion,
+      hostname: server.config.host,
+      port: server.config.port || 3306,
+      username: server.config.user,
+    });
+    resolvedPw = await signer.getAuthToken();
+  }
+
   const config: mysql.PoolOptions = {
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: server.config.password,
+    password: resolvedPw || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -125,6 +145,12 @@ function configDatabase(
   if (server.sshTunnel) {
     config.host = server.config.localHost;
     config.port = server.config.localPort;
+  }
+
+  if (
+    redshiftOptions?.iamAuthenticationEnabled
+  ){
+    server.config.ssl = true
   }
 
   if (server.config.ssl) {
@@ -265,8 +291,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async connect() {
     await super.connect();
-
-    const dbConfig = configDatabase(this.server, this.database);
+    const dbConfig = await configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
     this.conn = {
@@ -1341,10 +1366,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
   }
-  
+
   async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
     const { name } = table
-    
+
     return {
       beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('START TRANSACTION;', executeOptions),
       truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
