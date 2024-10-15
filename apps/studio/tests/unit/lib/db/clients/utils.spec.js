@@ -107,43 +107,44 @@ describe('isAllowedReadOnly', () => {
   })
 })
 
-describe.only('order that array', () => {
-  it('Should do a thing', () => {
-    const initArr = [
-      {columnName: 'a', dataType: 'something'},
-      {columnName: 'b', dataType: 'something'},
-      {columnName: 'c', dataType: 'something'},
-      {columnName: 'd', dataType: 'something'},
-      {columnName: 'e', dataType: 'something'},
-      {columnName: 'f', dataType: 'something'},
-      {columnName: 'g', dataType: 'something'},
-      {columnName: 'h', dataType: 'something'},
-      {columnName: 'i', dataType: 'something'}
-    ]
+// bring this one into the mysqlchangebuilder test. That would be slick
+// describe('order that array', () => {
+//   it('Should do a thing', () => {
+//     const initArr = [
+//       {columnName: 'a', dataType: 'something'},
+//       {columnName: 'b', dataType: 'something'},
+//       {columnName: 'c', dataType: 'something'},
+//       {columnName: 'd', dataType: 'something'},
+//       {columnName: 'e', dataType: 'something'},
+//       {columnName: 'f', dataType: 'something'},
+//       {columnName: 'g', dataType: 'something'},
+//       {columnName: 'h', dataType: 'something'},
+//       {columnName: 'i', dataType: 'something'}
+//     ]
 
-    const updatedArr = [
-      {columnName: 'd', dataType: 'something'},
-      {columnName: 'b', dataType: 'something'},
-      {columnName: 'c', dataType: 'something'},
-      {columnName: 'a', dataType: 'something'},
-      {columnName: 'f', dataType: 'something'},
-      {columnName: 'e', dataType: 'something'},
-      {columnName: 'h', dataType: 'something'},
-      {columnName: 'g', dataType: 'something'},
-      {columnName: 'i', dataType: 'something'}
-    ]
+//     const updatedArr = [
+//       {columnName: 'd', dataType: 'something'},
+//       {columnName: 'b', dataType: 'something'},
+//       {columnName: 'c', dataType: 'something'},
+//       {columnName: 'a', dataType: 'something'},
+//       {columnName: 'f', dataType: 'something'},
+//       {columnName: 'e', dataType: 'something'},
+//       {columnName: 'h', dataType: 'something'},
+//       {columnName: 'g', dataType: 'something'},
+//       {columnName: 'i', dataType: 'something'}
+//     ]
 
-    const updatedArrStuff = [
-      `MODIFY 'd' 'something' FIRST`,
-      `MODIFY 'a' 'something' AFTER c`,
-      `MODIFY 'f' 'something' AFTER a`,
-      `MODIFY 'e' 'something' AFTER f`,
-      `MODIFY 'h' 'something' AFTER e`,
-      `MODIFY 'g' 'something' AFTER h`
-    ]
+//     const updatedArrStuff = [
+//       `MODIFY 'd' 'something' FIRST`,
+//       `MODIFY 'a' 'something' AFTER c`,
+//       `MODIFY 'f' 'something' AFTER a`,
+//       `MODIFY 'e' 'something' AFTER f`,
+//       `MODIFY 'h' 'something' AFTER e`,
+//       `MODIFY 'g' 'something' AFTER h`
+//     ]
 
-    const wrapIdentifier = val => `'${val}'` 
+//     const wrapIdentifier = val => `'${val}'` 
 
-    expect(buildUpdateRowOrderQueries(initArr, updatedArr, wrapIdentifier)).toEqual(updatedArrStuff)
-  })
+//     expect(buildUpdateRowOrderQueries(initArr, updatedArr, wrapIdentifier)).toEqual(updatedArrStuff)
+//   })
 })

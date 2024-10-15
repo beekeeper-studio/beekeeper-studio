@@ -276,26 +276,6 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
-export function buildUpdateRowOrderQueries(oldColumnOrder: TableColumn[], newColumnOrder: TableColumn[], wrapIdentifier: (val: string) => string): string[] {
-
-  return newColumnOrder.reduce((acc, NCO, index, arr) => {
-    if ( oldColumnOrder.length < index + 1) return acc
-    const { columnName, dataType } = NCO
-    const { columnName: oldColumnName } = oldColumnOrder[index]
-
-    if ( columnName !== oldColumnName) {
-      // for mysql. Firebird is the only other one that does it and that's all.
-      if (index === 0) {
-        acc.push(`MODIFY ${wrapIdentifier(columnName)} ${wrapIdentifier(dataType)} FIRST`)
-      } else {
-        acc.push(`MODIFY ${wrapIdentifier(columnName)} ${wrapIdentifier(dataType)} AFTER ${arr[index - 1].columnName}`)
-      }
-    }
-    
-    return acc
-  }, [])
-}
-
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   if (!deletes) return []
   return deletes.map(deleteRow => {

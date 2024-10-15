@@ -2,6 +2,7 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { MysqlData } from "@shared/lib/dialects/mysql";
 import { CreateIndexSpec, Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from 'lodash'
+import { TableColumn } from "@/lib/db/models";
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'mysql'
@@ -13,6 +14,8 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
   existingColumns: SchemaItem[]
   constructor(table: string, existingColumns: SchemaItem[]) {
     super(table)
+    console.log('~~ AAAAH ~~')
+    console.log(table)
     this.existingColumns = existingColumns
   }
   
@@ -84,7 +87,6 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     ].filter((c) => !!c).join(" ")
   }
 
-
   getExisting(column: string) {
     const c: SchemaItem | undefined = this.existingColumns.find((c) => c.columnName === column)
     if (!c) {
@@ -123,6 +125,25 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
   renames() {
     // return nothing, do it all in alterColumns:
     return []
+  }
+
+  reorderColumns(oldColumnOrder: TableColumn[], newColumnOrder: TableColumn[]): string {
+    const newOrder = newColumnOrder.reduce((acc, NCO, index, arr) => {
+      if ( oldColumnOrder.length < index + 1) return acc
+      const { columnName, dataType } = NCO
+      const { columnName: oldColumnName } = oldColumnOrder[index]
+      if ( columnName !== oldColumnName) {
+        if (index === 0) {
+          acc.push(`MODIFY ${this.wrapIdentifier(columnName)} ${dataType} FIRST`)
+        } else {
+          acc.push(`MODIFY ${this.wrapIdentifier(columnName)} ${dataType} AFTER ${this.wrapIdentifier(arr[index - 1].columnName)}`)
+        }
+      }
+      
+      return acc
+    }, [])
+
+    return (newOrder.length) ? `ALTER TABLE ${this.wrapIdentifier(this.table)} ${newOrder.join(',')};` : ''
   }
 
   alterComments() {
