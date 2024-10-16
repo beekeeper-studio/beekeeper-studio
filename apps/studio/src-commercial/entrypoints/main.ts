@@ -51,7 +51,7 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    isPackage: `${electron.app.isPackaged}`,
+    isPackaged: `${electron.app.isPackaged}`,
     locale: electron.app.getLocale(),
     userDir: electron.app.getPath('userData'),
     downloadDir: electron.app.getPath('downloads'),
