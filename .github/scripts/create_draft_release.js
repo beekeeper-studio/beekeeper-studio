@@ -11,6 +11,9 @@ module.exports = async({github, core}, owner, repo, tagName) => {
     repo
   });
 
+  // NOTE(@day): for test releases
+  tagName = tagName.replace('test', 'v');
+
   let uploadUrl;
   let assetsUrl;
 
