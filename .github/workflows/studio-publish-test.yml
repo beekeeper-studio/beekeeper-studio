@@ -122,7 +122,7 @@ jobs:
           script: |
             const fs = require('fs')
             const path = `apps/studio/package.json`
-            const githubUrl = `git@github.com/${process.env.OWNER}/${process.env.repo}.git`
+            const githubUrl = `git@github.com/${process.env.OWNER}/${process.env.REPO}.git`
 
             const packageJson = JSON.parse(fs.readFileSync(path, 'utf8'));
 
@@ -234,7 +234,7 @@ jobs:
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.GH_DEPLOY_TOKEN }}
           skip_build: false
-          buildScriptName: "build"
+          build_script_name: "build"
           use_vue_cli: false
           max_attempts: 2
           args: "--config ./electron-builder-config-test.js"
