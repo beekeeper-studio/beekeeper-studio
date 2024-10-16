@@ -1,4 +1,4 @@
-name: Studio - Build & Publish
+name: Studio - Test Build & Publish
 
 on:
   push:
@@ -121,6 +121,7 @@ jobs:
         with:
           script: |
             const fs = require('fs')
+            const path = `apps/studio/package.json`
             const githubUrl = `git@github.com/${process.env.OWNER}/${process.env.repo}.git`
 
             const packageJson = JSON.parse(fs.readFileSync(path, 'utf8'));
