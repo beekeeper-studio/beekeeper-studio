@@ -211,7 +211,7 @@ jobs:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Remove dist directory
-        if: matrix.os.type != 'windows'
+        if: matrix.os.type == 'windows'
         run: rm -rf ./apps/studio/dist_electron
 
       - name: Remove dist directory windows
@@ -225,10 +225,7 @@ jobs:
           mkdir -p ~/private_keys/
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
-      - name: Build
-        run: yarn run bks:build
-
-      - name: Publish
+      - name: Build and Publish
         if: ${{!startsWith(matrix.os.name, 'ubuntu-arm64')}}
         uses: samuelmeuli/action-electron-builder@v1
         with:
@@ -236,7 +233,8 @@ jobs:
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.GH_DEPLOY_TOKEN }}
-          skip_build: true
+          skip_build: false
+          buildScriptName: "build"
           use_vue_cli: false
           max_attempts: 2
           args: "--config ./electron-builder-config-test.js"
