@@ -48,6 +48,8 @@ import { IDbConnectionServer } from '@/lib/db/backendTypes';
 const log = rawLog.scope('oracle')
 
 
+oracle.fetchAsString = [oracle.CLOB]
+oracle.fetchAsBuffer = [oracle.BLOB]
 
 export class OracleClient extends BasicDatabaseClient<DriverResult> {
   connectionBaseType = 'oracle' as const;
@@ -519,8 +521,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       if (configLocation) payload['configDir'] = configLocation
       oracle.initOracleClient(payload)
       // oracle.initOracleClient()
-      oracle.fetchAsString = [oracle.CLOB]
-      oracle.fetchAsBuffer = [oracle.BLOB]
     } catch {
       // do nothing
     }
