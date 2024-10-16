@@ -33,7 +33,7 @@ if (isRenderer()) {
 
   const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
   const testMode = p.env.TEST_MODE ? true : false
-  const isDevEnv = !(e?.app && (e?.app.isPackaged ?? p.env.isPackaged));
+  const isDevEnv = !(e?.app.isPackaged ?? p.env.isPackaged);
   const isWindows = platform === 'win32'
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')
