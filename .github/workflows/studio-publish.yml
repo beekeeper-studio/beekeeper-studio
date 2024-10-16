@@ -14,10 +14,7 @@ jobs:
         edition:
           - name: community
             owner: beekeeper-studio
-            repo: beekeeper-studio
-          - name: ultimate
-            owner: beekeeper-studio
-            repo: ultimate-releases
+            repo: test-releases
     runs-on: "ubuntu-20.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
