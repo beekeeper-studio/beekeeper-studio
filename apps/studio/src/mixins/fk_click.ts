@@ -112,7 +112,7 @@ export const FkLinkMixin = {
       });
 
       const payload = {
-        table, filters, titleScope: values.join(',')
+        table, filters, titleScope: values.join(','), openDetailView: true,
       }
       this.$root.$emit('loadTable', payload)
     },
