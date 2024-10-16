@@ -52,12 +52,6 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    // locale: electron.app.getLocale(),
-    // userDir: electron.app.getPath('userData'),
-    // downloadDir: electron.app.getPath('downloads'),
-    // homeDir: electron.app.getPath('home'),
-    // shouldUseDarkColors: `${electron.nativeTheme.shouldUseDarkColors}`,
-    // version: electron.app.getVersion(),
     bksPlatformInfo: JSON.stringify(platformInfo)
   }
 
