@@ -28,6 +28,12 @@ import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
+import * as sms from 'source-map-support'
+
+if (platformInfo.env.development || platformInfo.env.test) {
+  sms.install()
+}
+
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -45,7 +51,7 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    isPackage: `${electron.app.isPackaged}`,
+    isPackaged: `${electron.app.isPackaged}`,
     locale: electron.app.getLocale(),
     userDir: electron.app.getPath('userData'),
     downloadDir: electron.app.getPath('downloads'),
