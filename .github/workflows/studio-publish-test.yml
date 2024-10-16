@@ -236,7 +236,7 @@ jobs:
           skip_build: true
           use_vue_cli: false
           max_attempts: 2
-          args: "--config ./apps/studio/electron-builder-config-test.js"
+          args: "--config ./electron-builder-config-test.js"
 
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
