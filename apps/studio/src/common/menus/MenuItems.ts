@@ -257,7 +257,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     toggleBeta: {
       id: "toggle-beta",
-      label: "Channel",
+      label: "Release Channel",
       submenu: [
         {
           type: 'radio',
