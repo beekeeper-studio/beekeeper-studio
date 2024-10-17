@@ -4,6 +4,35 @@
     ref="sidebar"
     v-show="!hidden"
   >
+    <div class="community-overlay" v-if="$store.getters.isCommunity">
+      <button
+        class="close-btn btn btn-fab"
+        @click="close"
+      >
+        <i class="material-icons">close</i>
+      </button>
+      <span class="title">
+        Upgrade to premium
+      </span>
+      <span class="body">
+        Upgrade to premium to access this feature and additional benefits,
+        including magic formatting, backup & restore, and more!
+      </span>
+      <div class="actions">
+        <a
+          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+          class="btn btn-flat"
+        >
+          Learn more
+        </a>
+        <a
+          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+          class="btn btn-primary"
+        >
+          Upgrade
+        </a>
+      </div>
+    </div>
     <div class="header">
       <div class="header-group">
         <span class="title sub">{{ sidebarTitle }}</span>
