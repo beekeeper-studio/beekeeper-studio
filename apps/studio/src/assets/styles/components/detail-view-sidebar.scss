@@ -1,11 +1,13 @@
 div.sidebar.detail-view-sidebar {
+  position: relative;
   overflow: hidden;
   max-width: 100%;
   min-width: 11rem;
   width: auto;
   flex-grow: 1;
   border: 1px solid $border-color;
-  border-bottom: 0;
+  border-bottom: none;
+  border-right: none;
   background-color: $theme-bg;
   position: relative;
 
@@ -33,6 +35,20 @@ div.sidebar.detail-view-sidebar {
 
       &:first-child {
         margin-bottom: 0.5rem;
+      }
+    }
+
+    .title {
+      color: $text-dark;
+    }
+
+    .close-btn, .menu-btn {
+      i.material-icons {
+        color: $text;
+      }
+
+      &:not(:hover) {
+        background-color: transparent;
       }
     }
 
@@ -138,5 +154,15 @@ div.sidebar.detail-view-sidebar {
       top: 1rem;
       right: 1rem;
     }
+  }
+
+  .empty-state {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inset: 0;
+    z-index: 999;
+    font-weight: 700;
   }
 }

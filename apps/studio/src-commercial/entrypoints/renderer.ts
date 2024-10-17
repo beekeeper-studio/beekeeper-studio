@@ -34,6 +34,7 @@ import App from '@/App.vue'
 (async () => {
 
   await window.main.requestPlatformInfo();
+  rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 

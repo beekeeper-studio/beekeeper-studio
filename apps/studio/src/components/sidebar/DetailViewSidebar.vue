@@ -35,7 +35,7 @@
     </div>
     <div class="header">
       <div class="header-group">
-        <span>{{ sidebarTitle }}</span>
+        <span class="title sub">{{ sidebarTitle }}</span>
         <button
           class="close-btn btn btn-fab"
           @click="close"
@@ -92,6 +92,9 @@
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
     />
+    <div class="empty-state" v-show="empty">
+      No Data
+    </div>
   </div>
 </template>
 

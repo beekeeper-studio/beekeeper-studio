@@ -1675,6 +1675,11 @@ export default Vue.extend({
     },
     updateDetailView(range: RangeComponent) {
       const row = range.getRows()[0]
+      if (!row) {
+        this.selectedRowIndex = null
+        this.selectedRowData = {}
+        return
+      }
       const data = row.getData()
       const selectedRowIndex = data[this.internalIndexColumn]
       if (selectedRowIndex === this.selectedRowIndex) return

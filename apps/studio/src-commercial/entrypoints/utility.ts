@@ -21,6 +21,12 @@ import { CloudClient } from '@/lib/cloud/CloudClient';
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import globals from '@/common/globals';
 
+import * as sms from 'source-map-support'
+
+if (platformInfo.env.development || platformInfo.env.test) {
+  sms.install()
+}
+
 const log = rawLog.scope('UtilityProcess');
 
 let ormConnection: ORMConnection;
@@ -33,7 +39,7 @@ interface Reply {
   stack?: string
 }
 
-export let handlers: Handlers = {
+export const handlers: Handlers = {
   ...ConnHandlers,
   ...QueryHandlers,
   ...GeneratorHandlers,
@@ -75,7 +81,7 @@ process.parentPort.on('message', async ({ data, ports }) => {
 
 async function runHandler(id: string, name: string, args: any) {
   log.info('RECEIVED REQUEST FOR NAME, ID: ', name, id);
-  let replyArgs: Reply = {
+  const replyArgs: Reply = {
     id,
     type: 'reply',
   };
@@ -89,6 +95,7 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.type = 'error';
         replyArgs.stack = e?.stack;
         replyArgs.error = e?.message ?? e;
+        log.error("HANDLER: ERROR", e)
       })
       .finally(() => {
         try {
