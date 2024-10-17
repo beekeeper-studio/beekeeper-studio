@@ -22,3 +22,4 @@ yarn-error.log
 cli.zip
 apps/studio/test-results
 *.db
+*.log
