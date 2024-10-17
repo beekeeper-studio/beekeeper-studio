@@ -13,12 +13,12 @@ export function mainPlatformInfo(): IPlatformInfo {
   const e = require('electron')
   const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
   const testMode = p.env.TEST_MODE ? true : false
-  const isDevEnv = !e.app.isPackaged;
+  const isDevEnv = testMode ? false : !e.app.isPackaged;
   const isWindows = platform === 'win32'
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')
   const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
-  const locale = e.app.getLocale();
+  const locale = testMode ? 'test' : e.app.getLocale();
 
   const windowPrefersDarkMode = false
 
