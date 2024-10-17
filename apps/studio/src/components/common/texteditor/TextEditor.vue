@@ -110,7 +110,7 @@ export default {
   watch: {
     valueAndStatus() {
       const { value, status } = this.valueAndStatus;
-      if (!status) return;
+      if (!status || !this.editor) return;
       this.foundRootFold = false;
       const scrollInfo = this.editor.getScrollInfo();
       this.editor.setValue(value);
@@ -126,25 +126,25 @@ export default {
       this.initialize();
     },
     mode() {
-      this.editor.setOption("mode", this.mode);
+      this.editor?.setOption("mode", this.mode);
     },
     hint() {
-      this.editor.setOption("hint", this.hint);
+      this.editor?.setOption("hint", this.hint);
     },
     hintOptions() {
-      this.editor.setOption("hintOptions", this.hintOptions);
+      this.editor?.setOption("hintOptions", this.hintOptions);
     },
     heightAndStatus() {
       const { height, status } = this.heightAndStatus;
-      if (!status) return;
+      if (!status || !this.editor) return;
       this.editor.setSize(null, height);
       this.editor.refresh();
     },
     readOnly() {
-      this.editor.setOption("readOnly", this.readOnly);
+      this.editor?.setOption("readOnly", this.readOnly);
     },
     lineWrapping() {
-      this.editor.setOption("lineWrapping", this.lineWrapping);
+      this.editor?.setOption("lineWrapping", this.lineWrapping);
     },
     async focus() {
       if (this.focus && this.editor) {
@@ -173,8 +173,6 @@ export default {
       this.initializeBookmarks();
     },
     foldAll() {
-      console.log('foldall', this.foldAll)
-      // this.editor.foldAll();
       CodeMirror.commands.foldAll(this.editor)
     },
     unfoldAll() {
