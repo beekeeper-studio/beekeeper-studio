@@ -6,7 +6,6 @@ const log = rawLog.scope('AppEvent')
 export enum AppEvent {
   menuClick = 'menu-click',
   settingsChanged = "sc-refresh",
-  menuStyleChanged = 'mc-style',
   newTab = 'nt',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
@@ -50,7 +49,8 @@ export enum AppEvent {
   licenseValidDateExpired = 'licenseValidDateExpired',
   /** Triggered when the license support date has expired */
   licenseSupportDateExpired = 'licenseSupportDateExpired',
-  switchLicenseState = 'switchLicenseState'
+  switchLicenseState = 'switchLicenseState',
+  toggleBeta = 'toggleBeta'
 }
 
 export interface RootBinding {

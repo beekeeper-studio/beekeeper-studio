@@ -13,7 +13,6 @@ export default class {
 
   registerCallbacks() {
     window.main.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
-    window.main.on(AppEvent.menuStyleChanged, this.menuStyle.bind(this))
     window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
@@ -61,10 +60,6 @@ export default class {
 
   settingsChanged() {
     this.vueApp.$store.dispatch("settings/initializeSettings")
-  }
-
-  menuStyle() {
-    this.vueApp.$noty.success("Restart Beekeeper for the change to take effect")
   }
 
   async switchLicenseState(_event, state) {
