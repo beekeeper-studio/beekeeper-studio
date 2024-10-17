@@ -261,9 +261,11 @@ export default {
       // Empty on purpose
     }
   },
-  mounted() {
-    this.menuBuilder = new MenuBuilder(this.$store.state.settings.settings, this.actionHandler, this.$config)
-    this.menus = this.menuBuilder.buildTemplate()
+  async mounted() {
+    if (this.settings && this.settings.length > 0) {
+      this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
+      this.menus = this.menuBuilder.buildTemplate()
+    }
     document.addEventListener('click', this.maybeHideMenu)
     window.addEventListener('keydown', this.maybeCaptureKeydown, false)
   },

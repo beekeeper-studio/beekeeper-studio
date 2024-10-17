@@ -177,8 +177,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.switchLicenseState, state)
   }
 
-  toggleBeta = async (_menuItem: Electron.MenuItem): Promise<void> => {
-    this.settings.useBeta.userValue = !this.settings.useBeta.value;
+  toggleBeta = async (menuItem: Electron.MenuItem): Promise<void> => {
+    const label = _.isString(menuItem) ? menuItem : menuItem.label
+    const beta = label.toLowerCase() == 'beta';
+    this.settings.useBeta.userValue = beta;
     await this.settings.useBeta.save()
     getActiveWindows().forEach( window => {
       window.send(AppEvent.settingsChanged)

@@ -6,7 +6,8 @@ import { Module } from 'vuex'
 
 
 interface State {
-  settings: IGroupedUserSettings
+  settings: IGroupedUserSettings,
+  initialized: boolean
 }
 
 const M = {
@@ -18,6 +19,7 @@ const SettingStoreModule: Module<State, any> = {
   namespaced: true,
   state: () => ({
     settings: {},
+    initialized: false
   }),
   mutations: {
     replaceSettings(state, newSettings: TransportUserSetting) {
@@ -28,12 +30,16 @@ const SettingStoreModule: Module<State, any> = {
       if (!state.settings[newSetting.key]) {
         Vue.set(state.settings, newSetting.key, newSetting)
       }
+    },
+    setInitialized(state) {
+      state.initialized = true;
     }
   },
   actions: {
     async initializeSettings(context) {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
-      context.commit(M.REPLACEALL, settings)
+      context.commit(M.REPLACEALL, settings);
+      context.commit('setInitialized');
     },
     async saveSetting(context, setting: TransportUserSetting) {
       await Vue.prototype.$util.send('appdb/setting/save', { obj: setting })
