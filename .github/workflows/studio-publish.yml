@@ -285,6 +285,7 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.apple_id }}
           APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_TEAM_ID: "7KK583U8H2"
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
