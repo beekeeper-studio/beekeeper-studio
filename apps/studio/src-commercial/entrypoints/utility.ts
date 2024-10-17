@@ -39,7 +39,7 @@ interface Reply {
   stack?: string
 }
 
-export let handlers: Handlers = {
+export const handlers: Handlers = {
   ...ConnHandlers,
   ...QueryHandlers,
   ...GeneratorHandlers,
