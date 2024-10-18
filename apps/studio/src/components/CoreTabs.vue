@@ -37,7 +37,7 @@
       <a
         @click.prevent="showUpgradeModal"
         class="btn btn-brand btn-icon btn-upgrade"
-        v-tooltip="'Upgrade for: backup/restore, import from CSV, larger query results, and more!'"
+        v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
         v-if="$store.getters.isCommunity"
       >
         <i class="material-icons">stars</i> Upgrade
@@ -880,7 +880,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
-    openTable({ table, filters }) {
+    async openTable({ table, filters, openDetailView }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
       tab.title = table.name
@@ -894,9 +894,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         if (filters) {
           existing = setFilters(existing, filters)
         }
-        this.$store.dispatch('tabs/setActive', existing)
+        await this.$store.dispatch('tabs/setActive', existing)
       } else {
-        this.addTab(tab)
+        await this.addTab(tab)
+      }
+
+      if (openDetailView) {
+        this.$store.dispatch('toggleOpenDetailView', true)
       }
     },
     openExportModal(options) {

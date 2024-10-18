@@ -1,45 +1,40 @@
 import _ from 'lodash'
-import logRaw from 'electron-log'
+import rawLog from 'electron-log'
+import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient';
+import { TableOrView } from '../db/models';
+const log = rawLog.scope('import-file')
 
 export default class Import {
+  fileName: string;
+  options: any;
+  connection: BasicDatabaseClient<any>;
+  table: TableOrView;
+  logger: () => rawLog.LogFunctions;
+  importScriptOptions: any;
+
   constructor(fileName, options, connection, table) {
-    const log = logRaw.scope('import-file')
     this.fileName = fileName
     this.options = options
     this.connection = connection
     this.table = table
-    this.sqlInserts = []
     this.logger = () => log
-  }
 
-  #sqlInserts = []
-
-  clearInsert() {
-    this.sqlInserts = []
+    this.importScriptOptions = {
+      executeOptions: { multiple: false }
+    }
   }
 
   setOptions(opt) {
     this.options = opt
-  }
-
-  addInsert(insertArr) {
-    insertArr.forEach(data => {
-      this.sqlInserts.push({
-        data: [data],
-        table: this.table.name,
-        schema: this.table.schema || null
-      })
-    })
+    this.table = opt.table
+    this.importScriptOptions.userImportOptions = opt
   }
   
-  async buildSQL() {
-    await this.read(this.getImporterOptions({ preview: false }))
-    return this.connection.getImportSQL(this.sqlInserts, this.options.truncateTable)
-  }
-
   async importFile() {
-    const sql = await this.buildSQL()
-    return await this.connection.importData(sql)
+    this.importScriptOptions.importerOptions = this.getImporterOptions({ isPreview: false });
+    this.importScriptOptions.storeValues = { ...this.options };
+
+    await this.connection.importFile(this.table, this.importScriptOptions, this.read.bind(this))
   }
 
   /**
@@ -104,9 +99,9 @@ export default class Import {
 
         if (columnData != null) {
           if (this.options.trimWhitespaces && _.isString(columnData)) {
-            importedValue = this.connection.escapeString(columnData).trim()
+            importedValue = columnData.trim()
           } else if (_.isString(columnData)) {
-            importedValue = this.connection.escapeString(columnData)
+            importedValue = columnData
           } else {
             importedValue = columnData
           }
@@ -121,6 +116,24 @@ export default class Import {
     )
   }
 
+  /**
+   * Take the data to be put into the table and format it for the insertQueryBuilder function in client
+   * @param {String[]} data the raw data to be mapped when ready to write to the databse
+   * @returns {Object} A table insert containing
+   * - `data` {Array} 
+   * - `table` {String}
+   * - `schema` {String|null}
+   */
+  buildDataObj (data) {
+    return {
+      data: this
+        .mapData(data)
+        .filter(v => v != null && v !== ''),
+      table: this.table.name,
+      schema: this.table.schema || null
+    }
+  }
+
   allowChangeSettings() {
     return false
   }
@@ -129,11 +142,11 @@ export default class Import {
     return opt
   }
 
-  read() {
+  async read(_options?: any, _executeOptions?: any, _fileToImport: string = null): Promise<any> {
     throw new Error("Method 'read()' must be implemented.")
   }
 
-  getPreview() {
+  async getPreview(_options?: any): Promise<any> {
     throw new Error("Method 'getPreview()' must be implemented.")
   }
 
@@ -148,5 +161,9 @@ export default class Import {
 
   validateFile() {
     throw new Error("Method 'validateFile()' must be implemented")
+  }
+
+  async getSheets(): Promise<any> {
+    throw new Error("Method 'getSheets()' must be implemented but is Excel only")
   }
 }

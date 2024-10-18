@@ -25,7 +25,6 @@ import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import Mutators from '../../mixins/data_mutators'
 import { AppEvent } from '@/common/AppEvent'
 import { FormatterDialect } from '@shared/lib/dialects/models'
-import { getImporterClass } from '../../lib/import/utils'
 
 export default {
   components: {
@@ -38,7 +37,6 @@ export default {
       default: () => ({
         schema: '',
         table: '',
-        connection: {},
         importStarted: false,
         timer: null,
         importError: null
@@ -56,8 +54,7 @@ export default {
   },
   computed: {
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
-    ...mapGetters(['dialect']),
-    ...mapState(['connection']),
+    ...mapGetters(['schemaTables', 'dialect']),
     importColumns () {
       return this.importOptions.importMap.map(m => ({
         title: m.tableColumn,
@@ -79,14 +76,23 @@ export default {
     }
   },
   methods: {
+    getTable({schema, name: tableName}) {
+      let foundSchema = ''
+      if (this.schemaTables.length > 1) {
+        foundSchema = this.schemaTables.find(s => s.schema === schema)
+      } else {
+        foundSchema = this.schemaTables[0]
+      }
+      return foundSchema.tables.find(t => t.name === tableName)
+    },
     tableKey() {
       const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
       return `${schema}${this.stepperProps.table}`
     },
     async tableData() {
-      const { data } = await this.importerClass.getPreview()
-      return this.importerClass.mapData(data)
+      return await this.$util.send('import/getImportPreview', { id: this.importerClass })
     },
+
     async initTabulator() {
       if (this.tabulator) return this.tabulator.redraw(true)
 
@@ -109,10 +115,13 @@ export default {
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.tableKey())
-      const connection = await this.connection
       this.table = importOptions.table
       this.importOptions = importOptions
-      this.importerClass = getImporterClass(this.importOptions, connection, this.table)
+      if (!importOptions.importProcessId) {
+        this.importerClass = await this.$util.send('import/init', { options: importOptions })
+      } else {
+        this.importerClass = importOptions.importProcessId
+      }
       this.initTabulator()
     }
   },

@@ -13,7 +13,7 @@ export class UtilityConnection {
   constructor(private port: MessagePort, private sId: string) {
     port.onmessage = (msg) => {
       const { data: msgData } = msg;
-      log.info('RECEIVED MESSAGE: ', msgData.type, msgData)
+      log.debug('RECEIVED MESSAGE: ', msgData.type, msgData)
 
       if (msgData.type === 'error') {
         // handle errors
@@ -48,7 +48,7 @@ export class UtilityConnection {
     return new Promise<any>((resolve, reject) => {
       args = { sId: this.sId, ...args };
       const id = uuidv4();
-      log.info('SENDING REQUEST FOR NAME, ID: ', handlerName, id)
+      log.debug('SENDING REQUEST FOR NAME, ID: ', handlerName, id)
 
       this.replyHandlers.set(id, { resolve, reject });
 
@@ -59,7 +59,7 @@ export class UtilityConnection {
   public addListener(type: string, listener: Listener): string {
     const id = uuidv4();
     this.listeners.push({ type, id, listener });
-    log.info('ADDED LISTENER: ', type, id);
+    log.debug('ADDED LISTENER: ', type, id);
 
     return id;
   }
@@ -67,5 +67,5 @@ export class UtilityConnection {
   public removeListener(id: string) {
     this.listeners = _.reject(this.listeners, { 'id': id });
   }
- 
+
 }

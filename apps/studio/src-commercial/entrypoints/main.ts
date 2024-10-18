@@ -10,6 +10,7 @@ import _ from 'lodash'
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
 log.initialize();
+log.transports.console.level = 'info'
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})
 log.info("initializing background")
@@ -28,6 +29,12 @@ import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
+import * as sms from 'source-map-support'
+
+if (platformInfo.env.development || platformInfo.env.test) {
+  sms.install()
+}
+
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -37,7 +44,7 @@ function initUserDirectory(d: string) {
 
 let utilityProcess: Electron.UtilityProcess
 // don't need this
-let newWindows: number[] = new Array();
+let newWindows: number[] = [];
 
 async function createUtilityProcess() {
   if (utilityProcess) {
@@ -45,13 +52,7 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    isPackage: `${electron.app.isPackaged}`,
-    locale: electron.app.getLocale(),
-    userDir: electron.app.getPath('userData'),
-    downloadDir: electron.app.getPath('downloads'),
-    homeDir: electron.app.getPath('home'),
-    shouldUseDarkColors: `${electron.nativeTheme.shouldUseDarkColors}`,
-    version: electron.app.getVersion()
+    bksPlatformInfo: JSON.stringify(platformInfo)
   }
 
   utilityProcess = electron.utilityProcess.fork(
