@@ -46,6 +46,7 @@ import maxAllowedAppRelease from './20240920_add_max_allowed_app_release'
 import lastUsedWorkspace from './20240923_user_settings_default_workspace'
 import userSettingKeymap from './20241017_add_user_setting_keymap'
 import missingUserSettings from './20241017_add_missing_user_settings'
+import useBeta from './20241009_add_beta_toggle'
 
 import ultimate from './ultimate/index'
 
@@ -72,6 +73,7 @@ const realMigrations = [
   firebirdConnection, exportPath, UserSettingsWindowPosition,
   demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
   maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
+  useBeta
 ]
 
 // fixtures require the models
