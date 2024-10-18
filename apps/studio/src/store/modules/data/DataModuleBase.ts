@@ -150,7 +150,7 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
     },
 
     async reload(context, id: number) {
-      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, { options: id })
+      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, { options: { id } })
       if (item) {
         context.commit('upsert', item)
         return item.id
