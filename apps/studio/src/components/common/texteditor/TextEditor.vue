@@ -63,7 +63,7 @@ export default {
     // honestly, I forgot why do we need this.
     "forcedValue",
     "plugins",
-    "autoFocus"
+    "autoFocus",
     "lineNumbers",
     "foldGutter",
     "foldWithoutLineNumbers",
@@ -76,10 +76,10 @@ export default {
   data() {
     return {
       editor: null,
-      wasEditorFocused: false
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
+      wasEditorFocused: false,
     };
   },
   computed: {
