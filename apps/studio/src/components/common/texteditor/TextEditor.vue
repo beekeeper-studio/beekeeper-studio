@@ -63,6 +63,7 @@ export default {
     // honestly, I forgot why do we need this.
     "forcedValue",
     "plugins",
+    "autoFocus",
     "lineNumbers",
     "foldGutter",
     "foldWithoutLineNumbers",
@@ -78,6 +79,7 @@ export default {
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
+      wasEditorFocused: false,
     };
   },
   computed: {
@@ -86,7 +88,7 @@ export default {
     },
     userKeymap() {
       const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap.value;
+      const value = settings?.keymap?.value;
       return value && this.keymapTypes.map((k) => k.value).includes(value)
         ? value
         : "default";
@@ -180,6 +182,18 @@ export default {
     },
   },
   methods: {
+    focusEditor() {
+      if(this.editor && this.autoFocus && this.wasEditorFocused){
+        this.editor.focus();
+        this.wasEditorFocused = false;
+       }
+    },
+    handleBlur(){
+      const activeElement = document.activeElement;
+      if(activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder"){
+        this.wasEditorFocused = true;
+      }
+    },
     async initialize() {
       this.destroyEditor();
 
@@ -515,8 +529,12 @@ export default {
   },
   mounted() {
     this.initialize();
+    window.addEventListener('focus', this.focusEditor);
+    window.addEventListener('blur', this.handleBlur);
   },
   beforeDestroy() {
+    window.removeEventListener('focus', this.focusEditor);
+    window.removeEventListener('blur', this.handleBlur);
     this.destroyEditor();
   },
 };
