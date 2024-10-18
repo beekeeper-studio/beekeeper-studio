@@ -154,30 +154,30 @@ jobs:
       - run: "gem install -N ./deb-s3-0.11.2.gem"
         if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
 
-      - name: "Install python 3.12 (NOT Mac, NOT Ubuntu-arm)"
+      - name: "Install python 3.11 (NOT Mac, NOT Ubuntu-arm)"
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.11
         if: matrix.os.setup_python
 
-      - name: Install python 3.12 (mac arm64)
+      - name: Install python 3.11 (mac arm64)
         if: matrix.os.type == 'macos'
         id: mac_python
         env:
           ARCH: ${{ matrix.os.arch }}
         run: |
-          brew install python@3.12
+          brew install python@3.11
           if [ "$ARCH" = "arm64" ]; then
-              # Add Python 3.12 to PATH for arm64
-              echo "/opt/homebrew/opt/python@3.12/libexec/bin" >> $GITHUB_PATH
-              export PATH="/opt/homebrew/opt/python@3.12/libexec/bin:$PATH"
-              export PYTHON_PATH="/opt/homebrew/opt/python@3.12/libexec/bin/python3"
+              # Add Python 3.11 to PATH for arm64
+              echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+              export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
+              export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
               echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
           else
-              # Add Python 3.12 to PATH for other architectures
-              echo "/usr/local/opt/python@3.12/libexec/bin" >> $GITHUB_PATH
-              export PATH="/usr/local/opt/python@3.12/libexec/bin:$PATH"
-              export PYTHON_PATH="/usr/local/opt/python@3.12/libexec/bin/python3"
+              # Add Python 3.11 to PATH for other architectures
+              echo "/usr/local/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+              export PATH="/usr/local/opt/python@3.11/libexec/bin:$PATH"
+              export PYTHON_PATH="/usr/local/opt/python@3.11/libexec/bin/python3"
               echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
           fi
 
@@ -186,8 +186,8 @@ jobs:
         run: |
           $PYTHON_VERSION = python --version | Out-String
           Write-Output "Installed Python version: $PYTHON_VERSION"
-          if (-not $PYTHON_VERSION.StartsWith("Python 3.12")) {
-            Write-Output "Error: Python version does not start with 3.12"
+          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
+            Write-Output "Error: Python version does not start with 3.11"
             exit 1
           }
         shell: powershell
@@ -198,8 +198,8 @@ jobs:
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
-          if [[ ! $PYTHON_VERSION == 3.12* ]]; then
-            echo "Error: Python version does not start with 3.12"
+          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
+            echo "Error: Python version does not start with 3.11"
             exit 1
           fi
 
