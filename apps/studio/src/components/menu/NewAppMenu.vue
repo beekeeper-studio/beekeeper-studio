@@ -262,10 +262,8 @@ export default {
     }
   },
   async mounted() {
-    if (this.settings && this.settings.length > 0) {
-      this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
-      this.menus = this.menuBuilder.buildTemplate()
-    }
+    this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
+    this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
     window.addEventListener('keydown', this.maybeCaptureKeydown, false)
   },

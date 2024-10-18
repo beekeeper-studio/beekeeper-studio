@@ -170,31 +170,31 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: "System",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'system'
+          checked: settings?.theme?.value === 'system'
         },
         {
           type: "radio",
           label: "Light",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'light'
+          checked: settings?.theme?.value === 'light'
         },
         {
           type: 'radio',
           label: "Dark",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'dark'
+          checked: settings?.theme?.value === 'dark'
         },
         {
           type: 'radio',
           label: 'Solarized',
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'solarized'
+          checked: settings?.theme?.value === 'solarized'
         },
         {
           type: 'radio',
           label: 'Solarized Dark',
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'solarized-dark'
+          checked: settings?.theme?.value === 'solarized-dark'
         }
       ]
     },
@@ -263,13 +263,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: 'Stable',
           click: actionHandler.toggleBeta, 
-          checked: settings.useBeta.value == false
+          checked: settings?.useBeta?.value == false
         },
         {
           type: 'radio',
           label: 'Beta',
           click: actionHandler.toggleBeta, 
-          checked: settings.useBeta.value == true
+          checked: settings?.useBeta?.value == true
         }
       ]
     }
