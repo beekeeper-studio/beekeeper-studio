@@ -14,8 +14,6 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
   existingColumns: SchemaItem[]
   constructor(table: string, existingColumns: SchemaItem[]) {
     super(table)
-    console.log('~~ AAAAH ~~')
-    console.log(table)
     this.existingColumns = existingColumns
   }
   
