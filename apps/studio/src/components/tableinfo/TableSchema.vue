@@ -124,7 +124,7 @@ import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
-import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers } from '@shared/lib/tabulator/helpers'
+import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers, moveRowHandle } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -213,6 +213,7 @@ export default Vue.extend({
       return this.editCount > 0
     },
     tableColumns() {
+      const canMoveRows = !this.dialectData.disabledFeatures?.alter?.reorderColumn
       const autocompleteOptions = {
         freetext: true,
         allowEmpty: false,
@@ -223,6 +224,7 @@ export default Vue.extend({
       }
 
       const result = [
+        (canMoveRows) ? moveRowHandle() : null,
         {
           title: 'Name',
           field: 'columnName',
@@ -461,10 +463,9 @@ export default Vue.extend({
     },
     removeRow(_e, cell: CellComponent): void {
       const row = cell.getRow()
-      // TODO: check to see if the row was moved then deleted. If it was, remove it from the moved rows stuff
       const s = new Set(this.reorderedRows)
-      s.delete(row)
 
+      s.delete(row)
       this.reorderedRows = Array.from(s)
 
       if (this.newRows.includes(row)) {
@@ -509,18 +510,12 @@ export default Vue.extend({
     initializeTabulator() {
       log.info('initializing tabulator, (editable, columns)', this.editable, this.tableColumns)
       const canMoveRows = !this.dialectData.disabledFeatures?.alter?.reorderColumn
-      const tableColumns = (canMoveRows)?
-        [
-          { rowHandle:true, formatter:"handle", width:30, frozen: true, minWidth:30, resizable: false },
-          ...this.tableColumns
-        ]:
-        this.tableColumns
 
       this.initialColumns = this.tableData.slice(0)
       if (this.tabulator) this.tabulator.destroy()
       // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
-        columns: tableColumns,
+        columns: this.tableColumns,
         layout: 'fitColumns',
         movableRows: canMoveRows,
         columnDefaults: {
