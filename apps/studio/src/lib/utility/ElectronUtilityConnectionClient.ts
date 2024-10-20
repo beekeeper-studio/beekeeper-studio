@@ -254,31 +254,31 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/azureSignOut', { config });
   }
 
-  async importStepZero(table: TableOrView): Promise<any> {
-    return await Vue.prototype.$util.send('conn/importStepZero', { table });
+  async importStepZero(_table: TableOrView): Promise<any> {
+    throw new Error ('Do not use on front end')
   }
   
-  async importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
-    return await Vue.prototype.$util.send('conn/importBeginCommand', { table, importOptions });
+  async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    throw new Error ('Do not use on front end')
   }
   
-  async importTruncateCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
-    return await Vue.prototype.$util.send('conn/importTruncateCommand', { table, importOptions });
+  async importTruncateCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    throw new Error ('Do not use on front end')
   }
   
-  async importLineReadCommand(table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions): Promise<any> {
-    return await Vue.prototype.$util.send('conn/importLineReadCommand', { table, sqlString, importOptions });
+  async importLineReadCommand(_table: TableOrView, _sqlString: string | string[], _importOptions?: ImportFuncOptions): Promise<any> {
+    throw new Error ('Do not use on front end')
   }
   
-  async importCommitCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
-    return await Vue.prototype.$util.send('conn/importCommitCommand', { table, importOptions });
+  async importCommitCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    throw new Error ('Do not use on front end')
   }
   
-  async importRollbackCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
-    return await Vue.prototype.$util.send('conn/importRollbackCommand', { table, importOptions });
+  async importRollbackCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    throw new Error ('Do not use on front end')
   }
   
-  async importFinalCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
-    return await Vue.prototype.$util.send('conn/importFinalCommand', { table, importOptions });
+  async importFinalCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
+    throw new Error ('Do not use on front end')
   }
 }

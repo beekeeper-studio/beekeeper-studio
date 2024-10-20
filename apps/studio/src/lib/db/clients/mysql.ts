@@ -36,7 +36,6 @@ import {
   ExtendedTableColumn,
   FilterOptions,
   ImportFuncOptions,
-  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
