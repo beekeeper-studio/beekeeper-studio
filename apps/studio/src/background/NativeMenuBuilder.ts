@@ -15,11 +15,8 @@ export default class NativeMenuBuilder {
 
   constructor(private electron: any, settings: IGroupedUserSettings){
     this.handler = new NativeMenuActionHandlers(settings)
-    if (
-      (!settings.menuStyle ||
-      settings.menuStyle.value === 'native') &&
-      !platformInfo.isWayland
-    ) {
+    // We only support native titlebars for Mac now
+    if (platformInfo.isMac) {
       this.builder = new MenuBuilder(settings, this.handler, platformInfo)
     }
   }
