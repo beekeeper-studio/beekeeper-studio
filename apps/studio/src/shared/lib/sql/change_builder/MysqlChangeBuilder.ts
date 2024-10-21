@@ -6,12 +6,11 @@ import { TableColumn } from "@/lib/db/models";
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'mysql'
+  existingColumns: SchemaItem[]
   wrapIdentifier = MysqlData.wrapIdentifier
   wrapLiteral = MysqlData.wrapLiteral
   escapeString = MysqlData.escapeString
 
-
-  existingColumns: SchemaItem[]
   constructor(table: string, existingColumns: SchemaItem[]) {
     super(table)
     this.existingColumns = existingColumns
