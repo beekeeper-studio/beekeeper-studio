@@ -1,4 +1,4 @@
-import { buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery, buildUpdateRowOrderQueries } from "../../../../../src/lib/db/clients/utils";
+import { buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
 
 describe('Escape String', () => {
   it("should escape single quotes", () => {
