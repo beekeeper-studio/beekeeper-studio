@@ -252,7 +252,7 @@ export abstract class ChangeBuilderBase {
 
   // shouldn't be abstract because not all clients support reordering a column 
   reorderColumns(_oldColumnOrder: TableColumn[], _newColumnOrder: TableColumn[]): string {
-    throw new Error('reorderColumns must be in added to subclass')
+    throw new Error('reorderColumns must be added via a subclass')
   }
 
   dropRelations(names: string[]): string | null {
