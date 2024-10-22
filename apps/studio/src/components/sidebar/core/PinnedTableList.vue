@@ -58,7 +58,7 @@ import TableListItem from '@/components/sidebar/core/table_list/TableListItem.vu
 import Vue from 'vue'
 import TableListContextMenus from '@/mixins/TableListContextMenus'
 import SidebarSortButtons from '@/components/common/SidebarSortButtons.vue'
-import { TransportPinnedEntity } from '@/common/transport';
+import { TransportPinnedEntity } from '@/common/transport/TransportPinnedEntity'
 
 export default Vue.extend({
   components: { RoutineListItem, Draggable, TableListItem, SidebarSortButtons },

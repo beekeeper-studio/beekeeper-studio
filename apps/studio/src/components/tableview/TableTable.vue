@@ -190,7 +190,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Open detail view`"
+          v-tooltip="`Toggle Right Sidebar`"
           class="btn btn-flat"
           @click="toggleOpenDetailView()"
         >
