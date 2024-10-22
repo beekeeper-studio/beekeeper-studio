@@ -1128,6 +1128,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 

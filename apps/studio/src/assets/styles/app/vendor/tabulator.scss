@@ -97,6 +97,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
         }
       }
     }
+    &.row-moved {
+      .tabulator-cell {
+        background: rgba($theme-primary, 0.08) !important;
+      }
+    }
   }
 }
 
