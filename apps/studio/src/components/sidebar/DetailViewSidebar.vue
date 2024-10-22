@@ -12,12 +12,16 @@
         <i class="material-icons">close</i>
       </button>
       <span class="title">
-        <i class="material-icons">stars</i> Upgrade Required
+        <i class="material-icons">stars</i> JSON Viewer
       </span>
-      <span class="body">
-        View any row as JSON, plus in-line expanding foreign keys.
-        Super useful when working with wide tables or complex nested data.
-      </span>
+      <div class="body">
+        <p>
+          View rows as JSON, with in-line expanded foreign key data.
+        </p>
+        <p>
+          Super useful when working with wide tables or complex nested data.
+        </p>
+      </div>
       <div class="actions">
         <a
           href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"

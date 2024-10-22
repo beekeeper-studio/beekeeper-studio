@@ -134,7 +134,13 @@ div.sidebar.detail-view-sidebar {
     gap: 1rem;
 
     .title {
+      display: flex;
+      flex-direction: row;
       font-weight: 700;
+      align-items: center;
+      i.material-icons {
+        margin-right: 0.5rem;
+      }
     }
 
     .body {
