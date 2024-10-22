@@ -87,16 +87,21 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
 }
 
 function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+  if (_.isNil(obj)) {
+    return null
+  }
+
   return {
     ...obj,
-    value: obj.value
+    value: obj?.value
   };
 }
 
 function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
+  if (_.isNil(obj)) return null
   return {
     ...obj,
-    active: obj.active
+    active: obj?.active ?? false
   };
 }
 
