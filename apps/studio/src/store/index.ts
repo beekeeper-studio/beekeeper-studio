@@ -126,7 +126,7 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
-    openDetailView: SmartLocalStorage.getBool('openDetailView'),
+    openDetailView: SmartLocalStorage.getBool('openDetailView', true),
     tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
     showBeginTrialModal: SmartLocalStorage.getBool('showBeginTrialModal', true),
   },
