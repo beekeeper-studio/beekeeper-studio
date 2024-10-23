@@ -123,7 +123,7 @@ import {
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
 

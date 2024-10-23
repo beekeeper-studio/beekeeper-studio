@@ -1,4 +1,4 @@
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import {
   BasicDatabaseClient,

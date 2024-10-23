@@ -1,5 +1,9 @@
+import rawLog from '@bksLogger';
+rawLog.info("initializing utility");
+
+const log = rawLog.scope('UtilityProcess');
+
 import { MessagePortMain } from 'electron';
-import rawLog from 'electron-log'
 import ORMConnection from '@/common/appdb/Connection'
 import platformInfo from '@/common/platform_info';
 import { AppDbHandlers } from '@/handlers/appDbHandlers';
@@ -26,8 +30,6 @@ import * as sms from 'source-map-support'
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
-
-const log = rawLog.scope('UtilityProcess');
 
 let ormConnection: ORMConnection;
 

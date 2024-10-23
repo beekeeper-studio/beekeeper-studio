@@ -1,4 +1,4 @@
-import electronLog from "electron-log";
+import electronLog from "@bksLogger";
 import knexlib, { Knex } from "knex";
 import knexFirebirdDialect from "knex-firebird-dialect";
 import Firebird from "node-firebird";

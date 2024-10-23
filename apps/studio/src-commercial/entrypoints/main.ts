@@ -2,17 +2,13 @@
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
-import log from 'electron-log/main'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
+import log from '@/lib/log/bksLogger'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
-log.initialize();
-log.transports.console.level = 'info'
-log.transports.file.level = "info"
-log.catchErrors({ showDialog: false})
 log.info("initializing background")
 
 
@@ -60,26 +56,17 @@ async function createUtilityProcess() {
     [],
     {
       env: { ...process.env, ...args },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', 'inherit', 'inherit'],
       serviceName: 'BeekeeperUtility'
     }
   );
 
-  const utilLog = log.scope('UTILITY')
-
-  utilityProcess.stdout.on('data', (chunk) => {
-    utilLog.log(chunk.toString())
-  })
-
-  utilityProcess.stderr.on('data', (chunk) => {
-    utilLog.error(chunk.toString())
-  })
 
   utilityProcess.on('exit', async (code) => {
     // if non zero exit code
-    console.log("UTILITY DEAD", code)
+    log.log("UTILITY DEAD", code)
     if (code) {
-      utilLog.info('Utility process died, restarting')
+      log.info('Utility process died, restarting')
       utilityProcess = null;
       await createUtilityProcess();
       createAndSendPorts(false, true);

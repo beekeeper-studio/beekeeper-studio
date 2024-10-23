@@ -1,5 +1,5 @@
 import _ from "lodash";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { SqliteClient, SqliteResult } from "@/lib/db/clients/sqlite";
 import Client_Libsql from "@libsql/knex-libsql";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";

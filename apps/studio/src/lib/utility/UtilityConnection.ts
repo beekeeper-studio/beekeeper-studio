@@ -1,5 +1,5 @@
 import { uuidv4 } from "../uuid";
-import rawLog from 'electron-log/renderer';
+import rawLog from '@bksLogger';
 import _ from 'lodash';
 
 const log = rawLog.scope('renderer/utilityconnection');
@@ -37,7 +37,6 @@ export class UtilityConnection {
     log.info('RECEIVED PORT IN UtilityConnection: ', port);
     this.port.onmessage = (msg) => {
       const { data: msgData } = msg;
-      log.info('RECEIVED MESSAGE: ', msgData.type, msgData)
 
       if (msgData.type === 'error') {
         // handle errors
@@ -66,6 +65,8 @@ export class UtilityConnection {
         log.info('HANDLING REQUEST WITH LISTENER (type, id): ', type, id);
         const { input } = msgData;
         listener(input);
+      } else {
+        log.info('RECEIVED UNRECOGNIZED MESSAGE: ', msgData.type, msgData)
       }
     }
 

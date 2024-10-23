@@ -6,7 +6,7 @@ import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
-import logRaw from 'electron-log'
+import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions } from "../models";
@@ -31,7 +31,6 @@ const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
 
 const log = logRaw.scope('postgresql')
-const logger = () => log
 
 const knex = knexlib({ client: 'pg' })
 
@@ -142,7 +141,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     })
 
 
-    logger().debug('connected');
+    log.debug('connected');
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();

@@ -3,7 +3,7 @@ import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 import { ipcMain, BrowserWindow } from 'electron'
 import {AppEvent} from '../common/AppEvent'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 
 const log = rawLog.scope('NativeMenuBuilder')

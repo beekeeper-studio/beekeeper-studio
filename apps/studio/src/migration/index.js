@@ -52,7 +52,7 @@ import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 
 
 const logger = rawLog.scope('migrations');

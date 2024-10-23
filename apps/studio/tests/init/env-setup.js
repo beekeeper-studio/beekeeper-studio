@@ -10,7 +10,7 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { TextDecoder, TextEncoder } = require('util')
-const rawLog = require('electron-log/main')
+const rawLog = require('@bksLogger')
 
 rawLog.initialize()
 rawLog.transports.console.level = 'debug'

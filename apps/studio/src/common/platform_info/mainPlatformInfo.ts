@@ -1,4 +1,3 @@
-
 import yargs from 'yargs-parser'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'

@@ -1,4 +1,4 @@
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { CellComponent } from 'tabulator-tables';
 
 const log = rawLog.scope('fk_click');
