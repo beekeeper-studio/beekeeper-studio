@@ -31,6 +31,12 @@
               >
                 <i class="clear material-icons">cancel</i>
               </x-button>
+              <x-button
+                :title="hideRecentConnections ? 'Show Recent Connections List' : 'Hide Recent Connections List'"
+                @click="toggleRecentConnectionsList"
+              >
+                <i class="clear material-icons">schedule</i>
+              </x-button>
             </x-buttons>
           </div>
         </div>
@@ -198,7 +204,7 @@
         <div
           class="list recent-connection-list expand"
           ref="recentConnectionList"
-          v-show="!connFilter"
+          v-show="!connFilter && !hideRecentConnections"
         >
           <div class="list-group">
             <div class="list-heading">
@@ -238,6 +244,7 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -253,7 +260,8 @@ export default {
       connectionType: "Type",
     },
     sort: { field: 'name', order: 'asc' },
-    sizes: [33, 33, 33]
+    sizes: [33, 33, 33],
+    hideRecentConnections: false
   }),
   watch: {
     async sort() {
@@ -346,6 +354,14 @@ export default {
     },
   },
   async mounted() {
+   const lastSavedSplitSizes = SmartLocalStorage.getItem("connectionSidebarSplitSizes")
+   if(lastSavedSplitSizes){
+      this.sizes = JSON.parse(lastSavedSplitSizes)
+    }
+    const hideRecentConnections = SmartLocalStorage.getItem("hideRecentConnections")
+    if(hideRecentConnections){
+      this.hideRecentConnections = JSON.parse(hideRecentConnections)
+    }
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
@@ -353,10 +369,14 @@ export default {
     ])
     this.sort.field = field
     this.sort.order = order
-  },
+    },
   methods: {
     clearFilter() {
       this.connFilter = null;
+    },
+    toggleRecentConnectionsList(){
+       SmartLocalStorage.addItem("hideRecentConnections", !this.hideRecentConnections)
+       this.hideRecentConnections = !this.hideRecentConnections
     },
     buildSplit() {
       if (this.split) this.split.destroy()
@@ -370,7 +390,11 @@ export default {
           'flex-basis': `calc(${size}%)`
         }),
         direction: 'vertical',
-        sizes: this.sizes
+        sizes: this.sizes,
+        onDragEnd: () => {
+           const splitSizes = this.split.getSizes()
+           SmartLocalStorage.addItem("connectionSidebarSplitSizes", splitSizes)
+        }
       })
     },
     importFromLocal() {
