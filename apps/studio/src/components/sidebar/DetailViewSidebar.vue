@@ -4,39 +4,7 @@
     ref="sidebar"
     v-show="!hidden"
   >
-    <div class="community-overlay" v-if="$store.getters.isCommunity">
-      <button
-        class="close-btn btn btn-fab"
-        @click="close"
-      >
-        <i class="material-icons">close</i>
-      </button>
-      <span class="title">
-        <i class="material-icons">stars</i> JSON Viewer
-      </span>
-      <div class="body">
-        <p>
-          View rows as JSON, with in-line expanded foreign key data.
-        </p>
-        <p>
-          Super useful when working with wide tables or complex nested data.
-        </p>
-      </div>
-      <div class="actions">
-        <a
-          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-          class="btn btn-flat"
-        >
-          Learn more
-        </a>
-        <a
-          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-          class="btn btn-primary"
-        >
-          Upgrade
-        </a>
-      </div>
-    </div>
+    <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" @close="close" />
     <div class="header">
       <div class="header-group">
         <span class="title sub">{{ sidebarTitle }}</span>
@@ -123,6 +91,7 @@ import {
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
+import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
 import rawLog from "electron-log";
 import _ from "lodash";
 import globals from '@/common/globals'
@@ -130,7 +99,7 @@ import globals from '@/common/globals'
 const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
-  components: { TextEditor },
+  components: { TextEditor, DetailViewSidebarUpsell },
   props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {
