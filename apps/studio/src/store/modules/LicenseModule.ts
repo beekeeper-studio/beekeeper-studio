@@ -91,6 +91,7 @@ export const LicenseModule: Module<State, RootState>  = {
     async add(context, { email, key, trial }) {
       if (trial) {
         await Vue.prototype.$util.send('license/createTrialLicense')
+        await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
       } else {
         await Vue.prototype.$util.send('license/add', { email, key })
       }

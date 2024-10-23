@@ -3,11 +3,11 @@
   <!-- For example - can they start a trial? -->
   <div class="upsell-buttons">
     <div class="actions">
-      <a v-if="trialAvailable" @click.prevent="startTrial">Free Trial</a>
+      <a v-if="trialAvailable" class="btn btn-flat" @click.prevent="startTrial">Free Trial</a>
       <a v-else :href="learnUrl" class="btn btn-flat">Learn more</a>
       <a :href="buyUrl" class="btn btn-primary">Buy License</a>
     </div>
-    <p class="help text-right text-muted small">
+    <p class="help text-right text-muted small" v-if="trialExpired">
       Your free trial ended on {{ trialEndDate }}
     </p>
   </div>
@@ -39,8 +39,12 @@ export default {
       return this.trialLicense?.validUntil?.toDateString()
     },
     // if we've never started a trail, it's available!
-    trailAvailable() {
+    trialAvailable() {
       return !this.trialLicense
+    },
+    trialExpired() {
+      if (!this.trialLicense) return false
+      return this.trialLicense.validUntil > new Date()
     }
   },
   methods: {
