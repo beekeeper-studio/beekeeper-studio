@@ -3,7 +3,7 @@ import * as path from 'path'
 import { readFile } from 'fs'
 import * as fs from 'fs'
 import { URL } from 'url'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 
 const log = rawLog.scope('app:// ProtocolBuilder')

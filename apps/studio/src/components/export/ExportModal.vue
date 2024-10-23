@@ -169,7 +169,7 @@
 <script>
 import dateFormat from 'dateformat'
 import { mapMutations, mapGetters } from "vuex"
-import rawlog from 'electron-log'
+import rawlog from '@bksLogger'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
 import FilePicker from '../common/form/FilePicker.vue'
 import { AppEvent } from '@/common/AppEvent'

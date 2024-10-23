@@ -9,7 +9,7 @@ import Client from 'knex/lib/client';
 import { BigQueryClient as BigQueryKnexClient } from '@shared/lib/knex-bigquery';
 import { BigQueryChangeBuilder } from "@shared/lib/sql/change_builder/BigQueryChangeBuilder";
 import platformInfo from "@/common/platform_info";
-import rawLog from 'electron-log';
+import rawLog from '@bksLogger';
 import { applyChangesSql, buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
@@ -18,7 +18,6 @@ import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
-const logger = () => log
 
 interface BigQueryResult {
   data: any,
@@ -83,7 +82,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // For testing purposes
     this.config.apiEndpoint = this.bigQueryEndpoint(this.server.config)
 
-    logger().debug("configDatabase config: ", this.config)
+    log.debug("configDatabase config: ", this.config)
 
     
     this.knex = knexlib({
@@ -181,7 +180,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }  
 
   async query(queryText: string, options: any = {}): Promise<CancelableQuery> {
-    logger().debug('bigQuery query: ' + queryText);
+    log.debug('bigQuery query: ' + queryText);
     let job = null;
     const cancelable = createCancelablePromise({
       ...errors.CANCELED_BY_USER,
@@ -195,8 +194,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         // Get a query job first
         const jobOptions = { query: queryText, ...options };
         [job] = await this.client.createQueryJob(jobOptions)
-        logger().debug("created job: ", job.id)
-        console.log('JOB METADATA: ', job.metadata)
+        log.debug("created job: ", job.id)
 
         if (options.dryRun) {
           const metadata = job.metadata;
@@ -204,7 +202,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         }
 
         try {
-          logger().debug("wait for executeQuery job.id: ", job.id)
+          log.debug("wait for executeQuery job.id: ", job.id)
           const data = await Promise.race([
             cancelable.wait(),
             this.driverExecuteSingle(queryText, job),
@@ -221,7 +219,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         }
         try {
           const [jobCancelResponse] = await job.cancel()
-          logger().debug("query jobCancelResponse: ", jobCancelResponse)
+          log.debug("query jobCancelResponse: ", jobCancelResponse)
           cancelable.cancel()
         } finally {
           cancelable.discard()
@@ -273,7 +271,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         await this.deleteRows(changes.deletes);
       }
     } catch (ex) {
-      logger().error("Query Exception: ", ex);
+      log.error("Query Exception: ", ex);
 
       throw ex;
     }
@@ -286,7 +284,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async getTableProperties(table: string, _schema?: string): Promise<TableProperties> {
-    logger().debug("getTableProperties: ", table)
+    log.debug("getTableProperties: ", table)
 
     const [
       length,
@@ -486,7 +484,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // Create a new dataset/database
     const options = {}
     const [dataset] = await this.client.createDataset(databaseName, options);
-    logger().debug(`Dataset ${dataset.id} created.`);
+    log.debug(`Dataset ${dataset.id} created.`);
   }
 
   async createDatabaseSQL(): Promise<string> {
@@ -518,7 +516,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const [tables] = await this.client.dataset(db).getTables();
     let data = tables.map((table) => ({ name: table.id, entityType: table.metadata.type, metadata: table.metadata, table: table }));
     data = data.filter((table) => table.metadata.type === type);
-    logger().debug(`listTablesOrViews for type:${type} data: `, data);
+    log.debug(`listTablesOrViews for type:${type} data: `, data);
     return data;
   }
   
@@ -560,7 +558,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const isSelect = Array.isArray(data)
     const rows = this.parseRowData(data) || []
     const fields = Object.keys(rows[0] || {}).map((name) => ({ name, id: name }))
-    logger().debug("parseRowQueryResult data length: ", data.length)
+    log.debug("parseRowQueryResult data length: ", data.length)
 
     return {
       command: isSelect ? 'SELECT' : 'UNKNOWN',

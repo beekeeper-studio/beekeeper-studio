@@ -2,7 +2,7 @@ import { ConnectionsController } from '@/lib/cloud/controllers/ConnectionsContro
 import { AxiosInstance, AxiosRequestTransformer, AxiosResponseTransformer } from 'axios'
 import axios from 'axios'
 import _ from 'lodash';
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import axiosRetry from 'axios-retry'
 
 import { res } from './ClientHelpers';

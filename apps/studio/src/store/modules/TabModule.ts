@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { Module } from "vuex";
 import { State as RootState } from '../index'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { TransportOpenTab, duplicate, matches } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
 

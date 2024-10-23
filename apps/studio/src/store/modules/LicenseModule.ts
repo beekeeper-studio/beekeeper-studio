@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Module } from "vuex";
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { State as RootState } from '../index'
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { TransportLicenseKey } from '@/common/transport';
@@ -30,11 +30,15 @@ export const LicenseModule: Module<State, RootState>  = {
     now: new Date(),
     status: {
       edition: "community",
-      condition: "initial",
+      condition: ["initial"],
       isUltimate: false,
       isCommunity: true,
       isTrial: false,
-    },
+      isValidDateExpired: false,
+      isSupportDateExpired: false,
+      license: null,
+      maxAllowedVersion: null
+    } as LicenseStatus,
   }),
   getters: {
     realLicenses(state) {

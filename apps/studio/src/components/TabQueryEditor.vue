@@ -321,7 +321,7 @@
   import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
-  import rawlog from 'electron-log'
+  import rawlog from '@bksLogger'
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'

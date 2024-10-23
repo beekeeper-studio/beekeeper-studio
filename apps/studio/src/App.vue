@@ -74,7 +74,7 @@ import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExp
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('app.vue')
 

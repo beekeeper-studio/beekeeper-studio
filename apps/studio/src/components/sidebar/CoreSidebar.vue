@@ -53,7 +53,7 @@
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
 
   import { mapState, mapGetters } from 'vuex'
-  import rawLog from 'electron-log'
+  import rawLog from '@bksLogger'
 
   const log = rawLog.scope('core-sidebar')
 

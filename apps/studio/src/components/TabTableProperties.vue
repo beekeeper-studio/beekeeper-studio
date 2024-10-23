@@ -138,7 +138,7 @@ import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import { AppEvent } from '@/common/AppEvent'
 import { mapState } from 'vuex'
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('TabTableProperties')
 export default {

@@ -1,7 +1,7 @@
 import { HasId } from "@/common/interfaces/IGeneric";
 import { having } from "@/common/utils";
 import _ from "lodash";
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('StoreHelpers')
 export type ClientError = Error | string | Error[] | string[] | null

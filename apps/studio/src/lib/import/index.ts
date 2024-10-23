@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient';
 import { TableOrView } from '../db/models';
 const log = rawLog.scope('import-file')

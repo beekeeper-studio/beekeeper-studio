@@ -1,5 +1,5 @@
 import { BeeCursor } from "../../models";
-import rawLog from 'electron-log';
+import rawLog from '@bksLogger';
 import { BigQuery, GetRowsOptions, Job, QueryResultsOptions, RowMetadata } from "@google-cloud/bigquery";
 import { waitFor } from "../base/wait";
 
