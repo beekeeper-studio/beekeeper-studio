@@ -149,12 +149,15 @@ export default {
       this.editor?.setOption("lineWrapping", this.lineWrapping);
     },
     async focus() {
-      if (this.focus && this.editor) {
+      if (!this.editor) return
+      if (this.focus) {
         this.editor.focus();
         await this.$nextTick();
         // this fixes the editor not showing because it doesn't think it's dom element is in view.
         // its a hit and miss error
         this.editor.refresh();
+      } else {
+        this.editor.display.input.blur();
       }
     },
     removeJsonRootBrackets() {
@@ -529,6 +532,9 @@ export default {
   },
   mounted() {
     this.initialize();
+    if (this.focus) {
+      this.editor.focus();
+    }
     window.addEventListener('focus', this.focusEditor);
     window.addEventListener('blur', this.handleBlur);
   },

@@ -60,7 +60,7 @@
       },
       focus() {
         if (!this.focus) return
-        this.tabulator.rowManager.getElement().focus()
+        this.triggerFocus()
         this.scrollToRangeIfOutOfView()
       },
     },
@@ -184,6 +184,13 @@
     },
     async mounted() {
       this.initializeTabulator()
+      if (this.focus) {
+        const onTableBuilt = () => {
+          this.triggerFocus()
+          this.tabulator.off('tableBuilt', onTableBuilt)
+        }
+        this.tabulator.on('tableBuilt', onTableBuilt)
+      }
     },
     methods: {
       initializeTabulator() {
@@ -306,7 +313,12 @@
             column.getComponent().scrollTo(undefined, false);
           }
         }
-      }
+      },
+      triggerFocus() {
+        setTimeout(() => {
+          this.tabulator.rowManager.getElement().focus();
+        }, 0)
+      },
     }
 	}
 </script>
