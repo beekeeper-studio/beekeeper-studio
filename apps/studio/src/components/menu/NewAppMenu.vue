@@ -35,7 +35,13 @@
               @mouseover.prevent="setHover(item)"
               :class="hoverClass(item)"
             >
-              <span class="label">{{ item.label }}</span>
+              <span class="label">
+                <span 
+                  class="material-icons" 
+                  v-if="item.checked"
+                >done</span>
+                <span>{{ item.label }}</span>
+              </span>
               <span class="shortcut">{{ shortcutText(item) }}</span>
             </a>
             <!-- Second Level Menu, eg Dark Theme, Light Theme -->
@@ -255,8 +261,8 @@ export default {
       // Empty on purpose
     }
   },
-  mounted() {
-    this.menuBuilder = new MenuBuilder(this.$store.state.settings.settings, this.actionHandler, this.$config)
+  async mounted() {
+    this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
     this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
     window.addEventListener('keydown', this.maybeCaptureKeydown, false)

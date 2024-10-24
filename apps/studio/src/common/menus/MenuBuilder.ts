@@ -18,14 +18,21 @@ export default class extends DefaultMenu {
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
         this.menuItems.sidebarToggle,
-        this.menuItems.minimalModeToggle,
+        // Disable this for now in favor of #2380
+        // this.menuItems.minimalModeToggle,
       ]
     }
-    if (!this.platformInfo.isMac)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
-    if (this.platformInfo.isDevelopment)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
     return result
+  }
+
+  devMenu() {
+    return {
+      label: 'Dev',
+      submenu: [
+        this.menuItems.reload,
+        this.menuItems.licenseState,
+      ],
+    }
   }
 
   buildTemplate(): Electron.MenuItemConstructorOptions[] {
@@ -58,15 +65,14 @@ export default class extends DefaultMenu {
     }
 
     const windowMenu: Electron.MenuItemConstructorOptions[] = []
-    console.log("Menu style", this.settings.menuStyle)
-    if ((this.platformInfo.isMac || this.settings.menuStyle.value === 'native') && !this.platformInfo.isWayland) {
+    if (this.platformInfo.isMac) {
       windowMenu.push({
         label: 'Window',
         role: 'windowMenu'
       })
     }
 
-    return [
+    const menu = [
       ...appMenu,
       fileMenu,
       {
@@ -82,11 +88,17 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
+        label: "Ultimate",
+        submenu: [
+          this.menuItems.enterLicense,
+        ]
+      },
+      {
         label: "Tools",
         submenu: [
-          this.menuItems.upgradeModal("Data Export"),
-          this.menuItems.upgradeModal("Create a Backup"),
-          this.menuItems.upgradeModal("Restore a Backup")
+          this.menuItems.backupDatabase,
+          this.menuItems.restoreDatabase,
+          this.menuItems.exportTables
         ]
       },
       ...windowMenu,
@@ -98,8 +110,15 @@ export default class extends DefaultMenu {
           this.menuItems.addBeekeeper,
           this.menuItems.devtools,
           this.menuItems.about,
+          this.menuItems.toggleBeta
         ]
       }
     ]
+
+    if (this.platformInfo.isDevelopment) {
+      menu.push(this.devMenu())
+    }
+
+    return menu
   }
 }

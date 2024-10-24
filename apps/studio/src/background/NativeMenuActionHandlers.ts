@@ -7,7 +7,8 @@ import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
-import Vue from 'vue';
+import { DevLicenseState } from '@/lib/license';
+import { setAllowBeta } from './update_manager'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -87,7 +88,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     shell.openExternal("https://docs.beekeeperstudio.io/")
   }
 
-  checkForUpdates(menuItem: Electron.MenuItem, win: Electron.BrowserWindow): void {
+  checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {
     autoUpdater.checkForUpdates()
   }
 
@@ -133,25 +134,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
-    const existing = await Vue.prototype.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
-    if (!existing) {
-      const nu = {} as any;
-      nu.connectionType = 'sqlite'
-      nu.defaultDatabase = platformInfo.appDbPath
-      nu.name = "Beekeeper's Database"
-      nu.labelColor = 'orange'
-      await Vue.prototype.$util.send('appdb/saved/save', { obj: nu });
-    }
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
-  }
-
-  switchMenuStyle = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.menuStyle.value = label.toLowerCase()
-    await this.settings.menuStyle.save()
-    getActiveWindows().forEach( window => {
-      window.send(AppEvent.menuStyleChanged)
-    })
   }
 
   toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
@@ -188,5 +171,21 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     getActiveWindows().forEach( window => {
       window.send(AppEvent.settingsChanged)
     })
+  }
+
+  switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.switchLicenseState, state)
+  }
+
+  toggleBeta = async (menuItem: Electron.MenuItem): Promise<void> => {
+    const label = _.isString(menuItem) ? menuItem : menuItem.label
+    const beta = label.toLowerCase() == 'beta';
+    this.settings.useBeta.userValue = beta;
+    await this.settings.useBeta.save()
+    getActiveWindows().forEach( window => {
+      window.send(AppEvent.settingsChanged)
+    })
+    setAllowBeta(this.settings.useBeta.value as boolean);
+    autoUpdater.checkForUpdates();
   }
 }

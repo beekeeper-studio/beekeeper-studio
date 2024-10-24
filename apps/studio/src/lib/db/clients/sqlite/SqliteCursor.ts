@@ -6,8 +6,7 @@ export class SqliteCursor extends BeeCursor {
   protected database: Database
   protected statement: Statement
   protected iterator?: IterableIterator<any>;
-
-  private usingExternalConnection = false;
+  protected usingExternalConnection = false;
 
   constructor(
     database: string | Database,
@@ -51,6 +50,7 @@ export class SqliteCursor extends BeeCursor {
     return results
   }
   async cancel(): Promise<void> {
+    this.iterator?.return()
     if(!this.usingExternalConnection) {
       this.database.close()
     }

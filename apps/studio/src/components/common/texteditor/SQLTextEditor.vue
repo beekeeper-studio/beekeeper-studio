@@ -11,6 +11,7 @@
     :context-menu-options="handleContextMenuOptions"
     :forced-value="dataForcedValue"
     :plugins="plugins"
+    :auto-focus="true"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
     @update:cursorIndex="$emit('update:cursorIndex', $event)"
@@ -36,7 +37,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapGetters(['defaultSchema', 'dialectData']),
+    ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
     hint() {
       // @ts-expect-error not fully typed
@@ -82,11 +83,16 @@ export default Vue.extend({
       };
     },
     plugins() {
-      return [
+      const editorPlugins = [
         plugins.autoquote,
         plugins.autoComplete,
         plugins.autoRemoveQueryQuotes(this.connectionType),
       ];
+
+      if (this.isUltimate) {
+        editorPlugins.push(plugins.queryMagic(() => this.defaultSchema, () => this.tables))
+      }
+      return editorPlugins;
     },
   },
   watch: {

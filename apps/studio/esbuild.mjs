@@ -76,7 +76,7 @@ const commonArgs = {
 
   const mainArgs = {
     ...commonArgs,
-    entryPoints: ['src/background.ts', 'src/utility.ts', 'src/preload.ts'],
+    entryPoints: ['src-commercial/entrypoints/main.ts', 'src-commercial/entrypoints/utility.ts', 'src-commercial/entrypoints/preload.ts'],
     plugins: [getElectronPlugin("Main")]
   }
 

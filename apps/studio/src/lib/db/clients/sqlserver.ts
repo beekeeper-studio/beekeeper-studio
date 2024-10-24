@@ -28,7 +28,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions, DatabaseEntity } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
@@ -515,6 +515,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     throw new Error("Method not implemented.");
   }
 
+  // ONLY USED FOR IMPORT
+  protected async runWithConnection(child: (connection: Request) => Promise<any>):  Promise<any> {
+    return await child(null);
+  }
+
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
     this.logger().info('RUNNING', q, options);
 
@@ -865,23 +870,61 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query);
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
-    const { name, schema } = table
+  async hasIdentityColumn(table: TableOrView): Promise<boolean> {
+    const sql = `
+      SELECT
+        c.name AS ColumnName,
+        t.name AS TableName,
+        s.name AS SchemaName,
+        c.is_identity
+      FROM sys.columns c
+      JOIN sys.tables t ON c.object_id = t.object_id
+      JOIN sys.schemas s ON t.schema_id = s.schema_id
+      WHERE t.name = ${this.wrapValue(table.name)}
+      AND s.name = ${this.wrapValue(table.schema)}
+      AND c.is_identity = 1;
+    `;
+
+    const { data } = await this.driverExecuteSingle(sql);
+    return data.recordset && data.recordset.length > 0;
+  }
+
+  async importStepZero(table: TableOrView): Promise<any> {
     const transaction = new sql.Transaction(this.pool)
-    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-    let request
 
     return {
-      step0: async(): Promise<null> => {
-        request = new sql.Request(transaction)
-        return null
-      },
-      beginCommand: (_executeOptions: any): Promise<any> => transaction.begin(),
-      truncateCommand: (executeOptions: any): Promise<any> => request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sqlString: string, executeOptions: any): Promise<any> => request.query(sqlString, executeOptions),
-      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
-      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback()
+      transaction,
+      request: new sql.Request(transaction),
+      hasIdentityColumn: await this.hasIdentityColumn(table)
     }
+  }
+
+  async importBeginCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    await clientExtras.transaction.begin()
+  }
+
+  async importTruncateCommand (table: TableOrView, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+    await clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
+  }
+
+  async importLineReadCommand (table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+    const identOn = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} ON;` : '';
+
+    const identOff = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} OFF;` : '';
+    const query = `${identOn}${sqlString};${identOff}`;
+    return await executeOptions.request.query(query, executeOptions)
+  }
+
+  async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return await clientExtras.transaction.commit()
+  }
+
+  async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
+    return await clientExtras.transaction.rollback()
   }
 
   /* helper functions and settings below! */
@@ -894,10 +937,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     this.pool.on('error', (err) => {
       if (err instanceof ConnectionError) {
-        log.log('IS INSTANCE OF')
+        log.error('Pool ConnectionError', err.message)
       }
       log.error("Pool event: connection error:", err.name, err.message);
     });
+
 
     this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
     this.version = await this.getVersion()
@@ -954,9 +998,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   wrapIdentifier(value: string) {
-    if (_.isString(value)) {
-      return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
-    } return value
+    return SqlServerData.wrapIdentifier(value)
   }
 
   getBuilder(table: string, schema?: string) {

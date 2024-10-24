@@ -1,0 +1,111 @@
+
+.import-export {
+  &__container {
+    position: relative;
+    overflow-y: scroll;
+    max-height: 90vh;
+    padding: 0 2rem;
+    margin-bottom: $statusbar-height;
+  }
+
+  &__footer {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+
+    & .portal-stepper-buttons {
+      width: 70%;
+    }
+  }
+}
+
+.import-export-wrapper {
+  @include small-wrap;
+  padding: 0 1.5rem 3rem;
+  overflow: hidden;
+  overflow-y: auto;
+
+  margin: 2rem auto 0 auto;
+  .verify {
+    margin-top: 0;
+  }
+  .file-list {
+    padding-left: 0;
+    list-style-type: none;
+
+    li {
+      padding: 1rem;
+      margin: 0.75rem 0 0.75rem 0;
+      background: lighten($theme-bg, 2%);
+      border-radius: 0.5rem;
+      display: flex;
+      flex-direction: column;
+
+      .file-status {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        // margin-bottom: 0.5rem;
+
+        .status {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+
+          .with-message {
+            margin-left: 0.25rem;
+          }
+
+          &.complete {
+            color: $brand-success;
+          }
+
+          &.failed {
+            color: $brand-danger;
+          }
+
+          &.warning {
+            color: $brand-warning;
+            margin-left: 0.5rem;
+          }
+
+          &.pending {
+            color: $brand-default;
+          }
+        }
+
+        button {
+          background: inherit;
+          border: none;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          padding: 0.5rem;
+
+          &:hover {
+            background: lighten($theme-bg, 6%);
+          }
+        }
+      }
+
+      .progress .progress-bg {
+        margin-top: 0.5rem;
+        height: 0.65rem;
+        background: lighten($theme-bg, 6%);
+        border-radius: 0.35rem;
+        position: relative;
+        .progress-fill {
+          position: absolute;
+          border-radius: 0.35rem;
+          top: 0;
+          left: 0;
+          height: 100%;
+          background: $text-dark;
+          transition: width 0.2s ease-in;
+        }
+      }
+    }
+    span {
+      display: inline-block;
+    }
+  }
+}

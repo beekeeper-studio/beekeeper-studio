@@ -44,7 +44,7 @@
                 <li>Cloud sync</li>
                 <li>Read-only mode</li>
                 <li>SQLite Extensions</li>
-                <li>Import from CSV</li>
+                <li>Import from file</li>
               </ul>
             </div>
           </div>
@@ -67,6 +67,7 @@
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import Vue from 'vue'
+
 export default Vue.extend({
   data() {
     return {
@@ -75,7 +76,7 @@ export default Vue.extend({
   },
   methods: {
     showModal(message) {
-      if (this.$config.isCommunity) {
+      if (this.$store.getters.isCommunity) {
         this.message = message
         this.$modal.show('upgrade-modal')
       }

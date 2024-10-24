@@ -35,7 +35,7 @@ import {
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
-  ImportScriptFunctions,
+  ImportFuncOptions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -590,17 +590,21 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   ): Promise<StreamResults> {
     const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
     const columns = await this.listTableColumns(table);
-    const rowCount = await this.getTableLength(table);
+    const rowCount = await this.driverExecuteSingle(qs.countQuery);
     // TODO: DEBUG HERE
     const { query, params } = qs;
 
     return {
-      totalRows: rowCount,
+      totalRows: Number(rowCount.data[0].total),
       columns,
       cursor: new MysqlCursor(this.conn, query, params, chunkSize),
     };
   }
 
+  /**
+   * Get quick and approximate record count. For slow and precise count, use
+   * `SELECT COUNT(*)`.
+   **/
   async getTableLength(table: string, _schema?: string): Promise<number> {
     const tableCheck =
       "SELECT TABLE_TYPE as tt FROM INFORMATION_SCHEMA.TABLES where table_schema = database() and TABLE_NAME = ?";
@@ -1316,19 +1320,25 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return defaultValue;
   }
 
-  getImportScripts(table: TableOrView): ImportScriptFunctions {
+  async importBeginCommand(_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('START TRANSACTION;', executeOptions)
+  }
+
+  async importTruncateCommand (table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     const { name } = table
-    
-    return {
-      beginCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('START TRANSACTION;', executeOptions),
-      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
-      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
-      rollbackCommand: (executeOptions: any): Promise<any> => {
-        console.log('in rollback')
-        return this.rawExecuteQuery('ROLLBACK;', executeOptions)
-      }
-    }
+    return this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(name)};`, executeOptions)
+  }
+
+  async importLineReadCommand (_table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery(sqlString, executeOptions)
+  }
+
+  async importCommitCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('COMMIT;', executeOptions)
+  }
+
+  async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
+    return this.rawExecuteQuery('ROLLBACK;', executeOptions)
   }
 }
 

@@ -47,7 +47,9 @@ export class UtilityConnection {
         if (handler) {
           log.error('GOT ERROR BACK FOR REQUEST ID: ', id);
           this.replyHandlers.delete(id);
-          handler.reject(`${error} ${stack ? 'Stack: ' + stack : ''}`);
+          const err = new Error(error);
+          err.stack = stack;
+          handler.reject(err);
         }
       } else if (msgData.type === 'reply') {
         const { id, data } = msgData;

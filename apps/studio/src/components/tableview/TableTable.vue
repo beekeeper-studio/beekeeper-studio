@@ -26,9 +26,24 @@
         No Data
       </div>
       <div
-        ref="table"
-        class="spreadsheet-table"
-      />
+        class="table-view-wrapper"
+        ref="tableViewWrapper"
+      >
+        <div
+          ref="table"
+          class="spreadsheet-table"
+        />
+        <detail-view-sidebar
+          :title="detailViewTitle"
+          :value="selectedRowData"
+          :data-id="selectedRowIndex"
+          :hidden="!openDetailView"
+          :expandable-paths="expandablePaths"
+          :reinitialize="reinitializeDetailView"
+          @expandPath="expandForeignKey"
+          @close="toggleOpenDetailView(false)"
+        />
+      </div>
       <ColumnFilterModal
         :modal-name="columnFilterModalName"
         :columns-with-filter-and-order="columnsWithFilterAndOrder"
@@ -175,6 +190,13 @@
 
         <!-- Actions -->
         <x-button
+          v-tooltip="`Toggle Right Sidebar`"
+          class="btn btn-flat"
+          @click="toggleOpenDetailView()"
+        >
+          <i class="material-icons material-icons-round">view_sidebar</i>
+        </x-button>
+        <x-button
           v-tooltip="`Refresh Table (${ctrlOrCmd('r')} or F5)`"
           class="btn btn-flat"
           @click="refreshTable"
@@ -291,24 +313,28 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters, mapState, mapActions } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
-import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
+import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
+import Split from 'split.js'
+import { SmartLocalStorage } from '@/common/LocalStorage'
+import { ExpandablePath } from '@/lib/data/detail_view'
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -351,11 +377,18 @@ export default Vue.extend({
 
       /** This is true when we switch to minimal mode while TableTable is not active */
       enabledMinimalModeWhileInactive: false,
+
+      selectedRowIndex: null,
+      selectedRowData: {},
+      expandablePaths: {},
+      split: null,
+      detailViewTitle: undefined,
+      reinitializeDetailView: 0,
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
-    ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'openDetailView']),
     isEmpty() {
       return _.isEmpty(this.data);
     },
@@ -496,6 +529,7 @@ export default Vue.extend({
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
             { separator: true },
+            this.quickFilterMenuItem(cell),
             ...copyActionsMenu({
               range,
               table: this.table.name,
@@ -508,7 +542,6 @@ export default Vue.extend({
           ]
 
           if (keyDatas?.length > 0) {
-            menu.push({ separator: true })
             keyDatas.forEach(keyData => {
               menu.push({
                 label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
@@ -704,6 +737,9 @@ export default Vue.extend({
   },
 
   watch: {
+    filters() {
+      this.tabulator?.setData()
+    },
     allColumnsSelected() {
       this.resetPendingChanges()
     },
@@ -716,6 +752,14 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
+      this.updateSplit()
+
+      if (this.active) {
+        this.reinitializeDetailView++
+        const splitSizes = this.$store.state.tableTableSplitSizes
+        this.split?.setSizes(splitSizes)
+      }
+
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -807,7 +851,7 @@ export default Vue.extend({
     },
     copySelection() {
       if (!this.focusingTable()) return
-      copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
+      copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
     },
     pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
@@ -876,6 +920,7 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
+        debugEventsExternal: true,
         persistenceID: this.tableId,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
@@ -937,6 +982,13 @@ export default Vue.extend({
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
+      this.tabulator.on("cellMouseUp", this.updateDetailViewByFirstRange);
+      this.tabulator.on("headerMouseUp", this.updateDetailViewByFirstRange);
+      this.tabulator.on("keyNavigate", this.updateDetailViewByFirstRange);
+      // Tabulator range is reset after data is processed
+      this.tabulator.on("dataProcessed", this.updateDetailViewByFirstRange);
+
+      this.updateSplit()
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
@@ -960,6 +1012,14 @@ export default Vue.extend({
           },
           disabled: !this.editable,
         },
+        { separator: true },
+        {
+          label: createMenuItem('See details'),
+          action: () => {
+            this.updateDetailView(range)
+            this.toggleOpenDetailView(true)
+          },
+        },
       ]
     },
     setAsNullMenuItem(range: RangeComponent) {
@@ -982,10 +1042,30 @@ export default Vue.extend({
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       if (this.isEditorMenuDisabled(cell)) return
-      // FIXME maybe we can avoid calling child methods directly like this? 
-      // it should be done by calling an event using this.$modal.show(modalName) 
+      // FIXME maybe we can avoid calling child methods directly like this?
+      // it should be done by calling an event using this.$modal.show(modalName)
       // or this.$trigger(AppEvent.something) if possible
       this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+    },
+    quickFilterMenuItem(cell: CellComponent) {
+      const me = this
+      const symbols = [
+        '=', '!=', '<', '<=', '>', '>='
+      ]
+      return {
+        label: createMenuItem("Quick Filter"),
+        disabled: _.isNil(cell.getValue()),
+        menu: symbols.map((s) => {
+          return {
+            label: createMenuItem(`${cell.getField()} ${s} value`),
+            action: async (e, cell: CellComponent) => {
+              const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
+              this.tableFilters = newFilter
+              this.triggerFilter(this.tableFilters)
+            }
+          }
+        })
+      }
     },
     openEditorMenu(cell: CellComponent) {
       return {
@@ -1296,7 +1376,7 @@ export default Vue.extend({
         const changes = {
           inserts: this.buildPendingInserts(),
           updates: this.buildPendingUpdates(),
-          deletes: this.builudPendingDeletes()
+          deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
@@ -1450,7 +1530,6 @@ export default Vue.extend({
         return;
       }
       this.filters = filters
-      this.tabulator?.setData()
     },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
@@ -1587,6 +1666,47 @@ export default Vue.extend({
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
+    async toggleOpenDetailView(open?: boolean) {
+      if (typeof open === 'undefined') {
+        open = !this.openDetailView
+      }
+      this.updateSplit(open)
+      this.rootToggleOpenDetailView(open)
+    },
+    updateDetailView(range: RangeComponent) {
+      const row = range.getRows()[0]
+      if (!row) {
+        this.selectedRowIndex = null
+        this.selectedRowData = {}
+        return
+      }
+      const data = row.getData()
+      const selectedRowIndex = data[this.internalIndexColumn]
+      if (selectedRowIndex === this.selectedRowIndex) return
+
+      const position = (this.limit * (this.page - 1)) + (row.getPosition() || 0)
+      this.detailViewTitle = `Row ${position}`
+      this.selectedRowIndex = data[this.internalIndexColumn]
+      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      this.expandablePaths = this.rawTableKeys.map((key) => ({
+        path: [key.fromColumn],
+        tableKey: key,
+      }))
+    },
+    updateDetailViewByFirstRange() {
+      const range = this.tabulator.getRanges()[0]
+      this.updateDetailView(range)
+    },
+    initializeSplit() {
+      const components = this.$refs.tableViewWrapper.children
+      const splitSizes = this.$store.state.tableTableSplitSizes
+      this.split = Split(components, {
+        sizes: splitSizes,
+        onDragEnd: () => {
+          this.$store.dispatch("setTableTableSplitSizes", this.split.getSizes())
+        }
+      } as Split.Options)
+    },
     exportTable() {
       this.trigger(AppEvent.beginExport, { table: this.table })
     },
@@ -1643,9 +1763,64 @@ export default Vue.extend({
       setFilters(this.tab, filters)
       this.debouncedSaveTab(this.tab)
     },
+    // FIXME rename to expandForeignKeys (with s at the end), and it should be able
+    // to fetch multiple paths
+    async expandForeignKey(expandablePath: ExpandablePath) {
+      const { path, tableKey } = expandablePath
+      try {
+        const table = await this.connection.selectTop(
+          tableKey.toTable,
+          0,
+          1,
+          [],
+          [{
+            field: tableKey.toColumn,
+            type: '=',
+            value: _.get(this.selectedRowData, path),
+          }],
+          tableKey.toSchema
+        )
+
+        if (table.result.length > 0) {
+          _.set(this.selectedRowData, path, table.result[0])
+
+          // Add new expandable paths for the new table
+          const tableKeys = await this.connection.getTableKeys(tableKey.toTable, tableKey.toSchema)
+          tableKeys.forEach((key: TableKey) => {
+            this.expandablePaths.push({
+              path: [...path, key.fromColumn],
+              tableKey: key,
+            })
+          })
+        }
+      } catch (e) {
+        log.error(e)
+      }
+
+      // Remove the path from the list of expandable paths
+      this.expandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
+    },
+    /**
+     * This should be called before showing/hiding the detail view
+     * @param {boolean} open - true if we want to open the detail view
+     */
+    updateSplit(open?: boolean) {
+      if (typeof open === 'undefined') {
+        open = this.openDetailView
+      }
+      if (open && !this.split) {
+        this.initializeSplit()
+      } else if (!open) {
+        this.split?.destroy()
+        this.split = null
+      }
+    },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
     }, 300),
+    ...mapActions({
+      rootToggleOpenDetailView: "toggleOpenDetailView",
+    }),
   }
 });
 </script>

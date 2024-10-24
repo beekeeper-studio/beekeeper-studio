@@ -1,5 +1,11 @@
 import CodeMirror from 'codemirror'
 
+// According to the HTML spec, comments end at the forst -->
+// So nested comments aren't a thing.
+function removeHtmlComments(input) {
+  return input.replace(/<!--[\s\S]*?(?:-->)/g, '');
+}
+
 export interface LanguageData {
   isValid: (raw: string) => boolean;
   beautify: (raw: string) => string;
@@ -109,9 +115,7 @@ export const Languages: LanguageData[] = [
       return result;
     },
     minify: (value: string) => {
-      return value
-        .replace(/<!--\s*?[^\s?[][\s\S]*?-->/g, "")
-        .replace(/>\s*</g, "><");
+      return removeHtmlComments(value).replace(/>\s*</g, "><");
     },
   },
 ];

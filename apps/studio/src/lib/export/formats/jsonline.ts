@@ -15,9 +15,10 @@ export class JsonLineExporter extends Export {
     query: string,
     queryName: string,
     filters: TableFilter[] | any[],
-    options: ExportOptions
+    options: ExportOptions,
+    managerNotify: boolean = true
   ) {
-    super(filePath, connection, table, query, queryName, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options,managerNotify)
   }
 
   async getHeader(): Promise<string> {

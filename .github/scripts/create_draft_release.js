@@ -4,13 +4,15 @@
  * Create a draft release
  * @param {Object} options
  */
-module.exports = async({github, core}, repository, tagName) => {
-  const [owner, repo] = repository.split('/');
+module.exports = async({github, core}, owner, repo, tagName) => {
 
   const releases = await github.rest.repos.listReleases({
     owner,
     repo
   });
+
+  // NOTE(@day): for test releases
+  tagName = tagName.replace('test', 'v');
 
   let uploadUrl;
   let assetsUrl;

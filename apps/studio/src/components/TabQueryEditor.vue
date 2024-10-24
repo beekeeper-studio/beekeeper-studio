@@ -54,12 +54,12 @@
           <x-button
             v-if="showDryRun"
             class="btn btn-flat btn-small"
-            :disabled="$config.isCommunity"
+            :disabled="isCommunity"
             @click="dryRun = !dryRun"
           >
             <x-label>Dry Run</x-label>
             <i
-              v-if="$config.isCommunity"
+              v-if="isCommunity"
               class="material-icons menu-icon"
             >stars</i>
             <input
@@ -101,7 +101,7 @@
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
-                    v-if="$config.isCommunity"
+                    v-if="isCommunity"
                     class="material-icons menu-icon"
                   >
                     stars
@@ -110,7 +110,7 @@
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
                   <x-label>Run Current to File</x-label>
                   <i
-                    v-if="$config.isCommunity"
+                    v-if="isCommunity"
                     class="material-icons menu-icon "
                   >
                     stars
@@ -380,13 +380,16 @@
     },
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
+      ...mapGetters({
+        'isCommunity': 'licenses/isCommunity',
+      }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = this.settings?.keymap.value;
+          const value = this.settings?.keymap?.value;
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -815,7 +818,7 @@
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitQueryToFile() {
-        if (this.$config.isCommunity) {
+        if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
@@ -827,7 +830,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
-        if (this.$config.isCommunity) {
+        if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
