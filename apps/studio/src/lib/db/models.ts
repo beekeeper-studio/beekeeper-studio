@@ -351,3 +351,11 @@ export interface ImportScriptFunctions {
   rollbackCommand: (args?: any) => Promise<null|any>
   finalCommand?: (args?: any) => Promise<any|null>
 }
+
+export interface BuildInsertOptions {
+  columns?: any[],
+  bitConversionFunc?: (value: any) => any
+  runAsUpsert?: boolean
+  primaryKeys?: string[]
+  createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
+}
