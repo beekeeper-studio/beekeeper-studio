@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _, { defaults } from 'lodash'
 import { Module } from "vuex";
 import rawLog from 'electron-log'
 import { State as RootState } from '../index'
@@ -21,6 +21,12 @@ const log = rawLog.scope('LicenseModule')
 
 const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
 
+const defaultStatus = new LicenseStatus()
+Object.assign(defaultStatus, {
+  edition: "community",
+  condition: "initial",
+})
+
 export const LicenseModule: Module<State, RootState>  = {
   namespaced: true,
   state: () => ({
@@ -28,13 +34,7 @@ export const LicenseModule: Module<State, RootState>  = {
     licenses: [],
     error: null,
     now: new Date(),
-    status: {
-      edition: "community",
-      condition: "initial",
-      isUltimate: false,
-      isCommunity: true,
-      isTrial: false,
-    },
+    status: defaultStatus,
   }),
   getters: {
     trialLicense(state) {
@@ -63,6 +63,11 @@ export const LicenseModule: Module<State, RootState>  = {
       if (!state) return true
       return state.status.isTrial
     },
+    isValidStateExpired(state, getters) {
+      // this means a license with lifetime perms, but is no longer valid for software updates
+      // so the user has to use an older version of the app.
+      return state.status.isValidDateExpired
+    }
   },
   mutations: {
     set(state, licenses: TransportLicenseKey[]) {
@@ -101,6 +106,10 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     async update() {
       await Vue.prototype.$util.send('license/update')
+    },
+    async remove(context, license) {
+      await Vue.prototype.$util.send('license/remove', { id: license.id })
+      await context.dispatch('sync')
     },
     async sync(context) {
       const status = await Vue.prototype.$util.send('license/getStatus')
