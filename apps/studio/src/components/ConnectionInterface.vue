@@ -1,223 +1,106 @@
 <template>
   <div class="interface connection-interface">
-    <div
-      class="interface-wrap row"
-    >
-      <sidebar
-        class="connection-sidebar"
-        ref="sidebar"
-        v-show="sidebarShown"
-      >
-        <connection-sidebar
-          :selected-config="config"
-          @remove="remove"
-          @duplicate="duplicate"
-          @edit="edit"
-          @connect="handleConnect"
-          @create="create"
-        />
+    <div class="interface-wrap row">
+      <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
+        <connection-sidebar :selected-config="config" @remove="remove" @duplicate="duplicate" @edit="edit"
+          @connect="handleConnect" @create="create" />
       </sidebar>
-      <div
-        ref="content"
-        class="connection-main page-content flex-col"
-        id="page-content"
-      >
+      <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
-          <div
-            class="card-flat padding"
-            :class="determineLabelColor"
-          >
+          <div class="card-flat padding" :class="determineLabelColor">
             <div class="flex flex-between">
-              <h3
-                class="card-title"
-                v-if="!pageTitle"
-              >
+              <h3 class="card-title" v-if="!pageTitle">
                 New Connection
               </h3>
-              <h3
-                class="card-title"
-                v-if="pageTitle"
-              >
+              <h3 class="card-title" v-if="pageTitle">
                 {{ pageTitle }}
               </h3>
               <ImportButton :config="config">
                 Import from URL
               </ImportButton>
             </div>
-            <error-alert
-              :error="errors"
-              title="Please fix the following errors"
-            />
-            <form
-              @action="submit"
-              v-if="config"
-            >
+            <error-alert :error="errors" title="Please fix the following errors" />
+            <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connection-select">Connection Type</label>
-                <select
-                  name="connectionType"
-                  class="form-control custom-select"
-                  v-model="config.connectionType"
-                  id="connection-select"
-                >
-                  <option
-                    disabled
-                    hidden
-                    value="null"
-                  >
+                <select name="connectionType" class="form-control custom-select" v-model="config.connectionType"
+                  id="connection-select">
+                  <option disabled hidden value="null">
                     Select a connection type...
                   </option>
-                  <option
-                    :key="`${t.value}-${t.name}`"
-                    v-for="t in connectionTypes"
-                    :value="t.value"
-                  >
+                  <option :key="`${t.value}-${t.name}`" v-for="t in connectionTypes" :value="t.value">
                     {{ t.name }}
                   </option>
                 </select>
               </div>
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
-                <upsell-content v-if="shouldUpsell" />
-                <postgres-form
-                  v-else-if="config.connectionType === 'cockroachdb'"
-                  :config="config"
-                  :testing="testing"
-                />
-                <mysql-form
-                  v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
-                  :config="config"
-                  :testing="testing"
-                />
-                <postgres-form
-                  v-else-if="config.connectionType === 'postgresql'"
-                  :config="config"
-                  :testing="testing"
-                />
-                <redshift-form
-                  v-else-if="config.connectionType === 'redshift'"
-                  :config="config"
-                  :testing="testing"
-                />
-                <sqlite-form
-                  v-else-if="config.connectionType === 'sqlite'"
-                  :config="config"
-                  :testing="testing"
-                />
-                <sql-server-form
-                  v-else-if="config.connectionType === 'sqlserver'"
-                  :config="config"
-                  :testing="testing"
-                  @error="connectionError = $event"
-                />
-                <big-query-form
-                  v-else-if="config.connectionType === 'bigquery'"
-                  :config="config"
-                  :testing="testing"
-                />
-                <firebird-form
-                  v-else-if="config.connectionType === 'firebird' && isUltimate"
-                  :config="config"
-                  :testing="testing"
-                />
-                <oracle-form
-                  v-if="config.connectionType === 'oracle' && isUltimate"
-                  :config="config"
-                  :testing="testing"
-                />
-                <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && isUltimate"
-                  :config="config"
-                  :testing="testing"
-                />
-                <click-house-form
-                  v-else-if="config.connectionType === 'clickhouse' && isUltimate"
-                  :config="config"
-                  :testing="testing"
-                />
-                <lib-sql-form
-                  v-else-if="config.connectionType === 'libsql' && isUltimate"
-                  :config="config"
-                  :testing="testing"
-                />
+                <upsell-content v-if="shouldUpsell">
+                </upsell-content>
+                <postgres-form v-else-if="config.connectionType === 'cockroachdb'" :config="config"
+                  :testing="testing" />
+                <mysql-form v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)" :config="config"
+                  :testing="testing" />
+                <postgres-form v-else-if="config.connectionType === 'postgresql'" :config="config" :testing="testing" />
+                <redshift-form v-else-if="config.connectionType === 'redshift'" :config="config" :testing="testing" />
+                <sqlite-form v-else-if="config.connectionType === 'sqlite'" :config="config" :testing="testing" />
+                <sql-server-form v-else-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"
+                  @error="connectionError = $event" />
+                <big-query-form v-else-if="config.connectionType === 'bigquery'" :config="config" :testing="testing" />
+                <firebird-form v-else-if="config.connectionType === 'firebird' && isUltimate" :config="config"
+                  :testing="testing" />
+                <oracle-form v-if="config.connectionType === 'oracle' && isUltimate" :config="config"
+                  :testing="testing" />
+                <cassandra-form v-if="config.connectionType === 'cassandra' && isUltimate" :config="config"
+                  :testing="testing" />
+                <click-house-form v-else-if="config.connectionType === 'clickhouse' && isUltimate" :config="config"
+                  :testing="testing" />
+                <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
+                  :testing="testing" />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
-                <div class="form-group">
-                  <label
-                    class="checkbox-group"
-                    for="readOnlyMode"
-                  >
-                    <input
-                      class="form-control"
-                      id="readOnlyMode"
-                      type="checkbox"
-                      name="readOnlyMode"
-                      v-model="config.readOnlyMode"
-                    >
+                <div class="form-group" v-if="!shouldUpsell">
+                  <label class="checkbox-group" for="readOnlyMode">
+                    <input class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
+                      v-model="config.readOnlyMode">
                     <span>Read Only Mode</span>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
                 <!-- TEST AND CONNECT -->
-                <div
-                  v-if="!shouldUpsell"
-                  class="test-connect row flex-middle"
-                >
+                <div v-if="!shouldUpsell" class="test-connect row flex-middle">
                   <span class="expand" />
                   <div class="btn-group">
-                    <button
-                      :disabled="testing || connecting"
-                      class="btn btn-flat"
-                      type="button"
-                      @click.prevent="testConnection"
-                    >
+                    <button :disabled="testing || connecting" class="btn btn-flat" type="button"
+                      @click.prevent="testConnection">
                       Test
                     </button>
-                    <button
-                      :disabled="testing || connecting"
-                      class="btn btn-primary"
-                      type="submit"
-                      @click.prevent="submit"
-                    >
+                    <button :disabled="testing || connecting" class="btn btn-primary" type="submit"
+                      @click.prevent="submit">
                       Connect
                     </button>
                   </div>
                 </div>
-                <div
-                  class="row"
-                  v-if="connectionError"
-                >
+                <div class="row" v-if="connectionError">
                   <div class="col">
-                    <error-alert
-                      :error="connectionError"
-                      :help-text="errorHelp"
-                      @close="connectionError = null"
-                      :closable="true"
-                    />
+                    <error-alert :error="connectionError" :help-text="errorHelp" @close="connectionError = null"
+                      :closable="true" />
                   </div>
                 </div>
-                <SaveConnectionForm
-                  v-if="!shouldUpsell"
-                  :config="config"
-                  @save="save"
-                />
+                <SaveConnectionForm v-if="!shouldUpsell" :config="config" @save="save" />
               </div>
             </form>
           </div>
-          <div
-            class="pitch"
-            v-if="!config.connectionType && shouldUpsell"
-          >
-            🌟 <strong>Upgrade to premium</strong> for data import, multi-table export, backup & restore, Oracle support, and more.
-            <a
-              href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-              class=""
-            >Upgrade Now</a>.
+          <div class="pitch" v-if="!config.connectionType && shouldUpsell">
+            🌟 <strong>Upgrade to premium</strong> for data import, multi-table export, backup & restore, Oracle
+            support, and more.
+            <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition" class="">Upgrade
+              Now</a>.
           </div>
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version
-        }}</a></small>
+            }}</a></small>
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
@@ -249,7 +132,7 @@ import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
-import UpsellContent from './connection/UpsellContent.vue'
+import UpsellContent from '@/components/upsell/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
@@ -283,6 +166,9 @@ export default Vue.extend({
     ...mapGetters(['isUltimate']),
     connectionTypes() {
       return this.$config.defaults.connectionTypes
+    },
+    friendlyConnectionType() {
+      return this.$config.defaults.connectionTypes.find((ct) => ct.value === this.config?.connectionType)?.name ?? "Premium"
     },
     shouldUpsell() {
       if (this.isUltimate) return false

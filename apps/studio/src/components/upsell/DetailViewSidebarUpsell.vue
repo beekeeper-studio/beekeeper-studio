@@ -4,14 +4,14 @@
       <i class="material-icons">close</i>
     </button>
     <span class="title">
-      <i class="material-icons">stars</i> JSON Viewer
+      <i class="material-icons">stars</i> Upgrade Beekeeper Studio
     </span>
     <div class="body">
       <p>
-        View rows as JSON, with in-line expanded foreign key data.
+        Upgrade required to use the JSON view.
       </p>
       <p>
-        Super useful when working with wide tables or complex nested data.
+        View any row as JSON. Super useful when working with wide tables or complex nested data.
       </p>
     </div>
     <upsell-buttons />
