@@ -1021,7 +1021,7 @@
               log.warn('Timed out waiting for text editor to blur')
               resolve()
             }
-          }, 3000)
+          }, 1000)
           this.focusingElement = 'none'
         })
       },

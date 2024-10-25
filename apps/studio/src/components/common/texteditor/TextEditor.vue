@@ -295,7 +295,11 @@ export default {
         if ((event.relatedTarget as HTMLElement)?.id.includes('CodeMirror')) {
           return
         }
-        this.$emit("update:focus", false);
+
+        // This makes sure the editor is really blurred before emitting blur
+        setTimeout(() => {
+          this.$emit("update:focus", false);
+        }, 0);
       });
 
       cm.on("cursorActivity", (cm) => {

@@ -315,9 +315,7 @@
         }
       },
       triggerFocus() {
-        setTimeout(() => {
-          this.tabulator.rowManager.getElement().focus();
-        }, 0)
+        this.tabulator.rowManager.getElement().focus();
       },
     }
 	}
