@@ -30,7 +30,10 @@
                   <option disabled hidden value="null">
                     Select a connection type...
                   </option>
-                  <option :key="`${t.value}-${t.name}`" v-for="t in connectionTypes" :value="t.value">
+                  <option :key="`${t.value}-${t.name}`" v-for="t in communityConnectionTypes" :value="t.value">
+                    {{ t.name }}
+                  </option>
+                  <option :key="`${t.value}-${t.name}`" :value="t.value" v-for="t in ultimateConnectionTypes">
                     {{ t.name }}
                   </option>
                 </select>
@@ -104,13 +107,22 @@
               </div>
             </form>
           </div>
-          <div class="pitch" v-if="!config.connectionType && shouldUpsell">
-            🌟 <strong>Upgrade</strong> for more features like ClickHouse & Oracle support, JSON view for table rows, and more!
-            <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition" class="">Learn more</a>.
-          </div>
+          <template v-if="!config.connectionType">
+            <div class="pitch" v-if="!isUltimate">
+              🌟 <strong>Upgrade</strong> for more features like ClickHouse & Oracle support, JSON view for table rows,
+              and more!
+              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+            </div>
+            <div class="pitch" v-else-if="isTrial">
+              🌟 <strong>Trial expires {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> Upgrade now to make sure you
+              don't lose access.
+              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+            </div>
+          </template>
         </div>
 
-        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version }}</a></small>
+        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version
+        }}</a></small>
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
@@ -174,6 +186,13 @@ export default Vue.extend({
     ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapGetters(['isUltimate']),
+    ...mapGetters('licenses', ['isTrial', 'trialLicense']),
+    communityConnectionTypes() {
+      return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
+    },
+    ultimateConnectionTypes() {
+      return this.$config.defaults.connectionTypes.filter((ct) => isUltimateType(ct.value)).map((ct) => ({ ...ct, name: `${ct.name}*`}))
+    },
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },

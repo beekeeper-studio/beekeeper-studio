@@ -88,12 +88,7 @@ export default Vue.extend({
       return license.supportUntil > new Date('2888-01-1')
     },
     timeAgo(date) {
-      if (date > new Date('2888-01-01')) {
-        return 'forever'
-      }
-      const ta = new TimeAgo('en-US')
-
-      return ta.format(date)
+      return this.$bks.timeAgo(date)
     },
     openModal() {
       console.log("opening license modal")

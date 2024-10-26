@@ -35,7 +35,6 @@
     <confirmation-modal-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
-      <trial-begin-modal />
       <trial-expired-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
