@@ -38,7 +38,7 @@ export default class extends Import {
         if (!data || data?.length == 0) return;
         log.info(`Importing ${data?.length} records`)
 
-        let importData = [];
+        const importData = [];
         if (this.connection.connectionType === 'firebird') {
           this.mapData(data).forEach((value) => {
             importData.push({
@@ -64,7 +64,8 @@ export default class extends Import {
               ...executeOptions
             }
           }
-          const importSQL = await this.connection.getImportSQL(importData);
+          
+          const importSQL = await this.connection.getImportSQL(importData, this.table.name, this.table.schema || null);
           log.info('got importSQL: ', importSQL)
           await this.connection.importLineReadCommand(this.table, importSQL, updatedImportScriptOptions)
         } catch (err) {

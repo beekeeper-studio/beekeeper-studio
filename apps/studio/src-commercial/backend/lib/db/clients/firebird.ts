@@ -1281,7 +1281,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  getImportSQL(importedData: TableInsert[], primaryKeys: string[] = []): string[] {
+  async getImportSQL(importedData: TableInsert[], tableName: string): Promise<string[]> {
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
     return buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys, createUpsertFunc: this.createUpsertFunc })
   }
 

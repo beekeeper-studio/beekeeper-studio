@@ -346,8 +346,10 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     })
   }
 
-  getImportSQL(importedData: any[], primaryKeys: string[] = []): string | string[] {
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null): Promise<string | string[]> {
     const queries = []
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
     queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys }).join(';'))
     return joinQueries(queries)
   }

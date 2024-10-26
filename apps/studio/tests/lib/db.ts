@@ -1408,7 +1408,7 @@ export class DBTestUtil {
           ...executeOptions
         }
       };
-      const importSQL = await this.connection.getImportSQL(formattedData);
+      const importSQL = await this.connection.getImportSQL(formattedData, table.name, table.schema || null);
       await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
       return { aborted: false }
     }
@@ -1440,7 +1440,7 @@ export class DBTestUtil {
           ...executeOptions
         }
       };
-      const importSQL = await this.connection.getImportSQL(formattedData);
+      const importSQL = await this.connection.getImportSQL(formattedData, table.name, table.schema || null);
       await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
       return { aborted: true, error: "Forced abort" }
     }
