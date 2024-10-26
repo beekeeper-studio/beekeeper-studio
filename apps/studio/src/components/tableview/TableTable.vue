@@ -190,7 +190,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Open detail view`"
+          v-tooltip="`Toggle Right Sidebar`"
           class="btn btn-flat"
           @click="toggleOpenDetailView()"
         >
@@ -920,7 +920,6 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
-        debugEventsExternal: true,
         persistenceID: this.tableId,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
@@ -1675,6 +1674,11 @@ export default Vue.extend({
     },
     updateDetailView(range: RangeComponent) {
       const row = range.getRows()[0]
+      if (!row) {
+        this.selectedRowIndex = null
+        this.selectedRowData = {}
+        return
+      }
       const data = row.getData()
       const selectedRowIndex = data[this.internalIndexColumn]
       if (selectedRowIndex === this.selectedRowIndex) return

@@ -4,9 +4,42 @@
     ref="sidebar"
     v-show="!hidden"
   >
+    <div class="community-overlay" v-if="$store.getters.isCommunity">
+      <button
+        class="close-btn btn btn-fab"
+        @click="close"
+      >
+        <i class="material-icons">close</i>
+      </button>
+      <span class="title">
+        <i class="material-icons">stars</i> JSON Viewer
+      </span>
+      <div class="body">
+        <p>
+          View rows as JSON, with in-line expanded foreign key data.
+        </p>
+        <p>
+          Super useful when working with wide tables or complex nested data.
+        </p>
+      </div>
+      <div class="actions">
+        <a
+          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+          class="btn btn-flat"
+        >
+          Learn more
+        </a>
+        <a
+          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+          class="btn btn-primary"
+        >
+          Upgrade
+        </a>
+      </div>
+    </div>
     <div class="header">
       <div class="header-group">
-        <span>{{ sidebarTitle }}</span>
+        <span class="title sub">{{ sidebarTitle }}</span>
         <button
           class="close-btn btn btn-fab"
           @click="close"
@@ -24,11 +57,12 @@
             type="text"
             placeholder="Filter fields"
             v-model="debouncedFilter"
-          />
+          >
           <button
             type="button"
             class="clear btn-link"
             @click="filter = ''"
+            v-if="filter"
           >
             <i class="material-icons">cancel</i>
           </button>
@@ -63,6 +97,9 @@
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
     />
+    <div class="empty-state" v-show="empty">
+      No Data
+    </div>
   </div>
 </template>
 
@@ -73,7 +110,6 @@
  * dataId:  use this to update the component with new data.
  */
 import Vue from "vue";
-import Sidebar from "@/components/common/Sidebar.vue";
 import TextEditor from "@/components/common/texteditor/TextEditor.vue";
 import {
   ExpandablePath,
@@ -94,7 +130,7 @@ import globals from '@/common/globals'
 const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
-  components: { Sidebar, TextEditor },
+  components: { TextEditor },
   props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {
@@ -231,34 +267,31 @@ export default Vue.extend({
     menuOptions() {
       return [
         {
-          name: "Expand FK by default",
-          handler: () => {
-            this.$store.dispatch("toggleExpandFKDetailsByDefault");
-          },
-          checked: this.expandFKDetailsByDefault,
-        },
-        {
-          name: "Fold all",
-          handler: () => {
-            this.foldAll++;
-          },
-        },
-        {
-          name: "Unfold all",
-          handler: () => {
-            this.unfoldAll++;
-          },
-        },
-        {
-          name: "Copy",
+          name: "Copy Visible",
           handler: () => {
             this.$native.clipboard.writeText(this.text);
           },
         },
         {
-          name: "Close",
-          handler: this.close,
+          name: "Collapse all",
+          handler: () => {
+            this.foldAll++;
+          },
         },
+        {
+          name: "Expand all",
+          handler: () => {
+            this.unfoldAll++;
+          },
+        },
+        {
+          name: "Always Expand Foreign Keys",
+          handler: () => {
+            this.$store.dispatch("toggleExpandFKDetailsByDefault");
+          },
+          checked: this.expandFKDetailsByDefault,
+        },
+
       ]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),

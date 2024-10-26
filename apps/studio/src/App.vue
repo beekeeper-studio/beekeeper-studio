@@ -4,7 +4,7 @@
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
     >
-      <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
+      <titlebar />
       <template v-if="storeInitialized">
         <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
         <connection-interface v-if="!connected" />
@@ -109,7 +109,6 @@ export default Vue.extend({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
       'themeValue': 'settings/themeValue',
-      'menuStyle': 'settings/menuStyle'
     })
   },
   watch: {

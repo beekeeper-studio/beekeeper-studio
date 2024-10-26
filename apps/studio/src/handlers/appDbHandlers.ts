@@ -81,22 +81,27 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       })
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
-      return transform(await cls.findOne(options), cls)
+      return transform(await cls.findOneBy(options), cls)
     }
   }
 }
 
 function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+  if (_.isNil(obj)) {
+    return null
+  }
+
   return {
     ...obj,
-    value: obj.value
+    value: obj?.value
   };
 }
 
 function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
+  if (_.isNil(obj)) return null
   return {
     ...obj,
-    active: obj.active
+    active: obj?.active ?? false
   };
 }
 

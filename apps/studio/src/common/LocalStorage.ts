@@ -23,7 +23,7 @@ export const SmartLocalStorage = {
   setBool(key: string, value: boolean): void {
     localStorage.setItem(key, JSON.stringify(value))
   },
-  getBool(key: string, defaultVal: boolean = false): boolean {
+  getBool(key: string, defaultVal = false): boolean {
     const result = localStorage.getItem(key)
     if (_.isNil(result)) return defaultVal
     return result === "true"
