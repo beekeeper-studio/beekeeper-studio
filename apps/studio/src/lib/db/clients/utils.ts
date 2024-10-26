@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
@@ -179,8 +179,9 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitConversionFunc: any = _.toNumber) {
+export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber, runAsUpsert = false, primaryKeys = [] as string[], createUpsertFunc = null }: BuildInsertOptions = {}) {
   const data = _.cloneDeep(insert.data)
+  const canRunAsUpsert = _.intersection(Object.keys(data[0]), primaryKeys).length === primaryKeys.length && runAsUpsert
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
     insertColumns.forEach((ic) => {
@@ -194,7 +195,6 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
       } else if (matching && matching.dataType && matching.dataType.startsWith('bit') && _.isBoolean(item[ic])) {
         item[ic] = item[ic] ? 1 : 0;
       }
-
       // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
       if (ic.includes('?')) {
         const newIc = ic.replaceAll('?', '\\?');
@@ -204,20 +204,34 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
     })
 
   })
+
   const table = insert.dataset ? `${insert.dataset}.${insert.table}` : insert.table;
   const builder = knex(table);
+
   if (insert.schema) {
     builder.withSchema(insert.schema)
   }
-  const query = builder
+
+  if (canRunAsUpsert && typeof(createUpsertFunc) === 'function'){
+    return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
+  } else if (canRunAsUpsert) {
+    // might have to be different for different engines. 
+    // https://knexjs.org/guide/query-builder.html#onconflict
+    return builder
+      .insert(data)
+      .onConflict(primaryKeys)
+      .merge()
+      .toQuery()
+  }
+
+  return builder
     .insert(data)
     .toQuery()
-  return query
 }
 
-export function buildInsertQueries(knex, inserts) {
+export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [] } = {}) {
   if (!inserts) return []
-  return inserts.map(insert => buildInsertQuery(knex, insert))
+  return inserts.map(insert => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys }))
 }
 
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {

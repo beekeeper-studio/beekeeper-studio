@@ -66,6 +66,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 
@@ -591,7 +592,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   private async insertRows(inserts: TableInsert[]) {
     for (const insert of inserts) {
       const columns = await this.listTableColumns(insert.table);
-      const command = buildInsertQuery(this.knex, insert, columns);
+      const command = buildInsertQuery(this.knex, insert, { columns });
       await this.driverExecuteSingle(command);
     }
 
