@@ -259,7 +259,7 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().tableViewTests(dbReadOnlyMode)
     })
 
-    test.only("get insert query tests", async () => {
+    test("get insert query tests", async () => {
       await getUtil().getInsertQueryTests()
     })
 
