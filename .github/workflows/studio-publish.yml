@@ -43,6 +43,8 @@ jobs:
             await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
+  # outputs: latest, beta, alpha
+  # deb_codename: stable, beta
   identify_channel:
     runs-on: "ubuntu-20.04"
     outputs:
@@ -307,8 +309,9 @@ jobs:
             const channel = '${{needs.identify_channel.outputs.channel}}'
             await script({ github, core, context }, assetsUrl, channel)
 
+        # Only publishing the DEB for the stable channel (for now)
       - name: Publish DEB to S3
-        if: matrix.os.type == 'linux'
+        if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
         run: |
           deb-s3 upload apps/studio/dist_electron/*.deb \
             --bucket=deb.beekeeperstudio.io \
@@ -321,7 +324,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Invalidate cloudfront cache
-        if: startsWith(matrix.os.name, 'ubuntu')
+        if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
         run: |
           aws cloudfront create-invalidation \
           --distribution "$DISTRIBUTION" \
