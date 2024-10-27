@@ -31,15 +31,13 @@ class BeekeeperWindow {
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
     const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
-    let showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
-    let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
+    let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows ? 'default' : 'hidden'
 
     if (platformInfo.isWayland) {
-      showFrame = false
       titleBarStyle = 'hidden'
     }
 
-      log.info('constructing the window')
+    log.info('constructing the window')
     const preloadPath = path.join(__dirname, 'preload.js')
     console.log("PRELOAD PATH:", preloadPath)
     this.win = new BrowserWindow({
@@ -48,7 +46,7 @@ class BeekeeperWindow {
       minHeight: 600,
       backgroundColor: dark ? "#252525" : '#ffffff',
       titleBarStyle,
-      frame: showFrame,
+      frame: false,
       webPreferences: {
         preload: preloadPath,
         nodeIntegration: false,
@@ -60,7 +58,7 @@ class BeekeeperWindow {
     })
 
     const devUrl = 'http://localhost:3003'
-    const startUrl = 'app://./renderer/index.html'
+    const startUrl = 'app://./index.html'
     let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}

@@ -63,7 +63,6 @@ export class UserSetting extends ApplicationEntity {
   }
 
   static THEME = 'theme'
-  static MenuStyle = 'menuStyle'
 
   static async all(): Promise<IGroupedUserSettings> {
     const settings = await UserSetting.find()
