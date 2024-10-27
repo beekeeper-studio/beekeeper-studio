@@ -104,8 +104,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     opendocs : {
       id: 'opendocs',
-      label: 'Documentation and Support',
+      label: 'Documentation',
       click: actionHandler.opendocs
+    },
+    support: {
+      id: 'contactSupport',
+      label: 'Contact Support',
+      click: actionHandler.contactSupport
     },
     reload: {
       id: 'reload-window',
@@ -200,7 +205,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     enterLicense: {
       id: 'enter-license',
-      label: "Enter License Key",
+      label: "Manage License Keys",
       click: actionHandler.enterLicense,
 
     },
@@ -262,13 +267,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
         {
           type: 'radio',
           label: 'Stable',
-          click: actionHandler.toggleBeta, 
+          click: actionHandler.toggleBeta,
           checked: settings?.useBeta?.value == false
         },
         {
           type: 'radio',
           label: 'Beta',
-          click: actionHandler.toggleBeta, 
+          click: actionHandler.toggleBeta,
           checked: settings?.useBeta?.value == true
         }
       ]

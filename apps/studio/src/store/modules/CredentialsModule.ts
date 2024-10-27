@@ -137,7 +137,9 @@ export const CredentialsModule: Module<State, RootState> = {
       await context.commit('workspaceId', -1, { root: true })
     },
     async setUserWorkspace(context) {
-      const { value: lastUsedWorkspace } = context.rootGetters['settings/lastUsedWorkspace']
+      const settingsResponse = context.rootGetters['settings/lastUsedWorkspace']
+      if (!settingsResponse) return
+      const lastUsedWorkspace = settingsResponse.value
       const { workspaces } = context.getters
 
       if (lastUsedWorkspace !== -1 && workspaces.length > 1) {

@@ -88,12 +88,6 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
-        label: "Ultimate",
-        submenu: [
-          this.menuItems.enterLicense,
-        ]
-      },
-      {
         label: "Tools",
         submenu: [
           this.menuItems.backupDatabase,
@@ -105,8 +99,10 @@ export default class extends DefaultMenu {
       {
         label: "Help",
         submenu: [
-          this.menuItems.opendocs,
+          this.menuItems.enterLicense,
           this.menuItems.checkForUpdate,
+          this.menuItems.opendocs,
+          this.menuItems.support,
           this.menuItems.addBeekeeper,
           this.menuItems.devtools,
           this.menuItems.about,

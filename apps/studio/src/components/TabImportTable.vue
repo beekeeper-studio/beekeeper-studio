@@ -114,7 +114,7 @@
   import ImportFile from './importtable/ImportFile.vue'
   import ImportMapper from './importtable/ImportMapper.vue'
   import ImportPreview from './importtable/ImportPreview.vue'
-  import UpsellContent from '@/components/connection/UpsellContent.vue'
+  import UpsellContent from '@/components/upsell/UpsellContent.vue'
   import { DialectTitles } from '@shared/lib/dialects/models'
 
   import { ExportStatus } from '../lib/export/models'
