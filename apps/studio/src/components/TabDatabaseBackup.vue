@@ -122,7 +122,7 @@ import BackupSettings from './backup/BackupSettings.vue';
 import BackupReview from './backup/BackupReview.vue';
 import BackupProgress from './backup/BackupProgress.vue';
 import Stepper from './stepper/Stepper.vue';
-import UpsellContent from '@/components/connection/UpsellContent.vue'
+import UpsellContent from '@/components/upsell/UpsellContent.vue'
 import { Step } from './stepper/models';
 import { mapGetters, mapState } from 'vuex';
 import StatusBar from '@/components/common/StatusBar.vue';

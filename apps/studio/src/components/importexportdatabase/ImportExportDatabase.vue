@@ -87,7 +87,7 @@
   import ExportObjects from './ExportObjects.vue'
   import ExportOptions from './ExportOptions.vue'
   import ExportConfirmation from './ExportConfirmation.vue'
-  import UpsellContent from '../connection/UpsellContent.vue'
+  import UpsellContent from '@/components/upsell/UpsellContent.vue'
 
   import { ExportStatus } from '../../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
@@ -204,7 +204,7 @@
       },
       async addExport(tableToExport) {
         const tableOptions = this.tableOptions;
-        const exporter = await this.$util.send('export/add', { 
+        const exporter = await this.$util.send('export/add', {
           options: {
             filePath: `${tableOptions.filePath}/${tableToExport.name}`,
             table: tableToExport.table,
