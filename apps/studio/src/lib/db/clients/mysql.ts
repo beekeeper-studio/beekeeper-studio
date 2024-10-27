@@ -181,7 +181,7 @@ async function configDatabase(
       config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
     }
   }
-  console.log(server)
+
   return config;
 }
 
