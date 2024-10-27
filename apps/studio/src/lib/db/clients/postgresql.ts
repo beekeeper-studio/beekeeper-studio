@@ -10,8 +10,8 @@ import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
-import { createCancelablePromise, joinFilters } from '../../../common/utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, getIAMPassword } from './utils';
+import {createCancelablePromise, joinFilters} from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo } from './postgresql/types'
@@ -23,8 +23,6 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicD
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import { IDbConnectionServer } from '../backendTypes';
-import { Signer } from "@aws-sdk/rds-signer";
-import { fromIni } from "@aws-sdk/credential-providers";
 
 
 const base64 = require('base64-url'); // eslint-disable-line
@@ -108,6 +106,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       backDirFormat: true,
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
+      transactions: true
     };
   }
 
@@ -1259,18 +1258,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       server.config.client === "postgresql" &&
       redshiftOptions?.iamAuthenticationEnabled
     ) {
-      const nodeProviderChainCredentials = fromIni({
-        profile: redshiftOptions.awsProfile ?? "default",
-      });
-      const signer = new Signer({
-        credentials: nodeProviderChainCredentials,
-        region: redshiftOptions?.awsRegion,
-        hostname: server.config.host,
-        port: server.config.port || 5432,
-        username: server.config.user,
-      });
-
-      resolvedPw = await signer.getAuthToken();
+      resolvedPw = await getIAMPassword(
+        redshiftOptions.awsProfile ?? "default",
+        redshiftOptions?.awsRegion,
+        server.config.host,
+        server.config.port || 5432,
+        server.config.user
+      );
     }
 
     const config: PoolConfig = {

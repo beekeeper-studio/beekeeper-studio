@@ -17,6 +17,7 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
+  getIAMPassword,
   ClientError
 } from "./utils";
 import {
@@ -24,7 +25,7 @@ import {
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
-import { createCancelablePromise } from "@/common/utils";
+import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
@@ -59,8 +60,6 @@ import {
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
-import {fromIni} from "@aws-sdk/credential-providers";
-import {Signer} from "@aws-sdk/rds-signer";
 
 type ResultType = {
   data: any[];
@@ -102,23 +101,19 @@ function getRealError(conn, err) {
 async function configDatabase(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase
-): mysql.PoolOptions {
+): Promise<mysql.PoolOptions> {
 
   let resolvedPw = ''
   const redshiftOptions = server.config.redshiftOptions
 
   if(redshiftOptions?.iamAuthenticationEnabled){
-    const nodeProviderChainCredentials = fromIni({
-      profile: redshiftOptions.awsProfile ?? "default",
-    });
-    const signer = new Signer({
-      credentials: nodeProviderChainCredentials,
-      region: redshiftOptions?.awsRegion,
-      hostname: server.config.host,
-      port: server.config.port || 3306,
-      username: server.config.user,
-    });
-    resolvedPw = await signer.getAuthToken();
+    resolvedPw = await getIAMPassword(
+      redshiftOptions.awsProfile ?? "default",
+      redshiftOptions?.awsRegion,
+      server.config.host,
+      server.config.port || 3306,
+      server.config.user
+    );
   }
 
   const config: mysql.PoolOptions = {
@@ -186,7 +181,7 @@ async function configDatabase(
       config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
     }
   }
-
+  console.log(server)
   return config;
 }
 
@@ -1153,6 +1148,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 

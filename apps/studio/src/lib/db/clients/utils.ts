@@ -4,6 +4,8 @@ import logRaw from 'electron-log'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import {fromIni} from "@aws-sdk/credential-providers";
+import {Signer} from "@aws-sdk/rds-signer";
 
 const log = logRaw.scope('db/util')
 
@@ -302,4 +304,18 @@ export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], rea
 
 export const errorMessages = {
   readOnly: 'Write action(s) not allowed in Read-Only Mode.'
+}
+
+export async function getIAMPassword(awsProfile: string, region: string, hostname: string, port: number, username: string): Promise<string> {
+  const nodeProviderChainCredentials = fromIni({
+    profile: awsProfile ?? "default",
+  });
+  const signer = new Signer({
+    credentials: nodeProviderChainCredentials,
+    region,
+    hostname,
+    port,
+    username,
+  });
+  return  await signer.getAuthToken();
 }
