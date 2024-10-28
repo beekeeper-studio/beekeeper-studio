@@ -332,7 +332,7 @@ jobs:
           github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs')
-            const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.CHANNEL}-mac.yml`, 'utf8')
+            const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
   post-release:
     needs: [release, create_draft_release, identify_channel]
@@ -386,5 +386,5 @@ jobs:
         with:
           upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
           asset_path: "./mac.yml"
-          asset_name: "${{needs.identify_channel.outputs.channel}}-mac.yml"
+          asset_name: "latest-mac.yml"
           asset_content_type: 'application/octet-stream'
