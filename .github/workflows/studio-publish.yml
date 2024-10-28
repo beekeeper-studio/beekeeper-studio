@@ -281,6 +281,7 @@ jobs:
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
         with:
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
             const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
@@ -315,15 +316,11 @@ jobs:
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml)"
+
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
         continue-on-error: true
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os.name }}
-          path: apps/studio/dist_electron
 
       - name: Set yaml files
         id: set_yaml
@@ -333,11 +330,13 @@ jobs:
           ARCH: ${{ matrix.os.arch }}
           CHANNEL: ${{needs.identify_channel.outputs.channel}}
         with:
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs')
             const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.CHANNEL}-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
-  post-release:
+
+   post-release:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
@@ -351,7 +350,7 @@ jobs:
           INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
           ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
