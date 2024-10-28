@@ -49,6 +49,7 @@ type CassandraResult = {
   rows: CassRow[],
   hasNext: boolean,
   pageState: string
+  arrayMode: boolean
 };
 
 type CassandraVersion = {
@@ -57,8 +58,6 @@ type CassandraVersion = {
 };
 
 export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
-  connectionBaseType = 'cassandra' as const;
-
   client: cassandra.Client;
   versionInfo: CassandraVersion;
 
@@ -507,7 +506,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       columns: data.columns,
       rows: data.rows,
       hasNext: data.nextPage != null,
-      pageState: data.pageState
+      pageState: data.pageState,
+      arrayMode: false,
     };
   }
 

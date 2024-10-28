@@ -24,6 +24,8 @@ interface BigQueryResult {
   data: any,
   rows: any[],
   rowCount: number
+  arrayMode: boolean
+  columns: bq.SchemaField[]
 }
 
 const bigqueryContext = {
@@ -36,8 +38,6 @@ const bigqueryContext = {
 }
 
 export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
-  connectionBaseType = 'bigquery' as const;
-
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   client: bq.BigQuery;
@@ -399,11 +399,11 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const queriesResult = await this.driverExecuteMultiple(query, { countQuery, params });
     const data = queriesResult[0];
     const rowCount = Number(data.rowCount);
-    const fields = Object.keys(data.rows[0] || {});
+    const { rows, fields } = await this.serializeQueryResult(data);
 
     const result = {
       totalRows: rowCount,
-      result: data.rows,
+      result: rows,
       fields
     };
     return result;
@@ -495,7 +495,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   protected async rawExecuteQuery(q: string, options: any): Promise<BigQueryResult | BigQueryResult[]> {
     log.info("BIGQUERY, executing", q);
-    let job = options?.job;
+    let job: bq.Job = options?.job;
     const queryArgs = {query: q, ...options };
     if (!job) {
       [job] = await this.client.createQueryJob(queryArgs);
@@ -503,7 +503,15 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     // Wait for the query to finish
     const results = await job.getQueryResults();
-    return results.map((data) => this.parseRowQueryResult(data))
+    return results.map((data) => {
+      const parsed = this.parseRowQueryResult(data)
+      return {
+        ...parsed,
+        arrayMode: false,
+        data: parsed.rows,
+        columns: parsed.fields,
+      }
+    })
   }
 
   private bigQueryEndpoint(config: any) {

@@ -22,6 +22,7 @@ import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
 import { LicenseKey } from '@/common/appdb/models/LicenseKey'
 import { TestOrmConnection } from './TestOrmConnection'
+import { buffer as b } from '@tests/utils'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -1341,6 +1342,21 @@ export class DBTestUtil {
     expect(Number(dataLength)).toBe(expectedLength)
   }
 
+  async serializationBinary() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+
+    await this.knex('contains_binary').insert({ bin: b`deadbeef` })
+
+    const result = await this.connection.selectTop('contains_binary', 0, 10, [], [], this.defaultSchema)
+
+    expect(result.result[0].bin || result.result[0].BIN).toEqual('deadbeef')
+    expect(result.fields).toEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
@@ -1437,6 +1453,11 @@ export class DBTestUtil {
       table.string('industry', 255).notNullable();
       table.integer('number_of_employees').notNullable();
     });
+
+    await this.knex.schema.createTable('contains_binary', (table) => {
+      primary(table)
+      table.binary('bin', 8).notNullable()
+    })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {

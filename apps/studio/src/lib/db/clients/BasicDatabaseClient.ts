@@ -1,17 +1,18 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, SerializedQueryResult, BksField } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
-import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
+import { DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { GenericBinaryTranscoder, Transcoder } from '../serialization/transcoders';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -54,8 +55,14 @@ export const NoOpContextProvider: AppContextProvider = {
   }
 };
 
+export interface BaseQueryResult {
+  columns: { name: string }[]
+  rows: any[][] | Record<string, any>[];
+  arrayMode: boolean;
+}
+
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType> implements IBasicDatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
@@ -64,9 +71,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
-  connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
+  binaryTranscoder: Transcoder<any, any> = GenericBinaryTranscoder
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -395,6 +402,35 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       columns,
       totalRows
     }
+  }
+
+  protected resolveBksFields(qr: RawResultType): BksField[] {
+    return qr.columns.map((column) => ({
+      name: column.name,
+      bksType: "UNKNOWN",
+    }));
+  }
+
+  /** Serializes and mutates an array of rows based on their fields */
+  protected async serializeQueryResult(qr: RawResultType): Promise<SerializedQueryResult> {
+    const fields = this.resolveBksFields(qr)
+    const binaryFields = []
+
+    fields.forEach((field, idx) => {
+      if (field.bksType === 'BINARY') {
+        binaryFields.push(qr.arrayMode ? idx : field.name)
+      }
+    })
+
+    if (binaryFields.length > 0) {
+      for (const row of qr.rows) {
+        binaryFields.forEach((key) => {
+          row[key] = this.binaryTranscoder.serialize(row[key])
+        })
+      }
+    }
+
+    return { fields, rows: qr.rows };
   }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {

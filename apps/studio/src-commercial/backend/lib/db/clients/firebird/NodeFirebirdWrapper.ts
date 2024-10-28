@@ -125,12 +125,10 @@ export class Connection {
                   }
 
                   // reading data
-                  let val = '';
-                  event.on('data', (chunk) => {
-                    val += chunk.toString('binary');
-                  });
+                  const chunks: Buffer[] = []
+                  event.on('data', (chunk: Buffer) => chunks.push(chunk));
                   event.on('end', () => {
-                    resBlob({ value: val, column: name, row });
+                    resBlob({ value: Buffer.concat(chunks), column: name, row });
                   });
                 });
               });
@@ -228,12 +226,10 @@ export class Transaction {
                   }
 
                   // reading data
-                  let val = '';
-                  event.on('data', (chunk) => {
-                    val += chunk.toString('binary');
-                  });
+                  const chunks: Buffer[] = []
+                  event.on('data', (chunk: Buffer) => chunks.push(chunk));
                   event.on('end', () => {
-                    resBlob({ value: val, column: name, row });
+                    resBlob({ value: Buffer.concat(chunks), column: name, row });
                   });
                 });
               });

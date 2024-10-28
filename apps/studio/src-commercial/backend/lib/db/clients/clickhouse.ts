@@ -76,7 +76,15 @@ interface StreamResult {
   resultType: "stream";
 }
 
-type Result = JSONResult | StreamResult;
+type JSONOrStreamResult = JSONResult | StreamResult;
+
+interface BaseResult {
+  rows: any[][] | Record<string, any>[];
+  columns: { name: string }[]
+  arrayMode: boolean;
+}
+
+type Result = BaseResult & JSONOrStreamResult;
 
 interface ExecuteQueryOptions {
   params?: Record<string, any>;
@@ -271,11 +279,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     );
     const { fullQuery } = queries;
     const result = await this.driverExecuteSingle(fullQuery);
-    const json = result.data as ResponseJSON;
-    return {
-      result: json.data as any[],
-      fields: Object.keys(json.data[0] || {}),
-    };
+    const { rows, fields } = await this.serializeQueryResult(result);
+    return { result: rows, fields };
   }
 
   async selectTopSql(
@@ -780,7 +785,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         });
         data = await result.json();
         resultType = "json";
-        results.push({ statement, data, resultType: "json" });
+        results.push({ statement, data, resultType: "json", rows: data.data, columns: data.meta, arrayMode: options.arrayMode });
       } else {
         const result = await this.client.exec({
           query,
@@ -797,7 +802,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         });
         data = result.stream;
         resultType = "stream";
-        results.push({ statement, data: result.stream, resultType: "stream" });
+        results.push({ statement, data: result.stream, resultType: "stream", rows: [], columns: [], arrayMode: options.arrayMode });
       }
     }
 

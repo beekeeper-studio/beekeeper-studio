@@ -62,7 +62,7 @@
     "jquery": "^3.5.0",
     "knex": "^2.4.1",
     "knex-firebird-dialect": "1.4.6",
-    "libsql": "^0.3.18",
+    "libsql": "^0.4.6",
     "lodash": "^4.17.21",
     "markdown-table": "^3.0.2",
     "marked": "^4.0.10",

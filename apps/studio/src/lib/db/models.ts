@@ -150,7 +150,19 @@ export interface IDbInsert {
 
 export interface TableResult {
   result: any[];
-  fields: string[];
+  fields: BksField[];
+}
+
+export interface BksField {
+  name: string;
+  bksType: BksFieldType;
+}
+
+export type BksFieldType = 'BINARY' | 'UNKNOWN';
+
+export interface SerializedQueryResult {
+  rows: Record<string, any>[];
+  fields: BksField[];
 }
 
 export interface TableChanges {

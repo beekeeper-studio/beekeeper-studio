@@ -31,6 +31,8 @@ import {
   TableColumn,
   Routine,
   ImportFuncOptions,
+  BksField,
+  BksFieldType,
 } from "@/lib/db/models";
 import {
   BasicDatabaseClient,
@@ -56,8 +58,9 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 
 type FirebirdResult = {
   rows: any[];
-  meta: any[];
+  columns: any[];
   statement: IdentifyResult;
+  arrayMode: boolean;
 };
 
 // Char fields are padded with spaces to the maximum defined length.
@@ -211,8 +214,6 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
-  connectionBaseType = 'firebird' as const;
-
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
@@ -563,11 +564,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     );
 
     const result = await this.driverExecuteSingle(query, { params });
+    const { rows, fields } = await this.serializeQueryResult(result)
 
-    return {
-      result: result.rows,
-      fields: Object.keys(result.rows[0] || {}),
-    };
+    return { result: rows, fields };
   }
 
   async selectTopSql(
@@ -649,7 +648,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
             rowAsArray: true,
             connection,
           });
-          return results.map(({ rows, meta }) => {
+          return results.map(({ rows, columns: meta }) => {
             const fields = meta.map((field, idx) => ({
               id: `c${idx}`,
               name: field.alias || field.field,
@@ -1013,7 +1012,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ rows, statement, meta }) => ({
+    return result.map(({ rows, statement, columns: meta }) => ({
       fields: meta.map((field, idx) => ({
         id: `c${idx}`,
         name: field.alias || field.field,
@@ -1058,7 +1057,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const queries = identifyCommands(queryText);
     const params = options.params ?? [];
 
-    const results = [];
+    const results: FirebirdResult[] = [];
 
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
@@ -1066,9 +1065,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       const conn = options.connection ?? this.pool;
       const data = await conn.query(query.text, params, options.rowAsArray);
       results.push({
-        meta: data.meta,
+        columns: data.meta,
         rows: data.rows,
         statement: query,
+        arrayMode: options.rowAsArray,
       });
     }
 
@@ -1267,4 +1267,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return buildInsertQueries(this.knex, importedData)
   }
 
+  resolveBksFields(queryResult: FirebirdResult): BksField[] {
+    const meta = queryResult.columns;
+    return meta.map((field: any) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      // 520 is SQL_BLOB
+      // Ref: https://github.com/hgourvest/node-firebird/blob/3aba6c3bb605c9e4a260a572d6395d1b431dee8a/lib/wire/const.js#L230
+      if (field.type === 520) {
+        bksType = 'BINARY';
+      }
+      return { name: field.field, bksType };
+    });
+  }
 }

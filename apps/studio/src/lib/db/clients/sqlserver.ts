@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
+import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -28,7 +28,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, TableField, BksFieldType } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
@@ -45,11 +45,16 @@ type SQLServerVersion = {
   versionString: any
 }
 
+type ColumnMetadata = sql.IColumnMetadata[number]
+
 type SQLServerResult = {
   connection: Request,
-  data: any,
+  data: sql.IResult<any>,
   // Number of changes made by the query
   rowsAffected: number
+  rows: Record<string, any>[];
+  columns: ColumnMetadata[];
+  arrayMode: boolean;
 }
 
 interface ExecuteOptions {
@@ -66,12 +71,14 @@ const SQLServerContext = {
   }
 }
 
+sql.valueHandler.set(sql.TYPES.VarBinary, (value: Buffer) => value.toString('hex'))
+sql.valueHandler.set(sql.TYPES.Binary, (value: Buffer) => value.toString('hex'))
+sql.valueHandler.set(sql.TYPES.Image, (value: Buffer) => value.toString('hex'))
+
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
-  connectionBaseType = 'sqlserver' as const;
-
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -221,10 +228,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     const result = await this.driverExecuteSingle(query)
     this.logger().debug(result)
-    return {
-      result: result.data.recordset,
-      fields: Object.keys(result.data.recordset[0] || {})
-    }
+    const { rows, fields } = await this.serializeQueryResult(result)
+    return { result: rows, fields }
   }
 
   async selectTopSql(
@@ -496,7 +501,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       connection.arrayRowMode = options.arrayRowMode || false;
       const data = await connection.query(q)
       const rowsAffected = _.sum(data.rowsAffected)
-      return { connection, data, rowsAffected }
+      const columns = !data.recordset ? [] : Object.keys(data.recordset.columns).map((key) => data.recordset.columns[key])
+      const rows = data.recordset
+      const arrayMode = connection.arrayRowMode
+      return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
     return runQuery(options.connection ? options.connection : this.pool.request());
@@ -1276,6 +1284,22 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       return null
     }
     return data.recordset[0].MS_Description
+  }
+
+  resolveBksFields(queryResult: SQLServerResult): TableField[] {
+    const columns = queryResult.columns
+    return Object.keys(columns).map((key) => {
+      let bksType: BksFieldType = 'UNKNOWN'
+      const type = columns[key].type
+      if (
+        type === sql.VarBinary ||
+        type === sql.Binary ||
+        type === sql.Image
+      ) {
+        bksType = 'BINARY'
+      }
+      return { name: columns[key].name, bksType }
+    })
   }
 }
 

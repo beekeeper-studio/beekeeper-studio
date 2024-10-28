@@ -19,6 +19,8 @@ import {
   StreamResults,
   TableChanges,
   TableColumn,
+  BksField,
+  BksFieldType,
   TableFilter,
   TableIndex,
   TableOrView,
@@ -52,8 +54,6 @@ oracle.fetchAsString = [oracle.CLOB]
 oracle.fetchAsBuffer = [oracle.BLOB]
 
 export class OracleClient extends BasicDatabaseClient<DriverResult> {
-  connectionBaseType = 'oracle' as const;
-
   pool: oracle.Pool;
   server: IDbConnectionServer
   database: IDbConnectionDatabase
@@ -277,9 +277,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = null, selects: string[] = ['*']): Promise<TableResult> {
     schema = schema ? schema : await this.defaultSchema();
     const query = this.genSelect(table, offset, limit, orderBy, filters, schema, false, selects)
-    const result = await this.driverExecuteSimple(query)
-    const fields = Object.keys(result[0] || {})
-    return { result, fields }
+    const result = await this.driverExecuteSingle(query)
+    const { rows, fields } = await this.serializeQueryResult(result)
+    return { result: await this.convertRowsToObjects(rows, result.result.metaData), fields }
   }
   async selectTopStream(table, orderBy, filters, chunkSize, schema): Promise<StreamResults> {
     const q = this.genSelect(table, null, null, orderBy, filters, schema)
@@ -764,11 +764,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   private async driverExecuteSimple(query) {
     const {result} = await this.driverExecuteSingle(query)
+    return this.convertRowsToObjects(result.rows, result.metaData)
+  }
+
+  private async convertRowsToObjects(rows: any[], metaData: oracle.Metadata<unknown>[]) {
     const allRows = []
-    result.rows.forEach((r: any[]) => {
+    rows.forEach((r: any[]) => {
       const nuRow = {}
       r.forEach((item, idx) => {
-        const field = result.metaData[idx].name
+        const field = metaData[idx].name
         nuRow[field] = item
       })
       allRows.push(nuRow)
@@ -801,7 +805,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           log.debug("Execute Query", queryText, options)
           const data = await c.execute(queryText, {}, { outFormat: oracle.OUT_FORMAT_ARRAY})
 
-          results.push({ result: data, info: q})
+          results.push({ result: data, info: q, rows: data.rows, columns: data.metaData, arrayMode: true })
         }
         await c.commit()
         return results
@@ -812,6 +816,17 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   private identify(query: string): IdentifyResult[] {
     return rawIdentify(query, {strict: false, dialect: 'oracle'})
   }
+
+  resolveBksFields(queryResult: DriverResult): BksField[] {
+    const columns = queryResult.columns;
+    return columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      if (column.dbType === oracle.DB_TYPE_BLOB) {
+        bksType = 'BINARY'
+      }
+      return { name: column.name, bksType }
+    })
+  }
 }
 
 
@@ -820,4 +835,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 interface DriverResult {
   result: oracle.Result<unknown>,
   info: IdentifyResult
+  rows: oracle.Result<unknown>['rows']
+  columns: oracle.Result<unknown>['metaData']
+  arrayMode: true
 }
