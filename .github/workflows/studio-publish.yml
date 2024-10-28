@@ -265,7 +265,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_TEAM_ID: "7KK583U8H2"
           CSC_LINK: ${{ secrets.mac_dev }}
-          CSS_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
+          CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
