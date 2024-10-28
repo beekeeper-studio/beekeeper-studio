@@ -339,8 +339,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
       - run: npm install js-yaml
       - name: Merge yml files
         uses: actions/github-script@v7
