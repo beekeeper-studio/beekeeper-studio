@@ -7,7 +7,6 @@ on:
     paths-ignore:
       - "apps/sqltools/**"
 jobs:
-
   create_draft_release:
     strategy:
       matrix:
@@ -335,8 +334,7 @@ jobs:
             const fs = require('fs')
             const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.CHANNEL}-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
-
-   post-release:
+  post-release:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
