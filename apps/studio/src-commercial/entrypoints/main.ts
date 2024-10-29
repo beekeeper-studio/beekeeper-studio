@@ -5,7 +5,7 @@ import { app, protocol } from 'electron'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
-import log from '@/lib/log/bksLogger'
+import log from '@bksLogger'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
