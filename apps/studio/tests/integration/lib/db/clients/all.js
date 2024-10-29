@@ -398,6 +398,13 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
     })
   })
+
+  describe("Serialization", () => {
+    test("should support binary", async () => {
+      if (getUtil().data.disabledFeatures?.binaryColumn) return
+      await getUtil().serializationBinary()
+    })
+  })
 }
 
 // test functions below

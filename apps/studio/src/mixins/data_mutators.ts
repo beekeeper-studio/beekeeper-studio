@@ -3,6 +3,23 @@ import { Mutators } from '../lib/data/tools'
 import helpers, { escapeHtml } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('mixins/data_mutators');
+
+/**
+  * Extracted from https://github.com/zloirock/core-js/blob/master/packages/core-js/modules/esnext.uint8-array.to-hex.js
+  * FIXME we don't need this soon after `UInt8Array.prototype.toHex` is
+  * implemented. See https://github.com/tc39/proposal-arraybuffer-base64
+  */
+function uint8ArrayToHex(arr: Uint8Array) {
+  let result = '';
+  for (var i = 0, length = arr.length; i < length; i++) {
+    var hex = 1.0.toString.call(arr[i], 16);
+    result += hex.length === 1 ? '0' + hex : hex;
+  }
+  return result;
+}
 
 export function buildNullValue(text: string) {
   return `<span class="null-value">(${escapeHtml(text)})</span>`
@@ -45,19 +62,34 @@ export default {
       return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
     },
     cellTooltip(_event, cell: CellComponent) {
-      const nullValue = emptyResult(cell.getValue())
-      return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue(), true))
+      let cellValue = cell.getValue()
+      if (cellValue instanceof Uint8Array) {
+        cellValue = `0x${uint8ArrayToHex(cellValue)} (Binary in hex format)`
+      }
+      const nullValue = emptyResult(cellValue)
+      return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
     },
     cellFormatter(
       cell: CellComponent,
       params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void },
       onRendered: (func: () => void) => void
     ) {
-      const nullValue = emptyResult(cell.getValue())
+      const classNames = []
+      let htmlPrefix = ''
+      let cellValue = cell.getValue()
+
+      // TODO put this in a better place
+      if (cellValue instanceof Uint8Array) {
+        cellValue = '0x' + uint8ArrayToHex(cellValue)
+        classNames.push('binary-type')
+        // htmlPrefix += '<span class="cell-decoration buffer-type hex-format">0x</span>'
+      }
+
+      const nullValue = emptyResult(cellValue)
       if (nullValue) {
         return nullValue
       }
-      let cellValue = this.niceString(cell.getValue(), true)
+      cellValue = this.niceString(cellValue, true)
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
 
       // removing the <pre> will break selection / copy paste, see ResultTable
@@ -77,6 +109,7 @@ export default {
       } else if (
           params?.isPK != null &&
           !params.isPK &&
+          !classNames.includes('binary-type') &&
           _.isInteger(Number(cellValue))
         ) {
         try {
@@ -87,7 +120,9 @@ export default {
         }
     }
 
-      return result;
+      cell.getElement().classList.add(...classNames)
+
+      return htmlPrefix + result;
     },
     yesNoFormatter: helpers.yesNoFormatter,
     ...Mutators

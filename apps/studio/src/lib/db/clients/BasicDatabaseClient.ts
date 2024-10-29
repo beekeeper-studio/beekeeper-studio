@@ -5,7 +5,7 @@ import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
-import { DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
+import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "electron-log";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
@@ -414,20 +414,26 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   /** Serializes and mutates an array of rows based on their fields */
   protected async serializeQueryResult(qr: RawResultType): Promise<SerializedQueryResult> {
     const fields = this.resolveBksFields(qr)
+
+    // No transcoders, just return the raw result
+    if (!this.binaryTranscoder) {
+      return { fields, rows: qr.rows };
+    }
+
     const binaryFields = []
 
-    fields.forEach((field, idx) => {
-      if (field.bksType === 'BINARY') {
-        binaryFields.push(qr.arrayMode ? idx : field.name)
-      }
-    })
+    // No need to serialize buffers for now because they are automatically
+    // converted to UInt8Array which is an ArrayBuffer viewer. But how??
+    // fields.forEach((field, idx) => {
+    //   if (field.bksType === 'BINARY' && this.binaryTranscoder) {
+    //     binaryFields.push(qr.arrayMode ? idx : field.name)
+    //   }
+    // })
 
-    if (binaryFields.length > 0) {
-      for (const row of qr.rows) {
-        binaryFields.forEach((key) => {
-          row[key] = this.binaryTranscoder.serialize(row[key])
-        })
-      }
+    for (const row of qr.rows) {
+      binaryFields.forEach((key) => {
+        row[key] = this.binaryTranscoder.serialize(row[key])
+      })
     }
 
     return { fields, rows: qr.rows };

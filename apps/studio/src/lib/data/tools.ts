@@ -48,7 +48,7 @@ export const Mutators = {
    */
   genericMutator(value: any, preserveComplex = false): JsonFriendly {
     const mutate = Mutators.genericMutator
-    if (_.isBuffer(value)) return value.toString('hex')
+    if (ArrayBuffer.isView(value)) return value; // Buffers are formatted via Formatters, rather than mutated
     if (_.isDate(value)) return value.toISOString()
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
