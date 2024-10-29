@@ -51,7 +51,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}
     needs: [create_draft_release, identify_channel]
     outputs:
-      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
+      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
