@@ -392,7 +392,7 @@ jobs:
             const script = require('./.github/scripts/create_draft_release.js')
             await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
       - name: Copy community release to ultimate
-        uses: actions/github-script@7
+        uses: actions/github-script@v7
         env:
           TAG_NAME: ${{ github.ref_name }}
           SOURCE: ${{ needs.create_draft_release.outputs.id }}
