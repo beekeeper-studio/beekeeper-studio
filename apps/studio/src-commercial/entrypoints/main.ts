@@ -148,12 +148,20 @@ async function initBasics() {
     process.env['LD_LIBRARY_PATH'] = `${process.env.LD_LIBRARY_PATH}:${settings.oracleInstantClient.value}`
   }
 
+  const defaultChannel = settings.useBeta.defaultValue === 'true' ? 'beta' : 'stable'
+  // we should change the default channel based on the current app channel
+  if (platformInfo.parsedAppVersion.channel !== defaultChannel) {
+    settings.useBeta.defaultValue = platformInfo.parsedAppVersion.channel === 'beta' ? 'true' : 'false'
+    log.debug("Updating the default channel to", platformInfo.parsedAppVersion.channel)
+    await settings.useBeta.save()
+  }
+
   log.debug("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
   log.debug("Building the window")
   log.debug("managing updates")
-  manageUpdates(settings.useBeta.value as boolean)
+  manageUpdates(settings.useBeta.valueAsBool)
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     const url = args[0]
     if (!url) return
