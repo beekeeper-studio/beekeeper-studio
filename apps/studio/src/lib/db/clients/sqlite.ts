@@ -112,9 +112,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       ORDER BY name
     `;
 
-    const { rows: data } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql);
 
-    return data as TableOrView[];
+    return rows as TableOrView[];
   }
 
   async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -124,9 +124,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       WHERE type = 'view'
     `;
 
-    const { rows: data } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql);
 
-    return data as TableOrView[];
+    return rows as TableOrView[];
   }
 
   listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
@@ -141,8 +141,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     if (table) {
       const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
 
-      const { rows: data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-      return this.dataToColumns(data, table);
+      const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
+      return this.dataToColumns(rows, table);
     }
 
     const allTables = (await this.listTables()) || []
@@ -179,24 +179,24 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         AND tbl_name = '${table}'
     `;
 
-    const { rows: data } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql);
 
-    return data as TableTrigger[]
+    return rows as TableTrigger[]
   }
 
   async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
     const sql = `PRAGMA index_list('${SD.escapeString(table)}')`;
 
-    const { rows: data } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql);
 
-    const allSQL = data.map((row) => `PRAGMA index_xinfo('${SD.escapeString(row.name)}')`).join(";");
+    const allSQL = rows.map((row) => `PRAGMA index_xinfo('${SD.escapeString(row.name)}')`).join(";");
     const infos = await this.driverExecuteMultiple(allSQL);
 
     const indexColumns: IndexColumn[][] = infos.map((result) => {
       return result.rows.filter((r) => !!r.name).map((r) => ({ name: r.name, order: r.desc ? 'DESC' : 'ASC' }))
     })
 
-    return data.map((row, idx) => ({
+    return rows.map((row, idx) => ({
       id: row.seq,
       name: row.name,
       unique: row.unique === 1,
@@ -217,8 +217,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`
-    const { rows: data } = await this.driverExecuteSingle(sql);
-    return data.map(row => ({
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map(row => ({
       constraintName: row.id,
       constraintType: 'FOREIGN',
       toTable: row.table,
@@ -378,9 +378,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       WHERE name = '${table}';
     `;
 
-    const { rows: data } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql);
 
-    return data.map((row) => row.sql)[0];
+    return rows.map((row) => row.sql)[0];
   }
 
   async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
@@ -390,9 +390,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       WHERE name = '${view}';
     `;
 
-    const { rows: data } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql);
 
-    return data.map((row) => row.sql);
+    return rows.map((row) => row.sql);
   }
 
   getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
@@ -423,8 +423,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getPrimaryKeys(table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     const sql = `pragma table_xinfo('${SD.escapeString(table)}')`
-    const { rows: data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-    const found = data.filter(r => r.pk > 0)
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
+    const found = rows.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
     return found.map((r) => ({
       columnName: r.name,
