@@ -152,6 +152,7 @@ async function initBasics() {
   // we should change the default channel based on the current app channel
   if (platformInfo.parsedAppVersion.channel !== defaultChannel) {
     settings.useBeta.defaultValue = platformInfo.parsedAppVersion.channel === 'beta' ? 'true' : 'false'
+    log.debug("Updating the default channel to", platformInfo.parsedAppVersion.channel)
     await settings.useBeta.save()
   }
 
