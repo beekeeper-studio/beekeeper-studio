@@ -5,6 +5,8 @@ export interface Version {
   major: number;
   minor: number;
   patch: number;
+  channel: 'stable' | 'beta' | 'alpha'
+  channelRelease?: number
 }
 
 export enum DevLicenseState {
