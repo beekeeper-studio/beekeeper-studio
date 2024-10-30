@@ -61,7 +61,7 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const slice = isDevEnv ? 2 : 1
   const parsedArgs = yargs(p.argv.slice(slice))
-  const appVersion = testMode ? 'test-mode' : e.app.getVersion()
+  const appVersion = testMode ? '0.0.0' : e.app.getVersion()
 
   const parsedAppVersion = resolveAppVersion(appVersion)
   function isWaylandMode() {
