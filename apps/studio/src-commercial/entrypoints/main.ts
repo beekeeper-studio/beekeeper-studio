@@ -261,10 +261,6 @@ ipcMain.handle('requestPorts', async () => {
     utilityProcess = null;
     await createUtilityProcess();
   }
-  createAndSendPorts(false);
-})
-
-ipcMain.on('ready', (_event) => {
   createAndSendPorts(true);
 })
 
