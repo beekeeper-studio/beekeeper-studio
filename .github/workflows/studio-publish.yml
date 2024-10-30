@@ -399,7 +399,7 @@ jobs:
           DEST: ${{ steps.create_release.outputs.id }}
         with:
           script: |
-            const script = require('./github/scripts/duplicate_release.js')
+            const script = require('./.github/scripts/duplicate_release.js')
             await script(
               'beekeeper-studio/beekeeper-studio',
               'beekeeper-studio/ultimate-releases',
