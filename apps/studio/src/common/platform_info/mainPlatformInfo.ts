@@ -12,7 +12,7 @@ const p = process
 export function resolveAppVersion(appVersion): Version {
   const [major, minor, patch, channelVersion] = appVersion.split('.')
 
-  if(!patch.includes('-')) {
+  if(!patch?.includes('-')) {
     // no -beta or -alpha
     return { major: Number(major), minor: Number(minor), patch: Number(patch), channel: 'stable' }
   }
