@@ -1700,7 +1700,11 @@ export default Vue.extend({
       const components = this.$refs.tableViewWrapper.children
       const splitSizes = this.$store.state.tableTableSplitSizes
       this.split = Split(components, {
+        elementStyle: (_dimension, size) => ({
+          'flex-basis': `calc(${size}%)`,
+        }),
         sizes: splitSizes,
+        expandToMin: true,
         onDragEnd: () => {
           this.$store.dispatch("setTableTableSplitSizes", this.split.getSizes())
         }
