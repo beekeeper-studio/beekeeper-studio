@@ -1,14 +1,23 @@
 <template>
-  <div class="tabcontent">
-    <div
-      v-if="isSupported"
-      class="tabcontent"
-    >
-      <div v-if="isCommunity" style="padding: 0 1rem;">
-        <upsell-content />
-      </div>
+  <div
+    v-if="!isSupported"
+    class="tabcontent"
+  >
+    <div class="not-supported">
+      <p>
+        Beekeeper does not currently support Import from File for {{ this.dialectTitle }} ☹️
+      </p>
+    </div>
+  </div>
+  <div
+    v-else-if="isCommunity"
+    class="tab-upsell-wrapper"
+  >
+    <upsell-content />
+  </div>
+  <div v-else class="tabcontent">
+    <div class="tabcontent">
       <stepper
-        v-else
         :steps="importSteps"
         :button-portal-target="portalName"
         wrapper-class="import-export-wrapper"
@@ -79,14 +88,6 @@
           </p>
         </div>
       </div>
-    </div>
-    <div
-      class="not-supported"
-      v-else
-    >
-      <p>
-        Beekeeper does not currently support Import from File for {{ this.dialectTitle }} ☹️
-      </p>
     </div>
 
     <status-bar>
@@ -197,7 +198,7 @@
       }
     },
     computed: {
-      ...mapGetters(['schemaTables', 'dialectData', 'dialect', 'isCommunity']),
+      ...mapGetters(['schemaTables', 'dialectData', 'dialect', 'isCommunity', 'isUltimate']),
       ...mapState(['tables', 'connection']),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
       isSpinning() {
