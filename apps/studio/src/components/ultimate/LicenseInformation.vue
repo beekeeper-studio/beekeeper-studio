@@ -15,8 +15,8 @@
         </tr>
         <tr>
           <td>Valid for app version</td>
-          <td v-if="activeLicense">Any version</td>
-          <td v-else-if="expiredLifetime">{{ license.maxAllowedAppRelease.tagName }} or lower</td>
+          <td v-if="expiredLifetime">{{ license.maxAllowedAppRelease.tagName }} or lower</td>
+          <td v-else-if="activeLicense">Any version</td>
           <td v-else>No access, new license required</td>
         </tr>
       </table>
@@ -60,8 +60,8 @@ export default {
       return this.licenseStatus.isSupportDateExpired && !this.licenseStatus.isValidDateExpired
     },
     status() {
-      if (this.activeLicense) return "Active License"
       if (this.expiredLifetime) return "Expired, with lifetime access"
+      if (this.activeLicense) return "Active License"
       return "Expired, no lifetime access"
     }
   },
