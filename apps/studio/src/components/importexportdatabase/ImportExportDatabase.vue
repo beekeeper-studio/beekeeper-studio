@@ -1,9 +1,13 @@
 <template>
-  <div class="import-export__wrapper tabcontent">
+  <div
+    v-if="isCommunity"
+    class="tab-upsell-wrapper"
+  >
+    <upsell-content />
+  </div>
+  <div v-else class="import-export__wrapper tabcontent">
     <div class="import-export__container">
-      <upsell-content v-if="isCommunity" />
       <stepper
-        v-else
         :steps="exportSteps"
         @finished="startExport"
         :button-portal-target="portalName"

@@ -14,6 +14,9 @@
   }
 
   &.upgrade-modal {
+    .dialog-content {
+      padding: 2rem 2rem 1rem;
+    }
     .dialog-c-title {
       font-size: 1.2em;
     }
@@ -34,6 +37,27 @@
           list-style: none;
         }
       }
+      > p {
+        margin-bottom: 0;
+      }
+    }
+    .check-list {
+      margin-bottom: 0;
+    }
+    .vue-dialog-buttons {
+      justify-content: stretch;
+      padding-left: 0;
+      padding-right: 0;
+      & > div {
+        width: 100%;
+      }
+      .actions {
+        justify-content: flex-end;
+      }
+    }
+    .close-btn {
+      top: 1.5rem;
+      right: 1.5rem;
     }
   }
 
