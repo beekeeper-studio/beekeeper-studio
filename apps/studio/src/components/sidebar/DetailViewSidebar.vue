@@ -4,7 +4,6 @@
     ref="sidebar"
     v-show="!hidden"
   >
-    <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" @close="close" />
     <div class="header">
       <div class="header-group">
         <span class="title sub">{{ sidebarTitle }}</span>
@@ -68,6 +67,7 @@
     <div class="empty-state" v-show="empty">
       No Data
     </div>
+    <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" />
   </div>
 </template>
 
@@ -127,7 +127,7 @@ export default Vue.extend({
   },
   computed: {
     sidebarTitle() {
-      return this.title ?? "Detail View Sidebar"
+      return this.title ?? "JSON Row Viewer"
     },
     empty() {
       return _.isEmpty(this.value);

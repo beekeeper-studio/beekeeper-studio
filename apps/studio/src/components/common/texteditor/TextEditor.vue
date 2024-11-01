@@ -275,6 +275,10 @@ export default {
         cm.setOption("readOnly", this.readOnly);
       }
 
+      if (this.lineWrapping) {
+        cm.setOption("lineWrapping", this.lineWrapping);
+      }
+
       cm.on("change", (cm) => {
         this.$emit("input", cm.getValue());
       });

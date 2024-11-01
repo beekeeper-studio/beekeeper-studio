@@ -1,22 +1,27 @@
 <template>
   <div
+    v-if="!isSupported"
     class="tabcontent"
-    v-if="dataLoaded"
   >
-    <div
-      v-if="!isSupported"
-      class="not-supported"
-    >
+    <div class="not-supported">
       <div class="card-flat padding">
         <h3 class="card-title">
           Beekeeper does not currently support {{ isRestore ? 'restore' : 'backups' }} for {{ dialect }} ☹️
         </h3>
       </div>
     </div>
-    <div v-else-if="isCommunity">
-      <upsell-content></upsell-content>
-    </div>
-    <div v-else-if="!backupRunning" class="backup-stepper-wrapper">
+  </div>
+  <div
+    v-else-if="isCommunity"
+    class="tab-upsell-wrapper"
+  >
+    <upsell-content></upsell-content>
+  </div>
+  <div
+    v-else-if="dataLoaded"
+    class="tabcontent"
+  >
+    <div v-if="!backupRunning" class="backup-stepper-wrapper">
       <Stepper
         :steps="steps"
         :button-portal-target="isRestore ? 'restore-stepper-buttons' : 'backup-stepper-buttons'"
