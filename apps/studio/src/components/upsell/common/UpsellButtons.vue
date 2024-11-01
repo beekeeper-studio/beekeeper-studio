@@ -4,9 +4,12 @@
   <div class="upsell-buttons">
     <p class="small text-muted card padding flex flex-middle" v-if="isSupportDateExpired">
       <span class="expand flex flex-middle">
-        <i class="material-icons me-2">info_outline</i> Your existing license is not valid for this version of the app.
+        <i class="material-icons me-2">info_outline</i>
+        <span>
+          Your existing license is not valid for this version of the app.
+          <a @click.prevent="showLicenseInfo">Learn more.</a>
+        </span>
       </span>
-      <span class="text-nowrap"><a @click.prevent="showLicenseInfo">Learn more</a></span>
     </p>
     <div class="actions">
       <a v-if="trialAvailable" class="btn btn-flat" v-tooltip="'14 day free trial, no email or credit card required'" @click.prevent="startTrial">Start Free Trial</a>
@@ -18,7 +21,7 @@
     </p>
   </div>
 </template>
-<style scoped >
+<style scoped lang="scss">
   .actions {
     display: flex;
     flex-direction: row;
@@ -29,10 +32,15 @@
   .btn {
     white-space: nowrap;
   }
-  p.help {
-    margin-bottom: 0;
+  p {
+    .help {
+      margin-bottom: 0;
+    }
+    a {
+      display: inline;
+      font-weight: 700;
+    }
   }
-
 </style>
 <script lang="js">
 import { AppEvent } from '@/common/AppEvent';
