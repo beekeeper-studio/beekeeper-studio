@@ -258,10 +258,16 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
 ipcMain.handle('requestPorts', async () => {
   log.info('Client requested ports');
   if (!utilityProcess || !utilityProcess.pid) {
+    log.info('NO UTIL PROCESS')
     utilityProcess = null;
     await createUtilityProcess();
   }
-  createAndSendPorts(true);
+
+  if (newWindows.length > 0) {
+    createAndSendPorts(true);
+  } else {
+    createAndSendPorts(false);
+  }
 })
 
 // Open a connection from a file (e.g. ./sqlite.db)
