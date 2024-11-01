@@ -257,7 +257,7 @@ const store = new Vuex.Store<State>({
       state.storeInitialized = b
     },
     workspaceId(state, id: number) {
-      state.workspaceId = id
+      state.workspaceId = Number(id)
     },
     selectSidebarItem(state, item: string) {
       state.selectedSidebarItem = item
