@@ -350,7 +350,8 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     const queries = []
     const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
     const primaryKeys = primaryKeysPromise.map(v => v.columnName)
-    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys }).join(';'))
+    const createUpsertFunc = this.createUpsertFunc ?? null
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys, createUpsertFunc }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************

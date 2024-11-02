@@ -215,7 +215,6 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
   if (canRunAsUpsert && typeof(createUpsertFunc) === 'function'){
     return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
   } else if (canRunAsUpsert) {
-    // might have to be different for different engines. 
     // https://knexjs.org/guide/query-builder.html#onconflict
     return builder
       .insert(data)
@@ -229,9 +228,9 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
     .toQuery()
 }
 
-export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [] } = {}) {
+export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [], createUpsertFunc = null } = {}) {
   if (!inserts) return []
-  return inserts.map(insert => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys }))
+  return inserts.map(insert => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }))
 }
 
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {
