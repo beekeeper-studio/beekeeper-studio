@@ -51,7 +51,6 @@
 </template>
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
-import TimeAgo from 'javascript-time-ago'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import ErrorAlert from '../common/ErrorAlert.vue'

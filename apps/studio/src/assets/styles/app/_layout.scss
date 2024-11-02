@@ -609,15 +609,16 @@ input[type=file] {
   &.gutter-horizontal,
   &.gutter-vertical {
     display: flex;
-    background-color: tranparent;
-    z-index: 10;
+    background-color: transparent;
+    z-index: 20;
   }
   &.gutter-horizontal {
     width: 0!important;
     cursor: ew-resize;
     &:after {
       height: 100%;
-      width: 5px;
+      width: var(--gutter-size, 10px);
+      transform: translateX(-50%);
       background-color: inherit;
     }
   }

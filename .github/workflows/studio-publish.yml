@@ -8,15 +8,6 @@ on:
       - "apps/sqltools/**"
 jobs:
   create_draft_release:
-    strategy:
-      matrix:
-        edition:
-          - name: community
-            owner: beekeeper-studio
-            repo: beekeeper-studio
-          - name: ultimate
-            owner: beekeeper-studio
-            repo: ultimate-releases
     runs-on: "ubuntu-20.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -33,8 +24,8 @@ jobs:
         uses: actions/github-script@v7
         env:
           TAG_NAME: ${{ github.ref_name }}
-          OWNER: ${{matrix.edition.owner}}
-          REPO: ${{matrix.edition.repo}}
+          OWNER: 'beekeeper-studio'
+          REPO: 'beekeeper-studio'
         with:
           github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
@@ -60,7 +51,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}
     needs: [create_draft_release, identify_channel]
     outputs:
-      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
+      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
@@ -68,13 +59,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        edition:
-          - name: community
-            owner: beekeeper-studio
-            repo: beekeeper-studio
-          - name: ultimate
-            owner: beekeeper-studio
-            repo: ultimate-releases
         os:
           - name: ubuntu-20.04
             arch: x64
@@ -124,10 +108,10 @@ jobs:
           ruby-version: 2.7
         if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
 
-      - name: Update repository based on the edition we're publishing
+      - name: Update repository
         env:
-          OWNER: ${{matrix.edition.owner}}
-          REPO: ${{matrix.edition.repo}}
+          OWNER: 'beekeeper-studio'
+          REPO: 'beekeeper-studio'
         uses: actions/github-script@v7
         with:
           script: |
@@ -334,7 +318,7 @@ jobs:
             const fs = require('fs')
             const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
-  post-release:
+  finalize_mac_yml:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
@@ -386,3 +370,40 @@ jobs:
           asset_path: "./mac.yml"
           asset_name: "latest-mac.yml"
           asset_content_type: 'application/octet-stream'
+
+  upload_to_ultimate:
+    needs: [release, create_draft_release, finalize_mac_yml]
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+        # Requires us to use a github token with more power (to create drafts on another repo)
+      - name: Create or check draft release (ultimate)
+        id: create_release
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          OWNER: 'beekeeper-studio'
+          REPO: 'ultimate-releases'
+        with:
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
+          script: |
+            const script = require('./.github/scripts/create_draft_release.js')
+            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+      - name: Copy community release to ultimate
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          SOURCE: ${{ needs.create_draft_release.outputs.id }}
+          DEST: ${{ steps.create_release.outputs.id }}
+        with:
+          script: |
+            const script = require('./.github/scripts/duplicate_release.js')
+            await script(
+              'beekeeper-studio/beekeeper-studio',
+              'beekeeper-studio/ultimate-releases',
+              process.env.SOURCE,
+              process.env.DEST
+            )
+

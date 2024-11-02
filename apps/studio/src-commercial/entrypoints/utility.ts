@@ -1,5 +1,6 @@
 import { MessagePortMain } from 'electron';
 import rawLog from 'electron-log'
+import _ from 'lodash'
 import ORMConnection from '@/common/appdb/Connection'
 import platformInfo from '@/common/platform_info';
 import { AppDbHandlers } from '@/handlers/appDbHandlers';
@@ -53,6 +54,25 @@ export const handlers: Handlers = {
   ...LicenseHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
+
+_.mixin({
+  'deepMapKeys': function (obj, fn) {
+
+    const x = {};
+
+    _.forOwn(obj, function (rawV, k) {
+      let v = rawV
+      if (_.isPlainObject(v)) {
+        v = _.deepMapKeys(v, fn);
+      } else if (_.isArray(v)) {
+        v = v.map((item) => _.deepMapKeys(item, fn))
+      }
+      x[fn(v, k)] = v;
+    });
+
+    return x;
+  }
+});
 
 process.on('uncaughtException', (error) => {
   log.error(error);
