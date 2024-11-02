@@ -882,6 +882,7 @@ export class DBTestUtil {
 
   async getInsertQueryTests() {
     const isFirebird = this.dbType === 'firebird'
+    const isClickhouse = this.dbType === 'clickhouse'
     const row = { job_name: "Programmer", hourly_rate: 41 }
     const initialID = this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId
     const secondID = Number(initialID) + 1
@@ -901,8 +902,8 @@ export class DBTestUtil {
       { id: thirdID, job_name: "blarns", hourly_rate: 39}
     ] }
     const insertQuery = await this.connection.getInsertQuery(tableInsert)
-    const upsertQuery = await this.connection.getInsertQuery(tableUpsert, true)
-    const multipleUpsertQuery = isFirebird ? '' : await this.connection.getInsertQuery(tableMultipleUpsert, true)
+    const upsertQuery = isClickhouse ? '' : await this.connection.getInsertQuery(tableUpsert, true)
+    const multipleUpsertQuery = isFirebird || isClickhouse ? '' : await this.connection.getInsertQuery(tableMultipleUpsert, true)
 
     const expectedInsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
@@ -926,6 +927,7 @@ export class DBTestUtil {
       mariadb: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID + ", 'Programmer') on duplicate key update `hourly_rate` =  values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)", // mysql based
       sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
       libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
+      clickhouse: '',
       sqlserver: `
         SET IDENTITY_INSERT [dbo].[jobs] ON;
         MERGE INTO [dbo].[jobs] AS target
@@ -993,6 +995,7 @@ export class DBTestUtil {
         VALUES (source.[id], source.[job_name], source.[hourly_rate]);
       SET IDENTITY_INSERT [dbo].[jobs] OFF;`,
       firebird: '',
+      clickhouse: '',
       oracle: `
       MERGE INTO "BEEKEEPER"."jobs" target
       USING (
