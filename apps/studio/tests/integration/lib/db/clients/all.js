@@ -997,8 +997,9 @@ export async function prepareImportTests (util) {
       }
     ]
   }
+  const schema = await util().defaultSchema() ?? null
   const table = {
-    schema: util().defaultSchema ?? null,
+    schema,
     name: tableName,
     entityType: 'table'
   }
