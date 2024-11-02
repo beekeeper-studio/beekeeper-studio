@@ -9,11 +9,18 @@ export interface ILicenseHandlers {
   "license/getStatus": () => Promise<LicenseStatus>;
   "license/add": ({ email, key }: { email: string; key: string; }) => Promise<TransportLicenseKey>;
   "license/get": () => Promise<TransportLicenseKey[]>;
+  "license/remove": (({ id }: { id: number }) => Promise<void>)
 }
 
 export const LicenseHandlers: ILicenseHandlers = {
   "license/createTrialLicense": async function () {
     await LicenseKey.createTrialLicense();
+  },
+  "license/remove": async function({ id }){
+    const key = await LicenseKey.findOneBy({ id })
+    if (key) {
+      await key.remove()
+    }
   },
   "license/getStatus": async function () {
     const status = await LicenseKey.getLicenseStatus();
