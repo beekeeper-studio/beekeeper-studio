@@ -10,7 +10,7 @@ import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -1055,6 +1055,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const data = await this.driverExecuteSingle(sql, { params });
 
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
+  }
+
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null): Promise<string | string[]> {
+    const runAsUpsert = this.version.number >= 90500
+    const queries = []
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys }).join(';'))
+    return joinQueries(queries)
   }
 
   async importBeginCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
