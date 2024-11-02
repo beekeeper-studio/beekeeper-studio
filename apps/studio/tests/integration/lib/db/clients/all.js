@@ -944,6 +944,7 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
 
 export async function prepareImportTests (util) {
   const dialect = util().dialect
+  const schema = util().defaultSchema ?? null
   let tableName = 'importstuff'
 
   const importScriptOptions = {
@@ -997,7 +998,6 @@ export async function prepareImportTests (util) {
       }
     ]
   }
-  const schema = await util().defaultSchema() ?? null
   const table = {
     schema,
     name: tableName,
