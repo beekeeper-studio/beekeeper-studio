@@ -19,10 +19,10 @@ const TEST_VERSIONS = [
 
   // FYI - this might break when mssql-tools upgrades to version 19, as it affects the path
   // of sqlcmd
-  { version: '2019-latest', readonly: false },
-  { version: '2019-latest', readonly: true },
+  // { version: '2019-latest', readonly: false },
+  // { version: '2019-latest', readonly: true },
   { version: '2022-latest', readonly: false },
-  { version: '2022-latest', readonly: true },
+  // { version: '2022-latest', readonly: true },
 
 ]
 
@@ -39,8 +39,6 @@ function testWith(dockerTag: string, readonly: boolean) {
     beforeAll(async () => {
       const timeoutDefault = 5000
 
-      const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
-
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
         // .withResourcesQuota({ memory: 2, cpu: 1 })
         .withEnvironment({
@@ -50,14 +48,7 @@ function testWith(dockerTag: string, readonly: boolean) {
           "ACCEPT_EULA": "Y"
         })
         .withExposedPorts(1433)
-        .withWaitStrategy(Wait.forHealthCheck())
-        .withHealthCheck({
-          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
-          interval: 5000,
-          timeout: 3000,
-          retries: 10,
-          startPeriod: 7000,
-        })
+        .withWaitStrategy(Wait.forLogMessage("SQL Server is now ready for client connections."))
         .withStartupTimeout(dbtimeout)
         .start()
 

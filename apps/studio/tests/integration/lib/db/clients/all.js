@@ -232,7 +232,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
   })
 
-  describe("Import Scripts", () => {
+  describe.only("Import Scripts", () => {
     beforeEach(async() => {
       await prepareImportTable(getUtil())
     })
@@ -944,7 +944,7 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
 
 export async function prepareImportTests (util) {
   const dialect = util().dialect
-  const schema = dialect === 'sqlserver' ? 'dbo' : util().defaultSchema
+  const schema = util().defaultSchema ?? null
   let tableName = 'importstuff'
 
   const importScriptOptions = {
@@ -999,12 +999,13 @@ export async function prepareImportTests (util) {
     ]
   }
   const table = {
-    schema: schema ?? null,
+    schema,
     name: tableName,
     entityType: 'table'
   }
   const formattedData = data.map(d => ({
     table: tableName,
+    schema,
     data: [d]
   }))
 

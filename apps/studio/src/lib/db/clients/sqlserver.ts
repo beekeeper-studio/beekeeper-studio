@@ -486,7 +486,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     ).join(', ')
 
     return `
-      SET IDENTITY_INSERT [${schema}].[${tableName}] ON;
       MERGE INTO [${schema}].[${tableName}] AS target
       USING (VALUES
         ${usingSQLStatement}
@@ -497,7 +496,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           ${updateSet()}
       WHEN NOT MATCHED THEN
         ${insertSQL()};
-      SET IDENTITY_INSERT [${schema}].[${tableName}] OFF;
     `
   }
 
@@ -913,7 +911,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const { name, schema } = table
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
     const identOn = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} ON;` : '';
-
     const identOff = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} OFF;` : '';
     const query = `${identOn}${sqlString};${identOff}`;
     return await executeOptions.request.query(query, executeOptions)

@@ -66,7 +66,6 @@ export default class extends Import {
           }
           
           const importSQL = await this.connection.getImportSQL(importData, this.table.name, this.table.schema || null);
-          log.info('got importSQL: ', importSQL)
           await this.connection.importLineReadCommand(this.table, importSQL, updatedImportScriptOptions)
         } catch (err) {
           this.error = err;
