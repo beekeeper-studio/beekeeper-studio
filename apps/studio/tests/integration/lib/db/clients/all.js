@@ -944,7 +944,7 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
 
 export async function prepareImportTests (util) {
   const dialect = util().dialect
-  const schema = util().defaultSchema ?? null
+  const schema = dialect === 'sqlserver' ? 'dbo' : util().defaultSchema
   let tableName = 'importstuff'
 
   const importScriptOptions = {
@@ -999,7 +999,7 @@ export async function prepareImportTests (util) {
     ]
   }
   const table = {
-    schema,
+    schema: schema ?? null,
     name: tableName,
     entityType: 'table'
   }
