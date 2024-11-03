@@ -397,10 +397,12 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
           SOURCE: ${{ needs.create_draft_release.outputs.id }}
           DEST: ${{ steps.create_release.outputs.id }}
+          GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
         with:
           script: |
             const script = require('./.github/scripts/duplicate_release.js')
             await script(
+              github,
               'beekeeper-studio/beekeeper-studio',
               'beekeeper-studio/ultimate-releases',
               process.env.SOURCE,
