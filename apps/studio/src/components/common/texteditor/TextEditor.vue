@@ -349,10 +349,11 @@ export default {
 
       this.editor = cm;
 
-      this.initializeMarkers();
-      this.initializeBookmarks();
-
-      this.$emit("update:initialized", true);
+      this.$nextTick(() => {
+        this.initializeMarkers();
+        this.initializeBookmarks();
+        this.$emit("update:initialized", true);
+      })
     },
     initializeMarkers() {
       const markers = this.markers || [];
