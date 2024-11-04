@@ -77,13 +77,14 @@ export default {
     ...mapState(['windowTitle'])
   },
   mounted() {
-    // FIXME This doesn't work after the refactor and needs fixing
     window.main.onMaximize(() => {
       this.maximized = true
     }, this.$util.sId);
+
     window.main.onUnmaximize(() => {
       this.maximized = false
     }, this.$util.sId);
+
     window.main.onEnterFullscreen(() => {
       this.fullscreen = true
     }, this.$util.sId);
@@ -93,14 +94,8 @@ export default {
     }, this.$util.sId);
   },
   methods: {
-    // if the above works, we shouldn't need this
-    //async updateFlags() {
-    //  this.maximized = await window.main.isMaximized();
-    //  this.fullscreen = await window.main.isFullscreen();
-    //},
     async minimizeWindow() {
       await window.main.minimizeWindow();
-      //await this.updateFlags();
     },
     async maximizeWindow() {
       const isMaximized = await window.main.isMaximized();
@@ -111,7 +106,6 @@ export default {
       } else {
         await window.main.maximizeWindow();
       }
-      //await this.updateFlags();
     },
     async closeWindow() {
       await window.main.closeWindow();
