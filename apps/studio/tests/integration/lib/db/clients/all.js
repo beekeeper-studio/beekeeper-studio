@@ -232,7 +232,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
   })
 
-  describe.only("Import Scripts", () => {
+  describe("Import Scripts", () => {
     beforeEach(async() => {
       await prepareImportTable(getUtil())
     })

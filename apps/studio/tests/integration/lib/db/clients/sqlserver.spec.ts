@@ -19,10 +19,10 @@ const TEST_VERSIONS = [
 
   // FYI - this might break when mssql-tools upgrades to version 19, as it affects the path
   // of sqlcmd
-  // { version: '2019-latest', readonly: false },
-  // { version: '2019-latest', readonly: true },
+  { version: '2019-latest', readonly: false },
+  { version: '2019-latest', readonly: true },
   { version: '2022-latest', readonly: false },
-  // { version: '2022-latest', readonly: true },
+  { version: '2022-latest', readonly: true },
 
 ]
 
