@@ -455,7 +455,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
       return changes
     }
 
-    changes.inserts.forEach((ins) => {
+    changes.inserts?.forEach((ins) => {
       ins.data.forEach((row) => {
         Object.keys(row).forEach((key) => {
           row[key] = this.deserializeValue(row[key])
@@ -463,14 +463,14 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
       })
     })
 
-    changes.updates.forEach((upd) => {
+    changes.updates?.forEach((upd) => {
       upd.primaryKeys.forEach((pk) => {
         pk.value = this.deserializeValue(pk.value)
       })
       upd.value = this.deserializeValue(upd.value)
     })
 
-    changes.deletes.forEach((del) => {
+    changes.deletes?.forEach((del) => {
       del.primaryKeys.forEach((pk) => {
         pk.value = this.deserializeValue(pk.value)
       })
