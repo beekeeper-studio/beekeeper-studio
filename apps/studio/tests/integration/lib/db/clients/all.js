@@ -385,7 +385,7 @@ export function runCommonTests(getUtil, opts = {}) {
       await itShouldGenerateSQLForAllChanges(getUtil())
     })
 
-    test.only("Should generate scripts for all types of changes with binary format", async () => {
+    test("Should generate scripts for all types of changes with binary format", async () => {
       if (getUtil().data.disabledFeatures?.binaryColumn) return
       await itShouldGenerateSQLWithBinary(getUtil())
     })
