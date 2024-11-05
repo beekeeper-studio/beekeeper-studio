@@ -1,6 +1,4 @@
 // original code Copyright (c) 2023 Michael
-const fetch = require("node-fetch");
-
 module.exports = async (octo, sourceRepo, destRepo, sourceReleaseId, destReleaseId) => {
   const gitHubKey = process.env.GITHUB_TOKEN;
 
