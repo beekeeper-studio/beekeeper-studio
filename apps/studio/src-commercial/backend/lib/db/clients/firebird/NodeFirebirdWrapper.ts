@@ -128,6 +128,7 @@ export class Connection {
                   const chunks: Buffer[] = []
                   event.on('data', (chunk: Buffer) => chunks.push(chunk));
                   event.on('end', () => {
+                    // TODO find how many bytes to read to get faster
                     resBlob({ value: Buffer.concat(chunks), column: name, row });
                   });
                 });
@@ -229,6 +230,7 @@ export class Transaction {
                   const chunks: Buffer[] = []
                   event.on('data', (chunk: Buffer) => chunks.push(chunk));
                   event.on('end', () => {
+                    // TODO find how many bytes to read to get faster
                     resBlob({ value: Buffer.concat(chunks), column: name, row });
                   });
                 });

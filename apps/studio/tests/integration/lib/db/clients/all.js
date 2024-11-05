@@ -1,4 +1,5 @@
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
+import { uint8 as u } from '@tests/utils'
 
 /**
  * @typedef {import('../../../../lib/db').DBTestUtil} DBTestUtil
@@ -382,6 +383,11 @@ export function runCommonTests(getUtil, opts = {}) {
 
     test("Should generate scripts for all types of changes", async () => {
       await itShouldGenerateSQLForAllChanges(getUtil())
+    })
+
+    test.only("Should generate scripts for all types of changes with binary format", async () => {
+      if (getUtil().data.disabledFeatures?.binaryColumn) return
+      await itShouldGenerateSQLWithBinary(getUtil())
     })
 
     test("Should generate scripts for top selection", async () => {
@@ -947,6 +953,66 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
   expect(sql.includes('test_inserts'));
   expect(sql.includes('jane'));
   expect(sql.includes('testy'));
+
+}
+
+/** @param {DBTestUtil} util */
+export const itShouldGenerateSQLWithBinary = async function (util) {
+  const sql = await util.connection.applyChangesSql({
+    inserts: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        data: [{ id: u`deadbeef`, name: 'beef' }]
+      },
+    ],
+    updates: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [{ column: 'id', value: u`deadbeef` }],
+        column: 'name',
+        value: 'beefy'
+      }
+    ],
+    deletes: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [{ column: 'id', value: u`deadbeef` }],
+      }
+    ]
+  })
+
+  /** @type {Record<import('@/shared/lib/dialects/models').Dialect, string>} */
+  const expectedQueries = {
+    mysql:
+      "insert into `test_inserts` (`id`, `name`) values (X'deadbeef', 'beef');" +
+      "update `test_inserts` set `name` = 'beefy' where `id` = X'deadbeef';" +
+      "delete from `test_inserts` where `id` = X'deadbeef';",
+    sqlite:
+      "insert into `test_inserts` (`id`, `name`) values (X'deadbeef', 'beef');" +
+      "update `test_inserts` set `name` = 'beefy' where `id` = X'deadbeef';" +
+      "delete from `test_inserts` where `id` = X'deadbeef';",
+    sqlserver:
+      "insert into [dbo].[test_inserts] ([id], [name]) values (0xdeadbeef, 'beef');" +
+      "update [dbo].[test_inserts] set [name] = 'beefy' where [id] = 0xdeadbeef; select @@rowcount;" +
+      "delete from [dbo].[test_inserts] where [id] = 0xdeadbeef; select @@rowcount;",
+    postgresql:
+      `insert into "public"."test_inserts" ("id", "name") values ('\\xdeadbeef', 'beef');` +
+      `update "public"."test_inserts" set "name" = 'beefy' where "id" = '\\xdeadbeef';` +
+      `delete from "public"."test_inserts" where "id" = '\\xdeadbeef';`,
+    oracle:
+      `insert into "BEEKEEPER"."test_inserts" ("id", "name") values (hextoraw('deadbeef'), 'beef');` +
+      `update "BEEKEEPER"."test_inserts" set "name" = 'beefy' where "id" = hextoraw('deadbeef');` +
+      `delete from "BEEKEEPER"."test_inserts" where "id" = hextoraw('deadbeef');`,
+    firebird:
+      `insert into test_inserts (id, name) values (X'deadbeef', 'beef');` +
+      `update test_inserts set name = 'beefy' where id = X'deadbeef';` +
+      `delete from test_inserts where id = X'deadbeef';`,
+  }
+
+  expect(util.fmt(sql)).toEqual(util.fmt(expectedQueries[util.dialect]))
 }
 
 export async function prepareImportTests (util) {

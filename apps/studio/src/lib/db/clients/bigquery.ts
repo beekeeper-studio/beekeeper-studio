@@ -253,11 +253,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return data;
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex);
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
 
     try {

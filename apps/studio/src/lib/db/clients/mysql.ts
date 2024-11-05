@@ -12,7 +12,6 @@ import knexlib from "knex";
 import { readFileSync } from "fs";
 import _ from "lodash";
 import {
-  applyChangesSql,
   buildDeleteQueries,
   buildInsertQuery,
   buildSelectTopQuery,
@@ -61,6 +60,7 @@ import {
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
+import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 type ResultType = {
   tableName?: string
@@ -266,6 +266,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   conn: {
     pool: mysql.Pool;
   };
+  transcoders = [GenericBinaryTranscoder];
 
   clientId: string
 
@@ -737,7 +738,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     await this.driverExecuteSingle(sql);
   }
 
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
 
     await this.runWithConnection(async (connection) => {
@@ -765,10 +766,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     });
 
     return results;
-  }
-
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, knex);
   }
 
   async insertRows(inserts: TableInsert[], connection: mysql.PoolConnection) {

@@ -10,7 +10,7 @@ import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -25,15 +25,22 @@ import { defaultCreateScript, postgres10CreateScript } from './postgresql/script
 import { IDbConnectionServer } from '../backendTypes';
 import { Signer } from "@aws-sdk/rds-signer";
 import { fromIni } from "@aws-sdk/credential-providers";
+import { GenericBinaryTranscoder } from "../serialization/transcoders";
+import { makeEscape } from "knex/lib/util/string";
 
-
-const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
 
 const log = logRaw.scope('postgresql')
 const logger = () => log
 
 const knex = knexlib({ client: 'pg' })
+knex.client = Object.assign(knex.client, {
+  _escapeBinding: makeEscape({
+    escapeBuffer(value: Buffer) {
+      return `'\\x${value.toString('hex')}'`
+    },
+  }),
+});
 
 const pgErrors = {
   CANCELED: '57014',
@@ -84,6 +91,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   conn: HasPool;
   _defaultSchema: string;
   dataTypes: any;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -668,11 +676,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.datname);
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex)
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
     await this.runWithTransaction(async (connection) => {
@@ -1539,12 +1543,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
-  // if a type is BYTEA, decodes BASE64 URL encoded to hex
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
       return JSON.parse(value)
-    } else if (column?.dataType === 'bytea' && value) {
-      return '\\x' + base64.decode(value, 'hex')
     }
     return value
   }
@@ -1590,11 +1591,6 @@ pg.types.setTypeParser(pg.types.builtins.DATE, 'text', (val) => val); // date
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // timestamp
 pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
-
-/**
- * Convert BYTEA type encoded to hex without '\x'
- */
-pg.types.setTypeParser(17, 'text', (val) => val ? val.substring(2) : '');
 
 export function wrapIdentifier(value: string): string {
   if (value === '*') return value;

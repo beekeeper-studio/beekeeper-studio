@@ -7,7 +7,7 @@ import Database from "better-sqlite3";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { ClientError } from "./utils";
-import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery } from './utils';
 import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
@@ -16,6 +16,7 @@ import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
 import { IDbConnectionServer } from "../backendTypes";
+import { GenericBinaryTranscoder } from "../serialization/transcoders";
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -49,6 +50,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   dialectData = SD;
   isTempDB = false;
   _rawConnection: Database.Database;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, sqliteContext, server, database);
@@ -60,7 +62,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async versionString(): Promise<string> {
-    return this.version?.rows[0]["sqlite_version()"];
+    return this.version?.rows[0]["version"];
   }
 
   getBuilder(table: string, _schema?: string): ChangeBuilderBase {
@@ -85,7 +87,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     await super.connect();
 
     // set sqlite version
-    const version = await this.driverExecuteSingle('SELECT sqlite_version()');
+    const version = await this.driverExecuteSingle('SELECT sqlite_version() as version');
 
     this.version = version;
     return;
@@ -309,11 +311,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return result.rows.map((row) => row.file || ':memory:');
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex)
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
 
     const cli = { connection: this.acquireConnection() };
@@ -562,7 +560,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult | SqliteResult[]> {
     const queries = this.identifyCommands(q);
-    const params = options.params || [];
+    const params = (options.params || []).map((p) => _.isBoolean(p) ? Number(p) : p);
     const arrayMode = options.arrayMode;
 
     const results: SqliteResult[] = [];

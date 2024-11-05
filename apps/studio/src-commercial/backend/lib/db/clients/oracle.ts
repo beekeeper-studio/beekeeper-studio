@@ -34,7 +34,6 @@ import {
   buildUpdateQueries,
   withClosable,
   buildDeleteQueries,
-  applyChangesSql
 } from '@/lib/db/clients/utils';
 import rawLog from 'electron-log'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
@@ -46,6 +45,8 @@ import { OracleCursor } from './oracle/OracleCursor';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
+import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
+import Client_Oracledb from '@commercial/knex/oracledb';
 
 const log = rawLog.scope('oracle')
 
@@ -61,9 +62,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   instantClientLocation: string
   version: string
   readOnlyMode: boolean
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knexLib({ client: 'oracledb'}), NoOpContextProvider, server, database);
+    super(knexLib({ client: Client_Oracledb }), NoOpContextProvider, server, database);
     this.defaultSchema = async (): Promise<string> => server.config.user.toUpperCase()
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
@@ -153,12 +155,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return this.version
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex);
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
-
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     const insertQueries = buildInsertQueries(this.knex, changes.inserts)
     const updateQueries = buildUpdateQueries(this.knex, changes.updates)
     const deleteQueries = buildDeleteQueries(this.knex, changes.deletes)

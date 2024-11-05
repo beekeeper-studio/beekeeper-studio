@@ -14,7 +14,6 @@ import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
-import { applyChangesSql } from "@/lib/db/clients/utils";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 const log = rawLog.scope("cassandra");
@@ -354,11 +353,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]) // TODO: Routines really don't exist in Cassandra
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex);
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
     let batchedChanges = [];
 

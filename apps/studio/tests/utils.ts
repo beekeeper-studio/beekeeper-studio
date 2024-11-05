@@ -5,16 +5,35 @@
  *
  * ```js
  * import { buffer as b } from '@tests/utils'
- * b`beef` // Buffer.from([0xbe, 0xef])
+ * b`beef` // like 0xbeef
  * ````
  **/
 export function buffer(strings: TemplateStringsArray, ...values: string[]) {
-  // Concatenate the strings and values
-  const combined = strings.reduce((acc, str, index) => {
-    return acc + str + (values[index] !== undefined ? values[index] : '');
-  }, '');
-  // Split the combined string into groups of 2 characters
-  const arr = combined.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16));
+  const arr = hexStringToNumbers(combineTemplateStrings(strings, ...values));
   return Buffer.from(arr);
 }
 
+/**
+ * Create a Uint8Array from hex string
+ *
+ * Usage:
+ *
+ * ```js
+ * import { uint8 as u } from '@tests/utils'
+ * u`beef` // like 0xbeef
+ * ````
+ **/
+export function uint8(strings: TemplateStringsArray, ...values: string[]) {
+  const arr = hexStringToNumbers(combineTemplateStrings(strings, ...values));
+  return Uint8Array.from(arr)
+}
+
+function combineTemplateStrings(strings: TemplateStringsArray, ...values: string[]) {
+  return strings.reduce((acc, str, index) => {
+    return acc + str + (values[index] !== undefined ? values[index] : '');
+  }, '');
+}
+
+function hexStringToNumbers(hex: string) {
+  return hex.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16));
+}

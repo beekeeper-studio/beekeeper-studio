@@ -10,7 +10,6 @@ import { TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
-import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { IDbConnectionPublicServer } from './db/serverTypes'
@@ -22,7 +21,9 @@ import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
 import { LicenseKey } from '@/common/appdb/models/LicenseKey'
 import { TestOrmConnection } from './TestOrmConnection'
-import { buffer as b } from '@tests/utils'
+import { buffer as b, uint8 as u } from '@tests/utils'
+import Client_Oracledb from '@commercial/knex/oracledb'
+import Client_Firebird from '@commercial/knex/firebird'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -65,8 +66,8 @@ const KnexTypes: any = {
   "sqlite": "sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",
-  "firebird": knexFirebirdDialect,
-  "oracle": "oracledb",
+  "firebird": Client_Firebird,
+  "oracle": Client_Oracledb,
 }
 
 export interface Options {
@@ -91,7 +92,7 @@ export class DBTestUtil {
   public options: Options
   private dbType: ConnectionType | 'generic'
 
-  private dialect: Dialect
+  public dialect: Dialect
   public data: DialectData
 
   public preInitCmd: string | undefined
@@ -134,7 +135,7 @@ export class DBTestUtil {
       })
     } else if (config.client === 'oracle') {
       this.knex = knex({
-        client: 'oracledb',
+        client: Client_Oracledb,
         connection: {
           user: config.user,
           password: config.password,
@@ -1346,14 +1347,39 @@ export class DBTestUtil {
     const ID = this.dbType === 'firebird' ? 'ID' : 'id'
     const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
 
-    await this.knex('contains_binary').insert({ bin: b`deadbeef` })
+    await this.knex('contains_binary').insert({ id: 1, bin: b`deadbeef` })
 
     const result = await this.connection.selectTop('contains_binary', 0, 10, [], [], this.defaultSchema)
+    let data = result.result[0][BIN]
 
-    expect(result.result[0].bin || result.result[0].BIN).toEqual('deadbeef')
+    expect(ArrayBuffer.isView(data)).toBe(true)
+    expect(Buffer.from(data)).toEqual(b`deadbeef`)
     expect(result.fields).toEqual([
       { name: ID, bksType: 'UNKNOWN' },
       { name: BIN, bksType: 'BINARY' },
+    ])
+
+    await this.connection.applyChanges({
+      inserts: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        // frontend sends binary as Uint8Array, or any TypedArray is possible
+        data: [{ id: 2, bin: u`beefdeed` }],
+      }],
+      updates: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        primaryKeys: [{ column: ID, value: 1 }],
+        column: BIN,
+        value: u`eeffeeff`,
+      }],
+      deletes: [],
+    })
+
+    const rows = await this.knex('contains_binary').select('bin').orderBy(ID)
+    expect(rows.map((r) => Buffer.from(r.bin))).toEqual([
+      b`eeffeeff`,
+      b`beefdeed`,
     ])
   }
 
@@ -1455,7 +1481,7 @@ export class DBTestUtil {
     });
 
     await this.knex.schema.createTable('contains_binary', (table) => {
-      primary(table)
+      table.integer("id").primary().notNullable()
       table.binary('bin', 8).notNullable()
     })
 

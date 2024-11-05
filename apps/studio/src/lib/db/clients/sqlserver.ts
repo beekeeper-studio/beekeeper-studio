@@ -15,7 +15,6 @@ import {
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  applyChangesSql,
   buildInsertQuery
 } from './utils';
 import logRaw from 'electron-log'
@@ -32,6 +31,8 @@ import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, T
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
+import { GenericBinaryTranscoder } from '../serialization/transcoders';
+import { makeEscape } from "knex/lib/util/string";
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -71,9 +72,14 @@ const SQLServerContext = {
   }
 }
 
-sql.valueHandler.set(sql.TYPES.VarBinary, (value: Buffer) => value.toString('hex'))
-sql.valueHandler.set(sql.TYPES.Binary, (value: Buffer) => value.toString('hex'))
-sql.valueHandler.set(sql.TYPES.Image, (value: Buffer) => value.toString('hex'))
+const knex = knexlib({ client: 'mssql' });
+knex.client = Object.assign(knex.client, {
+  _escapeBinding: makeEscape({
+    escapeBuffer(value: Buffer) {
+      return `0x${value.toString('hex')}`
+    },
+  }),
+});
 
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
@@ -88,9 +94,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   logger: any
   pool: ConnectionPool;
   authService: AzureAuthService;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
+    super(knex, SQLServerContext, server, database)
     this.dialect = 'mssql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.defaultSchema = async (): Promise<string> => 'dbo'
@@ -563,7 +570,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(sql)
   }
 
-  async applyChanges(changes: TableChanges) {
+  async executeApplyChanges(changes: TableChanges) {
     const results = []
     let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
 
@@ -971,7 +978,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         })
       })
     }
-    return applyChangesSql(changes, this.knex)
+    return super.applyChangesSql(changes)
   }
 
   wrapIdentifier(value: string) {

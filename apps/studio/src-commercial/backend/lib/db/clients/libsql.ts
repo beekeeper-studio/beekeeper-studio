@@ -30,7 +30,7 @@ export class LibSQLClient extends SqliteClient {
   /** Use this connection only when we need to sync to remote database */
   // @ts-expect-error not fully typed
   _rawConnection: Database.Database;
-  binaryTranscoder = LibSQLBinaryTranscoder;
+  transcoders = [LibSQLBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);
@@ -79,10 +79,6 @@ export class LibSQLClient extends SqliteClient {
     if (this._rawConnection) {
       this._rawConnection.close();
     }
-  }
-
-  async versionString(): Promise<string> {
-    return this.version?.data[0]["version"] || "";
   }
 
   async truncateElementSql(elementName: string): Promise<string> {

@@ -1,6 +1,6 @@
 import electronLog from "electron-log";
-import knexlib, { Knex } from "knex";
-import knexFirebirdDialect from "knex-firebird-dialect";
+import knexlib from "knex";
+import Client_Firebird from "@commercial/knex/firebird";
 import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
 import {
@@ -44,7 +44,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildUpdateQueries } from "@/lib/db/clients/utils";
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery } from "@/lib/db/clients/utils";
 import {
   Pool,
   Connection,
@@ -55,6 +55,7 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 type FirebirdResult = {
   rows: any[];
@@ -165,58 +166,11 @@ function buildFilterString(filters: TableFilter[], columns = []) {
   };
 }
 
-// Only build an insert query from the first index of insert.data
-function buildInsertQuery(
-  knex: Knex,
-  insert: TableInsert,
-  columns = [],
-  bitConversionFunc: any = _.toNumber
-) {
-  const data = _.cloneDeep(insert.data);
-  data.forEach((item) => {
-    const insertColumns = Object.keys(item);
-    insertColumns.forEach((ic) => {
-      const matching = _.find(columns, (c) => c.columnName === ic);
-      if (
-        matching &&
-        matching.dataType &&
-        matching.dataType.startsWith("bit(")
-      ) {
-        if (matching.dataType === "bit(1)") {
-          item[ic] = bitConversionFunc(item[ic]);
-        } else {
-          item[ic] = parseInt(item[ic].split("'")[1], 2);
-        }
-      }
-
-      // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
-      if (ic.includes("?")) {
-        const newIc = ic.replaceAll("?", "\\?");
-        item[newIc] = item[ic];
-        delete item[ic];
-      }
-    });
-  });
-  const builder = knex(insert.table);
-  if (insert.schema) {
-    builder.withSchema(insert.schema);
-  }
-  const query = builder
-    // TODO: try extending the builder instead
-    .insert(data[0])
-    .toQuery();
-
-  return query
-}
-
-function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
-  return inserts.map((insert) => buildInsertQuery(knex, insert));
-}
-
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(
     server: IDbConnectionServer,
@@ -269,7 +223,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     const serverConfig = this.server.config;
     const knex = knexlib({
-      client: knexFirebirdDialect,
+      client: Client_Firebird,
       connection: {
         host: serverConfig.host,
         port: serverConfig.port,
@@ -687,9 +641,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     if (tableInsert.data.length > 1) {
-      // TODO: We can't insert multiple rows at once with Firebird. And
-      // firebird knex only accepts an object instead of an array, while the
-      // other dialects accept arrays. So this must be handled in knex instead?
       throw new Error("Inserting multiple rows is not supported.");
     }
     const columns = await this.listTableColumns(
@@ -853,7 +804,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     });
   }
 
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
     const connection = await this.pool.getConnection();
     const transaction = await connection.transaction();
@@ -861,6 +812,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     try {
       if (changes.inserts) {
         for (const command of buildInsertQueries(this.knex, changes.inserts)) {
+          console.log(command)
           await transaction.query(command);
         }
       }
@@ -885,20 +837,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    let queriesStr = "";
-    buildInsertQueries(this.knex, changes.inserts || []).forEach((query) => {
-      queriesStr += `${query};`;
-    });
-    buildUpdateQueries(this.knex, changes.updates || []).forEach((query) => {
-      queriesStr += `${query};`;
-    });
-    buildDeleteQueries(this.knex, changes.deletes || []).forEach((query) => {
-      queriesStr += `${query};`;
-    });
-    return queriesStr;
-  }
-
   async updateValues(
     cli: Connection | Transaction,
     updates: TableUpdate[]
@@ -906,9 +844,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const results = [];
 
     for (const update of updates) {
-      const updateParams = [
-        _.isBoolean(update.value) ? _.toInteger(update.value) : update.value,
-      ];
+      const updateParam = _.isBoolean(update.value) ? _.toInteger(update.value) : update.value
 
       const whereList = [];
       const whereParams = [];
@@ -925,7 +861,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       `;
       const selectQuery = `SELECT * FROM ${update.table} WHERE ${where}`;
 
-      await cli.query(updateQuery, [updateParams, ...whereParams]);
+      await cli.query(updateQuery, [updateParam, ...whereParams]);
       const result = await cli.query(selectQuery, whereParams);
       results.push(result.rows[0]);
     }

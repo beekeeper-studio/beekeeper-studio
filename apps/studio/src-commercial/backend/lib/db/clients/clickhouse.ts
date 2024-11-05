@@ -53,7 +53,6 @@ import { Stream } from "stream";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { ClickHouseChangeBuilder } from "@shared/lib/sql/change_builder/ClickHouseChangeBuilder";
 import {
-  applyChangesSql,
   buildDeleteQueries,
   buildSelectQueriesFromUpdates,
   buildUpdateQueries,
@@ -408,11 +407,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     }));
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex);
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = [];
 
     await this.runWithTransaction(async () => {
