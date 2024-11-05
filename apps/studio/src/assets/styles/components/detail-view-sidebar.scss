@@ -1,8 +1,10 @@
 div.sidebar.detail-view-sidebar {
+  --header-title-height: 2.8rem;
+
   position: relative;
   overflow: hidden;
   max-width: 100%;
-  min-width: 11rem;
+  min-width: 22rem;
   width: auto;
   flex-grow: 1;
   border: 1px solid $border-color;
@@ -34,7 +36,7 @@ div.sidebar.detail-view-sidebar {
       gap: 0.5rem;
 
       &:first-child {
-        margin-bottom: 0.5rem;
+        height: var(--header-title-height);
       }
     }
 
@@ -123,8 +125,9 @@ div.sidebar.detail-view-sidebar {
 
   .community-overlay {
     position: absolute;
-    z-index: 999;
+    z-index: 10;
     inset: 0;
+    top: var(--header-title-height);
     backdrop-filter: blur(6px);
     background-color: rgba($theme-bg, 0.5);
     padding: 2rem;
@@ -152,6 +155,7 @@ div.sidebar.detail-view-sidebar {
       gap: 0.5rem;
       justify-content: end;
       margin-top: 1rem;
+      padding-right: 0;
     }
 
     .close-btn {
@@ -167,7 +171,8 @@ div.sidebar.detail-view-sidebar {
     align-items: center;
     justify-content: center;
     inset: 0;
-    z-index: 999;
+    top: var(--header-title-height);
+    z-index: 10;
     font-weight: 700;
   }
 }

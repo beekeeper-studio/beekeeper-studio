@@ -11,7 +11,7 @@
         v-kbd-trap="true"
       >
         <h3 class="dialog-c-title has-icon">
-          <i class="material-icons">stars</i> <span>Upgrade To Premium</span>
+          <i class="material-icons">stars</i> <span>Upgrade Beekeeper Studio</span>
         </h3>
 
         <a
@@ -50,15 +50,7 @@
           </div>
         </div>
         <div class="vue-dialog-buttons">
-          <a
-            ref="learnMore"
-            href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-            class="btn btn-flat"
-          >Learn more</a>
-          <a
-            href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-            class="btn btn-primary"
-          >Upgrade</a>
+          <UpsellButtons />
         </div>
       </div>
     </modal>
@@ -67,8 +59,10 @@
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import Vue from 'vue'
+import UpsellButtons from '../upsell/common/UpsellButtons.vue';
 
 export default Vue.extend({
+  components: { UpsellButtons},
   data() {
     return {
       message: null

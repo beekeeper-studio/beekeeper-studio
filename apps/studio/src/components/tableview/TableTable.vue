@@ -524,14 +524,15 @@ export default Vue.extend({
 
       const cellMenu = (keyDatas?: any[]) => {
         return (_e, cell: CellComponent) => {
-          const range = _.last(cell.getRanges())
+          const ranges = cell.getRanges();
+          const range = _.last(ranges)
           const menu = [
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
             { separator: true },
             this.quickFilterMenuItem(cell),
             ...copyActionsMenu({
-              range,
+              ranges,
               table: this.table.name,
               schema: this.table.schema,
             }),
@@ -555,7 +556,8 @@ export default Vue.extend({
       }
 
       const columnMenu = (_e, column: ColumnComponent) => {
-        const range = _.last((column as any).getRanges()) as RangeComponent;
+        const ranges = (column as any).getRanges();
+        const range = _.last(ranges) as RangeComponent;
         let hideColumnLabel = `Hide ${column.getDefinition().title}`
 
         if (hideColumnLabel.length > 33) {
@@ -566,7 +568,7 @@ export default Vue.extend({
           this.setAsNullMenuItem(range),
           { separator: true },
           ...copyActionsMenu({
-            range,
+            ranges,
             table: this.table.name,
             schema: this.table.schema,
           }),
@@ -920,16 +922,16 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
-        debugEventsExternal: true,
         persistenceID: this.tableId,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
-            const range = _.last(cell.getRanges())
+            const ranges = cell.getRanges();
+            const range = _.last(ranges);
             return [
               this.setAsNullMenuItem(range),
               { separator: true },
               ...copyActionsMenu({
-                range,
+                ranges,
                 table: this.table.name,
                 schema: this.table.schema,
               }),
@@ -938,12 +940,13 @@ export default Vue.extend({
             ]
           },
           headerContextMenu: () => {
-            const range: RangeComponent = _.last(this.tabulator.getRanges())
+            const ranges = this.tabulator.getRanges();
+            const range: RangeComponent = _.last(ranges)
             return [
               this.setAsNullMenuItem(range),
               { separator: true },
               ...copyActionsMenu({
-                range,
+                ranges,
                 table: this.table.name,
                 schema: this.table.schema,
               }),
@@ -1701,7 +1704,11 @@ export default Vue.extend({
       const components = this.$refs.tableViewWrapper.children
       const splitSizes = this.$store.state.tableTableSplitSizes
       this.split = Split(components, {
+        elementStyle: (_dimension, size) => ({
+          'flex-basis': `calc(${size}%)`,
+        }),
         sizes: splitSizes,
+        expandToMin: true,
         onDragEnd: () => {
           this.$store.dispatch("setTableTableSplitSizes", this.split.getSizes())
         }

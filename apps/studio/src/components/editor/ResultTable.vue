@@ -60,7 +60,7 @@
       },
       focus() {
         if (!this.focus) return
-        this.tabulator.rowManager.getElement().focus()
+        this.triggerFocus()
         this.scrollToRangeIfOutOfView()
       },
     },
@@ -83,7 +83,7 @@
 
         const cellMenu = (_e, cell) => {
           return copyActionsMenu({
-            range: _.last(cell.getRanges()),
+            ranges: cell.getRanges(),
             table: this.result.tableName,
             schema: this.defaultSchema,
           })
@@ -92,7 +92,7 @@
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              range: _.last(column.getRanges()),
+              ranges: column.getRanges(),
               table: 'mytable',
               schema: this.defaultSchema,
             }),
@@ -184,6 +184,13 @@
     },
     async mounted() {
       this.initializeTabulator()
+      if (this.focus) {
+        const onTableBuilt = () => {
+          this.triggerFocus()
+          this.tabulator.off('tableBuilt', onTableBuilt)
+        }
+        this.tabulator.on('tableBuilt', onTableBuilt)
+      }
     },
     methods: {
       initializeTabulator() {
@@ -306,7 +313,10 @@
             column.getComponent().scrollTo(undefined, false);
           }
         }
-      }
+      },
+      triggerFocus() {
+        this.tabulator.rowManager.getElement().focus();
+      },
     }
 	}
 </script>

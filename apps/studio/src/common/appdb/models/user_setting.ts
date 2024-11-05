@@ -108,6 +108,10 @@ export class UserSetting extends ApplicationEntity {
     this.userValue = updated
   }
 
+  get valueAsBool() {
+    return !!this.value
+  }
+
   get stringValue() {
     return this.value.toString()
   }
