@@ -26,7 +26,6 @@ import { IDbConnectionServer } from '../backendTypes';
 import { Signer } from "@aws-sdk/rds-signer";
 import { fromIni } from "@aws-sdk/credential-providers";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
-import { makeEscape } from "knex/lib/util/string";
 
 const PD = PostgresData
 
@@ -34,13 +33,13 @@ const log = logRaw.scope('postgresql')
 const logger = () => log
 
 const knex = knexlib({ client: 'pg' })
-knex.client = Object.assign(knex.client, {
-  _escapeBinding: makeEscape({
-    escapeBuffer(value: Buffer) {
-      return `'\\x${value.toString('hex')}'`
-    },
-  }),
-});
+const escapeBinding = knex.client._escapeBinding;
+knex.client._escapeBinding = function(value: any, context: any) {
+  if (Buffer.isBuffer(value)) {
+    return `'\\x${value.toString('hex')}'`;
+  }
+  return escapeBinding.call(this, value, context);
+};
 
 const pgErrors = {
   CANCELED: '57014',

@@ -73,13 +73,13 @@ const SQLServerContext = {
 }
 
 const knex = knexlib({ client: 'mssql' });
-knex.client = Object.assign(knex.client, {
-  _escapeBinding: makeEscape({
-    escapeBuffer(value: Buffer) {
-      return `0x${value.toString('hex')}`
-    },
-  }),
-});
+const escapeBinding = knex.client._escapeBinding
+knex.client._escapeBinding = function (value: any, context: any) {
+  if (Buffer.isBuffer(value)) {
+    return `0x${value.toString('hex')}`
+  }
+  return escapeBinding.call(this, value, context)
+}
 
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
