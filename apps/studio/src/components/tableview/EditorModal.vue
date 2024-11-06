@@ -197,8 +197,9 @@ export default Vue.extend({
     openModal(content: any, language: LanguageData, eventParams?: any) {
       if (content === null) {
         content = ""
-      }
-      if (typeof content !== 'string') {
+      } else if (ArrayBuffer.isView(content)) {
+        content = content.toString()
+      } else if (typeof content !== 'string') {
         content = JSON.stringify(content)
       }
       language = language ? language : getLanguageByContent(content)

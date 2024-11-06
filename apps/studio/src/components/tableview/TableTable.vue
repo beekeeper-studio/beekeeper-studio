@@ -328,6 +328,7 @@ import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { ExpandablePath } from '@/lib/data/detail_view'
+import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
 const log = rawLog.scope('TableTable')
 
@@ -1081,7 +1082,11 @@ export default Vue.extend({
       }
     },
     onSaveEditorModal(content: string, _: LanguageData, cell: CellComponent){
-      cell.setValue(content)
+      if (ArrayBuffer.isView(cell.getValue())) {
+        cell.setValue(friendlyUint8Array(hexToUint8Array(content)))
+      } else {
+        cell.setValue(content)
+      }
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
