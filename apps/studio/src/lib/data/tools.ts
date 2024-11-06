@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
+import { friendlyUint8Array, uint8ArrayToHex } from '@/common/utils';
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
 function dec28bits(num: any): string {
@@ -48,7 +49,9 @@ export const Mutators = {
    */
   genericMutator(value: any, preserveComplex = false): JsonFriendly {
     const mutate = Mutators.genericMutator
-    if (ArrayBuffer.isView(value)) return value; // Buffers are formatted via Formatters, rather than mutated
+    if (ArrayBuffer.isView(value)) {
+      return friendlyUint8Array(value as Uint8Array)
+    }
     if (_.isDate(value)) return value.toISOString()
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)

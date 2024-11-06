@@ -1159,7 +1159,6 @@ export default Vue.extend({
         case 'text':
         case 'json':
         case 'jsonb':
-        case 'bytea':
         case 'tsvector':
           return 'textarea'
         case 'bool':

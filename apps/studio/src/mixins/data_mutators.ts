@@ -7,20 +7,6 @@ import rawLog from 'electron-log'
 
 const log = rawLog.scope('mixins/data_mutators');
 
-/**
-  * Extracted from https://github.com/zloirock/core-js/blob/master/packages/core-js/modules/esnext.uint8-array.to-hex.js
-  * FIXME we don't need this soon after `UInt8Array.prototype.toHex` is
-  * implemented. See https://github.com/tc39/proposal-arraybuffer-base64
-  */
-function uint8ArrayToHex(arr: Uint8Array) {
-  let result = '';
-  for (var i = 0, length = arr.length; i < length; i++) {
-    var hex = 1.0.toString.call(arr[i], 16);
-    result += hex.length === 1 ? '0' + hex : hex;
-  }
-  return result;
-}
-
 export function buildNullValue(text: string) {
   return `<span class="null-value">(${escapeHtml(text)})</span>`
 }
@@ -64,7 +50,7 @@ export default {
     cellTooltip(_event, cell: CellComponent) {
       let cellValue = cell.getValue()
       if (cellValue instanceof Uint8Array) {
-        cellValue = `0x${uint8ArrayToHex(cellValue)} (Binary in hex format)`
+        cellValue = `${_.truncate(cellValue.toString(), { length: 15 })} (as hex string)`
       }
       const nullValue = emptyResult(cellValue)
       return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
@@ -78,11 +64,8 @@ export default {
       let htmlPrefix = ''
       let cellValue = cell.getValue()
 
-      // TODO put this in a better place
       if (cellValue instanceof Uint8Array) {
-        cellValue = '0x' + uint8ArrayToHex(cellValue)
         classNames.push('binary-type')
-        // htmlPrefix += '<span class="cell-decoration buffer-type hex-format">0x</span>'
       }
 
       const nullValue = emptyResult(cellValue)

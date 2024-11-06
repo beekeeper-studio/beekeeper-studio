@@ -24,6 +24,7 @@ import _ from 'lodash'
 import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
 import rawLog from 'electron-log'
+import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
 const log = rawLog.scope('NullableInputEditor')
 
@@ -95,7 +96,15 @@ export default Vue.extend({
           updateAnyway && this.$emit('value', this.value)
         }
       } else {
-        this.$emit('value', this.parseValue())
+        let emitValue = this.value
+        try {
+          emitValue = this.parseValue()
+        } catch (e) {
+          log.error('Failed to parse value', this.value, e)
+          this.$noty.error('Failed to parse value')
+        } finally {
+          this.$emit('value', emitValue)
+        }
       }
 
     },
@@ -117,6 +126,8 @@ export default Vue.extend({
         return parseInt(this.value);
       } else if (floatTypes.includes(typeHint)) {
         return parseFloat(this.value);
+      } else if (ArrayBuffer.isView(this.cell.getValue())) {
+        return friendlyUint8Array(hexToUint8Array(this.value));
       } else {
         return this.value;
       }
