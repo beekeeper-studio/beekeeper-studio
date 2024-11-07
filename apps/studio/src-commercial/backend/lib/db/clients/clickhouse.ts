@@ -123,8 +123,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   async connect(): Promise<void> {
     await super.connect();
+
+    let url: string;
+
+    if (this.server.config.url) {
+      url = this.server.config.url
+    } else {
+      const urlObj = new URL('http://example.com/');
+      urlObj.hostname = this.server.config.host;
+      urlObj.port = this.server.config.port.toString();
+      urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
+      url = urlObj.toString();
+    }
+
     this.client = createClient({
-      url: this.server.config.url,
+      url,
       username: this.server.config.user,
       password: this.server.config.password,
       database: this.database.database,
