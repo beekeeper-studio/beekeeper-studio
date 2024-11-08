@@ -73,10 +73,11 @@
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
-                    <input class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
+                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
                            v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
+                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
