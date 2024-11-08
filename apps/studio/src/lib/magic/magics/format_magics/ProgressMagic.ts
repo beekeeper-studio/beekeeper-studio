@@ -1,6 +1,7 @@
 import BksProgress from "@shared/lib/tabulator/formatters/BksProgress";
 import { Magic } from "../../Magic";
 import { MagicColumn } from "../../MagicColumn";
+import _ from "lodash";
 
 
 
