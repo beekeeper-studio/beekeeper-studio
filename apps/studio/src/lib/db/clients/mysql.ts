@@ -59,7 +59,7 @@ import {
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
-import { BaseVersion, isVersionLessThanOrEqual, parseVersion } from "@/lib/license";
+import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 
 type ResultType = {
   data: any[];
@@ -245,7 +245,7 @@ function filterDatabase(
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
   connectionBaseType = 'mysql' as const;
 
-  versionInfo: BaseVersion & {
+  versionInfo: Version & {
     versionString: string;
     version: number;
   };

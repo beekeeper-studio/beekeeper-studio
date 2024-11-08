@@ -1,5 +1,5 @@
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import { isVersionLessThanOrEqual, parseVersion } from "@/lib/license";
+import { isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import _ from "lodash";
 import platformInfo from "@/common/platform_info";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
