@@ -1,5 +1,5 @@
 import platformInfo from "@/common/platform_info";
-import { LicenseStatus, isVersionLessThanOrEqual, parseTagVersion } from "@/lib/license";
+import { LicenseStatus, isVersionLessThanOrEqual } from "@/lib/license";
 import { Column, Entity, Not } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash';
