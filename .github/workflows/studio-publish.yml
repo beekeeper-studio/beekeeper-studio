@@ -7,17 +7,7 @@ on:
     paths-ignore:
       - "apps/sqltools/**"
 jobs:
-
   create_draft_release:
-    strategy:
-      matrix:
-        edition:
-          - name: community
-            owner: beekeeper-studio
-            repo: beekeeper-studio
-          - name: ultimate
-            owner: beekeeper-studio
-            repo: ultimate-releases
     runs-on: "ubuntu-20.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -34,8 +24,8 @@ jobs:
         uses: actions/github-script@v7
         env:
           TAG_NAME: ${{ github.ref_name }}
-          OWNER: ${{matrix.edition.owner}}
-          REPO: ${{matrix.edition.repo}}
+          OWNER: 'beekeeper-studio'
+          REPO: 'beekeeper-studio'
         with:
           github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
@@ -43,6 +33,8 @@ jobs:
             await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
+  # outputs: latest, beta, alpha
+  # deb_codename: stable, beta
   identify_channel:
     runs-on: "ubuntu-20.04"
     outputs:
@@ -59,7 +51,7 @@ jobs:
     runs-on: ${{ matrix.os.name }}
     needs: [create_draft_release, identify_channel]
     outputs:
-      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
+      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
@@ -67,13 +59,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        edition:
-          - name: community
-            owner: beekeeper-studio
-            repo: beekeeper-studio
-          - name: ultimate
-            owner: beekeeper-studio
-            repo: ultimate-releases
         os:
           - name: ubuntu-20.04
             arch: x64
@@ -83,9 +68,10 @@ jobs:
             arch: x64
             type: windows
             setup_python: true
-          - name: ubuntu-arm64
-            arch: arm64
-            type: linux
+          # FIXME: Upgrade our arm64 builder so it is compatible
+          # - name: ubuntu-arm64
+          #   arch: arm64
+          #   type: linux
           - name: macos-13
             arch: x64
             type: macos
@@ -122,10 +108,10 @@ jobs:
           ruby-version: 2.7
         if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
 
-      - name: Update repository based on the edition we're publishing
+      - name: Update repository
         env:
-          OWNER: ${{matrix.edition.owner}}
-          REPO: ${{matrix.edition.repo}}
+          OWNER: 'beekeeper-studio'
+          REPO: 'beekeeper-studio'
         uses: actions/github-script@v7
         with:
           script: |
@@ -255,60 +241,39 @@ jobs:
           mkdir -p ~/private_keys/
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
-      - name: Build and Publish (ARM Linux)
-        run: cd apps/studio && ./build/arm-publish.sh
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
-        env:
-          GH_TOKEN: ${{ secrets.github_token }}
-          BT_TOKEN: ${{ secrets.bintray_apikey }}
-          USE_SYSTEM_FPM: true
-          SNAPCRAFT_BUILD_ENVIRONMENT: host
-
-      - name: Build and Publish
-        if: ${{!startsWith(matrix.os.name, 'ubuntu-arm64')}}
-        uses: samuelmeuli/action-electron-builder@v1
-        with:
-          package_root: apps/studio
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
-          github_token: ${{ secrets.GH_DEPLOY_TOKEN }}
-          skip_build: false
-          build_script_name: "build"
-          use_vue_cli: false
-          max_attempts: 2
-
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          release: true
-          mac_certs: ${{ secrets.mac_dev }}
-          mac_certs_password: ${{ secrets.mac_dev_pw }}
+      - name: Build & Publish
         env:
           APPLE_ID: ${{ secrets.apple_id }}
           APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_TEAM_ID: "7KK583U8H2"
+          CSC_LINK: ${{ secrets.mac_dev }}
+          CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
+          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+        run: |
+          cd apps/studio
+          yarn electron:build --publish always
 
-        # this only works becuase the m1 build is faster, so the m1 build deletes
-        # it's latest-mac.yml before the intel build finishes, so it doesnt crash
-        # and can continue.
       - name: Delete latest-mac.yml
         if: matrix.os.type == 'macos'
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
         with:
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
             const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
             const channel = '${{needs.identify_channel.outputs.channel}}'
             await script({ github, core, context }, assetsUrl, channel)
 
+        # Only publishing the DEB for the stable channel (for now)
       - name: Publish DEB to S3
-        if: matrix.os.type == 'linux'
+        if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
         run: |
           deb-s3 upload apps/studio/dist_electron/*.deb \
             --bucket=deb.beekeeperstudio.io \
@@ -321,7 +286,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Invalidate cloudfront cache
-        if: startsWith(matrix.os.name, 'ubuntu')
+        if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
         run: |
           aws cloudfront create-invalidation \
           --distribution "$DISTRIBUTION" \
@@ -334,15 +299,11 @@ jobs:
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml)"
+
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
         continue-on-error: true
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os.name }}
-          path: apps/studio/dist_electron
 
       - name: Set yaml files
         id: set_yaml
@@ -352,17 +313,16 @@ jobs:
           ARCH: ${{ matrix.os.arch }}
           CHANNEL: ${{needs.identify_channel.outputs.channel}}
         with:
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs')
-            const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.CHANNEL}-mac.yml`, 'utf8')
+            const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
-  post-release:
+  finalize_mac_yml:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
       - run: npm install js-yaml
       - name: Merge yml files
         uses: actions/github-script@v7
@@ -370,7 +330,7 @@ jobs:
           INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
           ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
@@ -408,5 +368,44 @@ jobs:
         with:
           upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
           asset_path: "./mac.yml"
-          asset_name: "${{needs.identify_channel.outputs.channel}}-mac.yml"
+          asset_name: "latest-mac.yml"
           asset_content_type: 'application/octet-stream'
+
+  upload_to_ultimate:
+    needs: [release, create_draft_release, finalize_mac_yml]
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+        # Requires us to use a github token with more power (to create drafts on another repo)
+      - name: Create or check draft release (ultimate)
+        id: create_release
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          OWNER: 'beekeeper-studio'
+          REPO: 'ultimate-releases'
+        with:
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
+          script: |
+            const script = require('./.github/scripts/create_draft_release.js')
+            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+      - name: Copy community release to ultimate
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          SOURCE: ${{ needs.create_draft_release.outputs.id }}
+          DEST: ${{ steps.create_release.outputs.id }}
+          GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+        with:
+          script: |
+            const script = require('./.github/scripts/duplicate_release.js')
+            await script(
+              github,
+              'beekeeper-studio/beekeeper-studio',
+              'beekeeper-studio/ultimate-releases',
+              process.env.SOURCE,
+              process.env.DEST
+            )
+

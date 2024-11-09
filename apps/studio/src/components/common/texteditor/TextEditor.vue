@@ -275,6 +275,10 @@ export default {
         cm.setOption("readOnly", this.readOnly);
       }
 
+      if (this.lineWrapping) {
+        cm.setOption("lineWrapping", this.lineWrapping);
+      }
+
       cm.on("change", (cm) => {
         this.$emit("input", cm.getValue());
       });
@@ -345,10 +349,11 @@ export default {
 
       this.editor = cm;
 
-      this.initializeMarkers();
-      this.initializeBookmarks();
-
-      this.$emit("update:initialized", true);
+      this.$nextTick(() => {
+        this.initializeMarkers();
+        this.initializeBookmarks();
+        this.$emit("update:initialized", true);
+      })
     },
     initializeMarkers() {
       const markers = this.markers || [];

@@ -22,7 +22,7 @@ module.exports = {
   afterSign: "electron-builder-notarize",
   afterPack: "./build/afterPack.js",
   asarUnpack: [
-    '**/package.json'
+    'package.json'
   ],
   extraResources: [
     {
