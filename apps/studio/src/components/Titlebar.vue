@@ -77,38 +77,35 @@ export default {
     ...mapState(['windowTitle'])
   },
   mounted() {
-    // FIXME This doesn't work after the refactor and needs fixing
-    //this.getWindow()?.on('maximize', () => {
-    //  this.maximized = true
-    //})
-    //this.getWindow()?.on('unmaximize', () => {
-    //  this.maximized = false
-    //})
-    //this.getWindow()?.on('enter-full-screen', () => {
-    //  this.fullscreen = true
-    //})
-    //this.getWindow()?.on('leave-full-screen', () => {
-    //  this.fullscreen = false
-    //})
+    window.main.onMaximize(() => {
+      this.maximized = true
+    }, this.$util.sId);
+
+    window.main.onUnmaximize(() => {
+      this.maximized = false
+    }, this.$util.sId);
+
+    window.main.onEnterFullscreen(() => {
+      this.fullscreen = true
+    }, this.$util.sId);
+
+    window.main.onLeaveFullscreen(() => {
+      this.fullscreen = false
+    }, this.$util.sId);
   },
   methods: {
-    async updateFlags() {
-      this.maximized = await window.main.isMaximized();
-      this.fullscreen = await window.main.isFullscreen();
-    },
     async minimizeWindow() {
       await window.main.minimizeWindow();
-      await this.updateFlags();
     },
     async maximizeWindow() {
+      const isMaximized = await window.main.isMaximized();
       if (this.fullscreen) {
         await window.main.setFullScreen(false)
-      } else if (this.maximized) {
+      } else if (isMaximized) {
         await window.main.unmaximizeWindow()
       } else {
         await window.main.maximizeWindow();
       }
-      await this.updateFlags();
     },
     async closeWindow() {
       await window.main.closeWindow();
