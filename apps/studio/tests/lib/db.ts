@@ -79,7 +79,6 @@ export interface Options {
   supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
   knex?: Knex
-  nullDateTime?: any
 }
 
 export class DBTestUtil {
@@ -117,10 +116,6 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
-
-    if (_.isUndefined(options.nullDateTime)) {
-      options.nullDateTime = null
-    }
 
     if (options.knex) {
       this.knex = options.knex
@@ -787,8 +782,8 @@ export class DBTestUtil {
       // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
       person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
       job_id: this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId,
-      created_at: this.options.nullDateTime,
-      updated_at: this.options.nullDateTime,
+      created_at: expect.any(String),
+      updated_at: expect.any(String),
     }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])

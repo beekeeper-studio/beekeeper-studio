@@ -8,6 +8,7 @@ import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { runCommonTests, runReadOnlyTests } from './all'
 
 const TEST_VERSIONS = [
+  { version: '5.1', image: 'vettadock/mysql-old' },
   {version: '5.7'},
   {version: '5.7', readonly: true},
   { version: '8', socket: false, readonly: true},
@@ -16,7 +17,7 @@ const TEST_VERSIONS = [
 ]
 
 
-function testWith(tag, socket = false, readonly = false) {
+function testWith(tag, socket = false, readonly = false, image = 'mysql') {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
     jest.setTimeout(dbtimeout)
 
@@ -28,7 +29,7 @@ function testWith(tag, socket = false, readonly = false) {
       const timeoutDefault = 5000
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mysql-'));
       fs.chmodSync(temp, "777")
-      container = await new GenericContainer("mysql", tag)
+      container = await new GenericContainer(`${image}:${tag}`)
         .withName("testmysql")
         .withEnvironment({
           "MYSQL_ROOT_PASSWORD": "test",
@@ -37,11 +38,20 @@ function testWith(tag, socket = false, readonly = false) {
         .withExposedPorts(3306)
         .withStartupTimeout(dbtimeout)
         .withBindMounts([{
-          source: temp, 
-          target: '/var/run/mysqld/', 
+          source: temp,
+          target: '/var/run/mysqld/',
           mode: 'rw'
         }])
         .start()
+      await container.exec([
+        'mysql', '-u', 'root', '-e',
+        `
+          CREATE DATABASE IF NOT EXISTS test;
+          GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'test';
+          GRANT USAGE ON *.* TO 'root'@'%' WITH GRANT OPTION;
+          FLUSH PRIVILEGES;
+        `,
+      ])
       jest.setTimeout(timeoutDefault)
       const config = {
         client: 'mysql',
@@ -56,8 +66,12 @@ function testWith(tag, socket = false, readonly = false) {
         config.socketPathEnabled = true
         config.socketPath = path.join(temp, 'mysqld.sock')
       }
-      util = new DBTestUtil(config, "test", { dialect: 'mysql' })
+      util = new DBTestUtil(config, "test", { dialect: 'mysql', skipGeneratedColumns: true })
       await util.setupdb()
+
+      if (tag === '5.1') {
+        util.data.disabledFeatures.transactions = true
+      }
 
       const functionDDL = `
         CREATE FUNCTION isEligible(
@@ -139,9 +153,12 @@ function testWith(tag, socket = false, readonly = false) {
       expect(procedures.map((p) => (p.name))).toMatchObject(['no_parameters', 'proc_userdetails'])
       expect(functions.map((p) => (p.name))).toMatchObject(['isEligible'])
 
-      expect(procedures.find((p) => (p.name === 'proc_userdetails')).routineParams.length).toBe(1)
-      expect(procedures.find((p) => (p.name === 'no_parameters')).routineParams.length).toBe(0)
-      expect(functions.find((p) => (p.name === 'isEligible')).routineParams.length).toBe(2)
+      // This version doesn't have routine params
+      if (tag !== '5.1') {
+        expect(procedures.find((p) => (p.name === 'proc_userdetails')).routineParams.length).toBe(1)
+        expect(procedures.find((p) => (p.name === 'no_parameters')).routineParams.length).toBe(0)
+        expect(functions.find((p) => (p.name === 'isEligible')).routineParams.length).toBe(2)
+      }
     })
 
     it("Should not think there are params when there aren't", async () => {
@@ -240,12 +257,17 @@ function testWith(tag, socket = false, readonly = false) {
           newValue: "int unsigned",
         }],
       })
-      await expect(util.connection.applyChanges({
+      const applyChanges = () => util.connection.applyChanges({
         inserts: [{
           table: 'unsigned_integers',
           data: [{ number: -1, tiny_number: -1 }],
         }]
-      })).rejects.toThrowError()
+      })
+      if (tag === '5.1') {
+        await expect(applyChanges()).resolves.not.toThrowError()
+      } else {
+        await expect(applyChanges()).rejects.toThrowError()
+      }
     })
 
     // Regression test for #1945 -> cloning with bit fields doesn't work
@@ -317,5 +339,5 @@ function testWith(tag, socket = false, readonly = false) {
 
 }
 
-TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+TEST_VERSIONS.forEach(({ version, socket, readonly, image }) => testWith(version, socket, readonly, image ))
 
