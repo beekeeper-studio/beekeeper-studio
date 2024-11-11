@@ -10,7 +10,7 @@ import { TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
-import knexFirebirdDialect from 'knex-firebird-dialect'
+import knexFirebirdDialect from '@commercial/knex/knex-firebird'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { IDbConnectionPublicServer } from './db/serverTypes'
@@ -782,20 +782,21 @@ export class DBTestUtil {
     let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
 
     const row = rowobj(r.result)[0]
-    expect(row.person_id).toBeCloseTo(this.personId)
-    expect(row.job_id).toBeCloseTo(this.jobId)
+    // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
+    expect(row.person_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId)
+    expect(row.job_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId)
     expect(row.created_at).toBeDefined()
     expect(row.updated_at).toBeDefined()
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
     expect(rowobj(r.result)).toEqual([{
-      person_id: expect.closeTo(this.personId),
+      person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
     }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
     expect(rowobj(r.result)).toEqual([{
-      person_id: expect.closeTo(this.personId),
-      job_id: expect.closeTo(this.jobId),
+      person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
+      job_id: this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId,
     }])
   }
 

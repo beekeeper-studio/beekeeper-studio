@@ -3,6 +3,7 @@
 import SchemaCompiler from "./schema/clickhouse-compiler";
 import ColumnCompiler from "./schema/clickhouse-columncompiler";
 import TableCompiler from "./schema/clickhouse-tablecompiler";
+import TableBuilder from "./schema/clickhouse-tablebuilder";
 import ViewCompiler from "./schema/clickhouse-viewcompiler";
 import QueryCompiler from "./query/clickhouse-querycompiler";
 import { createClient } from "@clickhouse/client";
@@ -119,6 +120,11 @@ export class ClickhouseKnexClient extends Knex.Client {
   queryCompiler() {
     return new QueryCompiler(this, ...arguments);
   }
+
+  tableBuilder() {
+    return new TableBuilder(this, ...arguments);
+  }
+
     _escapeBinding(value) {
         const escapeBinding = makeEscape({
             escapeArray(val, esc) {
