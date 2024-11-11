@@ -140,7 +140,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            ...(this.isUltimate ? magicStuff : {}),
+            ...magicStuff
           }
 
           if (column.dataType === 'INTERVAL') {
