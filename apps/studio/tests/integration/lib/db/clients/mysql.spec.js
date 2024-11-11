@@ -6,9 +6,10 @@ import path from 'path'
 import data_mutators from '../../../../../src/mixins/data_mutators';
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { runCommonTests, runReadOnlyTests } from './all'
+import MySQL5_4KnexClient from '@/shared/lib/knex-mysql5_4'
 
 const TEST_VERSIONS = [
-  { version: '5.1', image: 'vettadock/mysql-old' },
+  { version: '5.1', image: 'vettadock/mysql-old', options: { knexClient: MySQL5_4KnexClient, skipTransactions: true } },
   {version: '5.7'},
   {version: '5.7', readonly: true},
   { version: '8', socket: false, readonly: true},
@@ -16,8 +17,7 @@ const TEST_VERSIONS = [
   { version: '8', socket: true }
 ]
 
-
-function testWith(tag, socket = false, readonly = false, image = 'mysql') {
+function testWith(tag, socket = false, readonly = false, image = 'mysql', options = {}) {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
     jest.setTimeout(dbtimeout)
 
@@ -66,12 +66,8 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql') {
         config.socketPathEnabled = true
         config.socketPath = path.join(temp, 'mysqld.sock')
       }
-      util = new DBTestUtil(config, "test", { dialect: 'mysql', skipGeneratedColumns: true })
+      util = new DBTestUtil(config, "test", { dialect: 'mysql', skipGeneratedColumns: true, ...options })
       await util.setupdb()
-
-      if (tag === '5.1') {
-        util.data.disabledFeatures.transactions = true
-      }
 
       const functionDDL = `
         CREATE FUNCTION isEligible(
@@ -339,5 +335,5 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql') {
 
 }
 
-TEST_VERSIONS.forEach(({ version, socket, readonly, image }) => testWith(version, socket, readonly, image ))
+TEST_VERSIONS.forEach(({ version, socket, readonly, image, options }) => testWith(version, socket, readonly, image, options ))
 
