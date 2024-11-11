@@ -17,13 +17,7 @@
       >
         <div class="form-group">
           <label for="server">
-            Server <i
-            class="material-icons"
-            style="padding-left: 0.25rem"
-            v-tooltip="{
-                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
-                html: true }"
-          >help_outlined</i>
+            Server
           </label>
           <input
             name="server"
