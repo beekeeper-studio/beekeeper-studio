@@ -10,7 +10,7 @@ import { TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
-import knexFirebirdDialect from 'knex-firebird-dialect'
+import knexFirebirdDialect from '@commercial/knex/knex-firebird'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { IDbConnectionPublicServer } from './db/serverTypes'
@@ -76,10 +76,11 @@ export interface Options {
   /** Skip creation of table with generated columns and the tests */
   skipGeneratedColumns?: boolean
   skipCreateDatabase?: boolean
+  skipTransactions?: boolean
   supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
   knex?: Knex
-  nullDateTime?: any
+  knexClient?: Knex.Client
 }
 
 export class DBTestUtil {
@@ -118,10 +119,6 @@ export class DBTestUtil {
     this.dbType = config.client || 'generic'
     this.options = options
 
-    if (_.isUndefined(options.nullDateTime)) {
-      options.nullDateTime = null
-    }
-
     if (options.knex) {
       this.knex = options.knex
     } else if (config.client === 'sqlite') {
@@ -143,7 +140,7 @@ export class DBTestUtil {
       })
     } else {
       this.knex = knex({
-        client: KnexTypes[config.client || ""] || config.client,
+        client: options.knexClient || KnexTypes[config.client || ""] || config.client,
         version: options?.version,
         connection: {
           host: config.socketPathEnabled ? undefined : config.host,
@@ -783,13 +780,13 @@ export class DBTestUtil {
 
   async columnFilterTests() {
     let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
-    expect(rowobj(r.result)).toEqual([{
-      // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
-      person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
-      job_id: this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId,
-      created_at: this.options.nullDateTime,
-      updated_at: this.options.nullDateTime,
-    }])
+
+    const row = rowobj(r.result)[0]
+    // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
+    expect(row.person_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId)
+    expect(row.job_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId)
+    expect(row.created_at).toBeDefined()
+    expect(row.updated_at).toBeDefined()
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
     expect(rowobj(r.result)).toEqual([{
@@ -1151,10 +1148,6 @@ export class DBTestUtil {
       let batch = []
       const maxBatch = this.dbType === 'firebird' ? 255 : 233
 
-      if (this.dbType === 'sqlserver') {
-        await this.knex.schema.raw('SET IDENTITY_INSERT organizations ON')
-      }
-
       const execBatch = async (batch: Record<string, any>[]) => {
         if (this.dbType === 'firebird') {
           const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
@@ -1354,7 +1347,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable('addresses', (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("street")
       table.string("city")
       table.string("state")
@@ -1381,7 +1374,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("people", (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("firstname")
       table.string("lastname")
       table.string("email").notNullable()
@@ -1391,7 +1384,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("jobs", (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
     })
@@ -1410,7 +1403,7 @@ export class DBTestUtil {
       table.foreign("person_id").references("people.id")
       table.foreign("job_id").references("jobs.id")
       table.primary(['person_id', "job_id"])
-      table.timestamps(true)
+      table.timestamps(true, true)
     })
 
     await this.knex.schema.createTable('with_composite_pk', (table) => {
