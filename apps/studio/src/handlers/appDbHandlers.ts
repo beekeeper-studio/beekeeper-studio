@@ -2,7 +2,7 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
-import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportPinnedEntity, TransportUsedQuery } from "@/common/transport";
+import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery } from "@/common/transport";
 import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
 import rawLog from 'electron-log';
 import _ from 'lodash';
@@ -19,6 +19,7 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
 
 const log = rawLog.scope('Appdb handlers');
 
