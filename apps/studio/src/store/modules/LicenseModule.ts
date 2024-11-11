@@ -63,7 +63,7 @@ export const LicenseModule: Module<State, RootState>  = {
       if (!state) return true
       return state.status.isTrial
     },
-    isValidStateExpired(state, getters) {
+    isValidStateExpired(state) {
       // this means a license with lifetime perms, but is no longer valid for software updates
       // so the user has to use an older version of the app.
       return state.status.isValidDateExpired
