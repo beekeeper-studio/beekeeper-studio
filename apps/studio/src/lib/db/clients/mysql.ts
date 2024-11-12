@@ -59,6 +59,7 @@ import {
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
+import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 
 type ResultType = {
   data: any[];
@@ -244,7 +245,7 @@ function filterDatabase(
 export class MysqlClient extends BasicDatabaseClient<ResultType> {
   connectionBaseType = 'mysql' as const;
 
-  versionInfo: {
+  versionInfo: Version & {
     versionString: string;
     version: number;
   };
@@ -301,14 +302,21 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       return {
         versionString: "",
         version: 5.7,
+        major: 5,
+        minor: 7,
+        patch: 0,
       };
     }
 
     const stuff = version.split("-");
+    const { major, minor, patch } = parseVersion(stuff[0]);
 
     return {
       versionString: version,
       version: Number(stuff[0] || 0),
+      major,
+      minor,
+      patch,
     };
   }
 
@@ -444,13 +452,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
+    const oldMysql = isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 4, patch: Infinity })
     const routinesSQL = `
       select
         r.specific_name as specific_name,
         r.routine_name as routine_name,
         r.routine_type as routine_type,
-        r.data_type as data_type,
-        r.character_maximum_length as length
+        ${oldMysql ? 'NULL' : 'r.data_type' } as data_type,
+        ${oldMysql ? 'NULL' : 'r.character_maximum_length' } as length
       from information_schema.routines r
       where r.routine_schema not in ('sys', 'information_schema',
                                  'mysql', 'performance_schema')
@@ -458,31 +467,34 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       order by r.specific_name
     `;
 
-    const paramsSQL = `
-      select
-             r.routine_schema as routine_schema,
-             r.specific_name as specific_name,
-             p.parameter_name as parameter_name,
-             p.character_maximum_length as char_length,
-             p.data_type as data_type
-      from information_schema.routines r
-      left join information_schema.parameters p
-                on p.specific_schema = r.routine_schema
-                and p.specific_name = r.specific_name
-      where r.routine_schema not in ('sys', 'information_schema',
-                                     'mysql', 'performance_schema')
-          AND p.parameter_mode is not null
-          and r.routine_schema = database()
-      order by r.routine_schema,
-               r.specific_name,
-               p.ordinal_position;
-    `;
-
     // this gives one row by parameter, so have to do a grouping
     const routinesResult = await this.driverExecuteSingle(routinesSQL);
-    const paramsResult = await this.driverExecuteSingle(paramsSQL);
 
-    const grouped = _.groupBy(paramsResult.data, "specific_name");
+    let grouped = {}
+    if (!oldMysql) {
+      const paramsSQL = `
+        select
+               r.routine_schema as routine_schema,
+               r.specific_name as specific_name,
+               p.parameter_name as parameter_name,
+               p.character_maximum_length as char_length,
+               p.data_type as data_type
+        from information_schema.routines r
+        left join information_schema.parameters p
+                  on p.specific_schema = r.routine_schema
+                  and p.specific_name = r.specific_name
+        where r.routine_schema not in ('sys', 'information_schema',
+                                       'mysql', 'performance_schema')
+            AND p.parameter_mode is not null
+            and r.routine_schema = database()
+        order by r.routine_schema,
+                 r.specific_name,
+                 p.ordinal_position;
+      `;
+
+      const paramsResult = await this.driverExecuteSingle(paramsSQL);
+      grouped = _.groupBy(paramsResult.data, "specific_name");
+    }
 
     return routinesResult.data.map((r) => {
       const params = grouped[r.specific_name] || [];

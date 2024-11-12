@@ -216,7 +216,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import FilePicker from '@/components/common/form/FilePicker.vue'
 import { CommandSettingControl, CommandSettingSection } from '@/lib/db/models';
 import _ from 'lodash';
@@ -238,6 +238,7 @@ export default Vue.extend({
       'supportedFeatures': 'supportedFeatures',
       'config': 'settingsConfig'
     }),
+    ...mapState(['database']),
     filePickerOptions() {
       return { buttonLabel: 'Choose Directory', properties: ['openDirectory', 'createDirectory'] };
     },
@@ -257,6 +258,7 @@ export default Vue.extend({
     },
     async onNext() {
       await this.$store.commit('backups/updateConfig', this.config);
+      await this.$store.commit('backups/setDatabase', this.database);
     },
     canContinue() {
       let cont = true;

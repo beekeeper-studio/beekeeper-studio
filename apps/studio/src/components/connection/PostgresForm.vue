@@ -1,6 +1,6 @@
 <template>
   <div class="with-connection-type">
-    <div class="form-group col">
+    <div class="form-group col" v-show="!isCockroach">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
@@ -11,19 +11,13 @@
     </div>
     <common-server-inputs v-show="!iamAuthenticationEnabled" :config="config" />
 
-    <div v-show="iamAuthenticationEnabled" class="host-port-user-password">
+    <div v-show="iamAuthenticationEnabled && !isCockroach" class="host-port-user-password">
       <div
         class="form-group col"
       >
         <div class="form-group">
           <label for="server">
-            Server <i
-            class="material-icons"
-            style="padding-left: 0.25rem"
-            v-tooltip="{
-                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
-                html: true }"
-          >help_outlined</i>
+            Server
           </label>
           <input
             name="server"
@@ -89,6 +83,7 @@
   import CommonIam from './CommonIam.vue'
   import {AppEvent} from "@/common/AppEvent";
   import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
+  import { mapGetters } from 'vuex';
   import _ from "lodash";
 
   export default {
@@ -109,7 +104,7 @@
         if (this.authType === 'default') {
           this.iamAuthenticationEnabled = false
         } else {
-          if (this.$config.isCommunity) {
+          if (this.isCommunity) {
             // we want to display a modal
             this.$root.$emit(AppEvent.upgradeModal);
             this.authType = 'default'
@@ -130,6 +125,7 @@
       }
     },
     computed: {
+      ...mapGetters(['isCommunity']),
       isCockroach() {
         return this.config.connectionType === 'cockroachdb'
       },
