@@ -87,11 +87,9 @@ export default Vue.extend({
         plugins.autoquote,
         plugins.autoComplete,
         plugins.autoRemoveQueryQuotes(this.connectionType),
+        plugins.queryMagic(() => this.defaultSchema, () => this.tables)
       ];
 
-      if (this.isUltimate) {
-        editorPlugins.push(plugins.queryMagic(() => this.defaultSchema, () => this.tables))
-      }
       return editorPlugins;
     },
   },

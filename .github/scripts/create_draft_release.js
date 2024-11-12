@@ -24,7 +24,7 @@ module.exports = async({github, core}, owner, repo, tagName) => {
   let finishedRelease = null
   if (draftRelease) {
     core.info(`Draft release with tag ${tagName} already exists.`);
-    finishedRelease = draftRelease
+    finishedRelease = { data: draftRelease }
   } else {
     const newRelease = await github.rest.repos.createRelease({
       owner,

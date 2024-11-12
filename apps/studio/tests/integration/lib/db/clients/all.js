@@ -316,7 +316,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not insert bad data", async () => {
-        if (getUtil().data.disabledFeatures?.transactions) return
+        if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
         await itShouldNotInsertBadData(getUtil())
       })
 
@@ -329,7 +329,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not commit on change error", async () => {
-        if (getUtil().data.disabledFeatures?.transactions) return
+        if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
         if (dbReadOnlyMode) {
           await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -353,7 +353,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not insert bad data", async () => {
-      if (getUtil().data.disabledFeatures?.transactions) return
+      if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
       await itShouldNotInsertBadDataCompositePK(getUtil())
     })
 
@@ -366,7 +366,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not commit on change error", async () => {
-      if (getUtil().data.disabledFeatures?.transactions) return
+      if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
       if (dbReadOnlyMode) {
         await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
       } else {

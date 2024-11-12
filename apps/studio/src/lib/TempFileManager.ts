@@ -29,6 +29,7 @@ export class TempFileManager {
   }
 
   async deleteFile(): Promise<void> {
+    if (!this.file) return;
     await Vue.prototype.$util.send('temp/delete', { id: this.file.id });
     this.file = null;
     this.ready = false;

@@ -53,9 +53,11 @@ export class MySqlRestoreClient extends BaseCommandClient {
       // },
     ]
   }
+
   processLog(chunk: any): string[] {
     return [chunk.toString()];
   }
+
   buildCommand(): Command {
     /* use the SQL command variant for sql-format and mysqlimport for the delimited-text format
       SQL format:
@@ -104,6 +106,8 @@ export class MySqlRestoreClient extends BaseCommandClient {
       if (BaseCommandClient.sslKey) {
         command.options.push(`--ssl-key=${BaseCommandClient.sslKey}`);
       }
+    } else {
+      command.options.push(BaseCommandClient.connectionType == 'mariadb' ? '--skip-ssl' : '--ssl-mode=DISABLED');
     }
 
     command.options.push(`--execute="SOURCE ${this._config.inputPath}"`);

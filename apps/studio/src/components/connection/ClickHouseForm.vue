@@ -1,6 +1,7 @@
 <template>
   <div class="with-connection-type">
-    <common-server-inputs :config="config" />
+    <!-- FIXME Clickhouse client supports custom SSL certificates -->
+    <common-server-inputs :config="config" :supportComplexSSL="false" />
     <common-advanced :config="config" />
   </div>
 </template>

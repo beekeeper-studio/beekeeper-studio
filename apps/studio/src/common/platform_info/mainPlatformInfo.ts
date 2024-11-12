@@ -3,13 +3,13 @@ import yargs from 'yargs-parser'
 import _ from 'lodash'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
-import { Version } from '@/lib/license'
+import { BksVersion } from '@/lib/license'
 
 // TODO: Automatically enable wayland without flags once
 // we're confident it will 'just work' for all Wayland users.
 const p = process
 
-export function resolveAppVersion(appVersion): Version {
+export function resolveAppVersion(appVersion): BksVersion {
   const [major, minor, patch, channelVersion] = appVersion.split('.')
 
   if(!patch?.includes('-')) {

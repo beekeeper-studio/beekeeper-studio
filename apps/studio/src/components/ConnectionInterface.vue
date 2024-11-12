@@ -73,10 +73,11 @@
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
-                    <input class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
+                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
                            v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
+                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
@@ -235,9 +236,12 @@ export default Vue.extend({
       }
     },
     'config.connectionType'(newConnectionType) {
-      if (!findClient(newConnectionType)?.supportsSocketPath) {
-        this.config.socketPathEnabled = false
-      }
+      this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
+        this.config = conn;
+        if (!findClient(newConnectionType)?.supportsSocketPath) {
+          this.config.socketPathEnabled = false
+        }
+      })
     },
     connectionError() {
       console.log("error watch", this.connectionError, this.dialect)
