@@ -549,7 +549,7 @@ x-buttons {
     color: $brand-warning;
   }
   .CodeMirror-line .cm-string {
-    color: $brand-success;
+    color: darken($brand-success, 20%);
   }
   .CodeMirror-cursor {
     border-color: $text-dark;
