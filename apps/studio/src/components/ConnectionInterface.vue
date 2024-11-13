@@ -300,18 +300,18 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   methods: {
-    maybeLoadSqlite({ files }) {
+    async maybeLoadSqlite({ files }) {
       // cast to an array
       if (!files || !files.length) return
       if (!this.config) return;
       // we only load the first
       const file = files[0]
-      const allGood = this.config.parse(file.path)
-      if (!allGood) {
+      try {
+        const conf = await this.$util.send('appdb/saved/parseUrl', { url: file.path });
+        this.config = conf;
+        this.submit();
+      } catch {
         this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
-        return
-      } else {
-        this.submit()
       }
 
     },
