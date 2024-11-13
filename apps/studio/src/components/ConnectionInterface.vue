@@ -237,7 +237,8 @@ export default Vue.extend({
     },
     'config.connectionType'(newConnectionType) {
       this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
-        if (!this.config.id) {
+        // only replace it if it's a blank, unused connection
+        if (!this.config.id && !this.config.password && !this.config.username) {
           this.config = conn;
         }
         if (!findClient(newConnectionType)?.supportsSocketPath) {

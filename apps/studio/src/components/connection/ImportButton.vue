@@ -71,7 +71,7 @@ export default {
       async importFromUrl() {
         try {
           const conf = await this.$util.send('appdb/saved/parseUrl', { url: this.url });
-          this.config = conf;
+          Object.assign(this.config, conf);
           if (!this.config.connectionType) {
             this.importError = "Unable to determine database type from the URL";
           } else {
