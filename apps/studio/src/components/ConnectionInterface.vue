@@ -73,10 +73,11 @@
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
-                    <input class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
+                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
                            v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
+                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
@@ -235,9 +236,15 @@ export default Vue.extend({
       }
     },
     'config.connectionType'(newConnectionType) {
-      if (!findClient(newConnectionType)?.supportsSocketPath) {
-        this.config.socketPathEnabled = false
-      }
+      this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
+        // only replace it if it's a blank, unused connection
+        if (!this.config.id && !this.config.password && !this.config.username) {
+          this.config = conn;
+        }
+        if (!findClient(newConnectionType)?.supportsSocketPath) {
+          this.config.socketPathEnabled = false
+        }
+      })
     },
     connectionError() {
       console.log("error watch", this.connectionError, this.dialect)
@@ -294,18 +301,18 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   methods: {
-    maybeLoadSqlite({ files }) {
+    async maybeLoadSqlite({ files }) {
       // cast to an array
       if (!files || !files.length) return
       if (!this.config) return;
       // we only load the first
       const file = files[0]
-      const allGood = this.config.parse(file.path)
-      if (!allGood) {
+      try {
+        const conf = await this.$util.send('appdb/saved/parseUrl', { url: file.path });
+        this.config = conf;
+        this.submit();
+      } catch {
         this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
-        return
-      } else {
-        this.submit()
       }
 
     },

@@ -1,5 +1,5 @@
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import { isVersionLessThanOrEqual, parseTagVersion } from "@/lib/license";
+import { isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import _ from "lodash";
 import platformInfo from "@/common/platform_info";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
@@ -53,9 +53,9 @@ function currentVersion(version: string) {
 }
 
 describe("License", () => {
-  it("parse tag version correctly", () => {
-    expect(parseTagVersion("v1.0.2")).toEqual({ major: 1, minor: 0, patch: 2 });
-    expect(parseTagVersion("v10.12.11")).toEqual({
+  it("parse version correctly", () => {
+    expect(parseVersion("1.0.2")).toEqual({ major: 1, minor: 0, patch: 2 });
+    expect(parseVersion("10.12.11")).toEqual({
       major: 10,
       minor: 12,
       patch: 11,

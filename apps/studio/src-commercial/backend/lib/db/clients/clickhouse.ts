@@ -78,9 +78,13 @@ interface StreamResult {
 
 type JSONOrStreamResult = JSONResult | StreamResult;
 
+interface ResultColumn {
+  name: string;
+}
+
 interface BaseResult {
   rows: any[][] | Record<string, any>[];
-  columns: { name: string }[]
+  columns: ResultColumn[]
   arrayMode: boolean;
 }
 
@@ -131,8 +135,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   async connect(): Promise<void> {
     await super.connect();
+
+    let url: string;
+
+    if (this.server.config.url) {
+      url = this.server.config.url
+    } else {
+      const urlObj = new URL('http://example.com/');
+      urlObj.hostname = this.server.config.host;
+      urlObj.port = this.server.config.port.toString();
+      urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
+      url = urlObj.toString();
+    }
+
     this.client = createClient({
-      url: this.server.config.url,
+      url,
       username: this.server.config.user,
       password: this.server.config.password,
       database: this.database.database,
@@ -773,7 +790,9 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     for (const statement of options.statements) {
       const format = this.parseQueryFormat(statement.text);
       let resultType: Result["resultType"];
-      let data: ResponseJSON | Stream;
+      let data: any;
+      let rows: any[][] | Record<string, any>[] = [];
+      let columns: ResultColumn[] = [];
       if (statement.executionType === "LISTING" && !format) {
         const result = await this.client.query({
           query: statement.text,
@@ -783,25 +802,30 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         });
         data = await result.json();
         resultType = "json";
-        results.push({ statement, data, resultType: "json", rows: data.data, columns: data.meta, arrayMode: options.arrayMode });
+        rows = data.data;
+        columns = data.meta;
       } else {
         const result = await this.client.exec({
           query,
           query_params: options.params,
           query_id: options.queryId,
 
-          // Recommended for cluster usage to avoid situations where a query
-          // processing error occurred after the response code, and HTTP
-          // headers were already sent to the client.
-          // See https://clickhouse.com/docs/en/interfaces/http/#response-buffering
           clickhouse_settings: {
-            wait_end_of_query: 1,
+            // Recommended for cluster usage to avoid situations where a query
+            // processing error occurred after the response code, and HTTP
+            // headers were already sent to the client.
+            // See https://clickhouse.com/docs/en/interfaces/http/#response-buffering
+            //
+            // TODO (azmi): Using this setting can obscure the error message
+            // (found in ClickHouse 24.2). We should probably make this optional
+            // explicitly in the UI if we want to enable it.
+            // wait_end_of_query: 1,
           },
         });
         data = result.stream;
         resultType = "stream";
-        results.push({ statement, data: result.stream, resultType: "stream", rows: [], columns: [], arrayMode: options.arrayMode });
       }
+      results.push({ statement, data, resultType, rows, columns, arrayMode: options.arrayMode });
     }
 
     log.info(`Running Query Finished`);
@@ -842,7 +866,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       JOIN system.columns c
         ON c.table = v.table_name
         AND c.database = v.table_schema
-      WHERE v.is_insertable_into = 'YES'
+      WHERE v.is_insertable_into = 1
         AND v.table_name = {table: String}
         AND v.table_schema = currentDatabase()
     `;
@@ -888,7 +912,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     const sql = `
       SELECT v.table_name as name
       FROM information_schema.views v
-      WHERE v.is_insertable_into = 'YES'
+      WHERE v.is_insertable_into = 1
         AND v.table_schema = currentDatabase()
     `;
     const result = await this.driverExecuteSingle(sql);
