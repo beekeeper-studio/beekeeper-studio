@@ -1,6 +1,6 @@
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults } from "@/lib/db/models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
@@ -166,7 +166,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       .sort((a, b) => b.position - a.position)
       .map((row) => ({
         columnName: row.column_name,
-        dataType: row.type
+        dataType: row.type,
+        bksField: this.parseTableColumn(row as any),
       } as ExtendedTableColumn));
   }
 
@@ -435,11 +436,13 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     if (limit) options.fetchSize = limit
     if (offset) options.pageState = offset
 
-    const { rows, columns, hasNext, pageState } = await this.driverExecuteSingle(qs.query, { params: qs.params, options })
+    const result = await this.driverExecuteSingle(qs.query, { params: qs.params, options })
+    const { rows, columns, hasNext, pageState } = result
+    const fields = columns ? this.parseQueryResultColumns(result) : []
 
     return {
       result: rows || [],
-      fields: columns?.map(f => f.name) || [],
+      fields,
       hasNext,
       pageState: pageState || null
     } as any
@@ -777,5 +780,12 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return keyspace && keyspace.length ?
       `${this.wrapIdentifier(keyspace)}.${this.wrapIdentifier(table)}` :
       this.wrapIdentifier(table)
+  }
+
+  parseTableColumn(column: { column_name: string; type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
+    };
   }
 }

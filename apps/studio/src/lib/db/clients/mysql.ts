@@ -102,11 +102,21 @@ function getRealError(conn, err) {
 }
 
 const binaryTypes = [
-  // mysql.Types.BLOB,
-  // mysql.Types.LONG_BLOB,
-  // mysql.Types.MEDIUM_BLOB,
-  // mysql.Types.TINY_BLOB,
+  mysql.Types.STRING, // aka CHAR or BINARY
   mysql.Types.VAR_STRING, // aka VARCHAR or VARBINARY
+  mysql.Types.TINY_BLOB,
+  mysql.Types.BLOB,
+  mysql.Types.MEDIUM_BLOB,
+  mysql.Types.LONG_BLOB,
+]
+
+const binaryDataTypes = [
+  'binary',
+  'varbinary',
+  'tinyblob',
+  'blob',
+  'mediumblob',
+  'longblob',
 ]
 
 // Ref: https://github.com/sidorares/node-mysql2/blob/master/lib/constants/field_flags.js
@@ -393,7 +403,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       SELECT
         table_name AS 'table_name',
         column_name AS 'column_name',
-        column_type AS 'data_type',
+        column_type AS 'column_type',
+        data_type AS 'data_type',
         is_nullable AS 'is_nullable',
         column_default as 'column_default',
         ordinal_position as 'ordinal_position',
@@ -415,7 +426,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return rows.map((row) => ({
       tableName: row.table_name,
       columnName: row.column_name,
-      dataType: row.data_type,
+      dataType: row.column_type,
       ordinalPosition: Number(row.ordinal_position),
       nullable: row.is_nullable === "YES",
       defaultValue: this.resolveDefault(row.column_default),
@@ -423,6 +434,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
       generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
+      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -566,7 +578,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     );
     const { query, params } = queries;
     const result = await this.driverExecuteSingle(query, { params });
-    const { rows, fields } = await this.serializeQueryResult(result);
+    const fields = this.parseQueryResultColumns(result);
+    const rows = await this.serializeQueryResult(result, fields);
     return { result: rows, fields };
   }
 
@@ -1349,15 +1362,21 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
   }
 
-  resolveBksFields(queryResult: ResultType): BksField[] {
-    const columns = queryResult.columns;
-    return columns.map((column) => {
+  parseQueryResultColumns(qr: ResultType): BksField[] {
+    return qr.columns.map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';
       if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
         bksType = 'BINARY'
       }
       return { name: column.name, bksType }
     })
+  }
+
+  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: binaryDataTypes.includes(column.data_type) ? 'BINARY' : 'UNKNOWN',
+    };
   }
 }
 

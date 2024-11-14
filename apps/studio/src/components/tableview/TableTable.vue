@@ -674,7 +674,8 @@ export default Vue.extend({
               log.error('Failed to preserve object for', value)
               return true
             },
-            typeHint: column.dataType.toLowerCase()
+            typeHint: column.dataType.toLowerCase(),
+            bksField: column.bksField,
           },
         }
 

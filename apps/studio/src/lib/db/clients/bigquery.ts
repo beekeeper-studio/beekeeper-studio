@@ -1,7 +1,7 @@
 import * as bq from '@google-cloud/bigquery';
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete, BksField } from "../models";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
@@ -120,7 +120,11 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     // Lists all columns in a table
     const [metadata] = await this.client.dataset(this.db).table(table).getMetadata()
-    const data = metadata.schema.fields.map((field) => ({ columnName: field.name, dataType: field.type }))
+    const data = metadata.schema.fields.map((field) => ({
+      columnName: field.name,
+      dataType: field.type,
+      bksField: this.parseTableColumn(field),
+    }))
     return data
   }
 
@@ -395,7 +399,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const queriesResult = await this.driverExecuteMultiple(query, { countQuery, params });
     const data = queriesResult[0];
     const rowCount = Number(data.rowCount);
-    const { rows, fields } = await this.serializeQueryResult(data);
+    const fields = this.parseQueryResultColumns(data);
+    const rows = await this.serializeQueryResult(data, fields);
 
     const result = {
       totalRows: rowCount,
@@ -618,5 +623,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     }
 
     return true;
+  }
+
+  parseTableColumn(column: any): BksField {
+    return { name: column.name, bksType: 'UNKNOWN' }
   }
 }

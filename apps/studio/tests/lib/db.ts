@@ -1383,6 +1383,19 @@ export class DBTestUtil {
     ])
   }
 
+  async resolveTableColumns() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+
+    const columns = await this.connection.listTableColumns('contains_binary', this.defaultSchema)
+    const bksFields = columns.map(c => c.bksField)
+
+    expect(bksFields).toStrictEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {

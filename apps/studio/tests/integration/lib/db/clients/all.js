@@ -410,6 +410,11 @@ export function runCommonTests(getUtil, opts = {}) {
       if (getUtil().data.disabledFeatures?.binaryColumn) return
       await getUtil().serializationBinary()
     })
+
+    test("should resolve table columns", async () => {
+      if (getUtil().data.disabledFeatures?.binaryColumn) return
+      await getUtil().resolveTableColumns()
+    })
   })
 }
 

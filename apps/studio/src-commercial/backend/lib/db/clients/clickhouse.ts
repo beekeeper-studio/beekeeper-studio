@@ -14,6 +14,7 @@ import {
   ClickHouseClient as NodeClickHouseClient,
 } from "@clickhouse/client";
 import {
+  BksField,
   CancelableQuery,
   DatabaseFilterOptions,
   ExtendedTableColumn,
@@ -212,6 +213,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         comment: row.comment,
         primaryKey: row.is_in_primary_key === 1,
         nullable: RE_NULLABLE.test(row.type),
+        bksField: this.parseTableColumn(row),
       };
     });
   }
@@ -278,7 +280,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     );
     const { fullQuery } = queries;
     const result = await this.driverExecuteSingle(fullQuery);
-    const { rows, fields } = await this.serializeQueryResult(result);
+    const fields = this.parseQueryResultColumns(result);
+    const rows = await this.serializeQueryResult(result, fields);
     return { result: rows, fields };
   }
 
@@ -1166,5 +1169,9 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       super.violatesReadOnly(statements, options) ||
       (this.readOnlyMode && options.insert)
     );
+  }
+
+  parseTableColumn(column: { name: string }): BksField {
+    return { name: column.name, bksType: "UNKNOWN" };
   }
 }

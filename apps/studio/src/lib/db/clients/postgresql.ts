@@ -385,6 +385,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -898,7 +899,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<TableResult> {
     const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params })
-    const { rows, fields } = await this.serializeQueryResult(result)
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
     return { result: rows, fields }
   }
 
@@ -1564,14 +1566,21 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  resolveBksFields(queryResult: QueryResult): BksField[] {
-    return queryResult.pgResult.fields.map((field) => {
+  parseQueryResultColumns(qr: QueryResult): BksField[] {
+    return qr.columns.map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';
-      if (field.dataTypeID === pg.types.builtins.BYTEA) {
+      if (column.dataTypeID === pg.types.builtins.BYTEA) {
         bksType = 'BINARY'
       }
-      return { name: field.name, bksType };
+      return { name: column.name, bksType };
     })
+  }
+
+  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type === 'bytea' ? 'BINARY' : 'UNKNOWN',
+    };
   }
 }
 

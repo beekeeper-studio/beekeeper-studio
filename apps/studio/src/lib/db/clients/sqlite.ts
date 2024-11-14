@@ -441,7 +441,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
     const result = await this.driverExecuteSingle(query);
-    const { rows, fields } = await this.serializeQueryResult(result);
+    const fields = this.parseQueryResultColumns(result);
+    const rows = await this.serializeQueryResult(result, fields);
     return { result: rows, fields };
   }
 
@@ -657,6 +658,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         ordinalPosition: Number(row.cid),
         hasDefault: !_.isNil(defaultValue),
         generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
+        bksField: this.parseTableColumn(row),
       }
     })
   }
@@ -736,13 +738,15 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return true
   }
 
-  resolveBksFields(qr: SqliteResult): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = "UNKNOWN";
-      if (column.type === "BLOB") {
-        bksType = "BINARY";
-      }
-      return { name: column.name, bksType };
-    });
+  parseQueryResultColumns(qr: SqliteResult): BksField[] {
+    return qr.columns.map(this.parseTableColumn);
+  }
+
+  parseTableColumn(column: { name: string, type: string }): BksField {
+    let bksType: BksFieldType = "UNKNOWN";
+    if (column.type === "BLOB") {
+      bksType = "BINARY";
+    }
+    return { name: column.name, bksType };
   }
 }

@@ -1,6 +1,6 @@
 import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
-import oracle from 'oracledb'
+import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
 
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
@@ -275,7 +275,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     schema = schema ? schema : await this.defaultSchema();
     const query = this.genSelect(table, offset, limit, orderBy, filters, schema, false, selects)
     const result = await this.driverExecuteSingle(query)
-    const { rows, fields } = await this.serializeQueryResult(result)
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
     return { result: await this.convertRowsToObjects(rows, result.result.metaData), fields }
   }
   async selectTopStream(table, orderBy, filters, chunkSize, schema): Promise<StreamResults> {
@@ -659,6 +660,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         defaultValue: this.parseDefault(row.DATA_DEFAULT),
         hasDefault: !_.isNil(this.parseDefault(row.DATA_DEFAULT)),
         generated: row.VIRTUAL_COLUMN === 'YES',
+        bksField: this.parseTableColumn(row),
       }
     })
     return _.sortBy(result, 'ordinalPosition')
@@ -814,15 +816,21 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return rawIdentify(query, {strict: false, dialect: 'oracle'})
   }
 
-  resolveBksFields(queryResult: DriverResult): BksField[] {
-    const columns = queryResult.columns;
-    return columns.map((column) => {
+  parseQueryResultColumns(qr: DriverResult): BksField[] {
+    return qr.columns.map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';
       if (column.dbType === oracle.DB_TYPE_BLOB) {
         bksType = 'BINARY'
       }
       return { name: column.name, bksType }
     })
+  }
+
+  parseTableColumn(column: { COLUMN_NAME: string; DATA_TYPE: string }): BksField {
+    return {
+      name: column.COLUMN_NAME,
+      bksType: column.DATA_TYPE === 'BLOB' ? 'BINARY' : 'UNKNOWN',
+    }
   }
 }
 
@@ -832,7 +840,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 interface DriverResult {
   result: oracle.Result<unknown>,
   info: IdentifyResult
-  rows: oracle.Result<unknown>['rows']
-  columns: oracle.Result<unknown>['metaData']
+  rows: unknown[]
+  columns: Metadata<unknown>[]
   arrayMode: true
 }

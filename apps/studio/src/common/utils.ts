@@ -262,8 +262,20 @@ export function hexToUint8Array(string: string, into?: any): Uint8Array {
   return bytes
 }
 
+type FriendlyUint8Array = Uint8Array & {
+  toString(): string
+  toJSON(): string
+  toHex(): string
+  toBase64(): string
+}
+
 /** Make `Uint8Array.toString` look better :D */
-export function friendlyUint8Array(bytes: Uint8Array) {
+export function friendlyUint8Array(bytes: string, encoding: 'hex'): FriendlyUint8Array
+export function friendlyUint8Array(bytes: Uint8Array): FriendlyUint8Array
+export function friendlyUint8Array(bytes: string | Uint8Array, encoding?: 'hex'): FriendlyUint8Array {
+  if (typeof bytes === 'string') {
+    bytes = hexToUint8Array(bytes)
+  }
   Object.assign(bytes, {
     toString() {
       return uint8ArrayToHex(this)
@@ -278,5 +290,5 @@ export function friendlyUint8Array(bytes: Uint8Array) {
       return '[TODO]'
     }
   })
-  return bytes
+  return bytes as FriendlyUint8Array
 }

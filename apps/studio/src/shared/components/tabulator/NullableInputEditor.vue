@@ -25,6 +25,7 @@ import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
 import rawLog from 'electron-log'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
+import { BksField } from "@/lib/db/models";
 
 const log = rawLog.scope('NullableInputEditor')
 
@@ -116,6 +117,10 @@ export default Vue.extend({
     },
     parseValue() {
       const typeHint = this.params.typeHint;
+      const bksField: BksField = this.params.bksField;
+      if (bksField?.bksType === 'BINARY' || ArrayBuffer.isView(this.cell.getValue())) {
+        return friendlyUint8Array(hexToUint8Array(this.value));
+      }
       if (typeof typeHint !== 'string') {
         return this.value
       }
@@ -126,8 +131,6 @@ export default Vue.extend({
         return parseInt(this.value);
       } else if (floatTypes.includes(typeHint)) {
         return parseFloat(this.value);
-      } else if (ArrayBuffer.isView(this.cell.getValue())) {
-        return friendlyUint8Array(hexToUint8Array(this.value));
       } else {
         return this.value;
       }

@@ -202,9 +202,9 @@ export class LibSQLClient extends SqliteClient {
     return this.server.config.libsqlOptions;
   }
 
-  resolveBksFields(qr: SqliteResult): BksField[] {
+  parseQueryResultColumns(qr: SqliteResult): BksField[] {
     if (qr.columns.length > 0) {
-      return super.resolveBksFields(qr);
+      return super.parseQueryResultColumns(qr);
     }
 
     const columns: BksField[] = [];

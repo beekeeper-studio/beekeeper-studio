@@ -282,6 +282,46 @@ function testWith(tag, socket = false, readonly = false) {
       expect(secondResult.bitcol[0]).toBe(1)
     })
 
+    it("should parse all binary type columns", async () => {
+      await util.knex.raw(`
+        CREATE TABLE binary_data_types (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            binary_fixed BINARY(16),         -- Fixed-length binary data
+            binary_var VARBINARY(255),       -- Variable-length binary data
+            tiny_blob TINYBLOB,              -- Very small binary data (up to 255 bytes)
+            regular_blob BLOB,               -- Small binary data (up to 64 KB)
+            medium_blob MEDIUMBLOB,          -- Medium binary data (up to 16 MB)
+            large_blob LONGBLOB              -- Large binary data (up to 4 GB)
+        );
+      `);
+      await util.knex.raw(`
+        INSERT INTO binary_data_types (
+          binary_fixed, binary_var, tiny_blob,
+          regular_blob, medium_blob, large_blob
+        )
+        VALUES (
+          CAST('small_value' AS BINARY(16)), 'var_data', 'tiny',
+          'blob', 'medium', 'large'
+        );
+      `)
+
+      const expectedBksFields = [
+        { name: 'id', bksType: 'UNKNOWN' },
+        { name: 'binary_fixed', bksType: 'BINARY' },
+        { name: 'binary_var', bksType: 'BINARY' },
+        { name: 'tiny_blob', bksType: 'BINARY' },
+        { name: 'regular_blob', bksType: 'BINARY' },
+        { name: 'medium_blob', bksType: 'BINARY' },
+        { name: 'large_blob', bksType: 'BINARY' },
+      ]
+
+      const columns = await util.connection.listTableColumns('binary_data_types')
+      expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields)
+
+      const { fields } = await util.connection.selectTop('binary_data_types', 0, 10, [], [])
+      expect(fields).toStrictEqual(expectedBksFields)
+    })
+
     describe("Index Prefixes", () => {
       beforeAll(async () => {
         await util.knex.schema.createTable("has_prefix_indexes", (table) => {

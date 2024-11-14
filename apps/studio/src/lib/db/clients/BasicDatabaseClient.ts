@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, SerializedQueryResult, BksField } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, BksField } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -341,7 +341,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
         if (storeValues.truncateTable) {
           await this.importTruncateCommand(table, importScriptOptions)
         }
-    
+
         const readOptions = {
           connection,
           ...importScriptOptions.clientExtras
@@ -381,6 +381,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
+    tableInsert.data.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        row[key] = this.deserializeValue(row[key]);
+      })
+    })
     return buildInsertQuery(this.knex, tableInsert, columns);
   }
 
@@ -412,20 +417,20 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     }
   }
 
-  protected resolveBksFields(qr: RawResultType): BksField[] {
-    return qr.columns.map((column) => ({
-      name: column.name,
+  protected abstract parseTableColumn(column: any): BksField
+
+  protected parseQueryResultColumns(qr: RawResultType): BksField[] {
+    return qr.columns.map((c) => ({
+      name: c.name,
       bksType: "UNKNOWN",
     }));
   }
 
   /** Serializes and mutates an array of rows based on their fields */
-  protected async serializeQueryResult(qr: RawResultType): Promise<SerializedQueryResult> {
-    const fields = this.resolveBksFields(qr)
-
+  protected async serializeQueryResult(qr: RawResultType, fields: BksField[]): Promise<Record<string, any>[]> {
     // No transcoders, just return the raw result
     if (this.transcoders.length === 0) {
-      return { fields, rows: qr.rows };
+      return qr.rows;
     }
 
     const fieldTranscoders: Record<string, Transcoder<any, any>> = {}
@@ -446,7 +451,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
       })
     }
 
-    return { fields, rows: qr.rows };
+    return qr.rows;
   }
 
   protected async deserializeTableChanges(changes: TableChanges) {

@@ -339,6 +339,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           nullable,
           primaryKey,
           hasDefault: !_.isNil(defaultValue),
+          bksField: this.parseTableColumn(row),
         };
       })
     );
@@ -518,7 +519,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     );
 
     const result = await this.driverExecuteSingle(query, { params });
-    const { rows, fields } = await this.serializeQueryResult(result)
+    const fields = this.parseQueryResultColumns(result);
+    const rows = await this.serializeQueryResult(result, fields);
 
     return { result: rows, fields };
   }
@@ -637,17 +639,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         }
       },
     };
-  }
-
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
-    if (tableInsert.data.length > 1) {
-      throw new Error("Inserting multiple rows is not supported.");
-    }
-    const columns = await this.listTableColumns(
-      tableInsert.table,
-      tableInsert.schema
-    );
-    return buildInsertQuery(this.knex, tableInsert, columns);
   }
 
   async listTableTriggers(
@@ -812,7 +803,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     try {
       if (changes.inserts) {
         for (const command of buildInsertQueries(this.knex, changes.inserts)) {
-          console.log(command)
           await transaction.query(command);
         }
       }
@@ -1203,16 +1193,22 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return buildInsertQueries(this.knex, importedData)
   }
 
-  resolveBksFields(queryResult: FirebirdResult): BksField[] {
-    const meta = queryResult.columns;
-    return meta.map((field: any) => {
+  parseQueryResultColumns(qr: FirebirdResult): BksField[] {
+    return qr.columns.map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';
       // 520 is SQL_BLOB
       // Ref: https://github.com/hgourvest/node-firebird/blob/3aba6c3bb605c9e4a260a572d6395d1b431dee8a/lib/wire/const.js#L230
-      if (field.type === 520) {
+      if (column.type === 520) {
         bksType = 'BINARY';
       }
-      return { name: field.field, bksType };
+      return { name: column.field, bksType };
     });
+  }
+
+  parseTableColumn(column: { FIELD_TYPE: string, RDB$FIELD_NAME: string }): BksField {
+    return {
+      name: column.RDB$FIELD_NAME,
+      bksType: column.FIELD_TYPE === "BLOB" ? "BINARY" : "UNKNOWN",
+    };
   }
 }

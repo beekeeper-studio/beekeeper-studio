@@ -100,6 +100,7 @@ export interface ExtendedTableColumn extends SchemaItem {
   hasDefault?: boolean
   generated?: boolean
   array?: boolean
+  bksField: BksField
 }
 
 export interface PrimaryKeyColumn {
@@ -159,11 +160,6 @@ export interface BksField {
 }
 
 export type BksFieldType = 'BINARY' | 'UNKNOWN';
-
-export interface SerializedQueryResult {
-  rows: Record<string, any>[];
-  fields: BksField[];
-}
 
 export interface TableChanges {
   inserts: TableInsert[];

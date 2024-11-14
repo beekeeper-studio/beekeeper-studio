@@ -27,12 +27,11 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, TableField, BksFieldType } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, BksFieldType, BksField } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
-import { makeEscape } from "knex/lib/util/string";
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -184,6 +183,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default,
       generated: row.is_generated === 'YES',
+      bksField: this.parseTableColumn(row),
     }))
   }
 
@@ -235,7 +235,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     const result = await this.driverExecuteSingle(query)
     this.logger().debug(result)
-    const { rows, fields } = await this.serializeQueryResult(result)
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
     return { result: rows, fields }
   }
 
@@ -1293,20 +1294,27 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset[0].MS_Description
   }
 
-  resolveBksFields(queryResult: SQLServerResult): TableField[] {
-    const columns = queryResult.columns
-    return Object.keys(columns).map((key) => {
+  parseQueryResultColumns(qr: SQLServerResult): BksField[] {
+    return Object.keys(qr.columns).map((key) => {
+      const column = qr.columns[key]
       let bksType: BksFieldType = 'UNKNOWN'
-      const type = columns[key].type
+      const type = column.type
       if (
         type === sql.VarBinary ||
-        type === sql.Binary ||
-        type === sql.Image
+          type === sql.Binary ||
+          type === sql.Image
       ) {
         bksType = 'BINARY'
       }
-      return { name: columns[key].name, bksType }
+      return { name: column.name, bksType }
     })
+  }
+
+  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type.includes('varbinary') ? 'BINARY' : 'UNKNOWN',
+    };
   }
 }
 
