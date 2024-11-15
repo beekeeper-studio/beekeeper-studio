@@ -146,6 +146,7 @@ export interface DialectData {
     generatedColumns?: boolean
     transactions?: boolean
     chunkSizeStream?: boolean
+    binaryColumn?: boolean
   },
   notices?: {
     infoSchema?: string
