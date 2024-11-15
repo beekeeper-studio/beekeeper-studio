@@ -377,6 +377,9 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
+        # this way we can fix this script without a full redeploy
+        with:
+          ref: master
 
         # Requires us to use a github token with more power (to create drafts on another repo)
       - name: Create or check draft release (ultimate)

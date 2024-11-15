@@ -672,11 +672,6 @@
         const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
         this.marker = { from: markStart, to: markEnd, type: 'highlight' } as EditorMarker
       },
-      async showResultTable() {
-        if (this.showResultTable) {
-          this.focusElement = 'table'
-        }
-      },
       async focusElement(element, oldElement) {
         if (oldElement === 'text-editor' && element !== 'text-editor') {
           await this.blurTextEditor()

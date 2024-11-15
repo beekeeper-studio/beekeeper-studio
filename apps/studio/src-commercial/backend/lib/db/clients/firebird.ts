@@ -1,6 +1,6 @@
 import electronLog from "electron-log";
 import knexlib, { Knex } from "knex";
-import knexFirebirdDialect from "knex-firebird-dialect";
+import knexFirebirdDialect from "@commercial/knex/knex-firebird";
 import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
 import {
