@@ -22,8 +22,8 @@ import { FirebirdData } from '@/shared/lib/dialects/firebird'
 import { LicenseKey } from '@/common/appdb/models/LicenseKey'
 import { TestOrmConnection } from './TestOrmConnection'
 import { buffer as b, uint8 as u } from '@tests/utils'
-import Client_Oracledb from '@commercial/knex/oracledb'
-import Client_Firebird from '@commercial/knex/firebird'
+import Client_Oracledb from '@shared/lib/knex-oracledb'
+import Client_Firebird from '@shared/lib/knex-firebird'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>

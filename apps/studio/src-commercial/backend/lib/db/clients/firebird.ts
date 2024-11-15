@@ -1,6 +1,6 @@
 import electronLog from "electron-log";
 import knexlib from "knex";
-import Client_Firebird from "@commercial/knex/firebird";
+import Client_Firebird from "@shared/lib/knex-firebird";
 import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
 import {

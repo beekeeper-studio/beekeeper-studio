@@ -46,7 +46,7 @@ import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChange
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
-import Client_Oracledb from '@commercial/knex/oracledb';
+import Client_Oracledb from '@shared/lib/knex-oracledb';
 
 const log = rawLog.scope('oracle')
 

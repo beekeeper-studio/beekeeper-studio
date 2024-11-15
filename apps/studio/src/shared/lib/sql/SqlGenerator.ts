@@ -7,8 +7,8 @@ const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
 import { identify } from 'sql-query-identifier'
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
-import Client_Firebird from '@commercial/knex/firebird'
-import Client_Oracledb from '@commercial/knex/oracledb'
+import Client_Firebird from '@shared/lib/knex-firebird'
+import Client_Oracledb from '@shared/lib/knex-oracledb'
 
 interface GeneratorConnection {
   dbConfig: any
