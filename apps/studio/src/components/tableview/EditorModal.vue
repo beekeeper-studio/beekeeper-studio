@@ -360,7 +360,7 @@ div.vue-dialog div.dialog-content {
     .CodeMirror {
       height: 300px;
       min-height: 300px;
-      max-height: 556px;
+      max-height: 55vh;
       resize: vertical;
     }
   }
