@@ -10,6 +10,7 @@ import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
 import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { OpenTab } from "@/common/appdb/models/OpenTab";
+import { TabHistoryHandlers } from "@/common/appdb/models/TabHistory";
 import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
@@ -118,6 +119,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
+  ...TabHistoryHandlers,
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
