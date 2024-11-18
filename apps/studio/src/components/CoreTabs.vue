@@ -129,43 +129,27 @@
         />
       </div>
     </div>
-    <portal to="modals">
-      <modal
-        :name="modalName"
-        class="beekeeper-modal vue-dialog sure header-sure"
-        @opened="sureOpened"
-        @closed="sureClosed"
-        @before-open="beforeOpened"
-      >
-        <div v-kbd-trap="true">
-          <div class="dialog-content">
-            <div class="dialog-c-title">
-              Really {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon
-                :tab="tabIcon"
-              /> {{ this.dbElement }}</span>?
-            </div>
-            <p>This change cannot be undone</p>
-          </div>
-          <div class="vue-dialog-buttons">
-            <span class="expand" />
-            <button
-              ref="no"
-              @click.prevent="$modal.hide(modalName)"
-              class="btn btn-sm btn-flat"
-            >
-              Cancel
-            </button>
-            <button
-              @focusout="sureOpen && $refs.no && $refs.no.focus()"
-              @click.prevent="completeDeleteAction"
-              class="btn btn-sm btn-primary"
-            >
-              {{ this.titleCaseAction }} {{ this.dbElement }}
-            </button>
-          </div>
-        </div>
-      </modal>
-    </portal>
+    <common-modal :id="modalName">
+      <template v-slot:title>
+        Really {{ dbAction | titleCase }} <span class="tab-like"><tab-icon
+          :tab="tabIcon"
+        /> {{ dbElement }}</span>?
+      </template>
+      <template v-slot:content>
+        This change cannot be undone
+      </template>
+      <template v-slot:action>
+        <button class="btn btn-sm btn-flat">
+          Cancel
+        </button>
+        <button
+          @click.prevent="completeDeleteAction"
+          class="btn btn-sm btn-primary"
+        >
+          {{ titleCaseAction }} {{ dbElement }}
+        </button>
+      </template>
+    </common-modal>
 
       <!-- Duplicate Modal -->
 
@@ -202,10 +186,7 @@
         v-slot:action
         v-if="!dialectData.disabledFeatures.duplicateTable"
       >
-        <button
-          ref="no"
-          class="btn btn-sm btn-flat"
-        >
+        <button class="btn btn-sm btn-flat">
           Cancel
         </button>
         <pending-changes-button
@@ -424,7 +405,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         this.$noty.warning("Sorry, you can only truncate tables.")
         return;
       }
-      this.$modal.hide(this.modalName)
+      this.$hideModal(this.modalName)
       this.$nextTick(async () => {
         try {
           if (this.dbAction.toLowerCase() === 'drop') {
@@ -629,7 +610,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.dbEntityType = dbActionParams.entityType || 'schema'
       this.dbDeleteElementParams = dbActionParams
 
-      this.$modal.show(this.modalName)
+      this.$showModal(this.modalName)
     },
     importExportTables() {
       // we want this to open a tab with the schema and tables open
