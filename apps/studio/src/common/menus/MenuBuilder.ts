@@ -49,7 +49,7 @@ export default class extends DefaultMenu {
       ]
     };
 
-    if (!this.platformInfo.isSnap && !this.platformInfo.isDeb) {
+    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
       helpMenu.submenu.push(this.menuItems.toggleBeta)
     }
 

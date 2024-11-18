@@ -10,7 +10,6 @@ export interface IPlatformInfo {
   sessionType: string,
   isWayland: boolean,
   isSnap: string,
-  isDeb: string,
   isPortable: string,
   isDevelopment: boolean,
   isAppImage: boolean,
