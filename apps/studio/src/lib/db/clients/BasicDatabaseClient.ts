@@ -1,6 +1,6 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, BksField } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
+import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -12,6 +12,7 @@ import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { Transcoder } from '../serialization/transcoders';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -54,8 +55,14 @@ export const NoOpContextProvider: AppContextProvider = {
   }
 };
 
+export interface BaseQueryResult {
+  columns: { name: string }[]
+  rows: any[][] | Record<string, any>[];
+  arrayMode: boolean;
+}
+
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType> implements IBasicDatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
@@ -64,9 +71,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
-  connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
+  transcoders: Transcoder<any, any>[] = [];
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -230,9 +237,17 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     return;
   }
 
-  abstract applyChangesSql(changes: TableChanges): Promise<string>;
+  async applyChangesSql(changes: TableChanges): Promise<string> {
+    await this.deserializeTableChanges(changes);
+    return applyChangesSql(changes, this.knex);
+  }
 
-  abstract applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>;
+  async applyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
+    await this.deserializeTableChanges(changes);
+    return await this.executeApplyChanges(changes);
+  }
+
+  abstract executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]>;
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
@@ -326,7 +341,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
         if (storeValues.truncateTable) {
           await this.importTruncateCommand(table, importScriptOptions)
         }
-    
+
         const readOptions = {
           connection,
           ...importScriptOptions.clientExtras
@@ -366,6 +381,11 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async getInsertQuery(tableInsert: TableInsert): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
+    tableInsert.data.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        row[key] = this.deserializeValue(row[key]);
+      })
+    })
     return buildInsertQuery(this.knex, tableInsert, columns);
   }
 
@@ -395,6 +415,76 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
       columns,
       totalRows
     }
+  }
+
+  protected abstract parseTableColumn(column: any): BksField
+
+  protected parseQueryResultColumns(qr: RawResultType): BksField[] {
+    return qr.columns.map((c) => ({
+      name: c.name,
+      bksType: "UNKNOWN",
+    }));
+  }
+
+  /** Serializes and mutates an array of rows based on their fields */
+  protected async serializeQueryResult(qr: RawResultType, fields: BksField[]): Promise<Record<string, any>[]> {
+    // No transcoders, just return the raw result
+    if (this.transcoders.length === 0) {
+      return qr.rows;
+    }
+
+    const fieldTranscoders: Record<string, Transcoder<any, any>> = {}
+
+    // Find transcoders by fields
+    fields.forEach((field, idx) => {
+      this.transcoders.forEach((transcoder) => {
+        if (transcoder.serializeCheckByField(field)) {
+          fieldTranscoders[qr.arrayMode ? idx : field.name] = transcoder
+        }
+      })
+    })
+
+    // Mutate rows based on the found transcoders
+    for (const row of qr.rows) {
+      Object.entries(fieldTranscoders).forEach(([key, transcoder]) => {
+        row[key] = transcoder.serialize(row[key])
+      })
+    }
+
+    return qr.rows;
+  }
+
+  protected async deserializeTableChanges(changes: TableChanges) {
+    // No transcoders, just return the raw result
+    if (this.transcoders.length === 0) {
+      return changes
+    }
+
+    changes.inserts?.forEach((ins) => {
+      ins.data.forEach((row) => {
+        Object.keys(row).forEach((key) => {
+          row[key] = this.deserializeValue(row[key])
+        })
+      })
+    })
+
+    changes.updates?.forEach((upd) => {
+      upd.primaryKeys.forEach((pk) => {
+        pk.value = this.deserializeValue(pk.value)
+      })
+      upd.value = this.deserializeValue(upd.value)
+    })
+
+    changes.deletes?.forEach((del) => {
+      del.primaryKeys.forEach((pk) => {
+        pk.value = this.deserializeValue(pk.value)
+      })
+    })
+  }
+
+  private deserializeValue(value: any) {
+    const transcoder = this.transcoders.find((t) => t.deserializeCheckByValue(value))
+    return transcoder?.deserialize(value) || value
   }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {

@@ -14,7 +14,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
   it("Should parseRowQueryResult when array", () => {
     const data = {
       command: 'SELECT',
-      fields: [{name: 'foo'}],
+      columns: [{name: 'foo'}],
       rows: [['bananas'], ['apples']]
     }
 
@@ -31,7 +31,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
   it("should parseRowQueryResult when object", () => {
     const data = {
       command: 'SELECT',
-      fields: [{name: 'foo'}],
+      columns: [{name: 'foo'}],
       rows: [{foo: 'bananas'}, {foo: 'apples'}]
     }
 

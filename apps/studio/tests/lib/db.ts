@@ -10,7 +10,6 @@ import { TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
-import knexFirebirdDialect from '@commercial/knex/knex-firebird'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { IDbConnectionPublicServer } from './db/serverTypes'
@@ -22,6 +21,9 @@ import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
 import { LicenseKey } from '@/common/appdb/models/LicenseKey'
 import { TestOrmConnection } from './TestOrmConnection'
+import { buffer as b, uint8 as u } from '@tests/utils'
+import Client_Oracledb from '@shared/lib/knex-oracledb'
+import Client_Firebird from '@shared/lib/knex-firebird'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -64,8 +66,8 @@ const KnexTypes: any = {
   "sqlite": "sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",
-  "firebird": knexFirebirdDialect,
-  "oracle": "oracledb",
+  "firebird": Client_Firebird,
+  "oracle": Client_Oracledb,
 }
 
 export interface Options {
@@ -81,6 +83,7 @@ export interface Options {
   knexConnectionOptions?: Record<string, any>
   knex?: Knex
   knexClient?: Knex.Client
+  queryTestsTableCreationQuery?: string
 }
 
 export class DBTestUtil {
@@ -91,7 +94,7 @@ export class DBTestUtil {
   public options: Options
   private dbType: ConnectionType | 'generic'
 
-  private dialect: Dialect
+  public dialect: Dialect
   public data: DialectData
 
   public preInitCmd: string | undefined
@@ -130,7 +133,7 @@ export class DBTestUtil {
       })
     } else if (config.client === 'oracle') {
       this.knex = knex({
-        client: 'oracledb',
+        client: Client_Oracledb,
         connection: {
           user: config.user,
           password: config.password,
@@ -821,7 +824,7 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    await this.connection.executeQuery('create table one_record(one integer primary key)')
+    await this.connection.executeQuery(this.options.queryTestsTableCreationQuery || 'create table one_record(one integer primary key)')
     await this.connection.executeQuery('insert into one_record values(1)')
 
     const tables = await this.connection.listTables({ schema: this.defaultSchema})
@@ -1334,6 +1337,59 @@ export class DBTestUtil {
     expect(Number(dataLength)).toBe(expectedLength)
   }
 
+  async serializationBinary() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+
+    await this.knex('contains_binary').insert({ id: 1, bin: b`deadbeef` })
+
+    const result = await this.connection.selectTop('contains_binary', 0, 10, [], [], this.defaultSchema)
+    let data = result.result[0][BIN]
+
+    expect(ArrayBuffer.isView(data)).toBe(true)
+    expect(Buffer.from(data)).toEqual(b`deadbeef`)
+    expect(result.fields).toEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+
+    await this.connection.applyChanges({
+      inserts: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        // frontend sends binary as Uint8Array, or any TypedArray is possible
+        data: [{ id: 2, bin: u`beefdeed` }],
+      }],
+      updates: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        primaryKeys: [{ column: ID, value: 1 }],
+        column: BIN,
+        value: u`eeffeeff`,
+      }],
+      deletes: [],
+    })
+
+    const rows = await this.knex('contains_binary').select('bin').orderBy(ID)
+    expect(rows.map((r) => Buffer.from(r.bin))).toEqual([
+      b`eeffeeff`,
+      b`beefdeed`,
+    ])
+  }
+
+  async resolveTableColumns() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+
+    const columns = await this.connection.listTableColumns('contains_binary', this.defaultSchema)
+    const bksFields = columns.map(c => c.bksField)
+
+    expect(bksFields).toStrictEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
@@ -1430,6 +1486,11 @@ export class DBTestUtil {
       table.string('industry', 255).notNullable();
       table.integer('number_of_employees').notNullable();
     });
+
+    await this.knex.schema.createTable('contains_binary', (table) => {
+      table.integer("id").primary().notNullable()
+      table.binary('bin', 8).notNullable()
+    })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {

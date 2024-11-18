@@ -157,7 +157,7 @@ describe("Firebird Tests", () => {
         SELECT * FROM blobTest;
       `);
 
-      expect(result.rows[0].DESCRIPTION).toBe(blobValue);
+      expect(result.rows[0].DESCRIPTION.toString()).toBe(blobValue);
     })
 
     it("should correctly parse blob columns in a transaction", async () => {
@@ -173,7 +173,7 @@ describe("Firebird Tests", () => {
 
       await transaction.commit();
 
-      expect(result.rows[0].DESCRIPTION).toBe(blobValue);
+      expect(result.rows[0].DESCRIPTION.toString()).toBe(blobValue);
     })
   });
 

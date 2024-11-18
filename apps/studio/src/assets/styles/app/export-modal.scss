@@ -1,4 +1,15 @@
 .export-modal {
+  form {
+    overflow-y: auto;
+    height: 100%;
+    max-height: 80vh;
+    padding: 1.2rem;
+  }
+
+  .dialog-content {
+    padding: 0;
+  }
+
   .dialog-c-title {
     .dialog-c-link {
         margin-left: $gutter-w;
@@ -45,10 +56,8 @@
 
   .vue-dialog-buttons {
     margin-top: $gutter-h * 4;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0;
   }
-
 }
 .export-form {
   .form-group {
