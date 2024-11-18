@@ -32,7 +32,7 @@
     <workspace-sign-in-modal />
     <import-queries-modal />
     <import-connections-modal />
-    <confirmation-modal-manager />
+    <modal-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
@@ -63,7 +63,7 @@ import { AppEvent } from './common/AppEvent'
 import globals from './common/globals'
 import NotificationManager from './components/NotificationManager.vue'
 import Noty from 'noty';
-import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
+import ModalManager from '@/components/common/modals/ModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
@@ -80,7 +80,7 @@ export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
+    StateManager, DataManager, UpgradeRequiredModal, ModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal,
