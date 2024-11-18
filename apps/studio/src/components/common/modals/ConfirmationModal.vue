@@ -6,7 +6,7 @@
       @opened="opened"
       @before-close="beforeClose"
     >
-      <div v-kbd-trap="true">
+      <form v-kbd-trap="true" @submit.prevent="submit" ref="form">
         <div class="dialog-content">
           <div class="dialog-c-title">
             <slot name="title">
@@ -19,27 +19,27 @@
         </div>
         <div class="vue-dialog-buttons">
           <button
+            name="intent"
+            value="cancel"
             class="btn btn-flat"
-            type="button"
             ref="cancelBtn"
             autofocus
-            @click.prevent="cancel"
           >
             <slot name="cancel-label">
               Cancel
             </slot>
           </button>
           <button
+            name="intent"
+            value="submit"
             class="btn btn-primary"
-            type="button"
-            @click.prevent="confirm"
           >
             <slot name="confirm-label">
               Confirm
             </slot>
           </button>
         </div>
-      </div>
+      </form>
     </modal>
   </portal>
 </template>
@@ -54,18 +54,22 @@ export default Vue.extend({
     opened() {
       this.$refs.cancelBtn.focus()
     },
-    beforeClose(e: { params?: boolean }) {
+    beforeClose(e: { params?: FormData }) {
       const event: ModalCloseEventData = {
         modalId: this.id,
-        confirmed: e.params ?? false,
+        formData: e.params,
       };
       this.trigger(MODAL_CLOSE_EVENT, event);
     },
-    confirm() {
-      this.$modal.hide(this.id, true);
-    },
-    cancel() {
-      this.$modal.hide(this.id, false);
+    submit(event: SubmitEvent) {
+      // We don't want to submit by pressing enter on an input element.
+      // This causes the submitter to always pick the first submit element
+      if (event.submitter !== document.activeElement) {
+        return
+      }
+      // @ts-expect-error FormData can accept 2 arguments
+      const formData = new FormData(event.target, event.submitter);
+      this.$modal.hide(this.id, formData);
     },
   },
   mounted() {

@@ -1,6 +1,6 @@
 export interface ModalCloseEventData {
   modalId: string;
-  confirmed: boolean;
+  formData: FormData;
 }
 
 export const MODAL_CLOSE_EVENT = "common-modal-close";

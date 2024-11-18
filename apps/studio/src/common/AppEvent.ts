@@ -41,8 +41,8 @@ export enum AppEvent {
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
   dropzoneDrop = 'dropzoneDrop',
-  createConfirmModal = 'createConfirmModal',
-  showConfirmModal = 'showConfirmModal',
+  createAndShowConfirmModal = 'createAndShowConfirmModal',
+  showModal = 'showModal',
   /** Triggered when the license valid date or support date has expired */
   licenseExpired = 'licenseExpired',
   /** Triggered when the license valid date has expired */

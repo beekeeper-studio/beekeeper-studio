@@ -123,11 +123,12 @@ export default {
     Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         try {
-          this.trigger(AppEvent.createConfirmModal, {
+          this.trigger(AppEvent.createAndShowConfirmModal, {
             title,
             message,
-            onConfirm: () => resolve(true),
-            onCancel: () => resolve(false),
+            onSubmit: (formData: FormData) => {
+              resolve(formData.get('intent') === 'submit')
+            },
             ...options,
           })
         } catch (e) {
@@ -136,13 +137,14 @@ export default {
       })
     }
 
-    Vue.prototype.$confirmById = function(id: string): Promise<boolean> {
-      return new Promise<boolean>((resolve, reject) => {
+    Vue.prototype.$showModal = function(id: string): Promise<FormData> {
+      return new Promise<FormData>((resolve, reject) => {
         try {
-          this.trigger(AppEvent.showConfirmModal, {
+          this.trigger(AppEvent.showModal, {
             id,
-            onConfirm: () => resolve(true),
-            onCancel: () => resolve(false),
+            onSubmit: (formData: FormData) => {
+              resolve(formData)
+            },
           })
         } catch (e) {
           reject(e)

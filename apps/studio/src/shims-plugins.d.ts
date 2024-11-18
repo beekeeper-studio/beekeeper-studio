@@ -23,8 +23,15 @@ declare module 'vue/types/vue' {
       warning(text: string, opts?: any): Noty
       info(text: string, opts?: any): Noty
     }
+    /** Similar to `window.confirm()` */
     $confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>
+    /**
+     * Use this if you have a custom confirmation modal that you want to show.
+     * You can make it by using `<confirmation-modal>` component.
+     **/
     $confirmById(id: string): Promise<boolean>
+    /** Show a modal and return the form data */
+    $showModal(id: string): Promise<FormData>
 
     // TODO: figure out how to add these automatically from AppEvent.ts
     registerHandlers(bindings: RootBinding[]): void

@@ -936,9 +936,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     async close(tab: TransportOpenTab, options?: CloseTabOptions) {
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
-        const confirmed = await this.$confirmById(this.confirmModalId);
+        const formData = await this.$showModal(this.confirmModalId);
+        const canceled = formData.get('intent') === 'cancel'
         this.closingTab = null
-        if (!confirmed) return
+        if (canceled) return
       }
 
       if (this.activeTab === tab) {

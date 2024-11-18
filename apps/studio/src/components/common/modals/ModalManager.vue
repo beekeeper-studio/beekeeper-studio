@@ -35,8 +35,7 @@ interface ModalOptions {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
+  onSubmit: (formData: FormData) => void;
 }
 
 interface ModalContext extends ModalOptions {
@@ -65,8 +64,8 @@ export default Vue.extend({
   computed: {
     rootBindings() {
       return [
-        { event: AppEvent.createConfirmModal, handler: this.createModal },
-        { event: AppEvent.showConfirmModal, handler: this.showExistingModal },
+        { event: AppEvent.createAndShowConfirmModal, handler: this.createAndShowConfirmModal },
+        { event: AppEvent.showModal, handler: this.showExistingModal },
         { event: MODAL_CLOSE_EVENT, handler: this.onModalClose },
       ]
     },
@@ -75,31 +74,26 @@ export default Vue.extend({
     onModalClose(event: ModalCloseEventData) {
       const idx: number = this.modals.findIndex((modal: ModalContext) => modal.id === event.modalId)
       const modal: ModalContext = this.modals[idx];
-
-      if (event.confirmed) modal.onConfirm();
-      else modal.onCancel();
-
+      modal.onSubmit(event.formData);
       this.modals.splice(idx, 1);
     },
     async showExistingModal(options: ModalOptions) {
       const modal: ModalContext = {
         id: options.id,
-        onConfirm: options.onConfirm,
-        onCancel: options.onCancel,
+        onSubmit: options.onSubmit,
         noDisplay: true,
       }
       this.modals.push(modal);
       this.$modal.show(modal.id);
     },
-    async createModal(options: ModalOptions) {
+    async createAndShowConfirmModal(options: ModalOptions) {
       const modal: ModalContext = {
         id: `${MODAL_NAME_PREFIX}-${this.idCounter++}`,
         title: options.title || DEFAULT_TITLE,
         message: options.message || DEFAULT_MESSAGE,
         cancelLabel: options.cancelLabel || DEFAULT_NO_LABEL,
         confirmLabel: options.confirmLabel || DEFAULT_YES_LABEL,
-        onConfirm: options.onConfirm,
-        onCancel: options.onCancel,
+        onSubmit: options.onSubmit,
         noDisplay: false,
       }
       this.modals.push(modal);
