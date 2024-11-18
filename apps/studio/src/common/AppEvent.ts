@@ -43,6 +43,7 @@ export enum AppEvent {
   dropzoneDrop = 'dropzoneDrop',
   createAndShowConfirmModal = 'createAndShowConfirmModal',
   showModal = 'showModal',
+  hideModal = 'hideModal',
   /** Triggered when the license valid date or support date has expired */
   licenseExpired = 'licenseExpired',
   /** Triggered when the license valid date has expired */

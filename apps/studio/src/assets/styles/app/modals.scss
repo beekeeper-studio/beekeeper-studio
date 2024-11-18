@@ -2,6 +2,23 @@
 
 .beekeeper-modal {
 
+  .dialog-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.64rem;
+
+    .dialog-c-title {
+      padding: 0;
+    }
+
+    .dialog-c-action {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.58rem;
+    }
+  }
+
   .dialog-c-title {
     &.has-icon {
       display: flex;
@@ -66,12 +83,6 @@
     .v--modal {
       width: auto !important;
       min-height: 0px;
-    }
-    .dialog-content {
-      padding: 1.5rem 1.5rem 2rem;
-    }
-    .dialog-c-title {
-      padding-bottom: 1.25rem;
     }
     .vue-dialog-buttons {
       padding-left: 1.5rem;

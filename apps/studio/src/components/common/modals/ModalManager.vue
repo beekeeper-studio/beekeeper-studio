@@ -38,6 +38,10 @@ interface ModalOptions {
   onSubmit: (formData: FormData) => void;
 }
 
+interface HideModalOptions {
+  id: string;
+}
+
 interface ModalContext extends ModalOptions {
   id: string;
   /**
@@ -57,6 +61,7 @@ export default Vue.extend({
   components: { ConfirmationModal },
   data() {
     return {
+      // TODO make sure we handle focusing on an element that were focused before the modal was shown
       modals: [],
       idCounter: 0,
     };
@@ -66,6 +71,7 @@ export default Vue.extend({
       return [
         { event: AppEvent.createAndShowConfirmModal, handler: this.createAndShowConfirmModal },
         { event: AppEvent.showModal, handler: this.showExistingModal },
+        { event: AppEvent.hideModal, handler: this.hideExistingModal },
         { event: MODAL_CLOSE_EVENT, handler: this.onModalClose },
       ]
     },
@@ -85,6 +91,9 @@ export default Vue.extend({
       }
       this.modals.push(modal);
       this.$modal.show(modal.id);
+    },
+    async hideExistingModal(options: HideModalOptions) {
+      this.$modal.hide(options.id);
     },
     async createAndShowConfirmModal(options: ModalOptions) {
       const modal: ModalContext = {

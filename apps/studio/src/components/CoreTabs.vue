@@ -165,68 +165,55 @@
           </div>
         </div>
       </modal>
+    </portal>
 
       <!-- Duplicate Modal -->
 
-      <modal
-        :name="duplicateTableModal"
-        class="beekeeper-modal vue-dialog sure header-sure"
-        @opened="sureOpened"
-        @closed="sureClosed"
-        @before-open="beforeOpened"
-      >
-        <div v-kbd-trap="true">
-          <div
-            class="dialog-content"
-            v-if="this.dialectData.disabledFeatures.duplicateTable"
-          >
-            <div class="dialog-c-title text-center">
-              Table Duplication not supported for {{ this.dialectTitle }} yet. Stay tuned!
-            </div>
-          </div>
-          <div
-            class="dialog-content"
-            v-else
-          >
-            <div class="dialog-c-title">
-              {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon :tab="tabIcon" />
-                {{ this.dbElement }}</span>?
-            </div>
-            <div class="form-group">
-              <label for="duplicateTableName">New table name</label>
-              <input
-                type="text"
-                name="duplicateTableName"
-                class="form-control"
-                required
-                v-model="duplicateTableName"
-                autofocus
-                ref="duplicateTableNameInput"
-              >
-            </div>
-            <small>This will create a new table and copy all existing data into it. Keep in mind that any indexes,
-              relations, or triggers associated with the original table will not be duplicated in the new table</small>
-          </div>
-          <div
-            v-if="!this.dialectData.disabledFeatures.duplicateTable"
-            class="vue-dialog-buttons"
-          >
-            <span class="expand" />
-            <button
-              ref="no"
-              @click.prevent="$modal.hide(duplicateTableModal)"
-              class="btn btn-sm btn-flat"
+    <!-- TODO first focus element is the input -->
+    <common-modal :id="duplicateTableModal">
+      <template v-slot:title>
+        Table Duplication
+        <template v-if="dialectData.disabledFeatures.duplicateTable">
+          {{ dbAction | titleCase }} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{ dbElement }}</span>?
+        </template>
+      </template>
+      <template v-slot:content>
+        <template v-if="dialectData.disabledFeatures.duplicateTable">
+          Table Duplication not supported for {{ dialectTitle }} yet. Stay tuned!
+        </template>
+        <template v-else>
+          <div class="form-group">
+            <label for="duplicateTableName">New table name</label>
+            <input
+              type="text"
+              name="duplicateTableName"
+              class="form-control"
+              required
+              v-model="duplicateTableName"
+              autofocus
+              ref="duplicateTableNameInput"
             >
-              Cancel
-            </button>
-            <pending-changes-button
-              :submit-apply="duplicateTable"
-              :submit-sql="duplicateTableSql"
-            />
           </div>
-        </div>
-      </modal>
-    </portal>
+          <small>This will create a new table and copy all existing data into it. Keep in mind that any indexes,
+            relations, or triggers associated with the original table will not be duplicated in the new table</small>
+        </template>
+      </template>
+      <template
+        v-slot:action
+        v-if="!dialectData.disabledFeatures.duplicateTable"
+      >
+        <button
+          ref="no"
+          class="btn btn-sm btn-flat"
+        >
+          Cancel
+        </button>
+        <pending-changes-button
+          :submit-apply="duplicateTable"
+          :submit-sql="duplicateTableSql"
+        />
+      </template>
+    </common-modal>
 
     <confirmation-modal :id="confirmModalId">
       <template v-slot:title>
@@ -265,7 +252,7 @@ import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import { FormatterDialect, DialectTitles } from '@shared/lib/dialects/models'
+import { FormatterDialect } from '@shared/lib/dialects/models'
 import Vue from 'vue';
 import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
 import TabWithTable from './common/TabWithTable.vue';
@@ -275,6 +262,7 @@ import PendingChangesButton from './common/PendingChangesButton.vue'
 import { DropzoneDropEvent } from '@/common/dropzone'
 import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
+import CommonModal from '@/components/common/modals/CommonModal.vue'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
@@ -299,6 +287,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       TabIcon,
       DatabaseBackup,
       PendingChangesButton,
+      CommonModal,
     ConfirmationModal,
     SqlFilesImportModal,
     DetailViewSidebar,
@@ -496,7 +485,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       } catch (ex) {
         this.$noty.error(`Error printing ${this.dbAction} query: ${ex.message}`)
       } finally {
-        this.$modal.hide(this.duplicateTableModal)
+        this.$hideModal(this.duplicateTableModal)
       }
     },
     async duplicateTable() {
@@ -517,7 +506,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         return;
       }
 
-      this.$modal.hide(this.duplicateTableModal)
+      this.$hideModal(this.duplicateTableModal)
 
       this.$nextTick(async () => {
         try {
@@ -694,7 +683,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         entityType: dbActionParams.entityType
       }
 
-      this.$modal.show(this.duplicateTableModal)
+      this.$showModal(this.duplicateTableModal)
     },
     async handleDropzoneDrop(event: DropzoneDropEvent) {
       const files = event.files.map((file) => ({

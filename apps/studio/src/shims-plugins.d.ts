@@ -30,8 +30,10 @@ declare module 'vue/types/vue' {
      * You can make it by using `<confirmation-modal>` component.
      **/
     $confirmById(id: string): Promise<boolean>
-    /** Show a modal and return the form data */
+    /** Show a modal and return the form data. The id will be added to the pool in modal manager. */
     $showModal(id: string): Promise<FormData>
+    /** Hide a modal and return the form data. The id will be removed from the pool in modal manager. */
+    $hideModal(id: string): Promise<FormData>
 
     // TODO: figure out how to add these automatically from AppEvent.ts
     registerHandlers(bindings: RootBinding[]): void

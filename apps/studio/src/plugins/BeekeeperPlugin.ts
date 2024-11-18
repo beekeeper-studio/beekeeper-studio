@@ -152,5 +152,9 @@ export default {
       })
     }
 
+    Vue.prototype.$hideModal = function(id: string): void {
+      this.trigger(AppEvent.hideModal, { id })
+    }
+
   }
 }
