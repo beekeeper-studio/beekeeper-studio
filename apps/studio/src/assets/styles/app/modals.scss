@@ -3,6 +3,7 @@
 .beekeeper-modal {
 
   .dialog-content {
+    max-height: var(--v-modal-max-height);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -10,6 +11,11 @@
 
     .dialog-c-title {
       padding: 0;
+    }
+
+    .dialog-c-content {
+      min-height: 0; // to prevent overflowing
+      overflow-y: auto;
     }
 
     .dialog-c-action {

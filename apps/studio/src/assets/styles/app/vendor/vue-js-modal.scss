@@ -77,6 +77,7 @@
 // Modal
 // ----------------------------
 .v--modal {
+  --v-modal-max-height: 80vh;
   background-color: lighten($theme-bg, 1%) !important;
   color: $theme-base !important;
   text-align: left !important;
@@ -89,7 +90,7 @@
   max-width: 600px;
   height: auto!important;
   min-height: 120px;
-  max-height: 80vh;
+  max-height: var(--v-modal-max-height);
   @include card-shadow;
 }
 .v--modal.v--modal-fullscreen {

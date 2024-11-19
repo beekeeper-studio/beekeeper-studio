@@ -1,48 +1,38 @@
 <template>
-  <modal
-    name="import-connections"
-    class="vue-dialog beekeeper-modal"
-  >
-    <div class="dialog-content">
-      <div class="dialog-c-title">
-        Import Connections
-      </div>
-      <div class="dialog-c-subtitle">
-        Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
-      </div>
+  <common-modal :id="modalId">
+    <template v-slot:title>
+      Import Connections
+    </template>
+    <template v-slot:content>
+      Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
       <error-alert :error="error" />
-      <div>
-        <div class="list-group">
-          <div class="list-body">
-            <div
-              class="list-item"
-              v-for="connection in connections"
-              :key="connection.id"
+      <div class="list-group">
+        <div class="list-body">
+          <div
+            class="list-item"
+            v-for="connection in connections"
+            :key="connection.id"
+          >
+            <label
+              :for="`c-${connection.id}`"
+              class="checkbox-group"
             >
-              <label
-                :for="`c-${connection.id}`"
-                class="checkbox-group"
+              <input
+                type="checkbox"
+                v-model="connection.checked"
+                class="form-control"
+                :id="`c-${connection.id}`"
+                :name="`c-${connection.id}`"
               >
-                <input
-                  type="checkbox"
-                  v-model="connection.checked"
-                  class="form-control"
-                  :id="`c-${connection.id}`"
-                  :name="`c-${connection.id}`"
-                >
-                <span>{{ connection.name }}</span>
+              <span>{{ connection.name }}</span>
 
-              </label>
-            </div>
+            </label>
           </div>
         </div>
       </div>
-    </div>
-    <div class="vue-dialog-buttons">
-      <button
-        class="btn btn-flat"
-        @click.prevent="$modal.hide('import-connections')"
-      >
+    </template>
+    <template v-slot:action>
+      <button class="btn btn-flat">
         Close
       </button>
       <button
@@ -52,19 +42,22 @@
       >
         {{ loading ? '...' : 'Import' }}
       </button>
-    </div>
-  </modal>
+    </template>
+  </common-modal>
 </template>
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
+import CommonModal from '@/components/common/modals/CommonModal.vue'
+
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, CommonModal },
   data: () => ({
     connections: [],
     loading: false,
-    error: null
+    error: null,
+    modalId: 'import-connections',
   }),
   mounted() {
     this.registerHandlers(this.rootBindings)
@@ -89,7 +82,7 @@ export default Vue.extend({
         }
       })
       this.error = null
-      this.$modal.show('import-connections')
+      this.$modal.show(this.modalId)
     },
     async doImport() {
       this.loading = true
@@ -100,7 +93,7 @@ export default Vue.extend({
           const payload = {...c, id: null}
           return this.$store.dispatch('data/connections/save', payload)
         }))
-        this.$modal.hide('import-connections')
+        this.$modal.hide(this.modalId)
       } catch (error) {
         this.error = error
       } finally {
