@@ -35,7 +35,6 @@
     <confirmation-modal-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
-      <trial-begin-modal />
       <trial-expired-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
@@ -54,7 +53,7 @@ import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 
-import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
+import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
 import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
@@ -67,7 +66,6 @@ import Noty from 'noty';
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
-import TrialBeginModal from '@/components/license/TrialBeginModal.vue'
 import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
@@ -84,7 +82,7 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, TrialBeginModal, TrialExpiredModal, LicenseExpiredModal,
+    EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal,
   },
   data() {

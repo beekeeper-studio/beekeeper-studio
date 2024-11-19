@@ -5,9 +5,10 @@ import knexlib from 'knex'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
-import knexFirebirdDialect from "knex-firebird-dialect"
 import { identify } from 'sql-query-identifier'
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
+import Client_Firebird from '@shared/lib/knex-firebird'
+import Client_Oracledb from '@shared/lib/knex-oracledb'
 
 interface GeneratorConnection {
   dbConfig: any
@@ -106,7 +107,9 @@ export class SqlGenerator {
     const { dbConfig, dbName } = this.connection
     if (!this.dialect || !this.connection) return
 
-    if (this.isNativeKnex) {
+    if (this.dialect === 'oracle') {
+        this.knex = knexlib({ client: Client_Oracledb })
+    } else if (this.isNativeKnex) {
         this.knex = knexlib({ client: this.knexDialect })
     } else if (this.dialect === 'cassandra') {
       this.knex  = knexlib({
@@ -123,7 +126,7 @@ export class SqlGenerator {
       })
     } else if (this.dialect === 'firebird') {
         this.knex = knexlib({
-          client: knexFirebirdDialect,
+          client: Client_Firebird,
           connection: {
             host: dbConfig.host,
             port: dbConfig.port,

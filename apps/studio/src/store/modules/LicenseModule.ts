@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _, { defaults } from 'lodash'
 import { Module } from "vuex";
 import rawLog from '@bksLogger'
 import { State as RootState } from '../index'
@@ -21,6 +21,12 @@ const log = rawLog.scope('LicenseModule')
 
 const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
 
+const defaultStatus = new LicenseStatus()
+Object.assign(defaultStatus, {
+  edition: "community",
+  condition: "initial",
+})
+
 export const LicenseModule: Module<State, RootState>  = {
   namespaced: true,
   state: () => ({
@@ -28,19 +34,12 @@ export const LicenseModule: Module<State, RootState>  = {
     licenses: [],
     error: null,
     now: new Date(),
-    status: {
-      edition: "community",
-      condition: ["initial"],
-      isUltimate: false,
-      isCommunity: true,
-      isTrial: false,
-      isValidDateExpired: false,
-      isSupportDateExpired: false,
-      license: null,
-      maxAllowedVersion: null
-    } as LicenseStatus,
+    status: defaultStatus,
   }),
   getters: {
+    trialLicense(state) {
+      return state.licenses.find((l) => l.licenseType === 'TrialLicense')
+    },
     realLicenses(state) {
       return state.licenses.filter((l) => l.licenseType !== 'TrialLicense')
     },
@@ -64,6 +63,11 @@ export const LicenseModule: Module<State, RootState>  = {
       if (!state) return true
       return state.status.isTrial
     },
+    isValidStateExpired(state) {
+      // this means a license with lifetime perms, but is no longer valid for software updates
+      // so the user has to use an older version of the app.
+      return state.status.isValidDateExpired
+    }
   },
   mutations: {
     set(state, licenses: TransportLicenseKey[]) {
@@ -92,6 +96,7 @@ export const LicenseModule: Module<State, RootState>  = {
     async add(context, { email, key, trial }) {
       if (trial) {
         await Vue.prototype.$util.send('license/createTrialLicense')
+        await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
       } else {
         await Vue.prototype.$util.send('license/add', { email, key })
       }
@@ -101,6 +106,10 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     async update() {
       await Vue.prototype.$util.send('license/update')
+    },
+    async remove(context, license) {
+      await Vue.prototype.$util.send('license/remove', { id: license.id })
+      await context.dispatch('sync')
     },
     async sync(context) {
       const status = await Vue.prototype.$util.send('license/getStatus')

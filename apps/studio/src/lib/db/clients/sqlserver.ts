@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
+import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -15,7 +15,6 @@ import {
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  applyChangesSql,
   buildInsertQuery
 } from './utils';
 import logRaw from '@bksLogger'
@@ -28,10 +27,11 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, BksFieldType, BksField } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
+import { GenericBinaryTranscoder } from '../serialization/transcoders';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -45,11 +45,16 @@ type SQLServerVersion = {
   versionString: any
 }
 
+type ColumnMetadata = sql.IColumnMetadata[number]
+
 type SQLServerResult = {
   connection: Request,
-  data: any,
+  data: sql.IResult<any>,
   // Number of changes made by the query
   rowsAffected: number
+  rows: Record<string, any>[];
+  columns: ColumnMetadata[];
+  arrayMode: boolean;
 }
 
 interface ExecuteOptions {
@@ -66,12 +71,19 @@ const SQLServerContext = {
   }
 }
 
+const knex = knexlib({ client: 'mssql' });
+const escapeBinding = knex.client._escapeBinding
+knex.client._escapeBinding = function (value: any, context: any) {
+  if (Buffer.isBuffer(value)) {
+    return `0x${value.toString('hex')}`
+  }
+  return escapeBinding.call(this, value, context)
+}
+
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
-  connectionBaseType = 'sqlserver' as const;
-
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -81,9 +93,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   logger: any
   pool: ConnectionPool;
   authService: AzureAuthService;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
+    super(knex, SQLServerContext, server, database)
     this.dialect = 'mssql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.defaultSchema = async (): Promise<string> => 'dbo'
@@ -170,6 +183,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default,
       generated: row.is_generated === 'YES',
+      bksField: this.parseTableColumn(row),
     }))
   }
 
@@ -221,10 +235,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     const result = await this.driverExecuteSingle(query)
     this.logger().debug(result)
-    return {
-      result: result.data.recordset,
-      fields: Object.keys(result.data.recordset[0] || {})
-    }
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
+    return { result: rows, fields }
   }
 
   async selectTopSql(
@@ -496,7 +509,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       connection.arrayRowMode = options.arrayRowMode || false;
       const data = await connection.query(q)
       const rowsAffected = _.sum(data.rowsAffected)
-      return { connection, data, rowsAffected }
+      const columns = !data.recordset ? [] : Object.keys(data.recordset.columns).map((key) => data.recordset.columns[key])
+      const rows = data.recordset
+      const arrayMode = connection.arrayRowMode
+      return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
     return runQuery(options.connection ? options.connection : this.pool.request());
@@ -555,7 +571,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(sql)
   }
 
-  async applyChanges(changes: TableChanges) {
+  async executeApplyChanges(changes: TableChanges) {
     const results = []
     let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
 
@@ -963,7 +979,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         })
       })
     }
-    return applyChangesSql(changes, this.knex)
+    return super.applyChangesSql(changes)
   }
 
   wrapIdentifier(value: string) {
@@ -1276,6 +1292,29 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       return null
     }
     return data.recordset[0].MS_Description
+  }
+
+  parseQueryResultColumns(qr: SQLServerResult): BksField[] {
+    return Object.keys(qr.columns).map((key) => {
+      const column = qr.columns[key]
+      let bksType: BksFieldType = 'UNKNOWN'
+      const type = column.type
+      if (
+        type === sql.VarBinary ||
+          type === sql.Binary ||
+          type === sql.Image
+      ) {
+        bksType = 'BINARY'
+      }
+      return { name: column.name, bksType }
+    })
+  }
+
+  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type.includes('varbinary') ? 'BINARY' : 'UNKNOWN',
+    };
   }
 }
 

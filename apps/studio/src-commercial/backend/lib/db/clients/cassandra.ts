@@ -1,6 +1,6 @@
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults } from "@/lib/db/models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
@@ -14,7 +14,6 @@ import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
-import { applyChangesSql } from "@/lib/db/clients/utils";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 const log = rawLog.scope("cassandra");
@@ -49,6 +48,7 @@ type CassandraResult = {
   rows: CassRow[],
   hasNext: boolean,
   pageState: string
+  arrayMode: boolean
 };
 
 type CassandraVersion = {
@@ -57,8 +57,6 @@ type CassandraVersion = {
 };
 
 export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
-  connectionBaseType = 'cassandra' as const;
-
   client: cassandra.Client;
   versionInfo: CassandraVersion;
 
@@ -168,7 +166,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       .sort((a, b) => b.position - a.position)
       .map((row) => ({
         columnName: row.column_name,
-        dataType: row.type
+        dataType: row.type,
+        bksField: this.parseTableColumn(row as any),
       } as ExtendedTableColumn));
   }
 
@@ -355,11 +354,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]) // TODO: Routines really don't exist in Cassandra
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex);
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
     let batchedChanges = [];
 
@@ -441,11 +436,13 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     if (limit) options.fetchSize = limit
     if (offset) options.pageState = offset
 
-    const { rows, columns, hasNext, pageState } = await this.driverExecuteSingle(qs.query, { params: qs.params, options })
+    const result = await this.driverExecuteSingle(qs.query, { params: qs.params, options })
+    const { rows, columns, hasNext, pageState } = result
+    const fields = columns ? this.parseQueryResultColumns(result) : []
 
     return {
       result: rows || [],
-      fields: columns?.map(f => f.name) || [],
+      fields,
       hasNext,
       pageState: pageState || null
     } as any
@@ -507,7 +504,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       columns: data.columns,
       rows: data.rows,
       hasNext: data.nextPage != null,
-      pageState: data.pageState
+      pageState: data.pageState,
+      arrayMode: false,
     };
   }
 
@@ -782,5 +780,12 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return keyspace && keyspace.length ?
       `${this.wrapIdentifier(keyspace)}.${this.wrapIdentifier(table)}` :
       this.wrapIdentifier(table)
+  }
+
+  parseTableColumn(column: { column_name: string; type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
+    };
   }
 }

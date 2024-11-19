@@ -136,9 +136,6 @@ import App from '@/App.vue'
     const app = new Vue({
       render: h => h(App),
       store,
-      beforeMount() {
-        store.dispatch('initRootStates')
-      },
     })
 
     Vue.prototype.$util = new UtilityConnection();
@@ -156,6 +153,7 @@ import App from '@/App.vue'
 
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
+    await store.dispatch('initRootStates')
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")

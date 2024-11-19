@@ -85,5 +85,7 @@ export const ClickHouseData: DialectData = {
     },
     transactions: true,
     chunkSizeStream: true,
+    // Clickhouse doesn't have binary types
+    binaryColumn: true,
   },
 }

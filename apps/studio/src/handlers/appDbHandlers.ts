@@ -124,7 +124,7 @@ export const AppDbHandlers = {
     if (!conn.parse(url)) {
       throw `Unable to parse ${url}`;
     }
-    return conn;
+    return defaultTransform(conn, SavedConnection);
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOneBy({ key });

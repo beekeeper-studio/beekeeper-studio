@@ -97,6 +97,18 @@ export const api = {
   openLink(link: string) {
     return electron.shell.openExternal(link);
   },
+  onMaximize(func: any, sId: string) {
+    ipcRenderer.on(`maximize-${sId}`, func);
+  },
+  onUnmaximize(func: any, sId: string) {
+    ipcRenderer.on(`unmaximize-${sId}`, func);
+  },
+  onEnterFullscreen(func: any, sId: string) {
+    ipcRenderer.on(`enter-full-screen-${sId}`, func);
+  },
+  onLeaveFullscreen(func: any, sId: string) {
+    ipcRenderer.on(`leave-full-screen-${sId}`, func);
+  },
   async isMaximized() {
     return await ipcRenderer.invoke('isMaximized');
   },

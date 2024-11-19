@@ -149,12 +149,15 @@ export default {
       this.editor?.setOption("lineWrapping", this.lineWrapping);
     },
     async focus() {
-      if (this.focus && this.editor) {
+      if (!this.editor) return
+      if (this.focus) {
         this.editor.focus();
         await this.$nextTick();
         // this fixes the editor not showing because it doesn't think it's dom element is in view.
         // its a hit and miss error
         this.editor.refresh();
+      } else {
+        this.editor.display.input.blur();
       }
     },
     removeJsonRootBrackets() {
@@ -272,6 +275,10 @@ export default {
         cm.setOption("readOnly", this.readOnly);
       }
 
+      if (this.lineWrapping) {
+        cm.setOption("lineWrapping", this.lineWrapping);
+      }
+
       cm.on("change", (cm) => {
         this.$emit("input", cm.getValue());
       });
@@ -292,7 +299,11 @@ export default {
         if ((event.relatedTarget as HTMLElement)?.id.includes('CodeMirror')) {
           return
         }
-        this.$emit("update:focus", false);
+
+        // This makes sure the editor is really blurred before emitting blur
+        setTimeout(() => {
+          this.$emit("update:focus", false);
+        }, 0);
       });
 
       cm.on("cursorActivity", (cm) => {
@@ -338,10 +349,11 @@ export default {
 
       this.editor = cm;
 
-      this.initializeMarkers();
-      this.initializeBookmarks();
-
-      this.$emit("update:initialized", true);
+      this.$nextTick(() => {
+        this.initializeMarkers();
+        this.initializeBookmarks();
+        this.$emit("update:initialized", true);
+      })
     },
     initializeMarkers() {
       const markers = this.markers || [];
@@ -529,6 +541,9 @@ export default {
   },
   mounted() {
     this.initialize();
+    if (this.focus) {
+      this.editor.focus();
+    }
     window.addEventListener('focus', this.focusEditor);
     window.addEventListener('blur', this.handleBlur);
   },
