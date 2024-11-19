@@ -10931,10 +10931,10 @@ sql-formatter@~10.7.2:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
-sql-query-identifier@^2.7.0:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.7.0.tgz#e05de066df91d93388f5f088245f16c13290022d"
-  integrity sha512-MTDRfn0kUv+9ELnt9wt/FATi03Wq1j3YvhE5Up8ToE5Afk5zzBgVHPuIu1bVhqNqfF0aeIPl3vEzZ60H1yv0ag==
+sql-query-identifier@^2.8.0:
+  version "2.8.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.8.0.tgz#af6e62594d784194b86c87bddc95e5f084223b47"
+  integrity sha512-5cfaQCq80pRtLulP0nxw1j8W7m2ytUrbbQNrjszV26D8gTly7FUO3bWwMu6rwF3chY30Xv9Rb/CEzAQhDJ1YgA==
 
 sqlite3@^5.1.5:
   version "5.1.6"
