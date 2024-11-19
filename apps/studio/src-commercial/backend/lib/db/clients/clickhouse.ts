@@ -817,9 +817,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
             // See https://clickhouse.com/docs/en/interfaces/http/#response-buffering
             //
             // TODO (azmi): Using this setting can obscure the error message
-            // (found in ClickHouse 24.2). We should probably make this optional
-            // explicitly in the UI if we want to enable it.
-            // wait_end_of_query: 1,
+            // (found in ClickHouse 24.2).
+            wait_end_of_query: 1,
           },
         });
         data = result.stream;

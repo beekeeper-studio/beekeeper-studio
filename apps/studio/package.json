@@ -32,7 +32,7 @@
     "@azure/msal-node": "^2.12.0",
     "@cleverbrush/async": "^1.1.10",
     "@cleverbrush/deep": "^1.1.10",
-    "@clickhouse/client": "^1.2.0",
+    "@clickhouse/client": "^1.8.1",
     "@electron/remote": "^2.0.10",
     "@google-cloud/bigquery": "^6.2.0",
     "@libsql/knex-libsql": "^0.1.0",
