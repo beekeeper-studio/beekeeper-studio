@@ -38,6 +38,7 @@ export default Vue.extend({
         closedWithoutSubmitter: _.isNil(e.params?.submitter),
       };
       this.trigger(MODAL_CLOSE_EVENT, event);
+      this.$emit("before-close", event);
     },
     submit(event: SubmitEvent) {
       // We don't want to submit by pressing enter on an input element.

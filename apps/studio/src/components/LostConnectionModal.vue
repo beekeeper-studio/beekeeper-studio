@@ -1,27 +1,15 @@
 <template>
   <portal to="modals">
-    <modal
-      class="vue-dialog beekeeper-modal"
-      :name="modalName"
-      @before-close="beforeClose"
-    >
-      <div class="dialog-content">
-        <slot name="title">
-          <div 
-            class="dialog-c-title" 
-          >
-            Lost Connection
-          </div>
-        </slot>
-        <slot name="message">
-          <div>
-            {{ connError }} Would you like to reconnect?
-          </div>
-        </slot>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button 
-          class="btn btn-flat" 
+    <common-modal :id="modalName" @before-close="beforeClose">
+      <template v-slot:title>
+        Lost Connection
+      </template>
+      <template v-slot:content>
+        {{ connError }} Would you like to reconnect?
+      </template>
+      <template v-slot:action>
+        <button
+          class="btn btn-flat"
           type="button"
           @click.prevent="disconnect"
           autofocus
@@ -29,23 +17,25 @@
         >
           Disconnect
         </button>
-        <button 
-          class="btn btn-primary" 
+        <button
+          class="btn btn-primary"
           type="button"
           @click.prevent="connect"
         >
           Reconnect
         </button>
-      </div>
-    </modal>
+      </template>
+    </common-modal>
   </portal>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
 import { mapState } from 'vuex'
+import CommonModal from '@/components/common/modals/CommonModal.vue'
 
 export default Vue.extend({
+  components: { CommonModal },
   data() {
     return {
       modalName: 'lost-connection-modal'
@@ -57,7 +47,7 @@ export default Vue.extend({
   watch: {
     connError(value) {
       if (value) {
-        this.$modal.show(this.modalName);
+        this.$showModal(this.modalName);
       }
     }
   },
@@ -68,14 +58,14 @@ export default Vue.extend({
     async connect() {
       try {
         await this.$store.dispatch('reconnect');
-        this.$modal.hide(this.modalName);
+        this.$hideModal(this.modalName);
       } catch (e) {
         this.$noty.error(e.message ?? e);
       }
     },
     disconnect() {
       this.$store.dispatch('disconnect');
-      this.$modal.hide(this.modalName);
+      this.$hideModal(this.modalName);
     }
   }
 })
