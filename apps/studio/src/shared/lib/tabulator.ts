@@ -29,7 +29,7 @@ function yesNoResult(value: boolean) {
 export default {
   niceString(value: any, truncate = false) {
     let cellValue = value.toString();
-    if(_.isArray(value) || _.isObject(value)) {
+    if(_.isArray(value) || (_.isObject(value) && !ArrayBuffer.isView(value))) {
       cellValue = JSON.stringify(value)
     }
     return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue

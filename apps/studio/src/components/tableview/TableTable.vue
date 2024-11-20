@@ -328,6 +328,7 @@ import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { ExpandablePath } from '@/lib/data/detail_view'
+import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
 const log = rawLog.scope('TableTable')
 
@@ -673,7 +674,8 @@ export default Vue.extend({
               log.error('Failed to preserve object for', value)
               return true
             },
-            typeHint: column.dataType.toLowerCase()
+            typeHint: column.dataType.toLowerCase(),
+            bksField: column.bksField,
           },
         }
 
@@ -719,6 +721,10 @@ export default Vue.extend({
       // However - some databases require an 'order by' for limit, so needs some
       // integration tests first.
       if (!this.table?.columns?.length) {
+        return [];
+      }
+
+      if (this.dialectData.disabledFeatures?.initialSort) {
         return [];
       }
 
@@ -1081,7 +1087,11 @@ export default Vue.extend({
       }
     },
     onSaveEditorModal(content: string, _: LanguageData, cell: CellComponent){
-      cell.setValue(content)
+      if (ArrayBuffer.isView(cell.getValue())) {
+        cell.setValue(friendlyUint8Array(hexToUint8Array(content)))
+      } else {
+        cell.setValue(content)
+      }
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
@@ -1159,7 +1169,6 @@ export default Vue.extend({
         case 'text':
         case 'json':
         case 'jsonb':
-        case 'bytea':
         case 'tsvector':
           return 'textarea'
         case 'bool':

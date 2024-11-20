@@ -3,6 +3,9 @@ import { Mutators } from '../lib/data/tools'
 import helpers, { escapeHtml } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('mixins/data_mutators');
 
 export function buildNullValue(text: string) {
   return `<span class="null-value">(${escapeHtml(text)})</span>`
@@ -45,19 +48,31 @@ export default {
       return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
     },
     cellTooltip(_event, cell: CellComponent) {
-      const nullValue = emptyResult(cell.getValue())
-      return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue(), true))
+      let cellValue = cell.getValue()
+      if (cellValue instanceof Uint8Array) {
+        cellValue = `${_.truncate(cellValue.toString(), { length: 15 })} (as hex string)`
+      }
+      const nullValue = emptyResult(cellValue)
+      return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
     },
     cellFormatter(
       cell: CellComponent,
       params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void },
       onRendered: (func: () => void) => void
     ) {
-      const nullValue = emptyResult(cell.getValue())
+      const classNames = []
+      let htmlPrefix = ''
+      let cellValue = cell.getValue()
+
+      if (cellValue instanceof Uint8Array) {
+        classNames.push('binary-type')
+      }
+
+      const nullValue = emptyResult(cellValue)
       if (nullValue) {
         return nullValue
       }
-      let cellValue = this.niceString(cell.getValue(), true)
+      cellValue = this.niceString(cellValue, true)
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
 
       // removing the <pre> will break selection / copy paste, see ResultTable
@@ -77,6 +92,7 @@ export default {
       } else if (
           params?.isPK != null &&
           !params.isPK &&
+          !classNames.includes('binary-type') &&
           _.isInteger(Number(cellValue))
         ) {
         try {
@@ -87,7 +103,9 @@ export default {
         }
     }
 
-      return result;
+      cell.getElement().classList.add(...classNames)
+
+      return htmlPrefix + result;
     },
     yesNoFormatter: helpers.yesNoFormatter,
     ...Mutators

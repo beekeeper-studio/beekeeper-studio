@@ -45,6 +45,7 @@ export const RedshiftData: DialectData = {
       onDelete: true
     },
     createIndex: true,
+    initialSort: true,
   }
 
 }

@@ -86,5 +86,9 @@ export const ClickHouseData: DialectData = {
     },
     transactions: true,
     chunkSizeStream: true,
+    // Clickhouse doesn't have binary types
+    binaryColumn: true,
+    // Sorting can slow down queries
+    initialSort: true,
   },
 }
