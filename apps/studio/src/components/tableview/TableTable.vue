@@ -724,6 +724,10 @@ export default Vue.extend({
         return [];
       }
 
+      if (this.dialectData.disabledFeatures?.initialSort) {
+        return [];
+      }
+
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
     },
     shouldInitialize() {
