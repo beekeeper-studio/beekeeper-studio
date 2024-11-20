@@ -157,6 +157,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       clickhouse_settings: {
         default_format: "JSONCompact",
       },
+      request_timeout: 120_000, // 2 minutes
     });
     const result = await this.driverExecuteSingle(
       "SELECT version() AS version"
