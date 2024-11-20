@@ -1,35 +1,30 @@
 <template>
-  <portal to="modals">
-    <modal class="vue-dialog beekeeper-modal wait-sso-modal" :name="modalName" :click-to-close="false">
-      <div v-kbd-trap="true">
-        <div class="dialog-content">
-          <div class="dialog-c-title">
-            Waiting for authentication
-            <loading-spinner />
-          </div>
-        </div>
-        <div class="vue-dialog-buttons">
-          <button
-            class="btn btn-flat btn-cancel"
-            type="button"
-            ref="cancelBtn"
-            @click.prevent="cancel"
-            :disabled="canceled"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </modal>
-  </portal>
+  <common-modal :id="modalName" :click-to-close="false">
+    <template v-slot:title>
+      Waiting for authentication
+      <loading-spinner />
+    </template>
+    <template v-slot:action>
+      <button
+        class="btn btn-flat btn-cancel"
+        type="button"
+        ref="cancelBtn"
+        @click.prevent="cancel"
+        :disabled="canceled"
+      >
+        Cancel
+      </button>
+    </template>
+  </common-modal>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
 import LoadingSpinner from '@/components/common/loading/LoadingSpinner.vue';
+import CommonModal from '@/components/common/modals/CommonModal.vue'
 
 export default Vue.extend({
-  components: {LoadingSpinner},
+  components: { LoadingSpinner, CommonModal },
   props: ["value"],
   data() {
     return {
@@ -57,5 +52,10 @@ export default Vue.extend({
       this.$emit('cancel');
     },
   },
+  mounted() {
+    this.$nextTick(() => {
+      this.$modal.show(this.modalName)
+    })
+  }
 });
 </script>

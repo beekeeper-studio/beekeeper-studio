@@ -1,9 +1,11 @@
 <template>
   <portal to="modals">
     <modal
-      class="vue-dialog beekeeper-modal confirmation-modal"
+      v-bind="$attrs"
+      :class="`vue-dialog beekeeper-modal confirmation-modal ${className ?? ''}`"
       :name="id"
       @before-close="beforeClose"
+      @opened="opened"
     >
       <form v-kbd-trap="true" @submit.prevent="submit" ref="form">
         <div class="dialog-content">
@@ -28,8 +30,11 @@ import { MODAL_CLOSE_EVENT, ModalCloseEventData } from "@/components/common/moda
 import _ from 'lodash';
 
 export default Vue.extend({
-  props: ['id'],
+  props: ['id', 'className'],
   methods: {
+    opened() {
+      this.$emit("opened");
+    },
     beforeClose(e: { params?: { submitter?: HTMLElement } }) {
       const event: ModalCloseEventData = {
         modalId: this.id,

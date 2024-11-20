@@ -114,20 +114,10 @@
     }
   }
 
-  &.wait-sso-modal {
-    .dialog-content {
-      padding-top: 2rem;
-      padding-bottom: 0.5rem;
-    }
-    .dialog-c-title {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding-right: 0;
-    }
-    .vue-dialog-buttons {
-      padding-bottom: 2rem;
-      justify-content: center;
-    }
+  &.wait-sso-modal .dialog-c-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-right: 0;
   }
 }
