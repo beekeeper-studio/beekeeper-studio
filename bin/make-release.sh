@@ -1,26 +1,31 @@
 #!/bin/bash
 
-set -euxo pipefail
+set -euo pipefail
 
 # Function to list the 5 most recent tags
 list_recent_tags() {
-  echo "Fetching the 5 most recent tags:"
-  git fetch --tags
-  git tag --sort=-v:refname | head -n 5
+  echo "Fetching the 5 most recent remote tags by date:"
+git ls-remote --tags origin | \
+  awk '{print $2}' | \
+  grep -Eo 'v[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?$' | \
+  sort -V | tail -n 5
 }
 
 # Function to validate version format
 validate_version() {
-  if [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    CHANNEL="none"
-  elif [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta)\.[0-9]+$ ]]; then
-    CHANNEL="${BASH_REMATCH[2]}"
+  if [[ "$1" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-(alpha|beta)\.[0-9]+)?$ ]]; then
+    FULL_VERSION="${BASH_REMATCH[0]}"     # The full version string
+    MAIN_VERSION="${BASH_REMATCH[1]}"    # The main version (e.g., 5.0.0)
+    CHANNEL="${BASH_REMATCH[3]:-stable}" # Channel (alpha, beta, or stable)
+
+    echo "Full Version: $FULL_VERSION"
+    echo "Main Version: $MAIN_VERSION"
+    echo "Channel: $CHANNEL"
   else
-    echo "Error: Invalid version format. Expected x.x.x or x.x.x-alpha.x or x.x.x-beta.x"
+    echo "Error: Invalid version format. Expected x.x.x or x.x.x-channel.x"
     exit 1
   fi
 }
-
 # Step 1: List recent tags
 list_recent_tags
 
