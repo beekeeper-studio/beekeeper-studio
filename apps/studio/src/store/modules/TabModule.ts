@@ -123,6 +123,7 @@ export const TabModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       context.commit('set', items)
       if (usedConfig?.id) await Vue.prototype.$util.send('appdb/tabs/save', { obj: items });
+      
       await Vue.prototype.$util.send('appdb/tabhistory/update', items);
     },
     async remove(context, rawItems: TransportOpenTab | TransportOpenTab[]) {
@@ -160,8 +161,8 @@ export const TabModule: Module<State, RootState> = {
         oldActive.active = false
       }
       tab.active = true
-      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))
-
+      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))  
+      await Vue.prototype.$util.send('appdb/tabhistory/update', tab);
     }
 
   }

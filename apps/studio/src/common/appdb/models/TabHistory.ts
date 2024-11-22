@@ -1,9 +1,8 @@
-import { Column, Entity, OneToOne, JoinColumn } from "typeorm";
+import { Column, Entity, In, JoinColumn, OneToOne } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
 import { TransportTabHistory } from "@/common/transport/TransportTabHistory";
-import { OpenTab } from "./OpenTab";
-
+import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
 type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table';
 
@@ -28,6 +27,9 @@ export class TabHistory extends ApplicationEntity {
   @Column({ type: 'integer', nullable: false, default: -1 })
   workspaceId?: number
 
+  @Column({ type: 'integer', nullable: true })
+  tabId?: number
+
   @Column({type: 'varchar', nullable: false})
   tabType?: TabType = 'query'
 
@@ -50,34 +52,80 @@ export class TabHistory extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   entityType?: string
 
-  @OneToOne(() => OpenTab)
-  @JoinColumn()
-  tab: OpenTab
+  static async updatePosition(newTab: TransportOpenTab) {
+    console.log('updatePosition: ', newTab)
+    const tab: TransportTabHistory = await this.findOne({
+      where: { tabId: newTab.id }
+    })
+    let tabHistoryList: TransportTabHistory[] = await this.find({
+      where: {
+        connectionId: newTab.connectionId,
+        workspaceId: newTab.workspaceId
+      }
+    })
+    let tabPosition = -1
+    console.log(tab)
+    console.log(tabHistoryList)
 
-  async updatePosition(newTab: OpenTab) {
-    console.log(newTab)
-    // get all tabs that match the newTab's connectionId
-    // see if it exists in the list.
-    //   If it's there, save the position it was, set to 0, reorder the others, then make it position 1 
-    // new 
-    // if less than 10, reorder everything
-    // if more than 10, delete the last one in the list and 
+    if (tabHistoryList.length === 0) {
+      console.log('no length!')
+      return await this.save({
+        tabId: newTab.id,
+        connectionId: newTab.connectionId,
+        workspaceId: newTab.workspaceId,
+        position: 0
+      })
+    }
+
+    if (tab) {
+      tabPosition = tab.position
+    } else {
+      // @ts-ignore
+      tabHistoryList = [{
+        tabId: newTab.id,
+        connectionId: newTab.connectionId,
+        workspaceId: newTab.workspaceId,
+        position: -1
+      }, ...tabHistoryList]
+    }
+
+    const updatedHistoryList = tabHistoryList
+      .map((currTab) => {
+        if (currTab.position === tabPosition) {
+          currTab.position = 0
+        } else if (tabPosition === -1 || currTab.position < tabPosition) {
+          currTab.position = currTab.position + 1
+        }
+
+        return currTab
+      })
+
+    const newHistoryList = updatedHistoryList.slice(0, 10)
+    const deleteHistoryList = updatedHistoryList
+      .slice(10)
+      .map(val => val.id)
+
+    console.log(newHistoryList)
+      
+    await this.save(newHistoryList)
+    if (deleteHistoryList.length > 0) {
+      await this.delete({ id: In(deleteHistoryList)})
+    }
   }
 
-  async closeTab(deletedTab: OpenTab) {
+  static async closeTab(deletedTab: TransportOpenTab) {
     console.log(deletedTab)
     // update its position to 1 (see update above steps),  
   }
 }
 
 export const TabHistoryHandlers = {
-  'appdb/tabhistory/update': async (newTab: OpenTab) => {
-    const th = new TabHistory()
-    await th.updatePosition(newTab) 
+  'appdb/tabhistory/update': async (newTab: TransportOpenTab) => {
+    console.log('update stuff')
+    await TabHistory.updatePosition(newTab) 
   },
-  'appdb/tabhistory/closetab': async (deletedTab: OpenTab) => {
-    const th = new TabHistory()
-    await th.closeTab(deletedTab) 
+  'appdb/tabhistory/closetab': async (deletedTab: TransportOpenTab) => {
+    await TabHistory.closeTab(deletedTab) 
     // update its position to 1 (see update above steps),  
   }
 }

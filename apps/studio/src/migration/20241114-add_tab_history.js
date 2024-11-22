@@ -5,8 +5,8 @@ export default {
       `
         CREATE TABLE IF NOT EXISTS tab_history(
           "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-          "tabType" varchar(64) NOT NULL DEFAULT 'query',
-          "title" varchar(255) NOT NULL,
+          "tabType" varchar(64) NULL,
+          "title" varchar(255) NULL,
           "tabId" integer NULL,
           "unsavedQueryText" text NULL,
           "tableName" varchar(255) NULL,
@@ -14,9 +14,10 @@ export default {
           "entityType" varchar(255) NULL,
           "workspaceId" integer NOT NULL DEFAULT -1,
           "connectionId" integer NULL,
-          "position" float NOT NULL default 99,
+          "position" float NOT NULL default 0,
           "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
-          "updatedAt" datetime NOT NULL DEFAULT (datetime('now'))
+          "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
+          "version" integer NOT NULL DEFAULT 0
         )
       `,
       'CREATE INDEX IF NOT EXISTS tab_index on tabs(tabId)'

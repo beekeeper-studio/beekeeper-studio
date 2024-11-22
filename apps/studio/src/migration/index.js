@@ -74,7 +74,8 @@ const realMigrations = [
   firebirdConnection, exportPath, UserSettingsWindowPosition,
   demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
   maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
-  useBeta, addTabHistory
+  useBeta,
+  addTabHistory
 ]
 
 // fixtures require the models
