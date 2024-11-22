@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "5.0.0-beta.4",
+  "version": "5.0.0-beta.5",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -89,7 +89,7 @@
     "source-map-support": "^0.5.21",
     "split.js": "^1.5.11",
     "sql-formatter": "~10.7.2",
-    "sql-query-identifier": "^2.7.0",
+    "sql-query-identifier": "^2.8.0",
     "ssh2": "^1.14.0",
     "tabulator-tables": "beekeeper-studio/tabulator#2642a6210fad1fb859838b6745efb061c1b35918",
     "tinyduration": "^3.2.4",
