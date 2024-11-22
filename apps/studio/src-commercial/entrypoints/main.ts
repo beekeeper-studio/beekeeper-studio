@@ -43,7 +43,6 @@ function initUserDirectory(d: string) {
 }
 
 let utilityProcess: Electron.UtilityProcess
-// don't need this
 let newWindows: number[] = [];
 
 async function createUtilityProcess() {
@@ -243,6 +242,7 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
       const { port1, port2 } = new electron.MessageChannelMain();
       const sId = uuidv4();
       log.info('SENDING PORT TO RENDERER: ', sId)
+      w.sId = sId;
       utilityProcess.postMessage({ type: 'init', sId }, [port1]);
       w.webContents.postMessage('port', { sId, utilDied }, [port2]);
       w.onClose((_event: electron.Event) => {

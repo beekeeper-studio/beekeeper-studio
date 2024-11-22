@@ -48,6 +48,7 @@ import userSettingKeymap from './20241017_add_user_setting_keymap'
 import missingUserSettings from './20241017_add_missing_user_settings'
 import useBeta from './20241009_add_beta_toggle'
 import addTabHistory from './20241114-add_tab_history'
+import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
 
 import ultimate from './ultimate/index'
 
@@ -75,7 +76,8 @@ const realMigrations = [
   demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
   maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
   useBeta,
-  addTabHistory
+  addTabHistory,
+  deleteDuplicateConnections
 ]
 
 // fixtures require the models

@@ -35,6 +35,27 @@ export default class extends DefaultMenu {
     }
   }
 
+  helpMenu() {
+    const helpMenu = {
+      label: "Help",
+      submenu: [
+        this.menuItems.enterLicense,
+        this.menuItems.checkForUpdate,
+        this.menuItems.opendocs,
+        this.menuItems.support,
+        this.menuItems.addBeekeeper,
+        this.menuItems.devtools,
+        this.menuItems.about,
+      ]
+    };
+
+    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
+      helpMenu.submenu.push(this.menuItems.toggleBeta)
+    }
+
+    return helpMenu;
+  }
+
   buildTemplate(): Electron.MenuItemConstructorOptions[] {
     const appMenu: Electron.MenuItemConstructorOptions[] = []
     if (this.platformInfo.isMac) {
@@ -96,19 +117,7 @@ export default class extends DefaultMenu {
         ]
       },
       ...windowMenu,
-      {
-        label: "Help",
-        submenu: [
-          this.menuItems.enterLicense,
-          this.menuItems.checkForUpdate,
-          this.menuItems.opendocs,
-          this.menuItems.support,
-          this.menuItems.addBeekeeper,
-          this.menuItems.devtools,
-          this.menuItems.about,
-          this.menuItems.toggleBeta
-        ]
-      }
+      this.helpMenu()
     ]
 
     if (this.platformInfo.isDevelopment) {
