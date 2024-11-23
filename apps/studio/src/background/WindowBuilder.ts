@@ -27,6 +27,7 @@ class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
   private appUrl: string
+  public sId: string;
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
@@ -97,6 +98,22 @@ class BeekeeperWindow {
         this.win.setTitle(args[0])
         e.preventDefault()
       }
+    })
+
+    this.win.on('maximize', () => {
+      this.win.webContents.send(`maximize-${this.sId}`)
+    })
+
+    this.win.on('unmaximize', () => {
+      this.win.webContents.send(`unmaximize-${this.sId}`)
+    })
+
+    this.win.on('enter-full-screen', () => {
+      this.win.webContents.send(`enter-full-screen-${this.sId}`)
+    })
+
+    this.win.on('leave-full-screen', () => {
+      this.win.webContents.send(`leave-full-screen-${this.sId}`)
     })
 
     this.initialize()

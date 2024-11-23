@@ -127,6 +127,7 @@ x-buttons > x-button[menu].btn {
 .btn-icon {
   .material-icons:first-child {
     margin-right: $gutter-h * 0.65;
+    margin-left: 0;
   }
 
   .material-icons:last-child {
@@ -608,15 +609,16 @@ input[type=file] {
   &.gutter-horizontal,
   &.gutter-vertical {
     display: flex;
-    background-color: tranparent;
-    z-index: 10;
+    background-color: transparent;
+    z-index: 20;
   }
   &.gutter-horizontal {
     width: 0!important;
     cursor: ew-resize;
     &:after {
       height: 100%;
-      width: 5px;
+      width: var(--gutter-size, 10px);
+      transform: translateX(-50%);
       background-color: inherit;
     }
   }

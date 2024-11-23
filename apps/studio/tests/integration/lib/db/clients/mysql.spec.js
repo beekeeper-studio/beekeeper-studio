@@ -6,8 +6,10 @@ import path from 'path'
 import data_mutators from '../../../../../src/mixins/data_mutators';
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { runCommonTests, runReadOnlyTests } from './all'
+import MySQL5_4KnexClient from '@/shared/lib/knex-mysql5_4'
 
 const TEST_VERSIONS = [
+  { version: '5.1', image: 'vettadock/mysql-old', options: { knexClient: MySQL5_4KnexClient, skipTransactions: true } },
   {version: '5.7'},
   {version: '5.7', readonly: true},
   { version: '8', socket: false, readonly: true},
@@ -15,8 +17,7 @@ const TEST_VERSIONS = [
   { version: '8', socket: true }
 ]
 
-
-function testWith(tag, socket = false, readonly = false) {
+function testWith(tag, socket = false, readonly = false, image = 'mysql', options = {}) {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
     jest.setTimeout(dbtimeout)
 
@@ -28,7 +29,7 @@ function testWith(tag, socket = false, readonly = false) {
       const timeoutDefault = 5000
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mysql-'));
       fs.chmodSync(temp, "777")
-      container = await new GenericContainer("mysql", tag)
+      container = await new GenericContainer(`${image}:${tag}`)
         .withName("testmysql")
         .withEnvironment({
           "MYSQL_ROOT_PASSWORD": "test",
@@ -37,11 +38,20 @@ function testWith(tag, socket = false, readonly = false) {
         .withExposedPorts(3306)
         .withStartupTimeout(dbtimeout)
         .withBindMounts([{
-          source: temp, 
-          target: '/var/run/mysqld/', 
+          source: temp,
+          target: '/var/run/mysqld/',
           mode: 'rw'
         }])
         .start()
+      await container.exec([
+        'mysql', '-u', 'root', '-e',
+        `
+          CREATE DATABASE IF NOT EXISTS test;
+          GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'test';
+          GRANT USAGE ON *.* TO 'root'@'%' WITH GRANT OPTION;
+          FLUSH PRIVILEGES;
+        `,
+      ])
       jest.setTimeout(timeoutDefault)
       const config = {
         client: 'mysql',
@@ -56,7 +66,7 @@ function testWith(tag, socket = false, readonly = false) {
         config.socketPathEnabled = true
         config.socketPath = path.join(temp, 'mysqld.sock')
       }
-      util = new DBTestUtil(config, "test", { dialect: 'mysql' })
+      util = new DBTestUtil(config, "test", { dialect: 'mysql', skipGeneratedColumns: true, ...options })
       await util.setupdb()
 
       const functionDDL = `
@@ -139,9 +149,12 @@ function testWith(tag, socket = false, readonly = false) {
       expect(procedures.map((p) => (p.name))).toMatchObject(['no_parameters', 'proc_userdetails'])
       expect(functions.map((p) => (p.name))).toMatchObject(['isEligible'])
 
-      expect(procedures.find((p) => (p.name === 'proc_userdetails')).routineParams.length).toBe(1)
-      expect(procedures.find((p) => (p.name === 'no_parameters')).routineParams.length).toBe(0)
-      expect(functions.find((p) => (p.name === 'isEligible')).routineParams.length).toBe(2)
+      // This version doesn't have routine params
+      if (tag !== '5.1') {
+        expect(procedures.find((p) => (p.name === 'proc_userdetails')).routineParams.length).toBe(1)
+        expect(procedures.find((p) => (p.name === 'no_parameters')).routineParams.length).toBe(0)
+        expect(functions.find((p) => (p.name === 'isEligible')).routineParams.length).toBe(2)
+      }
     })
 
     it("Should not think there are params when there aren't", async () => {
@@ -240,12 +253,17 @@ function testWith(tag, socket = false, readonly = false) {
           newValue: "int unsigned",
         }],
       })
-      await expect(util.connection.applyChanges({
+      const applyChanges = () => util.connection.applyChanges({
         inserts: [{
           table: 'unsigned_integers',
           data: [{ number: -1, tiny_number: -1 }],
         }]
-      })).rejects.toThrowError()
+      })
+      if (tag === '5.1') {
+        await expect(applyChanges()).resolves.not.toThrowError()
+      } else {
+        await expect(applyChanges()).rejects.toThrowError()
+      }
     })
 
     // Regression test for #1945 -> cloning with bit fields doesn't work
@@ -280,6 +298,46 @@ function testWith(tag, socket = false, readonly = false) {
 
       expect(firstResult.bitcol[0]).toBe(0)
       expect(secondResult.bitcol[0]).toBe(1)
+    })
+
+    it("should parse all binary type columns", async () => {
+      await util.knex.raw(`
+        CREATE TABLE binary_data_types (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            binary_fixed BINARY(16),         -- Fixed-length binary data
+            binary_var VARBINARY(255),       -- Variable-length binary data
+            tiny_blob TINYBLOB,              -- Very small binary data (up to 255 bytes)
+            regular_blob BLOB,               -- Small binary data (up to 64 KB)
+            medium_blob MEDIUMBLOB,          -- Medium binary data (up to 16 MB)
+            large_blob LONGBLOB              -- Large binary data (up to 4 GB)
+        );
+      `);
+      await util.knex.raw(`
+        INSERT INTO binary_data_types (
+          binary_fixed, binary_var, tiny_blob,
+          regular_blob, medium_blob, large_blob
+        )
+        VALUES (
+          CAST('small_value' AS BINARY(16)), 'var_data', 'tiny',
+          'blob', 'medium', 'large'
+        );
+      `)
+
+      const expectedBksFields = [
+        { name: 'id', bksType: 'UNKNOWN' },
+        { name: 'binary_fixed', bksType: 'BINARY' },
+        { name: 'binary_var', bksType: 'BINARY' },
+        { name: 'tiny_blob', bksType: 'BINARY' },
+        { name: 'regular_blob', bksType: 'BINARY' },
+        { name: 'medium_blob', bksType: 'BINARY' },
+        { name: 'large_blob', bksType: 'BINARY' },
+      ]
+
+      const columns = await util.connection.listTableColumns('binary_data_types')
+      expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields)
+
+      const { fields } = await util.connection.selectTop('binary_data_types', 0, 10, [], [])
+      expect(fields).toStrictEqual(expectedBksFields)
     })
 
     describe("Index Prefixes", () => {
@@ -317,5 +375,5 @@ function testWith(tag, socket = false, readonly = false) {
 
 }
 
-TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+TEST_VERSIONS.forEach(({ version, socket, readonly, image, options }) => testWith(version, socket, readonly, image, options ))
 
