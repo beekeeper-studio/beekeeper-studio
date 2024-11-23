@@ -126,7 +126,7 @@ const FieldFlags = {
   BINARY: 128,
 };
 
-function configDatabase(
+async function configDatabase(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase
 ): Promise<mysql.PoolOptions> {
