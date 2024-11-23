@@ -23,8 +23,6 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicD
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import { IDbConnectionServer } from '../backendTypes';
-import { Signer } from "@aws-sdk/rds-signer";
-import { fromIni } from "@aws-sdk/credential-providers";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 const PD = PostgresData
@@ -145,7 +143,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         try {
           this.conn.pool.getConnection(async (err, connection) => {
             if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server)
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, 5432)
             connection.release();
             log.info('Token refreshed successfully.')
           });
@@ -1285,7 +1283,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server) || server.config.password || undefined,
+      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,

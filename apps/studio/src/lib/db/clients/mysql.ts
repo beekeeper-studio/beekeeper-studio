@@ -135,7 +135,7 @@ function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server) || server.config.password || undefined,
+    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, 3306) || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -313,7 +313,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         try {
           this.conn.pool.getConnection(async (err, connection) => {
             if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server)
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, 3306)
             connection.release();
             log.info('Token refreshed successfully.')
           });

@@ -323,7 +323,7 @@ export async function getIAMPassword(awsProfile: string, region: string, hostnam
 let resolvedPw: string | undefined;
 let tokenExpiryTime: number | null = null;
 
-export async function refreshTokenIfNeeded(redshiftOptions: any, server: any): Promise<string> {
+export async function refreshTokenIfNeeded(redshiftOptions: any, server: any, port: number): Promise<string> {
   if(!redshiftOptions?.iamAuthenticationEnabled){
     return null
   }
@@ -336,9 +336,10 @@ export async function refreshTokenIfNeeded(redshiftOptions: any, server: any): P
       redshiftOptions.awsProfile ?? "default",
       redshiftOptions?.awsRegion,
       server.config.host,
-      server.config.port || 3306,
+      server.config.port || port,
       server.config.user
     );
+
     tokenExpiryTime = now + 15 * 60 * 1000; // Tokens last 15 minutes
   }
 
