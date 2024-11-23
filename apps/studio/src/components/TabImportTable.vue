@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!isSupported"
-    class="tabcontent"
+    class="tab-content"
   >
     <div class="not-supported">
       <p>
@@ -15,8 +15,8 @@
   >
     <upsell-content />
   </div>
-  <div v-else class="tabcontent">
-    <div class="tabcontent">
+  <div v-else class="tab-content">
+    <div class="import-table-container">
       <stepper
         :steps="importSteps"
         :button-portal-target="portalName"
