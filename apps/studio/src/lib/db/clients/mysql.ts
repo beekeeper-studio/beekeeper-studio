@@ -18,7 +18,7 @@ import {
   buildSelectTopQuery,
   escapeString,
   getIAMPassword,
-  ClientError
+  ClientError, refreshTokenIfNeeded
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -98,33 +98,6 @@ function getRealError(conn, err) {
   return err;
 }
 
-let resolvedPw: string | undefined;
-let tokenExpiryTime: number | null = null;
-
-async function refreshTokenIfNeeded(redshiftOptions: any, server: any): Promise<string> {
-  const redshiftOptions = server.config.redshiftOptions
-
-  if(!redshiftOptions?.iamAuthenticationEnabled){
-    return null
-  }
-
-  const now = Date.now();
-
-  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - 2 * 60 * 1000) { // Refresh 2 minutes before expiry
-    logger().info("Refreshing IAM token...");
-    resolvedPw = await getIAMPassword(
-      redshiftOptions.awsProfile ?? "default",
-      redshiftOptions?.awsRegion,
-      server.config.host,
-      server.config.port || 3306,
-      server.config.user
-    );
-    tokenExpiryTime = now + 15 * 60 * 1000; // Tokens last 15 minutes
-  }
-
-  return resolvedPw;
-}
-
 async function configDatabase(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase
@@ -134,7 +107,7 @@ async function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: await refreshTokenIfNeeded(redshiftOptions, server) || server.config.password || undefined,
+    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server) || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -156,7 +129,7 @@ async function configDatabase(
   }
 
   if (
-    redshiftOptions?.iamAuthenticationEnabled
+    server.config.redshiftOptions?.iamAuthenticationEnabled
   ){
     server.config.ssl = true
   }
@@ -287,6 +260,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     pool: mysql.Pool;
   };
 
+  interval: number
+
   clientId: string
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -306,18 +281,17 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
-
     if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
-      setInterval(async () => {
+      this.interval = setInterval(async () => {
         try {
-          this.conn.pool.getConnection((err, connection) => {
+          this.conn.pool.getConnection(async (err, connection) => {
             if(err) throw err;
             connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server)
             connection.release();
-            logger().info('Token refreshed successfully.')
+            log.info('Token refreshed successfully.')
           });
         } catch (err) {
-          logger().error('Could not refresh token!')
+          log.error('Could not refresh token!')
         }
       }, 13 * 60 * 1000);
     }
@@ -335,6 +309,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async disconnect() {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
     this.conn?.pool.end();
 
     await super.disconnect();

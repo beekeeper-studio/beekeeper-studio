@@ -10,7 +10,18 @@ import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, getIAMPassword } from './utils';
+import {
+  buildDatabaseFilter,
+  buildDeleteQueries,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  applyChangesSql,
+  getIAMPassword,
+  refreshTokenIfNeeded
+} from './utils';
 import {createCancelablePromise, joinFilters} from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -75,6 +86,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   conn: HasPool;
   _defaultSchema: string;
   dataTypes: any;
+  interval: number;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -123,6 +135,21 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       pool: new pg.Pool(dbConfig)
     };
 
+    if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
+      this.interval = setInterval(async () => {
+        try {
+          this.conn.pool.getConnection(async (err, connection) => {
+            if(err) throw err;
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server)
+            connection.release();
+            log.info('Token refreshed successfully.')
+          });
+        } catch (err) {
+          log.error('Could not refresh token!')
+        }
+      }, 13 * 60 * 1000);
+    }
+
     //test connection
     const test = await this.conn.pool.connect()
     test.release();
@@ -149,6 +176,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
     await super.disconnect();
     this.conn.pool.end();
   }
@@ -1251,26 +1281,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
-    let resolvedPw = null;
-    const redshiftOptions = server.config.redshiftOptions;
-
-    if (
-      server.config.client === "postgresql" &&
-      redshiftOptions?.iamAuthenticationEnabled
-    ) {
-      resolvedPw = await getIAMPassword(
-        redshiftOptions.awsProfile ?? "default",
-        redshiftOptions?.awsRegion,
-        server.config.host,
-        server.config.port || 5432,
-        server.config.user
-      );
-    }
-
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: resolvedPw || server.config.password || undefined,
+      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
@@ -1280,7 +1294,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     if (
       server.config.client === "postgresql" &&
-      redshiftOptions?.iamAuthenticationEnabled
+      server.config?.redshiftOptions
     ){
       server.config.ssl = true;
     }

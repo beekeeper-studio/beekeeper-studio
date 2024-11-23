@@ -319,3 +319,28 @@ export async function getIAMPassword(awsProfile: string, region: string, hostnam
   });
   return  await signer.getAuthToken();
 }
+
+let resolvedPw: string | undefined;
+let tokenExpiryTime: number | null = null;
+
+export async function refreshTokenIfNeeded(redshiftOptions: any, server: any): Promise<string> {
+  if(!redshiftOptions?.iamAuthenticationEnabled){
+    return null
+  }
+
+  const now = Date.now();
+
+  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - 2 * 60 * 1000) { // Refresh 2 minutes before expiry
+    log.info("Refreshing IAM token...");
+    resolvedPw = await getIAMPassword(
+      redshiftOptions.awsProfile ?? "default",
+      redshiftOptions?.awsRegion,
+      server.config.host,
+      server.config.port || 3306,
+      server.config.user
+    );
+    tokenExpiryTime = now + 15 * 60 * 1000; // Tokens last 15 minutes
+  }
+
+  return resolvedPw;
+}
