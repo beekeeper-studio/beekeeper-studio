@@ -147,23 +147,33 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       pool: new pg.Pool(dbConfig)
     };
 
-    if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
+    const test = await this.conn.pool.connect()
+
+    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
       this.interval = setInterval(async () => {
         try {
-          this.conn.pool.getConnection(async (err, connection) => {
-            if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, 5432)
-            connection.release();
-            log.info('Token refreshed successfully.')
+          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, 5432);
+
+          const newPool = new pg.Pool({
+            ...dbConfig,
+            password: newPassword,
           });
+
+          const test = await newPool.connect();
+          test.release();
+
+          if (this.conn?.pool) {
+            await this.conn.pool.end();
+          }
+          this.conn = { pool: newPool };
+
+          log.info('Token refreshed successfully and connection pool updated.');
         } catch (err) {
-          log.error('Could not refresh token!')
+          log.error('Could not refresh token or update connection pool!', err);
         }
       }, 13 * 60 * 1000);
     }
 
-    //test connection
-    const test = await this.conn.pool.connect()
     test.release();
 
     this.conn.pool.on('acquire', (_client) => {
