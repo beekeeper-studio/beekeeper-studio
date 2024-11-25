@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         # os: [macos-14, ubuntu-20.04, windows-2019, buildjet-2vcpu-ubuntu-2204-arm]
-        os: [warp-ubuntu-2204-arm64-2x-spot]
+        os: [buildjet-2vcpu-ubuntu-2204-arm]
 
     steps:
       - name: Check out Git repository
@@ -29,21 +29,26 @@ jobs:
         if: "contains(matrix.os, 'ubuntu')"
 
 
-      # - name: Add user to sudo group because multipass is a PITA
-      #   run: sudo usermod -a -G sudo $USER
-      #   if: "contains(matrix.os, 'ubuntu')"
+      - name: Add user to sudo group because multipass is a PITA
+        run: sudo usermod -a -G sudo $USER
+        if: "contains(matrix.os, 'ubuntu')"
 
-      # - name: add sudo group to session
-      #   run: newgrp sudo
-      #   if: "contains(matrix.os, 'ubuntu')"
+      - name: add sudo group to session
+        run: newgrp sudo
+        if: "contains(matrix.os, 'ubuntu')"
 
       - name: double check group names for user
-        run: groups
+        run: groups $USER
         if: "contains(matrix.os, 'ubuntu')"
 
       - name: Install multipass
         run: |
           sudo snap install multipass
+          sudo snap set system experimental.parallel-instances=true
+          sudo snap install multipass_socket
+          sudo chmod a+w /var/snap/multipass/common/multipass_socket
+          sudo systemctl restart snapd
+          sudo snap restart multipass.multipassd
         if: "contains(matrix.os, 'ubuntu')"
 
       - name: Check multipass socket
