@@ -26,34 +26,7 @@ jobs:
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
-        if: "contains(matrix.os, 'ubuntu')"
-
-
-      - name: Add user to sudo group because multipass is a PITA
-        run: sudo usermod -a -G sudo $USER
-        if: "contains(matrix.os, 'ubuntu')"
-
-      - name: add sudo group to session
-        run: newgrp sudo
-        if: "contains(matrix.os, 'ubuntu')"
-
-      - name: double check group names for user
-        run: groups $USER
-        if: "contains(matrix.os, 'ubuntu')"
-
-      - name: Install lxd
-        run: |
-          sudo snap install lxd
-        if: "contains(matrix.os, 'ubuntu')"
-
-      - name: Add user to lxd group because multipass is a PITA
-        run: sudo usermod -aG lxd $USER
-        if: "contains(matrix.os, 'ubuntu')"
-
-      - name: add lxd group to session
-        run: newgrp lxd
-        if: "contains(matrix.os, 'ubuntu')"
-
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
 
       - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v5
