@@ -28,6 +28,10 @@ jobs:
         if: "contains(matrix.os, 'ubuntu')"
 
 
+      - name: Check user groups
+        run: groups
+        if: "contains(matrix.os, 'ubuntu')"
+
       - name: Install multipass
         run: sudo snap install multipass
         if: "contains(matrix.os, 'ubuntu')"
