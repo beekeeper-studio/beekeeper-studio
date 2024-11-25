@@ -157,13 +157,12 @@ x-buttons > x-button[menu].btn {
 .btn-small {
   @include btn-small;
 }
-x-buttons > x-button.btn-small:first-of-type {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-x-buttons > x-button.btn-small:last-of-type {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+x-buttons {
+  border-radius: 6px;
+  overflow: hidden;
+  > x-button.btn-small {
+    border-radius: 0;
+  }
 }
 .btn-block {
   display: flex;
