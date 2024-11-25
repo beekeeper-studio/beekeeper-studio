@@ -23,6 +23,10 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v1
 
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
+        if: matrix.os.type == 'linux'
+
       - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v5
         with:

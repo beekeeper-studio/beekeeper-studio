@@ -199,15 +199,6 @@ jobs:
         uses: samuelmeuli/action-snapcraft@v2
         if: matrix.os.type == 'linux'
 
-      # We manage snapcraft ourselves on the arm box
-      # and it could have old credentials
-      # this will force it to use the env
-      # key defined at the top of this file.
-      - name: Snapcraft - logout
-        run: "snapcraft logout"
-        if: matrix.os.type == 'linux'
-        continue-on-error: true
-
       - name: Clean cache
         run: yarn cache clean --all
 
