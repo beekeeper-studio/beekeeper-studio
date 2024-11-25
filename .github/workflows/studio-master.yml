@@ -36,7 +36,7 @@ jobs:
 
       - name: Install fpm
         run: gem install fpm
-        if: "contains(matrix.os, 'ubuntu')"
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
 
       - name: Install python 3.11 (mac)
         if: "startsWith(matrix.os, 'macos')"
