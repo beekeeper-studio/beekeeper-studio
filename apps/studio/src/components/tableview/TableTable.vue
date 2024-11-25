@@ -1062,11 +1062,12 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>='
       ]
       return {
-        label: createMenuItem("Quick Filter"),
+        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {
             label: createMenuItem(`${cell.getField()} ${s} value`),
+            disabled: this.$store.getters.isCommunity,
             action: async (e, cell: CellComponent) => {
               const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
               this.tableFilters = newFilter
