@@ -27,6 +27,11 @@ jobs:
         uses: samuelmeuli/action-snapcraft@v2
         if: "contains(matrix.os, 'ubuntu')"
 
+
+      - name: Install multipass
+        run: snap install multipass
+        if: "contains(matrix.os, 'ubuntu')"
+
       - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v5
         with:

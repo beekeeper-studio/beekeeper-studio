@@ -199,6 +199,10 @@ jobs:
         uses: samuelmeuli/action-snapcraft@v2
         if: matrix.os.type == 'linux'
 
+      - name: Install multipass
+        run: snap install multipass
+        if: matrix.os.type == 'linux'
+
       - name: Clean cache
         run: yarn cache clean --all
 
