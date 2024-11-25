@@ -120,8 +120,13 @@
     }
   }
 
-  // Modal
-  // ------------------------------
+  .dry-run-btn {
+    gap: 0.35rem;
+
+    input[type=checkbox] {
+      margin: 0;
+    }
+  }
 }
 
 // Shortcut
