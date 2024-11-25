@@ -17,7 +17,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-20.04, windows-2019, buildjet-2vcpu-ubuntu-2204-arm]
+        # os: [macos-14, ubuntu-20.04, windows-2019, buildjet-2vcpu-ubuntu-2204-arm]
+        os: [buildjet-2vcpu-ubuntu-2204-arm]
 
     steps:
       - name: Check out Git repository
@@ -30,6 +31,10 @@ jobs:
 
       - name: Check user groups
         run: groups
+        if: "contains(matrix.os, 'ubuntu')"
+
+      - name: cat groups
+        run: cat /etc/group | sort
         if: "contains(matrix.os, 'ubuntu')"
 
       - name: Install multipass
