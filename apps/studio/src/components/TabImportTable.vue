@@ -57,10 +57,10 @@
         </div>
         <div v-else-if="this.importError">
           <p>The whole import was aborted with a transaction rollback</p>
-          <p>
-            <span class="import-error-message">
+          <div>
+            <p class="import-error-message">
               {{ importError }}
-            </span>
+            </p>
             <span class="buttons">
               <a
                 @click.prevent="goBack"
@@ -85,7 +85,7 @@
                 {{ copyMessage }}
               </a>
             </span>
-          </p>
+          </div>
         </div>
       </div>
     </div>
