@@ -19,7 +19,6 @@ module.exports = {
     'public/icons/**/*',
     '!**/node_gyp_bins/*'
   ],
-  afterSign: "electron-builder-notarize",
   afterPack: "./build/afterPack.js",
   asarUnpack: [
     'package.json'
@@ -107,6 +106,7 @@ module.exports = {
     icon: './public/icons/mac/bk-icon.icns',
     category: "public.app-category.developer-tools",
     "hardenedRuntime": true,
+    notarize: true,
     publish: ['github']
   },
   linux: {

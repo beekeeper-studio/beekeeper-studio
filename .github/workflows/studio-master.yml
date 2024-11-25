@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-20.04, windows-2019]
+        os: [macos-14, ubuntu-20.04, windows-2019, buildjet-2vcpu-ubuntu-2204-arm]
 
     steps:
       - name: Check out Git repository

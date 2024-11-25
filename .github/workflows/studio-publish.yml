@@ -68,10 +68,10 @@ jobs:
             arch: x64
             type: windows
             setup_python: true
-          # FIXME: Upgrade our arm64 builder so it is compatible
-          # - name: ubuntu-arm64
-          #   arch: arm64
-          #   type: linux
+          - name: buildjet-4vcpu-ubuntu-2204-arm
+            arch: arm64
+            type: linux
+            setup_python: true
           - name: macos-13
             arch: x64
             type: macos
@@ -106,7 +106,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
+        if: matrix.os.type == 'linux'
 
       - name: Update repository
         env:
@@ -129,7 +129,7 @@ jobs:
 
 
       - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
+        if: matrix.os.type == 'linux'
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
@@ -138,9 +138,9 @@ jobs:
         if: matrix.os.type == 'windows'
 
       - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
+        if: matrix.os.type == 'linux'
 
-      - name: "Install python 3.11 (NOT Mac, NOT Ubuntu-arm)"
+      - name: "Install python 3.11 (NOT Mac"
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
@@ -178,9 +178,9 @@ jobs:
           }
         shell: powershell
 
-        # Verify on everything except windows and ubuntu arm
+        # Verify on everything except windows
       - name: Verify Python Version
-        if: matrix.os.type != 'windows' && !(matrix.os.type != 'linux' && matrix.os.arch == 'arm64')
+        if: matrix.os.type != 'windows'
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
@@ -198,8 +198,6 @@ jobs:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
         if: matrix.os.type == 'linux'
-        with:
-          skip_install: ${{matrix.os.arch == 'arm64'}}
 
       # We manage snapcraft ourselves on the arm box
       # and it could have old credentials
@@ -207,7 +205,7 @@ jobs:
       # key defined at the top of this file.
       - name: Snapcraft - logout
         run: "snapcraft logout"
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
+        if: matrix.os.type == 'linux'
         continue-on-error: true
 
       - name: Clean cache
