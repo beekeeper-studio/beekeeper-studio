@@ -200,7 +200,7 @@ jobs:
         if: matrix.os.type == 'linux'
 
       - name: Install multipass
-        run: snap install multipass
+        run: sudo snap install multipass
         if: matrix.os.type == 'linux'
 
       - name: Clean cache

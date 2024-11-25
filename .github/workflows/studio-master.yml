@@ -29,7 +29,7 @@ jobs:
 
 
       - name: Install multipass
-        run: snap install multipass
+        run: sudo snap install multipass
         if: "contains(matrix.os, 'ubuntu')"
 
       - name: Install python 3.11 (not Mac)
