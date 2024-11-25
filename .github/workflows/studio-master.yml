@@ -33,8 +33,20 @@ jobs:
         run: sudo usermod -a -G sudo $USER
         if: "contains(matrix.os, 'ubuntu')"
 
+      - name: add sudo group to session
+        run: newgrp sudo
+        if: "contains(matrix.os, 'ubuntu')"
+
+      - name: double check group names for user
+        run: groups $USER
+        if: "contains(matrix.os, 'ubuntu')"
+
       - name: Install multipass
         run: sudo snap install multipass
+        if: "contains(matrix.os, 'ubuntu')"
+
+      - name: Check multipass socket
+        run: ls -lah /var/snap/multipass/common/multipass_socket
         if: "contains(matrix.os, 'ubuntu')"
 
       - name: Install python 3.11 (not Mac)
