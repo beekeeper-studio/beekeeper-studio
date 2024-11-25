@@ -41,14 +41,19 @@ jobs:
         run: groups $USER
         if: "contains(matrix.os, 'ubuntu')"
 
-      - name: Install multipass
+      - name: Install lxd
         run: |
-          sudo snap install multipass
-          sudo snap set system experimental.parallel-instances=true
-          sudo systemctl restart snapd
-          sudo snap restart multipass.multipassd
-          sudo chmod a+w /var/snap/multipass/common/multipass_socket
+          sudo snap install lxd
         if: "contains(matrix.os, 'ubuntu')"
+
+      - name: Add user to lxd group because multipass is a PITA
+        run: sudo usermod -aG lxd $USER
+        if: "contains(matrix.os, 'ubuntu')"
+
+      - name: add lxd group to session
+        run: newgrp lxd
+        if: "contains(matrix.os, 'ubuntu')"
+
 
       - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v5
@@ -105,6 +110,7 @@ jobs:
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
 
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"

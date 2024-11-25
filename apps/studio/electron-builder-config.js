@@ -133,6 +133,7 @@ module.exports = {
     publish: ['github'],
   },
   snap: {
+    base: 'core22',
     publish: [
       'github',
       'snapStore'
