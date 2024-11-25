@@ -42,7 +42,13 @@ jobs:
         if: "contains(matrix.os, 'ubuntu')"
 
       - name: Install multipass
-        run: sudo snap install multipass
+        run: |
+          sudo snap install multipass
+          sudo snap set system experimental.parallel-instances=true
+          sudo snap install multipass_socket
+          sudo chmod a+w /var/snap/multipass/common/multipass_socket
+          sudo systemctl restart snapd
+          sudo snap restart multipass.multipassd
         if: "contains(matrix.os, 'ubuntu')"
 
       - name: Check multipass socket
