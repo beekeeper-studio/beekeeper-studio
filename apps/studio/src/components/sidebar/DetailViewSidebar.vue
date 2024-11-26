@@ -59,7 +59,6 @@
       :fold-all="foldAll"
       :unfold-all="unfoldAll"
       :value="text"
-      :forced-value="text"
       :mode="mode"
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
