@@ -90,5 +90,7 @@ export const ClickHouseData: DialectData = {
     binaryColumn: true,
     // Sorting can slow down queries
     initialSort: true,
+    // TODO (azmi): in progress
+    importFromFile: true,
   },
 }

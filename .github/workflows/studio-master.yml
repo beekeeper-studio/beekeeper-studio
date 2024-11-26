@@ -17,17 +17,25 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-20.04, windows-2019]
+        os: [macos-14, ubuntu-20.04, windows-2019, ubuntu-arm64]
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
 
       - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
         if: "!startsWith(matrix.os, 'macos')"
+
+      - name: Install fpm
+        run: sudo gem install fpm
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
 
       - name: Install python 3.11 (mac)
         if: "startsWith(matrix.os, 'macos')"
@@ -78,6 +86,8 @@ jobs:
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+          USE_SYSTEM_FPM: true
 
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
