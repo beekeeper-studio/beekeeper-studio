@@ -39,12 +39,12 @@ export default Vue.extend({
     initNotifyInterval() {
       const intervalTime = 1000 * 60 * 60 * 3
       if (this.notificationInterval) {
-        this.notificationInterval = null
         clearInterval(this.notificationInterval)
+        this.notificationInterval = null
       }
       if (this.timeoutID) {
-        this.timeoutID = null
         clearTimeout(this.timeoutID)
+        this.timeoutID = null
       }
       if (!this.isCommunity) { 
         return
