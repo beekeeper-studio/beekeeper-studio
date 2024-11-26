@@ -18,7 +18,7 @@
         <div class="dialog-content">
           <div class="top">
             <div class="dialog-c-title">
-              Editing as
+              {{ isReadOnly ? "Viewing " : "Editing " }}as
             </div>
 
             <select
@@ -78,6 +78,7 @@
               :height="editorHeight"
               :focus="editorFocus"
               @focus="editorFocus = $event"
+              :readOnly="isReadOnly"
             />
           </div>
         </div>
@@ -105,6 +106,7 @@
               v-if="language.noMinify"
               class="btn btn-primary btn-sm"
               @click.prevent="save"
+              :disabled="isReadOnly"
             >
               <x-label>Apply</x-label>
             </x-button>
@@ -163,6 +165,7 @@ export default Vue.extend({
       content: "",
       eventParams: null,
       wrapText: TextLanguage.wrapTextByDefault,
+      isReadOnly: false
     }
   },
   components: { TextEditor },
@@ -194,7 +197,7 @@ export default Vue.extend({
   },
 
   methods: {
-    openModal(content: any, language: LanguageData, eventParams?: any) {
+    openModal(content: any, language: LanguageData, eventParams?: any, isReadOnly?: boolean) {
       if (content === null) {
         content = ""
       } else if (ArrayBuffer.isView(content)) {
@@ -210,6 +213,7 @@ export default Vue.extend({
         this.content = content
       }
       this.eventParams = eventParams
+      this.isReadOnly = isReadOnly
       this.wrapText = language.wrapTextByDefault ?? false
       this.$modal.show(this.modalName)
     },
