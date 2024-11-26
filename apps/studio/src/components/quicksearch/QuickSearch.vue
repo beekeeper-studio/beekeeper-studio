@@ -112,6 +112,7 @@ export default Vue.extend({
     document.addEventListener('mousedown', this.maybeHide)
     this.$nextTick(() => {
       this.$refs.searchBox.focus()
+      this.getTabHistory()
     })
   },
   beforeDestroy() {
@@ -122,7 +123,8 @@ export default Vue.extend({
       active: false,
       searchTerm: null,
       results: [],
-      selectedItem: 0
+      selectedItem: 0,
+      historyResults: []
     }
   },
   watch: {
@@ -148,6 +150,7 @@ export default Vue.extend({
 
   },
   computed: {
+    ...mapState(['usedConfig']),
     ...mapState('search', ['searchIndex']),
     ...mapGetters({ database: 'search/database'}),
     elements() {
@@ -179,6 +182,12 @@ export default Vue.extend({
     }
   },
   methods: {
+    async getTabHistory() {
+      const results = await Vue.prototype.$util.send('appdb/tabhistory/get', {workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
+      console.log('look here nerd!')
+      console.log(results)
+      this.historyResults = results 
+    },
     highlight(blob) {
       const dangerous = blob.title
       const text = escapeHtml(dangerous || "unknown item")

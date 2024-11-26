@@ -132,8 +132,8 @@ export const TabModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
         await Vue.prototype.$util.send('appdb/tabs/remove', { obj: items });
-        await Vue.prototype.$util.send('appdb/tabhistory/closetab', items);
       }
+      await Vue.prototype.$util.send('appdb/tabhistory/closetab', items);
     },
     async save(context, rawTabs: TransportOpenTab[] | TransportOpenTab) {
       try {

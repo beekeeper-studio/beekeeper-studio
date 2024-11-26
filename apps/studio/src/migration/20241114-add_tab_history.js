@@ -14,7 +14,7 @@ export default {
           "entityType" varchar(255) NULL,
           "workspaceId" integer NOT NULL DEFAULT -1,
           "connectionId" integer NULL,
-          "position" float NOT NULL default 0,
+          "lastActive" datetime NOT NULL DEFAULT (datetime('now')),
           "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
           "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
           "version" integer NOT NULL DEFAULT 0
