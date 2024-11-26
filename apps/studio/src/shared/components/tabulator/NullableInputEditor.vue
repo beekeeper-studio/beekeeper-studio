@@ -24,6 +24,8 @@ import _ from 'lodash'
 import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
 import rawLog from 'electron-log'
+import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
+import { BksField } from "@/lib/db/models";
 
 const log = rawLog.scope('NullableInputEditor')
 
@@ -95,7 +97,15 @@ export default Vue.extend({
           updateAnyway && this.$emit('value', this.value)
         }
       } else {
-        this.$emit('value', this.parseValue())
+        let emitValue = this.value
+        try {
+          emitValue = this.parseValue()
+        } catch (e) {
+          log.error('Failed to parse value', this.value, e)
+          this.$noty.error('Failed to parse value')
+        } finally {
+          this.$emit('value', emitValue)
+        }
       }
 
     },
@@ -107,6 +117,10 @@ export default Vue.extend({
     },
     parseValue() {
       const typeHint = this.params.typeHint;
+      const bksField: BksField = this.params.bksField;
+      if (bksField?.bksType === 'BINARY' || ArrayBuffer.isView(this.cell.getValue())) {
+        return friendlyUint8Array(hexToUint8Array(this.value));
+      }
       if (typeof typeHint !== 'string') {
         return this.value
       }

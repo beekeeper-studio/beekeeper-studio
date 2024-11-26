@@ -1,0 +1,8 @@
+.tabulator-cell {
+  &.binary-type > pre {
+    text-decoration-line: underline;
+    text-underline-offset: 2px;
+    text-decoration-style: dotted;
+    text-decoration-color: $text-light;
+  }
+}
