@@ -9,7 +9,6 @@
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
-    :forced-value="dataForcedValue"
     :plugins="plugins"
     :auto-focus="true"
     @update:focus="$emit('update:focus', $event)"
@@ -30,12 +29,7 @@ import CodeMirror from "codemirror";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions", "forcedValue"],
-  data() {
-    return {
-      dataForcedValue: this.value,
-    };
-  },
+  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions"],
   computed: {
     ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
@@ -93,17 +87,12 @@ export default Vue.extend({
       return editorPlugins;
     },
   },
-  watch: {
-    async forcedValue() {
-      await this.setEditorValue(this.forcedValue);
-    },
-  },
   methods: {
-    async formatSql() {
+    formatSql() {
       const formatted = format(this.value, {
         language: FormatterDialect(dialectFor(this.connectionType)),
       });
-      await this.setEditorValue(formatted);
+      this.$emit("input", formatted);
     },
     async columnsGetter(tableName: string) {
       let tableToFind = this.tables.find(
@@ -141,11 +130,6 @@ export default Vue.extend({
       }
 
       return newOptions;
-    },
-    async setEditorValue(value: string) {
-      this.dataForcedValue = this.value;
-      await this.$nextTick();
-      this.dataForcedValue = value;
     },
   },
 });
