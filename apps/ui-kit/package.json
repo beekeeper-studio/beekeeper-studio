@@ -1,0 +1,21 @@
+{
+  "name": "@bks/ui-kit",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/ui-kit.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^2.7.16"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue2": "^2.3.1",
+    "typescript": "~5.6.2",
+    "vite": "^5.3.6",
+    "vue-tsc": "^2.1.10"
+  }
+}
