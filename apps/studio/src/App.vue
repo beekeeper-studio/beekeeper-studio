@@ -7,6 +7,7 @@
       <titlebar />
       <template v-if="storeInitialized">
         <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
+         <hello />
         <connection-interface v-if="!connected" />
         <core-interface
           @databaseSelected="databaseSelected"
@@ -71,7 +72,7 @@ import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
-
+import { Hello } from '@bks/ui-kit'
 import rawLog from 'electron-log'
 
 const log = rawLog.scope('app.vue')
@@ -83,7 +84,7 @@ export default Vue.extend({
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal,
+    LifetimeLicenseExpiredModal, Hello
   },
   data() {
     return {
