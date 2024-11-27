@@ -63,6 +63,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
+import globals from '../../../common/globals';
 
 type ResultType = {
   tableName?: string
@@ -287,7 +288,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   };
   transcoders = [GenericBinaryTranscoder];
 
-  interval: number
+  interval: NodeJS.Timeout
 
   clientId: string
 
@@ -313,14 +314,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         try {
           this.conn.pool.getConnection(async (err, connection) => {
             if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, 3306)
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 3306)
             connection.release();
             log.info('Token refreshed successfully.')
           });
         } catch (err) {
           log.error('Could not refresh token!')
         }
-      }, 13 * 60 * 1000);
+      }, globals.iamRefreshTime);
     }
 
     this.conn.pool.on('acquire', (connection) => {

@@ -98,7 +98,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   _defaultSchema: string;
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
-  interval: number;
+  interval: NodeJS.Timeout;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -152,7 +152,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
       this.interval = setInterval(async () => {
         try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, 5432);
+          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
 
           const newPool = new pg.Pool({
             ...dbConfig,
@@ -171,7 +171,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         } catch (err) {
           log.error('Could not refresh token or update connection pool!', err);
         }
-      }, 13 * 60 * 1000);
+      }, globals.iamRefreshTime);
     }
 
     test.release();
