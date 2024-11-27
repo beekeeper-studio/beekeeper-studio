@@ -1198,6 +1198,7 @@ export class DBTestUtil {
             batch = [];
           }
           Promise.all(promises).then(() => resolve()).catch(reject);
+          fileStream.close()
         },
         error: (err) => reject(err),
       });

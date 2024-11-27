@@ -80,16 +80,19 @@ export default class extends Import {
     const fileName = fileToImport ?? this.fileName
 
     return new Promise((resolve, error) => {
-      const complete = (result: ParseResult<any>) => {
-        resolve({
-          aborted: result?.meta?.aborted,
-          error: this.error,
-          data: result?.data,
-          meta: result?.meta
-        })
-      }
       try {
-        Papa.parse(fs.createReadStream(fileName), {...options, complete: complete.bind(this), error})
+        const stream = fs.createReadStream(fileName)
+        const complete = (result: ParseResult<any>) => {
+          // stream needs to be closed explicitly
+          stream.close()
+          resolve({
+            aborted: result?.meta?.aborted,
+            error: this.error,
+            data: result?.data,
+            meta: result?.meta
+          })
+        }
+        Papa.parse(stream, { ...options, complete: complete.bind(this), error })
       } catch (err) {
         error(err?.message ?? err)
       }
