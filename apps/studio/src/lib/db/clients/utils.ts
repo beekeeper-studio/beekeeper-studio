@@ -6,6 +6,7 @@ import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import {fromIni} from "@aws-sdk/credential-providers";
 import {Signer} from "@aws-sdk/rds-signer";
+import globals from "@/common/globals";
 
 const log = logRaw.scope('db/util')
 
@@ -330,7 +331,7 @@ export async function refreshTokenIfNeeded(redshiftOptions: any, server: any, po
 
   const now = Date.now();
 
-  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - 2 * 60 * 1000) { // Refresh 2 minutes before expiry
+  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime) { // Refresh 2 minutes before expiry
     log.info("Refreshing IAM token...");
     resolvedPw = await getIAMPassword(
       redshiftOptions.awsProfile ?? "default",
@@ -340,7 +341,7 @@ export async function refreshTokenIfNeeded(redshiftOptions: any, server: any, po
       server.config.user
     );
 
-    tokenExpiryTime = now + 15 * 60 * 1000; // Tokens last 15 minutes
+    tokenExpiryTime = now + globals.iamExpiryTime; // Tokens last 15 minutes
   }
 
   return resolvedPw;

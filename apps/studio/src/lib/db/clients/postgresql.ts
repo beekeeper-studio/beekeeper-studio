@@ -1302,7 +1302,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, 5432) || server.config.password || undefined,
+      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,

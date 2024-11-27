@@ -136,7 +136,7 @@ async function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, 3306) || server.config.password || undefined,
+    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
