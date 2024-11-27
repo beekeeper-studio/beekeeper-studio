@@ -6,7 +6,8 @@
   "main": "dist/ui-kit.js",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "lib:dev": "vite build --watch",
+    "build": "vue-tsc vite build",
     "preview": "vite preview"
   },
   "dependencies": {

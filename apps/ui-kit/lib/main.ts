@@ -3,5 +3,8 @@
 
 
 export const Example = {
-  foo: 'bar'
+  foo: 'bar',
+  a: 'b',
+  c: 'd',
+  azmi: "hello"
 }
