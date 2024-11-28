@@ -137,15 +137,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import 'codemirror/addon/comment/comment'
-import 'codemirror/keymap/vim.js'
-import 'codemirror/addon/dialog/dialog'
-import 'codemirror/addon/search/search'
-import 'codemirror/addon/search/jump-to-line'
-import 'codemirror/addon/scroll/annotatescrollbar'
-import 'codemirror/addon/search/matchesonscrollbar'
-import 'codemirror/addon/search/matchesonscrollbar.css'
-import 'codemirror/addon/search/searchcursor'
 import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../../lib/editor/languageData'
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
