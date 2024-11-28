@@ -8,7 +8,8 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'lib/main.ts'),
       formats: ['es']
-    }
+    },
+    sourcemap: true,
   }
 
 })

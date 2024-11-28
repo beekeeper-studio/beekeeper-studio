@@ -30,7 +30,6 @@ import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
-import { Example } from '@bks/ui-kit'
 
 (async () => {
 
@@ -45,7 +44,6 @@ import { Example } from '@bks/ui-kit'
     log.debug("####################################")
     log.debug("Platform Information (App)")
     log.debug(JSON.stringify(window.platformInfo, null, 2))
-    log.info("EXAMPLE!", Example)
     _.mixin({
       'deepMapKeys': function (obj, fn) {
 
