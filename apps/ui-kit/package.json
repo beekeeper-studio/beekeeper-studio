@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "main": "dist/ui-kit.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "dev": "vite",
     "lib:dev": "vite build --watch",
@@ -13,7 +14,8 @@
   "dependencies": {
     "codemirror": "^5.63.1",
     "lodash": "^4.17.21",
-    "vue": "^2.7.16"
+    "vue": "^2.7.16",
+    "vue2-teleport": "^1.1.4"
   },
   "devDependencies": {
     "@types/codemirror": "^0.0.97",
@@ -21,6 +23,7 @@
     "@vitejs/plugin-vue2": "^2.3.1",
     "typescript": "~5.6.2",
     "vite": "^5.3.6",
+    "vite-plugin-dts": "^4.3.0",
     "vue-tsc": "^2.1.10"
   }
 }

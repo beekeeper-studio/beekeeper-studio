@@ -36,6 +36,7 @@ import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
 import { setKeybindings, applyConfig, Register } from "./vim";
+import { openMenu } from "../context-menu/menu";
 
 // Ref: https://stackoverflow.com/a/11752084/10012118
 const isMacLike = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
@@ -513,8 +514,8 @@ export default {
             handler: () => {
               const selection = this.editor.getSelection();
               this.editor.replaceSelection("");
-              // FIXME this wont work
-              this.$native.clipboard.writeText(selection);
+              // FIXME may need permission
+              navigator.clipboard.writeText(selection);
             },
             class: selectionDepClass,
             shortcut: this.ctrlOrCmd("x"),
@@ -522,18 +523,19 @@ export default {
           },
           {
             name: "Copy",
-            handler: () => {
+            handler: async () => {
               const selection = this.editor.getSelection();
-              // FIXME this wont work
-              this.$native.clipboard.writeText(selection);
+              // FIXME may need permission
+              await navigator.clipboard.writeText(selection);
             },
             class: selectionDepClass,
             shortcut: this.ctrlOrCmd("c"),
           },
           {
             name: "Paste",
-            handler: () => {
-              const clipboard = this.$native.clipboard.readText();
+            handler: async () => {
+              // FIXME may need permission
+              const clipboard = await navigator.clipboard.readText();
               if (this.editor.getSelection()) {
                 this.editor.replaceSelection(clipboard, "around");
               } else {
@@ -601,11 +603,10 @@ export default {
         return;
       }
 
-      // FIXME this wont work
       if (customOptions === undefined) {
-        this.$bks.openMenu(menu);
+        openMenu(menu);
       } else {
-        this.$bks.openMenu({
+        openMenu({
           ...menu,
           options: customOptions,
         });

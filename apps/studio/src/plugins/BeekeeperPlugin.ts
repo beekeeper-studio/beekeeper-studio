@@ -1,27 +1,8 @@
 import { AppEvent } from "@/common/AppEvent"
-import Vue from 'vue'
-import ContextMenu from '@/components/common/ContextMenu.vue'
+import { MenuProps, openMenu } from '@bks/ui-kit'
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
-import store from '@/store'
 import TimeAgo from "javascript-time-ago"
-
-export interface ContextOption {
-  name: string,
-  slug: string
-  type?: 'divider'
-  handler: (...any) => void
-  class?: string
-  shortcut?: string
-  ultimate?: boolean
-}
-
-interface MenuProps {
-  options: ContextOption[],
-  elementId?: string
-  item: any,
-  event: Event
-}
 
 export const BeekeeperPlugin = {
   timeAgo(date: Date) {
@@ -45,17 +26,11 @@ export const BeekeeperPlugin = {
       return false
     }
   },
-  openMenu(args: MenuProps): void {
-    const ContextComponent = Vue.extend(ContextMenu)
-    const cMenu = new ContextComponent({
-      store,
-      propsData: args
+  openMenu(args: MenuProps) {
+    openMenu({
+      ...args,
+      targetElement: "#teleport-target-menus",
     })
-    cMenu.$on('close', () => {
-      cMenu.$off()
-      cMenu.$destroy()
-    })
-    cMenu.$mount()
   },
   buildConnectionName(config: IConnection) {
     return config.name || this.simpleConnectionString(config)

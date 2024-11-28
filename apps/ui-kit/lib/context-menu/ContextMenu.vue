@@ -1,7 +1,7 @@
 <template>
   <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
   <div>
-    <portal to="menus">
+    <teleport :to="targetElement ?? 'body'">
       <ul
         class="vue-simple-context-menu"
         ref="menu"
@@ -19,33 +19,30 @@
             <span
               class="shortcut"
               v-if="option.shortcut"
-              v-html="option.shortcut"
+              v-text="option.shortcut"
             />
             <i
               class="material-icons menu-icon"
               v-if="option.icon"
             >{{ option.icon }}</i>
-            <!-- NOTE (@day): this is supposed to only appear when you don't have an ult license, but this component can't use the store -->
-            <i
-              v-if="option.ultimate && $store.getters.isCommunity"
-              class="material-icons menu-icon"
-            >stars</i>
           </span>
         </li>
       </ul>
-    </portal>
+    </teleport>
   </div>
 </template>
 
 <script lang="ts">
-
-// NOTE (@day): we can't use the store here for some reason
-import { ContextOption } from '@/plugins/BeekeeperPlugin'
+import Teleport from "vue2-teleport"
+import { ContextOption } from './utils'
 import Vue from 'vue'
 
 export default Vue.extend({
   name: 'ContextMenu',
-  props: ['options', 'event', 'item'],
+  components: {
+    Teleport,
+  },
+  props: ['options', 'event', 'item', 'targetElement'],
   data() {
     return {
       menuWidth: null,

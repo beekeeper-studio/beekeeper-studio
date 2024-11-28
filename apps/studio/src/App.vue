@@ -18,10 +18,7 @@
         <upgrade-required-modal />
       </template>
     </div>
-    <portal-target
-      name="menus"
-      multiple
-    />
+    <div id="teleport-target-menus" />
     <portal-target
       name="modals"
       multiple
