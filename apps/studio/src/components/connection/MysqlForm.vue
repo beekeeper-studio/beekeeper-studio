@@ -74,6 +74,7 @@ import CommonIam from './CommonIam.vue'
 import {AppEvent} from "@/common/AppEvent";
 import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import _ from "lodash";
+import { mapGetters } from 'vuex';
 
 export default {
   components: {CommonServerInputs, CommonAdvanced, CommonIam},
@@ -88,14 +89,18 @@ export default {
       errorSigningOut: null,
     }
   },
+  computed: {
+    ...mapGetters(['isCommunity']),
+  },
   watch: {
     async authType() {
+      console.log("Auth type changed", this.authType, 'community?', this.$config.isCommunity)
       if (this.authType === 'default') {
         this.iamAuthenticationEnabled = false
       } else {
-        if (this.$config.isCommunity) {
+        if (this.isCommunity) {
           // we want to display a modal
-          this.$root.$emit(AppEvent.upgradeModal);
+          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
           this.authType = 'default'
         } else {
           this.iamAuthenticationEnabled = true
