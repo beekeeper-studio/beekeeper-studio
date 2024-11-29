@@ -4,6 +4,7 @@ import MagicColumnBuilder from "@/lib/magic/MagicColumnBuilder";
 import electronLog from "electron-log";
 import { TableOrView } from "../db/models";
 import _ from "lodash";
+import { Options } from "sql-query-identifier";
 
 export function autoquoteHandler(
   instance: CodeMirror.Editor,
@@ -35,27 +36,12 @@ export function autoquoteHandler(
   }
 }
 
-function findSqlQueryIdentifierDialect(connectionType: string) {
-  const mappings = {
-    sqlserver: "mssql",
-    sqlite: "sqlite",
-    cockroachdb: "psql",
-    postgresql: "psql",
-    mysql: "mysql",
-    mariadb: "mysql",
-    tidb: "mysql",
-    redshift: "psql",
-  };
-  return mappings[connectionType] || "generic";
-}
-
 export function removeQueryQuotesHandler(
-  connectionType: string,
+  dialect: Options['dialect'],
   instance: CodeMirror.Editor,
   e: ClipboardEvent
 ) {
   e.preventDefault();
-  const dialect = findSqlQueryIdentifierDialect(connectionType);
   let clipboard = (e.clipboardData.getData("text") as string).trim();
   clipboard = removeQueryQuotes(clipboard, dialect);
   if (instance.getSelection()) {
@@ -191,7 +177,7 @@ export function registerAutoquote(
 }
 
 export function registerAutoRemoveQueryQuotes(
-  dialect: string,
+  dialect: Options['dialect'],
   instance: CodeMirror.Editor
 ) {
   const handler = removeQueryQuotesHandler.bind(null, dialect);

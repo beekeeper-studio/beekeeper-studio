@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import CodeMirror from 'codemirror'
+import { Options } from 'sql-query-identifier'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse'] as const
@@ -66,6 +67,16 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   return 'mysql' // we want this as the default
 }
 
+export function QueryIdentifierDialect(d: Dialect): Options['dialect'] {
+  if (d === "sqlserver") return "mssql";
+  if (d === "sqlite") return "sqlite";
+  if (d === "postgresql") return "psql";
+  if (d === "mysql") return "mysql";
+  if (d === "redshift") return "mysql";
+  if (d === "oracle") return "oracle";
+  if (d === "bigquery") return "bigquery";
+  return "generic";
+}
 
 export class ColumnType {
   public name: string

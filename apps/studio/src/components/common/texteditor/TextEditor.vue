@@ -3,6 +3,7 @@
     :keymap="userKeymap"
     :vimKeymaps="vimKeymaps"
     v-bind="$attrs"
+    v-on="$listeners"
   />
 </template>
 

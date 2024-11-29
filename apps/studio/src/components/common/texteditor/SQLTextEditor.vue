@@ -1,20 +1,14 @@
 <template>
   <text-editor
     v-bind="$attrs"
-    :value="value"
-    @input="$emit('input', $event)"
+    v-on="$listeners"
     hint="sql"
-    :mode="dialectData.textEditorMode"
+    :value="value"
     :extra-keybindings="keybindings"
-    :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
     :plugins="plugins"
     :auto-focus="true"
-    @update:focus="$emit('update:focus', $event)"
-    @update:selection="$emit('update:selection', $event)"
-    @update:cursorIndex="$emit('update:cursorIndex', $event)"
-    @update:initialized="$emit('update:initialized', $event)"
   />
 </template>
 
@@ -24,58 +18,24 @@ import TextEditor from "./TextEditor.vue";
 import { mapState, mapGetters } from "vuex";
 import { plugins } from "@/lib/editor/utils";
 import { format } from "sql-formatter";
-import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions"],
+  props: ["value", "identifierDialect", "formatterDialect"],
   computed: {
-    ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
+    ...mapGetters(['defaultSchema', 'dialectData']),
     ...mapState(["tables"]),
-    hintOptions() {
-      // We do this so we can order the autocomplete options
-      const firstTables = {};
-      const secondTables = {};
-      const thirdTables = {};
-
-      this.tables.forEach((table) => {
-        // don't add table names that can get in conflict with database schema
-        if (/\./.test(table.name)) return;
-
-        // Previously we had to provide a table: column[] mapping.
-        // we don't need to provide the columns anymore because we fetch them dynamically.
-        if (!table.schema) {
-          firstTables[table.name] = [];
-          return;
-        }
-
-        if (table.schema === this.defaultSchema) {
-          firstTables[table.name] = [];
-          secondTables[`${table.schema}.${table.name}`] = [];
-        } else {
-          thirdTables[`${table.schema}.${table.name}`] = [];
-        }
-      });
-
-      const sorted = Object.assign(
-        firstTables,
-        Object.assign(secondTables, thirdTables)
-      );
-
-      return { tables: sorted };
-    },
     keybindings() {
       return {
         "Shift-Ctrl-F": this.formatSql,
         "Shift-Cmd-F": this.formatSql,
-        ...this.extraKeybindings,
       };
     },
     plugins() {
       const editorPlugins = [
         plugins.autoquote,
         plugins.autoComplete,
-        plugins.autoRemoveQueryQuotes(this.connectionType),
+        plugins.autoRemoveQueryQuotes(this.identifierDialect),
         plugins.queryMagic(() => this.defaultSchema, () => this.tables)
       ];
 
@@ -85,7 +45,7 @@ export default Vue.extend({
   methods: {
     formatSql() {
       const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.connectionType)),
+        language: this.formatterDialect,
       });
       this.$emit("input", formatted);
     },
@@ -106,7 +66,7 @@ export default Vue.extend({
     },
     handleContextMenuOptions(e: unknown, options: any[]) {
       const pivot = options.findIndex((o) => o.slug === "find");
-      const newOptions = [
+      return [
         ...options.slice(0, pivot),
         {
           name: "Format Query",
@@ -119,12 +79,6 @@ export default Vue.extend({
         },
         ...options.slice(pivot),
       ];
-
-      if (this.contextMenuOptions) {
-        return this.contextMenuOptions(e, newOptions);
-      }
-
-      return newOptions;
     },
   },
 });

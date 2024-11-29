@@ -37,9 +37,12 @@
         :focus="focusingElement === 'text-editor'"
         @update:focus="updateTextEditorFocus"
         :markers="editorMarkers"
-        :connection-type="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
+        :formatter-dialect="formatterDialect"
+        :identifier-dialect="identifierDialect"
+        :mode="dialectData.textEditorMode"
+        :hint-options="hintOptions"
         @initialized="handleEditorInitialized"
       />
       <span class="expand" />
@@ -327,6 +330,7 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
+  import { FormatterDialect, dialectFor, QueryIdentifierDialect } from "@shared/lib/dialects/models";
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -601,6 +605,44 @@
       },
       showResultTable() {
         return this.rowCount > 0
+      },
+      formatterDialect() {
+        return FormatterDialect(dialectFor(this.connectionType))
+      },
+      identifierDialect() {
+        return QueryIdentifierDialect(dialectFor(this.connectionType))
+      },
+      hintOptions() {
+        // We do this so we can order the autocomplete options
+        const firstTables = {};
+        const secondTables = {};
+        const thirdTables = {};
+
+        this.tables.forEach((table) => {
+          // don't add table names that can get in conflict with database schema
+          if (/\./.test(table.name)) return;
+
+          // Previously we had to provide a table: column[] mapping.
+          // we don't need to provide the columns anymore because we fetch them dynamically.
+          if (!table.schema) {
+            firstTables[table.name] = [];
+            return;
+          }
+
+          if (table.schema === this.defaultSchema) {
+            firstTables[table.name] = [];
+            secondTables[`${table.schema}.${table.name}`] = [];
+          } else {
+            thirdTables[`${table.schema}.${table.name}`] = [];
+          }
+        });
+
+        const sorted = Object.assign(
+          firstTables,
+          Object.assign(secondTables, thirdTables)
+        );
+
+        return { tables: sorted };
       },
     },
     watch: {
