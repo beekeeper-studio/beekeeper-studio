@@ -4,65 +4,39 @@
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
-        <option value="default">Username / Password</option>
-        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
+          {{ t.name }}
         </option>
       </select>
     </div>
     <common-server-inputs v-show="!iamAuthenticationEnabled" :config="config" />
+
     <div v-show="iamAuthenticationEnabled" class="host-port-user-password">
-      <div
-        class="form-group col"
-      >
-        <div class="form-group">
+      <div class="row gutter">
+        <div class="form-group col s9">
           <label for="server">
-            Server <i
-            class="material-icons"
-            style="padding-left: 0.25rem"
-            v-tooltip="{
-                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
-                html: true }"
-          >help_outlined</i>
+            Host
           </label>
-          <input
-            name="server"
-            type="text"
-            class="form-control"
-            v-model="config.host"
-          >
+          <input name="server" type="text" class="form-control" v-model="config.host">
         </div>
+        <div class="form-group col s3">
+          <label for="database">Port</label>
+          <input type="number" class="form-control" name="port" v-model.number="config.port">
+        </div>
+      </div>
+      <div class="gutter">
         <div class="form-group">
           <label for="database">Database</label>
-          <input
-            name="database"
-            type="text"
-            class="form-control"
-            v-model="config.defaultDatabase"
-          >
-        </div>
-        <div class="form-group">
-          <label for="database">Port</label>
-          <input
-            type="number"
-            class="form-control"
-            name="port"
-            v-model.number="config.port"
-          >
+          <input name="database" type="text" class="form-control" v-model="config.defaultDatabase">
         </div>
         <div class="form-group">
           <label for="user">User</label>
-          <input
-            name="user"
-            type="text"
-            class="form-control"
-            v-model="config.username"
-          >
+          <input name="user" type="text" class="form-control" v-model="config.username">
         </div>
       </div>
     </div>
-
-    <common-advanced :config="config" />
     <common-iam v-show="iamAuthenticationEnabled" :config="config" />
+    <common-advanced :config="config" />
   </div>
 </template>
 
@@ -83,7 +57,7 @@ export default {
     return {
       iamAuthenticationEnabled: false,
       authType: 'default',
-      authTypes: IamAuthTypes,
+      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
