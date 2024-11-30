@@ -34,7 +34,7 @@
 
 <script lang="ts">
 import Teleport from "vue2-teleport"
-import { ContextOption } from './utils'
+import { ContextOption } from './menu'
 import Vue from 'vue'
 
 export default Vue.extend({
