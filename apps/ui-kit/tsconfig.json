@@ -1,7 +1,18 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "extends": "../../tsconfig.base.json",
+  "vueCompilerOptions": {
+    "target": 2.7
+  },
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ]
+  }
 }

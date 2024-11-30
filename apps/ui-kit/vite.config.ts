@@ -6,10 +6,7 @@ import dts from 'vite-plugin-dts';
 export default defineConfig({
   plugins: [
     vue(),
-    dts({
-      insertTypesEntry: true,
-      tsconfigPath: './tsconfig.app.json',
-    })
+    dts({ rollupTypes: true })
   ],
   build: {
     lib: {
