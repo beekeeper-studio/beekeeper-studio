@@ -37,13 +37,15 @@
         :focus="focusingElement === 'text-editor'"
         @update:focus="updateTextEditorFocus"
         :markers="editorMarkers"
-        :extra-keybindings="keybindings"
+        :keybindings="keybindings"
         :vim-config="vimConfig"
         :formatter-dialect="formatterDialect"
         :identifier-dialect="identifierDialect"
         :mode="dialectData.textEditorMode"
         :hint-options="hintOptions"
         @initialized="handleEditorInitialized"
+        :columns-getter="columnsGetter"
+        :plugins="textEditorPlugins"
       />
       <span class="expand" />
       <div class="toolbar text-right">
@@ -316,11 +318,10 @@
   import { identify } from 'sql-query-identifier'
 
   import { splitQueries } from '../lib/db/sql_tools'
-  import { EditorMarker } from '@/lib/editor/utils'
+  import { EditorMarker } from '@bks/ui-kit'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
-  import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
@@ -331,6 +332,7 @@
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
   import { FormatterDialect, dialectFor, QueryIdentifierDialect } from "@shared/lib/dialects/models";
+  import { queryMagic } from "@/lib/editor/CodeMirrorPlugins";
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -338,7 +340,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -398,18 +400,6 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
-      userKeymap: {
-        get() {
-          const value = this.settings?.keymap?.value;
-          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
-        },
-        set(value) {
-          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
-            this.initialize();
-          });
-        }
-      },
       keymapTypes() {
         return this.$config.defaults.keymapTypes
       },
@@ -643,6 +633,11 @@
         );
 
         return { tables: sorted };
+      },
+      textEditorPlugins() {
+        return [
+          queryMagic(() => this.defaultSchema, () => this.tables),
+        ]
       },
     },
     watch: {
@@ -1058,6 +1053,21 @@
           }, 1000)
           this.focusingElement = 'none'
         })
+      },
+      async columnsGetter(tableName: string) {
+        let tableToFind = this.tables.find(
+          (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+        );
+        if (!tableToFind) return null;
+        // Only refresh columns if we don't have them cached.
+        if (!tableToFind.columns?.length) {
+          await this.$store.dispatch("updateTableColumns", tableToFind);
+          tableToFind = this.tables.find(
+            (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+          );
+        }
+
+        return tableToFind?.columns.map((c) => c.columnName);
       },
     },
     async mounted() {

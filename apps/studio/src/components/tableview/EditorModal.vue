@@ -141,7 +141,6 @@ import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
-import TextEditor from '@/components/common/texteditor/TextEditor.vue'
 
 export default Vue.extend({
   name: "CellEditorModal",
@@ -156,16 +155,10 @@ export default Vue.extend({
       wrapText: TextLanguage.wrapTextByDefault,
     }
   },
-  components: { TextEditor },
   computed: {
     ...mapGetters({ 'settings': 'settings/settings' }),
     modalName() {
       return uuidv4()
-    },
-    userKeymap() {
-      const value = this.settings?.keymap.value;
-      const keymapTypes = this.$config.defaults.keymapTypes
-      return value && keymapTypes.map(k => k.value).includes(value) ? value : 'default';
     },
     languages() {
       return Languages

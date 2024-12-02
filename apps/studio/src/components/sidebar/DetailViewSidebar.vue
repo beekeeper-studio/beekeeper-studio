@@ -77,7 +77,6 @@
  * dataId:  use this to update the component with new data.
  */
 import Vue from "vue";
-import TextEditor from "@/components/common/texteditor/TextEditor.vue";
 import {
   ExpandablePath,
   findKeyPosition,
@@ -89,7 +88,7 @@ import {
   eachPaths,
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
-import { EditorMarker } from "@/lib/editor/utils";
+import { EditorMarker } from "@bks/ui-kit";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
 import rawLog from "electron-log";
 import _ from "lodash";
@@ -98,7 +97,7 @@ import globals from '@/common/globals'
 const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
-  components: { TextEditor, DetailViewSidebarUpsell },
+  components: { DetailViewSidebarUpsell },
   props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {

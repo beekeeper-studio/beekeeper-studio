@@ -14,12 +14,15 @@
   "dependencies": {
     "codemirror": "^5.63.1",
     "lodash": "^4.17.21",
+    "sql-query-identifier": "^2.8.0",
+    "tabulator-tables": "beekeeper-studio/tabulator#2642a6210fad1fb859838b6745efb061c1b35918",
     "vue": "^2.7.16",
     "vue2-teleport": "^1.1.4"
   },
   "devDependencies": {
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
+    "@types/tabulator-tables": "^6.2.0",
     "@vitejs/plugin-vue2": "^2.3.1",
     "typescript": "~5.6.2",
     "vite": "^5.3.6",

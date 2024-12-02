@@ -3,6 +3,8 @@ import { MenuProps, openMenu } from '@bks/ui-kit'
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import TimeAgo from "javascript-time-ago"
+import { SqlTextEditor, TextEditor } from "@bks/ui-kit"
+import { PluginObject } from "vue"
 
 export const BeekeeperPlugin = {
   timeAgo(date: Date) {
@@ -125,5 +127,30 @@ export default {
       })
     }
 
+    Vue.component('sql-text-editor', {
+      render(h) {
+        return h(SqlTextEditor, {
+          on: this.$listeners,
+          attrs: {
+            keymap: this.$store.getters['textEditor/userKeymap'],
+            vimKeymaps: this.$store.state.textEditor.vimKeymaps,
+            ...this.$attrs,
+          },
+        })
+      },
+    })
+
+    Vue.component('text-editor', {
+      render(h) {
+        return h(TextEditor, {
+          on: this.$listeners,
+          attrs: {
+            keymap: this.$store.getters['textEditor/userKeymap'],
+            vimKeymaps: this.$store.state.textEditor.vimKeymaps,
+            ...this.$attrs,
+          },
+        })
+      }
+    })
   }
-}
+} as PluginObject<void>

@@ -70,7 +70,6 @@ export default {
      * }
      */
     "contextMenuOptions",
-    "extraKeybindings",
     "markers",
     "selection",
     "cursor",
@@ -328,8 +327,8 @@ export default {
         "Cmd-/": () => this.editor.execCommand("toggleComment"),
       });
 
-      if (this.extraKeybindings) {
-        cm.addKeyMap(this.extraKeybindings);
+      if (this.keybindings) {
+        cm.addKeyMap(this.keybindings);
       }
 
       if (this.readOnly) {
@@ -414,6 +413,12 @@ export default {
         this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
           plugin(cm);
         });
+      }
+
+      if (this.value) {
+        // One more time because sometimes it doesn't set
+        this.valueChangeByCodeMirror = true
+        cm.setValue(this.value)
       }
 
       this.editor = cm;
