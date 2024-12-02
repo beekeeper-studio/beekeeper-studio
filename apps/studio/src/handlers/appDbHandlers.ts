@@ -15,11 +15,11 @@ import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
-import { UserSetting } from "@/common/appdb/models/user_setting";
-import { TokenCache } from "@/common/appdb/models/token_cache";
+import { UserSetting } from "@/common/appdb/models/user_setting"; import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
+import { validateOrReject } from "class-validator";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -50,6 +50,13 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
 
             return new cls().withProps(e);
           });
+          try {
+            await Promise.all(newEnts.map(async (v) => await validateOrReject(v)));
+          } catch (e) {
+            log.error('ERROR: ', e[0].toString());
+            const err: string = Object.values(e[0].constraints).reduce((prev, cur) => `${prev}\n${cur}`) as string;
+            throw new Error(err);
+          }
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
         let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
@@ -59,6 +66,13 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           dbObj = new cls().withProps(obj);
         }
         log.info(`Saving ${name}: `, dbObj);
+        try {
+          await validateOrReject(dbObj);
+        } catch (e) {
+          log.error('ERROR: ', e[0].toString());
+          const err: string = Object.values(e[0].constraints).reduce((prev, cur) => `${prev}\n${cur}`) as string;
+          throw new Error(err);
+        }
         await dbObj.save();
         return transform(dbObj, cls);
       }

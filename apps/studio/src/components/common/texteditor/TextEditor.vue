@@ -1,12 +1,5 @@
 <template>
-  <textarea
-    name="editor"
-    class="editor"
-    ref="editor"
-    id=""
-    cols="30"
-    rows="10"
-  />
+  <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10" />
 </template>
 
 <script lang="ts">
@@ -34,6 +27,7 @@ import "@/lib/editor/CodeMirrorDefinitions";
 import "codemirror/addon/merge/merge";
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
+import globals from "@/common/globals";
 import {
   setKeybindingsFromVimrc,
   applyConfig,
@@ -186,14 +180,14 @@ export default {
   },
   methods: {
     focusEditor() {
-      if(this.editor && this.autoFocus && this.wasEditorFocused){
+      if (this.editor && this.autoFocus && this.wasEditorFocused) {
         this.editor.focus();
         this.wasEditorFocused = false;
-       }
+      }
     },
-    handleBlur(){
+    handleBlur() {
       const activeElement = document.activeElement;
-      if(activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder"){
+      if (activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder") {
         this.wasEditorFocused = true;
       }
     },
@@ -314,9 +308,23 @@ export default {
         );
       });
 
+      cm.on("paste", (_cm, event) => {
+        const data = event.clipboardData.getData('text/plain');
+        if (data.length > globals.queryMaxLength) {
+          //(event as any).codemirrorIgnore = true;
+          //event.clipboardData.setData('text/plain', '');
+          //event.preventDefault();
+          // for some reason this is the only thing that actually works?!
+          // TODO (@day): display a proper error for the user
+          throw new Error(`Beekeeper can't handle more than ${globals.queryMaxLength} characters`)
+        }
+        return event;
+      })
+
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
 
       cmEl.addEventListener("contextmenu", this.showContextMenu);
+
 
       if (this.userKeymap === "vim") {
         const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;

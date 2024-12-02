@@ -2,6 +2,7 @@ import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 import { QueryLike } from './base'
+import { MaxLength } from 'class-validator'
 
 @Entity({ name: 'favorite_query' })
 export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISavedQuery {
@@ -13,6 +14,7 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   @Column({type: "varchar", nullable: false})
   title!: string
 
+  @MaxLength(2000000, { message: 'Beekeeper does not support queries that are over 2m characters long' })
   @Column({type: "text", nullable: false})
   text!: string
 

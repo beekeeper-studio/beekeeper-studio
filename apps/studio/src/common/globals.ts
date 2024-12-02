@@ -23,7 +23,9 @@ export default {
   tableListItemHeight: 22.8, // in pixels
   // for azure auth
   pollingTimeout: 60 * 1000, // 1 minute
-  clientId: '6eabc37c-bcc5-41fa-9a90-f6c5ab2aabcb'
+  clientId: '6eabc37c-bcc5-41fa-9a90-f6c5ab2aabcb',
+
+  queryMaxLength: 2_000_000 // Max 2m characters. JS can handle that many, CM chugs a bit though
 }
 
 
