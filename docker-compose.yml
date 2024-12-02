@@ -17,6 +17,7 @@ volumes:
 services:
 
   oracle18:
+    platform: linux/x86_64
     image: gvenzl/oracle-xe:18
     environment:
       ORACLE_PASSWORD: example
@@ -30,29 +31,33 @@ services:
       - 1521:1521
 
   psql15:
+    platform: linux/x86_64
     image: postgres:15
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: saklia
     volumes:
-      - psql13:/var/lib/postgresql/data
+      - psql13:/var/lib/postgresql/data/pgdata
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5434:5432
 
   psql13:
+    platform: linux/x86_64
     image: postgres:13
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: saklia
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - psql13:/var/lib/postgresql/data
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5433:5432
   psql:
+    platform: linux/x86_64
     image: postgres:9.6
     environment:
       POSTGRES_USER: postgres
@@ -64,6 +69,7 @@ services:
     ports:
       - 5432:5432
   mariadb:
+    platform: linux/x86_64
     image: mariadb
     restart: always
     environment:
@@ -75,6 +81,7 @@ services:
       - mariadb:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql8:
+    platform: linux/x86_64
     image: mysql:8.0.21
     command: --default-authentication-plugin=mysql_native_password
     restart: always
@@ -87,6 +94,7 @@ services:
       - mysql8:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql:
+    platform: linux/x86_64
     image: mysql:5.7.22
     command: --default-authentication-plugin=mysql_native_password
     restart: always
@@ -99,11 +107,13 @@ services:
       - mysql:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql4.1:
+    platform: linux/x86_64
     image: vettadock/mysql-old:4.1
     restart: always
     ports:
       - 3309:3306
   sqlserver:
+    platform: linux/x86_64
     image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
     volumes:
       - mssql:/var/opt/mssql/data
@@ -117,6 +127,7 @@ services:
       - 1433:1433
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
   sqlserverlatin:
+    platform: linux/x86_64
     image: 'mcr.microsoft.com/mssql/server:2017-latest-ubuntu'
     volumes:
     - mssqllatin:/var/opt/mssql/data
@@ -130,6 +141,7 @@ services:
       - 1434:1433
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
   cockroachdb:
+    platform: linux/x86_64
     image: cockroachdb/cockroach:v22.1.1
     volumes:
       - cockroachdb:/cockroach/cockroach-data
@@ -137,6 +149,7 @@ services:
       - 26257:26257
     command: start-single-node --insecure
   cassandra:
+    platform: linux/x86_64
     image: cassandra:latest
     entrypoint: ["/docker-entrypoint.initdb.d/entry.sh"]
     ports:
@@ -149,6 +162,7 @@ services:
 # https://www.folkstalk.com/2022/09/get-all-keyspaces-in-cassandra-with-code-examples.html
 # Create keyspace https://www.tutorialspoint.com/cassandra/cassandra_create_keyspace.htm
   bigquery:
+    platform: linux/x86_64
     image: ghcr.io/goccy/bigquery-emulator:latest
     volumes:
       - ./dev/docker_bigquery:/data
@@ -158,6 +172,7 @@ services:
       - 9060:9060
     entrypoint: sh -c 'chmod +x /docker_init/data.sh; /docker_init/data.sh'
   firebird:
+    platform: linux/x86_64
     image: jacobalberty/firebird:v4.0.1
     volumes:
       - ./dev/docker_firebird:/docker_init
@@ -169,7 +184,7 @@ services:
     command: sh -c 'chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /usr/local/firebird/docker-entrypoint.sh firebird;'
   libsql:
     image: ghcr.io/tursodatabase/libsql-server:latest
-    platform: linux/amd64
+    platform: linux/x86_64
     ports:
       - 8081:8080
       - 5001:5001
@@ -179,6 +194,7 @@ services:
     #   - ./dev/docker_libsql:/var/lib/sqld
   clickhouse:
     image: clickhouse/clickhouse-server
+    platform: linux/x86_64
     ports:
       - 8123:8123
     environment:

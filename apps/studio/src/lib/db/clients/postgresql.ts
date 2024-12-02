@@ -99,6 +99,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
+  connection: PoolClient | null = null;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -626,13 +627,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async query(queryText: string, options?: any): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
       execute: async (): Promise<NgQueryResult[]> => {
+        console.debug('PostgresClient query execute', options?.isManualCommit)
         const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
         const rows = dataPid.rows
 
@@ -641,7 +643,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, { arrayMode: true }),
+            this.executeQuery(queryText, { arrayMode: true, isManualCommit: options?.isManualCommit }),
           ]);
 
           pid = null;
@@ -684,15 +686,44 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           throw err;
         }
       },
+
+      commit: async (): Promise<void> => {
+        try {
+        if (!options?.isManualCommit) {
+          throw new Error('No transaction to commit manually');
+        }
+        if (options?.isManualCommit && !this.connection) {
+          throw new Error('Connection is not in manual commit mode');
+          }
+
+        await this.runQuery(this.connection, 'COMMIT;', {});
+        } finally {
+          cancelable.discard();
+        }
+      },
+
+      rollback: async (): Promise<void> => {
+        try {
+          if (!options?.isManualCommit) {
+            throw new Error('No transaction to rollback manually');
+          }
+          if (options?.isManualCommit && !this.connection) {
+            throw new Error('Connection is not in manual commit mode');
+        }
+
+        await this.runQuery(this.connection, 'ROLLBACK;', {});
+        } finally {
+          cancelable.discard();
+        }
+      }
     };
   }
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode });
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode, isManualCommit: options?.isManualCommit });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
-
     return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
   }
 
@@ -1125,13 +1156,26 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
-
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean }): Promise<QueryResult | QueryResult[]> {
+    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
     // This means connection.release will be called elsewhere
     if (options.connection) {
+      if (options.isManualCommit) {
+        await this.runQuery(options.connection, 'BEGIN', {});
+        this.connection = options.connection;
+      }
       return await this.runQuery(options.connection, q, options)
     } else {
       log.info('Acquiring new connection for: ', q)
+      log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+      // if it is a manual commit, keep the connection open
+      if (options.isManualCommit) {
+        return await this.runWhileKeepingConnection(async (connection) => {
+          log.debug('Are you hitting this?')
+          await this.runQuery(connection, 'BEGIN', {})
+          return await this.runQuery(connection, q, options)
+        })
+      }
       // the simple case where we manage the connection ourselves
       return await this.runWithConnection(async (connection) => {
         return await this.runQuery(connection, q, options)
@@ -1148,6 +1192,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     } finally {
       connection.release()
     }
+  }
+
+  private async runWhileKeepingConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
+    const connection = await this.conn.pool.connect()
+    this.connection = connection;
+    return await child(connection);
   }
 
   // this will run your SQL wrapped in a transaction, making sure to manage the connection pool

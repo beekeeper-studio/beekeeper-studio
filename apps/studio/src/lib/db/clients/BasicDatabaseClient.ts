@@ -535,6 +535,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
     options['statements'] = statements
+    log.debug('driverExecuteMultiple options', options)
     try {
       const result = await this.rawExecuteQuery(q, options) as RawResultType[]
       return result
