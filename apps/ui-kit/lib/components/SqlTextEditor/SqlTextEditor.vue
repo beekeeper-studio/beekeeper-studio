@@ -12,7 +12,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { TextEditor } from "../text-editor";
+import { TextEditor } from "../TextEditor";
 import { format, FormatOptions } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { Options } from "sql-query-identifier";

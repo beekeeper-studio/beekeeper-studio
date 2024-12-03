@@ -36,7 +36,7 @@ import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
 import { setKeybindings, applyConfig, Register } from "./vim";
-import { openMenu } from "../context-menu/menu";
+import { openMenu } from "../ContextMenu/menu";
 
 // Ref: https://stackoverflow.com/a/11752084/10012118
 const isMacLike = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);

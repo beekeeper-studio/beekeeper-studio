@@ -88,7 +88,7 @@ import {
   eachPaths,
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
-import { EditorMarker } from "@bks/ui-kit/components/text-editor";
+import type { EditorMarker } from "@bks/ui-kit/components/TextEditor";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
 import rawLog from "electron-log";
 import _ from "lodash";

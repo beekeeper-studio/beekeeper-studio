@@ -11,9 +11,9 @@ export default defineConfig({
       entry: {
         main: resolve(__dirname, 'lib/main.ts'),
         components: resolve(__dirname, 'lib/components/index.ts'),
-        'components/context-menu': resolve(__dirname, 'lib/components/context-menu/index.ts'),
-        'components/text-editor': resolve(__dirname, 'lib/components/text-editor/index.ts'),
-        'components/sql-text-editor': resolve(__dirname, 'lib/components/sql-text-editor/index.ts'),
+        'components/ContextMenu': resolve(__dirname, 'lib/components/ContextMenu/index.ts'),
+        'components/TextEditor': resolve(__dirname, 'lib/components/TextEditor/index.ts'),
+        'components/SqlTextEditor': resolve(__dirname, 'lib/components/SqlTextEditor/index.ts'),
         utils: resolve(__dirname, 'lib/utils/index.ts'),
       },
       formats: ['es']
