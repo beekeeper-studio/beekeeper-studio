@@ -56,7 +56,7 @@
     margin-bottom: 2rem;
     padding: 2rem;
     background-color: rgba($brand-success, .1);
-    border-radius: 50%;
+    border-radius: 9999px;
     &.error {
       color: $brand-danger;
       background-color: rgba($brand-danger, .1);
