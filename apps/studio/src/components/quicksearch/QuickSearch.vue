@@ -26,6 +26,40 @@
       >
         <li>No Results</li>
       </ul>
+      <ul
+        class="results"
+        v-if="!results.length && !searchTerm && historyResults.length"
+      >
+        <li
+          class="result-item"
+          v-for="(blob, idx) in historyResults"
+          :key="idx"
+          :class="{selected: idx === selectedItem}"
+          @click.prevent="handleHistoryClick($event, blob)"
+        >
+          <table-icon
+            v-if="blob.tabType === 'table' || blob.tabDetails?.tabType === 'table'"
+            :table="blob"
+          />
+          <i
+            class="material-icons item-icon query"
+            v-else-if="blob.tabType === 'table-properties' || blob.tabDetails?.tabType === 'table-properties'"
+          >construction</i>
+          <i
+            class="material-icons item-icon connection"
+            v-else-if="blob.tabType === 'connection' || blob.tabDetails?.tabType === 'connection'"
+          >power</i>
+          <i
+            class="material-icons item-icon database"
+            v-else-if="blob.tabType === 'database' || blob.tabDetails?.tabType === 'database'"
+          >storage</i>
+          <i
+            class="material-icons item-icon database"
+            v-else
+          >code</i>
+          <span v-html="highlightHistory(blob)" />
+        </li>
+      </ul>
       <div
         class="results empty"
         v-if="!results.length && !searchTerm"
@@ -153,6 +187,7 @@ export default Vue.extend({
     ...mapState(['usedConfig']),
     ...mapState('search', ['searchIndex']),
     ...mapGetters({ database: 'search/database'}),
+    ...mapState(["tables"]),
     elements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))
@@ -184,8 +219,6 @@ export default Vue.extend({
   methods: {
     async getTabHistory() {
       const results = await Vue.prototype.$util.send('appdb/tabhistory/get', {workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
-      console.log('look here nerd!')
-      console.log(results)
       this.historyResults = results 
     },
     highlight(blob) {
@@ -196,7 +229,18 @@ export default Vue.extend({
 
       return result
     },
+    highlightHistory(blob) {
+      console.log('look here nerd')
+      console.log(blob)
+      const dangerous = blob.title ?? blob.tabDetails?.title
+      let historyText = [escapeHtml(dangerous || 'unknown item')]
 
+      if (!blob.tabId) {
+        historyText.push('reopen')
+      }
+
+      return historyText.join(' - ')
+    },
     openSearch() {
       this.$nextTick(() => {
         this.$refs.searchBox.focus()
@@ -249,6 +293,48 @@ export default Vue.extend({
       }
       if (!persistSearch) this.closeSearch()
     },
+    async handleHistoryClick(_event: MouseEvent, result: any) {
+      // switch to tab
+      // reopen the tab
+      console.log('~~result~~')
+      console.log(result)
+      if (result.tabDetails) {
+        this.closeSearch()
+        this.$emit('click', result)
+        return
+      }
+
+      switch (result.tabType) {
+        case 'table':
+          this.$root.$emit(AppEvent.loadTable, {table: result})
+          break;
+          case 'query':
+            this.$root.$emit('favoriteClick', result)
+            break;
+        case 'table-properties': {
+          const newTable = this.tables.find(t => (
+            t.name === result.tableName &&
+            ((!result.schemaName && !t.schema) || (result.schemaName === t.schema))
+          ))
+          this.$root.$emit(AppEvent.openTableProperties, { table: newTable })
+          break;
+        }
+        default:
+          break;
+      }
+      // const tab = {
+      //   tabType: result.tabType,
+      //   title: result.title,
+      //   unsavedChanges: false,
+      //   unsavedQueryText: result.unsavedQueryText,
+      //   position: 99,
+      //   workspaceId: result.workspaceId,
+      //   connectionId: result.connectionId
+      // }
+      this.closeSearch()
+      await this.$util.send('appdb/tabhistory/reopenedtab', { historyId: result.id });
+      
+    },
     handleClick(event: MouseEvent, result: any) {
       if (event.ctrlKey) {
         this.submitAlt(result)
@@ -257,13 +343,22 @@ export default Vue.extend({
       }
     },
     enter() {
-      const result = this.results[this.selectedItem]
-      this.submit(result)
+      let result = this.results[this.selectedItem]
+      if (!this.results.length && !this.searchTerm && this.historyResults.length) {
+        result = this.historyResults[this.selectedItem]
+        this.handleHistoryClick(_, result) 
+      } else {
+        this.submit(result)
+      }
     },
     metaEnter() {
-      const result = this.results[this.selectedItem]
-      this.submitAlt(result)
-
+      let result = this.results[this.selectedItem]
+      if (!this.results.length && !this.searchTerm && this.historyResults.length) {
+        result = this.historyResults[this.selectedItem]
+        this.handleHistoryClick(_, result) 
+      } else {
+        this.submitAlt(result)
+      }
     },
     persistentSearchEnter(){
       const cursorPosition = this.$refs.searchBox.selectionStart

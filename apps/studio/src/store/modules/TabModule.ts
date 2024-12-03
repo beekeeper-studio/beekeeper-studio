@@ -154,15 +154,16 @@ export const TabModule: Module<State, RootState> = {
       }
       
     },
-    async setActive(context, tab: TransportOpenTab) {
+    async setActive(context, tab: TransportOpenTab, updateTabHistory = true) {
       const oldActive = context.state.active
       context.commit('setActive', tab)
       if (oldActive) {
         oldActive.active = false
       }
       tab.active = true
+
       await context.dispatch('save', [tab, oldActive].filter((x) => !!x))  
-      await Vue.prototype.$util.send('appdb/tabhistory/update', tab);
+      if (updateTabHistory) await Vue.prototype.$util.send('appdb/tabhistory/update', tab);
     }
 
   }
