@@ -187,7 +187,8 @@ export default Vue.extend({
     ...mapState(['usedConfig']),
     ...mapState('search', ['searchIndex']),
     ...mapGetters({ database: 'search/database'}),
-    ...mapState(["tables"]),
+    ...mapState(['tables']),
+    ...mapState('tabs', { 'tabs': 'tabs' }),
     elements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))
@@ -294,14 +295,10 @@ export default Vue.extend({
       if (!persistSearch) this.closeSearch()
     },
     async handleHistoryClick(_event: MouseEvent, result: any) {
-      // switch to tab
-      // reopen the tab
-      console.log('~~result~~')
-      console.log(result)
       if (result.tabDetails) {
+        const tab = this.tabs.find((t) => t.id === result.tabDetails.id)
         this.closeSearch()
-        this.$emit('click', result)
-        return
+        return await this.$store.dispatch('tabs/setActive', tab)
       }
 
       switch (result.tabType) {
@@ -322,18 +319,8 @@ export default Vue.extend({
         default:
           break;
       }
-      // const tab = {
-      //   tabType: result.tabType,
-      //   title: result.title,
-      //   unsavedChanges: false,
-      //   unsavedQueryText: result.unsavedQueryText,
-      //   position: 99,
-      //   workspaceId: result.workspaceId,
-      //   connectionId: result.connectionId
-      // }
       this.closeSearch()
-      await this.$util.send('appdb/tabhistory/reopenedtab', { historyId: result.id });
-      
+      return await this.$util.send('appdb/tabhistory/reopenedtab', { historyId: result.id });
     },
     handleClick(event: MouseEvent, result: any) {
       if (event.ctrlKey) {
