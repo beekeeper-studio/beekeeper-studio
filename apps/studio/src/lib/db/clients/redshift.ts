@@ -79,6 +79,7 @@ export class RedshiftClient extends PostgresClient {
       generated: null, // Redshift does not support generated columns in svv_columns
       array: null, // Redshift does not support arrays
       comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
     }));
   }
 

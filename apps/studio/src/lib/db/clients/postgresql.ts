@@ -2,15 +2,15 @@
 
 import { readFileSync } from 'fs';
 
-import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
+import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -23,17 +23,21 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicD
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import { IDbConnectionServer } from '../backendTypes';
-import { Signer } from "@aws-sdk/rds-signer";
-import { fromIni } from "@aws-sdk/credential-providers";
+import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
-
-const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
 
 const log = logRaw.scope('postgresql')
 const logger = () => log
 
 const knex = knexlib({ client: 'pg' })
+const escapeBinding = knex.client._escapeBinding;
+knex.client._escapeBinding = function(value: any, context: any) {
+  if (Buffer.isBuffer(value)) {
+    return `'\\x${value.toString('hex')}'`;
+  }
+  return escapeBinding.call(this, value, context);
+};
 
 const pgErrors = {
   CANCELED: '57014',
@@ -61,6 +65,15 @@ interface STQResults {
 
 }
 
+interface QueryResult {
+  pgResult: PgQueryResult
+  rows: any[]
+  columns: FieldDef[]
+  command: PgQueryResult['command']
+  rowCount: PgQueryResult['rowCount']
+  arrayMode: boolean
+}
+
 const postgresContext = {
   getExecutionContext(): ExecutionContext {
     return null;
@@ -71,12 +84,12 @@ const postgresContext = {
 };
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult> {
-  connectionBaseType = 'postgresql' as const;
-
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
   dataTypes: any;
+  transcoders = [GenericBinaryTranscoder];
+  interval: NodeJS.Timeout;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -125,8 +138,33 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       pool: new pg.Pool(dbConfig)
     };
 
-    //test connection
     const test = await this.conn.pool.connect()
+
+    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
+      this.interval = setInterval(async () => {
+        try {
+          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
+
+          const newPool = new pg.Pool({
+            ...dbConfig,
+            password: newPassword,
+          });
+
+          const test = await newPool.connect();
+          test.release();
+
+          if (this.conn?.pool) {
+            await this.conn.pool.end();
+          }
+          this.conn = { pool: newPool };
+
+          log.info('Token refreshed successfully and connection pool updated.');
+        } catch (err) {
+          log.error('Could not refresh token or update connection pool!', err);
+        }
+      }, globals.iamRefreshTime);
+    }
+
     test.release();
 
     this.conn.pool.on('acquire', (_client) => {
@@ -151,6 +189,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
     await super.disconnect();
     this.conn.pool.end();
   }
@@ -372,6 +413,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -662,11 +704,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.datname);
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex)
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
     await this.runWithTransaction(async (connection) => {
@@ -889,10 +927,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<TableResult> {
     const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params })
-    return {
-      result: result.rows,
-      fields: result.fields.map(f => f.name)
-    }
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
+    return { result: rows, fields }
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<string> {
@@ -1143,7 +1180,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
-    const fields = this.parseFields(data.fields, rowResults)
+    const fields = this.parseFields(data.columns, rowResults)
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
@@ -1262,31 +1299,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
-    let resolvedPw = null;
-    const redshiftOptions = server.config.redshiftOptions;
-
-    if (
-      server.config.client === "postgresql" &&
-      redshiftOptions?.iamAuthenticationEnabled
-    ) {
-      const nodeProviderChainCredentials = fromIni({
-        profile: redshiftOptions.awsProfile ?? "default",
-      });
-      const signer = new Signer({
-        credentials: nodeProviderChainCredentials,
-        region: redshiftOptions?.awsRegion,
-        hostname: server.config.host,
-        port: server.config.port || 5432,
-        username: server.config.user,
-      });
-
-      resolvedPw = await signer.getAuthToken();
-    }
-
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: resolvedPw || server.config.password || undefined,
+      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
@@ -1296,7 +1312,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     if (
       server.config.client === "postgresql" &&
-      redshiftOptions?.iamAuthenticationEnabled
+      server.config?.redshiftOptions
     ){
       server.config.ssl = true;
     }
@@ -1391,13 +1407,29 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
       log.info('RUNNING', query, options.params);
-      connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
+      connection.query(args, (err: Error, data: PgQueryResult | PgQueryArrayResult[]) => {
         if (err) return reject(err);
         let qr: QueryResult | QueryResult[];
         if (args.multiResult) {
-          qr = Array.isArray(data) ? data : [data];
+          const rows = Array.isArray(data) ? data : [data];
+          qr = rows.map((r) => ({
+            pgResult: r,
+            rows: r.rows,
+            columns: r.fields,
+            command: r.command,
+            rowCount: r.rowCount,
+            arrayMode: options.arrayMode,
+          }))
         } else {
-          qr = Array.isArray(data) ? data[0] : data;
+          const row = Array.isArray(data) ? data[0] : data;
+          qr = {
+            pgResult: row,
+            rows: row.rows,
+            columns: row.fields,
+            command: row.command,
+            rowCount: row.rowCount,
+            arrayMode: options.arrayMode,
+          };
         }
         resolve(qr);
       });
@@ -1528,12 +1560,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
-  // if a type is BYTEA, decodes BASE64 URL encoded to hex
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
       return JSON.parse(value)
-    } else if (column?.dataType === 'bytea' && value) {
-      return '\\x' + base64.decode(value, 'hex')
     }
     return value
   }
@@ -1553,6 +1582,22 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
+  parseQueryResultColumns(qr: QueryResult): BksField[] {
+    return qr.columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      if (column.dataTypeID === pg.types.builtins.BYTEA) {
+        bksType = 'BINARY'
+      }
+      return { name: column.name, bksType };
+    })
+  }
+
+  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type === 'bytea' ? 'BINARY' : 'UNKNOWN',
+    };
+  }
 }
 
 
@@ -1570,11 +1615,6 @@ pg.types.setTypeParser(pg.types.builtins.DATE, 'text', (val) => val); // date
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // timestamp
 pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
-
-/**
- * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
- */
-pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
 
 export function wrapIdentifier(value: string): string {
   if (value === '*') return value;
