@@ -27,7 +27,6 @@ export default Vue.extend({
   },
   computed: {
     extendedKeybindings() {
-      console.error("attrs keybindings", this.keybindings);
       return {
         "Shift-Ctrl-F": this.formatSql,
         "Shift-Cmd-F": this.formatSql,

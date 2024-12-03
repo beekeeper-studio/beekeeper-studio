@@ -1,9 +1,10 @@
 import { AppEvent } from "@/common/AppEvent"
-import { MenuProps, openMenu } from '@bks/ui-kit'
+import { MenuProps, openMenu } from '@bks/ui-kit/components/context-menu'
+import { TextEditor } from "@bks/ui-kit/components/text-editor"
+import { SqlTextEditor } from "@bks/ui-kit/components/sql-text-editor"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import TimeAgo from "javascript-time-ago"
-import { SqlTextEditor, TextEditor } from "@bks/ui-kit"
 import { PluginObject } from "vue"
 
 export const BeekeeperPlugin = {

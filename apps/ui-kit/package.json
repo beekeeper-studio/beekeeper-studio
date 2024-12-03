@@ -3,11 +3,29 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "dist/ui-kit.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/main.js",
+  "exports": {
+    ".": "./dist/main.js",
+    "./components": "./dist/components/components.js",
+    "./components/*": "./dist/components/*.js",
+    "./utils": "./dist/utils.js"
+  },
+  "types": "./dist/main.d.ts",
+  "typesVersions": {
+    "*": {
+      "dist/main.js": [
+        "dist/main.d.ts"
+      ],
+      "*": [
+        "dist/*.d.ts",
+        "dist/*/index.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "lib:dev": "vite build --watch",
+    "lib:dev": "vite build --watch --emptyOutDir",
+    "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
     "build": "vue-tsc vite build",
     "preview": "vite preview"
   },
@@ -26,7 +44,6 @@
     "@vitejs/plugin-vue2": "^2.3.1",
     "typescript": "~5.6.2",
     "vite": "^5.3.6",
-    "vite-plugin-dts": "^4.3.0",
     "vue-tsc": "^2.1.10"
   }
 }

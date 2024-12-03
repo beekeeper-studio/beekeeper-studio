@@ -3,6 +3,7 @@
   "vueCompilerOptions": {
     "target": 2.7
   },
+  "include": ["lib/**/*"],
   "compilerOptions": {
     "target": "es2018",
     "module": "esnext",
