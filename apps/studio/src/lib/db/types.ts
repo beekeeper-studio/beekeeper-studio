@@ -63,6 +63,7 @@ export const AzureAuthTypes = [
 ];
 
 export interface RedshiftOptions {
+  awsProfile?: string
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
