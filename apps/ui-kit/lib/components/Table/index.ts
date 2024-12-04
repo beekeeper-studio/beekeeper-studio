@@ -11,3 +11,4 @@ export * from "./mixins/tabulator";
 export { default as Mutators2 } from "./mixins/tabulator";
 export { Mutators as JsonFriendlyMutators } from "./mixins/jsonFriendlyMutators";
 export * from "./tabulator";
+export * from "./menu";

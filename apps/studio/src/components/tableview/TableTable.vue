@@ -320,7 +320,7 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@bks/ui-kit/components/Table';
 import { tabulatorForTableData } from "@bks/ui-kit/components/Table";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'

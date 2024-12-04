@@ -24,7 +24,7 @@ import { buildNullValue } from '@bks/ui-kit/components/Table'
 import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { escapeHtml } from '@bks/ui-kit/components/Table'
+import { Mutators, escapeHtml } from '@bks/ui-kit/components/Table'
 export default {
   components: {
 
