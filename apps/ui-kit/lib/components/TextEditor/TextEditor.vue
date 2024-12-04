@@ -37,9 +37,8 @@ import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
 import { setKeybindings, applyConfig, Register } from "./vim";
 import { openMenu } from "../ContextMenu/menu";
-
-// Ref: https://stackoverflow.com/a/11752084/10012118
-const isMacLike = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
+import { writeClipboard, readClipboard } from "../../utils/clipboard";
+import { isMacLike } from "../../utils/platform"
 
 const hintMap = {
   sql: CodeMirror.hint.sql,
@@ -401,7 +400,7 @@ export default {
           try {
             codeMirrorVimInstance.defineRegister(
               "*",
-              new Register(this.$native.clipboard)
+              new Register(navigator)
             );
           } catch (e) {
             // nothing
@@ -519,8 +518,7 @@ export default {
             handler: () => {
               const selection = this.editor.getSelection();
               this.editor.replaceSelection("");
-              // FIXME may need permission
-              navigator.clipboard.writeText(selection);
+              writeClipboard(selection);
             },
             class: selectionDepClass,
             shortcut: this.ctrlOrCmd("x"),
@@ -530,8 +528,7 @@ export default {
             name: "Copy",
             handler: async () => {
               const selection = this.editor.getSelection();
-              // FIXME may need permission
-              await navigator.clipboard.writeText(selection);
+              await writeClipboard(selection);
             },
             class: selectionDepClass,
             shortcut: this.ctrlOrCmd("c"),
@@ -539,8 +536,7 @@ export default {
           {
             name: "Paste",
             handler: async () => {
-              // FIXME may need permission
-              const clipboard = await navigator.clipboard.readText();
+              const clipboard = await readClipboard();
               if (this.editor.getSelection()) {
                 this.editor.replaceSelection(clipboard, "around");
               } else {

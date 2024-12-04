@@ -7,7 +7,7 @@
 <script>
 import { Tabulator, TabulatorFull, GroupRowsModule } from 'tabulator-tables'
 import pluralize from 'pluralize'
-import { escapeHtml } from '@shared/lib/tabulator'
+import { escapeHtml } from '@bks/ui-kit/components/Table'
 
 export default {
 

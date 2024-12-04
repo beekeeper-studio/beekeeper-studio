@@ -22,7 +22,7 @@
 import { mapGetters, mapState } from 'vuex'
 import { format } from 'sql-formatter'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
-import Mutators from '../../mixins/data_mutators'
+import { Mutators } from '@bks/ui-kit/components/Table'
 import { AppEvent } from '@/common/AppEvent'
 import { FormatterDialect } from '@shared/lib/dialects/models'
 

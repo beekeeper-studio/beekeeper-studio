@@ -1,4 +1,4 @@
-import { escapeHtml } from '@shared/lib/tabulator'
+import { escapeHtml } from '@bks/ui-kit/components/Table'
 import Noty from 'noty'
 
 const defaults = {

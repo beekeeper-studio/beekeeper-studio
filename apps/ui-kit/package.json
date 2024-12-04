@@ -8,7 +8,8 @@
     ".": "./dist/main.js",
     "./components": "./dist/components/components.js",
     "./components/*": "./dist/components/*.js",
-    "./utils": "./dist/utils.js"
+    "./utils": "./dist/utils.js",
+    "./utils/*": "./dist/utils/*.js"
   },
   "types": "./dist/main.d.ts",
   "typesVersions": {
@@ -32,8 +33,10 @@
   "dependencies": {
     "codemirror": "^5.63.1",
     "lodash": "^4.17.21",
+    "postgres-interval": "^4.0.0",
     "sql-query-identifier": "^2.8.0",
     "tabulator-tables": "beekeeper-studio/tabulator#2642a6210fad1fb859838b6745efb061c1b35918",
+    "tinyduration": "^3.2.4",
     "vue": "^2.7.16",
     "vue2-teleport": "^1.1.4"
   },

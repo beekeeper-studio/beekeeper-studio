@@ -38,7 +38,6 @@
 </template>
 <script>
 import {Tabulator, TabulatorFull} from 'tabulator-tables'
-import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
 import { mapGetters, mapState } from 'vuex'
@@ -47,7 +46,6 @@ export default {
   components: {
     StatusBar,
   },
-  mixins: [data_mutators],
   props: ["table", "tabId", "active", "properties"],
   data() {
     return {

@@ -20,11 +20,11 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
-import Mutators, { emptyResult, buildNullValue } from '../../mixins/data_mutators'
+import { buildNullValue } from '@bks/ui-kit/components/Table'
 import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { escapeHtml } from '@shared/lib/tabulator'
+import { escapeHtml } from '@bks/ui-kit/components/Table'
 export default {
   components: {
 

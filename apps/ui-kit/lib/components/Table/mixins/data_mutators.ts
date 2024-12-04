@@ -1,11 +1,8 @@
 import _ from 'lodash'
-import { Mutators } from '../lib/data/tools'
-import helpers, { escapeHtml } from '@shared/lib/tabulator'
+import { Mutators } from './jsonFriendlyMutators'
+import helpers, { escapeHtml } from './tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
-import rawLog from 'electron-log'
-
-const log = rawLog.scope('mixins/data_mutators');
 
 export function buildNullValue(text: string) {
   return `<span class="null-value">(${escapeHtml(text)})</span>`

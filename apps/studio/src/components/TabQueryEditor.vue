@@ -142,8 +142,10 @@
         :active="active"
         :table-height="tableHeight"
         :result="result"
+        :tableName="result.tableName"
         :query="query"
         :tab="tab"
+        @tabulator-built="tabulator = $event"
       />
       <div
         class="message"
@@ -333,6 +335,9 @@
   import { blankFavoriteQuery } from '@/common/transport'
   import { FormatterDialect, dialectFor, QueryIdentifierDialect } from "@shared/lib/dialects/models";
   import { queryMagic } from "@/lib/editor/CodeMirrorPlugins";
+  import { markdownTable } from 'markdown-table'
+  import Papa from 'papaparse'
+  import dateFormat from 'dateformat'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -389,6 +394,7 @@
          */
         focusElement: 'none',
         focusingElement: 'none',
+        tabulator: null,
       }
     },
     computed: {
@@ -801,20 +807,73 @@
         }
       },
       download(format) {
-        this.$refs.table.download(format)
+        let formatter = format !== 'md' ? format : (rows, options, setFileContents) => {
+          const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value))
+          setFileContents(markdownTable(values), 'text/markdown')
+        };
+        // Fix Issue #1493 Lost column names in json query download
+        // by overriding the tabulator-generated json with ...what cipboard() does, below:
+        formatter = format !== 'json' ? formatter : (rows, options, setFileContents) => {
+          setFileContents(
+            JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
+           )
+        };
+        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
+        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
+
+        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
+        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
+        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
       },
-      clipboard() {
-        this.$refs.table.clipboard()
+      dataToJson(rawData, firstObjectOnly) {
+        const rows = _.isArray(rawData) ? rawData : [rawData]
+        const result = rows.map((data) => {
+          return this.$bks.cleanData2(data, this.result.fields)
+        })
+        return firstObjectOnly ? result[0] : result
+      },
+      clipboard(format = null) {
+        // this.tabulator.copyToClipboard("all")
+
+        const allRows = this.tabulator.getData()
+        if (allRows.length == 0) {
+          return
+        }
+        const columnTitles = {}
+
+        const result = this.dataToJson(allRows, false)
+
+        if (format === 'md') {
+          const mdContent = [
+            Object.keys(result[0]),
+            ...result
+                .map((row) =>
+                  Object.values(row).map(v =>
+                    (typeof v === 'object') ? JSON.stringify(v) : v
+                  )
+                )
+          ];
+          this.$native.clipboard.writeText(markdownTable(mdContent))
+        } else if (format === 'json') {
+          this.$native.clipboard.writeText(JSON.stringify(result))
+        } else {
+          this.$native.clipboard.writeText(
+            Papa.unparse(
+              result,
+              { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
+            )
+          )
+        }
       },
       clipboardJson() {
         // eslint-disable-next-line
         // @ts-ignore
-        const data = this.$refs.table.clipboard('json')
+        const data = this.clipboard('json')
       },
       clipboardMarkdown() {
         // eslint-disable-next-line
         // @ts-ignore
-        const data = this.$refs.table.clipboard('md')
+        const data = this.clipboard('md')
       },
       selectEditor() {
         this.focusElement = 'text-editor'

@@ -31,7 +31,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import DatePicker from 'vue2-datepicker'
-import helpers from '@shared/lib/tabulator'
+import { Mutators2 as helpers } from '@bks/ui-kit/components/Table'
 import NullableInputEditor from './NullableInputEditor.vue'
 export default Vue.extend({
   props: ['cell', 'params'],

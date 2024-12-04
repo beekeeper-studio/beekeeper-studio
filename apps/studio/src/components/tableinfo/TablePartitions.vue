@@ -88,7 +88,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import DataMutators from '../../mixins/data_mutators'
+import { Mutators as DataMutators } from '@bks/ui-kit/components/Table'
 import { TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
 import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'

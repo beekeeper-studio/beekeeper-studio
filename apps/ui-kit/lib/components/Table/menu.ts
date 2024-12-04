@@ -6,13 +6,13 @@ import {
   Tabulator,
 } from "tabulator-tables";
 import { markdownTable } from "markdown-table";
-import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData, rowHeaderField } from "@/common/utils";
-import { escapeHtml } from "@shared/lib/tabulator";
+import { stringifyRangeData, rowHeaderField } from "./tabulator";
+import { escapeHtml } from "./mixins/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
 import Vue from "vue";
+import { readClipboard, writeClipboard } from "../../utils/clipboard";
 
 type ColumnMenuItem = MenuObject<ColumnComponent>;
 type RangeData = Record<string, any>[];
@@ -167,6 +167,7 @@ export async function copyRanges(options: {
       break;
     }
     case "sql":
+      // FIXME doesnt work here
       text = await Vue.prototype.$util.send("conn/getInsertQuery", {
         tableInsert: {
           table: options.table,
@@ -176,7 +177,7 @@ export async function copyRanges(options: {
       });
       break;
   }
-  ElectronPlugin.clipboard.writeText(text);
+  writeClipboard(text);
   extractedData.sources.forEach((range) => {
     (range.getElement() as HTMLElement).classList.add("copied");
   });
@@ -244,8 +245,8 @@ function countCellsFromData(data: RangeData) {
   return data.reduce((acc, row) => acc + Object.keys(row).length, 0);
 }
 
-export function pasteRange(range: RangeComponent) {
-  const text = ElectronPlugin.clipboard.readText();
+export async function pasteRange(range: RangeComponent) {
+  const text = await readClipboard();
   if (!text) return;
 
   const parsedText = Papa.parse(text, {

@@ -1,6 +1,8 @@
 import _ from 'lodash'
-import { Dialect } from '@shared/lib/dialects/models'
-import { friendlyUint8Array, uint8ArrayToHex } from '@/common/utils';
+// import { Dialect } from '@shared/lib/dialects/models'
+// FIXME cant import Dialect type from here
+type Dialect = any
+import { friendlyUint8Array, uint8ArrayToHex } from '../../../utils/binary';
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
 function dec28bits(num: any): string {

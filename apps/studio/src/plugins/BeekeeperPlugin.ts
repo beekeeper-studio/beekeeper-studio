@@ -87,7 +87,21 @@ export const BeekeeperPlugin = {
       }
     })
     return fixed
-  }
+  },
+
+  cleanData2(data: any, columns: {name: string, id: string}[] = []) {
+    const fixed = {}
+    Object.keys(data).forEach((key) => {
+      const v = data[key]
+      // internal table fields used just for us
+      if (!isBksInternalColumn(key)) {
+        const column = columns.find((c) => c.id === key)
+        const nuKey = column ? column.id : key
+        fixed[nuKey] = v
+      }
+    })
+    return fixed
+  },
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin

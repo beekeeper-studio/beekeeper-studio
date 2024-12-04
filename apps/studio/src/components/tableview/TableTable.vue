@@ -299,7 +299,7 @@
 import Vue from 'vue'
 import { ColumnComponent, CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
-import DataMutators from '../../mixins/data_mutators'
+import { Mutators as DataMutators, escapeHtml } from '@bks/ui-kit/components/Table'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
@@ -320,9 +320,8 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
-import { tabulatorForTableData } from "@/common/tabulator";
+import { tabulatorForTableData } from "@bks/ui-kit/components/Table";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'

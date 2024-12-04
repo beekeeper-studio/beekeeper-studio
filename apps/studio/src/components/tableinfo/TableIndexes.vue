@@ -108,7 +108,7 @@
 </template>
 <script lang="ts">
 import { Tabulator, TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
-import data_mutators from '../../mixins/data_mutators'
+import { Mutators as data_mutators } from '@bks/ui-kit/components/Table'
 import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import StatusBar from '../common/StatusBar.vue'
@@ -124,7 +124,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
 import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
-import { escapeHtml } from '@shared/lib/tabulator'
+import { escapeHtml } from '@bks/ui-kit/components/Table'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 
 interface State {

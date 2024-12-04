@@ -2,6 +2,7 @@ import { monthAgo } from '@/common/date';
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import rawLog from 'electron-log'
 import { CellComponent } from 'tabulator-tables';
+import { Column } from "@/components/editor/Table.vue";
 
 const log = rawLog.scope('fk_click');
 
@@ -10,7 +11,7 @@ export const FkLinkMixin = {
 
     // TODO: merge in community, get keyData changes, integrate here
     // check out TableTable first
-    fkColumn(column, keyDatas) {
+    fkColumn(column, keyDatas): Column {
       const keyWidth = 40
       const icon = () => "<i class='material-icons fk-link'>launch</i>"
       const tooltip = () => {
@@ -47,7 +48,11 @@ export const FkLinkMixin = {
         tooltip
       }
       column.cssClass = 'foreign-key'
-      return keyResult
+      return {
+        field: keyResult.field,
+        title: keyResult,
+        tabulatorColumnDef: keyResult,
+      } as Column
     },
 
     async fkClick(rawKeyData, cell: CellComponent) {
@@ -92,7 +97,7 @@ export const FkLinkMixin = {
 
       if (!columnName) {
         // just assume it's the primary key
-        columnName = await this.connection.getPrimaryKey(tableName, schemaName)
+        columnName = await this.$store.state.connection.getPrimaryKey(tableName, schemaName)
       }
 
       const filters = [];

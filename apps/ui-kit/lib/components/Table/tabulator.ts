@@ -1,17 +1,15 @@
-// @ts-nocheck tabulator is not fully typed
-
 import {
   Options as TabulatorOptions,
-  RangeComponent,
   TabulatorFull,
 } from "tabulator-tables";
 import {
   copyActionsMenu,
   resizeAllColumnsToFitContent,
   resizeAllColumnsToFixedWidth,
-} from "@/lib/menu/tableMenu";
-import { rowHeaderField } from "@/common/utils";
+} from "./menu";
 import _ from "lodash";
+import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
+import { KeyListenerTabulatorModule } from './plugins/KeyListenerTabulatorModule'
 
 interface Options extends TabulatorOptions {
   table: string;
@@ -44,6 +42,7 @@ export function tabulatorForTableData(
       resizable: false,
       frozen: true,
       headerSort: false,
+      // @ts-expect-error not fully typed
       editor: false,
       htmlOutput: false,
       print: false,
@@ -74,3 +73,28 @@ export function tabulatorForTableData(
   const mergedOptions = _.merge(defaultOptions, tabulatorOptions);
   return new TabulatorFull(el, mergedOptions);
 }
+
+export function stringifyRangeData(rangeData: Record<string, any>[]) {
+  const transformedRangeData:Record<string, any>[]  = [];
+
+  for (let i = 0; i < rangeData.length; i++) {
+    const keys = Object.keys(rangeData[i]);
+
+    transformedRangeData[i] = {};
+
+    for (const key of keys) {
+      const value = rangeData[i][key];
+      transformedRangeData[i][key] =
+        value && typeof value === "object" ? JSON.stringify(value) : value;
+    }
+  }
+
+  return transformedRangeData;
+}
+
+export const rowHeaderField = '--row-header--bks';
+
+TabulatorFull.defaultOptions.layout = "fitDataFill";
+TabulatorFull.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
+TabulatorFull.defaultOptions.headerSortClickElement = 'icon';
+TabulatorFull.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule]);

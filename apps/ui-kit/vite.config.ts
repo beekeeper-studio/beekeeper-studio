@@ -14,7 +14,9 @@ export default defineConfig({
         'components/ContextMenu': resolve(__dirname, 'lib/components/ContextMenu/index.ts'),
         'components/TextEditor': resolve(__dirname, 'lib/components/TextEditor/index.ts'),
         'components/SqlTextEditor': resolve(__dirname, 'lib/components/SqlTextEditor/index.ts'),
+        'components/Table': resolve(__dirname, 'lib/components/Table/index.ts'),
         utils: resolve(__dirname, 'lib/utils/index.ts'),
+        'utils/binary': resolve(__dirname, 'lib/utils/binary.ts'),
       },
       formats: ['es']
     },

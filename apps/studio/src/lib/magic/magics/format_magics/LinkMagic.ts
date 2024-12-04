@@ -1,4 +1,4 @@
-import { escapeHtml } from "@shared/lib/tabulator"
+import { escapeHtml } from "@bks/ui-kit/components/Table"
 import { CellComponent } from "tabulator-tables"
 import { Magic } from "../../Magic"
 import { MagicColumn } from "../../MagicColumn"
