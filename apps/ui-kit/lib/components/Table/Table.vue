@@ -67,6 +67,12 @@ export default Vue.extend({
     height: String,
     /** The database dialect. */
     dialect: String as PropType<Dialect>,
+    /** The offset for the row headers. Determines the starting number displayed
+    on the left side of rows.  */
+    rowHeaderOffset: {
+      type: Number,
+      default: 0,
+    },
 
     /** Customize the tabulator options. See https://tabulator.info/docs/6.3/options#table */
     tabulatorOptions: {
@@ -225,12 +231,14 @@ export default Vue.extend({
         this.tabulator.destroy();
         this.tabulator = null;
       }
+      const options = {
+        table: this.table,
+        schema: this.schema,
+        rowHeaderOffset: this.rowHeaderOffsetGetter,
+      }
       const defaultOptions: TabulatorOptions = {
         persistenceID: this.tableId,
         data: this.data,
-        downloadConfig: {
-          columnHeaders: true,
-        },
         height: this.height,
       };
       if (this.tableColumns.length === 0) {
@@ -242,11 +250,11 @@ export default Vue.extend({
         defaultOptions,
         this.tabulatorOptions
       );
-      this.tabulator = tabulatorForTableData(this.$refs.table, {
-        table: this.table,
-        schema: this.schema,
-        ...tabulatorOptions,
-      });
+      this.tabulator = tabulatorForTableData(
+        this.$refs.table,
+        options,
+        tabulatorOptions
+      );
       this.$refs.table.addEventListener("keydown", this.keydown);
       this.tabulator.on("tableDestroyed", () => {
         this.$refs.table.removeEventListener("keydown", this.keydown);
@@ -346,6 +354,9 @@ export default Vue.extend({
       } catch {
         return 0;
       }
+    },
+    rowHeaderOffsetGetter() {
+      return this.rowHeaderOffset;
     },
   },
   mounted() {

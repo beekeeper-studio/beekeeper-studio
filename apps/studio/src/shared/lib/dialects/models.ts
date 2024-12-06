@@ -106,6 +106,8 @@ export interface DialectData {
   unwrapIdentifier: (s: string) => string
   textEditorMode: CodeMirror.EditorConfiguration['mode']
   defaultSchema?: string
+  /** True if the dialect supports an OFFSET clause. Not all
+   * dialects support OFFSET e.g. cassandra. */
   usesOffsetPagination: boolean
   requireDataset?: boolean,
   disabledFeatures?: {

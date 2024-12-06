@@ -11,17 +11,19 @@ import _ from "lodash";
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from './plugins/KeyListenerTabulatorModule'
 
-interface Options extends Partial<TabulatorOptions> {
+interface Options {
   table: string;
   schema?: string;
+  rowHeaderOffset?: number | (() => number);
 }
 
 export function tabulatorForTableData(
   el: string | HTMLElement,
-  options: Options
+  options: Options,
+  tabulatorOptions: Partial<TabulatorOptions>
 ): TabulatorFull {
-  const { table, schema, ...tabulatorOptions } = options;
-  const defaultOptions: Options = {
+  const { table, schema, rowHeaderOffset = 0 } = options;
+  const defaultOptions: TabulatorOptions = {
     persistence: {
       columns: ["width", "visible"],
     },
@@ -37,12 +39,14 @@ export function tabulatorForTableData(
     movableColumns: true,
     height: "100%",
     editTriggerEvent: "dblclick",
+    downloadConfig: {
+      columnHeaders: true,
+    },
     rowHeader: {
       field: rowHeaderField,
       resizable: false,
       frozen: true,
       headerSort: false,
-      // @ts-expect-error not fully typed
       editor: false,
       htmlOutput: false,
       print: false,
@@ -51,8 +55,21 @@ export function tabulatorForTableData(
       minWidth: 38,
       width: 38,
       hozAlign: "center",
-      formatter: "rownum",
-      formatterParams: { relativeToPage: true },
+      // @ts-expect-error not fully typed
+      formatter(cell) {
+        const content = document.createElement("span");
+        const row = cell.getRow();
+
+        row.watchPosition((position: number) => {
+          let offset = rowHeaderOffset as number;
+          if (typeof rowHeaderOffset === "function") {
+            offset = rowHeaderOffset();
+          }
+          content.innerText = (position + offset).toString();
+        });
+
+        return content;
+      },
       contextMenu: (_e, cell) => {
         return copyActionsMenu({ ranges: cell.getRanges(), table, schema });
       },

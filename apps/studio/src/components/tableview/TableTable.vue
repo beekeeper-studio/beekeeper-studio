@@ -36,6 +36,7 @@
           :columns="tableColumns"
           :dialect="dialect"
           :tabulator-options="tabulatorOptions"
+          :row-header-offset="rowHeaderOffset"
           @tabulator-built="handleTabulatorBuilt"
         />
         <detail-view-sidebar
@@ -106,7 +107,7 @@
           >navigate_before</i></a>
           <input
             type="number"
-            v-model="page"
+            v-model="pageInput"
           >
           <a
             @click="page = page + 1"
@@ -428,6 +429,14 @@ export default Vue.extend({
         return this.rawPage
       }
     },
+    pageInput: {
+      set: _.debounce(function (nu) {
+        this.page = nu
+      }, 500),
+      get() {
+        return this.page
+      }
+    },
     error() {
       return this.saveError ? this.saveError : this.queryError
     },
@@ -553,11 +562,6 @@ export default Vue.extend({
         sortMode: 'remote',
         filterMode: 'remote',
         dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-        pagination: true,
-        paginationMode: 'remote',
-        paginationSize: this.limit,
-        paginationElement: this.$refs.paginationArea,
-        paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: this.initialFilters ?? [{}],
 
@@ -571,6 +575,9 @@ export default Vue.extend({
           scrollPageDown: false
         },
       }
+    },
+    rowHeaderOffset() {
+      return (this.page - 1) * this.limit
     },
     tableKeys() {
       const result = {}
@@ -804,8 +811,11 @@ export default Vue.extend({
   },
 
   watch: {
-    filters() {
-      this.tabulator?.setData()
+    async filters() {
+      this.page = 1
+      this.paginationStates = [null]
+      await this.$nextTick()
+      this.tabulator?.replaceData()
     },
     allColumnsSelected() {
       this.resetPendingChanges()
@@ -815,9 +825,9 @@ export default Vue.extend({
         this.initialize()
       }
     },
-    page: _.debounce(function () {
-      this.tabulator.setPage(this.page || 1)
-    }, 500),
+    page() {
+      this.tabulator.replaceData()
+    },
     active() {
       this.updateSplit()
 
@@ -1010,7 +1020,7 @@ export default Vue.extend({
 
       // FIXME nope. dont call this.tabulator like this. Nuh-uh. No thank you. you're welcome.
       // Steps to remove tabulator.replaceData():
-      // 1. Page state should be in this component and not dependent on tabulator
+      // 1. Page state should be in this component and not dependent on tabulator - DONE
       // 2. Sorting too
       // 3. Size too
       // 4. Pretty much all stuff inside dataFetch should be states that are not dependent on tabulator
@@ -1535,18 +1545,12 @@ export default Vue.extend({
       this.trigger(AppEvent.upgradeModal)
     },
     openQueryTab() {
-      const page = this.tabulator.getPage();
       const orderBy = [
         _.pick(this.tabulator.getSorters()[0], ["field", "dir"]),
       ];
       const limit = this.tabulator.getPageSize() ?? this.limit;
       const offset = (this.tabulator.getPage() - 1) * limit;
       const selects = ["*"];
-
-      // like if you change a filter
-      if (page && page !== this.page) {
-        this.page = page;
-      }
 
       this.connection.selectTopSql(
         this.table.name,
@@ -1581,10 +1585,7 @@ export default Vue.extend({
         // We'll go back here when it's not blocked
         this.shouldFetchData = true
         return new Promise((resolve) => {
-          resolve({
-            last_page: 1,
-            data: [],
-          });
+          resolve([]);
         })
       }
       // this conforms to the Tabulator API
@@ -1605,16 +1606,7 @@ export default Vue.extend({
         limit = params.size
       }
 
-      // if (usesOffsetPagination) then use pages otherwise hit the pageState array
-      if (params.page) {
-        offset = usesOffsetPagination ? (params.page - 1) * limit : this.paginationStates[params.page - 1];
-      }
-
-      // like if you change a filter
-      if (params.page && params.page !== this.page) {
-        this.page = params.page
-        this.paginationStates = [null]
-      }
+      offset = usesOffsetPagination ? (this.page - 1) * limit : this.paginationStates[this.page - 1];
 
       log.info("filters", filters)
 
@@ -1676,10 +1668,7 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
-            resolve({
-              last_page: 1,
-              data
-            });
+            resolve(data);
           } catch (error) {
             console.error("data fetch error", error)
             this.queryError = {
@@ -1716,9 +1705,7 @@ export default Vue.extend({
       if (!this.tabulator) return;
 
       log.debug('refreshing table')
-      const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
-      this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
     async toggleOpenDetailView(open?: boolean) {

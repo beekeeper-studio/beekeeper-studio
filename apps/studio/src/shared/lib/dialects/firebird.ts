@@ -42,8 +42,7 @@ export const FirebirdData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
   wrapIdentifier,
-  // NOTE I HAVE NO IDEA IF THIS IS RIGHT
-  usesOffsetPagination: false,
+  usesOffsetPagination: true,
   editorFriendlyIdentifier: friendlyNormalizedIdentifier,
   escapeString: (s) => escape(s),
   wrapLiteral: escape,
