@@ -8,6 +8,6 @@ export interface Column {
   dataType?: string;
   /** The CSS class to apply to the column. */
   cssClass?: string;
-  tabulatorColumnDef?: ColumnDefinition | ((def :ColumnDefinition) => ColumnDefinition)
+  tabulatorColumnDefinition?: Partial<ColumnDefinition> | ((def :ColumnDefinition) => ColumnDefinition)
 }
 

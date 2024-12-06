@@ -11,7 +11,7 @@ import _ from "lodash";
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from './plugins/KeyListenerTabulatorModule'
 
-interface Options extends TabulatorOptions {
+interface Options extends Partial<TabulatorOptions> {
   table: string;
   schema?: string;
 }

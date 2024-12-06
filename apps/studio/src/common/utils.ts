@@ -191,7 +191,7 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
   return transformedRangeData;
 }
 
-export const rowHeaderField = '--row-header--bks';
+import { rowHeaderField } from '@bks/ui-kit/components/Table';
 
 export function isBksInternalColumn(field: string) {
   return field.endsWith('--bks')

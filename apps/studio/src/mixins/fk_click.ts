@@ -51,7 +51,7 @@ export const FkLinkMixin = {
       return {
         field: keyResult.field,
         title: keyResult,
-        tabulatorColumnDef: keyResult,
+        tabulatorColumnDefinition: keyResult,
       } as Column
     },
 

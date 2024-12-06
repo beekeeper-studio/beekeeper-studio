@@ -68,30 +68,23 @@ export default Vue.extend({
     /** The database dialect. */
     dialect: String as PropType<Dialect>,
 
-    bigTableColumnWidth: {
-      type: Number,
-      default: constants.bigTableColumnWidth,
-    },
-    maxColumnWidth: {
-      type: Number,
-      default: constants.maxColumnWidth,
-    },
-
     /** Customize the tabulator options. See https://tabulator.info/docs/6.3/options#table */
     tabulatorOptions: {
-      type: Object as PropType<TabulatorOptions>,
+      type: Object as PropType<Partial<TabulatorOptions>>,
       default: () => ({}),
     },
   },
   data() {
     return {
       tabulator: null as TabulatorFull | null,
+      isBuilt: false,
+      pendingTasks: [],
     };
   },
   computed: {
     tableColumns() {
       const columnWidth =
-        this.columns.length > 30 ? this.bigTableColumnWidth : undefined;
+        this.columns.length > 30 ? constants.bigTableColumnWidth : undefined;
 
       const cellMenu = (_e, cell) => {
         return copyActionsMenu({
@@ -129,9 +122,12 @@ export default Vue.extend({
           titleHtmlOutput: escapeHtml(column.title),
           dataType: column.dataType,
           width: columnWidth,
+          mutatorData: this.resolveTabulatorMutator(column.dataType, this.dialect),
           mutator: this.resolveTabulatorMutator(column.dataType, this.dialect),
           formatter: this.cellFormatter,
-          maxInitialWidth: this.maxColumnWidth,
+          minWidth: constants.minColumnWidth,
+          maxWidth: constants.maxColumnWidth,
+          maxInitialWidth: constants.maxInitialColumnWidth,
           tooltip: this.cellTooltip,
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
@@ -148,9 +144,9 @@ export default Vue.extend({
         }
 
         const customDef =
-          typeof column.tabulatorColumnDef === "function"
-            ? column.tabulatorColumnDef(result)
-            : column.tabulatorColumnDef;
+          typeof column.tabulatorColumnDefintion === "function"
+            ? column.tabulatorColumnDefinition(result)
+            : column.tabulatorColumnDefinition;
 
         results.push({ ...result, ...customDef });
 
@@ -161,6 +157,12 @@ export default Vue.extend({
     },
   },
   watch: {
+    tableColumns() {
+      this.setColumns(this.tableColumns);
+    },
+    data() {
+      this.setData(this.data);
+    },
     hasFocus() {
       if (this.hasFocus) {
         this.triggerFocus();
@@ -184,6 +186,19 @@ export default Vue.extend({
     },
   },
   methods: {
+    whenTableIsBuilt(task: () => void) {
+      if (this.isBuilt) {
+        task();
+      } else {
+        this.pendingTasks.push(task);
+      }
+    },
+    setData(data: any) {
+      this.tabulator.setData(data);
+    },
+    setColumns(columns: ColumnDefinition[]) {
+      this.tabulator.setColumns(columns);
+    },
     blockRedraw() {
       this.tabulator?.blockRedraw();
     },
@@ -203,7 +218,9 @@ export default Vue.extend({
     copySelection() {
       copyRanges({ ranges: this.tabulator.getRanges(), type: "plain" });
     },
-    initialize() {
+    async initialize() {
+      this.isBuilt = false
+      await this.$nextTick();
       if (this.tabulator) {
         this.tabulator.destroy();
         this.tabulator = null;
@@ -211,12 +228,16 @@ export default Vue.extend({
       const defaultOptions: TabulatorOptions = {
         persistenceID: this.tableId,
         data: this.data,
-        columns: this.tableColumns,
         downloadConfig: {
           columnHeaders: true,
         },
         height: this.height,
       };
+      if (this.tableColumns.length === 0) {
+        defaultOptions.autoColumns = true;
+      } else {
+        defaultOptions.columns = this.tableColumns;
+      }
       const tabulatorOptions: TabulatorOptions = _.merge(
         defaultOptions,
         this.tabulatorOptions
@@ -231,6 +252,8 @@ export default Vue.extend({
         this.$refs.table.removeEventListener("keydown", this.keydown);
       });
       this.tabulator.on("tableBuilt", () => {
+        this.isBuilt = true
+        this.pendingTasks.forEach((task) => task())
         this.$emit("tabulator-built", this.tabulator);
       });
     },

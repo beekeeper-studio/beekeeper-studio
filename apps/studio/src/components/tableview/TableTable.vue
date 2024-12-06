@@ -29,9 +29,14 @@
         class="table-view-wrapper"
         ref="tableViewWrapper"
       >
-        <div
-          ref="table"
-          class="spreadsheet-table"
+        <bks-table
+          :table="table.name"
+          :schema="table.schema"
+          :table-id="tableId"
+          :columns="tableColumns"
+          :dialect="dialect"
+          :tabulator-options="tabulatorOptions"
+          @tabulator-built="handleTabulatorBuilt"
         />
         <detail-view-sidebar
           :title="detailViewTitle"
@@ -297,9 +302,9 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import { ColumnComponent, CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
+import { type TabulatorFull, ColumnComponent, CellComponent, RangeComponent, Options, ColumnDefinition } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
-import { Mutators as DataMutators, escapeHtml } from '@bks/ui-kit/components/Table'
+import { Mutators as DataMutators, escapeHtml, Column } from '@bks/ui-kit/components/Table'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
@@ -315,26 +320,26 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState, mapActions } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
-import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
+import { FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@bks/ui-kit/components/Table';
-import { tabulatorForTableData } from "@bks/ui-kit/components/Table";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { ExpandablePath } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
+import { Table as BksTable } from "@bks/ui-kit/components/Table";
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar, BksTable },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -384,6 +389,9 @@ export default Vue.extend({
       split: null,
       detailViewTitle: undefined,
       reinitializeDetailView: 0,
+
+      blockDataFetch: true,
+      shouldFetchData: false,
     };
   },
   computed: {
@@ -505,6 +513,65 @@ export default Vue.extend({
       if (this.pendingChangesCount) return 'editing'
       return null
     },
+    tabulatorOptions(): Options {
+      return {
+        rowHeader: {
+          contextMenu: (_e, cell: CellComponent) => {
+            const ranges = cell.getRanges();
+            const range = _.last(ranges);
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              ...this.rowActionsMenu(range),
+            ]
+          },
+          headerContextMenu: () => {
+            const ranges = this.tabulator.getRanges();
+            const range: RangeComponent = _.last(ranges)
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              resizeAllColumnsToFitContent,
+              resizeAllColumnsToFixedWidth,
+              this.openColumnFilterMenuItem,
+            ]
+          },
+        },
+        ajaxURL: "http://fake",
+        sortMode: 'remote',
+        filterMode: 'remote',
+        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
+        pagination: true,
+        paginationMode: 'remote',
+        paginationSize: this.limit,
+        paginationElement: this.$refs.paginationArea,
+        paginationButtonCount: 0,
+        initialSort: this.initialSort,
+        initialFilter: this.initialFilters ?? [{}],
+
+        // callbacks
+        ajaxRequestFunc: this.dataFetch,
+        index: this.internalIndexColumn,
+        keybindings: {
+          scrollToEnd: false,
+          scrollToStart: false,
+          scrollPageUp: false,
+          scrollPageDown: false
+        },
+      }
+    },
     tableKeys() {
       const result = {}
       this.rawTableKeys.forEach((item) => {
@@ -518,9 +585,9 @@ export default Vue.extend({
     tableColumnNames() {
       return this.table?.columns?.map((c) => c.columnName).join("-") || []
     },
-    tableColumns() {
-      const results = []
-      if (!this.table) return []
+    tableColumns(): Column[] {
+      const results: Column[] = []
+      if (!this.table?.columns) return []
 
       const cellMenu = (keyDatas?: any[]) => {
         return (_e, cell: CellComponent) => {
@@ -587,10 +654,7 @@ export default Vue.extend({
         ]
       }
 
-      // 1. add a column for a real column
-      // if a FK, add another column with the link
-      // to the FK table.
-      this.table.columns.forEach(column => {
+      this.table.columns.forEach((column: ExtendedTableColumn) => {
 
         const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
         // this needs fixing
@@ -631,23 +695,14 @@ export default Vue.extend({
           headerTooltip += `<br/> ${escapeHtml(column.comment)}`
         }
 
-        const result = {
-          title: column.columnName,
-          field: column.columnName,
+        const result: ColumnDefinition = {
           titleFormatter: this.headerFormatter,
           titleFormatterParams: {
             columnName: column.columnName,
             dataType: column.dataType,
             generated: column.generated,
           },
-          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-          dataType: column.dataType,
-          minWidth: globals.minColumnWidth,
           width: columnWidth,
-          maxWidth: globals.maxColumnWidth,
-          maxInitialWidth: globals.maxInitialWidth,
-          resizable: 'header',
-          cssClass,
           editable: this.cellEditCheck,
           headerSort: !this.dialectData.disabledFeatures.headerSort,
           editor: editorType,
@@ -687,24 +742,29 @@ export default Vue.extend({
           result.editorParams['values'] = values
         }
 
-        results.push(result)
+        results.push({
+          title: column.columnName,
+          field: column.columnName,
+          dataType: column.dataType,
+          cssClass,
+          tabulatorColumnDefinition: result,
+        } as Column)
       });
 
       // add internal index column
-      const result = {
-        title: this.internalIndexColumn,
-        field: this.internalIndexColumn,
-        maxWidth: globals.maxColumnWidth,
-        maxInitialWidth: globals.maxInitialWidth,
+      const result: ColumnDefinition = {
         editable: false,
         cellEditCancelled: cell => cell.getRow().normalizeHeight(),
-        formatter: this.cellFormatter,
         visible: false,
         clipboard: false,
         print: false,
         download: false
       }
-      results.push(result)
+      results.push({
+        title: this.internalIndexColumn,
+        field: this.internalIndexColumn,
+        tabulatorColumnDefinition: result,
+      })
 
       return results
     },
@@ -836,12 +896,15 @@ export default Vue.extend({
         this.enabledMinimalModeWhileInactive = this.minimalMode
       }
     },
+    blockDataFetch() {
+      this.handleDataFetchLock()
+    },
+    shouldFetchData() {
+      this.handleDataFetchLock()
+    },
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
-    if (this.tabulator) {
-      this.tabulator.destroy()
-    }
   },
   async mounted() {
     if (this.shouldInitialize) {
@@ -851,6 +914,12 @@ export default Vue.extend({
     }
   },
   methods: {
+    handleDataFetchLock() {
+      if (!this.blockDataFetch && this.shouldFetchData) {
+        this.shouldFetchData = false
+        this.tabulator.replaceData()
+      }
+    },
     handleTab(e: KeyboardEvent) {
       // do nothing?
       log.debug('tab pressed')
@@ -917,6 +986,9 @@ export default Vue.extend({
       return column && column.generated;
     },
     async initialize() {
+      this.blockDataFetch = true
+      await this.$nextTick()
+
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
@@ -926,65 +998,26 @@ export default Vue.extend({
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
-      this.tabulator = tabulatorForTableData(this.$refs.table, {
-        persistenceID: this.tableId,
-        rowHeader: {
-          contextMenu: (_e, cell: CellComponent) => {
-            const ranges = cell.getRanges();
-            const range = _.last(ranges);
-            return [
-              this.setAsNullMenuItem(range),
-              { separator: true },
-              ...copyActionsMenu({
-                ranges,
-                table: this.table.name,
-                schema: this.table.schema,
-              }),
-              { separator: true },
-              ...this.rowActionsMenu(range),
-            ]
-          },
-          headerContextMenu: () => {
-            const ranges = this.tabulator.getRanges();
-            const range: RangeComponent = _.last(ranges)
-            return [
-              this.setAsNullMenuItem(range),
-              { separator: true },
-              ...copyActionsMenu({
-                ranges,
-                table: this.table.name,
-                schema: this.table.schema,
-              }),
-              { separator: true },
-              resizeAllColumnsToFitContent,
-              resizeAllColumnsToFixedWidth,
-              this.openColumnFilterMenuItem,
-            ]
-          },
-        },
-        columns: this.tableColumns,
-        ajaxURL: "http://fake",
-        sortMode: 'remote',
-        filterMode: 'remote',
-        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-        pagination: true,
-        paginationMode: 'remote',
-        paginationSize: this.limit,
-        paginationElement: this.$refs.paginationArea,
-        paginationButtonCount: 0,
-        initialSort: this.initialSort,
-        initialFilter: this.initialFilters ?? [{}],
+      // FIXME This could be a sign that we do something in a wrong way if we
+      // do this here. But it's an easy hack to get around an edge case where
+      // the dataFetch is called when the columns are not updated. Maybe avoid
+      // using the ajaxRequestFunc initially?
+      this.blockDataFetch = false
+    },
+    async handleTabulatorBuilt(tabulator: TabulatorFull) {
+      this.tabulator = tabulator
+      await this.$nextTick()
 
-        // callbacks
-        ajaxRequestFunc: this.dataFetch,
-        index: this.internalIndexColumn,
-        keybindings: {
-          scrollToEnd: false,
-          scrollToStart: false,
-          scrollPageUp: false,
-          scrollPageDown: false
-        },
-      });
+      // FIXME nope. dont call this.tabulator like this. Nuh-uh. No thank you. you're welcome.
+      // Steps to remove tabulator.replaceData():
+      // 1. Page state should be in this component and not dependent on tabulator
+      // 2. Sorting too
+      // 3. Size too
+      // 4. Pretty much all stuff inside dataFetch should be states that are not dependent on tabulator
+      // 5. A sip of coffee to get rid of the stress
+      this.tabulator.replaceData()
+      // FIXME we shouldn't call tabulator.on like this directly. Provide some
+      // API from the Table component.
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
@@ -1544,6 +1577,16 @@ export default Vue.extend({
       this.filters = filters
     },
     dataFetch(_url, _config, params) {
+      if (this.blockDataFetch) {
+        // We'll go back here when it's not blocked
+        this.shouldFetchData = true
+        return new Promise((resolve) => {
+          resolve({
+            last_page: 1,
+            data: [],
+          });
+        })
+      }
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
@@ -1710,6 +1753,9 @@ export default Vue.extend({
       this.updateDetailView(range)
     },
     initializeSplit() {
+      if (this.split) {
+        this.split.destroy()
+      }
       const components = this.$refs.tableViewWrapper.children
       const splitSizes = this.$store.state.tableTableSplitSizes
       this.split = Split(components, {

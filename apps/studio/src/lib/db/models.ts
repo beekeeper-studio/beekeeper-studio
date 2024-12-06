@@ -154,6 +154,12 @@ export interface TableResult {
   fields: BksField[];
 }
 
+/**
+ * Generalized info about a database field. Any info in this object is not
+ * specific to a database type. Use this if you want to obtain consistent info
+ * about a database field. For example, binary fields are named differently
+ * in different databases. In this object, those fields are called `BINARY`.
+ **/
 export interface BksField {
   name: string;
   bksType: BksFieldType;

@@ -95,7 +95,7 @@
               ...col,
               title: magic.title,
               cssClass: magic.cssClass,
-              tabulatorColumnDef: magicStuff,
+              tabulatorColumnDefinition: magicStuff,
             } as Column
 
             if (magic && magic.tableLink) {

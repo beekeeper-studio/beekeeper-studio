@@ -12,6 +12,7 @@ interface State {
 import { Module } from "vuex";
 
 export const TextEditorModule: Module<State, RootState> = {
+  namespaced: true,
   state: {
     vimKeymaps: [],
   },
@@ -23,6 +24,11 @@ export const TextEditorModule: Module<State, RootState> = {
         config.defaults.keymapTypes.map((k) => k.value).includes(value)
         ? value
         : "default";
+    },
+  },
+  mutations: {
+    vimKeymaps(state, value: IMapping[]) {
+      state.vimKeymaps = value
     },
   },
   actions: {
