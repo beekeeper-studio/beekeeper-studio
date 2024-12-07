@@ -1036,7 +1036,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
 
     },
     createQueryFromItem(item) {
-      this.createQuery(item.text)
+      console.log('~~ item ~~')
+      console.log(item)
+      this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
     }
   },
   beforeDestroy() {

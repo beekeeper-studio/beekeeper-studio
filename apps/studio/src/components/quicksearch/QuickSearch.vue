@@ -231,10 +231,9 @@ export default Vue.extend({
       return result
     },
     highlightHistory(blob) {
-      console.log('look here nerd')
-      console.log(blob)
       const dangerous = blob.title ?? blob.tabDetails?.title
-      let historyText = [escapeHtml(dangerous || 'unknown item')]
+      // TODO: Take out the blob.id, it's for testing purposes right now
+      let historyText = [blob.id, escapeHtml(dangerous || 'unknown item')]
 
       if (!blob.tabId) {
         historyText.push('reopen')
@@ -306,7 +305,7 @@ export default Vue.extend({
           this.$root.$emit(AppEvent.loadTable, {table: result})
           break;
           case 'query':
-            this.$root.$emit('favoriteClick', result)
+            this.$root.$emit('historyClick', result)
             break;
         case 'table-properties': {
           const newTable = this.tables.find(t => (
@@ -320,7 +319,8 @@ export default Vue.extend({
           break;
       }
       this.closeSearch()
-      return await this.$util.send('appdb/tabhistory/reopenedtab', { historyId: result.id });
+
+      return await this.$util.send('appdb/tabhistory/reopenedtab', { historyTabId: result.id });
     },
     handleClick(event: MouseEvent, result: any) {
       if (event.ctrlKey) {

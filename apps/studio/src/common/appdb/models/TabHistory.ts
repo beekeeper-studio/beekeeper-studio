@@ -113,8 +113,6 @@ export class TabHistory extends ApplicationEntity {
 
   static async getHistory(connectionIds): Promise<TransportTabHistory[]> {
     const { connectionId, workspaceId } = connectionIds
-    console.log(`connectionId: ${connectionId}`)
-    console.log(`workspaceId: ${workspaceId}`)
     return await this.find({
       where: {
         connectionId,
@@ -128,47 +126,26 @@ export class TabHistory extends ApplicationEntity {
   }
 
   static async reopenedtab(historyTab) {
-    const foundTab: TransportTabHistory = await this.findOne({
-      where: { id: historyTab.id }
-    })
-
-    const justCreatedTab = await this.findOne({
-      where: {
-        connectionId: historyTab.connectionId,
-        workspaceId: historyTab.workspaceId
-      },
-      order: {
-        createdAt: 'DESC'
-      }
-    })
-
-    foundTab.tabType = null
-    foundTab.title = null
-    foundTab.unsavedQueryText = null
-    foundTab.tableName = null
-    foundTab.schemaName = null
-    foundTab.entityType = null
-    foundTab.tabId = justCreatedTab.id
-    foundTab.updatedAt = new Date()
-
-    this.save(foundTab)
+    const { historyTabId } = historyTab
+    try {
+      await this.delete({ id: historyTabId })
+    } catch (err) {
+      console.error(err)
+    }
   }
 }
 
 export const TabHistoryHandlers = {
   'appdb/tabhistory/update': async (newTab: TransportOpenTab): Promise<void> => {
-    console.log('update stuff')
     await TabHistory.updateLastActive(newTab) 
   },
   'appdb/tabhistory/closetab': async (deletedTab: TransportOpenTab): Promise<void> => {
     await TabHistory.closeTab(deletedTab) 
   },
   'appdb/tabhistory/get': async (connectionIds): Promise<TransportTabHistory[]> => {
-    console.log('~~ get tab history ~~')
     return await TabHistory.getHistory(connectionIds) 
   },
-  'appdb/tabhistory/reopenedtab': async (historyTab: TransportOpenTab): Promise<void> => {
-    console.log('~~ get tab history ~~')
-    await TabHistory.reopenedtab(historyTab) 
+  'appdb/tabhistory/reopenedtab': async (historyTabId): Promise<void> => {
+    await TabHistory.reopenedtab(historyTabId) 
   }
 }

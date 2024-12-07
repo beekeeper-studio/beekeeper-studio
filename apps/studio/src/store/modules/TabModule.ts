@@ -49,6 +49,8 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     add(state, nu: TransportOpenTab) {
+      console.log('~~~ nu ~~~')
+      console.log(nu)
       state.tabs.push(nu)
 
       // Prevent multiple tabs per table
