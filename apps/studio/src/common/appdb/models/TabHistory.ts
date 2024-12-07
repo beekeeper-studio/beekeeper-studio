@@ -57,23 +57,7 @@ export class TabHistory extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   entityType?: string
 
-  static async updateLastActive(newTab: TransportOpenTab): Promise<void> {
-    const tab: TransportTabHistory = await this.findOne({
-      where: { tabId: newTab.id }
-    })
-
-    if (!tab) {
-      await this.save({
-        tabId: newTab.id,
-        connectionId: newTab.connectionId,
-        workspaceId: newTab.workspaceId,
-        lastActive: new Date()
-      })
-    } else {
-      tab.lastActive = new Date()
-      await this.save(tab)
-    }
-
+  static async trimTable(newTab): Promise<void> {
     const tabHistoryList: TransportTabHistory[] = await this.find({
       where: {
         connectionId: newTab.connectionId,
@@ -93,22 +77,49 @@ export class TabHistory extends ApplicationEntity {
     }
   }
 
-  static async closeTab(deletedTab: any): Promise<void> {
-    const {0: deletedTabData} = deletedTab 
-    const closedTab: TransportTabHistory = await this.findOneBy({ tabId: deletedTabData.id })
-    await this.save({
-      ...closedTab,
-      ...{
-        tabId: null,
-        tabType: deletedTabData.tabType ?? null,
-        title: deletedTabData.title ?? null,
-        unsavedQueryText: deletedTabData.unsavedQueryText ?? null, 
-        tableName: deletedTabData.tableName ?? null,
-        schemaName: deletedTabData.schemaName ?? null,
-        entityType: deletedTabData.entityType ?? null,
-        lastActive: new Date()
-      }
+  static async updateLastActive(newTab: TransportOpenTab): Promise<void> {
+    const tab: TransportTabHistory = await this.findOne({
+      where: { tabId: newTab.id }
     })
+
+    if (!tab) {
+      await this.save({
+        tabId: newTab.id,
+        connectionId: newTab.connectionId,
+        workspaceId: newTab.workspaceId,
+        lastActive: new Date()
+      })
+    } else {
+      tab.lastActive = new Date()
+      await this.save(tab)
+    }
+
+    this.trimTable(newTab)
+  }
+
+  static async closeTab(deletedTab): Promise<void> {
+    let dt
+    for (const prop in deletedTab) {
+      if (_.isNaN(prop)) continue 
+      const deletedTabData = deletedTab[prop]
+      dt = deletedTabData
+      const closedTab: TransportTabHistory = await this.findOneBy({ tabId: deletedTabData.id })
+      await this.save({
+        ...closedTab,
+        ...{
+          tabId: null,
+          tabType: deletedTabData.tabType ?? null,
+          title: deletedTabData.title ?? null,
+          unsavedQueryText: deletedTabData.unsavedQueryText ?? null, 
+          tableName: deletedTabData.tableName ?? null,
+          schemaName: deletedTabData.schemaName ?? null,
+          entityType: deletedTabData.entityType ?? null,
+          lastActive: new Date()
+        }
+      })
+    }
+
+    this.trimTable(dt)
   }
 
   static async getHistory(connectionIds): Promise<TransportTabHistory[]> {
@@ -139,8 +150,8 @@ export const TabHistoryHandlers = {
   'appdb/tabhistory/update': async (newTab: TransportOpenTab): Promise<void> => {
     await TabHistory.updateLastActive(newTab) 
   },
-  'appdb/tabhistory/closetab': async (deletedTab: TransportOpenTab): Promise<void> => {
-    await TabHistory.closeTab(deletedTab) 
+  'appdb/tabhistory/closetab': async (deletedTabs: TransportOpenTab): Promise<void> => {
+    await TabHistory.closeTab(deletedTabs) 
   },
   'appdb/tabhistory/get': async (connectionIds): Promise<TransportTabHistory[]> => {
     return await TabHistory.getHistory(connectionIds) 
