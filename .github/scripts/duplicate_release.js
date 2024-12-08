@@ -1,37 +1,30 @@
-// original code Copyright (c) 2023 Michael
 module.exports = async (octo, sourceRepo, destRepo, sourceReleaseId, destReleaseId) => {
   const gitHubKey = process.env.GITHUB_TOKEN;
 
-  // Get the source release
-  const [owner, repo] = sourceRepo.split("/");
+  if (!gitHubKey) {
+    throw new Error("GITHUB_TOKEN is not set in environment variables.");
+  }
+
+  // Get the source release details
+  const [sourceOwner, sourceRepoName] = sourceRepo.split("/");
   const { data: sourceRelease } = await octo.rest.repos.getRelease({
-    owner,
-    repo,
-    release_id: sourceReleaseId, // Corrected key from sourceReleaseId to release_id
+    owner: sourceOwner,
+    repo: sourceRepoName,
+    release_id: sourceReleaseId,
   });
 
-  // Copy assets
-  const [destRepoOwner, destRepoName] = destRepo.split("/");
+  // Prepare to copy assets
+  const [destOwner, destRepoName] = destRepo.split("/");
+
   const assetPromises = sourceRelease.assets.map(async (asset) => {
     try {
-      // Fetch asset URL
-      const { data: assetData } = await octo.rest.repos.getReleaseAsset({
-        owner,
-        repo,
-        asset_id: asset.id,
+      console.log(`Processing asset: ${asset.name}`);
+
+      // Use `browser_download_url` for downloading assets
+      const response = await fetch(asset.browser_download_url, {
         headers: {
           Accept: "application/octet-stream",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      });
-
-      const assetUrl = assetData.url;
-
-      // Download the asset data
-      const response = await fetch(assetUrl, {
-        headers: {
-          Accept: "application/octet-stream",
-          Authorization: `token ${gitHubKey}`, // Removed angle brackets around token
+          Authorization: `Bearer ${gitHubKey}`,
         },
       });
 
@@ -39,28 +32,30 @@ module.exports = async (octo, sourceRepo, destRepo, sourceReleaseId, destRelease
         throw new Error(`Failed to download asset ${asset.name}: ${response.statusText}`);
       }
 
-      const data = await response.buffer();
-
-      console.log("uploading asset -> ", asset.name);
+      const assetData = await response.arrayBuffer();
 
       // Upload the asset to the destination release
       await octo.rest.repos.uploadReleaseAsset({
-        owner: destRepoOwner,
+        owner: destOwner,
         repo: destRepoName,
         release_id: destReleaseId,
         name: asset.name,
-        label: asset.label,
-        data,
+        label: asset.label || undefined, // Label is optional
+        data: Buffer.from(assetData), // Convert ArrayBuffer to Buffer
         headers: {
           "content-length": asset.size,
-          "content-type": asset.content_type,
+          "content-type": asset.content_type || "application/octet-stream",
         },
       });
+
+      console.log(`Successfully uploaded asset: ${asset.name}`);
     } catch (error) {
       console.error(`Failed to process asset ${asset.name}: ${error.message}`);
-      process.exit(1); // Optional: consider removing if you don't want to terminate on a single failure
     }
   });
 
+  // Wait for all assets to be processed
   await Promise.all(assetPromises);
+
+  console.log("All assets processed.");
 };

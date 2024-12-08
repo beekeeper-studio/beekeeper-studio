@@ -68,7 +68,7 @@ jobs:
             arch: x64
             type: windows
             setup_python: true
-          - name: buildjet-4vcpu-ubuntu-2204-arm
+          - name: ubuntu-arm64
             arch: arm64
             type: linux
             setup_python: true
@@ -90,6 +90,10 @@ jobs:
         with:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: matrix.os.type == 'linux'
+
+      - name: Install fpm
+        run: sudo gem install fpm
+        if: matrix.os.type == 'linux'  && matrix.os.arch != 'arm64'
 
       - name: Install dotnet
         uses: actions/setup-dotnet@v3
@@ -197,11 +201,7 @@ jobs:
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
-        if: matrix.os.type == 'linux'
-
-      - name: Install multipass
-        run: sudo snap install multipass
-        if: matrix.os.type == 'linux'
+        if: matrix.os.type == 'linux' && matrix.os.arch != 'arm64'
 
       - name: Clean cache
         run: yarn cache clean --all
@@ -247,9 +247,9 @@ jobs:
           PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
           GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
-        run: |
-          cd apps/studio
-          yarn electron:build --publish always
+          USE_SYSTEM_FPM: true
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+        run: yarn run electron:build --publish always
 
       - name: Delete latest-mac.yml
         if: matrix.os.type == 'macos'
