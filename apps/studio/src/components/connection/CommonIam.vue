@@ -18,16 +18,7 @@
           </div>
         </div>
       </div>
-      <div class="form-group">
-        <label for="awsRegion"> AWS Region </label>
-        <input
-          name="awsRegion"
-          type="text"
-          class="form-control"
-          v-model="config.redshiftOptions.awsRegion"
-        >
-      </div>
-      <div class="form-group">
+      <div v-show="isProfileAuth" class="form-group">
         <label for="awsProfile"> AWS Profile </label>
         <input
           name="awsProfile"
@@ -36,18 +27,84 @@
           v-model="config.redshiftOptions.awsProfile"
         >
       </div>
+      <div v-show="isKeyAuth" class="form-group">
+        <label for="Access Key ID">
+          Access Key ID
+        </label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="config.redshiftOptions.accessKeyId"
+        >
+      </div>
+      <div v-show="isKeyAuth" class="form-group">
+        <label for="Secret Access Key">
+          Secret Access Key
+        </label>
+        <input
+          type="password"
+          class="form-control"
+          v-model="config.redshiftOptions.secretAccessKey"
+        >
+      </div>
+      <div class="form-group">
+        <label for="AWS Region">
+          AWS Region
+        </label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="config.redshiftOptions.awsRegion"
+        >
+      </div>
+      <div v-show="isRedshift" class="form-group">
+        <label for="Cluster Identifier">Cluster Identifier</label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="config.redshiftOptions.clusterIdentifier"
+        >
+      </div>
+      <div v-show="isRedshift" class="form-group">
+        <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="config.redshiftOptions.databaseGroup"
+        >
+      </div>
+      <div v-show="isRedshift" class="form-group">
+        <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="config.redshiftOptions.tokenDurationSeconds"
+        >
+      </div>
     </div>
   </div>
 </template>
 <script>
 
 export default {
-  props: ['config'],
+  props: ['config', 'authType'],
   data() {
     return {
-      iamAuthenticationEnabled:
-      this.config.redshiftOptions?.iamAuthenticationEnabled,
+      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled
     };
+  },
+  computed: {
+    isRedshift(){
+      console.log('connectionType', this.config.connectionType)
+      return this.config.connectionType === 'redshift'
+    },
+    isKeyAuth() {
+      console.log('includes key', this.authType.includes('key'))
+      return this.authType.includes('key')
+    },
+    isProfileAuth() {
+      return this.authType.includes('file')
+    }
   },
   methods: {
     toggleIAMAuthentication() {
