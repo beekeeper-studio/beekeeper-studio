@@ -240,7 +240,24 @@ jobs:
         run: |
           echo "$DATA" | base64 --decode > ~/mac-certificate.p12
 
-      - name: Build & Publish
+        # Oh hello future Matthew, why do we split out windows build?
+        # well CSC_LINK gets picked up EVEN THOUGH YOU HAVE
+        # A CUSTOM sign.js. Obviously a bug, but this is a workaround
+        # Bug report: https://github.com/electron-userland/electron-builder/issues/8731
+      - name: Build & Publish (NT)
+        if: matrix.os.type == 'windows'
+        env:
+          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
+          PYTHON_PATH: "${{'$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ '$PYTHONPATH' }}"
+          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          USE_SYSTEM_FPM: true
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+        run: yarn run electron:build --publish always
+
+      - name: Build & Publish (*NIX)
+        if: matrix.os.type != 'windows'
         env:
           APPLE_ID: ${{ secrets.apple_id }}
           APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
@@ -248,8 +265,6 @@ jobs:
           APPLE_TEAM_ID: "7KK583U8H2"
           CSC_LINK: "~/mac-certificate.p12"
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
-          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
-          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
           GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
