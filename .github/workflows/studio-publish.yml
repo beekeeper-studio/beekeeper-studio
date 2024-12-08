@@ -238,7 +238,7 @@ jobs:
         env:
           DATA: ${{ secrets.mac_dev }}
         run: |
-          echo "$DATA" | base64 --decode > ./mac-certificate.p12
+          echo "$DATA" | base64 --decode > ~/mac-certificate.p12
 
       - name: Build & Publish
         env:
@@ -246,7 +246,7 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_TEAM_ID: "7KK583U8H2"
-          CSC_LINK: "./mac-certificate.p12"
+          CSC_LINK: "~/mac-certificate.p12"
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
