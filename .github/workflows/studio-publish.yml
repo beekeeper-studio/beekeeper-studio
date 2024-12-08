@@ -64,6 +64,7 @@ jobs:
             arch: x64
             type: linux
             setup_python: true
+            setup_ruby: true
           - name: windows-2019
             arch: x64
             type: windows
@@ -91,9 +92,6 @@ jobs:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: matrix.os.type == 'linux'
 
-      - name: Install fpm
-        run: sudo gem install fpm
-        if: matrix.os.type == 'linux'  && matrix.os.arch != 'arm64'
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
@@ -101,10 +99,15 @@ jobs:
 
       - name: Check out Git repository
         uses: actions/checkout@v1
+
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
-        if: matrix.os.type == 'linux'
+          ruby-version: 3.0.2
+        if: matrix.os.setup_ruby
+
+      - name: Install fpm
+        run: sudo gem install fpm
+        if: matrix.os.setup_ruby
 
       - name: Update repository
         env:
