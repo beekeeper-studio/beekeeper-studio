@@ -232,8 +232,7 @@ export default Vue.extend({
     },
     highlightHistory(blob) {
       const dangerous = blob.title ?? blob.tabDetails?.title
-      // TODO: Take out the blob.id, it's for testing purposes right now
-      let historyText = [blob.id, escapeHtml(dangerous || 'unknown item')]
+      let historyText = [escapeHtml(dangerous || 'unknown item')]
 
       if (!blob.tabId) {
         historyText.push('reopen')
@@ -302,7 +301,7 @@ export default Vue.extend({
 
       switch (result.tabType) {
         case 'table':
-          this.$root.$emit(AppEvent.loadTable, {table: result})
+          this.$root.$emit(AppEvent.loadTable, { table: result })
           break;
           case 'query':
             this.$root.$emit('historyClick', result)

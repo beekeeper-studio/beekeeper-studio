@@ -873,9 +873,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openTableProperties({ table }) {
       const t = {} as TransportOpenTab;
       t.tabType = 'table-properties';
-      t.tableName = table.name
-      t.schemaName = table.schema
-      t.title = table.name
+      t.tableName = table.name ?? table.tableName
+      t.schemaName = table.schema ?? table.schemaName
+      t.title = table.name ?? table.tableName
       const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
@@ -883,9 +883,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     async openTable({ table, filters, openDetailView }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
-      tab.title = table.name
-      tab.tableName = table.name
-      tab.schemaName = table.schema
+      tab.title = table.name ?? table.tableName
+      tab.tableName = table.name ?? table.tableName
+      tab.schemaName = table.schema ?? table.schemaName
       tab.entityType = table.entityType
       tab = setFilters(tab, filters)
       tab.titleScope = "all"
@@ -1036,8 +1036,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
 
     },
     createQueryFromItem(item) {
-      console.log('~~ item ~~')
-      console.log(item)
       this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
     }
   },
