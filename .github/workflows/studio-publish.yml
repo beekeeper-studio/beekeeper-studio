@@ -156,6 +156,11 @@ jobs:
         env:
           ARCH: ${{ matrix.os.arch }}
         run: |
+          rm -f /usr/local/bin/2to3-3.11
+          rm -f /usr/local/bin/idle3.11
+          rm -f /usr/local/bin/pydoc3.11
+          rm -f /usr/local/bin/python3.11
+          rm -f /usr/local/bin/python3.11-config
           brew install python@3.11
           if [ "$ARCH" = "arm64" ]; then
               # Add Python 3.11 to PATH for arm64
@@ -234,13 +239,20 @@ jobs:
           mkdir -p ~/private_keys/
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
+      - name: Decode macOS signing certificate
+        if: matrix.os.type == 'macos'
+        env:
+          DATA: ${{ secrets.mac_dev }}
+        run: |
+          echo "$DATA" | base64 --decode > ./mac-certificate.p12
+
       - name: Build & Publish
         env:
           APPLE_ID: ${{ secrets.apple_id }}
           APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_TEAM_ID: "7KK583U8H2"
-          CSC_LINK: ${{ secrets.mac_dev }}
+          CSC_LINK: "./mac-certificate.p12"
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
