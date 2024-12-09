@@ -92,7 +92,7 @@
                   <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
                   <x-shortcut value="Control+Enter" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQuery">
+                <x-menuitem @click.prevent="handleSubmitCurrentQuery">
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
@@ -134,14 +134,14 @@
                   @click.prevent="manualCommit"
                 >
                   <x-label>Commit</x-label>
-                  <x-shortcut value="Shift+Cmd+C" />
+                  <x-shortcut value="Shift+Control+C" />
                 </x-menuitem>
                 <x-menuitem 
                   :disabled="!this.isManualQueryRunning"
                   @click.prevent="manualRollback"
                 >
                   <x-label>Rollback</x-label>
-                  <x-shortcut value="Shift+Cmd+R" />
+                  <x-shortcut value="Shift+Control+R" />
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -583,25 +583,25 @@
       },
       keybindings() {
         const keybindings: any = {
-          "Shift-Ctrl-Enter": this.submitCurrentQuery,
-          "Shift-Cmd-Enter": this.submitCurrentQuery,
+          "Shift-Ctrl-Enter": this.handleSubmitCurrentQuery,
+          "Shift-Cmd-Enter": this.handleSubmitCurrentQuery,
           "Ctrl-Enter": this.handleSubmitTabQuery,
           "Cmd-Enter": this.handleSubmitTabQuery,
           "Ctrl-S": this.triggerSave,
           "Cmd-S": this.triggerSave,
-          "F5": this.submitTabQuery,
-          "Shift-F5": this.submitCurrentQuery,
+          "F5": this.handleSubmitTabQuery,
+          "Shift-F5": this.handleSubmitCurrentQuery,
           "Ctrl+I": this.submitQueryToFile,
           "Cmd+I": this.submitQueryToFile,
           "Shift+Ctrl+I": this.submitCurrentQueryToFile,
           "Shift+Cmd+I": this.submitCurrentQueryToFile,
 
-          "Shift-Cmd-M-Enter": this.submitManualQuery,
-          "Shift-Ctrl-M-Enter": this.submitManualQuery,
-          "Shift+Cmd+C": this.manualCommit,
-          "shift+Ctrl+C": this.manualCommit,
-          "Shift+Cmd+R": this.manualRollback,
-          "Shift+Ctrl+R": this.manualRollback,
+          "Shift-Cmd-M-Enter": this.submitManualTabQuery,
+          "Shift-Ctrl-M-Enter": this.submitManualTabQuery,
+          "Shift-Cmd-C": this.manualCommit,
+          "Shift-Ctrl-C": this.manualCommit,
+          "Shift-Cmd-R": this.manualRollback,
+          "Shift-Ctrl-R": this.manualRollback,
         }
 
         if(this.userKeymap === "vim") {
@@ -900,7 +900,7 @@
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
-          this.submitQuery(this.currentlySelectedQuery.text)
+          await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -995,6 +995,11 @@
           if(this.running) {
             this.error = ex
           }
+          if (this.isManualQueryRunning) {
+            this.error = ex
+            this.isManualQueryRunning = false
+            this.manualRollback()
+          }
         } finally {
           this.running = false
           this.tab.isRunning = false
@@ -1058,36 +1063,54 @@
           this.focusingElement = 'none'
         })
       },
-      toggleCommitMode() {
+      async toggleCommitMode() {
+        if (this.isManualCommit && this.isManualQueryRunning)
+          await this.manualRollback()
+        else if (!this.isManualCommit && this.running)
+          await this.cancelQuery()
         this.isManualCommit = !this.isManualCommit
       },
-      async submitManualQuery() {
+      async submitManualTabQuery() {
+        this.isManualCommit = true
         this.isManualQueryRunning = true
-        await this.submitQuery(this.unsavedText)
+        await this.submitTabQuery()
       },
-      manualCommit() {
+      async submitManualCurrentQuery() {
+        this.isManualCommit = true
+        this.isManualQueryRunning = true
+        await this.submitCurrentQuery()
+      },
+      async manualCommit() {
+        console.log("manual commit")
         if (!this.runningQuery) {
           throw new Error('No running query to commit manually');
         }
-        this.runningQuery.commit()
+        await this.runningQuery.commit()
         this.isManualQueryRunning = false
         this.runningQuery = null
       },
-      manualRollback() {
+      async manualRollback() {
         if (!this.runningQuery) {
           throw new Error('No running query to rollback manually');
         }
-        this.runningQuery.rollback()
+        await this.runningQuery.rollback()
         this.isManualQueryRunning = false
         this.runningQuery = null
       },
       handleSubmitTabQuery() {
         if (this.isManualCommit) {
-          this.submitManualQuery()
+          this.submitManualTabQuery()
         } else {
           this.submitTabQuery()
         }
-      }
+      },
+      handleSubmitCurrentQuery() {
+        if (this.isManualCommit) {
+          this.submitManualCurrentQuery()
+        } else {
+          this.submitCurrentQuery()
+        }
+      },
     },
     async mounted() {
       if (this.shouldInitialize) this.initialize()
