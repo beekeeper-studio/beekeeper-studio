@@ -634,7 +634,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     return {
       execute: async (): Promise<NgQueryResult[]> => {
-        console.debug('PostgresClient query execute', options?.isManualCommit)
         const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
         const rows = dataPid.rows
 
