@@ -39,7 +39,7 @@ jobs:
     runs-on: "ubuntu-20.04"
     outputs:
       channel: ${{steps.extract_channel.outputs.channel}}
-      deb_codename: ${{steps.extract_channel.outputs.codename}}
+      deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -142,7 +142,7 @@ jobs:
         if: matrix.os.type == 'windows'
 
 
-      - name: "Install python 3.11 (NOT Mac"
+      - name: "Install python 3.11 (NOT Mac)"
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
