@@ -64,11 +64,12 @@ jobs:
             arch: x64
             type: linux
             setup_python: true
+            setup_ruby: true
           - name: windows-2019
             arch: x64
             type: windows
             setup_python: true
-          - name: buildjet-4vcpu-ubuntu-2204-arm
+          - name: ubuntu-arm64
             arch: arm64
             type: linux
             setup_python: true
@@ -91,11 +92,6 @@ jobs:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: matrix.os.type == 'linux'
 
-      - name: Install dotnet
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '6.0.x'
-        if: matrix.os.type == 'linux'
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
@@ -103,10 +99,15 @@ jobs:
 
       - name: Check out Git repository
         uses: actions/checkout@v1
+
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
-        if: matrix.os.type == 'linux'
+          ruby-version: 3.0.2
+        if: matrix.os.setup_ruby
+
+      - name: Install fpm
+        run: sudo gem install fpm
+        if: matrix.os.setup_ruby
 
       - name: Update repository
         env:
@@ -152,6 +153,11 @@ jobs:
         env:
           ARCH: ${{ matrix.os.arch }}
         run: |
+          rm -f /usr/local/bin/2to3-3.11
+          rm -f /usr/local/bin/idle3.11
+          rm -f /usr/local/bin/pydoc3.11
+          rm -f /usr/local/bin/python3.11
+          rm -f /usr/local/bin/python3.11-config
           brew install python@3.11
           if [ "$ARCH" = "arm64" ]; then
               # Add Python 3.11 to PATH for arm64
@@ -197,11 +203,7 @@ jobs:
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
-        if: matrix.os.type == 'linux'
-
-      - name: Install multipass
-        run: sudo snap install multipass
-        if: matrix.os.type == 'linux'
+        if: matrix.os.type == 'linux' && matrix.os.arch != 'arm64'
 
       - name: Clean cache
         run: yarn cache clean --all
@@ -234,22 +236,44 @@ jobs:
           mkdir -p ~/private_keys/
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
-      - name: Build & Publish
+      - name: Decode macOS signing certificate
+        if: matrix.os.type == 'macos'
+        env:
+          DATA: ${{ secrets.mac_dev }}
+        run: |
+          echo "$DATA" | base64 --decode > ~/mac-certificate.p12
+
+        # Oh hello future Matthew, why do we split out windows build?
+        # well CSC_LINK gets picked up EVEN THOUGH YOU HAVE
+        # A CUSTOM sign.js. Obviously a bug, but this is a workaround
+        # Bug report: https://github.com/electron-userland/electron-builder/issues/8731
+      - name: Build & Publish (NT)
+        if: matrix.os.type == 'windows'
+        env:
+          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
+          PYTHON_PATH: "${{'$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ '$PYTHONPATH' }}"
+          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          USE_SYSTEM_FPM: true
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+        run: yarn run electron:build --publish always
+
+      - name: Build & Publish (*NIX)
+        if: matrix.os.type != 'windows'
         env:
           APPLE_ID: ${{ secrets.apple_id }}
           APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
           APPLE_TEAM_ID: "7KK583U8H2"
-          CSC_LINK: ${{ secrets.mac_dev }}
+          CSC_LINK: "~/mac-certificate.p12"
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
-          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
-          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
           GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
-        run: |
-          cd apps/studio
-          yarn electron:build --publish always
+          USE_SYSTEM_FPM: true
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+        run: yarn run electron:build --publish always
 
       - name: Delete latest-mac.yml
         if: matrix.os.type == 'macos'
