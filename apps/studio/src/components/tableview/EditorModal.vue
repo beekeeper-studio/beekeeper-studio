@@ -197,7 +197,7 @@ export default Vue.extend({
   },
 
   methods: {
-    openModal(content: any, language: LanguageData, eventParams?: any, isReadOnly?: boolean) {
+    openModal(content: any, language: LanguageData, eventParams?: any) {
       if (content === null) {
         content = ""
       } else if (ArrayBuffer.isView(content)) {
@@ -213,7 +213,7 @@ export default Vue.extend({
         this.content = content
       }
       this.eventParams = eventParams
-      this.isReadOnly = isReadOnly
+      this.isReadOnly = eventParams?.isReadOnly
       this.wrapText = language.wrapTextByDefault ?? false
       this.$modal.show(this.modalName)
     },
@@ -228,7 +228,7 @@ export default Vue.extend({
       this.save()
     },
     save() {
-      this.$emit('save', this.content, this.language, this.eventParams)
+      this.$emit('save', this.content, this.language, this.eventParams?.cell)
       this.$modal.hide(this.modalName)
     },
 

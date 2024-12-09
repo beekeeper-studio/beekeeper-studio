@@ -1083,7 +1083,7 @@ export default Vue.extend({
         label: createMenuItem(isReadOnly? "View in modal" : "Edit in modal", "Shift + Enter"),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
-          this.$refs.editorModal.openModal(cell.getValue(), undefined, cell, isReadOnly)
+          this.$refs.editorModal.openModal(cell.getValue(), undefined, { cell, isReadOnly })
         }
       }
     },
