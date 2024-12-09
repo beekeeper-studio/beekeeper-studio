@@ -23,7 +23,10 @@ export default {
   tableListItemHeight: 22.8, // in pixels
   // for azure auth
   pollingTimeout: 60 * 1000, // 1 minute
-  clientId: '6eabc37c-bcc5-41fa-9a90-f6c5ab2aabcb'
+  clientId: '6eabc37c-bcc5-41fa-9a90-f6c5ab2aabcb',
+  iamRefreshTime: 13 * 60 * 1000, // 13 minutes
+  iamExpiryTime: 15 * 60 * 1000, // 15 minutes
+  iamRefreshBeforeTime: 2 * 60 * 1000 // 2 minutes
 }
 
 
