@@ -72,6 +72,7 @@ jobs:
           - name: ubuntu-arm64
             arch: arm64
             type: linux
+            setup_ruby: true
             setup_python: true
           - name: macos-13
             arch: x64
@@ -109,6 +110,12 @@ jobs:
         run: sudo gem install fpm
         if: matrix.os.setup_ruby
 
+      - name: Install deb-s3 from GitHub
+        run: |
+          curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
+          gem install -N ./deb-s3.gem
+        if: matrix.os.type == 'linux'
+
       - name: Update repository
         env:
           OWNER: 'beekeeper-studio'
@@ -129,17 +136,12 @@ jobs:
             fs.writeFileSync(path, JSON.stringify(packageJson, null, 2) + '\n');
 
 
-      - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux'
-
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
           vs-version: '16.11.14'
         if: matrix.os.type == 'windows'
 
-      - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux'
 
       - name: "Install python 3.11 (NOT Mac"
         uses: actions/setup-python@v5
