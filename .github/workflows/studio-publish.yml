@@ -39,7 +39,7 @@ jobs:
     runs-on: "ubuntu-20.04"
     outputs:
       channel: ${{steps.extract_channel.outputs.channel}}
-      deb_codename: ${{steps.extract_channel.outputs.codename}}
+      deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -106,7 +106,13 @@ jobs:
         if: matrix.os.setup_ruby
 
       - name: Install fpm
-        run: sudo gem install fpm
+        run: sudo gem install fpm -v 1.15.1
+        if: matrix.os.setup_ruby
+
+      - name: Install deb-s3 from GitHub
+        run: |
+          curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
+          gem install -N ./deb-s3.gem
         if: matrix.os.setup_ruby
 
       - name: Update repository
@@ -129,19 +135,14 @@ jobs:
             fs.writeFileSync(path, JSON.stringify(packageJson, null, 2) + '\n');
 
 
-      - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux'
-
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
           vs-version: '16.11.14'
         if: matrix.os.type == 'windows'
 
-      - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux'
 
-      - name: "Install python 3.11 (NOT Mac"
+      - name: "Install python 3.11 (NOT Mac)"
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
