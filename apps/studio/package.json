@@ -91,7 +91,7 @@
     "sql-formatter": "~10.7.2",
     "sql-query-identifier": "^2.8.0",
     "ssh2": "^1.14.0",
-    "tabulator-tables": "beekeeper-studio/tabulator#2642a6210fad1fb859838b6745efb061c1b35918",
+    "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
     "typeface-roboto": "^0.0.75",
     "typeface-source-code-pro": "^1.1.3",

@@ -37,6 +37,8 @@
           :dialect="dialect"
           :tabulator-options="tabulatorOptions"
           :row-header-offset="rowHeaderOffset"
+          :sorters.sync="sorters"
+          :data="data"
           @tabulator-built="handleTabulatorBuilt"
         />
         <detail-view-sidebar
@@ -305,7 +307,7 @@
 import Vue from 'vue'
 import { type TabulatorFull, ColumnComponent, CellComponent, RangeComponent, Options, ColumnDefinition } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
-import { Mutators as DataMutators, escapeHtml, Column } from '@bks/ui-kit/components/Table'
+import { Table as BksTable, Mutators as DataMutators, escapeHtml, Column } from '@bks/ui-kit/components/Table'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
@@ -333,10 +335,10 @@ import Split from 'split.js'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { ExpandablePath } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
-import { Table as BksTable } from "@bks/ui-kit/components/Table";
 
 const log = rawLog.scope('TableTable')
 
+// FIXME this might be a bad idea. We should always put data inside the component. Except that data is a constant.
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
@@ -391,8 +393,11 @@ export default Vue.extend({
       detailViewTitle: undefined,
       reinitializeDetailView: 0,
 
-      blockDataFetch: true,
-      shouldFetchData: false,
+      initializationStatus: 'uninitialized', // uninitialized, initializing, initialized
+      isTableBuilt: false,
+
+      sorters: [],
+      shouldUseInitialSort: !this.$store.getters.dialectData.disabledFeatures?.initialSort,
     };
   },
   computed: {
@@ -405,7 +410,7 @@ export default Vue.extend({
       return this.connectionType === 'cassandra'
     },
     columnsWithFilterAndOrder() {
-      if (!this.tabulator || !this.table) return []
+      if (!this.tabulator || !this.table.columns) return []
       const cols = this.tabulator.getColumns()
       const columnNames = this.table.columns.map((c) => c.columnName)
       const typeOf = (f) => this.table.columns.find((c) => c.columnName === f)?.dataType
@@ -558,16 +563,16 @@ export default Vue.extend({
             ]
           },
         },
-        ajaxURL: "http://fake",
-        sortMode: 'remote',
+        // ajaxURL: "http://fake",
         filterMode: 'remote',
         dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-        initialSort: this.initialSort,
-        initialFilter: this.initialFilters ?? [{}],
+        // initialSort: this.sorters,
+        // initialFilter: this.initialFilters ?? [{}],
 
         // callbacks
-        ajaxRequestFunc: this.dataFetch,
-        index: this.internalIndexColumn,
+        // ajaxRequestFunc: this.dataFetch,
+        // index: this.internalIndexColumn,
+        index: "__beekeeper_internal_index",
         keybindings: {
           scrollToEnd: false,
           scrollToStart: false,
@@ -754,22 +759,24 @@ export default Vue.extend({
           field: column.columnName,
           dataType: column.dataType,
           cssClass,
+          sorter: 'none',
           tabulatorColumnDefinition: result,
         } as Column)
       });
 
       // add internal index column
-      const result: ColumnDefinition = {
+      const result: Partial<ColumnDefinition> = {
         editable: false,
         cellEditCancelled: cell => cell.getRow().normalizeHeight(),
         visible: false,
         clipboard: false,
         print: false,
-        download: false
+        download: false,
       }
       results.push({
         title: this.internalIndexColumn,
         field: this.internalIndexColumn,
+        sorter: 'none',
         tabulatorColumnDefinition: result,
       })
 
@@ -794,7 +801,7 @@ export default Vue.extend({
         return [];
       }
 
-      return [{ column: this.table.columns[0].columnName, dir: "asc" }];
+      return this.table.columns.map(c => ({ column: c.columnName, dir: 'asc' }))
     },
     shouldInitialize() {
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -906,12 +913,6 @@ export default Vue.extend({
         this.enabledMinimalModeWhileInactive = this.minimalMode
       }
     },
-    blockDataFetch() {
-      this.handleDataFetchLock()
-    },
-    shouldFetchData() {
-      this.handleDataFetchLock()
-    },
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
@@ -922,14 +923,21 @@ export default Vue.extend({
         await this.initialize()
       })
     }
+
+    // This ensure that the table is loaded when everything is ready
+    const unwatch = this.$watch(
+      function () {
+        return this.initializationStatus + this.isTableBuilt
+      },
+      function () {
+        if (this.initializationStatus === 'initialized' && this.isTableBuilt) {
+          unwatch()
+          this.dataFetch()
+        }
+      }
+    )
   },
   methods: {
-    handleDataFetchLock() {
-      if (!this.blockDataFetch && this.shouldFetchData) {
-        this.shouldFetchData = false
-        this.tabulator.replaceData()
-      }
-    },
     handleTab(e: KeyboardEvent) {
       // do nothing?
       log.debug('tab pressed')
@@ -996,7 +1004,7 @@ export default Vue.extend({
       return column && column.generated;
     },
     async initialize() {
-      this.blockDataFetch = true
+      this.initializationStatus = 'initializing'
       await this.$nextTick()
 
       this.initialized = true
@@ -1008,11 +1016,13 @@ export default Vue.extend({
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
-      // FIXME This could be a sign that we do something in a wrong way if we
-      // do this here. But it's an easy hack to get around an edge case where
-      // the dataFetch is called when the columns are not updated. Maybe avoid
-      // using the ajaxRequestFunc initially?
-      this.blockDataFetch = false
+      // Make sure that we set initialSort only once
+      if (this.shouldUseInitialSort && this.table.columns?.length > 0) {
+        this.shouldUseInitialSort = false
+        this.sorters = [{ field: this.table.columns[0].columnName, dir: "asc" }];
+      }
+
+      this.initializationStatus = 'initialized'
     },
     async handleTabulatorBuilt(tabulator: TabulatorFull) {
       this.tabulator = tabulator
@@ -1025,21 +1035,20 @@ export default Vue.extend({
       // 3. Size too
       // 4. Pretty much all stuff inside dataFetch should be states that are not dependent on tabulator
       // 5. A sip of coffee to get rid of the stress
-      this.tabulator.replaceData()
       // FIXME we shouldn't call tabulator.on like this directly. Provide some
       // API from the Table component.
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
-      this.tabulator.on('tableBuilt', () => {
-        this.tabulator.modules.selectRange.restoreFocus()
-      })
       this.tabulator.on("cellMouseUp", this.updateDetailViewByFirstRange);
       this.tabulator.on("headerMouseUp", this.updateDetailViewByFirstRange);
       this.tabulator.on("keyNavigate", this.updateDetailViewByFirstRange);
       // Tabulator range is reset after data is processed
       this.tabulator.on("dataProcessed", this.updateDetailViewByFirstRange);
+      this.tabulator.modules.selectRange.restoreFocus()
 
       this.updateSplit()
+
+      this.isTableBuilt = true
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
@@ -1581,13 +1590,6 @@ export default Vue.extend({
       this.filters = filters
     },
     dataFetch(_url, _config, params) {
-      if (this.blockDataFetch) {
-        // We'll go back here when it's not blocked
-        this.shouldFetchData = true
-        return new Promise((resolve) => {
-          resolve([]);
-        })
-      }
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
@@ -1595,16 +1597,8 @@ export default Vue.extend({
       log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
-      let orderBy = null;
+      let orderBy = this.sorters;
       let filters = this.filters
-
-      if (params.sort) {
-        orderBy = params.sort
-      }
-
-      if (params.size) {
-        limit = params.size
-      }
 
       offset = usesOffsetPagination ? (this.page - 1) * limit : this.paginationStates[this.page - 1];
 

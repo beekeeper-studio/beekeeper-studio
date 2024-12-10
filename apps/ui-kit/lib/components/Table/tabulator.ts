@@ -9,7 +9,7 @@ import {
 } from "./menu";
 import _ from "lodash";
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
-import { KeyListenerTabulatorModule } from './plugins/KeyListenerTabulatorModule'
+import { EventBridgeTabulatorModule } from './plugins/EventBridgeTabulatorModule'
 
 interface Options {
   table: string;
@@ -114,4 +114,4 @@ export const rowHeaderField = '--row-header--bks';
 TabulatorFull.defaultOptions.layout = "fitDataFill";
 TabulatorFull.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
 TabulatorFull.defaultOptions.headerSortClickElement = 'icon';
-TabulatorFull.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule]);
+TabulatorFull.registerModule([HeaderSortTabulatorModule, EventBridgeTabulatorModule]);

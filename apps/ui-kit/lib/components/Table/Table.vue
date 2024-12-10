@@ -27,7 +27,7 @@ import Mutators from "./mixins/data_mutators";
 // import { Dialect } from "@shared/lib/dialects/models";
 import * as constants from "../../utils/constants";
 import { isMacLike } from "../../utils/platform";
-import { Column } from "./types";
+import { Column, OrderBy } from "./types";
 
 export default Vue.extend({
   mixins: [Mutators],
@@ -73,8 +73,13 @@ export default Vue.extend({
       type: Number,
       default: 0,
     },
+    /** Apply sort orders to the table */
+    sorters: {
+      type: Array as PropType<Array<OrderBy>>,
+      default: () => [],
+    },
 
-    /** Customize the tabulator options. See https://tabulator.info/docs/6.3/options#table */
+    /** Customize the tabulator's table options. See https://tabulator.info/docs/6.3/options#table */
     tabulatorOptions: {
       type: Object as PropType<Partial<TabulatorOptions>>,
       default: () => ({}),
@@ -142,6 +147,7 @@ export default Vue.extend({
           cssClass:
             "hide-header-menu-icon" +
             (column.cssClass ? ` ${column.cssClass}` : ""),
+          sorter: column.sorter === 'none' ? () => 0 : column.sorter,
         };
 
         if (column.dataType === "INTERVAL") {
@@ -192,13 +198,6 @@ export default Vue.extend({
     },
   },
   methods: {
-    whenTableIsBuilt(task: () => void) {
-      if (this.isBuilt) {
-        task();
-      } else {
-        this.pendingTasks.push(task);
-      }
-    },
     setData(data: any) {
       this.tabulator.setData(data);
     },
@@ -263,6 +262,9 @@ export default Vue.extend({
         this.isBuilt = true
         this.pendingTasks.forEach((task) => task())
         this.$emit("tabulator-built", this.tabulator);
+      });
+      this.tabulator.on("sortChanged", (sorters) => {
+        this.$emit("update:sorters", sorters.map(({ column, dir }) => ({ column, dir })));
       });
     },
     keydown(e: KeyboardEvent) {

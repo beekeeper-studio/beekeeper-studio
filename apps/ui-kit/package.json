@@ -35,7 +35,7 @@
     "lodash": "^4.17.21",
     "postgres-interval": "^4.0.0",
     "sql-query-identifier": "^2.8.0",
-    "tabulator-tables": "beekeeper-studio/tabulator#2642a6210fad1fb859838b6745efb061c1b35918",
+    "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
     "vue": "^2.7.16",
     "vue2-teleport": "^1.1.4"

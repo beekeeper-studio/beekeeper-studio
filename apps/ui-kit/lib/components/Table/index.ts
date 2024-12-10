@@ -4,7 +4,7 @@ export * from "./types";
 
 // FIXME These should probably be removed once we're finished extracting tables
 export { HeaderSortTabulatorModule } from "./plugins/HeaderSortTabulatorModule";
-export { KeyListenerTabulatorModule } from "./plugins/KeyListenerTabulatorModule";
+export { EventBridgeTabulatorModule as KeyListenerTabulatorModule } from "./plugins/EventBridgeTabulatorModule";
 export * from "./mixins/data_mutators";
 export { default as Mutators } from "./mixins/data_mutators";
 export * from "./mixins/tabulator";

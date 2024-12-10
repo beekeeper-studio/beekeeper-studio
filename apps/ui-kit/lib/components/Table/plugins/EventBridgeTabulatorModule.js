@@ -1,8 +1,8 @@
 import { Module } from "tabulator-tables";
 
-/** Listen to internal key nav events and send them to external */
-export class KeyListenerTabulatorModule extends Module {
-  static moduleName = 'keyListener';
+/** Listen for internal events that are not exposed to the user */
+export class EventBridgeTabulatorModule extends Module {
+  static moduleName = 'eventBridge';
   static moduleInitOrder = 100;
 
   initialize() {
@@ -12,9 +12,14 @@ export class KeyListenerTabulatorModule extends Module {
 		this.subscribe("keybinding-nav-right", this.keyNavigate.bind(this, "right"), 100_000);
 		this.subscribe("keybinding-nav-up", this.keyNavigate.bind(this, "up"), 100_000);
 		this.subscribe("keybinding-nav-down", this.keyNavigate.bind(this, "down"), 100_000);
+    this.subscribe("sort-changed", this.sortChanged.bind(this));
   }
 
   keyNavigate(direction) {
     this.dispatchExternal("keyNavigate", direction);
+  }
+
+  sortChanged() {
+    this.dispatchExternal("sortChanged", this.table.getSorters());
   }
 }
