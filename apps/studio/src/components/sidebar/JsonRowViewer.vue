@@ -1,6 +1,6 @@
 <template>
   <div
-    class="sidebar detail-view-sidebar flex-col"
+    class="sidebar json-row-viewer flex-col"
     ref="sidebar"
     v-show="!hidden"
   >
@@ -66,7 +66,7 @@
     <div class="empty-state" v-show="empty">
       No Data
     </div>
-    <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" />
+    <json-row-viewer-upsell v-if="$store.getters.isCommunity" />
   </div>
 </template>
 
@@ -89,15 +89,15 @@ import {
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import type { EditorMarker } from "@bks/ui-kit/components/TextEditor";
-import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
+import JsonRowViewerUpsell from '@/components/upsell/JsonRowViewerUpsell.vue'
 import rawLog from "electron-log";
 import _ from "lodash";
 import globals from '@/common/globals'
 
-const log = rawLog.scope("detail-view-sidebar");
+const log = rawLog.scope("json-row-viewer");
 
 export default Vue.extend({
-  components: { DetailViewSidebarUpsell },
+  components: { JsonRowViewerUpsell },
   props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {

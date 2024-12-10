@@ -277,7 +277,6 @@ import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
-import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
@@ -301,7 +300,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       PendingChangesButton,
     ConfirmationModal,
     SqlFilesImportModal,
-    DetailViewSidebar,
     },
     data() {
       return {
