@@ -40,6 +40,7 @@
           :sorters.sync="sorters"
           :data="data"
           @tabulator-built="handleTabulatorBuilt"
+          @ranges-changed="handleRangesChanged"
         />
         <detail-view-sidebar
           :title="detailViewTitle"
@@ -356,8 +357,6 @@ export default Vue.extend({
 
       // table data
       data: null, // array of data
-      preLoadScrollPosition: null,
-      columnWidths: null,
       //
       response: null,
       limit: 100,
@@ -395,6 +394,7 @@ export default Vue.extend({
 
       initializationStatus: 'uninitialized', // uninitialized, initializing, initialized
       isTableBuilt: false,
+      isFetchingData: false,
 
       sorters: [],
       shouldUseInitialSort: !this.$store.getters.dialectData.disabledFeatures?.initialSort,
@@ -480,9 +480,6 @@ export default Vue.extend({
       return result
     },
 
-    tableHolder() {
-      return this.$el.querySelector('.tabulator-tableholder')
-    },
     allColumnsSelected() {
       return this.columnsWithFilterAndOrder.every((column) => column.filter)
     },
@@ -563,16 +560,12 @@ export default Vue.extend({
             ]
           },
         },
-        // ajaxURL: "http://fake",
         filterMode: 'remote',
         dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-        // initialSort: this.sorters,
         // initialFilter: this.initialFilters ?? [{}],
 
         // callbacks
-        // ajaxRequestFunc: this.dataFetch,
-        // index: this.internalIndexColumn,
-        index: "__beekeeper_internal_index",
+        index: this.internalIndexColumn,
         keybindings: {
           scrollToEnd: false,
           scrollToStart: false,
@@ -818,11 +811,14 @@ export default Vue.extend({
   },
 
   watch: {
+    sorters() {
+      this.dataFetch()
+    },
     async filters() {
       this.page = 1
       this.paginationStates = [null]
       await this.$nextTick()
-      this.tabulator?.replaceData()
+      this.dataFetch()
     },
     allColumnsSelected() {
       this.resetPendingChanges()
@@ -833,7 +829,7 @@ export default Vue.extend({
       }
     },
     page() {
-      this.tabulator.replaceData()
+      this.dataFetch()
     },
     active() {
       this.updateSplit()
@@ -878,10 +874,7 @@ export default Vue.extend({
       }
     },
     async tableColumnNames() {
-      if (!this.tabulator) return;
-
       if (!this.active) this.forceRedraw = true;
-      await this.tabulator.setColumns(this.tableColumns)
       await this.refreshTable();
     },
     async lastUpdated() {
@@ -973,26 +966,6 @@ export default Vue.extend({
           <span class="badge column-data-type">${dataType}</span>
         </span>`
     },
-    maybeScrollAndSetWidths() {
-      if (this.columnWidths) {
-        try {
-          this.tabulator.blockRedraw()
-          this.columnWidths.forEach(({ field, width}) => {
-            const col = this.tabulator.getColumn(field)
-            if (col) col.setWidth(width)
-          })
-          this.columnWidths = null
-        } catch (ex) {
-          console.error("error setting widths", ex)
-        } finally {
-          this.tabulator.restoreRedraw()
-        }
-      }
-      if (this.preLoadScrollPosition) {
-        this.tableHolder.scrollLeft = this.preLoadScrollPosition
-        this.preLoadScrollPosition = null
-      }
-    },
     async close() {
       this.$root.$emit(AppEvent.closeTab)
     },
@@ -1031,24 +1004,21 @@ export default Vue.extend({
       // FIXME nope. dont call this.tabulator like this. Nuh-uh. No thank you. you're welcome.
       // Steps to remove tabulator.replaceData():
       // 1. Page state should be in this component and not dependent on tabulator - DONE
-      // 2. Sorting too
-      // 3. Size too
+      // 2. Sorting too - DONE
+      // 3. Size too - DONE
       // 4. Pretty much all stuff inside dataFetch should be states that are not dependent on tabulator
       // 5. A sip of coffee to get rid of the stress
       // FIXME we shouldn't call tabulator.on like this directly. Provide some
       // API from the Table component.
       this.tabulator.on('cellEdited', this.cellEdited)
-      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
-      this.tabulator.on("cellMouseUp", this.updateDetailViewByFirstRange);
-      this.tabulator.on("headerMouseUp", this.updateDetailViewByFirstRange);
-      this.tabulator.on("keyNavigate", this.updateDetailViewByFirstRange);
-      // Tabulator range is reset after data is processed
-      this.tabulator.on("dataProcessed", this.updateDetailViewByFirstRange);
       this.tabulator.modules.selectRange.restoreFocus()
 
       this.updateSplit()
 
       this.isTableBuilt = true
+    },
+    handleRangesChanged() {
+      this.updateDetailViewByFirstRange()
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
@@ -1589,12 +1559,11 @@ export default Vue.extend({
       }
       this.filters = filters
     },
-    dataFetch(_url, _config, params) {
+    dataFetch(_url, _config, _params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
       const { usesOffsetPagination } = this.dialectData
-      log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
       let orderBy = this.sorters;
@@ -1607,6 +1576,7 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
+            this.isFetchingData = true
 
             // lets just make column selection a front-end only thing
             const selects = ['*']
@@ -1658,10 +1628,6 @@ export default Vue.extend({
             const data = this.dataToTableData({ rows: r }, this.tableColumns, offset);
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
-            this.preLoadScrollPosition = this.tableHolder.scrollLeft
-            this.columnWidths = this.tabulator.getColumns().map((c) => {
-              return { field: c.getField(), width: c.getWidth()}
-            })
             resolve(data);
           } catch (error) {
             console.error("data fetch error", error)
@@ -1674,6 +1640,7 @@ export default Vue.extend({
             })
             reject(error.message);
           } finally {
+            this.isFetchingData = false
             if (!this.active) {
               this.forceRedraw = true
             }
@@ -1699,7 +1666,7 @@ export default Vue.extend({
       if (!this.tabulator) return;
 
       log.debug('refreshing table')
-      await this.tabulator.replaceData()
+      await this.dataFetch()
       if (!this.active) this.forceRedraw = true
     },
     async toggleOpenDetailView(open?: boolean) {

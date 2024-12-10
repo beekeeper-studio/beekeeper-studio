@@ -14,6 +14,7 @@ import {
   Options as TabulatorOptions,
   ColumnDefinition,
   TabulatorFull,
+  RangeComponent,
 } from "tabulator-tables";
 import {
   copyRanges,
@@ -90,6 +91,10 @@ export default Vue.extend({
       tabulator: null as TabulatorFull | null,
       isBuilt: false,
       pendingTasks: [],
+      // Make this a prop if we want to support changing ranges programmatically
+      ranges: [],
+      columnWidths: null,
+      preLoadScrollPosition: null,
     };
   },
   computed: {
@@ -199,10 +204,19 @@ export default Vue.extend({
   },
   methods: {
     setData(data: any) {
+      this.preLoadScrollPosition = this.$el.querySelector('.tabulator-tableholder').scrollLeft
       this.tabulator.setData(data);
     },
-    setColumns(columns: ColumnDefinition[]) {
-      this.tabulator.setColumns(columns);
+    async setColumns(columns: ColumnDefinition[]) {
+      if (columns.length === 0) {
+        await this.initialize();
+      } else {
+        this.tabulator.options.autoColumns = false;
+        this.tabulator.setColumns(columns);
+      }
+      this.columnWidths = this.tabulator.getColumns().map((c) => {
+        return { field: c.getField(), width: c.getWidth()}
+      })
     },
     blockRedraw() {
       this.tabulator?.blockRedraw();
@@ -264,8 +278,59 @@ export default Vue.extend({
         this.$emit("tabulator-built", this.tabulator);
       });
       this.tabulator.on("sortChanged", (sorters) => {
-        this.$emit("update:sorters", sorters.map(({ column, dir }) => ({ column, dir })));
+        this.$emit("update:sorters", sorters.map(({ field, dir }) => ({ field, dir })));
       });
+      this.tabulator.on("cellMouseUp", this.checkRangeChanges);
+      this.tabulator.on("headerMouseUp", this.checkRangeChanges);
+      this.tabulator.on("keyNavigate", this.checkRangeChanges);
+      // Tabulator range is reset after data is processed
+      this.tabulator.on("dataProcessed", this.checkRangeChanges);
+      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths);
+    },
+    maybeScrollAndSetWidths() {
+      if (this.columnWidths) {
+        try {
+          this.tabulator.blockRedraw()
+          this.columnWidths.forEach(({ field, width}) => {
+            const col = this.tabulator.getColumn(field)
+            if (col) col.setWidth(width)
+          })
+          this.columnWidths = null
+        } catch (ex) {
+          console.error("error setting widths", ex)
+        } finally {
+          this.tabulator.restoreRedraw()
+        }
+      }
+      if (this.preLoadScrollPosition) {
+        this.$el.querySelector('.tabulator-tableholder').scrollLeft = this.preLoadScrollPosition
+        this.preLoadScrollPosition = null
+      }
+    },
+    checkRangeChanges() {
+      const ranges = this.tabulator.getRanges()
+      function edgesOfRange(range: RangeComponent) {
+        return {
+          top: range.getTopEdge(),
+          bottom: range.getBottomEdge(),
+          left: range.getLeftEdge(),
+          right: range.getRightEdge(),
+        }
+      }
+      if (this.ranges.length !== ranges.length) {
+        this.ranges = ranges
+        this.$emit("rangesUpdated", ranges)
+        return
+      }
+      const oldEdges = edgesOfRange(this.range)
+      const foundDiffRange = ranges.some((range, index) => {
+        const updatedEdges = edgesOfRange(range)
+        return !_.isEqual(updatedEdges, oldEdges)
+      })
+      if (foundDiffRange) {
+        this.$emit("rangesUpdated", ranges)
+        return
+      }
     },
     keydown(e: KeyboardEvent) {
       const isCtrl = event.ctrlKey || event.metaKey;
