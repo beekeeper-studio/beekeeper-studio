@@ -18,7 +18,6 @@ import {
   buildSelectQueriesFromUpdates,
   buildUpdateQueries,
   escapeString,
-  refreshTokenIfNeeded
 } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -98,7 +97,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   _defaultSchema: string;
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
-  interval: NodeJS.Timeout;
+  poolConfig: pg.PoolConfig;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -146,33 +145,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };
+    this.poolConfig = dbConfig;
 
     const test = await this.conn.pool.connect()
-
-    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
-      this.interval = setInterval(async () => {
-        try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
-
-          const newPool = new pg.Pool({
-            ...dbConfig,
-            password: newPassword,
-          });
-
-          const test = await newPool.connect();
-          test.release();
-
-          if (this.conn?.pool) {
-            await this.conn.pool.end();
-          }
-          this.conn = { pool: newPool };
-
-          log.info('Token refreshed successfully and connection pool updated.');
-        } catch (err) {
-          log.error('Could not refresh token or update connection pool!', err);
-        }
-      }, globals.iamRefreshTime);
-    }
 
     test.release();
 
@@ -198,9 +173,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
-    if(this.interval){
-      clearInterval(this.interval);
-    }
     await super.disconnect();
     this.conn.pool.end();
   }
@@ -1302,21 +1274,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
+      password: server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
 
     };
-
-    if (
-      server.config.client === "postgresql" &&
-      server.config?.redshiftOptions
-    ){
-      server.config.ssl = true;
-    }
-
     return this.configurePool(config, server, null);
   }
 

@@ -4,14 +4,19 @@ import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResol
 import { DatabaseElement } from "../types";
 import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
-import { escapeString } from "./utils";
+import { escapeString, refreshTokenIfNeeded } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
+import logRaw from 'electron-log'
+
+const log = logRaw.scope('redshift')
 
 export class RedshiftClient extends PostgresClient {
+  interval: NodeJS.Timeout;
+
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,
@@ -24,6 +29,41 @@ export class RedshiftClient extends PostgresClient {
       restore: false,
       indexNullsNotDistinct: false,
     };
+  }
+
+  async connect(): Promise<void> {
+    await super.connect()
+    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
+      this.interval = setInterval(async () => {
+        try {
+          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
+
+          const newPool = new pg.Pool({
+            ...this.poolConfig,
+            password: newPassword,
+          });
+
+          const test = await newPool.connect();
+          test.release();
+
+          if (this.conn?.pool) {
+            await this.conn.pool.end();
+          }
+          this.conn = { pool: newPool };
+
+          log.info('Token refreshed successfully and connection pool updated.');
+        } catch (err) {
+          log.error('Could not refresh token or update connection pool!', err);
+        }
+      }, globals.iamRefreshTime);
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
+    await super.disconnect();
   }
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -256,12 +296,14 @@ export class RedshiftClient extends PostgresClient {
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: passwordResolver || server.config.password || undefined,
+      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || passwordResolver || server.config.password || undefined,
       database: database.database,
       max: 5, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
       idleTimeoutMillis: globals.psqlIdleTimeout,
     };
+
+    server.config.ssl = true
 
     return this.configurePool(config, server, tempUser);
   }
