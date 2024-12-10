@@ -319,16 +319,17 @@ export default Vue.extend({
       }
       if (this.ranges.length !== ranges.length) {
         this.ranges = ranges
-        this.$emit("rangesUpdated", ranges)
+        this.$emit("ranges-changed", ranges)
         return
       }
-      const oldEdges = edgesOfRange(this.range)
-      const foundDiffRange = ranges.some((range, index) => {
+      const foundDiffRange = ranges.some((range, idx) => {
+        const oldEdges = edgesOfRange(this.ranges[idx])
         const updatedEdges = edgesOfRange(range)
         return !_.isEqual(updatedEdges, oldEdges)
       })
       if (foundDiffRange) {
-        this.$emit("rangesUpdated", ranges)
+        this.ranges = ranges
+        this.$emit("ranges-changed", ranges)
         return
       }
     },

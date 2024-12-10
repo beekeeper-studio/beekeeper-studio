@@ -66,7 +66,7 @@
     <div class="empty-state" v-show="empty">
       No Data
     </div>
-    <json-row-viewer-upsell v-if="$store.getters.isCommunity" />
+    <!-- <json-row-viewer-upsell v-if="$store.getters.isCommunity" /> -->
   </div>
 </template>
 
@@ -78,7 +78,6 @@
  */
 import Vue from "vue";
 import {
-  ExpandablePath,
   findKeyPosition,
   findValueInfo,
   createExpandableElement,
@@ -86,18 +85,14 @@ import {
   deepFilterObjectProps,
   getPaths,
   eachPaths,
-} from "@/lib/data/detail_view";
-import { mapGetters } from "vuex";
-import type { EditorMarker } from "@bks/ui-kit/components/TextEditor";
-import JsonRowViewerUpsell from '@/components/upsell/JsonRowViewerUpsell.vue'
-import rawLog from "electron-log";
+} from "./detail_view";
+import { ExpandablePath } from "./types";
+// import { mapGetters } from "vuex";
+import type { EditorMarker } from "../components/TextEditor";
 import _ from "lodash";
-import globals from '@/common/globals'
-
-const log = rawLog.scope("json-row-viewer");
+import * as constants from "../../utils/constants";
 
 export default Vue.extend({
-  components: { JsonRowViewerUpsell },
   props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {
@@ -113,14 +108,14 @@ export default Vue.extend({
       if (!this.hidden) this.reinitializeTextEditor++;
     },
     dataId() {
-      if (this.expandFKDetailsByDefault) {
-        this.expandablePaths.forEach((expandablePath: ExpandablePath) => {
-          // Expand only the first level
-          if (expandablePath.path.length === 1) {
-            this.expandPath(expandablePath);
-          }
-        });
-      }
+      // if (this.expandFKDetailsByDefault) {
+      //   this.expandablePaths.forEach((expandablePath: ExpandablePath) => {
+      //     // Expand only the first level
+      //     if (expandablePath.path.length === 1) {
+      //       this.expandPath(expandablePath);
+      //     }
+      //   });
+      // }
     },
   },
   computed: {
@@ -158,7 +153,7 @@ export default Vue.extend({
       const clonedValue = _.cloneDeep(this.value)
       eachPaths(clonedValue, (path, value: string) => {
         if (this.truncatedPaths.includes(path)) {
-          _.set(clonedValue, path, value.slice(0, globals.maxDetailViewTextLength))
+          _.set(clonedValue, path, value.slice(0, constants.maxJsonViewerTextLength))
         }
       })
       return clonedValue
@@ -168,7 +163,7 @@ export default Vue.extend({
         const val = _.get(this.value, path)
         if (
           typeof val === "string" &&
-          val.length > globals.maxDetailViewTextLength
+          val.length > constants.maxJsonViewerTextLength
         ) {
           return true
         }
@@ -251,17 +246,17 @@ export default Vue.extend({
             this.unfoldAll++;
           },
         },
-        {
-          name: "Always Expand Foreign Keys",
-          handler: () => {
-            this.$store.dispatch("toggleExpandFKDetailsByDefault");
-          },
-          checked: this.expandFKDetailsByDefault,
-        },
+        // {
+        //   name: "Always Expand Foreign Keys",
+        //   handler: () => {
+        //     this.$store.dispatch("toggleExpandFKDetailsByDefault");
+        //   },
+        //   checked: this.expandFKDetailsByDefault,
+        // },
 
       ]
     },
-    ...mapGetters(["expandFKDetailsByDefault"]),
+    // ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
     expandPath(path: ExpandablePath) {

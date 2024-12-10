@@ -1,11 +1,4 @@
-import { TableKey } from "@/shared/lib/dialects/models";
 import _ from "lodash";
-import globals from '@/common/globals'
-
-export interface ExpandablePath {
-  path: string[];
-  tableKey: TableKey;
-}
 
 /**
  * Find a line position of a key in a JSON string.

@@ -331,7 +331,7 @@ import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@bks/ui-kit/components/Table';
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import JsonRowViewer from '@/components/sidebar/JsonRowViewer.vue'
+import { JsonRowViewer } from '@bks/ui-kit/components/JsonRowViewer'
 import Split from 'split.js'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { ExpandablePath } from '@/lib/data/detail_view'
@@ -922,10 +922,11 @@ export default Vue.extend({
       function () {
         return this.initializationStatus + this.isTableBuilt
       },
-      function () {
+      async function () {
         if (this.initializationStatus === 'initialized' && this.isTableBuilt) {
           unwatch()
-          this.dataFetch()
+          await this.dataFetch()
+          this.updateDetailViewByFirstRange()
         }
       }
     )

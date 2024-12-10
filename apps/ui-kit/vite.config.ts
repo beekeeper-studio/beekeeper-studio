@@ -15,6 +15,7 @@ export default defineConfig({
         'components/TextEditor': resolve(__dirname, 'lib/components/TextEditor/index.ts'),
         'components/SqlTextEditor': resolve(__dirname, 'lib/components/SqlTextEditor/index.ts'),
         'components/Table': resolve(__dirname, 'lib/components/Table/index.ts'),
+        'components/JsonRowViewer': resolve(__dirname, 'lib/components/JsonRowViewer/index.ts'),
         utils: resolve(__dirname, 'lib/utils/index.ts'),
         'utils/binary': resolve(__dirname, 'lib/utils/binary.ts'),
       },
