@@ -36,7 +36,6 @@
         v-bind.sync="editor"
         :focus="focusingElement === 'text-editor'"
         @update:focus="updateTextEditorFocus"
-        :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
@@ -53,7 +52,7 @@
         >
           <x-button
             v-if="showDryRun"
-            class="btn btn-flat btn-small"
+            class="btn btn-flat btn-small dry-run-btn"
             :disabled="isCommunity"
             @click="dryRun = !dryRun"
           >
@@ -348,7 +347,6 @@
         runningType: 'all queries',
         selectedResult: 0,
         unsavedText: editorDefault,
-        forcedTextEditorValue: editorDefault,
         editor: {
           height: 100,
           selection: null,
@@ -969,7 +967,6 @@
         if (originalText) {
           this.originalText = originalText
           this.unsavedText = originalText
-          this.forcedTextEditorValue = originalText
         }
       },
       fakeRemoteChange() {

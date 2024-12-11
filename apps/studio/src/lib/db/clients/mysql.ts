@@ -16,14 +16,15 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError
+  getIAMPassword,
+  ClientError, refreshTokenIfNeeded
 } from "./utils";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
-import { createCancelablePromise } from "@/common/utils";
+import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
@@ -62,6 +63,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
+import globals from '../../../common/globals';
 
 type ResultType = {
   tableName?: string
@@ -125,15 +127,16 @@ const FieldFlags = {
   BINARY: 128,
 };
 
-function configDatabase(
+async function configDatabase(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase
-): mysql.PoolOptions {
+): Promise<mysql.PoolOptions> {
+
   const config: mysql.PoolOptions = {
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: server.config.password,
+    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -152,6 +155,12 @@ function configDatabase(
   if (server.sshTunnel) {
     config.host = server.config.localHost;
     config.port = server.config.localPort;
+  }
+
+  if (
+    server.config.redshiftOptions?.iamAuthenticationEnabled
+  ){
+    server.config.ssl = true
   }
 
   if (server.config.ssl) {
@@ -279,6 +288,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   };
   transcoders = [GenericBinaryTranscoder];
 
+  interval: NodeJS.Timeout
+
   clientId: string
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -291,13 +302,27 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async connect() {
     await super.connect();
-
-    const dbConfig = configDatabase(this.server, this.database);
+    const dbConfig = await configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
     this.conn = {
       pool: mysql.createPool(dbConfig),
     };
+
+    if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
+      this.interval = setInterval(async () => {
+        try {
+          this.conn.pool.getConnection(async (err, connection) => {
+            if(err) throw err;
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 3306)
+            connection.release();
+            log.info('Token refreshed successfully.')
+          });
+        } catch (err) {
+          log.error('Could not refresh token!')
+        }
+      }, globals.iamRefreshTime);
+    }
 
     this.conn.pool.on('acquire', (connection) => {
       log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
@@ -312,6 +337,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async disconnect() {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
     this.conn?.pool.end();
 
     await super.disconnect();
@@ -1161,6 +1189,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 

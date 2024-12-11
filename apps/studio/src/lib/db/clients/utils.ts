@@ -4,6 +4,9 @@ import logRaw from '@bksLogger'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import {fromIni} from "@aws-sdk/credential-providers";
+import {Signer} from "@aws-sdk/rds-signer";
+import globals from "@/common/globals";
 
 const log = logRaw.scope('db/util')
 
@@ -302,4 +305,44 @@ export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], rea
 
 export const errorMessages = {
   readOnly: 'Write action(s) not allowed in Read-Only Mode.'
+}
+
+export async function getIAMPassword(awsProfile: string, region: string, hostname: string, port: number, username: string): Promise<string> {
+  const nodeProviderChainCredentials = fromIni({
+    profile: awsProfile ?? "default",
+  });
+  const signer = new Signer({
+    credentials: nodeProviderChainCredentials,
+    region,
+    hostname,
+    port,
+    username,
+  });
+  return  await signer.getAuthToken();
+}
+
+let resolvedPw: string | undefined;
+let tokenExpiryTime: number | null = null;
+
+export async function refreshTokenIfNeeded(redshiftOptions: any, server: any, port: number): Promise<string> {
+  if(!redshiftOptions?.iamAuthenticationEnabled){
+    return null
+  }
+
+  const now = Date.now();
+
+  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime) { // Refresh 2 minutes before expiry
+    log.info("Refreshing IAM token...");
+    resolvedPw = await getIAMPassword(
+      redshiftOptions.awsProfile ?? "default",
+      redshiftOptions?.awsRegion,
+      server.config.host,
+      server.config.port || port,
+      server.config.user
+    );
+
+    tokenExpiryTime = now + globals.iamExpiryTime; // Tokens last 15 minutes
+  }
+
+  return resolvedPw;
 }

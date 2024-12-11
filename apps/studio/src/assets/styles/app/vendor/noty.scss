@@ -16,12 +16,8 @@
   .noty_buttons {
     display: flex;
     justify-content: flex-end;
-    margin: 0 -3px;
-    padding-top: 0;
-    padding-bottom: $gutter-w * 1.25;
-    > .btn {
-      margin: 0 3px;
-    };
+    padding: 0 0.8rem ($gutter-w * 1.25);
+    gap: 0.5rem;
   }
 }
 #noty_layout__bottomRight {

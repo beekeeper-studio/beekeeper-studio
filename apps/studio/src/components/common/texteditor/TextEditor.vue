@@ -59,9 +59,6 @@ export default {
     "selection",
     "cursor",
     "initialized",
-    // Use forcedValue if you want to set the value programmatically and
-    // honestly, I forgot why do we need this.
-    "forcedValue",
     "plugins",
     "autoFocus",
     "lineNumbers",
@@ -80,6 +77,7 @@ export default {
       bookmarkInstances: [],
       markInstances: [],
       wasEditorFocused: false,
+      valueChangeByCodeMirror: false,
     };
   },
   computed: {
@@ -104,13 +102,17 @@ export default {
     },
     valueAndStatus() {
       return {
-        value: this.forcedValue,
+        value: this.value,
         status: this.editor != null
       }
     }
   },
   watch: {
     valueAndStatus() {
+      if (this.valueChangeByCodeMirror || this.editor?.getValue() === this.value) {
+        this.valueChangeByCodeMirror = false;
+        return
+      }
       const { value, status } = this.valueAndStatus;
       if (!status || !this.editor) return;
       this.foundRootFold = false;
@@ -279,7 +281,9 @@ export default {
         cm.setOption("lineWrapping", this.lineWrapping);
       }
 
-      cm.on("change", (cm) => {
+      cm.on("change", async (cm) => {
+        this.valueChangeByCodeMirror = true;
+        await this.$nextTick()
         this.$emit("input", cm.getValue());
       });
 
