@@ -109,7 +109,7 @@ export default {
   },
   watch: {
     valueAndStatus() {
-      if (this.valueChangeByCodeMirror) {
+      if (this.valueChangeByCodeMirror || this.editor?.getValue() === this.value) {
         this.valueChangeByCodeMirror = false;
         return
       }
