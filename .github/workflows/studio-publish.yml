@@ -73,6 +73,7 @@ jobs:
             arch: arm64
             type: linux
             setup_python: true
+            clean_zfs: true
           - name: macos-13
             arch: x64
             type: macos
@@ -92,6 +93,13 @@ jobs:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: matrix.os.type == 'linux'
 
+        # Oh the hacks I put in place for the snap build
+        # Why does it fill up zfs? I don't understand what it does at all
+      - name: Free Up ZFS Space
+        run: |
+          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+          sudo zfs list -H -o name | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+        if: matrix.os.clean_zfs
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
