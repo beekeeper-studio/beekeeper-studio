@@ -304,6 +304,7 @@ export default Vue.extend({
           this.$root.$emit(AppEvent.loadTable, { table: result })
           break;
           case 'query':
+            result.text = result.unsavedQueryText
             this.$root.$emit('historyClick', result)
             break;
         case 'table-properties': {

@@ -595,25 +595,26 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     handleCreateTab() {
       this.createQuery()
     },
-    createQuery(optionalText, queryTitle?) {
+    async createQuery(optionalText, queryTitle?) {
       // const text = optionalText ? optionalText : ""
       console.log("Creating tab")
       let qNum = 0
       let tabName = "New Query"
-      do {
-        qNum = qNum + 1
-        tabName = `Query #${qNum}`
-      } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       if (queryTitle) {
         tabName = queryTitle
+      } else {
+        do {
+          qNum = qNum + 1
+          tabName = `Query #${qNum}`
+        } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       }
 
-        const result = {} as TransportOpenTab;
-        result.tabType = 'query'
-        result.title = tabName,
-        result.unsavedChanges = false
-        result.unsavedQueryText = optionalText
-        this.addTab(result)
+      const result = {} as TransportOpenTab;
+      result.tabType = 'query'
+      result.title = tabName,
+      result.unsavedChanges = false
+      result.unsavedQueryText = optionalText
+      await this.addTab(result)
     },
     async loadTableCreate(table) {
       let method = null
