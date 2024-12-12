@@ -46,7 +46,7 @@
     "@types/tabulator-tables": "^6.2.0",
     "@vitejs/plugin-vue2": "^2.3.1",
     "typescript": "~5.6.2",
-    "vite": "^5.3.6",
+    "vite": "~5.3.6",
     "vue-tsc": "^2.1.10"
   }
 }

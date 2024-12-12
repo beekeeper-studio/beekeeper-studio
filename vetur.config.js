@@ -3,7 +3,7 @@
 module.exports = {
   projects: [
     'apps/studio',
-    'apps/sqltools',
+    'apps/ui-kit',
     'shared'
   ]
 }
