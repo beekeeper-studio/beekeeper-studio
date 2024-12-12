@@ -141,7 +141,6 @@ export const TabModule: Module<State, RootState> = {
         if (rawTabs == null) return
         const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
         const { usedConfig } = context.rootState
-        console.log(tabs)
         if (usedConfig?.id) {
           await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs })
         }
