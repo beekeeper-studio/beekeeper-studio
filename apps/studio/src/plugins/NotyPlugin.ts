@@ -1,4 +1,4 @@
-import { escapeHtml } from '@bks/ui-kit/components/Table'
+import { escapeHtml } from '@bks/ui-kit/vue/components/Table'
 import Noty from 'noty'
 
 const defaults = {

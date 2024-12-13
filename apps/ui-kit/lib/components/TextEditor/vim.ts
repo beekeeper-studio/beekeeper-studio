@@ -5,7 +5,7 @@ export type IMapping = {
   mode: string;
 };
 
-interface Config {
+export interface Config {
   exCommands?: { name: string, prefix: string, handler: () => void }[];
 }
 

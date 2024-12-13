@@ -31,7 +31,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import DatePicker from 'vue2-datepicker'
-import { Mutators2 as helpers } from '@bks/ui-kit/components/Table'
+import { Mutators2 as helpers } from '@bks/ui-kit/vue/components/Table'
 import NullableInputEditor from './NullableInputEditor.vue'
 export default Vue.extend({
   props: ['cell', 'params'],
@@ -46,11 +46,11 @@ export default Vue.extend({
   computed: {
     typeEditorTitle() {
       if (this.typeEditorActive) return 'Use standard input'
-      return 'Open date/time picker' 
+      return 'Open date/time picker'
     },
     typeEditorIcon() {
       if (this.typeEditorActive) return 'edit'
-      return 'edit_calendar' 
+      return 'edit_calendar'
     },
     datePickerType() {
       const dataType = this.params?.dataType?.trim().toLowerCase() ?? ''
@@ -104,7 +104,7 @@ export default Vue.extend({
         let dataValue = refValue == null ? refValue : helpers.niceString(refValue)
 
         if (this.isTimeType(dataType) && dataValue !== null) {
-          dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue  
+          dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue
           // because it's a time type, we generally don't care what the date is, we just need to get a date object going to get the time working
           this.datePickerValue = new Date(`2023-03-31T${dataValue}`)
         } else if (dataValue !== null && dataValue !== '') {

@@ -24,7 +24,7 @@
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import { mapState } from 'vuex'
-  import { Column, Table as BksTable } from "@bks/ui-kit/components/Table";
+  import { Column, Table as BksTable } from "@bks/ui-kit/vue/components/Table";
   import { PropType } from "vue";
   import { NgQueryResult } from "@/lib/db/models";
   import ISavedQuery from '@/common/interfaces/ISavedQuery'

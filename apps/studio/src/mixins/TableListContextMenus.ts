@@ -1,6 +1,6 @@
 import { AppEvent } from "@/common/AppEvent";
 import { DatabaseElement } from "@/lib/db/types";
-import { ContextOption } from "@bks/ui-kit/components/ContextMenu";
+import { ContextOption } from "@bks/ui-kit/vue/components/ContextMenu";
 import { DialectData } from "@shared/lib/dialects/models";
 
 function disabled(...args: boolean[]) {

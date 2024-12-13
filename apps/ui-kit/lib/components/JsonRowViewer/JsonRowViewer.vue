@@ -88,11 +88,14 @@ import {
 } from "./detail_view";
 import { ExpandablePath } from "./types";
 // import { mapGetters } from "vuex";
-import type { EditorMarker } from "../components/TextEditor";
+import { EditorMarker, TextEditor } from "../TextEditor";
 import _ from "lodash";
 import * as constants from "../../utils/constants";
 
 export default Vue.extend({
+  components: {
+    TextEditor,
+  },
   props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
   data() {
     return {

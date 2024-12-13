@@ -320,7 +320,7 @@
   import { identify } from 'sql-query-identifier'
 
   import { splitQueries } from '../lib/db/sql_tools'
-  import type { EditorMarker } from '@bks/ui-kit/components/TextEditor'
+  import type { EditorMarker } from '@bks/ui-kit/vue/components/TextEditor'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'

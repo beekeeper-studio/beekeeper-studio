@@ -5,6 +5,7 @@
 @import "codemirror/theme/monokai";
 @import "codemirror/addon/merge/merge";
 @import "codemirror/addon/search/matchesonscrollbar";
+@import "codemirror/addon/fold/foldgutter";
 @import "vue-select/dist/vue-select";
 
 @import './app/normalize';

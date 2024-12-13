@@ -1,7 +1,7 @@
 import { AppEvent } from "@/common/AppEvent"
-import { MenuProps, openMenu } from '@bks/ui-kit/components/ContextMenu'
-import { TextEditor } from "@bks/ui-kit/components/TextEditor"
-import { SqlTextEditor } from "@bks/ui-kit/components/SqlTextEditor"
+import { MenuProps, openMenu } from "@bks/ui-kit/vue/components/ContextMenu"
+import { TextEditor } from "@bks/ui-kit/vue/components/TextEditor"
+import { SqlTextEditor } from "@bks/ui-kit/vue/components/SqlTextEditor"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import TimeAgo from "javascript-time-ago"

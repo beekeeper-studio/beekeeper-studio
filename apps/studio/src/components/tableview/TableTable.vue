@@ -308,7 +308,7 @@
 import Vue from 'vue'
 import { type TabulatorFull, ColumnComponent, CellComponent, RangeComponent, Options, ColumnDefinition } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
-import { Table as BksTable, Mutators as DataMutators, escapeHtml, Column } from '@bks/ui-kit/components/Table'
+import { Table as BksTable, Mutators as DataMutators, escapeHtml, Column } from '@bks/ui-kit/vue/components/Table'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
@@ -329,9 +329,9 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@bks/ui-kit/components/Table';
+import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@bks/ui-kit/vue/components/Table';
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import { JsonRowViewer } from '@bks/ui-kit/components/JsonRowViewer'
+import { JsonRowViewer } from '@bks/ui-kit/vue/components/JsonRowViewer'
 import Split from 'split.js'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { ExpandablePath } from '@/lib/data/detail_view'
@@ -920,10 +920,10 @@ export default Vue.extend({
     // This ensure that the table is loaded when everything is ready
     const unwatch = this.$watch(
       function () {
-        return this.initializationStatus + this.isTableBuilt
+        return this.initializationStatus + this.isTableBuilt + this.tabulator
       },
       async function () {
-        if (this.initializationStatus === 'initialized' && this.isTableBuilt) {
+        if (this.initializationStatus === 'initialized' && this.tabulator) {
           unwatch()
           await this.dataFetch()
           this.updateDetailViewByFirstRange()
@@ -1019,7 +1019,9 @@ export default Vue.extend({
       this.isTableBuilt = true
     },
     handleRangesChanged() {
-      this.updateDetailViewByFirstRange()
+      if (this.tabulator) {
+        this.updateDetailViewByFirstRange()
+      }
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
@@ -1561,6 +1563,15 @@ export default Vue.extend({
       this.filters = filters
     },
     dataFetch(_url, _config, _params) {
+      if (this.initializationStatus === 'uninitialized') {
+        console.warn("dataFetch called before initialization. Aborting.")
+        return
+      }
+      if (this.initializationStatus === 'initializing') {
+        console.warn("dataFetch called during initialization. Aborting.")
+        return
+      }
+
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info

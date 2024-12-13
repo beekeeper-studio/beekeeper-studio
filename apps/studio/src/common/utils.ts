@@ -191,7 +191,7 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
   return transformedRangeData;
 }
 
-import { rowHeaderField } from '@bks/ui-kit/components/Table';
+import { rowHeaderField } from '@bks/ui-kit/vue/components/Table';
 
 export function isBksInternalColumn(field: string) {
   return field.endsWith('--bks')
@@ -217,4 +217,4 @@ export function streamToBuffer(stream: Stream): Promise<Buffer> {
   });
 }
 
-export { uint8ArrayToHex, hexToUint8Array, friendlyUint8Array } from '@bks/ui-kit/utils/binary';
+export { uint8ArrayToHex, hexToUint8Array, friendlyUint8Array } from '@bks/ui-kit/vue/utils/binary';
