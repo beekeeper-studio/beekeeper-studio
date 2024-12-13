@@ -115,7 +115,10 @@ module.exports = {
     target: [
       'snap',
       'deb',
-      'appImage'
+      'appImage',
+      'rpm',
+      'flatpak',
+      'pacman'
     ],
     desktop: {
       'StartupWMClass': 'beekeeper-studio'
@@ -145,11 +148,14 @@ module.exports = {
   },
   win: {
     icon: './public/icons/png/512x512.png',
-    target: ['nsis', 'portable'],
+    target: ['nsis', 'portable', 'appx'],
     publish: ['github'],
     sign: "./build/win/sign.js",
   },
   portable: {
     "artifactName": "${productName}-${version}-portable.exe",
+  },
+  nsis: {
+    oneClick: false
   }
 }
