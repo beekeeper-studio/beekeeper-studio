@@ -73,6 +73,7 @@ jobs:
             arch: arm64
             type: linux
             setup_python: true
+            clean_zfs: true
           - name: macos-13
             arch: x64
             type: macos
@@ -92,6 +93,13 @@ jobs:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: matrix.os.type == 'linux'
 
+        # Oh the hacks I put in place for the snap build
+        # Why does it fill up zfs? I don't understand what it does at all
+      - name: Free Up ZFS Space
+        run: |
+          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+          sudo zfs list -H -o name | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+        if: matrix.os.clean_zfs
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
@@ -395,38 +403,11 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
-        # this way we can fix this script without a full redeploy
-        with:
-          ref: master
-
-        # Requires us to use a github token with more power (to create drafts on another repo)
-      - name: Create or check draft release (ultimate)
-        id: create_release
-        uses: actions/github-script@v7
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-          OWNER: 'beekeeper-studio'
-          REPO: 'ultimate-releases'
-        with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
-          script: |
-            const script = require('./.github/scripts/create_draft_release.js')
-            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
       - name: Copy community release to ultimate
-        uses: actions/github-script@v7
         env:
           TAG_NAME: ${{ github.ref_name }}
-          SOURCE: ${{ needs.create_draft_release.outputs.id }}
-          DEST: ${{ steps.create_release.outputs.id }}
           GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
-        with:
-          script: |
-            const script = require('./.github/scripts/duplicate_release.js')
-            await script(
-              github,
-              'beekeeper-studio/beekeeper-studio',
-              'beekeeper-studio/ultimate-releases',
-              process.env.SOURCE,
-              process.env.DEST
-            )
-
+          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          SOURCE: beekeeper-studio/beekeeper-studio
+          DEST: beekeeper-studio/ultimate-releases
+        run: 'bin/sync-release.sh "$SOURCE" "$DEST" "$TAG_NAME"'

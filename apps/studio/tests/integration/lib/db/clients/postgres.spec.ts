@@ -10,6 +10,7 @@ import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
+import { createServer } from '@commercial/backend/lib/db/server'
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -22,6 +23,7 @@ const TEST_VERSIONS = [
 ] as const
 
 type TestVersion = typeof TEST_VERSIONS[number]['version']
+let configUsed = null
 
 function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
   describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
@@ -92,6 +94,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         // Generated columns was introduced in postgres 12
         utilOptions.skipGeneratedColumns = true
       }
+      configUsed = config
 
       util = new DBTestUtil(config, "banana", utilOptions)
       await util.setupdb()
@@ -176,7 +179,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           first_key character varying(255) NOT NULL,
           second_key character varying(255) NOT NULL,
           PRIMARY KEY (first_key, second_key)
-        ); 
+        );
       `)
     })
 
@@ -188,6 +191,13 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     })
 
+    it("Should connect to localhost without SSL even if redshiftOptions isn't empty", async () => {
+      configUsed.redshiftOptions = { iamAuthenticationEnabled: false }
+      const server = createServer(configUsed)
+      const connection = server.createConnection('banana')
+      await connection.connect()
+      await connection.listTables()
+    })
 
     it("Should allow me to update rows with an empty array", async () => {
       const columns = await util.connection.listTableColumns("witharrays")
