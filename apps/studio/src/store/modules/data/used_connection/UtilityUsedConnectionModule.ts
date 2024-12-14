@@ -37,8 +37,8 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
     }
   }),
   getters: {
-    orderedUsedConfigs(state) {
-      return _.sortBy(state.items, 'updatedAt').reverse()
+    orderedUsedConfigs(state, _getters, rootState) {
+      return _.sortBy(state.items, 'updatedAt').filter((v) => v.workspaceId === rootState.workspaceId).reverse()
     }
   }
 }
