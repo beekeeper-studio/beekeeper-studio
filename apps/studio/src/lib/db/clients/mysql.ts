@@ -618,7 +618,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     );
     const { query, params } = queries;
     const result = await this.driverExecuteSingle(query, { params });
-    const fields = this.parseQueryResultColumns(result);
+    const fields = columns.map((v) => v.bksField).filter((v) => selects && selects.length > 0 ? selects.includes(v.name) : true);
     const rows = await this.serializeQueryResult(result, fields);
     return { result: rows, fields };
   }
