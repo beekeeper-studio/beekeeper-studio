@@ -23,6 +23,7 @@
     "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#fbbc631e3b536a4973432a2aa29354b8a0ec4959",
     "codemirror": "^5.63.1",
     "lodash": "^4.17.21",
+    "split.js": "^1.5.11",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
     "sql-query-identifier": "^2.8.0",

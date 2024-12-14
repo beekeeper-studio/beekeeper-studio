@@ -7,7 +7,6 @@ import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/serverTypes'
 import { CoreTab, EntityFilter } from './models'
-import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
 import RawLog from 'electron-log/renderer'
@@ -56,7 +55,6 @@ export interface State {
   databaseList: string[],
   tables: TableOrView[],
   routines: Routine[],
-  entityFilter: EntityFilter,
   columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
@@ -105,13 +103,6 @@ const store = new Vuex.Store<State>({
     databaseList: [],
     tables: [],
     routines: [],
-    entityFilter: {
-      filterQuery: undefined,
-      showTables: true,
-      showRoutines: true,
-      showViews: true,
-      showPartitions: false
-    },
     tablesLoading: null,
     columnsLoading: null,
     tablesInitialLoaded: false,
@@ -261,9 +252,6 @@ const store = new Vuex.Store<State>({
     },
     selectSidebarItem(state, item: string) {
       state.selectedSidebarItem = item
-    },
-    entityFilter(state, filter) {
-      state.entityFilter = filter
     },
     filterQuery(state, str: string) {
       state.entityFilter.filterQuery = str

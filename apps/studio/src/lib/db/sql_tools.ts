@@ -11,6 +11,7 @@ export function splitQueries(queryText: string, dialect) {
   return result
 }
 
+// TODO(@day): possibly remove
 export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   const tables = rawTables.filter((table) => {
     return (table.entityType === 'table' && allFilters.showTables && 
