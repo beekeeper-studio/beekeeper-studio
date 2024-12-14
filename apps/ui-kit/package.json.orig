@@ -41,8 +41,12 @@
     "codemirror": "^5.63.1",
     "@vue/web-component-wrapper": "^1.3.0",
     "lodash": "^4.17.21",
-    "split.js": "^1.5.11",
+<<<<<<< Updated upstream
     "material-icons": "^1.13.12",
+||||||| Stash base
+=======
+    "split.js": "^1.5.11",
+>>>>>>> Stashed changes
     "postgres-interval": "^4.0.0",
     "sql-query-identifier": "^2.8.0",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
