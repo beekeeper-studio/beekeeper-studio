@@ -24,6 +24,7 @@ import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { CloudClient } from '@/lib/cloud/CloudClient';
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import globals from '@/common/globals';
+import _ from 'lodash';
 
 import * as sms from 'source-map-support'
 
