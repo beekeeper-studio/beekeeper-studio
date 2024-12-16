@@ -6,8 +6,7 @@
 </template>
 
 <style lang="scss">
-@import "tabulator-tables/dist/css/tabulator_midnight";
-@import "./tabulator.scss";
+@import "./Table.scss";
 </style>
 
 <script lang="ts">
