@@ -32,7 +32,7 @@
         </div>
       </div>
       <sql-text-editor
-        v-model="unsavedText"
+        :value.sync="unsavedText"
         v-bind.sync="editor"
         :focus="focusingElement === 'text-editor'"
         @update:focus="updateTextEditorFocus"

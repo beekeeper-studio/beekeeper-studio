@@ -1,0 +1,30 @@
+
+
+.tabulator-row {
+  .tabulator-cell {
+    &.magic-link {
+      a {
+        text-decoration: underline;
+        color: $link-color;
+
+        &:hover {
+          color: $text-light;
+        }
+      }
+    }
+
+    &.magic-image {
+      height: inherit;
+    }
+
+    .bks-progress-container {
+      padding: 0;
+      .bks-progress {
+        height: 75%!important;
+        vertical-align: middle;
+        background-color: $brand-success!important;
+      }
+
+    }
+  }
+}

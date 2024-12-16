@@ -5,6 +5,11 @@
   />
 </template>
 
+<style lang="scss">
+@import "tabulator-tables/dist/css/tabulator_midnight";
+@import "./tabulator.scss";
+</style>
+
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import _ from "lodash";
@@ -132,6 +137,8 @@ export default Vue.extend({
             return `<span class="title">${escapeHtml(title)}</span>`;
           },
           field: column.field,
+          editable: !!column.editable,
+          editor: 'input',
           titleDownload: escapeHtml(column.title),
           titleClipboard: escapeHtml(column.title),
           titlePrint: escapeHtml(column.title),
@@ -333,7 +340,7 @@ export default Vue.extend({
         return
       }
     },
-    keydown(e: KeyboardEvent) {
+    keydown(event: KeyboardEvent) {
       const isCtrl = event.ctrlKey || event.metaKey;
       if (isCtrl && event.key === 'c') {
         event.preventDefault();

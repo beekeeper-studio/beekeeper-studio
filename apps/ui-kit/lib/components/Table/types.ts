@@ -5,6 +5,9 @@ export interface Column {
   field: string;
   /** The title of the column displayed in the table header. */
   title: string;
+  /** Make the column editable. */
+  editable?: boolean;
+  /** The data type of the column. */
   dataType?: string;
   /** The CSS class to apply to the column. */
   cssClass?: string;
