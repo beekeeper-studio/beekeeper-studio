@@ -1,8 +1,5 @@
 <template>
-  <div
-    ref="table"
-    class="spreadsheet-table"
-  />
+  <div ref="table" />
 </template>
 
 <style lang="scss">
@@ -150,10 +147,14 @@ export default Vue.extend({
           minWidth: constants.minColumnWidth,
           maxWidth: constants.maxColumnWidth,
           maxInitialWidth: constants.maxInitialColumnWidth,
-          tooltip: this.cellTooltip,
-          contextMenu: cellMenu,
-          headerContextMenu: columnMenu,
-          headerMenu: columnMenu,
+
+          // FIXME tooltip doesn't work in shadow dom
+          // tooltip: this.cellTooltip,
+
+          // FIXME context menu doesn't work in shadow dom
+          // contextMenu: cellMenu,
+          // headerContextMenu: columnMenu,
+          // headerMenu: columnMenu,
           resizable: "header",
           cssClass:
             "hide-header-menu-icon" +
