@@ -2,7 +2,7 @@ import _ from "lodash";
 import { BksField } from "../models";
 
 export interface Transcoder<T, U> {
-  serialize(value: T): U;
+  serialize(value: T): U | null| string;
   deserialize(value: U): T;
   serializeCheckByField(field: BksField): boolean;
   deserializeCheckByValue(value: unknown): value is U;
@@ -10,6 +10,8 @@ export interface Transcoder<T, U> {
 
 export const GenericBinaryTranscoder: Transcoder<Buffer, Uint8Array> = {
   serialize(value) {
+    if (_.isNull(value)) return null
+    if (_.isString(value)) return value
     return new Uint8Array(value, 0, value.byteLength);
   },
   deserialize(value) {
@@ -28,6 +30,8 @@ export const LibSQLBinaryTranscoder: Transcoder<
   Uint8Array
 > = {
   serialize(value) {
+    console.log('~~~~ libsql value ~~~~')
+    console.log(value)
     return new Uint8Array(value, 0, value.byteLength);
   },
   deserialize(value) {
