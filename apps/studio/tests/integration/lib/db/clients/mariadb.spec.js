@@ -43,7 +43,7 @@ describe("MariaDB Tests", () => {
   })
 
   // Regression test: https://github.com/beekeeper-studio/beekeeper-studio/issues/2640 
-  it.only("Should handle columns with binary collation", async () => {
+  it("Should handle columns with binary collation", async () => {
     await util.knex.raw(`
       CREATE TABLE binary_collation (
         id int(10) unsigned NOT NULL AUTO_INCREMENT,
