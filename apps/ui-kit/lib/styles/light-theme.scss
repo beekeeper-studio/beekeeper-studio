@@ -1,4 +1,3 @@
-@import "codemirror/theme/xq-light";
 @import "./light-variables.scss";
 
 // Global
@@ -126,60 +125,6 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 .tabulator-row {
   &:nth-child(odd) {
     background: rgba($theme-base, 0.025);
-  }
-}
-
-// CodeMirror
-// ----------------------------------
-.CodeMirror-hints {
-  background: darken($theme-bg, 5%)!important;
-  li {
-    &.CodeMirror-hint-active {
-      background: $brand-info;
-      color: white;
-    }
-  }
-}
-
-.cm-s-monokai {
-  span {
-    .cm-string {
-      color: $brand-success;
-    }
-  }
-  .CodeMirror-line {
-    .cm-number {
-      color: $brand-warning;
-    }
-  }
-}
-
-
-.cm-s-monokai {
-  font-weight: 500;
-  span.cm-keyword {
-    color: $brand-pink;
-  }
-  span.cm-variable-2 {
-    color: $brand-secondary;
-  }
-  div.CodeMirror-selected {
-    background: rgba($theme-secondary, 0.25);
-  }
-  .CodeMirror-linenumber {
-    color: rgba($theme-base, 0.25);
-  }
-  .CodeMirror-line .cm-number {
-    color: $brand-warning;
-  }
-  .CodeMirror-line .cm-string {
-    color: darken($brand-success, 20%);
-  }
-  .CodeMirror-cursor {
-    border-color: $text-dark;
-  }
-  span.cm-bracket {
-    color: $text;
   }
 }
 

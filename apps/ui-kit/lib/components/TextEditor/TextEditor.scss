@@ -1,10 +1,8 @@
-@import "codemirror/lib/codemirror";
-@import "codemirror/addon/hint/show-hint";
-@import "codemirror/theme/xq-light";
-@import "codemirror/theme/monokai";
-@import "codemirror/addon/merge/merge";
-@import "codemirror/addon/search/matchesonscrollbar";
-@import "codemirror/addon/fold/foldgutter";
-@import "../../styles/light-theme.scss";
-@import './vendor/codemirror';
+@import "codemirror/lib/codemirror.css";
+@import "codemirror/addon/hint/show-hint.css";
+@import "codemirror/theme/xq-light.css";
+@import "codemirror/addon/merge/merge.css";
+@import "codemirror/addon/search/matchesonscrollbar.css";
+@import "codemirror/addon/fold/foldgutter.css";
+@import "./theme.scss";
 @import "./text-editor";

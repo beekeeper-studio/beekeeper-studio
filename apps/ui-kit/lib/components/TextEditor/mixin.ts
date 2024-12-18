@@ -255,7 +255,6 @@ export default {
         value: this.value ?? "",
         lineNumbers: this.lineNumbers,
         tabSize: 2,
-        theme: "monokai",
         extraKeys: {
           "Ctrl-Space": "autocomplete",
           "Shift-Tab": "indentLess",
@@ -296,7 +295,7 @@ export default {
         }),
       });
 
-      const classNames = ["text-editor"];
+      const classNames = ["bks-text-editor"];
 
       if (this.foldWithoutLineNumbers) {
         classNames.push("fold-without-line-numbers");

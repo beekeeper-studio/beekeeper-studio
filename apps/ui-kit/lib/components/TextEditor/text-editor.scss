@@ -1,4 +1,9 @@
-.text-editor {
+@import '../../styles/mixins';
+@import '../../styles/variables';
+@import '../../styles/light-variables';
+@import "../../styles/base";
+
+.bks-text-editor {
   &.fold-without-line-numbers {
     margin-left: -2rem;
     .CodeMirror-linenumber {
@@ -12,7 +17,41 @@
     }
   }
 
-  .CodeMirror-guttermaker-subtle {
-    color: rgba($theme-base, 0.25);
+  &.CodeMirror {
+    font-family: $font-family-mono, monospace;
+    padding: 0.75rem 0;
+    z-index: 1;
+    height: 100%;
   }
+  &.CodeMirror-focused .CodeMirror-selected {
+    background: var(--bks-text-editor-selected-bg-color);
+  }
+  .CodeMirror-code {
+    line-height: 1.3!important;
+  }
+  .CodeMirror-gutters {
+    border: 0;
+  }
+  .CodeMirror-foldmarker {
+    color: $brand-primary;
+    text-shadow: none;
+  }
+}
+
+// Addon: Hints
+// --------------------------------------
+.CodeMirror-hints {
+  font-family: $font-family-mono, monospace;
+  padding: $gutter-h 0;
+  border: 0;
+  border-radius: 6px;
+  @include card-shadow;
+}
+.CodeMirror-hint {
+  padding: ($gutter-h * 0.5) $gutter-h;
+  border-radius: 0;
+  cursor: pointer;
+}
+.CodeMirror-scrollbar-filler {
+  background-color: transparent;
 }
