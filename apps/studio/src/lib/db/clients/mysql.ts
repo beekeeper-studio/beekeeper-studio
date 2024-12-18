@@ -1403,16 +1403,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
   }
 
-  parseQueryResultColumns(qr: ResultType): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
-        bksType = 'BINARY'
-      }
-      return { name: column.name, bksType }
-    })
-  }
-
   parseTableColumn(column: { column_name: string; data_type: string }): BksField {
     return {
       name: column.column_name,
