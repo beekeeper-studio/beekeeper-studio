@@ -2,10 +2,6 @@
   <div ref="table" />
 </template>
 
-<style lang="scss">
-@import "./Table.scss";
-</style>
-
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import _ from "lodash";
@@ -149,12 +145,12 @@ export default Vue.extend({
           maxInitialWidth: constants.maxInitialColumnWidth,
 
           // FIXME tooltip doesn't work in shadow dom
-          // tooltip: this.cellTooltip,
+          tooltip: this.cellTooltip,
 
           // FIXME context menu doesn't work in shadow dom
-          // contextMenu: cellMenu,
-          // headerContextMenu: columnMenu,
-          // headerMenu: columnMenu,
+          contextMenu: cellMenu,
+          headerContextMenu: columnMenu,
+          headerMenu: columnMenu,
           resizable: "header",
           cssClass:
             "hide-header-menu-icon" +

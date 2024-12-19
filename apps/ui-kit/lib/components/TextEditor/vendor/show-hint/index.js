@@ -239,7 +239,7 @@ import CodeMirror from "codemirror";
     hints.setAttribute("aria-expanded", "true")
     hints.id = this.id
     var theme = completion.cm.options.theme;
-    hints.className = "CodeMirror-hints " + theme;
+    hints.className = "BksTextEditor-hints CodeMirror-hints " + theme;
     this.selectedHint = data.selectedHint || 0;
 
     var completions = data.list;

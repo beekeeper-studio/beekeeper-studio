@@ -5,19 +5,14 @@
   "type": "module",
   "main": "./dist/web/main.js",
   "exports": {
-    ".": "./dist/web/main.js",
-    "./components": "./dist/web/components/components.js",
-    "./components/*": "./dist/web/components/*.js",
-    "./utils": "./dist/web/utils.js",
-    "./utils/*": "./dist/web/utils/*.js",
-    "./style.css": "./dist/web/style.css",
-    "./vue/components": "./dist/vue/components.js",
-    "./vue/components/*": "./dist/vue/components/*.js",
-    "./vue/utils": "./dist/vue/utils.js",
-    "./vue/utils/*": "./dist/vue/utils/*.js",
-    "./vue/style.css": "./dist/vue/style.css"
+    ".": "./dist/main.js",
+    "./style.css": "./dist/style.css",
+    "./components": "./dist/components/components.js",
+    "./components/*": "./dist/components/*.js",
+    "./utils": "./dist/utils.js",
+    "./utils/*": "./dist/utils/*.js"
   },
-  "style": "./dist/web/style.css",
+  "style": "./dist/style.css",
   "types": "./dist/main.d.ts",
   "typesVersions": {
     "*": {
@@ -32,14 +27,16 @@
   },
   "scripts": {
     "dev": "vite",
-    "lib:dev": "concurrently -c blue,green -n web,vue \"vite build -c vite.config.ts --watch --emptyOutDir --mode development\" \"vite build -c vite.vue.config.ts --watch --emptyOutDir --mode development\"",
+    "style:dev": "sass --watch lib/style.scss:dist/style.css",
+    "components:dev": "vite build -c vite.config.ts --watch --emptyOutDir=false --mode development",
+    "lib:dev": "concurrently -c blue,green -n components,styles \"yarn components:dev\" \"yarn style:dev\"",
     "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
     "build": "vue-tsc vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#a2a877643075f523864ca693598d06dcae42c5b5",
     "codemirror": "^5.63.1",
-    "@vue/web-component-wrapper": "^1.3.0",
     "lodash": "^4.17.21",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
@@ -55,9 +52,9 @@
     "@types/tabulator-tables": "^6.2.0",
     "@vitejs/plugin-vue2": "^2.3.1",
     "concurrently": "^8.2.2",
+    "sass": "~1.77.1",
     "typescript": "~5.6.2",
     "vite": "~5.3.6",
-    "vite-plugin-vue-wc-styles": "^0.3.2",
     "vite-plugin-vue2": "^2.0.3",
     "vue-tsc": "^2.1.10"
   }

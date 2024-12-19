@@ -9,10 +9,6 @@
   />
 </template>
 
-<style lang="scss">
-@import '../TextEditor/TextEditor.scss';
-</style>
-
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import textEditorMixin from "../TextEditor/mixin";

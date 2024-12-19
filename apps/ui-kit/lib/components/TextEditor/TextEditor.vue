@@ -9,10 +9,6 @@
   />
 </template>
 
-<style lang="scss">
-@import './TextEditor.scss';
-</style>
-
 <script lang="ts">
 import mixin from "./mixin";
 

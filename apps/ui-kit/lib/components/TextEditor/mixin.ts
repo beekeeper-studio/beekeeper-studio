@@ -295,7 +295,7 @@ export default {
         }),
       });
 
-      const classNames = ["bks-text-editor"];
+      const classNames = [];
 
       if (this.foldWithoutLineNumbers) {
         classNames.push("fold-without-line-numbers");

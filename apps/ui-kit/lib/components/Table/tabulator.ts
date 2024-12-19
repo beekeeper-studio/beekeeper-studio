@@ -112,6 +112,7 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
 export const rowHeaderField = '--row-header--bks';
 
 TabulatorFull.defaultOptions.layout = "fitDataFill";
-TabulatorFull.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
+// FIXME we should be able to customize this
+// TabulatorFull.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
 TabulatorFull.defaultOptions.headerSortClickElement = 'icon';
 TabulatorFull.registerModule([HeaderSortTabulatorModule, EventBridgeTabulatorModule]);
