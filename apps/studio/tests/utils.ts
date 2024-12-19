@@ -37,3 +37,4 @@ function combineTemplateStrings(strings: TemplateStringsArray, ...values: string
 function hexStringToNumbers(hex: string) {
   return hex.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16));
 }
+

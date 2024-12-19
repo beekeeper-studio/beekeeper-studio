@@ -1,13 +1,10 @@
-import platformInfo from "@/common/platform_info";
 import { LicenseStatus } from "@/lib/license";
-import { isVersionLessThanOrEqual } from "@/common/version";
 import { Column, Entity, Not } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash';
 import globals from "@/common/globals";
 
-
-function daysInFuture(days: number = 14) {
+function daysInFuture(days = 14) {
   return new Date(new Date().setDate(new Date().getDate() + days))
 }
 
@@ -19,6 +16,8 @@ export class LicenseKey extends ApplicationEntity {
     if (props) LicenseKey.merge(this, props);
     return this;
   }
+
+  fromFile = false
 
   @Column({type: 'varchar', nullable: false})
   email: string
@@ -49,52 +48,9 @@ export class LicenseKey extends ApplicationEntity {
   }
 
   static async getLicenseStatus(): Promise<LicenseStatus> {
-    const status = new LicenseStatus();
-    status.condition = []
-
     const licenses = await LicenseKey.find();
-    const currentDate = new Date();
-    const currentVersion = platformInfo.parsedAppVersion;
-
-    // Do they have a license at all?
-    if (licenses.length === 0) {
-      status.edition = "community";
-      status.condition.push("No license found");
-      return status;
-    }
-
-    const currentLicense = _.orderBy(licenses, ["validUntil"], ["desc"])[0];
-    status.license = currentLicense;
-
-    if (currentDate > currentLicense.supportUntil) {
-      status.condition.push("Expired support date");
-    }
-
-    // Is the license not valid?
-    if (currentDate > currentLicense.validUntil) {
-      status.edition = "community";
-      status.condition.push("Expired valid date");
-      return status;
-    }
-
-    // From here, we know that the license is still valid.
-    // Is maxAllowedAppRelease nullish?
-    if (_.isNil(currentLicense.maxAllowedAppRelease)) {
-      status.edition = "ultimate";
-      status.condition.push("No app version restriction");
-      return status;
-    }
-
-    // Does the license allow the current app version?
-    if (isVersionLessThanOrEqual(currentVersion, status.maxAllowedVersion)) {
-      status.edition = "ultimate";
-      status.condition.push("App version allowed");
-      return status;
-    }
-
-    status.edition = "community";
-    status.condition.push("App version not allowed");
-    return status;
+    const ls = new LicenseStatus(licenses)
+    return ls;
   }
 
   public get active() : boolean {
