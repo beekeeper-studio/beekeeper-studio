@@ -1698,20 +1698,9 @@ export default Vue.extend({
       if (selectedRowIndex === this.selectedRowIndex) return
 
       const position = (this.limit * (this.page - 1)) + (row.getPosition() || 0)
-      const cleanData = { ...this.$bks.cleanData(data, this.tableColumns) }
-
-      // un-stringify json fields that have been stringified by tabulator mutator
-      Object.keys(cleanData).forEach((key) => {
-        const dataType = this.table.columns.find((c) => c.columnName === key)?.dataType
-        // see apps/studio/src/lib/data/tools.ts#L25
-        if(dataType?.startsWith('json') && typeof cleanData[key] === 'string') {
-          cleanData[key] = JSON.parse(cleanData[key])
-        }
-      })
-
       this.detailViewTitle = `Row ${position}`
       this.selectedRowIndex = data[this.internalIndexColumn]
-      this.selectedRowData = cleanData
+      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
       this.expandablePaths = this.rawTableKeys.map((key) => ({
         path: [key.fromColumn],
         tableKey: key,
