@@ -105,7 +105,7 @@ import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
 import TableIcon from '@/components/common/TableIcon.vue'
-import { escapeHtml } from '@bks/ui-kit/vue/components/Table'
+import { escapeHtml } from '@shared/lib/tabulator'
 export default Vue.extend({
   components: { TableIcon },
   mounted() {

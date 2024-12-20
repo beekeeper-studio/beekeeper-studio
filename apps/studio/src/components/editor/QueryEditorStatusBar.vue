@@ -206,7 +206,8 @@ export default {
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
-        return this.$store.getters.userKeymap
+        const value = this.settings?.keymap.value;
+        return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
       },
       set(value) {
         if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;

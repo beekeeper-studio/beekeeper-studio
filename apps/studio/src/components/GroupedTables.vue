@@ -7,7 +7,7 @@
 <script>
 import { Tabulator, TabulatorFull, GroupRowsModule } from 'tabulator-tables'
 import pluralize from 'pluralize'
-import { escapeHtml } from '@bks/ui-kit/vue/components/Table'
+import { escapeHtml } from '@shared/lib/tabulator'
 
 export default {
 

@@ -119,7 +119,7 @@
 
 <script lang="ts">
 import { TabulatorFull, CellComponent, RowComponent } from 'tabulator-tables'
-import { Mutators as DataMutators } from '@bks/ui-kit/vue/components/Table'
+import DataMutators from '../../mixins/data_mutators'
 import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
@@ -135,7 +135,7 @@ import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import rawLog from 'electron-log'
-import { escapeHtml } from '@bks/ui-kit/vue/components/Table'
+import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
 
 const log = rawLog.scope('table-schema')

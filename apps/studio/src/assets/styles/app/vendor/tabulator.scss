@@ -796,8 +796,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     background-color: darken($theme-primary, 20%);
   }
   .tabulator-range.copied {
-    outline: 1.2px dashed darken($theme-primary, 20%);
-    border-style: none;
+    border-style: dashed;
   }
 }
 

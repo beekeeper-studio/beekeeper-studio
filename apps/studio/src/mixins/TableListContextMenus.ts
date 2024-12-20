@@ -1,6 +1,6 @@
 import { AppEvent } from "@/common/AppEvent";
 import { DatabaseElement } from "@/lib/db/types";
-import { ContextOption } from "@bks/ui-kit/vue/components/ContextMenu";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { DialectData } from "@shared/lib/dialects/models";
 
 function disabled(...args: boolean[]) {
@@ -73,7 +73,7 @@ export default {
           name: "Import from File",
           class: isBQClass,
           slug: 'import',
-          icon: this.$store.getters.isCommunity ? "stars" : "",
+          ultimate: true,
           handler: ({ item }) => {
             this.trigger(AppEvent.beginImport, { table: item })
           }

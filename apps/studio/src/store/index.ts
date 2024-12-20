@@ -31,7 +31,6 @@ import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
-import { TextEditorModule } from './modules/TextEditorModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
@@ -93,8 +92,7 @@ const store = new Vuex.Store<State>({
     pinnedConnections: PinConnectionModule,
     multiTableExports: MultiTableExportStoreModule,
     imports: ImportStoreModule,
-    backups: BackupModule,
-    textEditor: TextEditorModule,
+    backups: BackupModule
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -590,7 +588,6 @@ const store = new Vuex.Store<State>({
       await context.dispatch('licenses/init')
       await context.dispatch('userEnums/init')
       await context.dispatch('updateWindowTitle')
-      await context.dispatch('textEditor/init')
       setInterval(
         () => context.dispatch('licenses/sync'),
         globals.licenseCheckInterval

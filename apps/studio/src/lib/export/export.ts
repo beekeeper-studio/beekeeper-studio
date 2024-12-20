@@ -7,7 +7,7 @@ import rawlog from 'electron-log'
 import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 import _ from 'lodash'
-import { JsonFriendlyMutators as Mutators } from '@bks/ui-kit/vue/components/Table'
+import { Mutators } from '../data/tools'
 import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient'
 
 const log = rawlog.scope('export/export')

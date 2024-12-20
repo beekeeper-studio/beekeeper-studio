@@ -1,11 +1,27 @@
 import { AppEvent } from "@/common/AppEvent"
-import { MenuProps, openMenu } from "@bks/ui-kit/vue/components/ContextMenu"
-import { TextEditor } from "@bks/ui-kit/vue/components/TextEditor"
-import { SqlTextEditor } from "@bks/ui-kit/vue/components/SqlTextEditor"
+import Vue from 'vue'
+import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
+import store from '@/store'
 import TimeAgo from "javascript-time-ago"
-import { PluginObject } from "vue"
+
+export interface ContextOption {
+  name: string,
+  slug: string
+  type?: 'divider'
+  handler: (...any) => void
+  class?: string
+  shortcut?: string
+  ultimate?: boolean
+}
+
+interface MenuProps {
+  options: ContextOption[],
+  elementId?: string
+  item: any,
+  event: Event
+}
 
 export const BeekeeperPlugin = {
   timeAgo(date: Date) {
@@ -29,11 +45,17 @@ export const BeekeeperPlugin = {
       return false
     }
   },
-  openMenu(args: MenuProps) {
-    openMenu({
-      ...args,
-      targetElement: "#teleport-target-menus",
+  openMenu(args: MenuProps): void {
+    const ContextComponent = Vue.extend(ContextMenu)
+    const cMenu = new ContextComponent({
+      store,
+      propsData: args
     })
+    cMenu.$on('close', () => {
+      cMenu.$off()
+      cMenu.$destroy()
+    })
+    cMenu.$mount()
   },
   buildConnectionName(config: IConnection) {
     return config.name || this.simpleConnectionString(config)
@@ -87,21 +109,7 @@ export const BeekeeperPlugin = {
       }
     })
     return fixed
-  },
-
-  cleanData2(data: any, columns: {name: string, id: string}[] = []) {
-    const fixed = {}
-    Object.keys(data).forEach((key) => {
-      const v = data[key]
-      // internal table fields used just for us
-      if (!isBksInternalColumn(key)) {
-        const column = columns.find((c) => c.id === key)
-        const nuKey = column ? column.id : key
-        fixed[nuKey] = v
-      }
-    })
-    return fixed
-  },
+  }
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin
@@ -142,30 +150,5 @@ export default {
       })
     }
 
-    Vue.component('sql-text-editor', {
-      render(h) {
-        return h(SqlTextEditor, {
-          on: this.$listeners,
-          attrs: {
-            keymap: this.$store.getters['textEditor/userKeymap'],
-            vimKeymaps: this.$store.state.textEditor.vimKeymaps,
-            ...this.$attrs,
-          },
-        })
-      },
-    })
-
-    Vue.component('text-editor', {
-      render(h) {
-        return h(TextEditor, {
-          on: this.$listeners,
-          attrs: {
-            keymap: this.$store.getters['textEditor/userKeymap'],
-            vimKeymaps: this.$store.state.textEditor.vimKeymaps,
-            ...this.$attrs,
-          },
-        })
-      }
-    })
   }
-} as PluginObject<void>
+}

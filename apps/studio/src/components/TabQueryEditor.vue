@@ -32,20 +32,15 @@
         </div>
       </div>
       <sql-text-editor
-        :value.sync="unsavedText"
+        v-model="unsavedText"
         v-bind.sync="editor"
         :focus="focusingElement === 'text-editor'"
         @update:focus="updateTextEditorFocus"
         :markers="editorMarkers"
-        :keybindings="keybindings"
+        :connection-type="connectionType"
+        :extra-keybindings="keybindings"
         :vim-config="vimConfig"
-        :formatter-dialect="formatterDialect"
-        :identifier-dialect="identifierDialect"
-        :mode="dialectData.textEditorMode"
-        :hint-options="hintOptions"
         @initialized="handleEditorInitialized"
-        :columns-getter="columnsGetter"
-        :plugins="textEditorPlugins"
       />
       <span class="expand" />
       <div class="toolbar text-right">
@@ -142,10 +137,8 @@
         :active="active"
         :table-height="tableHeight"
         :result="result"
-        :tableName="result.tableName"
         :query="query"
         :tab="tab"
-        @tabulator-built="tabulator = $event"
       />
       <div
         class="message"
@@ -320,10 +313,11 @@
   import { identify } from 'sql-query-identifier'
 
   import { splitQueries } from '../lib/db/sql_tools'
-  import type { EditorMarker } from '@bks/ui-kit/vue/components/TextEditor'
+  import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
+  import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
@@ -333,11 +327,6 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
-  import { FormatterDialect, dialectFor, QueryIdentifierDialect } from "@shared/lib/dialects/models";
-  import { queryMagic } from "@/lib/editor/CodeMirrorPlugins";
-  import { markdownTable } from 'markdown-table'
-  import Papa from 'papaparse'
-  import dateFormat from 'dateformat'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -345,7 +334,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -394,7 +383,6 @@
          */
         focusElement: 'none',
         focusingElement: 'none',
-        tabulator: null,
       }
     },
     computed: {
@@ -406,6 +394,18 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
+      userKeymap: {
+        get() {
+          const value = this.settings?.keymap?.value;
+          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+        },
+        set(value) {
+          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
+            this.initialize();
+          });
+        }
+      },
       keymapTypes() {
         return this.$config.defaults.keymapTypes
       },
@@ -602,49 +602,6 @@
       showResultTable() {
         return this.rowCount > 0
       },
-      formatterDialect() {
-        return FormatterDialect(dialectFor(this.connectionType))
-      },
-      identifierDialect() {
-        return QueryIdentifierDialect(dialectFor(this.connectionType))
-      },
-      hintOptions() {
-        // We do this so we can order the autocomplete options
-        const firstTables = {};
-        const secondTables = {};
-        const thirdTables = {};
-
-        this.tables.forEach((table) => {
-          // don't add table names that can get in conflict with database schema
-          if (/\./.test(table.name)) return;
-
-          // Previously we had to provide a table: column[] mapping.
-          // we don't need to provide the columns anymore because we fetch them dynamically.
-          if (!table.schema) {
-            firstTables[table.name] = [];
-            return;
-          }
-
-          if (table.schema === this.defaultSchema) {
-            firstTables[table.name] = [];
-            secondTables[`${table.schema}.${table.name}`] = [];
-          } else {
-            thirdTables[`${table.schema}.${table.name}`] = [];
-          }
-        });
-
-        const sorted = Object.assign(
-          firstTables,
-          Object.assign(secondTables, thirdTables)
-        );
-
-        return { tables: sorted };
-      },
-      textEditorPlugins() {
-        return [
-          queryMagic(() => this.defaultSchema, () => this.tables),
-        ]
-      },
     },
     watch: {
       error() {
@@ -807,73 +764,20 @@
         }
       },
       download(format) {
-        let formatter = format !== 'md' ? format : (rows, options, setFileContents) => {
-          const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value))
-          setFileContents(markdownTable(values), 'text/markdown')
-        };
-        // Fix Issue #1493 Lost column names in json query download
-        // by overriding the tabulator-generated json with ...what cipboard() does, below:
-        formatter = format !== 'json' ? formatter : (rows, options, setFileContents) => {
-          setFileContents(
-            JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
-           )
-        };
-        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
-        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-
-        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
-        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
-        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
+        this.$refs.table.download(format)
       },
-      dataToJson(rawData, firstObjectOnly) {
-        const rows = _.isArray(rawData) ? rawData : [rawData]
-        const result = rows.map((data) => {
-          return this.$bks.cleanData2(data, this.result.fields)
-        })
-        return firstObjectOnly ? result[0] : result
-      },
-      clipboard(format = null) {
-        // this.tabulator.copyToClipboard("all")
-
-        const allRows = this.tabulator.getData()
-        if (allRows.length == 0) {
-          return
-        }
-        const columnTitles = {}
-
-        const result = this.dataToJson(allRows, false)
-
-        if (format === 'md') {
-          const mdContent = [
-            Object.keys(result[0]),
-            ...result
-                .map((row) =>
-                  Object.values(row).map(v =>
-                    (typeof v === 'object') ? JSON.stringify(v) : v
-                  )
-                )
-          ];
-          this.$native.clipboard.writeText(markdownTable(mdContent))
-        } else if (format === 'json') {
-          this.$native.clipboard.writeText(JSON.stringify(result))
-        } else {
-          this.$native.clipboard.writeText(
-            Papa.unparse(
-              result,
-              { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
-            )
-          )
-        }
+      clipboard() {
+        this.$refs.table.clipboard()
       },
       clipboardJson() {
         // eslint-disable-next-line
         // @ts-ignore
-        const data = this.clipboard('json')
+        const data = this.$refs.table.clipboard('json')
       },
       clipboardMarkdown() {
         // eslint-disable-next-line
         // @ts-ignore
-        const data = this.clipboard('md')
+        const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
         this.focusElement = 'text-editor'
@@ -1112,21 +1016,6 @@
           }, 1000)
           this.focusingElement = 'none'
         })
-      },
-      async columnsGetter(tableName: string) {
-        let tableToFind = this.tables.find(
-          (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
-        );
-        if (!tableToFind) return null;
-        // Only refresh columns if we don't have them cached.
-        if (!tableToFind.columns?.length) {
-          await this.$store.dispatch("updateTableColumns", tableToFind);
-          tableToFind = this.tables.find(
-            (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
-          );
-        }
-
-        return tableToFind?.columns.map((c) => c.columnName);
       },
     },
     async mounted() {

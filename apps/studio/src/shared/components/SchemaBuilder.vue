@@ -25,7 +25,7 @@
 import Vue, { PropType } from 'vue'
 import { TabulatorFull, Tabulator, CellComponent, RowComponent } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
-import { Mutators2 as tab } from '@bks/ui-kit/vue/components/Table'
+import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 import CheckboxEditor from './tabulator/CheckboxEditor.vue'

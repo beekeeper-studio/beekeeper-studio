@@ -1,4 +1,4 @@
-import { escapeHtml } from "@bks/ui-kit/vue/components/Table"
+import { escapeHtml } from "@shared/lib/tabulator"
 import { CellComponent } from "tabulator-tables"
 import { Magic } from "../../Magic"
 import { MagicColumn } from "../../MagicColumn"

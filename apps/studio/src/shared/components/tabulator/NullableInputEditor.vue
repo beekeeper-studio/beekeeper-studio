@@ -22,7 +22,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
-import { Mutators2 as helpers } from '@bks/ui-kit/vue/components/Table'
+import helpers from '@shared/lib/tabulator'
 import rawLog from 'electron-log'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 import { BksField } from "@/lib/db/models";
