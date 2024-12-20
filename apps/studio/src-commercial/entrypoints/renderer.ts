@@ -44,6 +44,7 @@ import App from '@/App.vue'
     log.debug("####################################")
     log.debug("Platform Information (App)")
     log.debug(JSON.stringify(window.platformInfo, null, 2))
+
     _.mixin({
       'deepMapKeys': function (obj, fn) {
 
