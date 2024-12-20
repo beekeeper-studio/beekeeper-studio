@@ -98,6 +98,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: false,
     }
   }
 
@@ -418,8 +419,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     await Promise.all(promises);
   }
 
-  getTableLength(_table: string, _schema?: string): Promise<number> {
-    throw new Error("Method not implemented.");
+  async getTableLength(_table: string, _schema?: string): Promise<number> {
+    const sql = `SELECT COUNT(*) FROM ${this.wrapIdentifier(_table)}`;
+    const [result] = await this.executeQuery(sql);
+    return result?.rows[0]?.count?.low || result?.rows[0]?.count || 0;
   }
 
   // keyspace takes the place of schema here
@@ -462,8 +465,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
     const qs = this.buildSelectTopQuery(table, null, null, orderBy, filters)
     const columns = await this.listTableColumns(table)
-    // const rowCount = await this.getTableLength(table, filters)
-    const rowCount = 0; // we don't have a table length implemented yet
+    const rowCount = await this.getTableLength(table)
     // TODO: DEBUG HERE
     const { query, params } = qs
 
