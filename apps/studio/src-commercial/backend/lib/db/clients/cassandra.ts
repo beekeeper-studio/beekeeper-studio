@@ -674,7 +674,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     const selectPromises: any = await Promise.all(updatePromises);
 
     return selectPromises.reduce((acc: Array<any>, sp: any) => {
-      const [data] = sp.data;
+      const [data] = sp.rows;
       if (data) acc.push(data);
 
       return acc;
