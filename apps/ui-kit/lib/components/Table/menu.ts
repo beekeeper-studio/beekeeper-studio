@@ -103,11 +103,10 @@ export const commonColumnMenu = [
   resizeAllColumnsToFixedWidth,
 ];
 
-export function createMenuItem(label: string, shortcut = "", ultimate = false) {
-  label = `<x-label>${escapeHtml(label)}</x-label>`;
-  if (shortcut) shortcut = `<x-shortcut value="${escapeHtml(shortcut)}" />`;
-  const ultimateIcon = ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
-  return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
+export function createMenuItem(label: string, shortcut = "") {
+  label = `<span class="BksContextMenu-item-label">${escapeHtml(label)}</span>`;
+  if (shortcut) shortcut = `<span class="BksContextMenu-item-shortcut"/>${escapeHtml(shortcut)}</span>`;
+  return `<div class="BksContextMenu-item">${label}${shortcut}</div>`;
 }
 
 export async function copyRanges(options: {
@@ -313,6 +312,7 @@ export function copyActionsMenu(options: {
     {
       label: createMenuItem("Copy as Markdown"),
       action: () => copyRanges({ ranges, type: "markdown" }),
+      disabled: true,
     },
     {
       label: createMenuItem("Copy as SQL"),

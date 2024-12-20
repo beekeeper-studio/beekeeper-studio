@@ -256,6 +256,7 @@ export default Vue.extend({
         persistenceID: this.tableId,
         data: this.data,
         height: this.height,
+        popupContainer: true,
       };
       if (this.tableColumns.length === 0) {
         defaultOptions.autoColumns = true;

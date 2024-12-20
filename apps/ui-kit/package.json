@@ -35,7 +35,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#a2a877643075f523864ca693598d06dcae42c5b5",
+    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#fbbc631e3b536a4973432a2aa29354b8a0ec4959",
     "codemirror": "^5.63.1",
     "lodash": "^4.17.21",
     "material-icons": "^1.13.12",

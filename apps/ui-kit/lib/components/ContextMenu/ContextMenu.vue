@@ -3,18 +3,17 @@
   <div>
     <teleport :to="targetElement ?? 'body'">
       <ul
-        class="vue-simple-context-menu"
+        class="BksContextMenu-list vue-simple-context-menu"
         ref="menu"
       >
         <li
           v-for="(option, index) in options"
           :key="index"
           @click.stop="optionClicked(option, $event)"
-          class="vue-simple-context-menu__item"
+          class="BksContextMenu-item vue-simple-context-menu__item"
           :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
         >
           <span v-html="option.name" />
-          <div class="expand" />
           <span>
             <span
               class="shortcut"
