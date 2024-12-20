@@ -312,7 +312,6 @@ export function copyActionsMenu(options: {
     {
       label: createMenuItem("Copy as Markdown"),
       action: () => copyRanges({ ranges, type: "markdown" }),
-      disabled: true,
     },
     {
       label: createMenuItem("Copy as SQL"),

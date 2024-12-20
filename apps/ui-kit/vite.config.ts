@@ -1,34 +1,43 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue2';
-import { resolve } from 'path'
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue2";
+import { resolve } from "path";
+
+const target = process.env.TARGET as string; // sql-text-editor
+if (typeof target === "undefined")
+  throw new Error("Please set TARGET environment variable");
+
+function capitalizeFirstLetter(val: string) {
+  return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+
+const componentName = target.split("-").map(capitalizeFirstLetter).join(""); // SqlTextEditor
+const componentPath = resolve(
+  __dirname,
+  `lib/components/${componentName}/index.ts` // lib/components/SqlTextEditor/index.ts
+);
+const componentOutFileName = `${target}.js`; // sql-text-editor.js
+const componentOutName = `Bks${componentName}`; // BksSqlTextEditor
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [ vue() ],
-  build: {
-    outDir: 'dist',
-    lib: {
-      entry: {
-        main: resolve(__dirname, 'lib/main.ts'),
-        components: resolve(__dirname, 'lib/components/index.ts'),
-        'components/ContextMenu': resolve(__dirname, 'lib/components/ContextMenu/index.ts'),
-        'components/TextEditor': resolve(__dirname, 'lib/components/TextEditor/index.ts'),
-        'components/SqlTextEditor': resolve(__dirname, 'lib/components/SqlTextEditor/index.ts'),
-        'components/Table': resolve(__dirname, 'lib/components/Table/index.ts'),
-        'components/JsonRowViewer': resolve(__dirname, 'lib/components/JsonRowViewer/index.ts'),
-        utils: resolve(__dirname, 'lib/utils/index.ts'),
-        'utils/binary': resolve(__dirname, 'lib/utils/binary.ts'),
-      },
-      formats: ['es']
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      vue: "vue/dist/vue.min.js",
     },
-    cssCodeSplit: false,
+  },
+  build: {
+    outDir: "dist",
+    emptyOutDir: false,
+    lib: {
+      entry: componentPath,
+      name: componentOutName,
+      formats: ["iife"],
+      fileName: () => componentOutFileName,
+    },
     rollupOptions: {
       external: [/\.css$/, /\.scss$/],
-      output: {
-        entryFileNames: '[name].js',
-      },
     },
     sourcemap: true,
-  }
-
-})
+  },
+});

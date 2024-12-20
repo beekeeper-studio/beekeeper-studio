@@ -5,33 +5,18 @@
   "type": "module",
   "main": "./dist/web/main.js",
   "exports": {
-    ".": "./dist/main.js",
     "./style.css": "./dist/style.css",
-    "./components": "./dist/components/components.js",
-    "./components/*": "./dist/components/*.js",
-    "./utils": "./dist/utils.js",
-    "./utils/*": "./dist/utils/*.js"
+    "./sql-text-editor": "./dist/sql-text-editor.js",
+    "./table": "./dist/table.js"
   },
   "style": "./dist/style.css",
-  "types": "./dist/main.d.ts",
-  "typesVersions": {
-    "*": {
-      "dist/main.js": [
-        "dist/main.d.ts"
-      ],
-      "*": [
-        "dist/*.d.ts",
-        "dist/*/index.d.ts"
-      ]
-    }
-  },
   "scripts": {
     "dev": "vite",
     "style:dev": "sass --watch lib/style.scss:dist/style.css",
     "components:dev": "vite build -c vite.config.ts --watch --emptyOutDir=false --mode development",
     "lib:dev": "concurrently -c blue,green -n components,styles \"yarn components:dev\" \"yarn style:dev\"",
     "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
-    "build": "vue-tsc vite build",
+    "build": "vite build --mode production && sass lib/style.scss:dist/style.css",
     "preview": "vite preview"
   },
   "dependencies": {
