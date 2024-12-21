@@ -792,39 +792,48 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     if (!rows || !columns) return [];
 
     const typeByColumn = columns?.reduce((acc, col) => {
-      acc[col.name] = col.type.code;
+      acc[col.name] = col.type;
       return acc;
     }, {});
 
     return rows?.map((row) => {
       Object.keys(row).forEach((key) => {
         const value = row[key];
-        if (value == null || value === undefined) {
+        const typeCode = typeByColumn[key].code;
+
+        if (typeCode == cassandra.types.dataTypes.list) {
+          row[key] = value?.map((v) => this.convertValueByType(v, typeByColumn[key].info.code));
           return;
         }
 
-        const type = typeByColumn[key];
-        if (type === cassandra.types.dataTypes.bigint) {
-          row[key] = String(value);
-        } else if (type === cassandra.types.dataTypes.timestamp) {
-          row[key] = value ? value.toISOString() : null;
-        } else if (
-          type === cassandra.types.dataTypes.time ||
-          type === cassandra.types.dataTypes.date
-        ) {
-          row[key] = value ? String(value) : null;
-        } else if (
-          type === cassandra.types.dataTypes.uuid ||
-          type === cassandra.types.dataTypes.timeuuid
-        ) {
-          row[key] = value?.buffer
-            ? new cassandra.types.Uuid(Buffer.from(value.buffer)).toString()
-            : null;
-        } else if (type === cassandra.types.dataTypes.inet) {
-          row[key] = value ? value.toString() : null;
-        }
+        row[key] = this.convertValueByType(value, typeCode);
       });
       return row;
     });
+  }
+
+  private convertValueByType(value, type) {
+    if (value == null || value === undefined) {
+      return null;
+    }
+
+    switch (type) {
+      case cassandra.types.dataTypes.bigint:
+        return String(value);
+      case cassandra.types.dataTypes.timestamp:
+        return value ? value.toISOString() : null;
+      case cassandra.types.dataTypes.time:
+      case cassandra.types.dataTypes.date:
+        return value ? String(value) : null;
+      case cassandra.types.dataTypes.uuid:
+      case cassandra.types.dataTypes.timeuuid:
+        return value?.buffer
+          ? new cassandra.types.Uuid(Buffer.from(value.buffer)).toString()
+          : value;
+      case cassandra.types.dataTypes.inet:
+        return value ? value.toString() : null;
+      default:
+        return value;
+    }
   }
 }
