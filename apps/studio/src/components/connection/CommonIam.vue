@@ -95,11 +95,9 @@ export default {
   },
   computed: {
     isRedshift(){
-      console.log('connectionType', this.config.connectionType)
       return this.config.connectionType === 'redshift'
     },
     isKeyAuth() {
-      console.log('includes key', this.authType.includes('key'))
       return this.authType.includes('key')
     },
     isProfileAuth() {

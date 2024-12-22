@@ -8,9 +8,7 @@ import {fromIni} from "@aws-sdk/credential-providers";
 import {Signer} from "@aws-sdk/rds-signer";
 import globals from "@/common/globals";
 import {
-  AWSCredentials,
-  ClusterCredentialConfiguration,
-  RedshiftCredentialResolver
+  AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
 
@@ -330,7 +328,6 @@ export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): P
 
 export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
   const {awsProfile, awsRegion: region, accessKeyId, secretAccessKey} = redshiftOptions
-  console.log(redshiftOptions)
   let credentials: {
     profile?: string,
     accessKeyId?: string,
@@ -345,8 +342,6 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
       secretAccessKey
     }
   }
-
-  console.log(credentials)
 
   const nodeProviderChainCredentials = fromIni(credentials);
   const signer = new Signer({
