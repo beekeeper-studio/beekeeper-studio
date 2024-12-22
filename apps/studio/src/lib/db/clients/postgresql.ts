@@ -1312,7 +1312,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     if (
       server.config.client === "postgresql" &&
-      server.config?.redshiftOptions
+      // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
+      // we only need SSL for iam authentication
+      server.config?.redshiftOptions?.iamAuthenticationEnabled
     ){
       server.config.ssl = true;
     }
