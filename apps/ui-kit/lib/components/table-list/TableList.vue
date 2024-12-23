@@ -171,7 +171,7 @@ import { entityFilter } from './sql_tools'
 
 // TODO(@day): to remove
 import { mapState, mapGetters } from 'vuex'
-import { AppEvent } from '@/common/AppEvent'
+// import { AppEvent } from '@/common/AppEvent'
 import { TableOrView, Routine } from "@/lib/db/models";
 import { matches } from '@/common/transport/TransportPinnedEntity'
 
@@ -189,7 +189,7 @@ export default {
     },
     // this might just be for us, maybe make a default for others and allow overrides?
     dialectData: {
-      
+
     }
   },
   data() {
@@ -283,7 +283,7 @@ export default {
     },
     rootBindings() {
       return [
-        { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
+        // { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
       ]
     },
     ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
@@ -313,7 +313,7 @@ export default {
     },
     toggleExpandCollapse() {
       this.isExpanded = !this.isExpanded
-      this.trigger(AppEvent.toggleExpandTableList, this.isExpanded)
+      // this.trigger(AppEvent.toggleExpandTableList, this.isExpanded)
     },
     // FIXME (azmi): expandedTables is always empty
     refreshExpandedColumns() {
@@ -343,7 +343,7 @@ export default {
       }
     },
     newTable() {
-      this.$root.$emit(AppEvent.createTable)
+      // this.$root.$emit(AppEvent.createTable)
     },
     maybeUnselect(e) {
       if (this.selectedSidebarItem) {

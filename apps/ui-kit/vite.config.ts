@@ -2,21 +2,16 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue2";
 import { resolve } from "path";
 
-const target = process.env.TARGET as string; // sql-text-editor
-if (typeof target === "undefined")
-  throw new Error("Please set TARGET environment variable");
-
 function capitalizeFirstLetter(val: string) {
   return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
 
-const componentName = target.split("-").map(capitalizeFirstLetter).join(""); // SqlTextEditor
-const componentPath = resolve(
-  __dirname,
-  `lib/components/${componentName}/index.ts` // lib/components/SqlTextEditor/index.ts
-);
-const componentOutFileName = `${target}.js`; // sql-text-editor.js
-const componentOutName = `Bks${componentName}`; // BksSqlTextEditor
+function camelCase(val: string) {
+  return val.split("-").map(capitalizeFirstLetter).join("");
+}
+
+/** Pass `COMPONENT` env to build a specific component. Expects kebab-case. */
+const component = process.env.COMPONENT || "main";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -30,10 +25,21 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: false,
     lib: {
-      entry: componentPath,
-      name: componentOutName,
+      ...(component === "main"
+        ? {
+          entry: resolve(__dirname, "lib/components/index.ts"),
+          name: "BksComponents",
+          fileName: () => "main.js",
+        }
+        : {
+          entry: resolve(
+            __dirname,
+            `lib/components/${component}/index.ts`
+          ),
+          name: `Bks${camelCase(component)}`,
+          fileName: () => `${component}.js`,
+        }),
       formats: ["iife"],
-      fileName: () => componentOutFileName,
     },
     rollupOptions: {
       external: [/\.css$/, /\.scss$/],

@@ -11,7 +11,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import textEditorMixin from "../TextEditor/mixin";
+import textEditorMixin from "../text-editor/mixin";
 import { format, FormatOptions } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { Options } from "sql-query-identifier";
