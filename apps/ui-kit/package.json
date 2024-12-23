@@ -13,25 +13,27 @@
   "style": "./dist/style.css",
   "scripts": {
     "dev": "vite",
-    "style:dev": "sass --watch lib/style.scss:dist/style.css",
-    "components:dev": "vite build -c vite.config.ts --watch --emptyOutDir=false --mode development",
-    "lib:dev": "concurrently -c blue,green -n components,styles \"yarn components:dev\" \"yarn style:dev\"",
+    "lib:dev": "vite build -c vite.config.ts --watch --emptyOutDir=false --mode development",
     "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
     "build": "vite build --mode production && sass lib/style.scss:dist/style.css",
     "preview": "vite preview"
   },
   "dependencies": {
     "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#fbbc631e3b536a4973432a2aa29354b8a0ec4959",
+    "xel": "beekeeper-studio/xel",
     "codemirror": "^5.63.1",
     "lodash": "^4.17.21",
     "split.js": "^1.5.11",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
+    "scrollyfills": "^1.0.0",
     "sql-query-identifier": "^2.8.0",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
     "vue": "^2.7.16",
-    "vue2-teleport": "^1.1.4"
+    "vue2-teleport": "^1.1.4",
+    "vuedraggable": "^2.24.2",
+    "vue-virtual-scroll-list": "^2.3.5"
   },
   "devDependencies": {
     "@types/codemirror": "^0.0.97",

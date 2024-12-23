@@ -113,10 +113,11 @@
 </style>
 
 <script type="text/javascript">
-import { RoutineTypeNames } from '@/lib/db/models'
-import { AppEvent } from "@/common/AppEvent";
+import { RoutineTypeNames } from './models'
+// TODO(@azmi): to remove
+// import { AppEvent } from "@/common/AppEvent";
 
-  import { mapGetters } from 'vuex'
+  // import { mapGetters } from 'vuex'
 	export default {
 		props: ["routine", "noSelect", "forceExpand", "forceCollapse", "pinned", 'draggable'],
     data() {
@@ -167,10 +168,10 @@ import { AppEvent } from "@/common/AppEvent";
         this.showArgs = !this.showArgs
       },
       pin() {
-        this.trigger(AppEvent.togglePinTableList, this.routine, true);
+        // this.trigger(AppEvent.togglePinTableList, this.routine, true);
       },
       unpin() {
-        this.trigger(AppEvent.togglePinTableList, this.routine, false);
+        // this.trigger(AppEvent.togglePinTableList, this.routine, false);
       },
     }
 	}

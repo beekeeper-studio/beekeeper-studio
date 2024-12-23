@@ -41,9 +41,9 @@ export default defineConfig({
         }),
       formats: ["iife"],
     },
-    rollupOptions: {
-      external: [/\.css$/, /\.scss$/],
-    },
+    // rollupOptions: {
+    //   external: [/\.css$/, /\.scss$/],
+    // },
     sourcemap: true,
   },
 });

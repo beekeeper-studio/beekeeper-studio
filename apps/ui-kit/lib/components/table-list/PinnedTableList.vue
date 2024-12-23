@@ -53,12 +53,14 @@
 <script lang="ts">
 import _ from 'lodash'
 import Draggable from 'vuedraggable'
-import RoutineListItem from '@/components/sidebar/core/table_list/RoutineListItem.vue'
-import TableListItem from '@/components/sidebar/core/table_list/TableListItem.vue'
+import RoutineListItem from './RoutineListItem.vue'
+import TableListItem from './TableListItem.vue'
 import Vue from 'vue'
-import TableListContextMenus from '@/mixins/TableListContextMenus'
-import SidebarSortButtons from '@/components/common/SidebarSortButtons.vue'
-import { TransportPinnedEntity } from '@/common/transport/TransportPinnedEntity'
+import TableListContextMenus from './mixins/TableListContextMenus'
+import SidebarSortButtons from './SidebarSortButtons.vue'
+// TODO(@azmi): to remove
+// import { TransportPinnedEntity } from '@/common/transport/TransportPinnedEntity'
+type TransportPinnedEntity = any
 
 export default Vue.extend({
   components: { RoutineListItem, Draggable, TableListItem, SidebarSortButtons },
@@ -77,7 +79,9 @@ export default Vue.extend({
   computed: {
     orderedPins: {
       get(): TransportPinnedEntity[] {
-        const raw: TransportPinnedEntity[] = this.$store.getters['pins/orderedPins']
+        const raw = []
+        // FIXME
+        // const raw: TransportPinnedEntity[] = this.$store.getters['pins/orderedPins']
         let result = _.sortBy(raw, this.sort.field)
         if (this.sort.order === 'desc' && this.sort.field !== 'position') return result.reverse()
         return result;
@@ -89,14 +93,16 @@ export default Vue.extend({
   },
   watch: {
     sort() {
-      this.$settings.set('pinSortField', this.sort.field)
-      this.$settings.set('pinSortOrder', this.sort.order)
+    // FIXME
+      // this.$settings.set('pinSortField', this.sort.field)
+      // this.$settings.set('pinSortOrder', this.sort.order)
     }
   },
   async mounted() {
     const [field, order] = await Promise.all([
-      this.$settings.get('pinSortField', 'position'),
-      this.$settings.get('pinSortOrder', 'asc')
+    // FIXME
+      // this.$settings.get('pinSortField', 'position'),
+      // this.$settings.get('pinSortOrder', 'asc')
     ])
     this.sort = { field, order }
     this.initialized = true

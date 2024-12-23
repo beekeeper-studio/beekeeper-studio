@@ -1,60 +1,56 @@
 <template>
   <div
-    class="flex-col expand table-list-component"
+    class="table-list-component"
     ref="wrapper"
   >
     <!-- Filter -->
-    <div class="fixed">
-      <div class="filter">
-        <div class="filter-wrap">
-          <input
-            class="filter-input"
-            type="text"
-            placeholder="Filter"
-            v-model="filterQuery"
-          >
-          <x-buttons class="filter-actions">
-            <x-button
-              @click="clearFilter"
-              v-if="filterQuery"
-            >
-              <i class="clear material-icons">cancel</i>
-            </x-button>
-            <x-button
-              :title="entitiesHidden ? 'Filter active' : 'No filters'"
-              class="btn btn-fab btn-link action-item"
-              :class="{active: entitiesHidden}"
-              menu
-            >
-              <i class="material-icons-outlined">filter_alt</i>
-              <x-menu style="--target-align: right;">
-                <label>
-                  <input
-                    type="checkbox"
-                    v-model="showTables"
-                  >
-                  <span>Tables</span>
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    v-model="showViews"
-                  >
-                  <span>Views</span>
-                </label>
-                <label v-if="supportsRoutines">
-                  <input
-                    type="checkbox"
-                    v-model="showRoutines"
-                  >
-                  <span>Routines</span>
-                </label>
-                <x-menuitem />
-              </x-menu>
-            </x-button>
-          </x-buttons>
-        </div>
-      </div>
+    <div class="filter-wrap">
+      <input
+        class="filter-input"
+        type="text"
+        placeholder="Filter"
+        v-model="filterQuery"
+      >
+      <x-buttons class="filter-actions">
+        <x-button
+          @click="clearFilter"
+          v-if="filterQuery"
+        >
+          <i class="clear material-icons">cancel</i>
+        </x-button>
+        <x-button
+          :title="entitiesHidden ? 'Filter active' : 'No filters'"
+          class="btn btn-fab btn-link action-item"
+          :class="{active: entitiesHidden}"
+          menu
+        >
+          <i class="material-icons-outlined">filter_alt</i>
+          <x-menu style="--target-align: right;">
+            <label>
+              <input
+                type="checkbox"
+                v-model="showTables"
+              >
+              <span>Tables</span>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                v-model="showViews"
+              >
+              <span>Views</span>
+            </label>
+            <label v-if="supportsRoutines">
+              <input
+                type="checkbox"
+                v-model="showRoutines"
+              >
+              <span>Routines</span>
+            </label>
+            <x-menuitem />
+          </x-menu>
+        </x-button>
+      </x-buttons>
     </div>
 
     <x-progressbar
@@ -149,19 +145,11 @@
         </p>
       </div>
     </nav>
-
-    <portal to="modals">
-      <HiddenEntitiesModal
-        :hidden-entities="hiddenEntities"
-        :hidden-schemas="hiddenSchemas"
-      />
-    </portal>
   </div>
 </template>
 
 <script lang="ts">
 import _ from 'lodash'
-import HiddenEntitiesModal from './HiddenEntitiesModal.vue'
 import Split from 'split.js'
 import TableFilter from './mixins/table_filter'
 import TableListContextMenus from './mixins/TableListContextMenus'
@@ -170,14 +158,20 @@ import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
 
 // TODO(@day): to remove
-import { mapState, mapGetters } from 'vuex'
+// import { mapState, mapGetters } from 'vuex'
+
+// FIXME(@azmi): do something
 // import { AppEvent } from '@/common/AppEvent'
-import { TableOrView, Routine } from "@/lib/db/models";
-import { matches } from '@/common/transport/TransportPinnedEntity'
+
+// TODO(@azmi): make new types instead
+// import { TableOrView, Routine } from "@/lib/db/models";
+
+// TODO(@azmi): make a new util function insteaed
+// import { matches } from '@/common/transport/TransportPinnedEntity'
 
 export default {
   mixins: [TableFilter, TableListContextMenus],
-  components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList },
+  components: { PinnedTableList, VirtualTableList },
   props: {
     tables: {
       type: Array,
@@ -214,10 +208,12 @@ export default {
   },
   computed: {
     createDisabled() {
-      return !!this.dialectData.disabledFeatures.createTable
+      // FIXME
+      return false
+      // return !!this.dialectData.disabledFeatures.createTable
     },
     totalEntities() {
-      return this.tables.length + this.routines.length - this.hiddenEntities.length
+      return this.tables.length + this.routines.length
     },
     shownEntities() {
       return this.filteredTables.length + this.filteredRoutines.length
@@ -273,10 +269,14 @@ export default {
       ]
     },
     async supportsRoutines() {
-      return this.supportedFeatures.customRoutines
+      // TODO(@azmi): do something
+      // return this.supportedFeatures.customRoutines
+      return false
     },
     canCreateTable() {
-      return !this.dialectData.disabledFeatures?.createTable
+      // FIXME
+      return false
+      // return !this.dialectData.disabledFeatures?.createTable
     },
     loadedWithPins() {
       return !this.tablesLoading && this.pinnedEntities.length > 0
@@ -286,15 +286,26 @@ export default {
         // { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
       ]
     },
-    ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
-    ...mapGetters(['dialectData']),
-    ...mapGetters({
-        pinnedEntities: 'pins/pinnedEntities',
-        orderedPins: 'pins/orderedPins',
-        totalHiddenEntities: 'hideEntities/totalEntities',
-        hiddenEntities: 'hideEntities/databaseEntities',
-        hiddenSchemas: 'hideEntities/databaseSchemas',
-    }),
+    tables() {
+      return [{"name":"cheeses","entityType":"table","columns":[{"tableName":"cheeses","columnName":"id","dataType":"INTEGER","nullable":true,"defaultValue":null,"ordinalPosition":0,"hasDefault":false,"generated":false,"bksField":{"name":"id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"name","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":1,"hasDefault":false,"generated":false,"bksField":{"name":"name","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"origin_country_id","dataType":"INTEGER","nullable":false,"defaultValue":null,"ordinalPosition":2,"hasDefault":false,"generated":false,"bksField":{"name":"origin_country_id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"cheese_type","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":3,"hasDefault":false,"generated":false,"bksField":{"name":"cheese_type","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"description","dataType":"TEXT","nullable":true,"defaultValue":null,"ordinalPosition":4,"hasDefault":false,"generated":false,"bksField":{"name":"description","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"first_seen","dataType":"DATETIME","nullable":true,"defaultValue":null,"ordinalPosition":5,"hasDefault":false,"generated":false,"bksField":{"name":"first_seen","bksType":"UNKNOWN"}}]},{"name":"countries","entityType":"table"},{"name":"neko","entityType":"table"},{"name":"producers","entityType":"table"},{"name":"reviews","entityType":"table"},{"name":"sqlite_sequence","entityType":"table"},{"name":"stores","entityType":"table"},{"name":"cheese_summary","entityType":"view"}]
+      return [] // FIXME temp
+    },
+    routines() {
+      return [] // FIXME temp
+    },
+    pinnedEntities() {
+      return [] // FIXME temp
+    },
+    orderedPins() {
+      return [] // FIXME temp
+    },
+    // ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
+    // ...mapGetters(['dialectData']),
+    // ...mapGetters({
+    //     pinnedEntities: 'pins/pinnedEntities',
+    //     orderedPins: 'pins/orderedPins',
+    //     totalHiddenEntities: 'hideEntities/totalEntities',
+    // }),
   },
   watch: {
     loadedWithPins (loaded, oldloaded) {
@@ -376,14 +387,16 @@ export default {
       direction: 'vertical',
       sizes: this.sizes,
     })
-    this.registerHandlers(this.rootBindings)
+    // FIXME
+    // this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeUnselect)
     if(this.split) {
       this.split.destroy()
     }
-    this.unregisterHandlers(this.rootBindings)
+    // FIXME
+    // this.unregisterHandlers(this.rootBindings)
   }
 }
 </script>

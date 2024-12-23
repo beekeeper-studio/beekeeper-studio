@@ -134,11 +134,11 @@
 
 <script type="text/javascript">
 
-import { mapGetters, mapState } from 'vuex'
+// import { mapGetters, mapState } from 'vuex'
 import _ from 'lodash'
-import { AppEvent } from '../../../../common/AppEvent'
-import { uuidv4 } from '../../../../lib/uuid'
-import TableIcon from '@/components/common/TableIcon.vue'
+// import { AppEvent } from '../../../../common/AppEvent'
+import { uuidv4 } from '../../utils/uuid'
+import TableIcon from './TableIcon.vue'
 export default {
   props: ["table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned", "draggable"],
   components: { TableIcon },
@@ -206,8 +206,8 @@ export default {
 
       return tableSelected
     },
-    ...mapGetters(['selectedSidebarItem']),
-    ...mapState(['activeTab', 'database', 'config', 'columnsLoading'])
+    // ...mapGetters(['selectedSidebarItem']),
+    // ...mapState(['activeTab', 'database', 'config', 'columnsLoading'])
   },
   methods: {
     doNothing() {
@@ -220,7 +220,7 @@ export default {
       this.$root.$emit('loadTableCreate', this.table)
     },
     exportTable() {
-      this.trigger(AppEvent.beginExport, { table: this.table })
+      console.warn('appevent triggered!!!!')//this.trigger(AppEvent.beginExport, { table: this.table })
     },
     copyTable() {
       this.$copyText(this.table.name)
@@ -249,13 +249,13 @@ export default {
       }, this.clickState.delay);
     },
     openTableStructure() {
-      this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
+      console.warn('appevent triggered!!!!')//this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
     },
     pin() {
-      this.trigger(AppEvent.togglePinTableList, this.table, true);
+      console.warn('appevent triggered!!!!')//this.trigger(AppEvent.togglePinTableList, this.table, true);
     },
     unpin() {
-      this.trigger(AppEvent.togglePinTableList, this.table, false);
+      console.warn('appevent triggered!!!!')//this.trigger(AppEvent.togglePinTableList, this.table, false);
     }
   }
 }

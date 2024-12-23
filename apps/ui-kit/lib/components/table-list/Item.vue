@@ -53,7 +53,7 @@
 import Vue from "vue";
 import StatelessTableListItem from "./StatelessTableListItem.vue";
 import StatelessRoutineListItem from "./StatelessRoutineListItem.vue";
-import StatelessSidebarFolder from "@/components/common/StatelessSidebarFolder.vue";
+import StatelessSidebarFolder from "./StatelessSidebarFolder.vue";
 export default Vue.extend({
   components: {
     StatelessTableListItem,

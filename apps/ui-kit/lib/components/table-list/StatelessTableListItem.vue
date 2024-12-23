@@ -123,9 +123,9 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapGetters, mapState } from "vuex";
+// import { mapGetters, mapState } from "vuex";
 import _ from "lodash";
-import TableIcon from "@/components/common/TableIcon.vue";
+import TableIcon from "./TableIcon.vue";
 
 export default Vue.extend({
   props: [
@@ -178,8 +178,8 @@ export default Vue.extend({
 
       return tableSelected;
     },
-    ...mapGetters(["selectedSidebarItem"]),
-    ...mapState(["activeTab"]),
+    // ...mapGetters(["selectedSidebarItem"]),
+    // ...mapState(["activeTab"]),
   },
   methods: {
     selectItem() {

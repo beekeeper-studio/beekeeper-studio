@@ -108,7 +108,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { RoutineTypeNames } from "@/lib/db/models";
+import { RoutineTypeNames } from "./models";
 
 export default Vue.extend({
   props: ["routine", "pinned", "draggable", "level", "expanded"],
