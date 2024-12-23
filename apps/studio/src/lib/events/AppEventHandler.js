@@ -41,7 +41,7 @@ export default class {
   }
 
   async addBeekeeper() {
-    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
+    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: { defaultDatabase: platformInfo.appDbPath }});
     if (!existing) {
       const nu = {};
       nu.connectionType = 'sqlite'
