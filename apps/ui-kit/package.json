@@ -3,8 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "./dist/web/main.js",
+  "main": "./dist/main.js",
   "exports": {
+    ".": "./dist/main.js",
     "./style.css": "./dist/style.css",
     "./sql-text-editor": "./dist/sql-text-editor.js",
     "./table": "./dist/table.js",
@@ -19,7 +20,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#fbbc631e3b536a4973432a2aa29354b8a0ec4959",
+    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#196b07abf5fef8fb3ed041fed46a3fb2faabefe4",
     "xel": "beekeeper-studio/xel",
     "codemirror": "^5.63.1",
     "lodash": "^4.17.21",
