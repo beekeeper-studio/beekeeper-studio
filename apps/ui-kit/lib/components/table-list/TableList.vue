@@ -3,6 +3,7 @@
     class="table-list-component"
     ref="wrapper"
   >
+
     <!-- Filter -->
     <div class="filter-wrap">
       <input
@@ -18,39 +19,42 @@
         >
           <i class="clear material-icons">cancel</i>
         </x-button>
+
         <x-button
+          v-show="false"
           :title="entitiesHidden ? 'Filter active' : 'No filters'"
           class="btn btn-fab btn-link action-item"
           :class="{active: entitiesHidden}"
           menu
         >
           <i class="material-icons-outlined">filter_alt</i>
-          <x-menu style="--target-align: right;">
-            <label>
-              <input
-                type="checkbox"
-                v-model="showTables"
-              >
-              <span>Tables</span>
-            </label>
-            <!-- FIXME support views -->
-            <!-- <label> -->
-            <!--   <input -->
-            <!--     type="checkbox" -->
-            <!--     v-model="showViews" -->
-            <!--   > -->
-            <!--   <span>Views</span> -->
-            <!-- </label> -->
-            <label v-if="supportsRoutines">
-              <input
-                type="checkbox"
-                v-model="showRoutines"
-              >
-              <span>Routines</span>
-            </label>
-            <x-menuitem />
-          </x-menu>
+          <!-- FIXME commenting this because it freezes chrome. but it works in firefox.. -->
+          <!-- <x-menu style="--target-align: right;"> -->
+          <!--   <label> -->
+          <!--     <input -->
+          <!--       type="checkbox" -->
+          <!--       v-model="showTables" -->
+          <!--     > -->
+          <!--     <span>Tables</span> -->
+          <!--   </label> -->
+          <!--   <label> -->
+          <!--     <input -->
+          <!--       type="checkbox" -->
+          <!--       v-model="showViews" -->
+          <!--     > -->
+          <!--     <span>Views</span> -->
+          <!--   </label> -->
+          <!--   <label v-if="supportsRoutines"> -->
+          <!--     <input -->
+          <!--       type="checkbox" -->
+          <!--       v-model="showRoutines" -->
+          <!--     > -->
+          <!--     <span>Routines</span> -->
+          <!--   </label> -->
+          <!--   <x-menuitem /> -->
+          <!-- </x-menu> -->
         </x-button>
+
       </x-buttons>
     </div>
 
