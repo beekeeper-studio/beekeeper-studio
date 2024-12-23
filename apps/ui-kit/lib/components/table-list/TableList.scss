@@ -105,6 +105,16 @@
     display: flex;
     flex-direction: row;
   }
+
+  .table-action-wrapper{
+    display: flex;
+    flex-direction: row;
+  }
+
+  p.no-entities {
+    width: 100%;
+    white-space:normal;
+  }
 }
 
 // Pinned

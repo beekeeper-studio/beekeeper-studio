@@ -5,13 +5,7 @@
     :expanded="source.expanded"
     :schema="source.entity"
     @expand="onExpand($event, source)"
-    @contextmenu.prevent.stop="
-      $bks.openMenu({
-        event: $event,
-        item: source.entity,
-        options: source.contextMenu,
-      })
-    "
+    @contextmenu.prevent.stop="onContextMenu($event, source)"
   />
   <stateless-table-list-item
     v-else-if="source.type === 'table'"
@@ -21,15 +15,10 @@
     :table="source.entity"
     :pinned="source.pinned"
     :loading-columns="source.loadingColumns"
+    @dblclick="onDblClick($event, source)"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
-    @contextmenu.prevent.stop="
-      $bks.openMenu({
-        event: $event,
-        item: source.entity,
-        options: source.contextMenu,
-      })
-    "
+    @contextmenu.prevent.stop="onContextMenu($event, source)"
   />
   <stateless-routine-list-item
     v-else-if="source.type === 'routine'"
@@ -39,13 +28,7 @@
     :pinned="source.pinned"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
-    @contextmenu.prevent.stop="
-      $bks.openMenu({
-        event: $event,
-        item: source.entity,
-        options: source.contextMenu,
-      })
-    "
+    @contextmenu.prevent.stop="onContextMenu($event, source)"
   />
 </template>
 
@@ -60,6 +43,6 @@ export default Vue.extend({
     StatelessRoutineListItem,
     StatelessSidebarFolder,
   },
-  props: ["source", "onExpand", "onPin"],
+  props: ["source", "onExpand", "onPin", "onDblClick", "onContextMenu"],
 });
 </script>

@@ -8,7 +8,7 @@
     :data-component="itemComponent"
     :estimate-size="estimateItemHeight"
     :keeps="keeps"
-    :extra-props="{ onExpand: handleExpand, onPin: handlePin }"
+    :extra-props="{ onExpand: handleExpand, onPin: handlePin, onDblClick: handleDblClick, onContextMenu: handleContextMenu }"
   />
 </template>
 
@@ -42,11 +42,13 @@ export function entityId(schema: string, entity?: TableOrView | Routine) {
 }
 
 import Vue from "vue";
+import { RootEventMixin } from "../mixins/RootEvent";
 import TableListContextMenus from "./mixins/TableListContextMenus";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
+import { TableListEvents } from "./constants";
 // TODO(@azmi): to remove
-// import { AppEvent } from "@/common/AppEvent";
+
 // import { mapGetters, mapState } from "vuex";
 import * as globals from "../../utils/constants";
 import "scrollyfills";
@@ -92,8 +94,14 @@ interface RoutineItem extends BaseItem {
 }
 
 export default Vue.extend({
-  mixins: [TableListContextMenus],
+  mixins: [TableListContextMenus, RootEventMixin],
   components: { VirtualList },
+  props: {
+    tables: {
+      type: Array,
+      default: () => [],
+    },
+  },
   data() {
     return {
       items: [],
@@ -248,13 +256,20 @@ export default Vue.extend({
     },
     handleExpand(_: Event, item: Item) {
       item.expanded = !item.expanded;
-      if (item.expanded && item.type === "table") {
-        this.loadColumns(item);
-      }
+      this.$emit("expand", {
+        entity: item.entity,
+        expanded: item.expanded,
+      } as ExpandEventData);
       this.generateDisplayItems();
     },
     handlePin(_: Event, item: TableItem) {
       // this.trigger(AppEvent.togglePinTableList, item.entity, !item.pinned);
+    },
+    handleDblClick(_: Event, item: Item) {
+      this.$emit("dblclick", { entity: item.entity });
+    },
+    handleContextMenu(_: Event, item: Item) {
+      this.$emit("contextmenu", { entity: item.entity });
     },
     handleToggleHidden(
       entity: TableOrView | Routine | string,
@@ -275,11 +290,12 @@ export default Vue.extend({
         item.expanded = expand;
       });
       this.generateDisplayItems();
-      if (expand) {
-        this.$nextTick(() => {
-          this.updateTableColumnsInRange();
-        });
-      }
+      this.$emit("expand-all", expand);
+      // if (expand) {
+      //   this.$nextTick(() => {
+      //     this.updateTableColumnsInRange();
+      //   });
+      // }
     },
     handleTogglePinned(entity: Entity, pinned?: boolean) {
       const item = this.items.find((item: Item) => item.entity === entity);
@@ -305,18 +321,34 @@ export default Vue.extend({
         // { event: AppEvent.toggleHideSchema, handler: this.handleToggleHidden },
         // { event: AppEvent.toggleHideEntity, handler: this.handleToggleHidden },
         {
-          // event: AppEvent.toggleExpandTableList,
+          event: TableListEvents.toggleExpandTableList,
           handler: this.handleToggleExpandedAll,
         },
-        {
-          // event: AppEvent.togglePinTableList,
-          handler: this.handleTogglePinned,
-        },
+        // {
+        //   // event: AppEvent.togglePinTableList,
+        //   handler: this.handleTogglePinned,
+        // },
       ];
     },
-    // FIXME remove this
-    schemaTables(g){
-      return [{"schema":null,"skipSchemaDisplay":true,"tables":[{"name":"cheeses","entityType":"table","columns":[{"tableName":"cheeses","columnName":"id","dataType":"INTEGER","nullable":true,"defaultValue":null,"ordinalPosition":0,"hasDefault":false,"generated":false,"bksField":{"name":"id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"name","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":1,"hasDefault":false,"generated":false,"bksField":{"name":"name","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"origin_country_id","dataType":"INTEGER","nullable":false,"defaultValue":null,"ordinalPosition":2,"hasDefault":false,"generated":false,"bksField":{"name":"origin_country_id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"cheese_type","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":3,"hasDefault":false,"generated":false,"bksField":{"name":"cheese_type","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"description","dataType":"TEXT","nullable":true,"defaultValue":null,"ordinalPosition":4,"hasDefault":false,"generated":false,"bksField":{"name":"description","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"first_seen","dataType":"DATETIME","nullable":true,"defaultValue":null,"ordinalPosition":5,"hasDefault":false,"generated":false,"bksField":{"name":"first_seen","bksType":"UNKNOWN"}}]},{"name":"countries","entityType":"table"},{"name":"neko","entityType":"table"},{"name":"producers","entityType":"table"},{"name":"reviews","entityType":"table"},{"name":"sqlite_sequence","entityType":"table"},{"name":"stores","entityType":"table"},{"name":"cheese_summary","entityType":"view"}],"routines":[]}]
+    // TODO(@azmi): maybe we don't need this
+    schemaTables(){
+      const noSchema = Symbol('noSchema')
+      const schemaCollection = Object.groupBy(this.tables, ({ schema }) => {
+        if (!schema) {
+          return noSchema
+        }
+        return schema
+      })
+
+      const schemaList = []
+      if (schemaCollection[noSchema]) {
+        schemaList.push({
+          tables: schemaCollection[noSchema],
+          routines: [],
+        })
+      }
+      Object.keys(schemaCollection).forEach((key) => schemaList.push(schemaCollection[key]))
+      return schemaList
     },
     // FIXME remove this
     hiddenEntities() {
@@ -353,14 +385,10 @@ export default Vue.extend({
     },
   },
   mounted() {
-    // FIXME
-    // this.registerHandlers(this.rootBindings);
     this.$nextTick(() => this.resizeObserver.observe(this.$refs.vList.$el));
     this.$refs.vList.$el.addEventListener("scrollend", this.handleScrollEnd);
   },
   beforeDestroy() {
-    // FIXME
-    // this.unregisterHandlers(this.rootBindings);
     this.resizeObserver.disconnect();
     this.$refs.vList.$el.removeEventListener("scrollend", this.handleScrollEnd);
   },

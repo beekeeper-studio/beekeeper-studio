@@ -33,13 +33,14 @@
               >
               <span>Tables</span>
             </label>
-            <label>
-              <input
-                type="checkbox"
-                v-model="showViews"
-              >
-              <span>Views</span>
-            </label>
+            <!-- FIXME support views -->
+            <!-- <label> -->
+            <!--   <input -->
+            <!--     type="checkbox" -->
+            <!--     v-model="showViews" -->
+            <!--   > -->
+            <!--   <span>Views</span> -->
+            <!-- </label> -->
             <label v-if="supportsRoutines">
               <input
                 type="checkbox"
@@ -57,21 +58,6 @@
       v-show="tablesLoading"
       style="margin-top: -5px;"
     />
-
-    <!-- Pinned Tables -->
-    <div
-      class="table-list pinned flex-col"
-      ref="pinned"
-      v-show="orderedPins.length > 0"
-    >
-      <pinned-table-list
-        :all-expanded="allExpanded"
-        :all-collapsed="allCollapsed"
-      />
-    </div>
-
-    <!-- Tables -->
-    <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
 
     <nav
       class="list-group flex-col"
@@ -112,7 +98,7 @@
             <i class="material-icons">{{ isExpanded ? 'unfold_less' : 'unfold_more' }}</i>
           </button>
           <button
-            @click.prevent="refreshTables"
+            @click.prevent="$emit('refresh')"
             :title="'Refresh'"
             :disabled="tablesLoading"
           >
@@ -130,7 +116,14 @@
         </div>
       </div>
 
-      <virtual-table-list />
+      <virtual-table-list
+        :tables="filteredTables"
+        :expanded="isExpanded"
+        @expand="handleExpand"
+        @expand-all="handleToggleExpandedAll"
+        @dblclick="handleDblClick"
+        @contextmenu="handleContextMenu"
+      />
 
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
       <div
@@ -149,13 +142,17 @@
 </template>
 
 <script lang="ts">
+import "xel/xel";
+import "./TableList.scss";
+import Vue, { PropType } from 'vue';
 import _ from 'lodash'
-import Split from 'split.js'
 import TableFilter from './mixins/table_filter'
 import TableListContextMenus from './mixins/TableListContextMenus'
-import PinnedTableList from './PinnedTableList.vue'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
+import { ExpandEventData, DblClickEventData, ContextMenuEventData, Table } from "./models";
+import { TableListEvents } from "./constants";
+import { RootEventMixin } from "../mixins/RootEvent";
 
 // TODO(@day): to remove
 // import { mapState, mapGetters } from 'vuex'
@@ -166,15 +163,12 @@ import { entityFilter } from './sql_tools'
 // TODO(@azmi): make new types instead
 // import { TableOrView, Routine } from "@/lib/db/models";
 
-// TODO(@azmi): make a new util function insteaed
-// import { matches } from '@/common/transport/TransportPinnedEntity'
-
-export default {
-  mixins: [TableFilter, TableListContextMenus],
-  components: { PinnedTableList, VirtualTableList },
+export default Vue.extend({
+  mixins: [TableFilter, TableListContextMenus, RootEventMixin],
+  components: { VirtualTableList },
   props: {
     tables: {
-      type: Array,
+      type: Array as PropType<Table[]>,
       default: () => [],
     },
     routines: {
@@ -189,12 +183,9 @@ export default {
   data() {
     return {
       tableLoadError: null,
-      allExpanded: null,
-      allCollapsed: null,
       isExpanded: false,
       listItemsCollapsed: null,
       activeItem: 'tables',
-      split: null,
       sizes: [25,75],
       expandedTables: [],
       entityFilter: {
@@ -262,61 +253,28 @@ export default {
         this.entityFilter.showRoutines = !this.entityFilter.showRoutines;
       }
     },
-    components() {
-      return [
-        this.$refs.pinned,
-        this.$refs.tables
-      ]
-    },
-    async supportsRoutines() {
+    supportsRoutines() {
       // TODO(@azmi): do something
       // return this.supportedFeatures.customRoutines
       return false
     },
     canCreateTable() {
       // FIXME
-      return false
+      return true
       // return !this.dialectData.disabledFeatures?.createTable
     },
-    loadedWithPins() {
-      return !this.tablesLoading && this.pinnedEntities.length > 0
-    },
-    rootBindings() {
-      return [
-        // { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
-      ]
-    },
-    tables() {
-      return [{"name":"cheeses","entityType":"table","columns":[{"tableName":"cheeses","columnName":"id","dataType":"INTEGER","nullable":true,"defaultValue":null,"ordinalPosition":0,"hasDefault":false,"generated":false,"bksField":{"name":"id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"name","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":1,"hasDefault":false,"generated":false,"bksField":{"name":"name","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"origin_country_id","dataType":"INTEGER","nullable":false,"defaultValue":null,"ordinalPosition":2,"hasDefault":false,"generated":false,"bksField":{"name":"origin_country_id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"cheese_type","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":3,"hasDefault":false,"generated":false,"bksField":{"name":"cheese_type","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"description","dataType":"TEXT","nullable":true,"defaultValue":null,"ordinalPosition":4,"hasDefault":false,"generated":false,"bksField":{"name":"description","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"first_seen","dataType":"DATETIME","nullable":true,"defaultValue":null,"ordinalPosition":5,"hasDefault":false,"generated":false,"bksField":{"name":"first_seen","bksType":"UNKNOWN"}}]},{"name":"countries","entityType":"table"},{"name":"neko","entityType":"table"},{"name":"producers","entityType":"table"},{"name":"reviews","entityType":"table"},{"name":"sqlite_sequence","entityType":"table"},{"name":"stores","entityType":"table"},{"name":"cheese_summary","entityType":"view"}]
-      return [] // FIXME temp
-    },
+    // tables() {
+    //   return [{"name":"cheeses","entityType":"table","columns":[{"tableName":"cheeses","columnName":"id","dataType":"INTEGER","nullable":true,"defaultValue":null,"ordinalPosition":0,"hasDefault":false,"generated":false,"bksField":{"name":"id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"name","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":1,"hasDefault":false,"generated":false,"bksField":{"name":"name","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"origin_country_id","dataType":"INTEGER","nullable":false,"defaultValue":null,"ordinalPosition":2,"hasDefault":false,"generated":false,"bksField":{"name":"origin_country_id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"cheese_type","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":3,"hasDefault":false,"generated":false,"bksField":{"name":"cheese_type","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"description","dataType":"TEXT","nullable":true,"defaultValue":null,"ordinalPosition":4,"hasDefault":false,"generated":false,"bksField":{"name":"description","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"first_seen","dataType":"DATETIME","nullable":true,"defaultValue":null,"ordinalPosition":5,"hasDefault":false,"generated":false,"bksField":{"name":"first_seen","bksType":"UNKNOWN"}}]},{"name":"countries","entityType":"table"},{"name":"neko","entityType":"table"},{"name":"producers","entityType":"table"},{"name":"reviews","entityType":"table"},{"name":"sqlite_sequence","entityType":"table"},{"name":"stores","entityType":"table"},{"name":"cheese_summary","entityType":"view"}]
+    //   return [] // FIXME temp
+    // },
     routines() {
-      return [] // FIXME temp
-    },
-    pinnedEntities() {
-      return [] // FIXME temp
-    },
-    orderedPins() {
       return [] // FIXME temp
     },
     // ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
     // ...mapGetters(['dialectData']),
     // ...mapGetters({
-    //     pinnedEntities: 'pins/pinnedEntities',
-    //     orderedPins: 'pins/orderedPins',
     //     totalHiddenEntities: 'hideEntities/totalEntities',
     // }),
-  },
-  watch: {
-    loadedWithPins (loaded, oldloaded) {
-      if (loaded && (!oldloaded)) {
-        this.$nextTick(() => {
-          this.split.setSizes(this.sizes);
-        });
-      } else if (!loaded) {
-        // this.split.destroy();
-      }
-    },
   },
   methods: {
     clearFilter() {
@@ -324,7 +282,7 @@ export default {
     },
     toggleExpandCollapse() {
       this.isExpanded = !this.isExpanded
-      // this.trigger(AppEvent.toggleExpandTableList, this.isExpanded)
+      this.trigger(TableListEvents.toggleExpandTableList, this.isExpanded)
     },
     // FIXME (azmi): expandedTables is always empty
     refreshExpandedColumns() {
@@ -332,81 +290,29 @@ export default {
         this.$store.dispatch('updateTableColumns', table)
       })
     },
-    refreshPinnedColumns() {
-      this.orderedPins.forEach((p) => {
-        const t = this.tables.find((table) => matches(p, table))
-        if (t) {
-          this.$store.dispatch('updateTableColumns', t)
-        }
-      })
-    },
-    async refreshTables() {
-      try {
-        this.$store.dispatch('updateRoutines')
-        await this.$store.dispatch('updateTables')
-        // When we refresh sidebar tables we need to also refresh:
-        // 1. Any open tables
-        // 2. Any pinned tables
-        this.refreshExpandedColumns()
-        this.refreshPinnedColumns()
-      } catch (ex) {
-        this.$noty.error(`Unable to refresh tables ${ex.message}`)
-      }
-    },
     newTable() {
-      // this.$root.$emit(AppEvent.createTable)
+      this.$emit('new-table')
     },
-    maybeUnselect(e) {
-      if (this.selectedSidebarItem) {
-        if (this.$refs.wrapper.contains(e.target)) {
-          return
-        }
-        this.$store.commit('selectSidebarItem', null)
+    handleExpand(data: ExpandEventData) {
+      if (data.expanded) {
+        this.$emit('item-expand', data.entity)
+      } else {
+        this.$emit('item-collapse', data.entity)
       }
     },
-    togglePinTableList(entity: TableOrView | Routine, pinned?: boolean) {
-      if (typeof pinned === 'undefined') {
-        pinned = !this.pinnedEntities.includes(entity)
+    handleExpandAll(expand: boolean) {
+      if (expand) {
+        this.$emit('expand-all')
+      } else {
+        this.$emit('collapse-all')
       }
-
-      if (pinned) this.$store.dispatch('pins/add', entity)
-      else this.$store.dispatch('pins/remove', entity)
-
-      if (pinned && entity.entityType === 'table') {
-        this.$store.dispatch('updateTableColumns', entity)
-      }
-    }
+    },
+    handleDblClick(data: DblClickEventData) {
+      this.$emit('item-dblclick', data.entity)
+    },
+    handleContextMenu(data: ContextMenuEventData) {
+      this.$emit('item-contextmenu', data.entity)
+    },
   },
-  mounted() {
-    document.addEventListener('mousedown', this.maybeUnselect)
-    const components = [this.$refs.pinned, this.$refs.tables]
-    this.split = Split(components, {
-      elementStyle: (_dimension, size) => ({
-          'flex-basis': `calc(${size}%)`,
-      }),
-      direction: 'vertical',
-      sizes: this.sizes,
-    })
-    // FIXME
-    // this.registerHandlers(this.rootBindings)
-  },
-  beforeDestroy() {
-    document.removeEventListener('mousedown', this.maybeUnselect)
-    if(this.split) {
-      this.split.destroy()
-    }
-    // FIXME
-    // this.unregisterHandlers(this.rootBindings)
-  }
-}
+})
 </script>
-<style scoped>
-  .table-action-wrapper{
-    display: flex;
-    flex-direction: row;
-  }
-  p.no-entities {
-    width: 100%;
-    white-space:normal;
-  }
-</style>

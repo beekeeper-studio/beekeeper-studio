@@ -22,7 +22,7 @@ import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
 import { setKeybindings, applyConfig, Register, Config } from "./vim";
-import { openMenu } from "../ContextMenu/menu";
+import { openMenu } from "../context-menu/menu";
 import { writeClipboard, readClipboard } from "../../utils/clipboard";
 import { isMacLike } from "../../utils/platform"
 import { PropType } from "vue";
