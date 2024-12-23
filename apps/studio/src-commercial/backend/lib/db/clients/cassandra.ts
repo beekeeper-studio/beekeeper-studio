@@ -16,6 +16,8 @@ import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import _ from "lodash";
+
 const log = rawLog.scope("cassandra");
 const logger = () => log;
 
