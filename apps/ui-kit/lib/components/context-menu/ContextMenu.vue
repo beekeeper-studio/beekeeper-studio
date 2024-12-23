@@ -32,6 +32,7 @@
 </template>
 
 <script lang="ts">
+import "./ContextMenu.scss";
 import Teleport from "vue2-teleport"
 import { ContextOption } from './menu'
 import Vue from 'vue'

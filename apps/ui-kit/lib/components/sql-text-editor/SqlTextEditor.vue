@@ -10,6 +10,7 @@
 </template>
 
 <script lang="ts">
+import "./SqlTextEditor.scss";
 import Vue, { PropType } from "vue";
 import textEditorMixin from "../text-editor/mixin";
 import { format, FormatOptions } from "sql-formatter";

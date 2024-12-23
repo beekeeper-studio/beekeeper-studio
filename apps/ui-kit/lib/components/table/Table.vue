@@ -3,6 +3,7 @@
 </template>
 
 <script lang="ts">
+import "./Table.scss";
 import Vue, { PropType } from "vue";
 import _ from "lodash";
 import { tabulatorForTableData } from "./tabulator";

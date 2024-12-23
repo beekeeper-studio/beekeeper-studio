@@ -88,7 +88,7 @@ import {
 } from "./detail_view";
 import { ExpandablePath } from "./types";
 // import { mapGetters } from "vuex";
-import { EditorMarker, TextEditor } from "../TextEditor";
+import { EditorMarker, TextEditor } from "../text-editor";
 import _ from "lodash";
 import * as constants from "../../utils/constants";
 

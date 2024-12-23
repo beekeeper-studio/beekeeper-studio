@@ -1,4 +1,8 @@
-// Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
+// Original file source copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
+
+@import "../../styles/variables";
+@import "../../styles/light-theme.scss";
+@import "../../styles/mixins";
 
 .BksContextMenu-list, bks-table .tabulator-menu {
   top: 0;

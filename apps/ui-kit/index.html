@@ -1,13 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Vue + TS</title>
+    <title>Document</title>
+    <link rel="stylesheet" href="/dist/style.css" />
+    <style>
+      body,
+      html {
+        height: 100%;
+      }
+      #app {
+        height: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      bks-table-list {
+        grid-row: span 2;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="app">
+      <bks-table-list></bks-table-list>
+      <bks-sql-text-editor
+        value="SELECT * FROM cheeses"
+        focus
+      ></bks-sql-text-editor>
+      <bks-table></bks-table>
+    </div>
+    <script src="/dist/main.js"></script>
+    <script>
+      const tables = [
+        {
+          name: "cheeses",
+          columns: [
+            { name: "id", dataType: "INTEGER" },
+            { name: "name", dataType: "VARCHAR(255)" },
+            { name: "origin_country_id", dataType: "INTEGER" },
+            { name: "cheese_type", dataType: "VARCHAR(255)" },
+            { name: "description", dataType: "TEXT" },
+            { name: "first_seen", dataType: "DATETIME" },
+          ],
+          data: [
+            {
+              id: "1",
+              name: "Camembert",
+              origin_country_id: "1",
+              cheese_type: "Soft",
+              description: "A soft, creamy, surface-ripened cow's milk cheese.",
+              first_seen: "1791-01-01",
+            },
+            {
+              id: "2",
+              name: "Parmigiano Reggiano",
+              origin_country_id: "2",
+              cheese_type: "Hard",
+              description:
+                "Known as Parmesan, this is a hard, granular cheese.",
+              first_seen: "1200-01-01",
+            },
+            {
+              id: "3",
+              name: "Gruyère",
+              origin_country_id: "3",
+              cheese_type: "Semi-hard",
+              description:
+                "A sweet but slightly salty cheese that becomes more flavorful with age.",
+              first_seen: "1115-01-01",
+            },
+            {
+              id: "4",
+              name: "Gouda",
+              origin_country_id: "4",
+              cheese_type: "Semi-hard",
+              description:
+                "Named after the Dutch city of Gouda, not pronounced like the name of the city.",
+              first_seen: "1184-01-01",
+            },
+          ],
+        },
+        { name: "countries", columns: [] },
+        { name: "producers" },
+        { name: "reviews" },
+        { name: "sqlite_sequence" },
+        { name: "stores" },
+        { name: "cheese_summary" },
+      ];
+
+      // --------------------------------------------------------------
+
+      // BksTableList
+      const tableList = document.querySelector("bks-table-list");
+      tableList.tables = tables;
+
+      // BksSqlTextEditor
+      const editor = document.querySelector("bks-sql-text-editor");
+      const hintOptionsTables = {};
+      tables.forEach((table) => {
+        hintOptionsTables[table.name] = table.columns?.map((c) => c.name) ?? [];
+      });
+      editor.hintOptions = { tables: hintOptionsTables };
+
+      // BksTable
+      const table = document.querySelector("bks-table");
+      table.table = tables[0].name;
+      table.columns = tables[0].columns.map((col) => ({
+        field: col.name,
+        title: col.name,
+        editable: true,
+      }));
+      table.data = tables[0].data;
+    </script>
   </body>
 </html>
