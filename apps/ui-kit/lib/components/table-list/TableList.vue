@@ -102,7 +102,7 @@
             <i class="material-icons">{{ isExpanded ? 'unfold_less' : 'unfold_more' }}</i>
           </button>
           <button
-            @click.prevent="$emit('refresh')"
+            @click.prevent="$emit('bks-refresh-btn-click')"
             :title="'Refresh'"
             :disabled="tablesLoading"
           >
@@ -295,27 +295,27 @@ export default Vue.extend({
       })
     },
     newTable() {
-      this.$emit('new-table')
+      this.$emit('bks-add-btn-click')
     },
     handleExpand(data: ExpandEventData) {
       if (data.expanded) {
-        this.$emit('item-expand', data.entity)
+        this.$emit('bks-item-expand', data.entity)
       } else {
-        this.$emit('item-collapse', data.entity)
+        this.$emit('bks-item-collapse', data.entity)
       }
     },
     handleExpandAll(expand: boolean) {
       if (expand) {
-        this.$emit('expand-all')
+        this.$emit('bks-expand-all')
       } else {
-        this.$emit('collapse-all')
+        this.$emit('bks-collapse-all')
       }
     },
     handleDblClick(data: DblClickEventData) {
-      this.$emit('item-dblclick', data.entity)
+      this.$emit('bks-item-dblclick', data.entity)
     },
     handleContextMenu(data: ContextMenuEventData) {
-      this.$emit('item-contextmenu', data.entity)
+      this.$emit('bks-item-contextmenu', data.entity)
     },
   },
 })

@@ -173,7 +173,8 @@ export default {
       ] as ContextOption[]
     },
     schemaMenuOptions() {
-      const dialect: DialectData = this.$store.getters.dialectData;
+          // FIXME
+      // const dialect: DialectData = this.$store.getters.dialectData;
 
       return [
         {
@@ -187,7 +188,8 @@ export default {
         {
           name: "Rename",
           slug: 'rename',
-          class: dialect.disabledFeatures?.alter?.renameSchema ? 'disabled' : '',
+          // FIXME
+          // class: dialect.disabledFeatures?.alter?.renameSchema ? 'disabled' : '',
           // handler: ({ item }) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.SCHEMA, item })
         },
         {
@@ -200,7 +202,8 @@ export default {
         {
           name: "Truncate",
           slug: 'sql-truncate',
-          class: disabled(dialect.disabledFeatures?.truncateElement),
+          // FIXME
+          // class: disabled(dialect.disabledFeatures?.truncateElement),
           handler: ({ item }) => {
             // this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
           }

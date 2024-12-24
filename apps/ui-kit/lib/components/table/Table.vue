@@ -120,9 +120,9 @@ export default Vue.extend({
         ];
       };
 
-      const columns = this.columns.flatMap((column: Column, index) => {
+      const columns = this.columns.flatMap((column: Column) => {
         const results = [];
-        const title = column.title ?? `Result ${index}`;
+        const title = column.title ?? column.field;
 
         const result: ColumnDefinition = {
           title,
@@ -280,10 +280,10 @@ export default Vue.extend({
       this.tabulator.on("tableBuilt", () => {
         this.isBuilt = true
         this.pendingTasks.forEach((task) => task())
-        this.$emit("tabulator-built", this.tabulator);
+        this.$emit("bks-tabulator-built", this.tabulator);
       });
       this.tabulator.on("sortChanged", (sorters) => {
-        this.$emit("update:sorters", sorters.map(({ field, dir }) => ({ field, dir })));
+        this.$emit("bks-sorters-change", sorters.map(({ field, dir }) => ({ field, dir })));
       });
       this.tabulator.on("cellMouseUp", this.checkRangeChanges);
       this.tabulator.on("headerMouseUp", this.checkRangeChanges);
@@ -324,7 +324,7 @@ export default Vue.extend({
       }
       if (this.ranges.length !== ranges.length) {
         this.ranges = ranges
-        this.$emit("ranges-changed", ranges)
+        this.$emit("bks-ranges-changed", ranges)
         return
       }
       const foundDiffRange = ranges.some((range, idx) => {
@@ -334,7 +334,7 @@ export default Vue.extend({
       })
       if (foundDiffRange) {
         this.ranges = ranges
-        this.$emit("ranges-changed", ranges)
+        this.$emit("bks-ranges-changed", ranges)
         return
       }
     },

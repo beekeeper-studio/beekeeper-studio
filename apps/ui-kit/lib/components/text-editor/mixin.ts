@@ -33,13 +33,15 @@ const hintMap = {
 
 export default {
   props: {
-    value: String,
+    value: {
+      type: String,
+      default: "",
+    },
     mode: [String, Object],
     hint: String,
     keybindings: Object as PropType<Record<string, () => void>>,
     vimConfig: Object as PropType<Config>,
     lineWrapping: Boolean,
-    hintOptions: Object,
     columnsGetter: Function,
     height: Number,
     readOnly: Boolean,
@@ -128,7 +130,10 @@ export default {
         value: this.value ?? "",
         status: this.editor != null
       }
-    }
+    },
+    hintOptions() {
+      return {}
+    },
   },
   watch: {
     valueAndStatus() {

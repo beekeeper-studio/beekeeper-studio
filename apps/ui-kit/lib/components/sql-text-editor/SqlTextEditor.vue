@@ -11,6 +11,7 @@
 
 <script lang="ts">
 import "./SqlTextEditor.scss";
+import _ from "lodash";
 import Vue, { PropType } from "vue";
 import textEditorMixin from "../text-editor/mixin";
 import { format, FormatOptions } from "sql-formatter";
@@ -53,17 +54,69 @@ export default Vue.extend({
         return this.handleContextMenuOptions(...arguments);
       },
     },
+    /** Tables for autocompletion */
+    tables: {
+      type: Object as PropType<Record<string, string[]>>,
+      default() {
+        return [];
+      },
+    },
+    routines: {
+      type: Object as PropType<Record<string, string[]>>,
+      default() {
+        return [];
+      },
+    },
+    defaultSchema: {
+      type: String,
+      default: "public",
+    },
     formatterDialect: String as PropType<FormatOptions['language']>,
     identifierDialect: String as PropType<Options['dialect']>,
+  },
+  computed: {
+    hintOptions() {
+      // We do this so we can order the autocomplete options
+      const firstTables = {};
+      const secondTables = {};
+      const thirdTables = {};
+
+      this.tables.forEach((table) => {
+        const columns = table.columns.map((c) => c.name);
+        // don't add table names that can get in conflict with database schema
+        if (/\./.test(table.name)) return;
+
+        // Previously we had to provide a table: column[] mapping.
+        // we don't need to provide the columns anymore because we fetch them dynamically.
+        if (!table.schema) {
+          firstTables[table.name] = columns;
+          return;
+        }
+
+        if (table.schema === this.defaultSchema) {
+          firstTables[table.name] = columns;
+          secondTables[`${table.schema}.${table.name}`] = columns;
+        } else {
+          thirdTables[`${table.schema}.${table.name}`] = columns;
+        }
+      });
+
+      const sorted = Object.assign(
+        firstTables,
+        Object.assign(secondTables, thirdTables)
+      );
+
+      return { tables: sorted };
+    }
   },
   methods: {
     formatSql() {
       const formatted = format(this.$attrs.value, {
         language: this.formatterDialect,
       });
-      this.$emit("input", formatted);
+      this.$emit("bks-input", formatted);
     },
-    handleContextMenuOptions(e: unknown, options: any[]) {
+    handleContextMenuOptions(_e: unknown, options: any[]) {
       const pivot = options.findIndex((o) => o.slug === "find");
       return [
         ...options.slice(0, pivot),

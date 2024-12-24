@@ -27,23 +27,24 @@ export default defineConfig({
     lib: {
       ...(component === "main"
         ? {
-          entry: resolve(__dirname, "lib/components/index.ts"),
-          name: "BksComponents",
-          fileName: () => "main.js",
-        }
+            entry: resolve(__dirname, "lib/components/index.ts"),
+            name: "BksComponents",
+            fileName: () => "main.js",
+          }
         : {
-          entry: resolve(
-            __dirname,
-            `lib/components/${component}/index.ts`
-          ),
-          name: `Bks${camelCase(component)}`,
-          fileName: () => `${component}.js`,
-        }),
+            entry: resolve(__dirname, `lib/components/${component}/index.ts`),
+            name: `Bks${camelCase(component)}`,
+            fileName: () => `${component}.js`,
+          }),
       formats: ["iife"],
     },
-    // rollupOptions: {
-    //   external: [/\.css$/, /\.scss$/],
-    // },
+    rollupOptions: {
+      output: {
+        ...(component !== "main" && {
+          assetFileNames: `${component}.[ext]`,
+        }),
+      },
+    },
     sourcemap: true,
   },
 });

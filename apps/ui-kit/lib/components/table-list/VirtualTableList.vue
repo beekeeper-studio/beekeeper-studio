@@ -143,7 +143,8 @@ export default Vue.extend({
               : this.items.findIndex(
                   (item: Item) => item.key === key && item.expanded
                 ) >= 0,
-            hidden: this.hiddenSchemas.includes(schema.schema),
+            // FIXME
+            hidden: false, // hidden: this.hiddenSchemas.includes(schema.schema),
             contextMenu: this.schemaMenuOptions,
             parent: root,
             level: 0,
@@ -330,7 +331,7 @@ export default Vue.extend({
         // },
       ];
     },
-    // TODO(@azmi): maybe we don't need this
+    // TODO(@azmi): uuh... this whole thing is unnecessary
     schemaTables(){
       const noSchema = Symbol('noSchema')
       const schemaCollection = Object.groupBy(this.tables, ({ schema }) => {
@@ -347,7 +348,11 @@ export default Vue.extend({
           routines: [],
         })
       }
-      Object.keys(schemaCollection).forEach((key) => schemaList.push(schemaCollection[key]))
+      Object.keys(schemaCollection).forEach((key) => schemaList.push({
+        schema: key,
+        tables: schemaCollection[key],
+        routines: [],
+      }))
       return schemaList
     },
     // FIXME remove this

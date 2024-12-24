@@ -37,5 +37,5 @@ export interface Table {
   columns?: {
     name: string;
     dataType: string;
-  }
+  }[]
 }
