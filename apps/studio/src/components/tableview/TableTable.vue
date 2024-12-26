@@ -1693,13 +1693,12 @@ export default Vue.extend({
         this.selectedRowData = {}
         return
       }
-      const data = row.getData()
-      const selectedRowIndex = data[this.internalIndexColumn]
-      if (selectedRowIndex === this.selectedRowIndex) return
-
       const position = (this.limit * (this.page - 1)) + (row.getPosition() || 0)
+      if (position === this.selectedRowIndex) return
+
+      const data = row.getData()
       this.detailViewTitle = `Row ${position}`
-      this.selectedRowIndex = data[this.internalIndexColumn]
+      this.selectedRowIndex = position
       this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
       this.expandablePaths = this.rawTableKeys.map((key) => ({
         path: [key.fromColumn],
