@@ -379,6 +379,7 @@ export default Vue.extend({
       /** This is true when we switch to minimal mode while TableTable is not active */
       enabledMinimalModeWhileInactive: false,
 
+      selectedRow: null,
       selectedRowIndex: null,
       selectedRowData: {},
       expandablePaths: {},
@@ -1226,6 +1227,7 @@ export default Vue.extend({
 
       // reflect changes in the detail view
       if (this.indexRowOf(cell.getRow()) === this.selectedRowIndex) {
+        cell.getRow().invalidateForeignCache(cell.getField())
         this.updateDetailView()
       }
 
@@ -1699,19 +1701,25 @@ export default Vue.extend({
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
+        this.selectedRow = null
         this.selectedRowIndex = null
         this.selectedRowData = {}
         return
       }
       const position = this.indexRowOf(row)
-      const data = row.getData()
+      const data = row.getData("withForeignData")
+      const cachedExpandablePaths = row.getExpandablePaths()
       this.detailViewTitle = `Row ${position}`
+      this.selectedRow = row
       this.selectedRowIndex = position
       this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
-      this.expandablePaths = this.rawTableKeys.map((key) => ({
-        path: [key.fromColumn],
-        tableKey: key,
-      }))
+      this.expandablePaths = this.rawTableKeys
+        .filter((key) => !row.hasForeignData([key.fromColumn]))
+        .map((key) => ({
+          path: [key.fromColumn],
+          tableKey: key,
+        }))
+      this.expandablePaths.push(...cachedExpandablePaths)
     },
     initializeSplit() {
       const components = this.$refs.tableViewWrapper.children
@@ -1803,22 +1811,25 @@ export default Vue.extend({
 
         if (table.result.length > 0) {
           _.set(this.selectedRowData, path, table.result[0])
+          this.selectedRow.setForeignData(path, table.result[0])
 
           // Add new expandable paths for the new table
           const tableKeys = await this.connection.getTableKeys(tableKey.toTable, tableKey.toSchema)
-          tableKeys.forEach((key: TableKey) => {
-            this.expandablePaths.push({
-              path: [...path, key.fromColumn],
-              tableKey: key,
-            })
-          })
+          const expandablePaths = tableKeys.map((key: TableKey) => ({
+            path: [...path, key.fromColumn],
+            tableKey: key,
+          }))
+          this.expandablePaths.push(...expandablePaths)
+          this.selectedRow.pushExpandablePaths(...expandablePaths)
         }
       } catch (e) {
         log.error(e)
       }
 
       // Remove the path from the list of expandable paths
-      this.expandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
+      const filteredExpandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
+      this.expandablePaths = filteredExpandablePaths
+      this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
     },
     /**
      * This should be called before showing/hiding the detail view
