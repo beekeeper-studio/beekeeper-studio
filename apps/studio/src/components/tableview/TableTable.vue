@@ -991,11 +991,11 @@ export default Vue.extend({
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on("cellMouseUp", this.updateDetailViewByFirstRange);
-      this.tabulator.on("headerMouseUp", this.updateDetailViewByFirstRange);
-      this.tabulator.on("keyNavigate", this.updateDetailViewByFirstRange);
+      this.tabulator.on("cellMouseUp", this.updateDetailView);
+      this.tabulator.on("headerMouseUp", this.updateDetailView);
+      this.tabulator.on("keyNavigate", this.updateDetailView);
       // Tabulator range is reset after data is processed
-      this.tabulator.on("dataProcessed", this.updateDetailViewByFirstRange);
+      this.tabulator.on("dataProcessed", this.updateDetailView);
 
       this.updateSplit()
     },
@@ -1025,7 +1025,7 @@ export default Vue.extend({
         {
           label: createMenuItem('See details'),
           action: () => {
-            this.updateDetailView(range)
+            this.updateDetailView({ range })
             this.toggleOpenDetailView(true)
           },
         },
@@ -1223,6 +1223,12 @@ export default Vue.extend({
         cell.restoreOldValue()
         return
       }
+
+      // reflect changes in the detail view
+      if (this.indexRowOf(cell.getRow()) === this.selectedRowIndex) {
+        this.updateDetailView()
+      }
+
       // Dont handle cell edit if made on a pending insert
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() })
       if (pendingInsert) {
@@ -1686,16 +1692,18 @@ export default Vue.extend({
       this.updateSplit(open)
       this.rootToggleOpenDetailView(open)
     },
-    updateDetailView(range: RangeComponent) {
+    indexRowOf(row: RowComponent) {
+      return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
+    },
+    updateDetailView(options: { range?: RangeComponent } = {}) {
+      const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
         this.selectedRowIndex = null
         this.selectedRowData = {}
         return
       }
-      const position = (this.limit * (this.page - 1)) + (row.getPosition() || 0)
-      if (position === this.selectedRowIndex) return
-
+      const position = this.indexRowOf(row)
       const data = row.getData()
       this.detailViewTitle = `Row ${position}`
       this.selectedRowIndex = position
@@ -1704,10 +1712,6 @@ export default Vue.extend({
         path: [key.fromColumn],
         tableKey: key,
       }))
-    },
-    updateDetailViewByFirstRange() {
-      const range = this.tabulator.getRanges()[0]
-      this.updateDetailView(range)
     },
     initializeSplit() {
       const components = this.$refs.tableViewWrapper.children
