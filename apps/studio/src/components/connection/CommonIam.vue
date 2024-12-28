@@ -18,6 +18,18 @@
           </div>
         </div>
       </div>
+      <div class="flex flex-middle mb-3">
+        <h4
+          class="advanced-heading flex"
+          :class="{enabled: config.redshiftOptions.isServerless}"
+        >
+          <span class="expand">Is Serverless Instance</span>
+          <x-switch
+            @click.prevent="toggleServerless"
+            :toggled="config.redshiftOptions.isServerless"
+          />
+        </h4>
+      </div>
       <div v-show="isProfileAuth" class="form-group">
         <label for="awsProfile"> AWS Profile </label>
         <input
@@ -58,7 +70,7 @@
         >
       </div>
       <div v-show="isRedshift" class="form-group">
-        <label for="Cluster Identifier">Cluster Identifier</label>
+        <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
         <input
           type="text"
           class="form-control"
@@ -90,7 +102,8 @@ export default {
   props: ['config', 'authType'],
   data() {
     return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled
+      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
+      isServerless: this.config.redshiftOptions?.isServerless
     };
   },
   computed: {
@@ -109,6 +122,9 @@ export default {
       this.iamAuthenticationEnabled = !this.iamAuthenticationEnabled
       this.config.redshiftOptions.iamAuthenticationEnabled =
         this.iamAuthenticationEnabled;
+    },
+    toggleServerless() {
+      this.config.redshiftOptions.isServerless = !this.isServerless
     },
   }
 }

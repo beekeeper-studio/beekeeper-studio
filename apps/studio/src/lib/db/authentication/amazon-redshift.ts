@@ -1,4 +1,5 @@
 import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-redshift';
+import { RedshiftServerlessClient, GetCredentialsCommand } from "@aws-sdk/client-redshift-serverless";
 
 // The number of minutes to consider credentials expired *before* their actual expiration.
 // This accounts for potential client clock drift.
@@ -16,6 +17,7 @@ export interface ClusterCredentialConfiguration {
     dbUser: string;
     dbGroup: string;
     durationSeconds: number;
+    isServerLess?: boolean;
 }
 
 export interface TemporaryClusterCredentials {
@@ -26,8 +28,8 @@ export interface TemporaryClusterCredentials {
 
 /**
  * RedshiftCredentialResolver provides the ability to use temporary cluster credentials to access
- * an Amazon Redshift cluster. 
- * 
+ * an Amazon Redshift cluster.
+ *
  * See: https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html
  */
 export class RedshiftCredentialResolver {
@@ -51,7 +53,7 @@ export class RedshiftCredentialResolver {
 
     /**
      * Determines whether credentials managed by the resolver should be refreshed.
-     * 
+     *
      * @returns true if the credentials should be refreshed
      */
     private shouldRefreshCredentials(credentials: TemporaryClusterCredentials): boolean {
@@ -69,7 +71,7 @@ export class RedshiftCredentialResolver {
     /**
      * Exchanges a set of AWS credentials and configuration for a temporary set of credentials
      * to a Redshift cluster.
-     * 
+     *
      * @param awsCredentials the AWS credentials
      * @param config the credential configuration
      * @returns the temporary credentials
@@ -101,29 +103,52 @@ export class RedshiftCredentialResolver {
         return credentials;
       }
 
-      // Construct the client
-      const redshiftClient = new RedshiftClient({ 
-        credentials: awsCredentials,
-        region: config.awsRegion
-      });
+      let newCredentials = null
 
       // Get the credentials
       console.log(`Calling Redshift to get temporary cluster credentials with config ${JSON.stringify(config)}`)
-      const tempCredsResponse = await redshiftClient.send(new GetClusterCredentialsCommand({
-        ClusterIdentifier: config.clusterIdentifier,
-        DbName: config.dbName,
-        DbUser: config.dbUser,
-        DbGroups: [config.dbGroup],
-        DurationSeconds: config.durationSeconds || undefined,
-        AutoCreate: true
-      }));
-      console.log(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.Expiration!}`)
+      if(config.isServerLess){
+        const redshiftClientServerless = new RedshiftServerlessClient({
+          credentials: awsCredentials,
+          region: config.awsRegion
+        })
 
-      const newCredentials = {
-        dbUser: tempCredsResponse.DbUser!,
-        dbPassword: tempCredsResponse.DbPassword!,
-        expiration: new Date(tempCredsResponse.Expiration!)
+        const tempCredsResponse = await redshiftClientServerless.send(new GetCredentialsCommand({
+          workgroupName: config.clusterIdentifier,
+          dbName: config.dbName,
+          durationSeconds: config.durationSeconds || undefined
+        }))
+
+        newCredentials = {
+          dbUser: tempCredsResponse.dbUser!,
+          dbPassword: tempCredsResponse.dbPassword!,
+          expiration: new Date(tempCredsResponse.expiration!)
+        }
+
+        console.log(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.expiration!}`)
+      }else{
+        const redshiftClient = new RedshiftClient({
+          credentials: awsCredentials,
+          region: config.awsRegion
+        });
+
+        const tempCredsResponse = await redshiftClient.send(new GetClusterCredentialsCommand({
+          ClusterIdentifier: config.clusterIdentifier,
+          DbName: config.dbName,
+          DbUser: config.dbUser,
+          DbGroups: [config.dbGroup],
+          DurationSeconds: config.durationSeconds || undefined,
+          AutoCreate: true
+        }));
+        console.log(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.Expiration!}`)
+
+        newCredentials = {
+          dbUser: tempCredsResponse.DbUser!,
+          dbPassword: tempCredsResponse.DbPassword!,
+          expiration: new Date(tempCredsResponse.Expiration!)
+        }
       }
+
       this.credentials.set(cacheKey, newCredentials);
 
       return newCredentials;

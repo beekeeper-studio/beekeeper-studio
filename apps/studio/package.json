@@ -27,6 +27,7 @@
   "main": "dist/main.js",
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.651.1",
+    "@aws-sdk/client-redshift-serverless": "^3.651.1",
     "@aws-sdk/credential-providers": "^3.651.0",
     "@aws-sdk/rds-signer": "^3.651.0",
     "@azure/msal-node": "^2.12.0",

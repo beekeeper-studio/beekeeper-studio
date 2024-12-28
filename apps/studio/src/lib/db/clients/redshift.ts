@@ -232,7 +232,8 @@ export class RedshiftClient extends PostgresClient {
         dbName: database.database,
         dbUser: server.config.user,
         dbGroup: redshiftOptions.databaseGroup,
-        durationSeconds: server.config.options.tokenDurationSeconds
+        durationSeconds: server.config.options.tokenDurationSeconds,
+        isServerLess: redshiftOptions.isServerless
       };
 
       const credentialResolver = RedshiftCredentialResolver.getInstance();

@@ -72,6 +72,7 @@ export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;
+  isServerless?: boolean;
 }
 
 export interface CassandraOptions {
