@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="node_modules/@bks/ui-kit/dist/table-list.css"
+    />
+  </head>
+  <body>
+    <bks-table-list></bks-table-list>
+    <script src="node_modules/@bks/ui-kit/dist/table-list.js"></script>
+    <script src="./data.js"></script>
+    <script>
+      const tableList = document.querySelector("bks-table-list");
+      tableList.tables = tables;
+    </script>
+  </body>
+</html>

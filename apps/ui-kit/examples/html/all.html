@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="node_modules/@bks/ui-kit/dist/style.css" />
+    <style>
+      body,
+      html {
+        height: 100%;
+      }
+      #app {
+        height: 100%;
+        display: grid;
+        grid-template-columns: 20rem 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      bks-table-list {
+        grid-row: span 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <bks-table-list></bks-table-list>
+      <bks-sql-text-editor></bks-sql-text-editor>
+      <bks-table></bks-table>
+    </div>
+    <script src="node_modules/@bks/ui-kit/dist/main.js"></script>
+    <script src="./data.js"></script>
+    <script>
+      // >>>>> helper
+      let currentTableIndex = 0;
+      function currentTable() {
+        return tables[currentTableIndex];
+      }
+      function setTable(idx) {
+        currentTableIndex = idx;
+        const table = currentTable();
+        tableComponent.columns = table.columns.map((c) => ({
+          field: c.name,
+          ...c,
+        }));
+        tableComponent.data = table.data;
+      }
+      // <<<<<
+
+      const tableListComponent = document.querySelector("bks-table-list");
+      const sqlTextEditorComponent = document.querySelector(
+        "bks-sql-text-editor"
+      );
+      const tableComponent = document.querySelector("bks-table");
+
+      tableListComponent.tables = tables;
+      tableListComponent.addEventListener("bks-item-dblclick", (e) => {
+        const [table] = e.detail;
+        const idx = tables.findIndex((t) => t === table);
+        if (idx > -1) {
+          setTable(idx);
+        } else {
+          throw new Error("Table not found");
+        }
+      });
+
+      sqlTextEditorComponent.tables = tables;
+      sqlTextEditorComponent.value = "SELECT * FROM users";
+
+      tableComponent.addEventListener("bks-foreign-key-go-to", (e) => {
+        const [{ field, value }] = e.detail;
+        const tableIdx = tables.findIndex(
+          (t) =>
+            t ===
+            currentTable().columns.find((c) => c.name === field).toTable
+        );
+        if (tableIdx > -1) {
+          setTable(tableIdx);
+        }
+      });
+
+      setTable(4);
+    </script>
+  </body>
+</html>
