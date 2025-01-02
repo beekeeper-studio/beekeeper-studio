@@ -123,6 +123,30 @@ export default Vue.extend({
       const columns = this.columns.flatMap((column: Column) => {
         const results = [];
         const title = column.title ?? column.field;
+        let headerTooltip = escapeHtml(`${column.field} ${column.dataType}`)
+        let cssClass = 'hide-header-menu-icon';
+
+        if (column.generated) {
+          headerTooltip = '[Generated] ' + headerTooltip
+          cssClass += " generated-column";
+        }
+        if (column.foreignKey) {
+          cssClass += " foreign-key";
+        } else if (column.primaryKey) {
+          headerTooltip += ' [Primary Key]'
+          cssClass += " primary-key";
+        }
+        if (column.cssClass) {
+          cssClass += ` ${column.cssClass}`
+        }
+
+        // FIXME missing tooltips for foreign keys
+        // if (hasKeyDatas) {
+        //   const keyData = keyDatas[0][1];
+        //   if (keyData.length === 1)
+        //     headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
+        //   else
+        //     headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
 
         const result: ColumnDefinition = {
           title,
@@ -141,21 +165,27 @@ export default Vue.extend({
           mutatorData: this.resolveTabulatorMutator(column.dataType, this.dialect),
           mutator: this.resolveTabulatorMutator(column.dataType, this.dialect),
           formatter: this.cellFormatter,
+          formatterParams: {
+            fk: column.foreignKey,
+            fkOnClick: (value, field) => {
+              this.$emit("bks-foreign-key-go-to", { value, field });
+            },
+            isPK: column.primaryKey,
+          },
           minWidth: constants.minColumnWidth,
           maxWidth: constants.maxColumnWidth,
           maxInitialWidth: constants.maxInitialColumnWidth,
 
-          // FIXME tooltip doesn't work in shadow dom
+          // FIXME tooltip won't work in shadow dom
           tooltip: this.cellTooltip,
+          headerTooltip,
 
-          // FIXME context menu doesn't work in shadow dom
+          // FIXME context won't work in shadow dom
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
           headerMenu: columnMenu,
           resizable: "header",
-          cssClass:
-            "hide-header-menu-icon" +
-            (column.cssClass ? ` ${column.cssClass}` : ""),
+          cssClass,
           sorter: column.sorter === 'none' ? () => 0 : column.sorter,
         };
 
@@ -257,7 +287,6 @@ export default Vue.extend({
         persistenceID: this.tableId,
         data: this.data,
         height: this.height,
-        popupContainer: true,
       };
       if (this.tableColumns.length === 0) {
         defaultOptions.autoColumns = true;

@@ -54,7 +54,7 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void },
+      params: { fk?: any[], isPK?: boolean, fkOnClick?: (value: any, field: string) => void },
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
@@ -77,15 +77,20 @@ export default {
       let tooltip = ''
 
       if (params?.fk) {
-        if (params.fk.length === 1) tooltip = `View record in ${params.fk[0].toTable}`
-        else tooltip = `View records in ${(params.fk.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
+        // FIXME do something so we can do this tooltip
+        // if (params.fk.length === 1) tooltip = `View record in ${params.fk[0].toTable}`
+        // else tooltip = `View records in ${(params.fk.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
+        tooltip = ""
 
-        result = buildFormatterWithTooltip(cellValue, tooltip, 'launch')
+        const withGotoButton = !!params.fkOnClick
+        result = buildFormatterWithTooltip(cellValue, tooltip, withGotoButton ? 'launch' : undefined)
 
-        onRendered(() => {
-          const fkLink = cell.getElement().querySelector('.fk-link') as HTMLElement
-          fkLink.onclick = (e) => params.fkOnClick(e, cell);
-        })
+        if (withGotoButton) {
+          onRendered(() => {
+            const fkLink = cell.getElement().querySelector('.fk-link') as HTMLElement
+            fkLink.onclick = (e) => params.fkOnClick(cell.getValue(), cell.getField());
+          })
+        }
       } else if (
           params?.isPK != null &&
           !params.isPK &&

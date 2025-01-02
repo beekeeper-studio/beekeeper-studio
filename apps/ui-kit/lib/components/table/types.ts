@@ -9,6 +9,12 @@ export interface Column {
   editable?: boolean;
   /** The data type of the column. */
   dataType?: string;
+  /** Make the column a primary key. */
+  primaryKey?: boolean;
+  /** Make the column a foreign key. TODO add object type */
+  foreignKey?: boolean;
+  /** Make the column a generated column. */
+  generated?: boolean;
   /** The CSS class to apply to the column. */
   cssClass?: string;
   /** By default, the table will guess which sorter to use based on the data of the first row.

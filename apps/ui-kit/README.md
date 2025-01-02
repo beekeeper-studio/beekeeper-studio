@@ -81,17 +81,21 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `dataType`                  | `string`               | The data type of the column.                                                                                                                                                         | `undefined` |
 | `cssClass`                  | `string`               | The CSS class to apply to the column.                                                                                                                                                | `undefined` |
 | `sorter`                    | `string` \| `'none'`   | The sorter to use for the column. Use `none` to disable sorting. Also see the [built-in sorters](https://tabulator.info/docs/6.3/sort#func-builtin) from tabulator for more options. | `undefined` |
+| `primaryKey`                | `boolean`              | Make the column a primary key. If `true`, the column header will indicate that it is a primary key.                                                                                  | `undefined` |
+| `foreignKey`                | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
+| `generated`                 | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
 | `tabulatorColumnDefinition` | `object` \| `function` | Extend the tabulator column definition. See [tabulator docs](https://tabulator.info/docs/6.3/columns#definition) for more information.                                               | `undefined` |
 
 \* Required
 
 #### Events
 
-| Name                  | Description                                   | Event Detail                                |
-| --------------------- | --------------------------------------------- | ------------------------------------------- |
-| `bks-tabulator-built` | Emitted when the tabulator instance is built. | `[Tabulator]`                               |
-| `bks-sorters-change`  | Emitted when the sorters are changed.         | `[{ field: string, dir: 'asc' | 'desc' }]`  |
-| `bks-ranges-change`   | Emitted when the ranges are changed.          | `[TabulatorRange[]]`                        |
+| Name                    | Description                                           | Event Detail                                |
+| ----------------------- | ----------------------------------------------------- | ------------------------------------------- |
+| `bks-tabulator-built`   | Emitted when the tabulator instance is built.         | `[Tabulator]`                               |
+| `bks-sorters-change`    | Emitted when the sorters are changed.                 | `[{ field: string, dir: 'asc' | 'desc' }]`  |
+| `bks-ranges-change`     | Emitted when the ranges are changed.                  | `[TabulatorRange[]]`                        |
+| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `[{ value: any; field: string; }]`          |
 
 ### Table List
 
