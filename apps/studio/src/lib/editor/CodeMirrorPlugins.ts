@@ -35,7 +35,7 @@ export function autoquoteHandler(
   }
 }
 
-function findSqlQueryIdentifierDialect(connectionType: string) {
+export function findSqlQueryIdentifierDialect(connectionType: string) {
   const mappings = {
     sqlserver: "mssql",
     sqlite: "sqlite",

@@ -117,3 +117,17 @@ $row-handle-selected: lighten($query-editor-bg, 10%);
     }
   }
 }
+
+bks-sql-text-editor {
+  --bks-text-editor-bg-color: #{$query-editor-bg};
+  --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
+  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};
+  --bks-text-editor-number-fg-color: #{$brand-primary};
+  --bks-text-editor-string-fg-color: #{$brand-primary};
+  --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-bracket-fg-color: #{$text};
+}
