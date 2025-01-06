@@ -90,12 +90,13 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Events
 
-| Name                    | Description                                           | Event Detail                       |
-| ----------------------- | ----------------------------------------------------- | ---------------------------------- | ---------- |
-| `bks-tabulator-built`   | Emitted when the tabulator instance is built.         | `[Tabulator]`                      |
-| `bks-sorters-change`    | Emitted when the sorters are changed.                 | `[{ field: string, dir: 'asc'      | 'desc' }]` |
-| `bks-ranges-change`     | Emitted when the ranges are changed.                  | `[TabulatorRange[]]`               |
-| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `[{ value: any; field: string; }]` |
+| Name                    | Description                                           | Event Detail                                |
+| ----------------------- | ----------------------------------------------------- | ------------------------------------------- |
+| `bks-tabulator-built`   | Emitted when the tabulator instance is built.         | `[Tabulator]`                               |
+| `bks-sorters-change`    | Emitted when the sorters are changed.                 | `[{ field: string, dir: 'asc' | 'desc' }]`  |
+| `bks-ranges-change`     | Emitted when the ranges are changed.                  | `[TabulatorRange[]]`                        |
+| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `[{ value: any; field: string; }]`          |
+
 
 ### Table List
 
