@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `@bks/ui-kit` library provides a set of reusable web components used in Beekeeper Studio.
+The `@bks/ui-kit` library provides a set of reusable custom elements used in Beekeeper Studio.
 
 ## Components
 
@@ -90,12 +90,12 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Events
 
-| Name                    | Description                                           | Event Detail                                |
-| ----------------------- | ----------------------------------------------------- | ------------------------------------------- |
-| `bks-tabulator-built`   | Emitted when the tabulator instance is built.         | `[Tabulator]`                               |
-| `bks-sorters-change`    | Emitted when the sorters are changed.                 | `[{ field: string, dir: 'asc' | 'desc' }]`  |
-| `bks-ranges-change`     | Emitted when the ranges are changed.                  | `[TabulatorRange[]]`                        |
-| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `[{ value: any; field: string; }]`          |
+| Name                    | Description                                           | Event Detail                       |
+| ----------------------- | ----------------------------------------------------- | ---------------------------------- | ---------- |
+| `bks-tabulator-built`   | Emitted when the tabulator instance is built.         | `[Tabulator]`                      |
+| `bks-sorters-change`    | Emitted when the sorters are changed.                 | `[{ field: string, dir: 'asc'      | 'desc' }]` |
+| `bks-ranges-change`     | Emitted when the ranges are changed.                  | `[TabulatorRange[]]`               |
+| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `[{ value: any; field: string; }]` |
 
 ### Table List
 
@@ -171,13 +171,25 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Properties
 
-| Name     | Type       | Description                                                                                                                 | Default |
-| -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `value`  | `string`   | The SQL query to display.                                                                                                   | `''`    |
-| `tables` | `object[]` | An array of table names to autocomplete. The format is the same as the `tables` property of the `bks-table-list` component. | `[]`    |
+| Name                | Type                  | Description                                                                                                                                                                                                                          | Default     |
+| ------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| `value`             | `string`              | The SQL query to display.                                                                                                                                                                                                            | `''`        |
+| `tables`            | `object[]`            | An array of table names to autocomplete. The format is the same as the `tables` property of the `bks-table-list` component.                                                                                                          | `[]`        |
+| `readOnly`          | `boolean` \| `string` | Disable editing. If "nocursor" is provided, focusing the editor is also disabled.                                                                                                                                                    | `false`     |
+| `markers`           | `object[]`            | An array of objects representing the markers.                                                                                                                                                                                        | `[]`        |
+| `formatterDialect`  | `string`              | The SQL dialect to use for formatting. See sql-formatter's [language](https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md) for possible options.                                                         | `'sql'`     |
+| `identifierDialect` | `string`              | The SQL dialect to use for identifier quoting. See sql-query-identifier [API](https://github.com/coresql/sql-query-identifier?tab=readme-ov-file#api) for possible options.                                                          | `'generic'` |
+| `keybindings`       | `object`              | Object contiaining keybindings where the key is a combination of keys and the value is a function. For example, `{ 'Ctrl-Enter': function submit(){}, 'Cmd-Enter': function submit(){} }`.                                           | `undefined` |
+| `keymap`            | `string`              | Configure the keymap to use. Possible values are 'default', 'vim', 'emacs' and 'sublime'.                                                                                                                                            | `default`   |
+| `vimConfig`         | `object`              | Configure vim mode.                                                                                                                                                                                                                  | `undefined` |
+| `columnsGetter`     | `function`            | If provided, this function will be called for autocompleting column names instead of using the `tables.columns` property. Expect one argument of type `string` representing a combination of schema name (if exists) and table name. | `undefined` |
+| `defaultSchema`     | `string`              | The default schema to use when autocompleting table names. Schemas that match this will be prioritized in the autocompletion list.                                                                                                   | `public`    |
 
 #### Events
 
-| Name    | Description                            | Event Detail |
-| ------- | -------------------------------------- | ------------ |
-| `input` | Emitted when the SQL query is changed. | `[string]`   |
+| Name               | Description                                      | Event Detail   |
+| ------------------ | ------------------------------------------------ | -------------- |
+| `bks-value-change` | Emitted when the SQL query is changed.           | `[string]`     |
+| `bks-initialized`  | Emitted when the SQL text editor is initialized. | `[CodeMirror]` |
+| `bks-focus`        | Emitted when the SQL text editor is focused.     | -              |
+| `bks-blur`         | Emitted when the SQL text editor is blurred.     | -              |

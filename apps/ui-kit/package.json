@@ -1,7 +1,7 @@
 {
   "name": "@bks/ui-kit",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "files": ["dist"],
   "main": "./dist/main.js",
@@ -41,6 +41,7 @@
     "sass": "~1.77.1",
     "scrollyfills": "^1.0.0",
     "split.js": "^1.5.11",
+    "sql-formatter": "~10.7.2",
     "sql-query-identifier": "^2.8.0",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
@@ -51,7 +52,6 @@
     "vue-tsc": "^2.1.10",
     "vue-virtual-scroll-list": "^2.3.5",
     "vue2-teleport": "^1.1.4",
-    "vuedraggable": "^2.24.2",
-    "xel": "beekeeper-studio/xel"
+    "vuedraggable": "^2.24.2"
   }
 }

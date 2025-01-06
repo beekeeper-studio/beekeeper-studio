@@ -17,6 +17,8 @@ import textEditorMixin from "../text-editor/mixin";
 import { format, FormatOptions } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { Options } from "sql-query-identifier";
+// FIXME move models outside table list
+import { Table } from "../table-list/models";
 
 export default Vue.extend({
   mixins: [textEditorMixin],
@@ -28,15 +30,6 @@ export default Vue.extend({
     hint: {
       type: textEditorMixin.props.hint,
       default: "sql",
-    },
-    keybindings: {
-      type: textEditorMixin.props.keybindings,
-      default() {
-        return {
-          "Shift-Ctrl-F": this.formatSql,
-          "Shift-Cmd-F": this.formatSql,
-        }
-      }
     },
     plugins: {
       type: textEditorMixin.props.plugins,
@@ -56,13 +49,14 @@ export default Vue.extend({
     },
     /** Tables for autocompletion */
     tables: {
-      type: Object as PropType<Record<string, string[]>>,
+      type: Array as PropType<Table[]>,
       default() {
         return [];
       },
     },
+    // FIXME routines are not implemented yet
     routines: {
-      type: Object as PropType<Record<string, string[]>>,
+      type: Array,
       default() {
         return [];
       },
@@ -71,8 +65,14 @@ export default Vue.extend({
       type: String,
       default: "public",
     },
-    formatterDialect: String as PropType<FormatOptions['language']>,
-    identifierDialect: String as PropType<Options['dialect']>,
+    formatterDialect: {
+      type: String as PropType<FormatOptions['language']>,
+      default: "sql",
+    },
+    identifierDialect: {
+      type: String as PropType<Options['dialect']>,
+      default: "generic",
+    },
   },
   computed: {
     hintOptions() {
@@ -82,7 +82,7 @@ export default Vue.extend({
       const thirdTables = {};
 
       this.tables.forEach((table) => {
-        const columns = table.columns.map((c) => c.name);
+        const columns = table.columns?.map((c) => c.name) ?? [];
         // don't add table names that can get in conflict with database schema
         if (/\./.test(table.name)) return;
 
@@ -111,10 +111,10 @@ export default Vue.extend({
   },
   methods: {
     formatSql() {
-      const formatted = format(this.$attrs.value, {
+      const formatted = format(this.value, {
         language: this.formatterDialect,
       });
-      this.$emit("bks-input", formatted);
+      this.$emit("bks-value-change", formatted);
     },
     handleContextMenuOptions(_e: unknown, options: any[]) {
       const pivot = options.findIndex((o) => o.slug === "find");
@@ -133,5 +133,9 @@ export default Vue.extend({
       ];
     },
   },
+  mounted() {
+    this.internalKeybindings["Shift-Ctrl-F"] = this.formatSql;
+    this.internalKeybindings["Shift-Cmd-F"] = this.formatSql;
+  }
 });
 </script>

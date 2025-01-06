@@ -146,7 +146,7 @@
 </template>
 
 <script lang="ts">
-import "xel/xel";
+// import "xel/xel";
 import "./TableList.scss";
 import Vue, { PropType } from 'vue';
 import _ from 'lodash'

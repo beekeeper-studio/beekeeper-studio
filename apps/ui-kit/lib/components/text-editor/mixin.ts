@@ -44,7 +44,10 @@ export default {
     lineWrapping: Boolean,
     columnsGetter: Function,
     height: Number,
-    readOnly: Boolean,
+    readOnly: {
+      type: Boolean,
+      default: false,
+    },
     focus: Boolean,
     /**
      * TextEditor has a set of default context menu options. You can extend it
@@ -58,8 +61,10 @@ export default {
      * }
      */
     contextMenuOptions: Function,
-    markers: Array,
-    selection: String,
+    markers: {
+      type: Array,
+      default: () => [],
+    },
     cursor: String,
     initialized: Boolean,
     plugins: Array,
@@ -113,6 +118,9 @@ export default {
       wasEditorFocused: false,
       editorInitialized: false,
       initializing: false,
+
+      // Add our own keybindings
+      internalKeybindings: {},
     };
   },
   computed: {
@@ -321,6 +329,7 @@ export default {
         "Cmd-/": () => this.editor.execCommand("toggleComment"),
       });
 
+      cm.addKeyMap(this.internalKeybindings);
       if (this.keybindings) {
         cm.addKeyMap(this.keybindings);
       }
@@ -336,6 +345,7 @@ export default {
       cm.on("change", async (cm) => {
         await this.$nextTick()
         this.$emit("update:value", cm.getValue());
+        this.$emit("bks-value-change", cm.getValue());
       });
 
       cm.on("keydown", (_cm, e) => {
@@ -346,6 +356,7 @@ export default {
 
       cm.on("focus", () => {
         this.$emit("update:focus", true);
+        this.$emit("bks-focus");
       });
 
       cm.on("blur", (_cm, event) => {
@@ -358,15 +369,8 @@ export default {
         // This makes sure the editor is really blurred before emitting blur
         setTimeout(() => {
           this.$emit("update:focus", false);
+          this.$emit("bks-blur");
         }, 0);
-      });
-
-      cm.on("cursorActivity", (cm) => {
-        this.$emit("update:selection", cm.getSelection());
-        this.$emit(
-          "update:cursorIndex",
-          cm.getDoc().indexFromPos(cm.getCursor())
-        );
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
@@ -421,10 +425,11 @@ export default {
         this.initializeMarkers();
         this.initializeBookmarks();
         this.$emit("update:initialized", true);
+        this.$emit("bks-initialized", cm);
       })
     },
     initializeMarkers() {
-      const markers = this.markers || [];
+      const markers = this.markers;
       if (!this.editor) return;
 
       // Cleanup existing bookmarks
