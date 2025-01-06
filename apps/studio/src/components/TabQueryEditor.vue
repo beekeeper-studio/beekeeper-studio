@@ -31,16 +31,23 @@
           >Close Tab</a>
         </div>
       </div>
-      <sql-text-editor
-        v-model="unsavedText"
-        v-bind.sync="editor"
-        :focus="focusingElement === 'text-editor'"
-        @update:focus="updateTextEditorFocus"
-        :markers="editorMarkers"
-        :connection-type="connectionType"
-        :extra-keybindings="keybindings"
-        :vim-config="vimConfig"
-        @initialized="handleEditorInitialized"
+      <bks-sql-text-editor
+        ref="editor"
+        :value.prop="unsavedText"
+        :height.prop="editor.height"
+        :read-only.prop="editor.readOnly"
+        :markers.prop="editorMarkers"
+        :formatter-dialect.prop="formatterDialect"
+        :identifier-dialect.prop="identifierDialect"
+        :keybindings.prop="keybindings"
+        :vim-config.prop="vimConfig"
+        :keymap.prop="userKeymap"
+        :tables.prop="editorTables"
+        :columns-getter.prop="columnsGetter"
+        :default-schema.prop="defaultSchema"
+        @bks-initialized="handleEditorInitialized"
+        @bks-value-change="unsavedText = $event.detail[0]"
+        @bks-blur="onTextEditorBlur?.()"
       />
       <span class="expand" />
       <div class="toolbar text-right">
@@ -317,7 +324,6 @@
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
-  import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
@@ -327,6 +333,8 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
+  import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
+  import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -334,7 +342,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -394,6 +402,9 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
+      editorTables() {
+        return this.tables.map((t) => ({ schema: t.schema, name: t.name }))
+      },
       userKeymap: {
         get() {
           const value = this.settings?.keymap?.value;
@@ -602,6 +613,12 @@
       showResultTable() {
         return this.rowCount > 0
       },
+      formatterDialect() {
+        return FormatterDialect(dialectFor(this.connectionType))
+      },
+      identifierDialect() {
+        return findSqlQueryIdentifierDialect(this.connectionType)
+      },
     },
     watch: {
       error() {
@@ -741,7 +758,14 @@
           })
         })
       },
-      handleEditorInitialized() {
+      handleEditorInitialized(event) {
+        const [cm] = event.detail
+
+        cm.on("cursorActivity", (cm) => {
+          this.editor.selection = cm.getSelection()
+          this.editor.cursorIndex = cm.getDoc().indexFromPos(cm.getCursor())
+        });
+
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights
         this.$nextTick(() => {
@@ -979,11 +1003,6 @@
           this.close()
         }
       },
-      updateTextEditorFocus(focused: boolean) {
-        if (!focused) {
-          this.onTextEditorBlur?.()
-        }
-      },
       async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
         if (target) {
           this.focusElement = target
@@ -1017,8 +1036,27 @@
           this.focusingElement = 'none'
         })
       },
+      async columnsGetter(tableName: string) {
+        let tableToFind = this.tables.find(
+          (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+        );
+        if (!tableToFind) return null;
+        // Only refresh columns if we don't have them cached.
+        if (!tableToFind.columns?.length) {
+          await this.$store.dispatch("updateTableColumns", tableToFind);
+          tableToFind = this.tables.find(
+            (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+          );
+        }
+
+        return tableToFind?.columns.map((c) => c.columnName);
+      },
     },
     async mounted() {
+      // I have no idea why I couldn't add these from html
+      this.$refs.editor.keybindings = this.keybindings
+      this.$refs.editor.columnsGetter = this.columnsGetter
+
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {

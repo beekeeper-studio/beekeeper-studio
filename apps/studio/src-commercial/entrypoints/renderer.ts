@@ -3,6 +3,8 @@ import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
 import VTooltip from 'v-tooltip'
 import 'xel/xel'
+import '@bks/ui-kit';
+import "@bks/ui-kit/style.css";
 import { TabulatorFull as Tabulator } from 'tabulator-tables'
 import '@/filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
