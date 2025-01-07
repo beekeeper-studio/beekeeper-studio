@@ -902,19 +902,4 @@ bks-table {
     background-color: var(--bks-table-tooltip-bg-color);
     color: var(--bks-table-tooltip-fg-color);
   }
-
-  .tabulator-menu {
-    background: unset;
-    border: unset;
-
-    .tabulator-menu-item {
-      padding: unset;
-
-      // Reset
-      &:not(.tabulator-menu-item-disabled):hover {
-        cursor: unset;
-        background: unset;
-      }
-    }
-  }
 }

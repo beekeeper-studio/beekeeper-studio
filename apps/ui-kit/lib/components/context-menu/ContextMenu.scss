@@ -4,7 +4,7 @@
 @import "../../styles/light-theme.scss";
 @import "../../styles/mixins";
 
-.BksContextMenu-list, bks-table .tabulator-menu {
+.BksContextMenu-list {
   top: 0;
   left: 0;
   margin: 0;
@@ -24,15 +24,8 @@
   min-width: 150px;
   border: 0;
   @include card-shadow-hover;
-  &.vue-simple-context-menu--active, &.tabulator-menu {
+  &.vue-simple-context-menu--active {
     display: block;
-  }
-  // FIXME we can remove this once we use contextmenu in tabulator
-  .tabulator-menu-item.tabulator-menu-item-disabled {
-    pointer-events: none;
-    color: darken($text-dark, 25%);
-    background: darken(rgba($theme-base, 0.05), 25%);
-    opacity: unset;
   }
   .vue-simple-context-menu__item, .BksContextMenu-item {
     display: flex;
@@ -67,7 +60,7 @@
       margin-left: 0.4rem;
     }
   }
-  .vue-simple-context-menu__divider, hr, .tabulator-menu-separator {
+  .vue-simple-context-menu__divider, hr {
     min-height: 0;
     width: 100%;
     height: 1px;

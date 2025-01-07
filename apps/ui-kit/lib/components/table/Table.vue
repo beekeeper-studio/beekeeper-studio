@@ -6,7 +6,7 @@
 import "./Table.scss";
 import Vue, { PropType } from "vue";
 import _ from "lodash";
-import { tabulatorForTableData } from "./tabulator";
+import { tabulatorForTableData, Options } from "./tabulator";
 import { escapeHtml } from "./mixins/tabulator";
 import {
   Options as TabulatorOptions,
@@ -18,14 +18,16 @@ import {
   copyRanges,
   copyActionsMenu,
   commonColumnMenu,
+  resizeAllColumnsToFitContent,
+  resizeAllColumnsToFixedWidth,
 } from "./menu";
+import { openMenu, divider, useCustomMenuItems } from "../context-menu/menu";
 import * as td from "tinyduration";
 import intervalParse from "postgres-interval";
 import Mutators from "./mixins/data_mutators";
 //  FIXME cant import Dialect type here
 // import { Dialect } from "@shared/lib/dialects/models";
 import * as constants from "../../utils/constants";
-import { isMacLike } from "../../utils/platform";
 import { Column, OrderBy } from "./types";
 
 export default Vue.extend({
@@ -77,6 +79,10 @@ export default Vue.extend({
       type: Array as PropType<Array<OrderBy>>,
       default: () => [],
     },
+    cellContextMenuItems: [Array, Function],
+    columnHeaderContextMenuItems: [Array, Function],
+    rowHeaderContextMenuItems: [Array, Function],
+    cornerHeaderContextMenuItems: [Array, Function],
 
     /** Customize the tabulator's table options. See https://tabulator.info/docs/6.3/options#table */
     tabulatorOptions: {
@@ -100,24 +106,30 @@ export default Vue.extend({
       const columnWidth =
         this.columns.length > 30 ? constants.bigTableColumnWidth : undefined;
 
-      const cellMenu = (_e, cell) => {
-        return copyActionsMenu({
+      const cellMenu = (event, cell) => {
+        const defaultItems = copyActionsMenu({
           ranges: cell.getRanges(),
           table: this.table,
           schema: this.defaultSchema,
-        });
+        })
+        const items = useCustomMenuItems(event, defaultItems, this.cellContextMenuItems)
+        openMenu({ options: items, item: cell, event })
+        return false
       };
 
-      const columnMenu = (_e, column) => {
-        return [
+      const columnMenu = (event, column) => {
+        const defaultItems = [
           ...copyActionsMenu({
             ranges: column.getRanges(),
             table: this.table,
             schema: this.defaultSchema,
           }),
-          { separator: true },
+          divider,
           ...commonColumnMenu,
-        ];
+        ]
+        const items = useCustomMenuItems(event, defaultItems, this.columnHeaderContextMenuItems)
+        openMenu({ options: items, item: column, event })
+        return false;
       };
 
       const columns = this.columns.flatMap((column: Column) => {
@@ -278,10 +290,33 @@ export default Vue.extend({
         this.tabulator.destroy();
         this.tabulator = null;
       }
-      const options = {
-        table: this.table,
-        schema: this.schema,
+      const options: Options = {
         rowHeaderOffset: this.rowHeaderOffsetGetter,
+        rowHeaderContextMenu: (event, cell) => {
+          const defaultItems = copyActionsMenu({
+            ranges: cell.getRanges(),
+            table: this.table,
+            schema: this.schema,
+          })
+          const items = useCustomMenuItems(event, defaultItems, this.rowHeaderContextMenuItems)
+          openMenu({ options: items, item: cell, event })
+          return false;
+        },
+        cornerHeaderContextMenu: (event, column) => {
+          const defaultItems = [
+            ...copyActionsMenu({
+              ranges: column.getTable().getRanges(),
+              table: this.table,
+              schema: this.schema,
+            }),
+            divider,
+            resizeAllColumnsToFitContent,
+            resizeAllColumnsToFixedWidth,
+          ]
+          const items = useCustomMenuItems(event, defaultItems, this.cornerHeaderContextMenuItems)
+          openMenu({ options: items, item: column, event })
+          return false
+        },
       }
       const defaultOptions: TabulatorOptions = {
         persistenceID: this.tableId,

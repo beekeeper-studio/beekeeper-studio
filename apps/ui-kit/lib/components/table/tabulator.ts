@@ -1,20 +1,16 @@
 import {
   Options as TabulatorOptions,
   TabulatorFull,
+  ColumnDefinition,
 } from "tabulator-tables";
-import {
-  copyActionsMenu,
-  resizeAllColumnsToFitContent,
-  resizeAllColumnsToFixedWidth,
-} from "./menu";
 import _ from "lodash";
 import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
 import { EventBridgeTabulatorModule } from './plugins/EventBridgeTabulatorModule'
 
-interface Options {
-  table: string;
-  schema?: string;
+export interface Options {
   rowHeaderOffset?: number | (() => number);
+  rowHeaderContextMenu?: ColumnDefinition['contextMenu'];
+  cornerHeaderContextMenu?: ColumnDefinition['headerContextMenu'];
 }
 
 export function tabulatorForTableData(
@@ -22,7 +18,7 @@ export function tabulatorForTableData(
   options: Options,
   tabulatorOptions: Partial<TabulatorOptions>
 ): TabulatorFull {
-  const { table, schema, rowHeaderOffset = 0 } = options;
+  const { rowHeaderOffset = 0 } = options;
   const defaultOptions: TabulatorOptions = {
     persistence: {
       columns: ["width", "visible"],
@@ -70,21 +66,8 @@ export function tabulatorForTableData(
 
         return content;
       },
-      contextMenu: (_e, cell) => {
-        return copyActionsMenu({ ranges: cell.getRanges(), table, schema });
-      },
-      headerContextMenu: (_e, column) => {
-        return [
-          ...copyActionsMenu({
-            ranges: column.getTable().getRanges(),
-            table,
-            schema,
-          }),
-          { separator: true },
-          resizeAllColumnsToFitContent,
-          resizeAllColumnsToFixedWidth,
-        ];
-      },
+      ...(options.rowHeaderContextMenu && { contextMenu: options.rowHeaderContextMenu }),
+      ...(options.cornerHeaderContextMenu && { headerContextMenu: options.cornerHeaderContextMenu }),
     },
   };
   const mergedOptions = _.merge(defaultOptions, tabulatorOptions);

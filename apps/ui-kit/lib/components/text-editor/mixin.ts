@@ -22,9 +22,9 @@ import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
 import { setKeybindings, applyConfig, Register, Config } from "./vim";
-import { openMenu } from "../context-menu/menu";
+import { divider, InternalContextOption, openMenu } from "../context-menu/menu";
 import { writeClipboard, readClipboard } from "../../utils/clipboard";
-import { isMacLike } from "../../utils/platform"
+import { ctrlOrCmd, cmCtrlOrCmd } from "../../utils/platform"
 import { PropType } from "vue";
 
 const hintMap = {
@@ -49,18 +49,7 @@ export default {
       default: false,
     },
     focus: Boolean,
-    /**
-     * TextEditor has a set of default context menu options. You can extend it
-     * or override it by passing a function to `contextMenuOptions`.
-     *
-     * For example:
-     *
-     * ```js
-     * const contextMenuOptions = (event, menu: ) => {
-     *
-     * }
-     */
-    contextMenuOptions: Function,
+    contextMenuItems: [Function, Array],
     markers: {
       type: Array,
       default: () => [],
@@ -271,9 +260,9 @@ export default {
         extraKeys: {
           "Ctrl-Space": "autocomplete",
           "Shift-Tab": "indentLess",
-          [this.cmCtrlOrCmd("F")]: "findPersistent",
-          [this.cmCtrlOrCmd("R")]: "replace",
-          [this.cmCtrlOrCmd("Shift-R")]: "replaceAll",
+          [cmCtrlOrCmd("F")]: "findPersistent",
+          [cmCtrlOrCmd("R")]: "replace",
+          [cmCtrlOrCmd("Shift-R")]: "replaceAll",
         },
         // @ts-expect-error not fully typed
         options: {
@@ -502,38 +491,43 @@ export default {
         options: [
           {
             name: "Undo",
+            slug: "text-undo",
             handler: () => this.editor.execCommand("undo"),
-            shortcut: this.ctrlOrCmd("z"),
+            shortcut: ctrlOrCmd("z"),
             write: true,
           },
           {
             name: "Redo",
+            slug: "text-redo",
             handler: () => this.editor.execCommand("redo"),
-            shortcut: this.ctrlOrCmd("shift+z"),
+            shortcut: ctrlOrCmd("shift+z"),
             write: true,
           },
           {
             name: "Cut",
+            slug: "text-cut",
             handler: () => {
               const selection = this.editor.getSelection();
               this.editor.replaceSelection("");
               writeClipboard(selection);
             },
             class: selectionDepClass,
-            shortcut: this.ctrlOrCmd("x"),
+            shortcut: ctrlOrCmd("x"),
             write: true,
           },
           {
             name: "Copy",
+            slug: "text-copy",
             handler: async () => {
               const selection = this.editor.getSelection();
               await writeClipboard(selection);
             },
             class: selectionDepClass,
-            shortcut: this.ctrlOrCmd("c"),
+            shortcut: ctrlOrCmd("c"),
           },
           {
             name: "Paste",
+            slug: "text-paste",
             handler: async () => {
               const clipboard = await readClipboard();
               if (this.editor.getSelection()) {
@@ -543,11 +537,12 @@ export default {
                 this.editor.replaceRange(clipboard, cursor);
               }
             },
-            shortcut: this.ctrlOrCmd("v"),
+            shortcut: ctrlOrCmd("v"),
             write: true,
           },
           {
             name: "Delete",
+            slug: "text-delete",
             handler: () => {
               this.editor.replaceSelection("");
             },
@@ -556,35 +551,37 @@ export default {
           },
           {
             name: "Select All",
+            slug: "text-select-all",
             handler: () => {
               this.editor.execCommand("selectAll");
             },
-            shortcut: this.ctrlOrCmd("a"),
+            shortcut: ctrlOrCmd("a"),
           },
-          {
-            type: "divider",
-          },
+          divider,
           {
             name: "Find",
+            slug: "text-find",
             handler: () => {
               this.editor.execCommand("find");
             },
-            shortcut: this.ctrlOrCmd("f"),
+            shortcut: ctrlOrCmd("f"),
           },
           {
             name: "Replace",
+            slug: "text-replace",
             handler: () => {
               this.editor.execCommand("replace");
             },
-            shortcut: this.ctrlOrCmd("r"),
+            shortcut: ctrlOrCmd("r"),
             write: true,
           },
           {
             name: "Replace All",
+            slug: "text-replace-all",
             handler: () => {
               this.editor.execCommand("replaceAll");
             },
-            shortcut: this.ctrlOrCmd("shift+r"),
+            shortcut: ctrlOrCmd("shift+r"),
             write: true,
           },
         ],
@@ -595,32 +592,19 @@ export default {
         menu.options = menu.options.filter((option) => !option.write);
       }
 
-      const customOptions = this.contextMenuOptions
-        ? this.contextMenuOptions(event, menu.options)
-        : undefined;
+      const customItems =
+        typeof this.contextMenuItems === "function"
+          ? this.contextMenuItems(event, menu.options)
+          : this.contextMenuItems;
 
-      if (customOptions === false) {
-        return;
-      }
-
-      if (customOptions === undefined) {
+      if (customItems === undefined) {
         openMenu(menu);
       } else {
         openMenu({
           ...menu,
-          options: customOptions,
+          options: customItems,
         });
       }
-    },
-    // For codemirror
-    cmCtrlOrCmd(key: string) {
-      if (isMacLike) return `Cmd-${key}`
-      return `Ctrl-${key}`
-    },
-    // For anything else
-    ctrlOrCmd(key) {
-      if (isMacLike) return `meta+${key}`
-      return `ctrl+${key}`
     },
   },
   async mounted() {

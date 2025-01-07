@@ -84,6 +84,7 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `primaryKey`                | `boolean`              | Make the column a primary key. If `true`, the column header will indicate that it is a primary key.                                                                                  | `undefined` |
 | `foreignKey`                | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
 | `generated`                 | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
+| `tabulatorOptions`          | `object`               | Extend the tabulator definition. See [tabulator docs](https://tabulator.info/docs/6.3/options) for more information.                                                                 | `undefined` |
 | `tabulatorColumnDefinition` | `object` \| `function` | Extend the tabulator column definition. See [tabulator docs](https://tabulator.info/docs/6.3/columns#definition) for more information.                                               | `undefined` |
 
 \* Required
@@ -193,3 +194,5 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `bks-initialized`  | Emitted when the SQL text editor is initialized. | `[CodeMirror]` |
 | `bks-focus`        | Emitted when the SQL text editor is focused.     | -              |
 | `bks-blur`         | Emitted when the SQL text editor is blurred.     | -              |
+
+Hey, you've reached the end of the README! Check out our recipes for more guidance: [recipes](docs/recipes.md).

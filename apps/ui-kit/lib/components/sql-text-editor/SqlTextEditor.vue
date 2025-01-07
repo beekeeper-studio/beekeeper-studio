@@ -19,6 +19,7 @@ import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { Options } from "sql-query-identifier";
 // FIXME move models outside table list
 import { Table } from "../table-list/models";
+import { ctrlOrCmd } from "../../utils/platform";
 
 export default Vue.extend({
   mixins: [textEditorMixin],
@@ -41,10 +42,10 @@ export default Vue.extend({
         ];
       }
     },
-    contextMenuOptions: {
-      type: textEditorMixin.props.contextMenuOptions,
+    contextMenuItems: {
+      type: textEditorMixin.props.contextMenuItems,
       default() {
-        return this.handleContextMenuOptions(...arguments);
+        return this.handleContextMenuItems(...arguments);
       },
     },
     /** Tables for autocompletion */
@@ -116,20 +117,20 @@ export default Vue.extend({
       });
       this.$emit("bks-value-change", formatted);
     },
-    handleContextMenuOptions(_e: unknown, options: any[]) {
-      const pivot = options.findIndex((o) => o.slug === "find");
+    handleContextMenuItems(_e: unknown, items: any[]) {
+      const pivot = items.findIndex((o) => o.slug === "find");
       return [
-        ...options.slice(0, pivot),
+        ...items.slice(0, pivot),
         {
           name: "Format Query",
-          slug: "format",
+          slug: "text-format",
           handler: this.formatSql,
-          shortcut: this.ctrlOrCmd("shift+f"),
+          shortcut: ctrlOrCmd("shift+f"),
         },
         {
           type: "divider",
         },
-        ...options.slice(pivot),
+        ...items.slice(pivot),
       ];
     },
   },
