@@ -17,11 +17,10 @@ contextMenu.contextMenuItems = (event, items) => {
 ```js
 table.cellContextMenuItems = (event, items) => {
   const newItems = [...items]; // avoid mutating the original array
-  const lastCopyItemIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
-  newItems.splice(lastCopyItemIndex + 1, 0, {
-    slug: 'custom-item',
-    label: 'Custom Action',
-    action: () => console.log('Custom action executed!'),
+  const lastCopyIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
+  newItems.splice(lastCopyIndex + 1, 0, {
+    name: 'Custom Action',
+    handler: () => console.log('Custom action executed!'),
   });
   return newItems;
 };

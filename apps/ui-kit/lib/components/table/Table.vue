@@ -92,11 +92,9 @@ export default Vue.extend({
   },
   data() {
     return {
-      tabulator: null as TabulatorFull | null,
       isBuilt: false,
       pendingTasks: [],
-      // Make this a prop if we want to support changing ranges programmatically
-      ranges: [],
+      rangesInfo: [],
       columnWidths: null,
       preLoadScrollPosition: null,
     };
@@ -250,10 +248,14 @@ export default Vue.extend({
   },
   methods: {
     setData(data: any) {
+      if (!this.isBuilt) return
+
       this.preLoadScrollPosition = this.$el.querySelector('.tabulator-tableholder').scrollLeft
       this.tabulator.setData(data);
     },
     async setColumns(columns: ColumnDefinition[]) {
+      if (!this.isBuilt) return
+
       if (columns.length === 0) {
         await this.initialize();
       } else {
@@ -338,9 +340,6 @@ export default Vue.extend({
         tabulatorOptions
       );
       this.$refs.table.addEventListener("keydown", this.keydown);
-      this.tabulator.on("tableDestroyed", () => {
-        this.$refs.table.removeEventListener("keydown", this.keydown);
-      });
       this.tabulator.on("tableBuilt", () => {
         this.isBuilt = true
         this.pendingTasks.forEach((task) => task())
@@ -386,19 +385,19 @@ export default Vue.extend({
           right: range.getRightEdge(),
         }
       }
-      if (this.ranges.length !== ranges.length) {
-        this.ranges = ranges
-        this.$emit("bks-ranges-changed", ranges)
+      if (this.rangesInfo.length !== ranges.length) {
+        this.rangesInfo = ranges.map(edgesOfRange)
+        this.$emit("bks-ranges-change", ranges)
         return
       }
       const foundDiffRange = ranges.some((range, idx) => {
-        const oldEdges = edgesOfRange(this.ranges[idx])
+        const oldEdges = this.rangesInfo[idx]
         const updatedEdges = edgesOfRange(range)
         return !_.isEqual(updatedEdges, oldEdges)
       })
       if (foundDiffRange) {
-        this.ranges = ranges
-        this.$emit("bks-ranges-changed", ranges)
+        this.rangesInfo = ranges.map(edgesOfRange)
+        this.$emit("bks-ranges-change", ranges)
         return
       }
     },
@@ -495,6 +494,12 @@ export default Vue.extend({
     rowHeaderOffsetGetter() {
       return this.rowHeaderOffset;
     },
+  },
+  created() {
+    // Storing `tabulator` as `data` wouldn't allow Vue clients to store it and
+    // its descendants as `data` too. It freezes the component >:D. Best to do
+    // this if we intend to send the data to the client.
+    this.tabulator = null as TabulatorFull | null;
   },
   mounted() {
     this.initialize();
