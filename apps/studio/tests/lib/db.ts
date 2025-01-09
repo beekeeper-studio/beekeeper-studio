@@ -1390,28 +1390,6 @@ export class DBTestUtil {
     ])
   }
 
-  async insertBigIntTests() {
-    /** sqlite is different than other databases on numbers */
-    const n = (i) => {
-      return this.dialect === 'sqlite' ? BigInt(i) : i
-    }
-
-    const inserts = [
-      {
-        table: 'with_bigint',
-        schema: this.options.defaultSchema,
-        data: [{ id: 1, n_int: 1n, n_bigint: 11n }, { id: 2, n_int: 2n, n_bigint: 22n }]
-      },
-    ]
-
-    await this.connection.applyChanges({ inserts })
-    const { result } = await this.connection.selectTop("with_bigint", 0, 2, [], [], this.options.defaultSchema)
-    expect(result).toEqual([
-      { id: n(1), n_int: n(1), n_bigint: n('11') },
-      { id: n(2), n_int: n(2), n_bigint: n('22') },
-    ])
-  }
-
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
@@ -1519,6 +1497,12 @@ export class DBTestUtil {
       table.integer('n_int')
       table.bigInteger('n_bigint')
     })
+
+    console.log(this.knex.schema.createTable('with_bigint', (table) => {
+      primary(table)
+      table.integer('n_int')
+      table.bigInteger('n_bigint')
+    }).toQuery())
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {

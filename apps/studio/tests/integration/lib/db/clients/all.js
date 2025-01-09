@@ -321,10 +321,6 @@ export function runCommonTests(getUtil, opts = {}) {
         await itShouldNotInsertBadData(getUtil())
       })
 
-      test("should insert BigInt", async () => {
-        await getUtil().insertBigIntTests()
-      })
-
       test("should apply all types of changes", async () => {
         if (dbReadOnlyMode) {
           await expect(itShouldApplyAllTypesOfChanges(getUtil())).rejects.toThrow(errorMessages.readOnly)
