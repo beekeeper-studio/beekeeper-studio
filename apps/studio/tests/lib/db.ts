@@ -1492,18 +1492,6 @@ export class DBTestUtil {
       table.binary('bin', 8).notNullable()
     })
 
-    await this.knex.schema.createTable('with_bigint', (table) => {
-      primary(table)
-      table.integer('n_int')
-      table.bigInteger('n_bigint')
-    })
-
-    console.log(this.knex.schema.createTable('with_bigint', (table) => {
-      primary(table)
-      table.integer('n_int')
-      table.bigInteger('n_bigint')
-    }).toQuery())
-
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
