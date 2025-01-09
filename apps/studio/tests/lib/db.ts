@@ -1341,10 +1341,13 @@ export class DBTestUtil {
     const ID = this.dbType === 'firebird' ? 'ID' : 'id'
     const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
 
-    await this.knex('contains_binary').insert({ id: 1, bin: b`deadbeef` })
+    await this.knex('contains_binary').insert({ id: 1, bin: null })
+    await this.knex('contains_binary').insert({ id: 2, bin: b`` })
+    await this.knex('contains_binary').insert({ id: 3, bin: b`0` })
+    await this.knex('contains_binary').insert({ id: 4, bin: b`deadbeef` })
 
-    const result = await this.connection.selectTop('contains_binary', 0, 10, [], [], this.defaultSchema)
-    let data = result.result[0][BIN]
+    const result = await this.connection.selectTop('contains_binary', 0, 10, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema)
+    let data = result.result[3][BIN]
 
     expect(ArrayBuffer.isView(data)).toBe(true)
     expect(Buffer.from(data)).toEqual(b`deadbeef`)
@@ -1353,24 +1356,31 @@ export class DBTestUtil {
       { name: BIN, bksType: 'BINARY' },
     ])
 
+    expect(result.result).toMatchObject([
+      { id: 1, bin: null },
+      { id: 2, bin: u`` },
+      { id: 3, bin: u`0` },
+      { id: 4, bin: u`deadbeef` },
+    ])
+
     await this.connection.applyChanges({
       inserts: [{
         table: 'contains_binary',
         schema: this.defaultSchema,
         // frontend sends binary as Uint8Array, or any TypedArray is possible
-        data: [{ id: 2, bin: u`beefdeed` }],
+        data: [{ id: 5, bin: u`beefdeed` }],
       }],
       updates: [{
         table: 'contains_binary',
         schema: this.defaultSchema,
-        primaryKeys: [{ column: ID, value: 1 }],
+        primaryKeys: [{ column: ID, value: 4 }],
         column: BIN,
         value: u`eeffeeff`,
       }],
       deletes: [],
     })
 
-    const rows = await this.knex('contains_binary').select('bin').orderBy(ID)
+    const rows = await this.knex('contains_binary').select('bin').offset(3).limit(2).orderBy(ID)
     expect(rows.map((r) => Buffer.from(r.bin))).toEqual([
       b`eeffeeff`,
       b`beefdeed`,
@@ -1489,7 +1499,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable('contains_binary', (table) => {
       table.integer("id").primary().notNullable()
-      table.binary('bin', 8).notNullable()
+      table.binary('bin', 8).nullable()
     })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
