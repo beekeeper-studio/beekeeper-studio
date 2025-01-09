@@ -77,7 +77,6 @@ export default {
       bookmarkInstances: [],
       markInstances: [],
       wasEditorFocused: false,
-      valueChangeByCodeMirror: false,
     };
   },
   computed: {
@@ -109,12 +108,9 @@ export default {
   },
   watch: {
     valueAndStatus() {
-      if (this.valueChangeByCodeMirror) {
-        this.valueChangeByCodeMirror = false;
-        return
-      }
       const { value, status } = this.valueAndStatus;
       if (!status || !this.editor) return;
+      if (this.editor.getValue() === value) return; // Only setValue when necessary, as it can reset the cursor position, cause infinite loops, and whatnot.
       this.foundRootFold = false;
       const scrollInfo = this.editor.getScrollInfo();
       this.editor.setValue(value);
@@ -282,8 +278,6 @@ export default {
       }
 
       cm.on("change", async (cm) => {
-        this.valueChangeByCodeMirror = true;
-        await this.$nextTick()
         this.$emit("input", cm.getValue());
       });
 
