@@ -39,7 +39,7 @@ export const LibSQLBinaryTranscoder: Transcoder<
   Uint8Array
 > = {
   serialize(value) {
-    if (!_.isBuffer(value) || !_.isArrayBuffer(value)) {
+    if (!_.isBuffer(value) && !_.isArrayBuffer(value)) {
       log.warn("LibSQLBinaryTranscoder: cannot serialize non-buffer value");
       return value as Uint8Array;
     }
