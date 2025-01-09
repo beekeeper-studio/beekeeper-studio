@@ -169,6 +169,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.promptSqlFilesImport);
   }
 
+  createAndImportTable = (_menuItem: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.beginImport);
+  }
+
   toggleMinimalMode = async (): Promise<void> => {
     this.settings.minimalMode.value = !this.settings.minimalMode.value
     await this.settings.minimalMode.save()

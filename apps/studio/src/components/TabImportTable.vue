@@ -135,7 +135,7 @@
       },
       table: {
         type: String,
-        required: true,
+        required: false,
         default: ''
       },
       tab: {
@@ -294,6 +294,67 @@
           this.tab.isRunning = false
         }
       }
+    },
+    mounted() {
+      const steps = [{
+        component: ImportFile,
+        title: 'Choose File',
+        icon: 'attach_file',
+        stepperProps: {
+          schema: this.schema,
+          table: this.table
+        },
+        completed: false,
+        completePrevious: false,
+        nextButtonText: 'Map to Table',
+        nextButtonIcon: 'keyboard_arrow_right'
+      }]
+      const latterSteps = [
+        {
+          component: ImportMapper,
+          title: 'Map to Table',
+          icon: 'settings',
+          stepperProps: {
+            schema: this.schema,
+            table: this.table
+          },
+          completed: false,
+          validateOnNext: true,
+          completePrevious: true,
+          nextButtonText: 'Review & Execute',
+          nextButtonIcon: 'keyboard_arrow_right'
+        },
+        {
+          component: ImportPreview,
+          title: 'Review & Execute',
+          icon: 'check',
+          stepperProps: {
+            schema: this.schema,
+            table: this.table
+          },
+          completed: false,
+          completePrevious: true,
+          nextButtonText: 'Run The Import',
+          nextButtonIcon: 'keyboard_arrow_right'
+        }
+      ]
+      if (!this.table) {
+        steps.push({
+          component: ImportFile,
+          title: 'Create Table',
+          icon: 'add',
+          stepperProps: {
+            schema: this.schema,
+            table: this.table
+          },
+          completed: false,
+          completePrevious: false,
+          nextButtonText: 'Map to Table',
+          nextButtonIcon: 'keyboard_arrow_right'
+        })
+      }
+
+      this.importSteps = [...steps, ...latterSteps]
     }
   }
 </script>

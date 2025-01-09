@@ -660,15 +660,17 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.addTab(t);
     },
     beginImport({ table }) {
-      if (table.entityType !== 'table') {
+      if (table && table.entityType !== 'table') {
         this.$noty.error("You can only import data into a table")
         return;
       }
       const t = { tabType: 'import-table' }
-      t.title = `Import Table: ${table.name}`
+      t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false
-      t.schemaName = table.schema
-      t.tableName = table.name
+      if (table) {
+        t.schemaName = table.schema
+        t.tableName = table.name
+      }
       const existing = this.tabItems.find(tab => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)

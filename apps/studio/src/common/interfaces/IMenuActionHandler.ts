@@ -35,6 +35,7 @@ export interface IMenuActionHandler {
   backupDatabase: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   restoreDatabase: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   exportTables: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  createAndImportTable: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   upgradeModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
