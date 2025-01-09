@@ -30,6 +30,7 @@ import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
+import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
 
 (async () => {
 
@@ -70,7 +71,7 @@ import App from '@/App.vue'
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule]);
+    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
 
     (window as any).$ = $;
