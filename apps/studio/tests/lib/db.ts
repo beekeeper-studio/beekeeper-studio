@@ -1390,6 +1390,23 @@ export class DBTestUtil {
     ])
   }
 
+  async insertBigIntTests() {
+    const inserts = [
+      {
+        table: 'with_bigint',
+        schema: this.options.defaultSchema,
+        data: [{ id: 1, n_int: 1n, n_bigint: 11n }, { id: 2, n_int: 2n, n_bigint: 22n }]
+      },
+    ]
+
+    await this.connection.applyChanges({ inserts })
+    const { result } = await this.connection.selectTop("with_bigint", 0, 2, [], [], this.options.defaultSchema)
+    expect(result).toEqual([
+      { id: 1, n_int: 1, n_bigint: 11 },
+      { id: 2, n_int: 2, n_bigint: 22 },
+    ])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
@@ -1490,6 +1507,12 @@ export class DBTestUtil {
     await this.knex.schema.createTable('contains_binary', (table) => {
       table.integer("id").primary().notNullable()
       table.binary('bin', 8).notNullable()
+    })
+
+    await this.knex.schema.createTable('with_bigint', (table) => {
+      primary(table)
+      table.integer('n_int')
+      table.bigInteger('n_bigint')
     })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
