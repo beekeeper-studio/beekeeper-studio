@@ -1391,6 +1391,10 @@ export class DBTestUtil {
   }
 
   async insertBigIntTests() {
+    function bigint(n){
+      return this.dialect === 'sqlite' ? BigInt(n) : n.toString(),
+    }
+
     const inserts = [
       {
         table: 'with_bigint',
@@ -1402,8 +1406,8 @@ export class DBTestUtil {
     await this.connection.applyChanges({ inserts })
     const { result } = await this.connection.selectTop("with_bigint", 0, 2, [], [], this.options.defaultSchema)
     expect(result).toEqual([
-      { id: 1, n_int: 1, n_bigint: 11 },
-      { id: 2, n_int: 2, n_bigint: 22 },
+      { id: 1, n_int: 1, n_bigint: bigint(11) },
+      { id: 2, n_int: 2, n_bigint: bigint(22) },
     ])
   }
 
