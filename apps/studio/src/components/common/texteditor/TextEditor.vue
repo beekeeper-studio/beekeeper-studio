@@ -59,10 +59,8 @@ export default {
     "selection",
     "cursor",
     "initialized",
-    // Use forcedValue if you want to set the value programmatically and
-    // honestly, I forgot why do we need this.
-    "forcedValue",
     "plugins",
+    "autoFocus",
     "lineNumbers",
     "foldGutter",
     "foldWithoutLineNumbers",
@@ -78,6 +76,7 @@ export default {
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
+      wasEditorFocused: false,
     };
   },
   computed: {
@@ -86,7 +85,7 @@ export default {
     },
     userKeymap() {
       const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap.value;
+      const value = settings?.keymap?.value;
       return value && this.keymapTypes.map((k) => k.value).includes(value)
         ? value
         : "default";
@@ -94,12 +93,27 @@ export default {
     hasSelectedText() {
       return this.editorInitialized ? !!this.editor.getSelection() : false;
     },
+    heightAndStatus() {
+      return {
+        height: this.height,
+        status: this.editor != null
+      }
+    },
+    valueAndStatus() {
+      return {
+        value: this.value,
+        status: this.editor != null
+      }
+    }
   },
   watch: {
-    forcedValue() {
+    valueAndStatus() {
+      const { value, status } = this.valueAndStatus;
+      if (!status || !this.editor) return;
+      if (this.editor.getValue() === value) return; // Only setValue when necessary, as it can reset the cursor position, cause infinite loops, and whatnot.
       this.foundRootFold = false;
       const scrollInfo = this.editor.getScrollInfo();
-      this.editor.setValue(this.forcedValue);
+      this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
     forceInitizalize() {
@@ -112,31 +126,36 @@ export default {
       this.initialize();
     },
     mode() {
-      this.editor.setOption("mode", this.mode);
+      this.editor?.setOption("mode", this.mode);
     },
     hint() {
-      this.editor.setOption("hint", this.hint);
+      this.editor?.setOption("hint", this.hint);
     },
     hintOptions() {
-      this.editor.setOption("hintOptions", this.hintOptions);
+      this.editor?.setOption("hintOptions", this.hintOptions);
     },
-    height() {
-      this.editor.setSize(null, this.height);
+    heightAndStatus() {
+      const { height, status } = this.heightAndStatus;
+      if (!status || !this.editor) return;
+      this.editor.setSize(null, height);
       this.editor.refresh();
     },
     readOnly() {
-      this.editor.setOption("readOnly", this.readOnly);
+      this.editor?.setOption("readOnly", this.readOnly);
     },
     lineWrapping() {
-      this.editor.setOption("lineWrapping", this.lineWrapping);
+      this.editor?.setOption("lineWrapping", this.lineWrapping);
     },
     async focus() {
-      if (this.focus && this.editor) {
+      if (!this.editor) return
+      if (this.focus) {
         this.editor.focus();
         await this.$nextTick();
         // this fixes the editor not showing because it doesn't think it's dom element is in view.
         // its a hit and miss error
         this.editor.refresh();
+      } else {
+        this.editor.display.input.blur();
       }
     },
     removeJsonRootBrackets() {
@@ -157,8 +176,6 @@ export default {
       this.initializeBookmarks();
     },
     foldAll() {
-      console.log('foldall', this.foldAll)
-      // this.editor.foldAll();
       CodeMirror.commands.foldAll(this.editor)
     },
     unfoldAll() {
@@ -166,6 +183,18 @@ export default {
     },
   },
   methods: {
+    focusEditor() {
+      if(this.editor && this.autoFocus && this.wasEditorFocused){
+        this.editor.focus();
+        this.wasEditorFocused = false;
+       }
+    },
+    handleBlur(){
+      const activeElement = document.activeElement;
+      if(activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder"){
+        this.wasEditorFocused = true;
+      }
+    },
     async initialize() {
       this.destroyEditor();
 
@@ -244,7 +273,11 @@ export default {
         cm.setOption("readOnly", this.readOnly);
       }
 
-      cm.on("change", (cm) => {
+      if (this.lineWrapping) {
+        cm.setOption("lineWrapping", this.lineWrapping);
+      }
+
+      cm.on("change", async (cm) => {
         this.$emit("input", cm.getValue());
       });
 
@@ -264,7 +297,11 @@ export default {
         if ((event.relatedTarget as HTMLElement)?.id.includes('CodeMirror')) {
           return
         }
-        this.$emit("update:focus", false);
+
+        // This makes sure the editor is really blurred before emitting blur
+        setTimeout(() => {
+          this.$emit("update:focus", false);
+        }, 0);
       });
 
       cm.on("cursorActivity", (cm) => {
@@ -310,10 +347,11 @@ export default {
 
       this.editor = cm;
 
-      this.initializeMarkers();
-      this.initializeBookmarks();
-
-      this.$emit("update:initialized", true);
+      this.$nextTick(() => {
+        this.initializeMarkers();
+        this.initializeBookmarks();
+        this.$emit("update:initialized", true);
+      })
     },
     initializeMarkers() {
       const markers = this.markers || [];
@@ -390,11 +428,13 @@ export default {
             name: "Undo",
             handler: () => this.editor.execCommand("undo"),
             shortcut: this.ctrlOrCmd("z"),
+            write: true,
           },
           {
             name: "Redo",
             handler: () => this.editor.execCommand("redo"),
             shortcut: this.ctrlOrCmd("shift+z"),
+            write: true,
           },
           {
             name: "Cut",
@@ -499,8 +539,15 @@ export default {
   },
   mounted() {
     this.initialize();
+    if (this.focus) {
+      this.editor.focus();
+    }
+    window.addEventListener('focus', this.focusEditor);
+    window.addEventListener('blur', this.handleBlur);
   },
   beforeDestroy() {
+    window.removeEventListener('focus', this.focusEditor);
+    window.removeEventListener('blur', this.handleBlur);
     this.destroyEditor();
   },
 };

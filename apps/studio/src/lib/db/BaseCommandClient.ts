@@ -1,6 +1,6 @@
 import { BackupConfig } from "./models/BackupConfig";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { IDbConnectionServerConfig } from "./types";
+import { ConnectionType, IDbConnectionServerConfig } from "./types";
 import { SupportedBackupFeatures, Command, CommandSettingSection, CommandControlAction, CommandSettingControl, SupportedFeatures } from "./models";
 import { TempFileManager } from "../TempFileManager";
 import Vue from "vue";
@@ -44,6 +44,7 @@ export abstract class BaseCommandClient {
   protected static sslCA?: string;
   protected static sslCert?: string;
   protected static sslKey?: string;
+  protected static connectionType?: ConnectionType;
 
   protected static _password?: string;
   static get quotedPassword() {
@@ -52,6 +53,7 @@ export abstract class BaseCommandClient {
 
   set connConfig(value: IConnection) {
     BaseCommandClient.databaseName = BaseCommandClient.databaseName ?? value.defaultDatabase;
+    BaseCommandClient.connectionType = value.connectionType;
     BaseCommandClient.username = value.username;
     BaseCommandClient._password = value.password;
     BaseCommandClient.host = value.host;
@@ -165,7 +167,7 @@ export abstract class BaseCommandClient {
         return !this.toolName || (config.dumpToolPath && config.dumpToolPath.includes(this.toolName));
       },
       controls: [
-        isRestore && BaseCommandClient._conn.supportedFeatures().backDirFormat ? {
+        isRestore && BaseCommandClient._supportedFeatures.backDirFormat ? {
           controlType: 'checkbox',
           settingName: 'isDir',
           settingDesc: 'Restore a "directory" backup',
@@ -314,15 +316,15 @@ export abstract class BaseCommandClient {
   }
 
   public async writeToLog(content: string) {
-    await this.tempFile.write(content);
+    await this.tempFile?.write(content);
   }
 
   public deleteLogFile() {
-    this.tempFile.deleteFile();
+    this.tempFile?.deleteFile();
   }
 
   public get logPath() {
-    return this.tempFile.path;
+    return this.tempFile?.path;
   }
 
   // end log file things

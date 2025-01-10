@@ -92,6 +92,8 @@ nav:
       - user_guide/connecting/sqlite.md
       - user_guide/connecting/google-bigquery.md
       - user_guide/connecting/oracle-database.md
+      - user_guide/connecting/amazon-rdb.md
+      - user_guide/connecting/firebird.md
   - User Guide:
     - user_guide/using-the-sql-editor.md
     - user_guide/editing-data.md

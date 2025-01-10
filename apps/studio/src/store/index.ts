@@ -26,11 +26,14 @@ import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityCo
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
 import { LicenseModule } from './modules/LicenseModule'
-import { CredentialsModule } from './modules/CredentialsModule'
+import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
+import globals from '@/common/globals'
+import { CloudClient } from '@/lib/cloud/CloudClient'
+import { ConnectionTypes } from '@/lib/db/types'
 
 
 const log = RawLog.scope('store/index')
@@ -68,6 +71,8 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
+  openDetailView: boolean
+  tableTableSplitSizes: number[]
 }
 
 Vue.use(Vuex)
@@ -121,14 +126,25 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
+    openDetailView: SmartLocalStorage.getBool('openDetailView', true),
+    tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
   },
 
   getters: {
     defaultSchema(state) {
       return state.defaultSchema;
     },
-    workspace(): IWorkspace {
-      return LocalWorkspace
+    friendlyConnectionType(state) {
+      return ConnectionTypes.find((ct) => ct.value == state.connectionType)?.name ?? "Default Connection"
+    },
+    workspace(state, getters): IWorkspace {
+      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
+
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
+
+      if (!result) return LocalWorkspace
+      return result.workspace
     },
     isCloud(state: State) {
       return state.workspaceId !== LocalWorkspace.id
@@ -141,6 +157,15 @@ const store = new Vuex.Store<State>({
         const pollError = state[module.path]['pollError']
         return pollError || null
       }).find((e) => !!e)
+    },
+    cloudClient(state: State, getters): CloudClient | null {
+      if (state.workspaceId === LocalWorkspace.id) return null
+
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
+      if (!result) return null
+      return result.client.cloneWithWorkspace(result.workspace.id)
+
     },
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
@@ -211,16 +236,28 @@ const store = new Vuex.Store<State>({
     versionString(state) {
       return state.server.versionString();
     },
+    isCommunity(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isCommunity']
+    },
+    isUltimate(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isUltimate']
+    },
+    isTrial(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isTrial']
+    },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
-    }
+    },
+    openDetailView(state) {
+      return state.openDetailView
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
       state.storeInitialized = b
     },
     workspaceId(state, id: number) {
-      state.workspaceId = id
+      state.workspaceId = Number(id)
     },
     selectSidebarItem(state, item: string) {
       state.selectedSidebarItem = item
@@ -252,9 +289,9 @@ const store = new Vuex.Store<State>({
     setUsername(state, name) {
       state.username = name
     },
-    newConnection(state, config: IConnection) {
+    newConnection(state, config: Nullable<IConnection>) {
       state.usedConfig = config
-      state.database = config.defaultDatabase
+      state.database = config?.defaultDatabase
     },
     // this shouldn't be used at all
     clearConnection(state) {
@@ -348,6 +385,12 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
+    openDetailView(state, value: boolean) {
+      state.openDetailView = value
+    },
+    tableTableSplitSizes(state, value: number[]) {
+      state.tableTableSplitSizes = value
+    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -364,11 +407,18 @@ const store = new Vuex.Store<State>({
       await context.dispatch('connect', conn)
     },
 
-    updateWindowTitle(context, config: Nullable<IConnection>) {
-      const title = config
+    updateWindowTitle(context) {
+      const config = context.state.usedConfig
+      let title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
-
+      if (context.getters.isUltimate) {
+        title += ' Ultimate Edition'
+      }
+      if (context.getters.isTrial && context.getters.isUltimate) {
+        const days = context.rootGetters['licenses/licenseDaysLeft']
+        title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
+      }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
     },
@@ -381,16 +431,16 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: IConnection) {
       if (context.state.username) {
-        // HACK (@day): this is just to fix some issues with the typeorm models moving to the utility process.
-        // this should be removed once the appdb handlers have been merged.
-        const tConfig = JSON.parse(JSON.stringify(config));
-        tConfig.port = config.port;
-        tConfig.connectionType = config.connectionType;
-
-        await Vue.prototype.$util.send('conn/create', { config: tConfig, osUser: context.state.username })
+        await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
+
+        if (supportedFeatures.backups) {
+          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+        }
+
         context.commit('defaultSchema', defaultSchema);
         context.commit('connectionType', config.connectionType);
         context.commit('connected', true);
@@ -401,13 +451,8 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('data/usedconnections/recordUsed', config)
+        await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
-
-        if (supportedFeatures.backups) {
-          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
-        }
 
       } else {
         throw "No username provided"
@@ -422,7 +467,8 @@ const store = new Vuex.Store<State>({
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
-      context.dispatch('updateWindowTitle', null)
+      context.commit('newConnection', null)
+      context.dispatch('updateWindowTitle')
       context.dispatch('refreshConnections')
     },
     async syncDatabase(context) {
@@ -537,13 +583,42 @@ const store = new Vuex.Store<State>({
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
     },
-    async toggleExpandFKDetailsByDefault(context, value?: boolean) {
+    async initRootStates(context) {
+      await context.dispatch('fetchUsername')
+      await context.dispatch('licenses/init')
+      await context.dispatch('userEnums/init')
+      await context.dispatch('updateWindowTitle')
+      setInterval(
+        () => context.dispatch('licenses/sync'),
+        globals.licenseCheckInterval
+      )
+    },
+    licenseEntered(context) {
+      context.dispatch('updateWindowTitle')
+    },
+    toggleFlag(context, { flag, value }: { flag: string, value?: boolean }) {
       if (typeof value === 'undefined') {
-        value = !context.state.expandFKDetailsByDefault
+        value = !context.state[flag]
       }
-      SmartLocalStorage.setBool('expandFKDetailsByDefault', value)
-      context.commit('expandFKDetailsByDefault', value)
-    }
+      SmartLocalStorage.setBool(flag, value)
+      context.commit(flag, value)
+      return value
+    },
+    toggleOpenDetailView(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.openDetailView
+      }
+      SmartLocalStorage.setBool('openDetailView', value)
+      context.commit('openDetailView', value)
+      return value
+    },
+    setTableTableSplitSizes(context, value: number[]) {
+      SmartLocalStorage.addItem('tableTableSplitSizes', value)
+      context.commit('tableTableSplitSizes', value)
+    },
+    toggleExpandFKDetailsByDefault(context, value?: boolean) {
+      context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
   },
   plugins: []
 })

@@ -72,6 +72,11 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   pollError(state, error: Error | null) {
     state.pollError = error
   },
+  set(state, items: T[] | T) {
+    items = _.isArray(items) ? items : [items];
+    const sorted = sortBy ? _.sortBy(items, sortBy.field) : items;
+    state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted;
+  },
   upsert(state, items: T[] | T) {
     const stateItems = [...state.items]
     const list = _.isArray(items) ? items : [items]
@@ -150,7 +155,7 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
     },
 
     async reload(context, id: number) {
-      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, { options: id })
+      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, { options: { id } })
       if (item) {
         context.commit('upsert', item)
         return item.id
@@ -224,7 +229,7 @@ export function localActionsFor<T extends Transport>(cls: any, other: any, loadO
     },
 
     async reload(context, id: number) {
-      const item = await cls.findOne(id)
+      const item = await cls.findOneBy({ id: id })
       if (item) {
         context.commit('upsert', item)
         return item.id

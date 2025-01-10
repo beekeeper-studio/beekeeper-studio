@@ -14,12 +14,12 @@
                 <i class="material-icons">save_alt</i>
                 <x-menu style="--align: end;">
                   <x-menuitem @click.prevent="importFromComputer">
-                    <x-label>Import .sql files</x-label>
+                    <x-label>Import .sql files into Saved Queries</x-label>
                   </x-menuitem>
                   <x-menuitem @click.prevent="importFromLocal">
                     <x-label>Import from local workspace</x-label>
                     <i
-                      v-if="$config.isCommunity"
+                      v-if="$store.getters.isCommunity"
                       class="material-icons menu-icon"
                     >stars</i>
                   </x-menuitem>
@@ -41,7 +41,7 @@
         <div class="fixed query-filter">
           <div class="filter">
             <div class="filter-wrap">
-              <input 
+              <input
                 class="filter-input"
                 type="text"
                 placeholder="Filter"
@@ -232,7 +232,7 @@ export default {
         this.$root.$emit(AppEvent.promptQueryImport)
     },
     importFromComputer() {
-      this.$root.$emit(AppEvent.promptQueryImportFromComputer)
+      this.$root.$emit(AppEvent.promptSqlFilesImport)
     },
     maybeUnselect(e) {
       if (!this.selected) return

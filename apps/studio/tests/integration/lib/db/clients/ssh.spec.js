@@ -1,6 +1,7 @@
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
 import ConnectionProvider from '@commercial/backend/lib/connection-provider';
 import { dbtimeout } from '../../../../lib/db'
+import { TestOrmConnection } from '@tests/lib/TestOrmConnection';
 
 
 
@@ -13,6 +14,8 @@ describe("SSH Tunnel Tests", () => {
   let environment
 
   beforeAll(async () => {
+    await TestOrmConnection.connect()
+
     const timeoutDefault = 5000
     environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
       .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
@@ -79,5 +82,6 @@ describe("SSH Tunnel Tests", () => {
     if (environment) {
       await environment.stop()
     }
+    await TestOrmConnection.disconnect()
   })
 })

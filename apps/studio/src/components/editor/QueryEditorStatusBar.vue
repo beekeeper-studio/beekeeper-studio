@@ -96,7 +96,7 @@
             >
               <x-label>Download Full Resultset</x-label>
               <i
-                v-if="$config.isCommunity"
+                v-if="$store.getters.isCommunity"
                 class="material-icons menu-icon"
               >stars</i>
             </x-menuitem>
@@ -153,8 +153,7 @@
 <script>
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
-import { mapState } from 'vuex';
-import pluralize from 'pluralize';
+import { mapState, mapGetters } from 'vuex';
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -244,7 +243,7 @@ export default {
         return null
       }
       const executeTime = this.executeTime || 0
-      
+
       return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
     },
     executionTimeTitle() {

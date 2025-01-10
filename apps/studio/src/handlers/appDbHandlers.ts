@@ -2,7 +2,7 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
-import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportPinnedEntity, TransportUsedQuery } from "@/common/transport";
+import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery } from "@/common/transport";
 import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
 import rawLog from 'electron-log';
 import _ from 'lodash';
@@ -19,6 +19,7 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -51,7 +52,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           });
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
-        let dbObj: any = obj.id ? await cls.findOneBy(obj.id) : new cls().withProps(obj);
+        let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
         if (dbObj && obj.id) {
           cls.merge(dbObj, obj);
         } else if (!dbObj) {
@@ -70,7 +71,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         });
         await cls.remove(dbEntities)
       } else {
-        const dbObj = await cls.findOneBy(obj.id);
+        const dbObj = await cls.findOneBy({ id: obj.id });
         log.info(`Removing ${name}: `, dbObj);
         await dbObj?.remove();
       }
@@ -87,16 +88,21 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
 }
 
 function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+  if (_.isNil(obj)) {
+    return null
+  }
+
   return {
     ...obj,
-    value: obj.value
+    value: obj?.value
   };
 }
 
 function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
+  if (_.isNil(obj)) return null
   return {
     ...obj,
-    active: obj.active
+    active: obj?.active ?? false
   };
 }
 
@@ -118,7 +124,7 @@ export const AppDbHandlers = {
     if (!conn.parse(url)) {
       throw `Unable to parse ${url}`;
     }
-    return conn;
+    return defaultTransform(conn, SavedConnection);
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOneBy({ key });

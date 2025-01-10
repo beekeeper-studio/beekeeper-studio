@@ -1,6 +1,6 @@
 import electronLog from "electron-log";
-import knexlib, { Knex } from "knex";
-import knexFirebirdDialect from "knex-firebird-dialect";
+import knexlib from "knex";
+import Client_Firebird from "@shared/lib/knex-firebird";
 import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
 import {
@@ -30,8 +30,9 @@ import {
   StreamResults,
   TableColumn,
   Routine,
-  ImportScriptFunctions,
   ImportFuncOptions,
+  BksField,
+  BksFieldType,
 } from "@/lib/db/models";
 import {
   BasicDatabaseClient,
@@ -43,7 +44,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildUpdateQueries } from "@/lib/db/clients/utils";
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery } from "@/lib/db/clients/utils";
 import {
   Pool,
   Connection,
@@ -54,11 +55,13 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 type FirebirdResult = {
   rows: any[];
-  meta: any[];
+  columns: any[];
   statement: IdentifyResult;
+  arrayMode: boolean;
 };
 
 // Char fields are padded with spaces to the maximum defined length.
@@ -163,60 +166,11 @@ function buildFilterString(filters: TableFilter[], columns = []) {
   };
 }
 
-// Only build an insert query from the first index of insert.data
-function buildInsertQuery(
-  knex: Knex,
-  insert: TableInsert,
-  columns = [],
-  bitConversionFunc: any = _.toNumber
-) {
-  const data = _.cloneDeep(insert.data);
-  data.forEach((item) => {
-    const insertColumns = Object.keys(item);
-    insertColumns.forEach((ic) => {
-      const matching = _.find(columns, (c) => c.columnName === ic);
-      if (
-        matching &&
-        matching.dataType &&
-        matching.dataType.startsWith("bit(")
-      ) {
-        if (matching.dataType === "bit(1)") {
-          item[ic] = bitConversionFunc(item[ic]);
-        } else {
-          item[ic] = parseInt(item[ic].split("'")[1], 2);
-        }
-      }
-
-      // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
-      if (ic.includes("?")) {
-        const newIc = ic.replaceAll("?", "\\?");
-        item[newIc] = item[ic];
-        delete item[ic];
-      }
-    });
-  });
-  const builder = knex(insert.table);
-  if (insert.schema) {
-    builder.withSchema(insert.schema);
-  }
-  const query = builder
-    // TODO: try extending the builder instead
-    .insert(data[0])
-    .toQuery();
-
-  return query
-}
-
-function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
-  return inserts.map((insert) => buildInsertQuery(knex, insert));
-}
-
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
-  connectionBaseType = 'firebird' as const;
-
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(
     server: IDbConnectionServer,
@@ -269,7 +223,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     const serverConfig = this.server.config;
     const knex = knexlib({
-      client: knexFirebirdDialect,
+      client: Client_Firebird,
       connection: {
         host: serverConfig.host,
         port: serverConfig.port,
@@ -385,6 +339,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           nullable,
           primaryKey,
           hasDefault: !_.isNil(defaultValue),
+          bksField: this.parseTableColumn(row),
         };
       })
     );
@@ -564,11 +519,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     );
 
     const result = await this.driverExecuteSingle(query, { params });
+    const fields = this.parseQueryResultColumns(result);
+    const rows = await this.serializeQueryResult(result, fields);
 
-    return {
-      result: result.rows,
-      fields: Object.keys(result.rows[0] || {}),
-    };
+    return { result: rows, fields };
   }
 
   async selectTopSql(
@@ -650,7 +604,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
             rowAsArray: true,
             connection,
           });
-          return results.map(({ rows, meta }) => {
+          return results.map(({ rows, columns: meta }) => {
             const fields = meta.map((field, idx) => ({
               id: `c${idx}`,
               name: field.alias || field.field,
@@ -685,20 +639,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         }
       },
     };
-  }
-
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
-    if (tableInsert.data.length > 1) {
-      // TODO: We can't insert multiple rows at once with Firebird. And
-      // firebird knex only accepts an object instead of an array, while the
-      // other dialects accept arrays. So this must be handled in knex instead?
-      throw new Error("Inserting multiple rows is not supported.");
-    }
-    const columns = await this.listTableColumns(
-      tableInsert.table,
-      tableInsert.schema
-    );
-    return buildInsertQuery(this.knex, tableInsert, columns);
   }
 
   async listTableTriggers(
@@ -855,7 +795,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     });
   }
 
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
     const connection = await this.pool.getConnection();
     const transaction = await connection.transaction();
@@ -887,20 +827,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     }
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    let queriesStr = "";
-    buildInsertQueries(this.knex, changes.inserts || []).forEach((query) => {
-      queriesStr += `${query};`;
-    });
-    buildUpdateQueries(this.knex, changes.updates || []).forEach((query) => {
-      queriesStr += `${query};`;
-    });
-    buildDeleteQueries(this.knex, changes.deletes || []).forEach((query) => {
-      queriesStr += `${query};`;
-    });
-    return queriesStr;
-  }
-
   async updateValues(
     cli: Connection | Transaction,
     updates: TableUpdate[]
@@ -908,9 +834,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const results = [];
 
     for (const update of updates) {
-      const updateParams = [
-        _.isBoolean(update.value) ? _.toInteger(update.value) : update.value,
-      ];
+      const updateParam = _.isBoolean(update.value) ? _.toInteger(update.value) : update.value
 
       const whereList = [];
       const whereParams = [];
@@ -927,7 +851,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       `;
       const selectQuery = `SELECT * FROM ${update.table} WHERE ${where}`;
 
-      await cli.query(updateQuery, [updateParams, ...whereParams]);
+      await cli.query(updateQuery, [updateParam, ...whereParams]);
       const result = await cli.query(selectQuery, whereParams);
       results.push(result.rows[0]);
     }
@@ -1014,7 +938,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ rows, statement, meta }) => ({
+    return result.map(({ rows, statement, columns: meta }) => ({
       fields: meta.map((field, idx) => ({
         id: `c${idx}`,
         name: field.alias || field.field,
@@ -1059,7 +983,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const queries = identifyCommands(queryText);
     const params = options.params ?? [];
 
-    const results = [];
+    const results: FirebirdResult[] = [];
 
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
@@ -1067,9 +991,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       const conn = options.connection ?? this.pool;
       const data = await conn.query(query.text, params, options.rowAsArray);
       results.push({
-        meta: data.meta,
+        columns: data.meta,
         rows: data.rows,
         statement: query,
+        arrayMode: options.rowAsArray,
       });
     }
 
@@ -1225,12 +1150,20 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     throw new Error("Method not implemented.");
   }
 
-  async importStepZero(_table: TableOrView): Promise<any> {
-    const connection = await this.pool.getConnection()
-    const transaction = await connection.transaction()
+  protected async runWithConnection(child: (connection: Connection) => Promise<any>):  Promise<any> {
+    const connection = await this.pool.getConnection();
+
+    try {
+      return await child(connection);
+    } finally {
+      await connection.release()
+    }
+  }
+
+  async importStepZero(_table: TableOrView, options: { connection: Connection }): Promise<any> {
+    const transaction = await options.connection.transaction()
 
     return {
-      connection,
       transaction
     }
   }
@@ -1238,59 +1171,44 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   async importTruncateCommand (table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
     const { name } = table
 
-    return clientExtras.transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`)
+    return await clientExtras.transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`)
   }
 
-  async importLineReadCommand (_table: TableOrView, sqlString: string[], { clientExtras }: ImportFuncOptions): Promise<any> {
-    try {
-      const theStrings = sqlString.map(sql => clientExtras.transaction.query(`${sql};`))
-      return Promise.all(theStrings)
-    } catch(err) {
-      throw new Error(err)
-    }
+  async importLineReadCommand (_table: TableOrView, sqlString: string[], { executeOptions }: ImportFuncOptions): Promise<any> {
+    return await Promise.all(sqlString.map(async (sql) => {
+      await executeOptions.transaction.query(`${sql};`);
+    }))
   }
 
   async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.commit()
+    // NOTE (@day): this seems to be crashing
+    return await clientExtras.transaction.commit()
   }
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.rollback()
-  }
-
-  async importFinalCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.connection.release()
-  }
-
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name } = table
-    let connection
-    let transaction
-
-    return {
-      step0: async(): Promise<any|null> => {
-        connection = await this.pool.getConnection()
-        transaction = await connection.transaction()
-      },
-      beginCommand: (_executeOptions: any): any => null,
-      truncateCommand: (): Promise<any> => transaction.query(`DELETE FROM ${this.wrapIdentifier(name)};`),
-      lineReadCommand: (sqlString: string[]): Promise<any> => {
-        // firebird doesn't do multiple commands at once so you have to split it up
-        try {
-          const theStrings = sqlString.map(sql => transaction.query(`${sql};`))
-          return Promise.all(theStrings)
-        } catch(err) {
-          throw new Error(err)
-        }
-      },
-      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
-      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback(),
-      finalCommand: (_executeOptions: any): Promise<any> => connection.release()
-    }
+    return await clientExtras.transaction.rollback()
   }
 
   async getImportSQL(importedData: TableInsert[]): Promise<string[]> {
     return buildInsertQueries(this.knex, importedData)
   }
 
+  parseQueryResultColumns(qr: FirebirdResult): BksField[] {
+    return qr.columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      // 520 is SQL_BLOB
+      // Ref: https://github.com/hgourvest/node-firebird/blob/3aba6c3bb605c9e4a260a572d6395d1b431dee8a/lib/wire/const.js#L230
+      if (column.type === 520) {
+        bksType = 'BINARY';
+      }
+      return { name: column.field, bksType };
+    });
+  }
+
+  parseTableColumn(column: { FIELD_TYPE: string, RDB$FIELD_NAME: string }): BksField {
+    return {
+      name: column.RDB$FIELD_NAME,
+      bksType: column.FIELD_TYPE === "BLOB" ? "BINARY" : "UNKNOWN",
+    };
+  }
 }

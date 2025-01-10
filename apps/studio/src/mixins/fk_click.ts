@@ -1,3 +1,5 @@
+import { monthAgo } from '@/common/date';
+import { SmartLocalStorage } from '@/common/LocalStorage';
 import rawLog from 'electron-log'
 import { CellComponent } from 'tabulator-tables';
 
@@ -111,8 +113,18 @@ export const FkLinkMixin = {
         });
       });
 
+      let openDetailView = true
+      if (this.$store.getters.isCommunity) {
+        const lastOpen = SmartLocalStorage.getDate('openJSONViewerViaFK__community')
+        if (!lastOpen || lastOpen < monthAgo()) {
+          SmartLocalStorage.setDate('openJSONViewerViaFK__community', new Date())
+        } else {
+          openDetailView = false
+        }
+      }
+
       const payload = {
-        table, filters, titleScope: values.join(',')
+        table, filters, titleScope: values.join(','), openDetailView,
       }
       this.$root.$emit('loadTable', payload)
     },

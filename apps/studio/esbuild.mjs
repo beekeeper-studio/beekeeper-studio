@@ -38,7 +38,10 @@ const restartElectron = _.debounce(() => {
   }
   // start electron again
   electron = spawn(electronBin, ['.'], { stdio: 'inherit' })
-  electron.on('exit', (code, signal) => console.log('electron exited', code, signal))
+  electron.on('exit', (code, signal) => {
+    console.log('electron exited', code, signal)
+    if (!signal) process.exit()
+  })
   console.log('spawned electron, pid: ', electron.pid)
 
 }, 500)

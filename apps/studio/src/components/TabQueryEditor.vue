@@ -34,9 +34,8 @@
       <sql-text-editor
         v-model="unsavedText"
         v-bind.sync="editor"
-        :focus="focusElement === 'text-editor'"
+        :focus="focusingElement === 'text-editor'"
         @update:focus="updateTextEditorFocus"
-        :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
@@ -53,13 +52,13 @@
         >
           <x-button
             v-if="showDryRun"
-            class="btn btn-flat btn-small"
-            :disabled="$config.isCommunity"
+            class="btn btn-flat btn-small dry-run-btn"
+            :disabled="isCommunity"
             @click="dryRun = !dryRun"
           >
             <x-label>Dry Run</x-label>
             <i
-              v-if="$config.isCommunity"
+              v-if="isCommunity"
               class="material-icons menu-icon"
             >stars</i>
             <input
@@ -101,7 +100,7 @@
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
-                    v-if="$config.isCommunity"
+                    v-if="isCommunity"
                     class="material-icons menu-icon"
                   >
                     stars
@@ -110,7 +109,7 @@
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
                   <x-label>Run Current to File</x-label>
                   <i
-                    v-if="$config.isCommunity"
+                    v-if="isCommunity"
                     class="material-icons menu-icon "
                   >
                     stars
@@ -134,7 +133,7 @@
       <result-table
         ref="table"
         v-else-if="showResultTable"
-        :focus="focusElement === 'table'"
+        :focus="focusingElement === 'table'"
         :active="active"
         :table-height="tableHeight"
         :result="result"
@@ -348,12 +347,10 @@
         runningType: 'all queries',
         selectedResult: 0,
         unsavedText: editorDefault,
-        forcedTextEditorValue: editorDefault,
         editor: {
           height: 100,
           selection: null,
           readOnly: false,
-          focus: false,
           cursorIndex: 0,
           initialized: false,
         },
@@ -375,18 +372,31 @@
         blankQuery: blankFavoriteQuery(),
         dryRun: false,
         containerResizeObserver: null,
-        focusElement: 'text-editor',
+        onTextEditorBlur: null,
+
+        /**
+         * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
+         * if we want to switch focus. Why two states? We need a feedback from
+         * text editor cause it can't release focus automatically.
+         *
+         * Possible values: 'text-editor', 'table', 'none'
+         */
+        focusElement: 'none',
+        focusingElement: 'none',
       }
     },
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
+      ...mapGetters({
+        'isCommunity': 'licenses/isCommunity',
+      }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
-          const value = this.settings?.keymap.value;
+          const value = this.settings?.keymap?.value;
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
@@ -626,7 +636,6 @@
       },
       async active() {
         if (!this.editor.initialized) {
-          this.editor.focus = false
           return
         }
 
@@ -634,9 +643,12 @@
         // clicked because something steals the focus. So we defer focusing
         // the editor at the end of the call stack with timeout, and
         // this.$nextTick doesn't work in this case.
-        setTimeout(() => this.editor.focus = this.active, 0);
+        if (this.active) {
+          setTimeout(this.selectEditor, 0)
+        }
 
         if (!this.active) {
+          this.focusElement = 'none'
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
@@ -657,6 +669,12 @@
 
         const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
         this.marker = { from: markStart, to: markEnd, type: 'highlight' } as EditorMarker
+      },
+      async focusElement(element, oldElement) {
+        if (oldElement === 'text-editor' && element !== 'text-editor') {
+          await this.blurTextEditor()
+        }
+        this.focusingElement = element
       },
     },
     methods: {
@@ -762,7 +780,7 @@
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
-        this.editor.focus = true
+        this.focusElement = 'text-editor'
       },
       selectTitleInput() {
         this.$refs.titleInput.select()
@@ -815,7 +833,7 @@
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitQueryToFile() {
-        if (this.$config.isCommunity) {
+        if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
@@ -827,7 +845,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
-        if (this.$config.isCommunity) {
+        if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
@@ -949,7 +967,6 @@
         if (originalText) {
           this.originalText = originalText
           this.unsavedText = originalText
-          this.forcedTextEditorValue = originalText
         }
       },
       fakeRemoteChange() {
@@ -963,18 +980,42 @@
         }
       },
       updateTextEditorFocus(focused: boolean) {
-        this.switchPaneFocus(undefined, focused ? 'text-editor' : 'table')
+        if (!focused) {
+          this.onTextEditorBlur?.()
+        }
       },
-      switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
-        if (!this.showResultTable) {
-          this.focusElement = 'text-editor'
-        } else if (target) {
+      async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
+        if (target) {
           this.focusElement = target
         } else {
           this.focusElement = this.focusElement === 'text-editor'
             ? 'table'
             : 'text-editor'
         }
+      },
+      blurTextEditor() {
+        let timedOut = false
+        let resolved = false
+        return new Promise<void>((resolvePromise) => {
+          const resolve = () => {
+            this.onTextEditorBlur = null
+            resolvePromise()
+          }
+          this.onTextEditorBlur = () => {
+            resolved = true
+            if (!timedOut) {
+              resolve()
+            }
+          }
+          setTimeout(() => {
+            if (!resolved) {
+              timedOut = true
+              log.warn('Timed out waiting for text editor to blur')
+              resolve()
+            }
+          }, 1000)
+          this.focusingElement = 'none'
+        })
       },
     },
     async mounted() {
@@ -984,6 +1025,11 @@
         this.updateEditorHeight()
       })
       this.containerResizeObserver.observe(this.$refs.container)
+
+      if (this.active) {
+        await this.$nextTick()
+        this.focusElement = 'text-editor'
+      }
     },
     beforeDestroy() {
       if(this.split) {

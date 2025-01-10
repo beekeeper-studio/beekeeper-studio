@@ -27,12 +27,12 @@ export interface IConnectionHandlers {
   'conn/getDefaultCharset': ({ sId }: { sId: string}) => Promise<string>,
   'conn/listCollations': ({ charset, sId }: { charset: string, sId: string }) => Promise<string[]>,
 
-  
+
   // Connection *****************************************************************
   'conn/connect': ({ sId }: { sId: string}) => Promise<void>,
   'conn/disconnect': ({ sId }: { sId: string}) => Promise<void>,
 
-  
+
   // List schema information ****************************************************
   'conn/listTables': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/listViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
@@ -105,16 +105,7 @@ export interface IConnectionHandlers {
   'conn/azureCancelAuth': ({ sId }: { sId: string }) => Promise<void>
   'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
-  'conn/azureGetAccountName': ({ authId, sId }: { authId: string, sId: string }) => Promise<string | null>
-
-  // For Import ************************************************************
-  'conn/importStepZero': ({ sId, table }: { sId: string, table: any }) => Promise<any>,
-  'conn/importBeginCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importTruncateCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importLineReadCommand': ({ sId, table, sqlString, importOptions  }: { sId: string, table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importCommitCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importRollbackCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>,
-  'conn/importFinalCommand': ({ sId, table, importOptions  }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) => Promise<any>
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -123,7 +114,7 @@ export const ConnHandlers: IConnectionHandlers = {
       throw new Error(errorMessages.noUsername);
     }
 
-    if (config.azureAuthOptions.azureAuthEnabled && !config.authId) {
+    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
       let cache = new TokenCache();
       cache = await cache.save();
       config.authId = cache.id;
@@ -250,7 +241,7 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/listTableIndexes': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
-    checkConnection(sId);  
+    checkConnection(sId);
     return await state(sId).connection.listTableIndexes(table, schema);
   },
 
@@ -467,11 +458,11 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).connectionAbortController?.abort();
   },
 
-  'conn/azureGetAccountName': async function({ authId }: { authId: string }) {
+  'conn/azureGetAccountName': async function({ authId }: { authId: number }) {
     if (!authId) {
       throw new Error("authId is required");
     };
-    const cache = await TokenCache.findOne(authId)
+    const cache = await TokenCache.findOneBy({id: authId})
     if (!cache) return null
     return cache.name
   },
@@ -480,46 +471,11 @@ export const ConnHandlers: IConnectionHandlers = {
     await AzureAuthService.ssoSignOut(config.authId)
 
     // Clean up authId cause it's invalid after signing out
-    const savedConnection = await SavedConnection.findOne(config.id)
+    const savedConnection = await SavedConnection.findOneBy({id: config.id})
     savedConnection.authId = null
     await savedConnection.save()
     if (state(sId).usedConfig) {
       state(sId).usedConfig.authId = null
     }
-  },
-
-  'conn/importStepZero': async function({ sId, table }: { sId: string, table: any }) {
-    checkConnection(sId)
-    return await state(sId).connection.importStepZero(table)
-  },
-
-  'conn/importBeginCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importBeginCommand(table, importOptions)
-  },
-
-  'conn/importTruncateCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importTruncateCommand(table, importOptions)
-  },
-
-  'conn/importLineReadCommand': async function({ sId, table, sqlString, importOptions }: { sId: string, table: TableOrView, sqlString: string | string[], importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importLineReadCommand(table, sqlString, importOptions)
-  },
-
-  'conn/importCommitCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importCommitCommand(table, importOptions)
-  },
-
-  'conn/importRollbackCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importRollbackCommand(table, importOptions)
-  },
-
-  'conn/importFinalCommand': async function({ sId, table, importOptions }: { sId: string, table: TableOrView, importOptions?: ImportFuncOptions }) {
-    checkConnection(sId)
-    return await state(sId).connection.importFinalCommand(table, importOptions)
   }
 }

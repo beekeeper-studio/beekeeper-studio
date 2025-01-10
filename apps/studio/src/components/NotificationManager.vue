@@ -24,7 +24,7 @@ export default Vue.extend({
     }
   },
   mounted() {
-    if (this.$config.isCommunity) {
+    if (this.$store.getters.isCommunity) {
       const today = new Date()
       const upgradeSuggested = SmartLocalStorage.getDate('ultimate-upsell')
       const lastWeek = new Date(today.getTime() - (28 * 24 * 60 * 60 * 1000))

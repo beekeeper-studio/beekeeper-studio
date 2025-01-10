@@ -19,8 +19,12 @@ export class UtilityConnection {
   private listeners: Array<{type: string, id: string, listener: Listener}> = new Array();
   private messageQueue: Array<Message> = new Array();
   private port: MessagePort;
-  private sId: string;
+  private _sId: string;
   private portsRequested: boolean = false;
+
+  public get sId() {
+    return this._sId;
+  } 
 
   public async hasWorkingPort(): Promise<boolean> {
     return new Promise((resolve, reject) => {
@@ -33,7 +37,7 @@ export class UtilityConnection {
 
   public setPort(port: MessagePort, sId: string) {
     this.port = port;
-    this.sId = sId;
+    this._sId = sId;
     log.info('RECEIVED PORT IN UtilityConnection: ', port);
     this.port.onmessage = (msg) => {
       const { data: msgData } = msg;
@@ -47,7 +51,9 @@ export class UtilityConnection {
         if (handler) {
           log.error('GOT ERROR BACK FOR REQUEST ID: ', id);
           this.replyHandlers.delete(id);
-          handler.reject(`${error} ${stack ? 'Stack: ' + stack : ''}`);
+          const err = new Error(error);
+          err.stack = stack;
+          handler.reject(err);
         }
       } else if (msgData.type === 'reply') {
         const { id, data } = msgData;
@@ -72,7 +78,7 @@ export class UtilityConnection {
     if (this.messageQueue.length > 0) {
       this.messageQueue.forEach(({ handlerName, args, id, resolve, reject }) => {
         log.info('PROCESSING QUEUED REQUEST: ', handlerName, id);
-        args = { sId: this.sId, ...args };
+        args = { sId: this._sId, ...args };
         this.replyHandlers.set(id, { resolve, reject });
         this.port.postMessage({ id, name: handlerName, args: args ?? {}})
       });
@@ -93,7 +99,7 @@ export class UtilityConnection {
         }
       } else {
         log.info('SENDING REQUEST FOR NAME, ID: ', handlerName, id)
-        args = { sId: this.sId, ...args };
+        args = { sId: this._sId, ...args };
 
         this.replyHandlers.set(id, { resolve, reject });
         this.port.postMessage({id, name: handlerName, args: args ?? {}});

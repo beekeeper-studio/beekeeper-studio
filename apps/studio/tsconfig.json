@@ -17,7 +17,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["./src/shared/*"],
-      "@commercial/*": ["./src-commercial/*"]
+      "@commercial/*": ["./src-commercial/*"],
+      "@tests/*": ["./tests/*"]
     },
     "lib": [
       "esnext",

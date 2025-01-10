@@ -1,6 +1,8 @@
 
-module.exports = async ({ github, core }, assetsUrl) => {
-  const assetName = 'latest-mac.yml';
+module.exports = async ({ github, core }, assetsUrl, channel) => {
+  // even though the main channel is also called 'latest', the name of this file
+  // doesn't change.... I don't know why, it's all very confusing.
+  const assetName = `latest-mac.yml`;
 
   async function findAssetByName(assets, name) {
     for (const asset of assets) {

@@ -217,7 +217,22 @@ export class DbConnectionBase extends ApplicationEntity {
 export class SavedConnection extends DbConnectionBase implements IConnection {
 
   withProps(props?: any): SavedConnection {
-    if (props) SavedConnection.merge(this, props);
+
+    if (props) {
+      if (props.connectionType) {
+        this.connectionType = props.connectionType;
+      }
+      SavedConnection.merge(this, props);
+    }
+
+    if (!this.createdAt) {
+      this.createdAt = new Date();
+    }
+
+    if (!this.updatedAt) {
+      this.updatedAt = new Date();
+    }
+
     return this;
   }
 

@@ -29,7 +29,7 @@ export const UserEnumsModule: Module<State, RootState> = {
         context.dispatch('load');
       })
       await Vue.prototype.$util.send('enum/init');
-      context.dispatch('load');
+      await context.dispatch('load');
     },
     async load(context) {
       const rawEnums = await Vue.prototype.$util.send('enum/load')

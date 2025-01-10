@@ -3,6 +3,8 @@ import Vue from 'vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
+import store from '@/store'
+import TimeAgo from "javascript-time-ago"
 
 export interface ContextOption {
   name: string,
@@ -22,6 +24,15 @@ interface MenuProps {
 }
 
 export const BeekeeperPlugin = {
+  timeAgo(date: Date) {
+    if (date > new Date('2888-01-01')) {
+      return 'forever'
+    }
+    const ta = new TimeAgo('en-US')
+
+    return ta.format(date)
+
+  },
   closeTab(id?: string) {
     this.$root.$emit(AppEvent.closeTab, id)
   },
@@ -37,6 +48,7 @@ export const BeekeeperPlugin = {
   openMenu(args: MenuProps): void {
     const ContextComponent = Vue.extend(ContextMenu)
     const cMenu = new ContextComponent({
+      store,
       propsData: args
     })
     cMenu.$on('close', () => {

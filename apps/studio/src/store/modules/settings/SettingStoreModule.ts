@@ -6,7 +6,8 @@ import { Module } from 'vuex'
 
 
 interface State {
-  settings: IGroupedUserSettings
+  settings: IGroupedUserSettings,
+  initialized: boolean
 }
 
 const M = {
@@ -18,6 +19,7 @@ const SettingStoreModule: Module<State, any> = {
   namespaced: true,
   state: () => ({
     settings: {},
+    initialized: false
   }),
   mutations: {
     replaceSettings(state, newSettings: TransportUserSetting) {
@@ -28,12 +30,16 @@ const SettingStoreModule: Module<State, any> = {
       if (!state.settings[newSetting.key]) {
         Vue.set(state.settings, newSetting.key, newSetting)
       }
+    },
+    setInitialized(state) {
+      state.initialized = true;
     }
   },
   actions: {
     async initializeSettings(context) {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
-      context.commit(M.REPLACEALL, settings)
+      context.commit(M.REPLACEALL, settings);
+      context.commit('setInitialized');
     },
     async saveSetting(context, setting: TransportUserSetting) {
       await Vue.prototype.$util.send('appdb/setting/save', { obj: setting })
@@ -54,26 +60,28 @@ const SettingStoreModule: Module<State, any> = {
     settings(state) {
       return state.settings
     },
-    themeValue(state) {
+    themeValue(state, _getters, _rootState, rootGetters) {
       const theme = state.settings.theme ? state.settings.theme.value : null;
       if (!theme) return null
-      if (['system', 'dark', 'light'].includes(theme as string)) {
+      if (rootGetters.isCommunity && ['system', 'dark', 'light'].includes(theme as string)) {
         return theme
       }
-      return 'system'
-    },
-    menuStyle(state) {
-      if (!state.settings.menuStyle) return 'native'
-      return state.settings.menuStyle.value
+      return rootGetters.isUltimate ? theme : 'system';
     },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'
       return state.settings.sortOrder.value
     },
-    minimalMode(state) {
-      if (!state.settings.minimalMode) return false;
-      return state.settings.minimalMode.value
+    minimalMode(_state) {
+      // Disable minimal mode in favor of #2380
+      return false
+      // if (!state.settings.minimalMode) return false;
+      // return state.settings.minimalMode.value
     },
+    lastUsedWorkspace(state) {
+      if (!state.settings.lastUsedWorkspace) return null;
+      return state.settings.lastUsedWorkspace
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 <template>
   <virtual-list
     ref="vList"
-    class="list-body"
+    class="virtual-table-list list-body"
     :class="{ 'list-body-empty': displayItems.length === 0 }"
     :data-key="'key'"
     :data-sources="displayItems"

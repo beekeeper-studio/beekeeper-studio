@@ -4,6 +4,7 @@ volumes:
   mssqllatin:
   mysql:
   mysql8:
+  mysql4.1:
   psql96:
   psql13:
   mariadb:
@@ -97,6 +98,11 @@ services:
     volumes:
       - mysql:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
+  mysql4.1:
+    image: vettadock/mysql-old:4.1
+    restart: always
+    ports:
+      - 3309:3306
   sqlserver:
     image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
     volumes:
@@ -171,5 +177,11 @@ services:
     #   - SQLD_NODE=primary
     # volumes:
     #   - ./dev/docker_libsql:/var/lib/sqld
-
-
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    ports:
+      - 8123:8123
+    environment:
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1

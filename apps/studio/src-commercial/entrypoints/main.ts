@@ -10,6 +10,7 @@ import _ from 'lodash'
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
 log.initialize();
+log.transports.console.level = 'info'
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})
 log.info("initializing background")
@@ -28,6 +29,12 @@ import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
+import * as sms from 'source-map-support'
+
+if (platformInfo.env.development || platformInfo.env.test) {
+  sms.install()
+}
+
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -36,8 +43,7 @@ function initUserDirectory(d: string) {
 }
 
 let utilityProcess: Electron.UtilityProcess
-// don't need this
-let newWindows: number[] = new Array();
+let newWindows: number[] = [];
 
 async function createUtilityProcess() {
   if (utilityProcess) {
@@ -45,13 +51,7 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    isPackage: `${electron.app.isPackaged}`,
-    locale: electron.app.getLocale(),
-    userDir: electron.app.getPath('userData'),
-    downloadDir: electron.app.getPath('downloads'),
-    homeDir: electron.app.getPath('home'),
-    shouldUseDarkColors: `${electron.nativeTheme.shouldUseDarkColors}`,
-    version: electron.app.getVersion()
+    bksPlatformInfo: JSON.stringify(platformInfo)
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -147,12 +147,20 @@ async function initBasics() {
     process.env['LD_LIBRARY_PATH'] = `${process.env.LD_LIBRARY_PATH}:${settings.oracleInstantClient.value}`
   }
 
+  const defaultChannel = settings.useBeta.defaultValue === 'true' ? 'beta' : 'stable'
+  // we should change the default channel based on the current app channel
+  if (platformInfo.parsedAppVersion.channel !== defaultChannel) {
+    settings.useBeta.defaultValue = platformInfo.parsedAppVersion.channel === 'beta' ? 'true' : 'false'
+    log.debug("Updating the default channel to", platformInfo.parsedAppVersion.channel)
+    await settings.useBeta.save()
+  }
+
   log.debug("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
   log.debug("Building the window")
   log.debug("managing updates")
-  manageUpdates()
+  manageUpdates(settings.useBeta.valueAsBool)
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     const url = args[0]
     if (!url) return
@@ -234,6 +242,7 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
       const { port1, port2 } = new electron.MessageChannelMain();
       const sId = uuidv4();
       log.info('SENDING PORT TO RENDERER: ', sId)
+      w.sId = sId;
       utilityProcess.postMessage({ type: 'init', sId }, [port1]);
       w.webContents.postMessage('port', { sId, utilDied }, [port2]);
       w.onClose((_event: electron.Event) => {
@@ -249,14 +258,16 @@ function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
 ipcMain.handle('requestPorts', async () => {
   log.info('Client requested ports');
   if (!utilityProcess || !utilityProcess.pid) {
+    log.info('NO UTIL PROCESS')
     utilityProcess = null;
     await createUtilityProcess();
   }
-  createAndSendPorts(false);
-})
 
-ipcMain.on('ready', (_event) => {
-  createAndSendPorts(true);
+  if (newWindows.length > 0) {
+    createAndSendPorts(true);
+  } else {
+    createAndSendPorts(false);
+  }
 })
 
 // Open a connection from a file (e.g. ./sqlite.db)

@@ -1,4 +1,5 @@
 import { IndexColumn, SchemaItem, TableKey } from "@shared/lib/dialects/models";
+import { BackupConfig } from "./models/BackupConfig";
 
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
@@ -42,6 +43,7 @@ export interface TableOrView extends DatabaseEntity {
   partitions?: TablePartition[];
   tabletype?: string | null
   parenttype?: string | null
+  engine?: string
 }
 
 export interface TableIndex {
@@ -98,6 +100,7 @@ export interface ExtendedTableColumn extends SchemaItem {
   hasDefault?: boolean
   generated?: boolean
   array?: boolean
+  bksField: BksField
 }
 
 export interface PrimaryKeyColumn {
@@ -148,8 +151,15 @@ export interface IDbInsert {
 
 export interface TableResult {
   result: any[];
-  fields: string[];
+  fields: BksField[];
 }
+
+export interface BksField {
+  name: string;
+  bksType: BksFieldType;
+}
+
+export type BksFieldType = 'BINARY' | 'UNKNOWN';
 
 export interface TableChanges {
   inserts: TableInsert[];
@@ -230,6 +240,7 @@ export interface SupportedFeatures {
   backDirFormat: boolean;
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
+  transactions: boolean;
 }
 
 export interface FieldDescriptor {
@@ -335,6 +346,8 @@ export interface CommandSettingSection {
 export interface ImportFuncOptions {
   clientExtras?: {[key: string]: any}
   executeOptions?: {[key: string]: any}
+  importerOptions?: {[key: string]: any}
+  storeValues?: {[key: string]: any}
 }
 
 export interface ImportScriptFunctions {

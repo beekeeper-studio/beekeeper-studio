@@ -70,7 +70,7 @@ export default Vue.extend({
     percentage() {
       const perc = this.export ? this.export.percentComplete : 0;
 
-      return global.isNaN(perc) ? 0 : perc;
+      return window.isNaN(perc) ? 0 : perc;
     }
   }
 })
