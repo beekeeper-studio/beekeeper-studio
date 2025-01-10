@@ -62,6 +62,7 @@
       :mode="mode"
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
+      :plugins="textEditorPlugins"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -90,6 +91,7 @@ import {
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
+import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
 import rawLog from "electron-log";
 import _ from "lodash";
@@ -275,6 +277,9 @@ export default Vue.extend({
         },
 
       ]
+    },
+    textEditorPlugins() {
+      return [persistJsonFold]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
