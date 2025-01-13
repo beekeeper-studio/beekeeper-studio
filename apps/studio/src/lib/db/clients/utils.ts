@@ -1,6 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
-import logRaw from 'electron-log'
+import logRaw from '@bksLogger'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, TableColumn } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'

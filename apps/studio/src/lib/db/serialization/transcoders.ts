@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { BksField } from "../models";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 
 const log = rawLog.scope("transcoders");
 

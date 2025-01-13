@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('settings-plugin')
 

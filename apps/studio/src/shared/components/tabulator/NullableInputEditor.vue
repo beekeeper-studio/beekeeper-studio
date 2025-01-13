@@ -23,7 +23,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 import { BksField } from "@/lib/db/models";
 

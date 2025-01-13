@@ -93,7 +93,7 @@ import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
 import { getLanguageByContent } from '@/lib/editor/languageData'

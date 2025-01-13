@@ -1,7 +1,7 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import _ from "lodash";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { safely } from "../StoreHelpers";
 import Vue from "vue";
 

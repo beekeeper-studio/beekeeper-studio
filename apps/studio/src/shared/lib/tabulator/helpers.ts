@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import { Tabulator, CellComponent, RowComponent, ColumnDefinition } from 'tabulator-tables'
 import _ from 'lodash'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('tabulator/helpers')
 
