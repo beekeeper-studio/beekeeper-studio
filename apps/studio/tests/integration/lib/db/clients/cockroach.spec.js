@@ -22,7 +22,23 @@ describe("CockroachDB Tests", () => {
       user: 'root',
     }
     util = new DBTestUtil(config, "defaultdb", {dialect: 'postgresql', version: '7.2', skipPkQuote: true, defaultSchema: 'public'})
-    await util.setupdb()
+    await util.setupdb();
+
+    await util.knex.raw(`
+      CREATE TABLE public.test_indexes (
+        first_name text NOT NULL,
+        last_name text NOT NULL,
+        data jsonb NOT NULL DEFAULT '{"a": {"b": ["foo", "bar"]}}'::jsonb
+      );
+
+      CREATE INDEX single_column ON test_indexes (first_name);
+      CREATE INDEX multi_column ON test_indexes (first_name, last_name);
+      CREATE INDEX single_expression ON test_indexes (lower(first_name));
+      CREATE INDEX multi_expression ON test_indexes (lower(first_name), lower(last_name));
+      CREATE INDEX expression_with_comma ON test_indexes ((lower(first_name) || ', ' || lower(last_name)));
+      CREATE INDEX expression_with_double_quote ON test_indexes (('"' || first_name));
+      CREATE INDEX expression_with_jsonb_operator ON test_indexes ((data #>> '{a,b,1}'));
+    `);
 
   })
 
@@ -38,6 +54,12 @@ describe("CockroachDB Tests", () => {
 
   describe("Common Tests", () => {
     runCommonTests(() => util)
+  })
+
+  it.only("should be able to list basic indexes", async () => {
+    const indexes = await util.connection.listTableIndexes('test_indexes')
+    // cockroach adds a pkey index
+    expect(indexes.length).toBe(8)
   })
 
 })
