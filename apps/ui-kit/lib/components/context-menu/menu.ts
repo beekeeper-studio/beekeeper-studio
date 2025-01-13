@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import ContextMenu from './ContextMenu.vue'
+import ContextMenu from './ContextMenuRoot.vue'
 import isEmpty from "lodash/isEmpty"
 
 export interface ContextOption<Item = unknown> {
@@ -11,6 +11,8 @@ export interface ContextOption<Item = unknown> {
   ultimate?: boolean
   /** Material Icons name. E.g. 'arrow_drop_down' */
   icon?: string
+  disabled?: boolean
+  items?: (ContextOption<Item> | Divider)[]
 }
 
 export interface Divider {
@@ -50,10 +52,11 @@ type CustomMenuItems = ContextOption[] | ((event: Event, items: InternalContextO
 export function useCustomMenuItems(
   event: Event,
   defaultItems: (InternalContextOption | Divider)[],
-  customItems: CustomMenuItems
+  customItems: CustomMenuItems,
+  context: any
 ): (ContextOption | Divider)[] {
   if (typeof customItems === "function") {
-    return customItems(event, defaultItems as InternalContextOption[]);
+    return customItems(event, defaultItems as InternalContextOption[], context);
   }
   if (customItems === undefined) {
     return defaultItems;

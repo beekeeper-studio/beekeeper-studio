@@ -1,53 +1,50 @@
 <template>
   <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
-  <div>
-    <teleport :to="targetElement ?? 'body'">
-      <ul
-        class="BksContextMenu-list vue-simple-context-menu"
-        ref="menu"
+  <div class="BksContextMenu-list-wrapper">
+    <ul
+      class="BksContextMenu-list vue-simple-context-menu"
+      ref="menu"
+    >
+      <li
+        v-for="(option, index) in options"
+        :key="index"
+        @click="optionClicked(option, index, $event)"
+        class="BksContextMenu-item vue-simple-context-menu__item"
+        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : ''), option.disabled ? 'disabled' : '']"
+        ref="item"
       >
-        <li
-          v-for="(option, index) in options"
-          :key="index"
-          @click.stop="optionClicked(option, $event)"
-          class="BksContextMenu-item vue-simple-context-menu__item"
-          :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
-        >
-          <span v-html="option.name" />
-          <span>
-            <span
-              class="shortcut"
-              v-if="option.shortcut"
-              v-text="option.shortcut"
-            />
-            <i
-              class="material-icons menu-icon"
-              v-if="option.icon"
-            >{{ option.icon }}</i>
-          </span>
-        </li>
-      </ul>
-    </teleport>
+        <span v-html="option.name" />
+        <span>
+          <span
+            class="shortcut"
+            v-if="option.shortcut"
+            v-text="option.shortcut"
+          />
+          <i
+            class="material-icons menu-icon"
+            v-if="option.icon"
+          >{{ option.icon }}</i>
+        </span>
+      </li>
+    </ul>
+    <context-menu v-if="showSubItemsIndex !== -1" :options="options[showSubItemsIndex].items" :item="item" :event="event" :parentMenu="$refs.item[showSubItemsIndex]" @close="$emit('close')" />
   </div>
 </template>
 
 <script lang="ts">
 import "./ContextMenu.scss";
-import Teleport from "vue2-teleport"
 import { ContextOption } from './menu'
 import Vue from 'vue'
 
 export default Vue.extend({
   name: 'ContextMenu',
-  components: {
-    Teleport,
-  },
-  props: ['options', 'event', 'item', 'targetElement'],
+  props: ['options', 'event', 'item', 'parentMenu'],
   data() {
     return {
       menuWidth: null,
       menuHeight: null,
       menuOpen: false,
+      showSubItemsIndex: -1,
     }
   },
 
@@ -76,20 +73,49 @@ export default Vue.extend({
         menu.removeAttribute("style")
       }
 
+      const { left, top } = this.calculatePosition(event)
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+      menu.classList.add('vue-simple-context-menu--active')
+      this.menuOpen = true
+    },
+    calculatePosition(event: MouseEvent): { left: number, top: number } {
+      let left = 0;
+      let top = 0;
+
+      const isSubItem = this.parentMenu
+
+      if (isSubItem) {
+        const parentClientRect = this.parentMenu.getBoundingClientRect()
+
+        if ((this.menuWidth + parentClientRect.right) >= window.innerWidth) {
+          left = parentClientRect.left - 2 - this.menuWidth
+        } else {
+          left = parentClientRect.right + 2
+        }
+
+        if ((this.menuHeight + parentClientRect.bottom) >= window.innerHeight) {
+          top = parentClientRect.bottom - this.menuHeight
+        } else {
+          top = parentClientRect.top
+        }
+
+        return { left, top }
+      }
+
       if ((this.menuWidth + event.pageX) >= window.innerWidth) {
-        menu.style.left = (event.pageX - this.menuWidth + 2) + "px"
+        left = event.pageX - this.menuWidth + 2
       } else {
-        menu.style.left = (event.pageX - 2) + "px"
+        left = event.pageX - 2
       }
 
       if ((this.menuHeight + event.pageY) >= window.innerHeight) {
-        menu.style.top = (event.pageY - this.menuHeight + 2) + "px"
+        top = event.pageY - this.menuHeight + 2
       } else {
-        menu.style.top = (event.pageY - 2) + "px"
+        top = event.pageY - 2
       }
 
-      menu.classList.add('vue-simple-context-menu--active')
-      this.menuOpen = true
+      return { left, top }
     },
     hideContextMenu() {
       this.$emit('close')
@@ -101,34 +127,27 @@ export default Vue.extend({
     onClickOutside() {
       this.hideContextMenu()
     },
-    optionClicked(option: ContextOption, event: any) {
-      option.handler({ item: this.item, option, event })
-      this.hideContextMenu()
+    optionClicked(option: ContextOption, idx: number, event: any) {
+      if (option.items?.length > 0 && this.showSubItemsIndex === idx) {
+        return
+      }
+      if (option.disabled) return;
+      option.handler?.({ item: this.item, option, event })
+      if (option.items?.length > 0) {
+        this.showSubItemsIndex = idx
+      } else {
+        this.hideContextMenu()
+      }
     },
     onEscKeyRelease(event) {
       if (event.keyCode === 27) {
         this.hideContextMenu();
       }
     },
-    maybeHideMenu(event) {
-      const target = event.target
-      if (!this.menuElements.includes(target)) {
-        this.hideContextMenu()
-      }
-    }
   },
   mounted() {
-    this.$nextTick(() => {
-      this.showMenu(this.event, this.item)
-    })
-
-    document.addEventListener('keyup', this.onEscKeyRelease);
-    document.addEventListener('mousedown', this.maybeHideMenu)
+    this.showMenu(this.event, this.item)
   },
-  beforeDestroy() {
-    document.removeEventListener('mousedown', this.maybeHideMenu)
-    document.removeEventListener('keyup', this.onEscKeyRelease);
-  }
 })
 </script>
 

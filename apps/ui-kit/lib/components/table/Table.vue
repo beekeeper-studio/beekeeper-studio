@@ -92,8 +92,7 @@ export default Vue.extend({
   },
   data() {
     return {
-      isBuilt: false,
-      pendingTasks: [],
+      isFirstInitialization: true,
       rangesInfo: [],
       columnWidths: null,
       preLoadScrollPosition: null,
@@ -110,7 +109,7 @@ export default Vue.extend({
           table: this.table,
           schema: this.defaultSchema,
         })
-        const items = useCustomMenuItems(event, defaultItems, this.cellContextMenuItems)
+        const items = useCustomMenuItems(event, defaultItems, this.cellContextMenuItems, cell)
         openMenu({ options: items, item: cell, event })
         return false
       };
@@ -125,7 +124,7 @@ export default Vue.extend({
           divider,
           ...commonColumnMenu,
         ]
-        const items = useCustomMenuItems(event, defaultItems, this.columnHeaderContextMenuItems)
+        const items = useCustomMenuItems(event, defaultItems, this.columnHeaderContextMenuItems, column)
         openMenu({ options: items, item: column, event })
         return false;
       };
@@ -205,7 +204,7 @@ export default Vue.extend({
         }
 
         const customDef =
-          typeof column.tabulatorColumnDefintion === "function"
+          typeof column.tabulatorColumnDefinition === "function"
             ? column.tabulatorColumnDefinition(result)
             : column.tabulatorColumnDefinition;
 
@@ -248,13 +247,12 @@ export default Vue.extend({
   },
   methods: {
     setData(data: any) {
-      if (!this.isBuilt) return
-
+      if (!this.tabulator) return
       this.preLoadScrollPosition = this.$el.querySelector('.tabulator-tableholder').scrollLeft
       this.tabulator.setData(data);
     },
     async setColumns(columns: ColumnDefinition[]) {
-      if (!this.isBuilt) return
+      if (!this.tabulator) return
 
       if (columns.length === 0) {
         await this.initialize();
@@ -285,9 +283,7 @@ export default Vue.extend({
     copySelection() {
       copyRanges({ ranges: this.tabulator.getRanges(), type: "plain" });
     },
-    async initialize() {
-      this.isBuilt = false
-      await this.$nextTick();
+    initialize() {
       if (this.tabulator) {
         this.tabulator.destroy();
         this.tabulator = null;
@@ -300,7 +296,7 @@ export default Vue.extend({
             table: this.table,
             schema: this.schema,
           })
-          const items = useCustomMenuItems(event, defaultItems, this.rowHeaderContextMenuItems)
+          const items = useCustomMenuItems(event, defaultItems, this.rowHeaderContextMenuItems, cell)
           openMenu({ options: items, item: cell, event })
           return false;
         },
@@ -315,7 +311,7 @@ export default Vue.extend({
             resizeAllColumnsToFitContent,
             resizeAllColumnsToFixedWidth,
           ]
-          const items = useCustomMenuItems(event, defaultItems, this.cornerHeaderContextMenuItems)
+          const items = useCustomMenuItems(event, defaultItems, this.cornerHeaderContextMenuItems, column)
           openMenu({ options: items, item: column, event })
           return false
         },
@@ -341,9 +337,13 @@ export default Vue.extend({
       );
       this.$refs.table.addEventListener("keydown", this.keydown);
       this.tabulator.on("tableBuilt", () => {
-        this.isBuilt = true
-        this.pendingTasks.forEach((task) => task())
-        this.$emit("bks-tabulator-built", this.tabulator);
+        if (this.isFirstInitialization) {
+          this.isFirstInitialization = false
+          if (this.hasFocus) {
+            this.focus();
+          }
+        }
+        this.$emit("bks-initialized", this.tabulator)
       });
       this.tabulator.on("sortChanged", (sorters) => {
         this.$emit("bks-sorters-change", sorters.map(({ field, dir }) => ({ field, dir })));
@@ -494,6 +494,9 @@ export default Vue.extend({
     rowHeaderOffsetGetter() {
       return this.rowHeaderOffset;
     },
+    getTabulator() {
+      return this.tabulator
+    },
   },
   created() {
     // Storing `tabulator` as `data` wouldn't allow Vue clients to store it and
@@ -503,13 +506,6 @@ export default Vue.extend({
   },
   mounted() {
     this.initialize();
-    if (this.hasFocus) {
-      const onTableBuilt = () => {
-        this.focus();
-        this.tabulator.off("tableBuilt", onTableBuilt);
-      };
-      this.tabulator.on("tableBuilt", onTableBuilt);
-    }
   },
   beforeDestroy() {
     this.tabulator?.destroy();

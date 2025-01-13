@@ -66,10 +66,11 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Properties
 
-| Name    | Type     | Description                                         | Default |
-| ------- | -------- | --------------------------------------------------- | ------- |
-| data    | object[] | An array of objects representing the table data.    | []      |
-| columns | object[] | An array of objects representing the table columns. | []      |
+| Name               | Type       | Description                                                                                                          | Default     |
+| ------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `data`             | `object[]` | An array of objects representing the table data.                                                                     | `[]`        |
+| `columns`          | `object[]` | An array of objects representing the table columns.                                                                  | `[]`        |
+| `tabulatorOptions` | `object`   | Extend the tabulator definition. See [tabulator docs](https://tabulator.info/docs/6.3/options) for more information. | `undefined` |
 
 #### Column Definition
 
@@ -84,19 +85,24 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `primaryKey`                | `boolean`              | Make the column a primary key. If `true`, the column header will indicate that it is a primary key.                                                                                  | `undefined` |
 | `foreignKey`                | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
 | `generated`                 | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
-| `tabulatorOptions`          | `object`               | Extend the tabulator definition. See [tabulator docs](https://tabulator.info/docs/6.3/options) for more information.                                                                 | `undefined` |
 | `tabulatorColumnDefinition` | `object` \| `function` | Extend the tabulator column definition. See [tabulator docs](https://tabulator.info/docs/6.3/columns#definition) for more information.                                               | `undefined` |
 
 \* Required
 
+#### Methods
+
+| Name             | Description                                                                                                        | Arguments |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ | --------- |
+| `getTabulator()` | Returns the Tabulator instance. See [tabulator docs](https://tabulator.info/docs/6.3/update) for more information. | -         |
+
 #### Events
 
-| Name                    | Description                                           | Event Detail                                |
-| ----------------------- | ----------------------------------------------------- | ------------------------------------------- |
-| `bks-tabulator-built`   | Emitted when the tabulator instance is built.         | `[Tabulator]`                               |
-| `bks-sorters-change`    | Emitted when the sorters are changed.                 | `[{ field: string, dir: 'asc' \| 'desc' }]` |
-| `bks-ranges-change`     | [FIXME doesnt works sometimes. fix from tabulator]Emitted when the ranges are changed.                  | `[TabulatorRange[]]`                        |
-| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `[{ value: any; field: string; }]`          |
+| Name                    | Description                                                                           | Event Detail                                |
+| ----------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `bks-initialized`       | Emitted when the Table is initialized.                                                | `[Tabulator]`                               |
+| `bks-sorters-change`    | Emitted when the sorters are changed.                                                 | `[{ field: string, dir: 'asc' \| 'desc' }]` |
+| `bks-ranges-change`     | [FIXME doesnt work sometimes. fix from tabulator]Emitted when the ranges are changed. | `[TabulatorRange[]]`                        |
+| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked.                                 | `[{ value: any; field: string; }]`          |
 
 ### Table List
 
@@ -121,9 +127,9 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Properties
 
-| Name   | Type     | Description                                  | Default |
-| ------ | -------- | -------------------------------------------- | ------- |
-| tables | object[] | An array of objects representing the tables. | []      |
+| Name     | Type       | Description                                  | Default |
+| -------- | ---------- | -------------------------------------------- | ------- |
+| `tables` | `object[]` | An array of objects representing the tables. | `[]`    |
 
 ##### Table Definition
 

@@ -20,6 +20,7 @@ export class EventBridgeTabulatorModule extends Module {
   }
 
   sortChanged() {
+    if (!this.table.initialized) return;
     this.dispatchExternal("sortChanged", this.table.getSorters());
   }
 }
