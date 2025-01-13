@@ -62,6 +62,7 @@
       :mode="mode"
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
+      :plugins="textEditorPlugins"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -90,10 +91,12 @@ import {
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
+import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
+import { getLanguageByContent } from '@/lib/editor/languageData'
 
 const log = rawLog.scope("detail-view-sidebar");
 
@@ -157,18 +160,31 @@ export default Vue.extend({
     },
     processedValue() {
       const clonedValue = _.cloneDeep(this.value)
-      eachPaths(clonedValue, (path, value: string) => {
-        if (this.truncatedPaths.includes(path)) {
-          _.set(clonedValue, path, value.slice(0, globals.maxDetailViewTextLength))
+      eachPaths(clonedValue, (path, value) => {
+        if (this.jsonFields.includes(path)) {
+          _.set(clonedValue, path, JSON.parse(value as string))
+        } else if (this.truncatedPaths.includes(path)) {
+          _.set(clonedValue, path, (value as string).slice(0, globals.maxDetailViewTextLength))
         }
       })
       return clonedValue
+    },
+    jsonFields() {
+      const fields = []
+      Object.keys(this.value).forEach((key) => {
+        const val = this.value[key]
+        if (typeof val === 'string' && getLanguageByContent(val).name === "json") {
+          fields.push(key)
+        }
+      })
+      return fields
     },
     truncatablePaths() {
       return getPaths(this.value).filter((path) => {
         const val = _.get(this.value, path)
         if (
           typeof val === "string" &&
+          !this.jsonFields.includes(path) &&
           val.length > globals.maxDetailViewTextLength
         ) {
           return true
@@ -261,6 +277,9 @@ export default Vue.extend({
         },
 
       ]
+    },
+    textEditorPlugins() {
+      return [persistJsonFold]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },

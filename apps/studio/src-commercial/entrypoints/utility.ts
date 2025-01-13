@@ -136,7 +136,6 @@ async function runHandler(id: string, name: string, args: any) {
       log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
     }
   }
-
 }
 
 async function initState(sId: string, port: MessagePortMain) {

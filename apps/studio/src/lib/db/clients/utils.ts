@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from '@bksLogger'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, TableColumn } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import {fromIni} from "@aws-sdk/credential-providers";
@@ -278,7 +278,6 @@ export async function withClosable<T>(item, func): Promise<T> {
   }
 
 }
-
 
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   if (!deletes) return []
