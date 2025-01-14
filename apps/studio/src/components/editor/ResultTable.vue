@@ -3,9 +3,16 @@
     class="result-table"
     v-hotkey="keymap"
   >
-    <div
-      ref="tabulator"
-      class="spreadsheet-table"
+    <bks-table
+      ref="table"
+      :table-id.prop="tableId"
+      :height.prop="actualTableHeight"
+      :cell-context-menu-items.prop="contextMenuItems"
+      :column-header-context-menu-items.prop="contextMenuItems"
+      :row-header-context-menu-items.prop="contextMenuItems"
+      :corner-header-context-menu-items.prop="contextMenuItems"
+      :tabulator-options.prop="tabulatorOptions"
+      @bks-initialized="handleTableInitialized"
     />
   </div>
 </template>
@@ -25,9 +32,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
-  import { rowHeaderField } from '@/common/utils'
-  import { tabulatorForTableData } from '@/common/tabulator';
+  import { copyRanges, copyRangeDataAsSqlMenuItem } from '@/lib/menu/tableMenu';
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -53,7 +58,7 @@
       result() {
         // This is better than just setting data because
         // the whole dataset has changed.
-        this.initializeTabulator()
+        this.setTableData()
       },
       tableHeight() {
         this.tabulator.setHeight(this.actualTableHeight)
@@ -80,26 +85,6 @@
       },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
-
-        const cellMenu = (_e, cell) => {
-          return copyActionsMenu({
-            ranges: cell.getRanges(),
-            table: this.result.tableName,
-            schema: this.defaultSchema,
-          })
-        }
-
-        const columnMenu = (_e, column) => {
-          return [
-            ...copyActionsMenu({
-              ranges: column.getRanges(),
-              table: 'mytable',
-              schema: this.defaultSchema,
-            }),
-            { separator: true },
-            ...commonColumnMenu,
-          ]
-        }
 
         const columns = this.result.fields.flatMap((column, index) => {
           const results = []
@@ -135,14 +120,12 @@
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: this.cellTooltip,
-            contextMenu: cellMenu,
-            headerContextMenu: columnMenu,
-            headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
             ...magicStuff
           }
 
+          // FIXME this should be in tabulatorColumnOption
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
             result['sorter'] = this.intervalSorter;
@@ -176,36 +159,34 @@
         const columns = 'columns-' + this.result.fields.reduce((str, field) => `${str},${field.name}`, '')
         return `${workspace}.${connection}.${table}.${columns}`
       },
+      tabulatorOptions() {
+        return {
+          downloadConfig: {
+            columnHeaders: true,
+          },
+        }
+      },
     },
     beforeDestroy() {
-      if (this.tabulator) {
-        this.tabulator.destroy()
-      }
-    },
-    async mounted() {
-      this.initializeTabulator()
-      if (this.focus) {
-        const onTableBuilt = () => {
-          this.triggerFocus()
-          this.tabulator.off('tableBuilt', onTableBuilt)
-        }
-        this.tabulator.on('tableBuilt', onTableBuilt)
-      }
+      this.$refs.table.vueComponent.$destroy();
     },
     methods: {
-      initializeTabulator() {
-        if (this.tabulator) {
-          this.tabulator.destroy()
+      async handleTableInitialized(event) {
+        this.tabulator = event.detail[0]
+        this.setTableData()
+        if (this.focus) {
+          this.triggerFocus()
         }
-        this.tabulator = tabulatorForTableData(this.$refs.tabulator, {
-          persistenceID: this.tableId,
-          data: this.tableData, //link data to table
-          columns: this.tableColumns, //define table columns
-          height: this.actualTableHeight,
-          downloadConfig: {
-            columnHeaders: true
-          },
-        });
+      },
+      contextMenuItems(event, items) {
+        const newItems = [...items];
+        const lastCopyIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
+        newItems.splice(lastCopyIndex + 1, 0, copyRangeDataAsSqlMenuItem(this.tabulator.getRanges(), this.result.tableName, this.defaultSchema));
+        return newItems;
+      },
+      setTableData() {
+        this.$refs.table.columns = this.tableColumns
+        this.$refs.table.data = this.tableData
       },
       copySelection() {
         if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
