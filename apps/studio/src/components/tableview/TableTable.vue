@@ -32,6 +32,7 @@
         <bks-table
           v-if="mountBksTable"
           :ref="table"
+          :table-id.prop="tableId"
           :tabulator-options.prop="tabulatorOptions"
           :columns.prop="tableColumns"
           :corner-header-context-menu-items.prop="cornerHeaderContextMenuItems"
