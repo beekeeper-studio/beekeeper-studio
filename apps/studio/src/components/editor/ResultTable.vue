@@ -12,7 +12,9 @@
       :row-header-context-menu-items.prop="contextMenuItems"
       :corner-header-context-menu-items.prop="contextMenuItems"
       :tabulator-options.prop="tabulatorOptions"
+      :dialect.prop="dialect"
       @bks-initialized="handleTableInitialized"
+      @bks-foreign-key-go-to="handleFkClick"
     />
   </div>
 </template>
@@ -71,7 +73,7 @@
     },
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
-      ...mapGetters(['isUltimate']),
+      ...mapGetters(['isUltimate', 'dialect']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -90,45 +92,36 @@
           const results = []
           const magic = MagicColumnBuilder.build(column.name) || {}
           const title = magic?.title ?? column.name ?? `Result ${index}`
-
-          let cssClass = 'hide-header-menu-icon'
-
-          if (magic.cssClass) {
-            cssClass += ` ${magic.cssClass}`
-          }
-
-          if (magic.formatterParams?.fk) {
-            magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
-          }
-
+          const isForeignKey = Boolean(magic.formatterParams?.fk)
           const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
-          const defaults = {
-            formatter: this.cellFormatter,
-          }
 
           const result = {
-            ...defaults,
             title,
-            titleFormatter() {
-              return `<span class="title">${escapeHtml(title)}</span>`
-            },
             field: column.id,
-            titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
-            width: columnWidth,
-            mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-            formatter: this.cellFormatter,
-            maxInitialWidth: globals.maxColumnWidth,
-            tooltip: this.cellTooltip,
-            resizable: 'header',
-            cssClass,
-            ...magicStuff
-          }
+            foreignKey: isForeignKey,
+            magic,
+            tabulatorColumnDefinition: (def) => {
+              let result;
 
-          // FIXME this should be in tabulatorColumnOption
-          if (column.dataType === 'INTERVAL') {
-            // add interval sorter
-            result['sorter'] = this.intervalSorter;
+              if (isForeignKey) {
+                // we handle fk click from bks-foreign-key-go-to event
+                result = { ...def, ..._.omit(magicStuff, 'formatterParams') }
+              } else {
+                result = { ...def, ...magicStuff }
+              }
+
+              if (magic.cssClass) {
+                result.cssClass += ` ${magic.cssClass}`
+              }
+
+              if (column.dataType === 'INTERVAL') {
+                // add interval sorter
+                result['sorter'] = this.intervalSorter;
+              }
+
+              return result
+            }
           }
 
           results.push(result)
@@ -297,6 +290,13 @@
       },
       triggerFocus() {
         this.tabulator.rowManager.getElement().focus();
+      },
+      handleFkClick(event) {
+        const { field, cell } = event.detail[0]
+        const magic = this.tableColumns.find((c) => c.field === field).magic
+        if (magic.formatterParams?.fk) {
+          this.fkClick(magic.formatterParams.fk[0], cell)
+        }
       },
     }
 	}
