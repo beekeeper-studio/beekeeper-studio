@@ -18,7 +18,10 @@
         <database-dropdown
           @databaseSelected="databaseSelected"
         />
-        <table-list />
+        <bks-table-list
+          :tables.prop="filteredTables"
+          @bks-item-dblclick="handleTableListItemDblClick"
+        />
       </div>
 
       <!-- History -->
@@ -51,6 +54,7 @@
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
+  import { AppEvent } from "@/common/AppEvent";
 
   import { mapState, mapGetters } from 'vuex'
   import rawLog from '@bksLogger'
@@ -73,7 +77,7 @@
     computed: {
       filteredTables() {
         if (!this.filterQuery) {
-          return this.tables
+          return _.cloneDeep(this.tables)
         }
         const startsWithFilter = _(this.tables)
           .filter((item) => _.startsWith(item.name, this.filterQuery))
@@ -82,7 +86,7 @@
           .difference(startsWithFilter)
           .filter((item) => item.name.includes(this.filterQuery))
           .value()
-        return _.concat(startsWithFilter, containsFilter)
+        return _.cloneDeep(_.concat(startsWithFilter, containsFilter))
       },
       ...mapState(['tables', 'database']),
       ...mapGetters(['minimalMode']),
@@ -117,6 +121,11 @@
       async disconnect() {
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
+      },
+      handleTableListItemDblClick(event) {
+        // FIXME use lodash throttle
+        const item = event.detail[0]
+        this.$root.$emit(AppEvent.loadTable, { table: item })
       },
     }
   }
