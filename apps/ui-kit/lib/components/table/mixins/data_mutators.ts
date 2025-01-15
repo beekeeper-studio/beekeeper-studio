@@ -54,7 +54,7 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (value: any, field: string) => void },
+      params: { fk?: any[], isPK?: boolean, fkOnClick?: (value: any, field: string, cell: CellComponent) => void },
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
@@ -88,7 +88,7 @@ export default {
         if (withGotoButton) {
           onRendered(() => {
             const fkLink = cell.getElement().querySelector('.fk-link') as HTMLElement
-            fkLink.onclick = (e) => params.fkOnClick(cell.getValue(), cell.getField());
+            fkLink.onclick = (e) => params.fkOnClick(cell.getValue(), cell.getField(), cell);
           })
         }
       } else if (

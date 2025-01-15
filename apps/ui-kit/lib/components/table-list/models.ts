@@ -1,7 +1,6 @@
 // FIXME not any
-export type TableOrView = any
 export type Routine = any
-export type Entity = TableOrView | Routine | string;
+export type Entity = Table | Routine | string;
 
 export interface EntityFilter {
   filterQuery?: string;
@@ -54,7 +53,7 @@ export interface SchemaItem extends BaseItem {
 
 export interface TableItem extends BaseItem {
   type: "table";
-  entity: TableOrView;
+  entity: Table;
   parent: BaseItem;
   loadingColumns: boolean;
 }

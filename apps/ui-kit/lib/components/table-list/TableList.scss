@@ -10,9 +10,13 @@
   flex-direction: column;
   height: 100%;
 
-  .filter-wrap {
+  .filter {
+    position: relative;
     padding: 0 $gutter-w;
     margin-bottom: $gutter-h;
+  }
+
+  .filter-wrap {
     display: flex;
     align-items: center;
     border: 1px solid $border-color;

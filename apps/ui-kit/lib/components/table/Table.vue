@@ -176,8 +176,8 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           formatterParams: {
             fk: column.foreignKey,
-            fkOnClick: (value, field) => {
-              this.$emit("bks-foreign-key-go-to", { value, field });
+            fkOnClick: (value, field, cell) => {
+              this.$emit("bks-foreign-key-go-to", { value, field, cell });
             },
             isPK: column.primaryKey,
           },
@@ -185,7 +185,6 @@ export default Vue.extend({
           maxWidth: constants.maxColumnWidth,
           maxInitialWidth: constants.maxInitialColumnWidth,
 
-          // FIXME tooltip won't work in shadow dom
           tooltip: this.cellTooltip,
           headerTooltip,
 

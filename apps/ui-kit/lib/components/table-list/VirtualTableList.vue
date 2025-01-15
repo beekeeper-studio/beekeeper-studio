@@ -24,7 +24,7 @@ should be stored here instead of the item component.
 
 */
 
-import { TableOrView, Routine, Entity, Item, BaseItem, RootItem, SchemaItem, TableItem, RoutineItem } from "./models";
+import { Routine, Entity, Table, Item, BaseItem, RootItem, SchemaItem, TableItem, RoutineItem } from "./models";
 
 // TODO(@azmi): make a new type instead
 // import { TransportPinnedEntity } from "@/common/transport";
@@ -33,7 +33,7 @@ type TransportPinnedEntity = any
 // TODO(@azmi): make a new util function insteaed
 // import { entityId } from "@/common/utils";
 /** Useful for identifying an entity item in table list */
-export function entityId(schema: string, entity?: TableOrView | Routine) {
+export function entityId(schema: string, entity?: Table | Routine) {
   if (entity) return `${entity.entityType}.${schema}.${entity.name}`;
   return `schema.${schema}`;
 }
@@ -111,7 +111,7 @@ export default Vue.extend({
           parent = schemaItem;
         }
 
-        schema.tables.forEach((table: TableOrView) => {
+        schema.tables.forEach((table: Table) => {
           const key = entityId(schema.schema, table);
           items.push({
             type: "table",
@@ -191,13 +191,8 @@ export default Vue.extend({
       }
       this.displayItems = displayItems;
     },
-    loadColumns(item: TableItem) {
-      item.loadingColumns = true;
-      this.$nextTick(() => {
-        this.$store.dispatch("updateTableColumns", item.entity).finally(() => {
-          item.loadingColumns = false;
-        });
-      });
+    updateColumns(item: TableItem) {
+      this.$emit("update-columns", item)
     },
     updateTableColumnsInRange(whenEmpty = false) {
       const range = this.$refs.vList.range;
@@ -209,15 +204,15 @@ export default Vue.extend({
         if (whenEmpty && item.entity.columns?.length) continue;
         if (item.loadingColumns) continue;
 
-        this.loadColumns(item);
+        this.updateColumns(item);
       }
     },
     handleExpand(_: Event, item: Item) {
       item.expanded = !item.expanded;
-      this.$emit("expand", {
-        entity: item.entity,
-        expanded: item.expanded,
-      } as ExpandEventData);
+      if (item.expanded && item.type === "table") {
+        this.updateColumns(item);
+      }
+      this.$emit("expand", item);
       this.generateDisplayItems();
     },
     handlePin(_: Event, item: TableItem) {
@@ -230,7 +225,7 @@ export default Vue.extend({
       this.$emit("contextmenu", e, item);
     },
     handleToggleHidden(
-      entity: TableOrView | Routine | string,
+      entity: Table | Routine | string,
       hidden?: boolean
     ) {
       const item = this.items.find((item: Item) => item.entity === entity);
@@ -249,11 +244,11 @@ export default Vue.extend({
       });
       this.generateDisplayItems();
       this.$emit("expand-all", expand);
-      // if (expand) {
-      //   this.$nextTick(() => {
-      //     this.updateTableColumnsInRange();
-      //   });
-      // }
+      if (expand) {
+        this.$nextTick(() => {
+          this.updateTableColumnsInRange();
+        });
+      }
     },
     handleTogglePinned(entity: Entity, pinned?: boolean) {
       const item = this.items.find((item: Item) => item.entity === entity);
@@ -330,17 +325,9 @@ export default Vue.extend({
     // ...mapState("pins", ["pins"]),
   },
   watch: {
-    // schemaTables() {
-    //   this.generateItems();
-    //   this.generateDisplayItems();
-    // },
-    // FIXME use above
-    schemaTables: {
-      handler() {
+    schemaTables() {
       this.generateItems();
       this.generateDisplayItems();
-    },
-      immediate: true
     },
     minimalMode() {
       this.generateDisplayItems();

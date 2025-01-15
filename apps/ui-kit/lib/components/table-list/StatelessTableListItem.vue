@@ -76,7 +76,7 @@
             class="title truncate"
             ref="title"
           >{{
-            c.name
+            c.field
           }}</span>
           <span
             class="badge"

@@ -6,11 +6,11 @@ The `@bks/ui-kit` library provides a set of reusable custom elements used in Bee
 
 ## Components
 
-The library contains the following web components:
+The library contains the following custom elements:
 
-- **Table**: A web component for displaying tabular data.
-- **Table List**: A web component for displaying a list of table items.
-- **SQL Text Editor**: A web component for editing SQL queries with syntax highlighting and auto-completion.
+- **Table**: A custom element for displaying tabular data.
+- **Table List**: A custom element for displaying a list of table items.
+- **SQL Text Editor**: A custom element for editing SQL queries with syntax highlighting and auto-completion.
 
 ## Installation
 
@@ -76,7 +76,7 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 | Name                        | Type                   | Description                                                                                                                                                                          | Default     |
 | --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| `field`\*                   | `string`               | The key of the column in the data array.                                                                                                                                             |             |
+| `field`<sup>required</sup>  | `string`               | The key of the column in the data array.                                                                                                                                             |             |
 | `title`                     | `string`               | The title of the column displayed in the table header. If not provided, the `field` will be used.                                                                                    | `undefined` |
 | `editable`                  | `boolean`              | Make the column editable.                                                                                                                                                            | `false`     |
 | `dataType`                  | `string`               | The data type of the column.                                                                                                                                                         | `undefined` |
@@ -87,8 +87,6 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `generated`                 | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
 | `tabulatorColumnDefinition` | `object` \| `function` | Extend the tabulator column definition. See [tabulator docs](https://tabulator.info/docs/6.3/columns#definition) for more information.                                               | `undefined` |
 
-\* Required
-
 #### Methods
 
 | Name             | Description                                                                                                        | Arguments |
@@ -97,12 +95,12 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Events
 
-| Name                    | Description                                                                           | Event Detail                                |
-| ----------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `bks-initialized`       | Emitted when the Table is initialized.                                                | `[Tabulator]`                               |
-| `bks-sorters-change`    | Emitted when the sorters are changed.                                                 | `[{ field: string, dir: 'asc' \| 'desc' }]` |
-| `bks-ranges-change`     | [FIXME doesnt work sometimes. fix from tabulator]Emitted when the ranges are changed. | `[TabulatorRange[]]`                        |
-| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked.                                 | `[{ value: any; field: string; }]`          |
+| Name                    | Description                                                                           | Event Detail                                             |
+| ----------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `bks-initialized`       | Emitted when the Table is initialized.                                                | `[Tabulator]`                                            |
+| `bks-sorters-change`    | Emitted when the sorters are changed.                                                 | `[{ field: string, dir: 'asc' \| 'desc' }]`              |
+| `bks-ranges-change`     | [FIXME doesnt work sometimes. fix from tabulator]Emitted when the ranges are changed. | `[TabulatorRange[]]`                                     |
+| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked.                                 | `[{ value: any; field: string; cell: CellCommponent; }]` |
 
 ### Table List
 
@@ -117,8 +115,8 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
       name: "users",
       schema: "public",
       columns: [
-        { name: "id", dataType: "integer" },
-        { name: "name", dataType: "string" },
+        { field: "id", dataType: "integer" },
+        { field: "name", dataType: "string" },
       ],
     },
   ];
@@ -133,26 +131,25 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 ##### Table Definition
 
-| Name      | Type                                   | Description                                         | Default     |
-| --------- | -------------------------------------- | --------------------------------------------------- | ----------- |
-| `name`\*  | `string`                               | The name of the table.                              |             |
-| `schema`  | `string`                               | The schema of the table.                            | `undefined` |
-| `columns` | `{ name: string; dataType: string }[]` | An array of objects representing the table columns. | `undefined` |
-
-\* Required
+| Name                      | Type                                    | Description                                         | Default     |
+| ------------------------- | --------------------------------------- | --------------------------------------------------- | ----------- |
+| `name`<sup>required</sup> | `string`                                | The name of the table.                              |             |
+| `schema`                  | `string`                                | The schema of the table.                            | `undefined` |
+| `columns`                 | `{ field: string; dataType: string }[]` | An array of objects representing the table columns. | `undefined` |
 
 ### Events
 
-| Name                    | Description                                 | Event Detail |
-| ----------------------- | ------------------------------------------- | ------------ |
-| `bks-item-expand`       | Emitted when an item is expanded.           | `[object]`   |
-| `bks-item-collaps`      | Emitted when an item is collapsed.          | `[object]`   |
-| `bks-item-dblclick`     | Emitted when an item is double-clicked.     | `[object]`   |
-| `bks-item-contextmenu`  | Emitted when an item is right-clicked.      | `[object]`   |
-| `bks-expand-all`        | Emitted when all items are expanded.        | -            |
-| `bks-collapse-all`      | Emitted when all items are collapsed.       | -            |
-| `bks-add-btn-click`     | Emitted when the add button is clicked.     | `[object]`   |
-| `bks-refresh-btn-click` | Emitted when the refresh button is clicked. | `[object]`   |
+| Name                      | Description                                                                  | Event Detail |
+| ------------------------- | ---------------------------------------------------------------------------- | ------------ |
+| `bks-item-expand`         | Emitted when an item is expanded.                                            | `[object]`   |
+| `bks-item-collaps`        | Emitted when an item is collapsed.                                           | `[object]`   |
+| `bks-item-dblclick`       | Emitted when an item is double-clicked.                                      | `[object]`   |
+| `bks-item-contextmenu`    | Emitted when an item is right-clicked.                                       | `[object]`   |
+| `bks-item-update-columns` | Emitted when an item requests columns update. This is used for lazy loading. | `[object]`   |
+| `bks-expand-all`          | Emitted when all items are expanded.                                         | -            |
+| `bks-collapse-all`        | Emitted when all items are collapsed.                                        | -            |
+| `bks-add-btn-click`       | Emitted when the add button is clicked.                                      | `[object]`   |
+| `bks-refresh-btn-click`   | Emitted when the refresh button is clicked.                                  | `[object]`   |
 
 ### SQL Text Editor
 
@@ -167,8 +164,8 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
       name: "users",
       schema: "public",
       columns: [
-        { name: "id", dataType: "integer" },
-        { name: "name", dataType: "string" },
+        { field: "id", dataType: "integer" },
+        { field: "name", dataType: "string" },
       ],
     },
   ];

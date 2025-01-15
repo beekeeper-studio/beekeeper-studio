@@ -5,57 +5,59 @@
   >
 
     <!-- Filter -->
-    <div class="filter-wrap">
-      <input
-        class="filter-input"
-        type="text"
-        placeholder="Filter"
-        v-model="filterQuery"
-      >
-      <x-buttons class="filter-actions">
-        <x-button
-          @click="clearFilter"
-          v-if="filterQuery"
+    <div class="filter">
+      <div class="filter-wrap">
+        <input
+          class="filter-input"
+          type="text"
+          placeholder="Filter"
+          v-model="filterQuery"
         >
-          <i class="clear material-icons">cancel</i>
-        </x-button>
+        <x-buttons class="filter-actions">
+          <x-button
+            @click="clearFilter"
+            v-if="filterQuery"
+          >
+            <i class="clear material-icons">cancel</i>
+          </x-button>
 
-        <x-button
-          v-show="false"
-          :title="entitiesHidden ? 'Filter active' : 'No filters'"
-          class="btn btn-fab btn-link action-item"
-          :class="{active: entitiesHidden}"
-          menu
-        >
-          <i class="material-icons-outlined">filter_alt</i>
-          <!-- FIXME commenting this because it freezes chrome. but it works in firefox.. -->
-          <!-- <x-menu style="--target-align: right;"> -->
-          <!--   <label> -->
-          <!--     <input -->
-          <!--       type="checkbox" -->
-          <!--       v-model="showTables" -->
-          <!--     > -->
-          <!--     <span>Tables</span> -->
-          <!--   </label> -->
-          <!--   <label> -->
-          <!--     <input -->
-          <!--       type="checkbox" -->
-          <!--       v-model="showViews" -->
-          <!--     > -->
-          <!--     <span>Views</span> -->
-          <!--   </label> -->
-          <!--   <label v-if="supportsRoutines"> -->
-          <!--     <input -->
-          <!--       type="checkbox" -->
-          <!--       v-model="showRoutines" -->
-          <!--     > -->
-          <!--     <span>Routines</span> -->
-          <!--   </label> -->
-          <!--   <x-menuitem /> -->
-          <!-- </x-menu> -->
-        </x-button>
+          <x-button
+            v-show="false"
+            :title="entitiesHidden ? 'Filter active' : 'No filters'"
+            class="btn btn-fab btn-link action-item"
+            :class="{active: entitiesHidden}"
+            menu
+          >
+            <i class="material-icons-outlined">filter_alt</i>
+            <!-- FIXME commenting this because it freezes chrome. but it works in firefox.. -->
+            <!-- <x-menu style="--target-align: right;"> -->
+            <!--   <label> -->
+            <!--     <input -->
+            <!--       type="checkbox" -->
+            <!--       v-model="showTables" -->
+            <!--     > -->
+            <!--     <span>Tables</span> -->
+            <!--   </label> -->
+            <!--   <label> -->
+            <!--     <input -->
+            <!--       type="checkbox" -->
+            <!--       v-model="showViews" -->
+            <!--     > -->
+            <!--     <span>Views</span> -->
+            <!--   </label> -->
+            <!--   <label v-if="supportsRoutines"> -->
+            <!--     <input -->
+            <!--       type="checkbox" -->
+            <!--       v-model="showRoutines" -->
+            <!--     > -->
+            <!--     <span>Routines</span> -->
+            <!--   </label> -->
+            <!--   <x-menuitem /> -->
+            <!-- </x-menu> -->
+          </x-button>
 
-      </x-buttons>
+        </x-buttons>
+      </div>
     </div>
 
     <x-progressbar
@@ -127,6 +129,7 @@
         @expand-all="handleToggleExpandedAll"
         @dblclick="handleDblClick"
         @contextmenu="handleContextMenu"
+        @update-columns="handleUpdateColumns"
       />
 
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
@@ -169,7 +172,7 @@ import { openMenu } from "../context-menu/menu";
 // TODO(@azmi): make new types instead
 // import { TableOrView, Routine } from "@/lib/db/models";
 
-export default Vue.extend({
+export default {
   mixins: [TableFilter, TableListContextMenus, RootEventMixin],
   components: { VirtualTableList },
   props: {
@@ -193,7 +196,6 @@ export default Vue.extend({
       listItemsCollapsed: null,
       activeItem: 'tables',
       sizes: [25,75],
-      expandedTables: [],
       entityFilter: {
         filterQuery: null,
         showTables: true,
@@ -315,20 +317,14 @@ export default Vue.extend({
       this.isExpanded = !this.isExpanded
       this.trigger(TableListEvents.toggleExpandTableList, this.isExpanded)
     },
-    // FIXME (azmi): expandedTables is always empty
-    refreshExpandedColumns() {
-      this.expandedTables.forEach((table) => {
-        this.$store.dispatch('updateTableColumns', table)
-      })
-    },
     newTable() {
       this.$emit('bks-add-btn-click')
     },
-    handleExpand(data: ExpandEventData) {
-      if (data.expanded) {
-        this.$emit('bks-item-expand', data.entity)
+    async handleExpand(item: Item) {
+      if (item.expanded) {
+        this.$emit('bks-item-expand', item.entity)
       } else {
-        this.$emit('bks-item-collapse', data.entity)
+        this.$emit('bks-item-collapse', item.entity)
       }
     },
     handleExpandAll(expand: boolean) {
@@ -351,6 +347,9 @@ export default Vue.extend({
         openMenu({ options: this.routineMenuOptions, item: item.entity, event })
       }
     },
+    handleUpdateColumns(item: Item) {
+      this.$emit('bks-item-update-columns', item.entity)
+    },
   },
-})
+}
 </script>
