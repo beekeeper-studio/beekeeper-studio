@@ -12,11 +12,12 @@ import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
 import _ from 'lodash';
-import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
+
+import rawLog from '@bksLogger'
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -708,7 +709,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       const params = [];
       const whereList = []
       update.primaryKeys.forEach(({ column, value }) => {
-        console.log('updateValues, column, value', column, value)
+        log.log('updateValues, column, value', column, value)
         whereList.push(`${this.wrapIdentifier(column)} = ?`);
         params.push(value);
       })

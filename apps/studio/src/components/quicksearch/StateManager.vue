@@ -5,7 +5,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('StateManager')
 export default Vue.extend({

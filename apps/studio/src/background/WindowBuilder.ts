@@ -4,7 +4,7 @@ import { BrowserWindow, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import querystring from 'query-string'
 
 

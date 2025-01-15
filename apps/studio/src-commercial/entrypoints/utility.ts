@@ -1,6 +1,9 @@
+import rawLog from '@bksLogger';
+rawLog.info("initializing utility");
+
+const log = rawLog.scope('UtilityProcess');
+
 import { MessagePortMain } from 'electron';
-import rawLog from 'electron-log'
-import _ from 'lodash'
 import ORMConnection from '@/common/appdb/Connection'
 import platformInfo from '@/common/platform_info';
 import { AppDbHandlers } from '@/handlers/appDbHandlers';
@@ -21,14 +24,13 @@ import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { CloudClient } from '@/lib/cloud/CloudClient';
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import globals from '@/common/globals';
+import _ from 'lodash';
 
 import * as sms from 'source-map-support'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
-
-const log = rawLog.scope('UtilityProcess');
 
 let ormConnection: ORMConnection;
 

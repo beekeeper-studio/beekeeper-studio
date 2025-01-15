@@ -18,7 +18,8 @@
       "@/*": ["./src/*"],
       "@shared/*": ["./src/shared/*"],
       "@commercial/*": ["./src-commercial/*"],
-      "@tests/*": ["./tests/*"]
+      "@tests/*": ["./tests/*"],
+      "@bksLogger": ["./src/lib/log/bksLogger.ts"]
     },
     "lib": [
       "esnext",

@@ -1,5 +1,6 @@
 import { testOnly } from '../../../../../src/lib/db/clients/mysql'
 import { parseIndexColumn } from '../../../../../src/common/utils'
+import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder"
 
 
 describe("MySQL UNIT tests (no connection required)", () => {
@@ -34,5 +35,49 @@ describe("MySQL UNIT tests (no connection required)", () => {
       expect(parseIndexColumn(input)).toMatchObject(output)
     }
   })
-
 })
+
+describe("MysqlChangeBuilder", () => {
+  let builder
+  beforeEach(() => {
+    builder = new MySqlChangeBuilder('beans', [])
+  })
+
+  it("test", (() => {
+    const initArr = [
+      {columnName: 'a', dataType: 'something'},
+      {columnName: 'b', dataType: 'something'},
+      {columnName: 'c', dataType: 'something'},
+      {columnName: 'd', dataType: 'something'},
+      {columnName: 'e', dataType: 'something'},
+      {columnName: 'f', dataType: 'something'},
+      {columnName: 'g', dataType: 'something'},
+      {columnName: 'h', dataType: 'something'},
+      {columnName: 'i', dataType: 'something'}
+    ]
+
+    const updatedArr = [
+      {columnName: 'd', dataType: 'something'},
+      {columnName: 'b', dataType: 'something'},
+      {columnName: 'c', dataType: 'something'},
+      {columnName: 'a', dataType: 'something'},
+      {columnName: 'f', dataType: 'something'},
+      {columnName: 'e', dataType: 'something'},
+      {columnName: 'h', dataType: 'something'},
+      {columnName: 'g', dataType: 'something'},
+      {columnName: 'i', dataType: 'something'}
+    ]
+
+    const updatedArrStuff = [
+      'MODIFY `d` something FIRST',
+      'MODIFY `a` something AFTER `c`',
+      'MODIFY `f` something AFTER `a`',
+      'MODIFY `e` something AFTER `f`',
+      'MODIFY `h` something AFTER `e`',
+      'MODIFY `g` something AFTER `h`'
+    ]
+
+    expect(builder.reorderColumns(initArr, updatedArr)).toEqual(`ALTER TABLE \`beans\` ${updatedArrStuff.join(',')};`)
+  }))
+})
+

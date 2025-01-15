@@ -12,7 +12,7 @@ export interface ExpandablePath {
  *
  * We expect the string to be a result of `JSON.stringify(obj, null, 2)`
  **/
-export function findKeyPosition(jsonStr: string, path: string[]) {
+export function findKeyPosition(jsonStr: string, path: (string | number)[]) {
   let lines = jsonStr.split("\n");
   let lineSearchOffset = 0;
 

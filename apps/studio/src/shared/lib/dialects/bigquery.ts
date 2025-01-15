@@ -34,7 +34,8 @@ export const BigQueryData: DialectData = {
     },
     alter: {
       addConstraint: true,
-      dropConstraint: true
+      dropConstraint: true,
+      reorderColumn: true,
     },
     importFromFile: true,
     createIndex: true,

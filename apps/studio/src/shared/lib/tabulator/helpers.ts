@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import { Tabulator, CellComponent, RowComponent, ColumnDefinition } from 'tabulator-tables'
 import _ from 'lodash'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('tabulator/helpers')
 
@@ -78,6 +78,18 @@ export function trashButton(handler: (e, c: CellComponent) => void): ColumnDefin
   }
 }
 
+export function moveRowHandle(): ColumnDefinition {
+  return {
+    title: null,
+    rowHandle:true,
+    formatter:"handle",
+    width:30,
+    frozen: true,
+    minWidth:30,
+    resizable: false
+  }
+}
+
 export const TabulatorStateWatchers = {
   active() {
     if (!this.tabulator) return;
@@ -109,6 +121,11 @@ export const TabulatorStateWatchers = {
     const removed = oldRemoved.filter((r) => !newRemoved.includes(r))
     newRemoved.forEach((r) => r.getElement().classList?.add('deleted'))
     removed.forEach((r) => r.getElement().classList?.remove('deleted'))
+  },
+  reorderedRows(newMoved: RowComponent[], oldMoved: RowComponent[]) {
+    const moved = oldMoved.filter((r) => !newMoved.includes(r))
+    newMoved.forEach((r) => r.getElement().classList?.add('row-moved'))
+    moved.forEach((r) => r.getElement().classList?.remove('row-moved'))
   },
   tableColumns: {
     deep: true,

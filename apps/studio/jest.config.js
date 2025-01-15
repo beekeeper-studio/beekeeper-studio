@@ -31,6 +31,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared(.*)$': '<rootDir>/src/shared/$1',
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',
+    '^@bksLogger$': '<rootDir>/src/lib/log/bksLogger.ts',
     '^@tests(.*)$': '<rootDir>/tests/$1',
   },
   // serializer for snapshots

@@ -58,6 +58,7 @@ export const OracleData: DialectData = {
     },
     alter: {
       renameSchema: true,
+      reorderColumn: true,
     },
   },
   notices: {

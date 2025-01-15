@@ -7,7 +7,7 @@ import {
   QueryLogOptions,
 } from "./BasicDatabaseClient";
 import mysql, { Connection } from "mysql2";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import knexlib from "knex";
 import { readFileSync } from "fs";
 import _ from "lodash";

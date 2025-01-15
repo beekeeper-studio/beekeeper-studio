@@ -116,6 +116,7 @@ export interface DialectData {
       renameSchema?: boolean
       renameTable?: boolean
       renameView?: boolean
+      reorderColumn?: boolean
     },
     triggers?: boolean,
     relations?: boolean,
@@ -216,7 +217,7 @@ export interface Schema {
 }
 
 export interface SchemaItemChange {
-  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment' | 'extra'
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment' | 'extra' | 'position'
   columnName: string
   newValue: string | boolean | null
 }
@@ -228,6 +229,7 @@ export interface AlterTableSpec {
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]
+  reorder? : { newOrder: SchemaItem[], oldOrder: SchemaItem[] } | null
 }
 
 export interface PartitionExpressionChange {

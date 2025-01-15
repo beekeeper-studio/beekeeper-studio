@@ -56,6 +56,9 @@ jobs:
       - name: Check for license-breaking includes
         run: bin/check-for-src-commercial.sh
 
+      - name: Check for bad log imports
+        run: bin/check-for-electron-log-imports.sh
+
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 

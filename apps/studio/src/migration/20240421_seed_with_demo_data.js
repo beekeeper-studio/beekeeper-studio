@@ -1,5 +1,5 @@
 import platformInfo from '@/common/platform_info'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { copyFileSync } from 'fs'
 import path from 'path'
 

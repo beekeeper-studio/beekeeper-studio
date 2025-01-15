@@ -1,5 +1,5 @@
 import { AppEvent } from "../../common/AppEvent"
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope("AppEventHandler")
@@ -41,7 +41,7 @@ export default class {
   }
 
   async addBeekeeper() {
-    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
+    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: { defaultDatabase: platformInfo.appDbPath }});
     if (!existing) {
       const nu = {};
       nu.connectionType = 'sqlite'

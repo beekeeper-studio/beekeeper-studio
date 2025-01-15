@@ -6,7 +6,7 @@ import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
