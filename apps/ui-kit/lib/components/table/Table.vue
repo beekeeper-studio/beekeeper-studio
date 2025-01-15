@@ -198,11 +198,6 @@ export default Vue.extend({
           sorter: column.sorter === 'none' ? () => 0 : column.sorter,
         };
 
-        if (column.dataType === "INTERVAL") {
-          // add interval sorter
-          result["sorter"] = this.intervalSorter;
-        }
-
         const customDef =
           typeof column.tabulatorColumnDefinition === "function"
             ? column.tabulatorColumnDefinition(result)
@@ -463,32 +458,6 @@ export default Vue.extend({
         } else {
           column.getComponent().scrollTo(undefined, false);
         }
-      }
-    },
-    // HACK (day): this is probably not the best way of doing things, but postgres intervals are dumb
-    intervalSorter(a, b, aRow, bRow, column, dir, sorterParams) {
-      try {
-        const durationA = td.parse(intervalParse(a).toISOString());
-        const durationB = td.parse(intervalParse(b).toISOString());
-        const dateA = new Date(
-          durationA.years,
-          durationA.months,
-          durationA.days,
-          durationA.hours,
-          durationA.minutes,
-          durationA.seconds
-        );
-        const dateB = new Date(
-          durationB.years,
-          durationB.months,
-          durationB.days,
-          durationB.hours,
-          durationB.minutes,
-          durationB.seconds
-        );
-        return dateA - dateB;
-      } catch {
-        return 0;
       }
     },
     rowHeaderOffsetGetter() {

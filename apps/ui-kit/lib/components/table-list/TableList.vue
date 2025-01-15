@@ -1,6 +1,6 @@
 <template>
   <div
-    class="table-list-component"
+    class="table-list-wrapper"
     ref="wrapper"
   >
 
@@ -154,9 +154,11 @@ import TableFilter from './mixins/table_filter'
 import TableListContextMenus from './mixins/TableListContextMenus'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
-import { ExpandEventData, DblClickEventData, ContextMenuEventData, Table } from "./models";
+import { Item, Table } from "./models";
 import { TableListEvents } from "./constants";
 import { RootEventMixin } from "../mixins/RootEvent";
+import { writeClipboard } from "../../utils/clipboard";
+import { openMenu } from "../context-menu/menu";
 
 // TODO(@day): to remove
 // import { mapState, mapGetters } from 'vuex'
@@ -279,6 +281,31 @@ export default Vue.extend({
     // ...mapGetters({
     //     totalHiddenEntities: 'hideEntities/totalEntities',
     // }),
+    schemaMenuOptions() {
+      return []
+    },
+    tableMenuOptions() {
+      return [
+        {
+          name: "Copy Name",
+          slug: 'copy-name',
+          handler({ item }) {
+            writeClipboard(item.name)
+          },
+        },
+      ]
+    },
+    routineMenuOptions() {
+      return [
+        {
+          name: "Copy Name",
+          slug: 'copy-name',
+          handler({ item }) {
+            writeClipboard(item.name)
+          },
+        },
+      ]
+    }
   },
   methods: {
     clearFilter() {
@@ -311,11 +338,18 @@ export default Vue.extend({
         this.$emit('bks-collapse-all')
       }
     },
-    handleDblClick(data: DblClickEventData) {
-      this.$emit('bks-item-dblclick', data.entity)
+    handleDblClick(_e, item: Item) {
+      this.$emit('bks-item-dblclick', item.entity)
     },
-    handleContextMenu(data: ContextMenuEventData) {
-      this.$emit('bks-item-contextmenu', data.entity)
+    handleContextMenu(event, item: Item) {
+      this.$emit('bks-item-contextmenu', item.entity)
+      if(item.type === 'schema') {
+        openMenu({ options: this.schemaMenuOptions, item: item, event })
+      } else if(item.type === 'table') {
+        openMenu({ options: this.tableMenuOptions, item: item.entity, event })
+      } else if (item.type === 'routine') {
+        openMenu({ options: this.routineMenuOptions, item: item.entity, event })
+      }
     },
   },
 })

@@ -1,20 +1,7 @@
 // FIXME not any
-type TableOrView = any
-type Routine = any
-type Entity = TableOrView | Routine | string;
-
-export interface ExpandEventData {
-  entity: Entity;
-  expanded: boolean;
-}
-
-export interface DblClickEventData {
-  entity: Entity;
-}
-
-export interface ContextMenuEventData {
-  entity: Entity;
-}
+export type TableOrView = any
+export type Routine = any
+export type Entity = TableOrView | Routine | string;
 
 export interface EntityFilter {
   filterQuery?: string;
@@ -38,4 +25,42 @@ export interface Table {
     name: string;
     dataType: string;
   }[]
+}
+
+export type Item = SchemaItem | TableItem | RoutineItem;
+
+export interface BaseItem {
+  type: "schema" | "table" | "routine" | "root";
+  entity: Entity;
+  key: string;
+  expanded: boolean;
+  hidden: boolean;
+  contextMenu: any[];
+  level: number;
+  parent?: BaseItem;
+  pinned: boolean;
+}
+
+export interface RootItem extends BaseItem {
+  type: "root";
+  entity: string;
+}
+
+export interface SchemaItem extends BaseItem {
+  type: "schema";
+  entity: string;
+  parent: BaseItem;
+}
+
+export interface TableItem extends BaseItem {
+  type: "table";
+  entity: TableOrView;
+  parent: BaseItem;
+  loadingColumns: boolean;
+}
+
+export interface RoutineItem extends BaseItem {
+  type: "routine";
+  entity: Routine;
+  parent: BaseItem;
 }

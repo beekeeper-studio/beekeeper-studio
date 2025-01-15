@@ -201,4 +201,14 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `bks-focus`        | Emitted when the SQL text editor is focused.     | -              |
 | `bks-blur`         | Emitted when the SQL text editor is blurred.     | -              |
 
+## NOTE
+
+When the custom element is removed from the document, the Vue component behaves just as if it's inside a <keep-alive> and its deactivated hook will be called. When it's inserted again, the activated hook will be called.
+
+If you wish to destroy the inner component, you'd have to do that explicitly:
+
+```js
+document.querySelector('bks-table').vueComponent.$destroy()
+```
+
 Hey, you've reached the end of the README! Check out our recipes for more guidance: [recipes](docs/recipes.md).

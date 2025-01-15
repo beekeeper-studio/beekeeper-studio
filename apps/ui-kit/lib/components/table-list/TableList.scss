@@ -5,9 +5,10 @@
 @import "../../styles/base";
 @import "../../styles/layout";
 
-.table-list-component {
+.table-list-wrapper {
   display: flex;
   flex-direction: column;
+  height: 100%;
 
   .filter-wrap {
     padding: 0 $gutter-w;
@@ -207,7 +208,7 @@
   }
 }
 
-.table-list-component .virtual-table-list .sub-item {
+.table-list-wrapper .virtual-table-list .sub-item {
   .title {
     flex-grow: 0;
     flex-shrink: 0;
@@ -525,7 +526,7 @@
 
   display: flex;
   align-items: center;
-  padding: $gutter-w $gutter-w $gutter-w * 0.5;
+  padding: $gutter-w $gutter-w * 0.5 $gutter-w * 0.5;
   color: $text-dark;
   .badge {
     font-size: 0.7rem;

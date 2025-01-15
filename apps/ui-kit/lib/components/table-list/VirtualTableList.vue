@@ -24,10 +24,7 @@ should be stored here instead of the item component.
 
 */
 
-// TODO(@azmi): make new types instead
-// import { TableOrView, Routine } from "@/lib/db/models";
-type TableOrView = any
-type Routine = any
+import { TableOrView, Routine, Entity, Item, BaseItem, RootItem, SchemaItem, TableItem, RoutineItem } from "./models";
 
 // TODO(@azmi): make a new type instead
 // import { TransportPinnedEntity } from "@/common/transport";
@@ -52,46 +49,6 @@ import { TableListEvents } from "./constants";
 // import { mapGetters, mapState } from "vuex";
 import * as globals from "../../utils/constants";
 import "scrollyfills";
-
-type Entity = TableOrView | Routine | string;
-
-type Item = SchemaItem | TableItem | RoutineItem;
-
-interface BaseItem {
-  type: "schema" | "table" | "routine" | "root";
-  entity: Entity;
-  key: string;
-  expanded: boolean;
-  hidden: boolean;
-  contextMenu: any[];
-  level: number;
-  parent?: BaseItem;
-  pinned: boolean;
-}
-
-interface RootItem extends BaseItem {
-  type: "root";
-  entity: string;
-}
-
-interface SchemaItem extends BaseItem {
-  type: "schema";
-  entity: string;
-  parent: BaseItem;
-}
-
-interface TableItem extends BaseItem {
-  type: "table";
-  entity: TableOrView;
-  parent: BaseItem;
-  loadingColumns: boolean;
-}
-
-interface RoutineItem extends BaseItem {
-  type: "routine";
-  entity: Routine;
-  parent: BaseItem;
-}
 
 export default Vue.extend({
   mixins: [TableListContextMenus, RootEventMixin],
@@ -266,11 +223,11 @@ export default Vue.extend({
     handlePin(_: Event, item: TableItem) {
       // this.trigger(AppEvent.togglePinTableList, item.entity, !item.pinned);
     },
-    handleDblClick(_: Event, item: Item) {
-      this.$emit("dblclick", { entity: item.entity });
+    handleDblClick(e: Event, item: Item) {
+      this.$emit("dblclick", e, item);
     },
-    handleContextMenu(_: Event, item: Item) {
-      this.$emit("contextmenu", { entity: item.entity });
+    handleContextMenu(e: Event, item: Item) {
+      this.$emit("contextmenu", e, item);
     },
     handleToggleHidden(
       entity: TableOrView | Routine | string,
