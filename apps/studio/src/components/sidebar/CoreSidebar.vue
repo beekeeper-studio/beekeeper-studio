@@ -19,7 +19,7 @@
           @databaseSelected="databaseSelected"
         />
         <bks-table-list
-          :tables.prop="filteredTables"
+          :tables.prop="tables"
           @bks-item-dblclick="handleTableListItemDblClick"
         />
       </div>
@@ -75,20 +75,17 @@
       }
     },
     computed: {
-      filteredTables() {
-        if (!this.filterQuery) {
-          return _.cloneDeep(this.tables)
-        }
-        const startsWithFilter = _(this.tables)
-          .filter((item) => _.startsWith(item.name, this.filterQuery))
-          .value()
-        const containsFilter = _(this.tables)
-          .difference(startsWithFilter)
-          .filter((item) => item.name.includes(this.filterQuery))
-          .value()
-        return _.cloneDeep(_.concat(startsWithFilter, containsFilter))
+      tables() {
+        return this.$store.state.tables.map((table) => ({
+          name: table.name,
+          entityType: table.entityType,
+          columns: table.columns?.map((column) => ({
+            field: column.columnName,
+            dataType: column.dataType,
+          }))
+        }))
       },
-      ...mapState(['tables', 'database']),
+      ...mapState(['database']),
       ...mapGetters(['minimalMode']),
     },
     watch: {

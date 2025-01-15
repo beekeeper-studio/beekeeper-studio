@@ -335,6 +335,7 @@
   import { blankFavoriteQuery } from '@/common/transport'
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
+  import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -767,6 +768,8 @@
           this.editor.cursorIndex = cm.getDoc().indexFromPos(cm.getCursor())
         });
 
+        registerQueryMagic(() => this.defaultSchema, () => this.tables, cm)
+
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights
         this.$nextTick(() => {
@@ -1054,10 +1057,6 @@
       },
     },
     async mounted() {
-      // I have no idea why I couldn't add these from html
-      this.$refs.editor.keybindings = this.keybindings
-      this.$refs.editor.columnsGetter = this.columnsGetter
-
       if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {
