@@ -82,6 +82,9 @@
       flex-direction: column;
       flex-grow: 1;
       overflow: hidden;
+      bks-table {
+        height: 100%;
+      }
       .tabulator-cell {
         cursor: default;
       }
