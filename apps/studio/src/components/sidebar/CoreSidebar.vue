@@ -21,6 +21,9 @@
         <bks-table-list
           :tables.prop="tables"
           @bks-item-dblclick="handleTableListItemDblClick"
+          @bks-item-update-columns="handleItemUpdateColumns"
+          @bks-refresh-btn-click="handleRefreshBtnClick"
+          @bks-add-btn-click="handleAddBtnClick"
         />
       </div>
 
@@ -120,9 +123,28 @@
         this.$noty.success("Successfully Disconnected")
       },
       handleTableListItemDblClick(event) {
-        // FIXME use lodash throttle
-        const item = event.detail[0]
-        this.$root.$emit(AppEvent.loadTable, { table: item })
+        this.throttledLoadTable(event)
+      },
+      throttledLoadTable: _.throttle(function(event) {
+        const table = event.detail[0]
+        this.$root.$emit(AppEvent.loadTable, { table })
+      }, 500),
+      async handleItemUpdateColumns(event) {
+        const table = event.detail[0]
+        if (!table.columns?.length) {
+          await this.$store.dispatch("updateTableColumns", table)
+        }
+      },
+      async handleRefreshBtnClick() {
+        try {
+          this.$store.dispatch('updateRoutines')
+          await this.$store.dispatch('updateTables')
+        } catch (ex) {
+          this.$noty.error(`Unable to refresh tables ${ex.message}`)
+        }
+      },
+      async handleAddBtnClick() {
+        this.$root.$emit(AppEvent.createTable)
       },
     }
   }
