@@ -292,3 +292,37 @@ export function friendlyUint8Array(bytes: string | Uint8Array, encoding?: 'hex')
   })
   return bytes as FriendlyUint8Array
 }
+
+/** Make `object.toString` look better :D */
+export function friendlyJsonObject<T extends object>(obj: T): T {
+  Object.defineProperties(obj, {
+    [Symbol.toPrimitive]() {
+      try {
+        return stringifyWithBigInt(obj);
+      } catch (ex) {
+        console.warn('Error serializing object:', obj, ex);
+        return "[object Object]"
+      }
+    },
+    toString: {
+      value() {
+        try {
+          return stringifyWithBigInt(obj);
+        } catch (ex) {
+          console.warn('Error serializing object:', obj, ex);
+          return "[object Object]"
+        }
+      },
+      enumerable: false, // This tells js to not clone this property. Useful when we want to send this object to utility.
+    }
+  });
+  return obj;
+}
+
+export function stringifyWithBigInt(value: any): string {
+  return JSON.stringify(
+    value,
+    (_key, val) => typeof val === 'bigint' ? `${val}n` : val
+  );
+}
+

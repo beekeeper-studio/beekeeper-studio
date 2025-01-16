@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
-import { friendlyUint8Array, uint8ArrayToHex } from '@/common/utils';
+import { friendlyUint8Array, uint8ArrayToHex, friendlyJsonObject } from '@/common/utils';
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
 function dec28bits(num: any): string {
@@ -102,6 +102,6 @@ export const Mutators = {
   /** Stringify json data for MySQL column */
   jsonMutator(value: any): JsonFriendly {
     if (_.isString(value) || _.isNull(value)) return value
-    return JSON.stringify(value)
+    return friendlyJsonObject(value)
   },
 }
