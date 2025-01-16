@@ -25,6 +25,7 @@
           @closeToRight="closeToRight"
           @forceClose="forceClose"
           @duplicate="duplicate"
+          @copyName="copyName"
         />
       </Draggable>
       <!-- </div> -->
@@ -281,6 +282,7 @@ import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
+import { log } from 'console'
 
   export default Vue.extend({
     props: [],
@@ -1037,7 +1039,43 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     createQueryFromItem(item) {
       this.createQuery(item.text)
+    },
+    extractEntityName (q: string): string | null {
+      const query = q?.replace(/\s+/g, ' ').trim();
+
+      const patterns = [
+        { type: 'Stored Procedure', regex: /(create|alter)\s+procedure\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?/i },
+        { type: 'Function', regex: /(create|alter)\s+function\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?/i },
+        { type: 'View', regex: /(create|alter)\s+view\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?/i },
+        { type: 'Trigger', regex: /(create|alter)\s+trigger\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?/i },
+        { type: 'Table', regex: /(create|alter)\s+table\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?/i },
+        { type: 'Index', regex: /(create|alter)\s+index\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?/i },
+        { type: 'Schema', regex: /(create|alter)\s+schema\s+\[?(\w+)\]?/i },
+        { type: 'Sequence', regex: /(create|alter)\s+sequence\s+\[?(\w+)\]?/i },
+        { type: 'Materialized View', regex: /(create|alter)\s+materialized\s+view\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?/i },
+        { type: 'Database', regex: /(create|alter)\s+database\s+\[?(\w+)\]?/i },
+    ];
+
+    for (const pattern of patterns) {
+      const match = query?.match(pattern.regex);
+      if (match && match[2]) {
+        return match[2];
+      }
     }
+
+    return null;
+    },
+    copyName (tab: TransportOpenTab) {
+      if (tab.tabType == 'table') {
+        this.$copyText(tab?.tableName)
+      } else if (tab.tabType == 'query') {
+        const entityName: string | null = this.extractEntityName(tab?.unsavedQueryText);
+
+        if (entityName) {
+          this.$copyText(entityName)
+        }
+      }
+    },
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
