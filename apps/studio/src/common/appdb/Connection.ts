@@ -8,7 +8,7 @@ import { LoggerOptions } from 'typeorm/logger/LoggerOptions'
 import { PinnedEntity } from "./models/PinnedEntity"
 import { CloudCredential } from "./models/CloudCredential"
 import { OpenTab } from "./models/OpenTab"
-
+import { TabHistory } from "./models/TabHistory"
 import { LicenseKey } from "./models/LicenseKey"
 import { HiddenEntity } from "./models/HiddenEntity"
 import { HiddenSchema } from "./models/HiddenSchema"
@@ -28,7 +28,8 @@ const models = [
   HiddenEntity,
   HiddenSchema,
   PinnedConnection,
-  TokenCache
+  TokenCache,
+  TabHistory
 ]
 
 

@@ -595,25 +595,26 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     handleCreateTab() {
       this.createQuery()
     },
-    createQuery(optionalText, queryTitle?) {
+    async createQuery(optionalText, queryTitle?) {
       // const text = optionalText ? optionalText : ""
       console.log("Creating tab")
       let qNum = 0
       let tabName = "New Query"
-      do {
-        qNum = qNum + 1
-        tabName = `Query #${qNum}`
-      } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       if (queryTitle) {
         tabName = queryTitle
+      } else {
+        do {
+          qNum = qNum + 1
+          tabName = `Query #${qNum}`
+        } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       }
 
-        const result = {} as TransportOpenTab;
-        result.tabType = 'query'
-        result.title = tabName,
-        result.unsavedChanges = false
-        result.unsavedQueryText = optionalText
-        this.addTab(result)
+      const result = {} as TransportOpenTab;
+      result.tabType = 'query'
+      result.title = tabName,
+      result.unsavedChanges = false
+      result.unsavedQueryText = optionalText
+      await this.addTab(result)
     },
     async loadTableCreate(table) {
       let method = null
@@ -873,9 +874,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openTableProperties({ table }) {
       const t = {} as TransportOpenTab;
       t.tabType = 'table-properties';
-      t.tableName = table.name
-      t.schemaName = table.schema
-      t.title = table.name
+      t.tableName = table.name ?? table.tableName
+      t.schemaName = table.schema ?? table.schemaName
+      t.title = table.name ?? table.tableName
       const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
@@ -883,9 +884,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     async openTable({ table, filters, openDetailView }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
-      tab.title = table.name
-      tab.tableName = table.name
-      tab.schemaName = table.schema
+      tab.title = table.name ?? table.tableName
+      tab.tableName = table.name ?? table.tableName
+      tab.schemaName = table.schema ?? table.schemaName
       tab.entityType = table.entityType
       tab = setFilters(tab, filters)
       tab.titleScope = "all"
@@ -1036,7 +1037,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
 
     },
     createQueryFromItem(item) {
-      this.createQuery(item.text)
+      this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
     }
   },
   beforeDestroy() {

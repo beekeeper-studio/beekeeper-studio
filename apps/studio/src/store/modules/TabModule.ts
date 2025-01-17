@@ -87,6 +87,7 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
+      await Vue.prototype.$util.send('appdb/tabhistory/closetab', context.state.tabs)
       await Vue.prototype.$util.send('appdb/tabs/remove', { obj: context.state.tabs })
       context.commit('remove', context.state.tabs)
       context.commit('setActive', null)
@@ -113,7 +114,7 @@ export const TabModule: Module<State, RootState> = {
         log.info("saving tab", item)
         item.workspaceId = context.rootState.workspaceId
         item.connectionId = usedConfig.id
-        item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item });
+        item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item })
       }
       context.commit('add', item)
       return item;
@@ -122,22 +123,26 @@ export const TabModule: Module<State, RootState> = {
       items.forEach((p, idx) => p.position = idx)
       const { usedConfig } = context.rootState
       context.commit('set', items)
-      if (usedConfig?.id) await Vue.prototype.$util.send('appdb/tabs/save', { obj: items });
+      if (usedConfig?.id) await Vue.prototype.$util.send('appdb/tabs/save', { obj: items })
+      
+      await Vue.prototype.$util.send('appdb/tabhistory/update', items);
     },
     async remove(context, rawItems: TransportOpenTab | TransportOpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
       items.forEach((tab) => context.commit('remove', tab))
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
-        await Vue.prototype.$util.send('appdb/tabs/remove', { obj: items });
+        await Vue.prototype.$util.send('appdb/tabs/remove', { obj: items })
       }
+      await Vue.prototype.$util.send('appdb/tabhistory/closetab', items)
     },
     async save(context, rawTabs: TransportOpenTab[] | TransportOpenTab) {
       try {
+        if (rawTabs == null) return
         const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
         const { usedConfig } = context.rootState
         if (usedConfig?.id) {
-          await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs });
+          await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs })
         }
       } catch (ex) {
         console.error("tab/save", ex)
@@ -151,15 +156,16 @@ export const TabModule: Module<State, RootState> = {
       }
       
     },
-    async setActive(context, tab: TransportOpenTab) {
+    async setActive(context, tab: TransportOpenTab, updateTabHistory = true) {
       const oldActive = context.state.active
       context.commit('setActive', tab)
       if (oldActive) {
         oldActive.active = false
       }
       tab.active = true
-      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))
 
+      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))  
+      if (updateTabHistory && tab != null) await Vue.prototype.$util.send('appdb/tabhistory/update', tab)
     }
 
   }
