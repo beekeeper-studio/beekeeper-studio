@@ -5,7 +5,7 @@
 @import "../../styles/base";
 @import "../../styles/layout";
 
-.table-list-wrapper {
+.BksTableList {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -212,7 +212,7 @@
   }
 }
 
-.table-list-wrapper .virtual-table-list .sub-item {
+.BksTableList .virtual-table-list .sub-item {
   .title {
     flex-grow: 0;
     flex-shrink: 0;

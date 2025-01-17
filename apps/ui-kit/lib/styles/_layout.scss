@@ -560,7 +560,7 @@ input[type=file] {
   display: block;
   padding: 0.5rem 1rem;
 }
-.item-icon {
+.material-icons.item-icon {
   font-size: 12px;
   color: darken($theme-primary, 15%);
   &.schema-icon {

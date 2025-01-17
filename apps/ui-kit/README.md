@@ -2,15 +2,40 @@
 
 ## Overview
 
-The `@bks/ui-kit` library provides a set of reusable custom elements used in Beekeeper Studio.
-
-## Components
-
-The library contains the following custom elements:
+The `@bks/ui-kit` library provides a set of reusable custom elements used in Beekeeper Studio, such as:
 
 - **Table**: A custom element for displaying tabular data.
 - **Table List**: A custom element for displaying a list of table items.
 - **SQL Text Editor**: A custom element for editing SQL queries with syntax highlighting and auto-completion.
+- **Data Editor**: A custom element that provides all of the above in one place.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Table of Contents](#table-of-contents)
+- [Installation](#installation)
+- [Components](#components)
+  - [Table](#table)
+    - [Example](#example)
+    - [Properties](#properties)
+    - [Column Definition](#column-definition)
+    - [Context Menu Item](#context-menu-item)
+    - [Methods](#methods)
+    - [Events](#events)
+  - [Table List](#table-list)
+    - [Example](#example-1)
+    - [Properties](#properties-1)
+    - [Table Definition](#table-definition)
+    - [Events](#events-1)
+  - [SQL Text Editor](#sql-text-editor)
+    - [Example](#example-2)
+    - [Properties](#properties-2)
+    - [Events](#events-2)
+  - [Data Editor](#data-editor)
+    - [Example](#example-3)
+    - [Properties](#properties-3)
+    - [Events](#events-3)
+- [NOTE](#note)
 
 ## Installation
 
@@ -34,6 +59,9 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
    import "@bks/ui-kit/bks-sql-text-editor.js";
    import "@bks/ui-kit/bks-sql-text-editor.css";
 
+   import "@bks/ui-kit/bks-data-editor.js";
+   import "@bks/ui-kit/bks-data-editor.css";
+
    // or import the whole library
    import "@bks/ui-kit";
    import "@bks/ui-kit/style.css";
@@ -45,9 +73,12 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
    <bks-table></bks-table>
    <bks-table-list></bks-table-list>
    <bks-sql-text-editor></bks-sql-text-editor>
+   <bks-data-editor></bks-data-editor>
    ```
 
-## Table
+## Components
+
+### Table
 
 #### Example
 
@@ -66,11 +97,16 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Properties
 
-| Name               | Type       | Description                                                                                                          | Default     |
-| ------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `data`             | `object[]` | An array of objects representing the table data.                                                                     | `[]`        |
-| `columns`          | `object[]` | An array of objects representing the table columns.                                                                  | `[]`        |
-| `tabulatorOptions` | `object`   | Extend the tabulator definition. See [tabulator docs](https://tabulator.info/docs/6.3/options) for more information. | `undefined` |
+| Name                           | Type                     | Description                                                                                                          | Default     |
+| ------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `data`                         | `object[]`               | An array of objects representing the table data.                                                                     | `[]`        |
+| `columns`                      | `object[]`               | An array of objects representing the table columns.                                                                  | `[]`        |
+| `tabulatorOptions`             | `object`                 | Extend the tabulator definition. See [tabulator docs](https://tabulator.info/docs/6.3/options) for more information. | `undefined` |
+| `cellContextMenuItems`         | `object[]` \| `function` | Extend the cell context menu items.                                                                                  | `undefined` |
+| `rowContextMenuItems`          | `object[]` \| `function` | Extend the row context menu items.                                                                                   | `undefined` |
+| `columnHeaderContextMenuItems` | `object[]` \| `function` | Extend the column header context menu items.                                                                         | `undefined` |
+| `rowHeaderContextMenuItems`    | `object[]` \| `function` | Extend the row header context menu items.                                                                            | `undefined` |
+| `cornerHeaderContextMenuItems` | `object[]` \| `function` | Extend the corner header context menu items.                                                                         | `undefined` |
 
 #### Column Definition
 
@@ -86,6 +122,21 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `foreignKey`                | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
 | `generated`                 | `boolean`              | Similar to `primaryKey`.                                                                                                                                                             | `undefined` |
 | `tabulatorColumnDefinition` | `object` \| `function` | Extend the tabulator column definition. See [tabulator docs](https://tabulator.info/docs/6.3/columns#definition) for more information.                                               | `undefined` |
+
+#### Context Menu Item
+
+| Name                         | Type         | Description                                                      | Default     |
+| ---------------------------- | ------------ | ---------------------------------------------------------------- | ----------- |
+| `name`<sup>required</sup>    | `string`     | The name of the context menu item.                               |             |
+| `handler`<sup>required</sup> | `function`   | The handler function to be called when the item is clicked.      |             |
+| `slug`                       | `string`     | The slug of the context menu item.                               | `undefined` |
+| `class`                      | `string`     | The CSS class to apply to the context menu item.                 | `undefined` |
+| `shortcut`                   | `string`     | The shortcut key to trigger the context menu item.               | `undefined` |
+| `icon`                       | `string`     | The material icon name to display next to the context menu item. | `undefined` |
+| `disabled`                   | `boolean`    | Disable the context menu item.                                   | `false`     |
+| `items`                      | `MenuItem[]` | An array of sub-items.                                           | `undefined` |
+
+If you want to add a divider between context menu items, you can add an object `{ type: "divider" }`.
 
 #### Methods
 
@@ -125,11 +176,14 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Properties
 
-| Name     | Type       | Description                                  | Default |
-| -------- | ---------- | -------------------------------------------- | ------- |
-| `tables` | `object[]` | An array of objects representing the tables. | `[]`    |
+| Name                      | Type                     | Description                                  | Default     |
+| ------------------------- | ------------------------ | -------------------------------------------- | ----------- |
+| `tables`                  | `object[]`               | An array of objects representing the tables. | `[]`        |
+| `schemaContextMenuItems`  | `object[]` \| `function` | Extend the schema context menu items.        | `undefined` |
+| `tableContextMenuItems`   | `object[]` \| `function` | Extend the table context menu items.         | `undefined` |
+| `routineContextMenuItems` | `object[]` \| `function` | Extend the routine context menu items.       | `undefined` |
 
-##### Table Definition
+#### Table Definition
 
 | Name                      | Type                                    | Description                                         | Default     |
 | ------------------------- | --------------------------------------- | --------------------------------------------------- | ----------- |
@@ -137,7 +191,7 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `schema`                  | `string`                                | The schema of the table.                            | `undefined` |
 | `columns`                 | `{ field: string; dataType: string }[]` | An array of objects representing the table columns. | `undefined` |
 
-### Events
+#### Events
 
 | Name                      | Description                                                                  | Event Detail |
 | ------------------------- | ---------------------------------------------------------------------------- | ------------ |
@@ -198,6 +252,60 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 | `bks-focus`        | Emitted when the SQL text editor is focused.     | -              |
 | `bks-blur`         | Emitted when the SQL text editor is blurred.     | -              |
 
+### Data Editor
+
+#### Example
+
+```html
+<bks-data-editor></bks-data-editor>
+<script>
+  const dataEditor = document.querySelector("bks-data-editor");
+  dataEditor.tables = [
+    {
+      name: "users",
+      columns: [
+        { field: "id", dataType: "integer" },
+        { field: "name", dataType: "varchar" },
+      ],
+      data: [
+        { id: 1, name: "John Doe" },
+        { id: 2, name: "Jane Smith" },
+      ],
+    },
+  ];
+  dataEditor.addEventListener("bks-query-submit", () => {
+    dataEditor.setTable({
+      name: "result",
+      columns: [
+        { field: "uuid", dataType: "varchar" },
+        { field: "name", dataType: "varchar" },
+        { field: "email", dataType: "varchar" },
+      ],
+      data: [
+        { uuid: "123-456-789", name: "John Doe", email: "H0T4h@example.com" },
+      ],
+    });
+  });
+</script>
+```
+
+#### Properties
+
+| Name                 | Type       | Description                                              | Default |
+| -------------------- | ---------- | -------------------------------------------------------- | ------- |
+| `tables`             | `object[]` | An array of objects representing the tables.             | `[]`    |
+| `tableListProps`     | `object`   | An object containing default table list properties.      | `{}`    |
+| `sqlTextEditorProps` | `object`   | An object containing default SQL text editor properties. | `{}`    |
+| `tableProps`         | `object`   | An object containing default table properties.           | `{}`    |
+
+#### Events
+
+All events from `bks-table`, `bks-table-list` and `bks-sql-text-editor` are available. In addition, the following events are emitted:
+
+| Name               | Description                          | Event Detail |
+| ------------------ | ------------------------------------ | ------------ |
+| `bks-query-submit` | Emitted when the query is submitted. | `[string]`   |
+
 ## NOTE
 
 When the custom element is removed from the document, the Vue component behaves just as if it's inside a <keep-alive> and its deactivated hook will be called. When it's inserted again, the activated hook will be called.
@@ -205,7 +313,7 @@ When the custom element is removed from the document, the Vue component behaves 
 If you wish to destroy the inner component, you'd have to do that explicitly:
 
 ```js
-document.querySelector('bks-table').vueComponent.$destroy()
+document.querySelector("bks-table").vueComponent.$destroy();
 ```
 
 Hey, you've reached the end of the README! Check out our recipes for more guidance: [recipes](docs/recipes.md).

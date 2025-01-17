@@ -27,5 +27,6 @@ result = build("main");
 result = build("table");
 result = build("table-list");
 result = build("sql-text-editor");
+result = build("data-editor");
 
 process.exit(result.status);

@@ -10,7 +10,7 @@
 @import '../../styles/light-variables';
 @import "../../styles/base";
 
-bks-text-editor, bks-sql-text-editor {
+.BksTextEditor {
   --bks-text-editor-activeline-bg-color: #373831;
   --bks-text-editor-atom-fg-color: #ae81ff;
   --bks-text-editor-bg-color: #{$query-editor-bg};
@@ -42,6 +42,8 @@ bks-text-editor, bks-sql-text-editor {
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-variable-3-fg-color: #66d9ef;
   --bks-text-editor-variable-fg-color: #f8f8f2;
+
+  height: 100%;
 
   .CodeMirror {
     font-family: $font-family-mono, monospace;

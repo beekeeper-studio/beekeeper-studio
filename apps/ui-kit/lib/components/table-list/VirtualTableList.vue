@@ -40,7 +40,6 @@ export function entityId(schema: string, entity?: Table | Routine) {
 
 import Vue from "vue";
 import { RootEventMixin } from "../mixins/RootEvent";
-import TableListContextMenus from "./mixins/TableListContextMenus";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
 import { TableListEvents } from "./constants";
@@ -51,7 +50,7 @@ import * as globals from "../../utils/constants";
 import "scrollyfills";
 
 export default Vue.extend({
-  mixins: [TableListContextMenus, RootEventMixin],
+  mixins: [RootEventMixin],
   components: { VirtualList },
   props: {
     tables: {
@@ -79,7 +78,6 @@ export default Vue.extend({
         key: "",
         expanded: true,
         hidden: false,
-        contextMenu: [],
         level: 0,
         pinned: false,
       };
@@ -102,7 +100,6 @@ export default Vue.extend({
                 ) >= 0,
             // FIXME
             hidden: false, // hidden: this.hiddenSchemas.includes(schema.schema),
-            contextMenu: this.schemaMenuOptions,
             parent: root,
             level: 0,
             pinned: false,
@@ -122,7 +119,6 @@ export default Vue.extend({
                 (item: Item) => item.key === key && item.expanded
               ) >= 0,
             hidden: this.hiddenEntities.includes(table),
-            contextMenu: this.tableMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
             pinned: this.pins.find((pin: TransportPinnedEntity) => pin.entity === table),
@@ -141,7 +137,6 @@ export default Vue.extend({
                 (item: Item) => item.key === key && item.expanded
               ) >= 0,
             hidden: this.hiddenEntities.includes(routine),
-            contextMenu: this.routineMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
             pinned: this.pins.find(
@@ -325,9 +320,12 @@ export default Vue.extend({
     // ...mapState("pins", ["pins"]),
   },
   watch: {
-    schemaTables() {
-      this.generateItems();
-      this.generateDisplayItems();
+    schemaTables: {
+      handler() {
+        this.generateItems();
+        this.generateDisplayItems();
+      },
+      immediate: true,
     },
     minimalMode() {
       this.generateDisplayItems();

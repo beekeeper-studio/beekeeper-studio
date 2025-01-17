@@ -1,14 +1,11 @@
 import type { ColumnDefinition } from "tabulator-tables";
+import { BaseColumn } from "../types";
 
-export interface Column {
-  /** The key of the column in the data array. */
-  field: string;
+export interface Column extends BaseColumn {
   /** The title of the column displayed in the table header. */
   title: string;
   /** Make the column editable. */
   editable?: boolean;
-  /** The data type of the column. */
-  dataType?: string;
   /** Make the column a primary key. */
   primaryKey?: boolean;
   /** Make the column a foreign key. TODO add object type */

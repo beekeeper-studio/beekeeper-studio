@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="node_modules/@bks/ui-kit/dist/data-editor.css"
+    />
+  </head>
+  <body>
+    <bks-data-editor></bks-data-editor>
+    <script src="node_modules/@bks/ui-kit/dist/data-editor.js"></script>
+    <script>
+      const dataEditor = document.querySelector("bks-data-editor");
+      dataEditor.tables = [
+        {
+          name: "users",
+          columns: [
+            { field: "id", dataType: "integer" },
+            { field: "name", dataType: "varchar" },
+          ],
+          data: [
+            { id: 1, name: "John Doe" },
+            { id: 2, name: "Jane Smith" },
+          ],
+        },
+      ];
+      dataEditor.addEventListener("bks-query-submit", () => {
+        dataEditor.setTable({
+          name: "result",
+          columns: [
+            { field: "uuid", dataType: "varchar" },
+            { field: "name", dataType: "varchar" },
+            { field: "email", dataType: "varchar" },
+          ],
+          data: [
+            {
+              uuid: "123-456-789",
+              name: "John Doe",
+              email: "H0T4h@example.com",
+            },
+          ],
+        });
+      });
+    </script>
+  </body>
+</html>

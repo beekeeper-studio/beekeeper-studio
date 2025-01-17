@@ -1,5 +1,5 @@
 <template>
-  <div ref="table" />
+  <div class="BksTable" ref="table" />
 </template>
 
 <script lang="ts">
@@ -22,16 +22,16 @@ import {
   resizeAllColumnsToFixedWidth,
 } from "./menu";
 import { openMenu, divider, useCustomMenuItems } from "../context-menu/menu";
-import * as td from "tinyduration";
-import intervalParse from "postgres-interval";
 import Mutators from "./mixins/data_mutators";
 //  FIXME cant import Dialect type here
 // import { Dialect } from "@shared/lib/dialects/models";
 import * as constants from "../../utils/constants";
+import { BaseData } from "../types";
 import { Column, OrderBy } from "./types";
+import ProxyEmit from "../mixins/ProxyEmit";
 
 export default Vue.extend({
-  mixins: [Mutators],
+  mixins: [Mutators, ProxyEmit],
   props: {
     /** The name of the table. */
     table: {
@@ -46,12 +46,12 @@ export default Vue.extend({
     /** The data to render. Represented as a list of objects where the keys are the
     column names. */
     data: {
-      type: Array as PropType<Array<Record<string, any>>>,
+      type: Array as PropType<BaseData>,
       default: () => [],
     },
     /** The columns to render. */
     columns: {
-      type: Array as PropType<Array<Column>>,
+      type: Array as PropType<Column[]>,
       default: () => [],
     },
     /** Whether the table should be focused. */
@@ -245,17 +245,19 @@ export default Vue.extend({
       this.preLoadScrollPosition = this.$el.querySelector('.tabulator-tableholder').scrollLeft
       this.tabulator.setData(data);
     },
-    async setColumns(columns: ColumnDefinition[]) {
+    setColumns(columns: ColumnDefinition[]) {
       if (!this.tabulator) return
 
       if (columns.length === 0) {
-        await this.initialize();
+        this.initialize();
       } else {
         this.tabulator.options.autoColumns = false;
         this.tabulator.setColumns(columns);
       }
-      this.columnWidths = this.tabulator.getColumns().map((c) => {
-        return { field: c.getField(), width: c.getWidth()}
+      this.$nextTick(() => {
+        this.columnWidths = this.tabulator.getColumns().map((c) => {
+          return { field: c.getField(), width: c.getWidth()}
+        })
       })
     },
     blockRedraw() {

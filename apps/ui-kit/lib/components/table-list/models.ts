@@ -1,3 +1,7 @@
+import { BaseTable } from "../types";
+
+
+export type Table = BaseTable
 // FIXME not any
 export type Routine = any
 export type Entity = Table | Routine | string;
@@ -17,15 +21,6 @@ export const RoutineTypeNames = {
   procedure: "Stored Procedure",
 };
 
-export interface Table {
-  name: string;
-  schema?: string;
-  columns?: {
-    name: string;
-    dataType: string;
-  }[]
-}
-
 export type Item = SchemaItem | TableItem | RoutineItem;
 
 export interface BaseItem {
@@ -34,7 +29,6 @@ export interface BaseItem {
   key: string;
   expanded: boolean;
   hidden: boolean;
-  contextMenu: any[];
   level: number;
   parent?: BaseItem;
   pinned: boolean;

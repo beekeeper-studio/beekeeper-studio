@@ -1,12 +1,14 @@
 <template>
-  <textarea
-    name="editor"
-    class="editor"
-    ref="editor"
-    id=""
-    cols="30"
-    rows="10"
-  />
+  <div class="BksTextEditor">
+    <textarea
+      name="editor"
+      class="BksTextEditor-textarea editor"
+      ref="editor"
+      id=""
+      cols="30"
+      rows="10"
+    />
+  </div>
 </template>
 
 <script lang="ts">

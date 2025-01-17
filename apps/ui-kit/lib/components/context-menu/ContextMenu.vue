@@ -33,7 +33,7 @@
 
 <script lang="ts">
 import "./ContextMenu.scss";
-import { ContextOption } from './menu'
+import { MenuItem } from './menu'
 import Vue from 'vue'
 
 export default Vue.extend({
@@ -127,7 +127,7 @@ export default Vue.extend({
     onClickOutside() {
       this.hideContextMenu()
     },
-    optionClicked(option: ContextOption, idx: number, event: any) {
+    optionClicked(option: MenuItem, idx: number, event: any) {
       if (option.items?.length > 0 && this.showSubItemsIndex === idx) {
         return
       }

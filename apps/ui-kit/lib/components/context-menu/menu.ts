@@ -2,7 +2,7 @@ import Vue from 'vue'
 import ContextMenu from './ContextMenuRoot.vue'
 import isEmpty from "lodash/isEmpty"
 
-export interface ContextOption<Item = unknown> {
+interface BaseMenuItem<Item = unknown> {
   name: string
   handler: (...any) => void
   slug?: string
@@ -12,8 +12,15 @@ export interface ContextOption<Item = unknown> {
   /** Material Icons name. E.g. 'arrow_drop_down' */
   icon?: string
   disabled?: boolean
-  items?: (ContextOption<Item> | Divider)[]
+  items?: (MenuItem<Item> | Divider)[]
 }
+
+interface DividerItem {
+  type: 'divider'
+  slug: 'divider'
+}
+
+export type MenuItem<Item = unknown> = BaseMenuItem<Item> | DividerItem
 
 export interface Divider {
   type: 'divider'
@@ -21,16 +28,13 @@ export interface Divider {
 }
 
 export interface MenuProps<Item = unknown> {
-  options: (ContextOption<Item> | Divider)[],
+  options: (MenuItem<Item> | Divider)[],
   /** If set, the menu will be attached to this element. The string must be a valid CSS selector.
    *  @default body */
   targetElement?: string
   item?: Item
   event: Event
 }
-
-// Context options that are generated internally should have a slug. This will allow the items to be easily located or modified.
-export type InternalContextOption<Item = unknown> = ContextOption<Item> & Required<Pick<ContextOption, 'slug'>>;
 
 export const divider: Divider = { type: 'divider', slug: 'divider' }
 
@@ -47,16 +51,19 @@ export function openMenu<Item>(args: MenuProps<Item>) {
   cMenu.$mount()
 }
 
-type CustomMenuItems = ContextOption[] | ((event: Event, items: InternalContextOption[]) => ContextOption[])
+// Context options that are generated internally should have a slug. This will allow the items to be easily located or modified.
+export type InternalContextItem = MenuItem & Required<Pick<MenuItem, 'slug'>>;
+export type MenuItemsExtension = (event: Event, items: InternalContextItem[], additionalContext?: unknown) => MenuItem[]
+export type CustomMenuItems = MenuItem[] | MenuItemsExtension
 
 export function useCustomMenuItems(
   event: Event,
-  defaultItems: (InternalContextOption | Divider)[],
+  defaultItems: InternalContextItem[],
   customItems: CustomMenuItems,
-  context: any
-): (ContextOption | Divider)[] {
+  additionalContext?: unknown
+): (MenuItem | Divider)[] {
   if (typeof customItems === "function") {
-    return customItems(event, defaultItems as InternalContextOption[], context);
+    return customItems(event, defaultItems, additionalContext);
   }
   if (customItems === undefined) {
     return defaultItems;

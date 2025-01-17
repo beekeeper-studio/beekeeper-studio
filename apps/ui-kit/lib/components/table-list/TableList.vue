@@ -1,6 +1,6 @@
 <template>
   <div
-    class="table-list-wrapper"
+    class="BksTableList"
     ref="wrapper"
   >
 
@@ -154,14 +154,14 @@ import "./TableList.scss";
 import Vue, { PropType } from 'vue';
 import _ from 'lodash'
 import TableFilter from './mixins/table_filter'
-import TableListContextMenus from './mixins/TableListContextMenus'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
 import { Item, Table } from "./models";
 import { TableListEvents } from "./constants";
 import { RootEventMixin } from "../mixins/RootEvent";
 import { writeClipboard } from "../../utils/clipboard";
-import { openMenu } from "../context-menu/menu";
+import { openMenu, MenuItem, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
+import ProxyEmit from "../mixins/ProxyEmit";
 
 // TODO(@day): to remove
 // import { mapState, mapGetters } from 'vuex'
@@ -173,7 +173,7 @@ import { openMenu } from "../context-menu/menu";
 // import { TableOrView, Routine } from "@/lib/db/models";
 
 export default {
-  mixins: [TableFilter, TableListContextMenus, RootEventMixin],
+  mixins: [TableFilter, RootEventMixin, ProxyEmit],
   components: { VirtualTableList },
   props: {
     tables: {
@@ -184,6 +184,9 @@ export default {
       type: Array,
       default: () => []
     },
+    schemaContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    tableContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    routineContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     // this might just be for us, maybe make a default for others and allow overrides?
     dialectData: {
 
@@ -283,9 +286,6 @@ export default {
     // ...mapGetters({
     //     totalHiddenEntities: 'hideEntities/totalEntities',
     // }),
-    schemaMenuOptions() {
-      return []
-    },
     tableMenuOptions() {
       return [
         {
@@ -339,13 +339,15 @@ export default {
     },
     handleContextMenu(event, item: Item) {
       this.$emit('bks-item-contextmenu', item.entity)
+      let items: MenuItem[]
       if(item.type === 'schema') {
-        openMenu({ options: this.schemaMenuOptions, item: item, event })
+        items = useCustomMenuItems(event, [], this.schemaContextMenuItems)
       } else if(item.type === 'table') {
-        openMenu({ options: this.tableMenuOptions, item: item.entity, event })
-      } else if (item.type === 'routine') {
-        openMenu({ options: this.routineMenuOptions, item: item.entity, event })
+        items = useCustomMenuItems(event, this.tableMenuOptions, this.tableContextMenuItems)
+      } else {
+        items = useCustomMenuItems(event, this.routineMenuOptions, this.routineContextMenuItems)
       }
+      openMenu({ options: items, item: item.entity, event })
     },
     handleUpdateColumns(item: Item) {
       this.$emit('bks-item-update-columns', item.entity)

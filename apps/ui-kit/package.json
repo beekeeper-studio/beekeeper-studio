@@ -1,7 +1,7 @@
 {
   "name": "@bks/ui-kit",
   "private": true,
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "files": ["dist"],
   "main": "./dist/main.js",
@@ -26,7 +26,7 @@
   "dependencies": {
   },
   "devDependencies": {
-    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#a1f168f18b6de4ba9832ca93aa5bb1c8cbd28762",
+    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#4a90edd6f2d597e240a2a5c19242ba5d666d0290",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.2.0",

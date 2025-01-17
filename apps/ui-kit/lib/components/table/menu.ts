@@ -10,7 +10,7 @@ import _ from "lodash";
 // ?? not sure about this but :shrug:
 import Vue from "vue";
 import { readClipboard, writeClipboard } from "../../utils/clipboard";
-import { InternalContextOption as ColumnMenuItem, divider } from "../context-menu/menu";
+import { MenuItem as ColumnMenuItem, divider } from "../context-menu/menu";
 import { ctrlOrCmd } from "../../utils/platform";
 
 type RangeData = Record<string, any>[];

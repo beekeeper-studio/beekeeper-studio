@@ -37,7 +37,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
               inset 0 -1px $theme;
 }
 
-bks-table {
+.BksTable {
   --bks-table-bg-color: #ffffff;
   --bks-table-fg-color: #{$text-dark};
 
@@ -66,7 +66,9 @@ bks-table {
   --bks-table-tooltip-bg-color: #292A2D;
   --bks-table-tooltip-fg-color: lightgray;
 
-  .tabulator .tabulator-tableholder .tabulator-table {
+  height: 100%;
+
+  .tabulator-tableholder .tabulator-table {
 
     .tabulator-row {
       &.inserted,
@@ -125,7 +127,7 @@ bks-table {
     }
   }
 
-  .tabulator .tabulator-row {
+  .tabulator-row {
     background: transparent;
     width: min-content;
     min-width: 100%;
@@ -368,37 +370,7 @@ bks-table {
   }
 
 
-  // NOT Editable ~ change to editable at some point
-  .tabletable.view-only {
-    .tabulator-row {
-      .tabulator-cell {
-        cursor: default!important;
-        &:hover {
-          background: transparent!important;
-          &.selected {
-            background: rgba($theme-base, 0.10) !important;
-          }
-          &.copied {
-            background: rgba($theme-base, 0.4) !important;
-          }
-        }
-      }
-    }
-  }
-  .table-properties .view-only {
-    .tabulator-row {
-      .tabulator-cell:hover {
-        background: transparent;
-      }
-      .tabulator-cell,
-      .tabulator-cell input {
-        cursor: default!important;
-      }
-    }
-  }
-
-
-  .tabulator {
+  & {
     position: relative;
     font-size: 12px;
     border: 0;
@@ -704,7 +676,7 @@ bks-table {
   @import './tabulator/magics.scss';
   @import './tabulator/cell-decorations.scss';
 
-  .tabulator .tabulator-tableholder .tabulator-range-overlay {
+  .tabulator-tableholder .tabulator-range-overlay {
     .tabulator-range, .tabulator-range-cell-active {
       border-width: 1px;
     }
@@ -810,7 +782,7 @@ bks-table {
     }
   }
 
-  .tabulator {
+  & {
     color: var(--bks-table-fg-color);
     background-color: var(--bks-table-bg-color);
     .tabulator-tableholder {

@@ -1,12 +1,14 @@
 <template>
-  <textarea
-    name="editor"
-    class="editor"
-    ref="editor"
-    id=""
-    cols="30"
-    rows="10"
-  />
+  <div class="BksTextEditor BksSqlTextEditor">
+    <textarea
+      name="editor"
+      class="BksTextEditor-textarea BksSqlTextEditor-textarea editor"
+      ref="editor"
+      id=""
+      cols="30"
+      rows="10"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -17,12 +19,12 @@ import textEditorMixin from "../text-editor/mixin";
 import { format, FormatOptions } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { Options } from "sql-query-identifier";
-// FIXME move models outside table list
-import { Table } from "../table-list/models";
+import { BaseTable } from "../types";
 import { ctrlOrCmd } from "../../utils/platform";
+import ProxyEmit from "../mixins/ProxyEmit";
 
 export default Vue.extend({
-  mixins: [textEditorMixin],
+  mixins: [textEditorMixin, ProxyEmit],
   props: {
     mode: {
       type: textEditorMixin.props.mode,
@@ -50,7 +52,7 @@ export default Vue.extend({
     },
     /** Tables for autocompletion */
     tables: {
-      type: Array as PropType<Table[]>,
+      type: Array as PropType<BaseTable[]>,
       default() {
         return [];
       },
