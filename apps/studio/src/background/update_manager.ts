@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import globals from '../common/globals'
 import { getActiveWindows } from './WindowBuilder'
-import rawlog from 'electron-log'
+import rawlog from '@bksLogger'
 
 const log = rawlog.scope('update-manager')
 

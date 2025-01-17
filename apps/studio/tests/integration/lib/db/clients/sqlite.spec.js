@@ -1,4 +1,5 @@
 import { DBTestUtil } from "../../../../lib/db";
+import { writeFileSync } from "fs";
 import tmp from "tmp";
 import { runCommonTests, runReadOnlyTests } from "./all";
 import knex from "knex";
@@ -227,3 +228,41 @@ function testWith(options) {
 }
 
 TEST_VERSIONS.forEach(testWith)
+
+describe('SQLite - invalid db file', () => {
+  /** @type {tmp.FileResult} */
+  let dbfile
+  let dbName
+  /** @type {DBTestUtil} */
+  let util
+
+  beforeAll(() => {
+    dbfile = tmp.fileSync()
+    dbName = dbfile.name
+    writeFileSync(dbfile.name, "some data to make it invalid sqlite file", "utf8")
+
+    util = new DBTestUtil({
+      client: 'sqlite',
+    },
+    dbName,
+    {
+      dialect: "sqlite",
+      knex: knex({
+        client: "better-sqlite3",
+        connection: {
+          filename: dbName,
+        },
+      }),
+    })
+  })
+
+  afterAll(async () => {
+    await util?.disconnect()
+    dbfile?.removeCallback()
+  })
+
+  test('should throw error on connecting', () => {
+    expect.assertions(1)
+    return expect(util.connection.connect()).rejects.toHaveProperty('message', 'file is not a database')
+  })
+})
