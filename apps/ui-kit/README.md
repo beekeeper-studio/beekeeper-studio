@@ -34,6 +34,7 @@ The `@bks/ui-kit` library provides a set of reusable custom elements used in Bee
   - [Data Editor](#data-editor)
     - [Example](#example-3)
     - [Properties](#properties-3)
+    - [Methods](#methods-2)
     - [Events](#events-3)
 - [NOTE](#note)
 
@@ -297,6 +298,12 @@ If you want to add a divider between context menu items, you can add an object `
 | `tableListProps`     | `object`   | An object containing default table list properties.      | `{}`    |
 | `sqlTextEditorProps` | `object`   | An object containing default SQL text editor properties. | `{}`    |
 | `tableProps`         | `object`   | An object containing default table properties.           | `{}`    |
+
+#### Methods
+
+| Name         | Description          | Arguments |
+| ------------ | -------------------- | --------- |
+| `setTable()` | Sets the table data. | `Table`   |
 
 #### Events
 
