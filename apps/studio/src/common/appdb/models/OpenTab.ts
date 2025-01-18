@@ -74,6 +74,12 @@ export class OpenTab extends ApplicationEntity {
   filters?: string
   isRunning = false;
 
+  @Column({type: 'datetime', nullable: true})
+  lastActive?: Date
+
+  @Column({type: 'datetime', nullable: true})
+  deletedAt?: Date
+
   public setFilters(filters: Nullable<TableFilter[]>) {
     if (filters && _.isArray(filters)) {
       this.filters = JSON.stringify(filters)
@@ -156,5 +162,69 @@ export class OpenTab extends ApplicationEntity {
     }
   }
 
+  static async closeTab(deletedTab): Promise<void> {
+    console.log('~~~ closeTab ~~~')
+    console.log(deletedTab)
+    // let dt
+    // for (const prop in deletedTab) {
+    //   if (_.isNaN(prop)) continue 
+    //   const deletedTabData = deletedTab[prop]
+    //   dt = deletedTabData
+    //   const closedTab: TransportTabHistory = await this.findOneBy({ tabId: deletedTabData.id })
+    //   await this.save({
+    //     ...closedTab,
+    //     ...{
+    //       tabId: null,
+    //       tabType: deletedTabData.tabType ?? null,
+    //       title: deletedTabData.title ?? null,
+    //       unsavedQueryText: deletedTabData.unsavedQueryText ?? null, 
+    //       tableName: deletedTabData.tableName ?? null,
+    //       schemaName: deletedTabData.schemaName ?? null,
+    //       entityType: deletedTabData.entityType ?? null,
+    //       lastActive: new Date()
+    //     }
+    //   })
+    // }
+
+    // this.trimTable(dt)
+  }
+
+  static async getHistory(connectionIds): Promise<TransportOpenTab[]> {
+    console.log('~~~ Get History ~~~')
+    console.log(connectionIds)
+    const { connectionId, workspaceId } = connectionIds
+    return await OpenTab.find({
+      where: {
+        connectionId,
+        workspaceId
+      },
+      order: {
+        lastActive: 'DESC'
+      },
+      take: 10
+    })
+  }
+
+  static async reopenedtab(historyTab) {
+    console.log('~~~ reopen tabs ~~~')
+    console.log(historyTab)
+    // const { historyTabId } = historyTab
+    // try {
+    //   await this.delete({ id: historyTabId })
+    // } catch (err) {
+    //   console.error(err)
+    // }
+  }
 }
 
+export const TabHistoryHandlers = {
+  'appdb/tabhistory/closetab': async (deletedTabs: TransportOpenTab): Promise<void> => {
+    await OpenTab.closeTab(deletedTabs) 
+  },
+  'appdb/tabhistory/get': async (connectionIds): Promise<TransportOpenTab[]> => {
+    return await OpenTab.getHistory(connectionIds) 
+  },
+  'appdb/tabhistory/reopenedtab': async (historyTabId): Promise<void> => {
+    await OpenTab.reopenedtab(historyTabId) 
+  }
+}

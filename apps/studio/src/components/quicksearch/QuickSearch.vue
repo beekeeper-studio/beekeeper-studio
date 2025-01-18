@@ -219,7 +219,7 @@ export default Vue.extend({
   },
   methods: {
     async getTabHistory() {
-      const results = await Vue.prototype.$util.send('appdb/tabhistory/get', {workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
+      const results = await Vue.prototype.$util.send('appdb/tabhistory/get', { workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
       this.historyResults = results 
     },
     highlight(blob) {
@@ -231,11 +231,11 @@ export default Vue.extend({
       return result
     },
     highlightHistory(blob) {
-      const dangerous = blob.title ?? blob.tabDetails?.title
+      const dangerous = blob.title
       let historyText = [escapeHtml(dangerous || 'unknown item')]
 
-      if (!blob.tabId) {
-        historyText.push('reopen')
+      if (blob.deletedAt) {
+        historyText.push('recently closed')
       }
 
       return historyText.join(' - ')
@@ -257,6 +257,7 @@ export default Vue.extend({
       this.selectedItem = this.selectedItem + 1
     },
     async submit(result, persistSearch = false) {
+      console.log('submit')
       if(!result?.item) return
       switch (result.type) {
         case 'table':
@@ -293,12 +294,14 @@ export default Vue.extend({
       if (!persistSearch) this.closeSearch()
     },
     async handleHistoryClick(_event: MouseEvent, result: any) {
-      if (result.tabDetails) {
-        const tab = this.tabs.find((t) => t.id === result.tabDetails.id)
+      console.log(result)
+      if (!result.deletedAt) {
+        const tab = this.tabs.find((t) => t.id === result.id)
         this.closeSearch()
         return await this.$store.dispatch('tabs/setActive', tab)
       }
 
+      // this would just be reopening the tab and going from there, daaaaawg
       switch (result.tabType) {
         case 'table':
           this.$root.$emit(AppEvent.loadTable, { table: result })
