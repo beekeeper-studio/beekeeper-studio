@@ -35,7 +35,7 @@
         </div>
       </div>
     </div>
-    <common-iam v-show="iamAuthenticationEnabled" :config="config" />
+    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
   </div>
 </template>
@@ -77,7 +77,7 @@ export default {
           this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
           this.authType = 'default'
         } else {
-          this.iamAuthenticationEnabled = true
+          this.iamAuthenticationEnabled = this.authType.includes('iam')
         }
       }
 
