@@ -73,6 +73,7 @@ export interface RedshiftOptions {
   databaseGroup?: string;
   tokenDurationSeconds?: number;
   isServerless?: boolean;
+  authType?: string;
 }
 
 export interface CassandraOptions {

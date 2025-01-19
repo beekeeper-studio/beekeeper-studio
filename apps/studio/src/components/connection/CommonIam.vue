@@ -103,7 +103,7 @@
 <script>
 
 export default {
-  props: ['config', 'authType'],
+  props: ['config'],
   data() {
     return {
       iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
@@ -115,10 +115,12 @@ export default {
       return this.config.connectionType === 'redshift'
     },
     isKeyAuth() {
-      return this.authType.includes('key')
+      const { redshiftOptions } = this.config
+      return redshiftOptions?.authType && redshiftOptions.authType.includes('key')
     },
     isProfileAuth() {
-      return this.authType.includes('file')
+      const { redshiftOptions } = this.config
+      return redshiftOptions?.authType && redshiftOptions.authType.includes('file')
     }
   },
   methods: {
