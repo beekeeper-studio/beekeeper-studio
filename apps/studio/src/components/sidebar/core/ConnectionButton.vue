@@ -121,7 +121,7 @@
 <script>
 import { mapState, mapGetters } from 'vuex'
 import SaveConnectionForm from '../../connection/SaveConnectionForm.vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('app.vue')
 

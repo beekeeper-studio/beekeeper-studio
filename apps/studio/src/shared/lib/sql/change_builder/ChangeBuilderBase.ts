@@ -1,3 +1,4 @@
+import { TableColumn } from "@/lib/db/models";
 import { getDialectData } from "@shared/lib/dialects";
 import { AlterTableSpec, CreateIndexSpec, CreateRelationSpec, Dialect, DialectData, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from "lodash";
@@ -164,9 +165,12 @@ export abstract class ChangeBuilderBase {
 
     const renames = this.renames(spec.alterations || [])
     const fullRenames = renames.map((r) => `${beginning} ${r}`).join(";")
-
+    // need to add the 'alter table' portion at the beginning of each of these
+    const reorderColumns = spec.reorder ? this.reorderColumns(spec.reorder.oldOrder, spec.reorder.newOrder) : null
     let alterTable = alterations.length ? `${beginning} ${alterations.join(", ")}` : null
 
+    console.log('{{reorderColumns}}')
+    console.log(reorderColumns)
     // some dbs (SQLITE) don't support multiple operations in a single ALTER
     if (this.multiStatementMode) {
       alterTable = alterations.map((a) => {
@@ -182,6 +186,7 @@ export abstract class ChangeBuilderBase {
       alterTable,
       fullRenames,
       this.alterComments(spec.alterations || []).join(";"),
+      reorderColumns,
       end
     ].filter((sql) => !!sql).join(";")
     if (results.length) {
@@ -243,6 +248,11 @@ export abstract class ChangeBuilderBase {
   createRelations(specs: CreateRelationSpec[]): string | null {
     if (!specs?.length) return null
     return specs.map((spec) => this.singleRelation(spec)).join(";")
+  }
+
+  // shouldn't be abstract because not all clients support reordering a column 
+  reorderColumns(_oldColumnOrder: TableColumn[], _newColumnOrder: TableColumn[]): string {
+    throw new Error('reorderColumns must be added via a subclass')
   }
 
   dropRelations(names: string[]): string | null {
