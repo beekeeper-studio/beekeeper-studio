@@ -4,7 +4,7 @@
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
-        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
+        <option :key="`${t.value}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
           {{ t.name }}
         </option>
       </select>

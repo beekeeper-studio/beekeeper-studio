@@ -18,7 +18,7 @@
           </div>
         </div>
       </div>
-      <div class="flex flex-middle mb-3">
+      <div v-show="isRedshift" class="flex flex-middle mb-3">
         <h4
           class="advanced-heading flex"
           :class="{enabled: config.redshiftOptions.isServerless}"
@@ -39,26 +39,28 @@
           v-model="config.redshiftOptions.awsProfile"
         >
       </div>
-      <div v-show="isKeyAuth" class="form-group">
-        <label for="Access Key ID">
-          Access Key ID
-        </label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="config.redshiftOptions.accessKeyId"
-        >
-      </div>
-      <div v-show="isKeyAuth" class="form-group">
-        <label for="Secret Access Key">
-          Secret Access Key
-        </label>
-        <input
-          type="password"
-          class="form-control"
-          v-model="config.redshiftOptions.secretAccessKey"
-        >
-      </div>
+      <template v-show="isKeyAuth" >
+        <div class="form-group">
+          <label for="Access Key ID">
+            Access Key ID
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.accessKeyId"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Secret Access Key">
+            Secret Access Key
+          </label>
+          <input
+            type="password"
+            class="form-control"
+            v-model="config.redshiftOptions.secretAccessKey"
+          >
+        </div>
+      </template>
       <div class="form-group">
         <label for="AWS Region">
           AWS Region
@@ -69,30 +71,32 @@
           v-model="config.redshiftOptions.awsRegion"
         >
       </div>
-      <div v-show="isRedshift" class="form-group">
-        <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="config.redshiftOptions.clusterIdentifier"
-        >
-      </div>
-      <div v-show="isRedshift" class="form-group">
-        <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="config.redshiftOptions.databaseGroup"
-        >
-      </div>
-      <div v-show="isRedshift" class="form-group">
-        <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="config.redshiftOptions.tokenDurationSeconds"
-        >
-      </div>
+      <template v-show="isRedshift">
+        <div class="form-group">
+          <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.clusterIdentifier"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.databaseGroup"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.tokenDurationSeconds"
+          >
+        </div>
+      </template>
     </div>
   </div>
 </template>

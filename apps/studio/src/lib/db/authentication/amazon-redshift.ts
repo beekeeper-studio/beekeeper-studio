@@ -1,9 +1,13 @@
 import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-redshift';
 import { RedshiftServerlessClient, GetCredentialsCommand } from "@aws-sdk/client-redshift-serverless";
+import rawLog from "electron-log";
 
 // The number of minutes to consider credentials expired *before* their actual expiration.
 // This accounts for potential client clock drift.
 const CREDENTIAL_EXPIRATION_THRESHOLD_MINUTES = 5;
+
+const log = rawLog.scope("amazon-redshift");
+const logger = () => log;
 
 export interface AWSCredentials {
     accessKeyId: string;
@@ -99,14 +103,14 @@ export class RedshiftCredentialResolver {
       // instead of refreshing. This prevents excessive calling to Redshift's control plane
       // when we have credentials that we know with high confidence are still valid.
       if (!this.shouldRefreshCredentials(credentials)) {
-        console.log(`Re-using existing Redshift cluster credentials.`);
+        logger().info(`Re-using existing Redshift cluster credentials.`);
         return credentials;
       }
 
       let newCredentials = null
 
       // Get the credentials
-      console.log(`Calling Redshift to get temporary cluster credentials with config ${JSON.stringify(config)}`)
+      logger().info(`Calling Redshift to get temporary cluster credentials with config ${JSON.stringify(config)}`)
       if(config.isServerLess){
         const redshiftClientServerless = new RedshiftServerlessClient({
           credentials: awsCredentials,
@@ -125,7 +129,7 @@ export class RedshiftCredentialResolver {
           expiration: new Date(tempCredsResponse.expiration!)
         }
 
-        console.log(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.expiration!}`)
+        logger().info(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.expiration!}`)
       }else{
         const redshiftClient = new RedshiftClient({
           credentials: awsCredentials,
@@ -140,7 +144,7 @@ export class RedshiftCredentialResolver {
           DurationSeconds: config.durationSeconds || undefined,
           AutoCreate: true
         }));
-        console.log(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.Expiration!}`)
+        logger().info(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.Expiration!}`)
 
         newCredentials = {
           dbUser: tempCredsResponse.DbUser!,
