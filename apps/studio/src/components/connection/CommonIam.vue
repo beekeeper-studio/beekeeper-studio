@@ -128,7 +128,7 @@ export default {
         this.iamAuthenticationEnabled;
     },
     toggleServerless() {
-      this.config.redshiftOptions.isServerless = !this.isServerless
+      this.config.redshiftOptions.isServerless = !this.config.redshiftOptions.isServerless
     },
   }
 }
