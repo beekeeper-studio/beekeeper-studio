@@ -63,7 +63,12 @@ export const TabModule: Module<State, RootState> = {
       state.lastClosedTabs.push(...tabs.map((tab) => duplicate(tab)))
     },
     setActive(state, tab?: TransportOpenTab) {
+      const tabs = state.tabs.map(t => {
+        t.active = t.id === tab.id
+        return t
+      })
       state.active = tab
+      state.tabs = tabs
     },
   },
   actions: {

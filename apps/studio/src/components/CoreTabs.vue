@@ -55,12 +55,12 @@
         class="tab-pane"
         :id="'tab-' + idx"
         :key="tab.id"
-        :class="{active: (activeTab === tab)}"
-        v-show="activeTab === tab"
+        :class="{active: (activeTab.id === tab.id)}"
+        v-show="activeTab.id === tab.id"
       >
         <QueryEditor
           v-if="tab.tabType === 'query'"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
         />
@@ -72,7 +72,7 @@
           <template v-slot:default="slotProps">
             <TableTable
               :tab="tab"
-              :active="activeTab === tab"
+              :active="activeTab.id === tab.id"
               :table="slotProps.table"
             />
           </template>
@@ -84,7 +84,7 @@
         >
           <template v-slot:default="slotProps">
             <TableProperties
-              :active="activeTab === tab"
+              :active="activeTab.id === tab.id"
               :tab="tab"
               :tab-id="tab.id"
               :table="slotProps.table"
@@ -93,7 +93,7 @@
         </tab-with-table>
         <TableBuilder
           v-if="tab.tabType === 'table-builder'"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
         />
@@ -107,7 +107,7 @@
           v-if="tab.tabType === 'backup'"
           :connection="connection"
           :is-restore="false"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           @close="close"
         />
@@ -115,7 +115,7 @@
           v-if="tab.tabType === 'restore'"
           :connection="connection"
           :is-restore="true"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           @close="close"
         />
