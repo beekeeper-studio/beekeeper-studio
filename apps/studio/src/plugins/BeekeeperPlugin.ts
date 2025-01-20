@@ -65,6 +65,8 @@ export const BeekeeperPlugin = {
 
     if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
       return config.defaultDatabase || "./unknown.db"
+    } else if (config.connectionType === 'mongodb') {
+      return config.uri
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -89,6 +91,8 @@ export const BeekeeperPlugin = {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
     } else if (config.connectionType === 'bigquery') {
       connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
+    } else if (config.connectionType === 'mongodb') {
+      return config.uri;
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`

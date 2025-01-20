@@ -10,6 +10,7 @@ export function isUltimateType(s: ConnectionType) {
     'cassandra',
     'libsql',
     'clickhouse',
+    'mongodb'
   ]
   return types.includes(s)
 }

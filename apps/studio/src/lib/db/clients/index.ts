@@ -183,5 +183,9 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:socketPath',
     ],
+  },
+  {
+    key: 'mongodb',
+    name: 'MongoDB'
   }
 ];

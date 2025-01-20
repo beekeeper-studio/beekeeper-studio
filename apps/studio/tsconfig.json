@@ -1,8 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
- "vueCompilerOptions": {
-    "target": 2.7
-  },
   "compilerOptions": {
     "rootDirs": [
       "src", "src-commercial", "tests"
