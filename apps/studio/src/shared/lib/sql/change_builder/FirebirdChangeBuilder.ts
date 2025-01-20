@@ -1,6 +1,7 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
 import { CreateIndexSpec, Dialect, SchemaItem } from "@shared/lib/dialects/models";
+import { TableColumn } from "@/lib/db/models";
 
 export class FirebirdChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'firebird'
@@ -61,5 +62,20 @@ export class FirebirdChangeBuilder extends ChangeBuilderBase {
 
   dropColumn(column: string) {
     return `DROP ${this.wrapIdentifier(column)}`
+  }
+
+  reorderColumns(oldColumnOrder: TableColumn[], newColumnOrder: TableColumn[]): string {
+    const newOrder = newColumnOrder.reduce((acc, NCO, index) => {
+      if ( oldColumnOrder.length < index + 1) return acc
+      const { columnName } = NCO
+      const { columnName: oldColumnName } = oldColumnOrder[index]
+      if ( columnName !== oldColumnName) {
+          acc.push(`ALTER TABLE ${this.wrapIdentifier(this.table)} ALTER ${this.wrapIdentifier(columnName)} POSITION ${index + 1}`)
+      }
+      
+      return acc
+    }, [])
+
+    return (newOrder.length) ? newOrder.join(';') : ''
   }
 }

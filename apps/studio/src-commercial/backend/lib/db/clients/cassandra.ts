@@ -9,7 +9,7 @@ const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs');
 import * as cassandra from 'cassandra-driver';
 import { readFileSync } from "fs";
 import { CassandraChangeBuilder } from "@shared/lib/sql/change_builder/CassandraChangeBuilder";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";

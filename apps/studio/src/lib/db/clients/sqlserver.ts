@@ -17,7 +17,7 @@ import {
   joinQueries,
   buildInsertQuery
 } from './utils';
-import logRaw from 'electron-log'
+import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder'

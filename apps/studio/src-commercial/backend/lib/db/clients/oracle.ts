@@ -36,7 +36,7 @@ import {
   withClosable,
   buildDeleteQueries,
 } from '@/lib/db/clients/utils';
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { identify as rawIdentify } from 'sql-query-identifier'

@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import fs from 'fs'
 import path from 'path'
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
 import appConfig from '@/common/platform_info'
 import pf from 'portfinder'

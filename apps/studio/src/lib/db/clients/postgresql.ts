@@ -6,7 +6,7 @@ import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResul
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
-import logRaw from 'electron-log'
+import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
@@ -28,7 +28,6 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 const PD = PostgresData
 
 const log = logRaw.scope('postgresql')
-const logger = () => log
 
 const knex = knexlib({ client: 'pg' })
 const escapeBinding = knex.client._escapeBinding;
@@ -181,7 +180,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     })
 
 
-    logger().debug('connected');
+    log.debug('connected');
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
