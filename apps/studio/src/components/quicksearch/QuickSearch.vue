@@ -294,36 +294,13 @@ export default Vue.extend({
       if (!persistSearch) this.closeSearch()
     },
     async handleHistoryClick(_event: MouseEvent, result: any) {
-      console.log(result)
-      if (!result.deletedAt) {
-        const tab = this.tabs.find((t) => t.id === result.id)
-        this.closeSearch()
-        return await this.$store.dispatch('tabs/setActive', tab)
-      }
-
-      // this would just be reopening the tab and going from there, daaaaawg
-      switch (result.tabType) {
-        case 'table':
-          this.$root.$emit(AppEvent.loadTable, { table: result })
-          break;
-          case 'query':
-            result.text = result.unsavedQueryText
-            this.$root.$emit('historyClick', result)
-            break;
-        case 'table-properties': {
-          const newTable = this.tables.find(t => (
-            t.name === result.tableName &&
-            ((!result.schemaName && !t.schema) || (result.schemaName === t.schema))
-          ))
-          this.$root.$emit(AppEvent.openTableProperties, { table: newTable })
-          break;
-        }
-        default:
-          break;
-      }
       this.closeSearch()
+      if (result.deletedAt) {
+        result.deletedAt = null
+        await this.$store.dispatch('tabs/add', { item: result } )
+      }
 
-      return await this.$util.send('appdb/tabhistory/reopenedtab', { historyTabId: result.id });
+      return await this.$store.dispatch('tabs/setActive', result)
     },
     handleClick(event: MouseEvent, result: any) {
       if (event.ctrlKey) {

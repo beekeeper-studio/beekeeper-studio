@@ -71,14 +71,16 @@ export const TabModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
         log.info("Loading tabs for ", context.rootState.workspaceId, usedConfig.id)
-        const tabs = await Vue.prototype.$util.send('appdb/tabs/find', {
+        let tabs = await Vue.prototype.$util.send('appdb/tabs/find', {
           options: {
             where: {
               connectionId: usedConfig.id,
               workspaceId: context.rootState.workspaceId
             }
           }
-        });
+        })
+        tabs = tabs.filter(tab => !tab.deletedAt)
+        tabs.forEach(t => console.log(`${t.id} - ${t.deletedAt}`))
         context.commit('set', tabs || [])
         if (tabs?.length) {
           const active = tabs.find((t) => t.active) || tabs[0]
@@ -87,8 +89,6 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
-      await Vue.prototype.$util.send('appdb/tabhistory/closetab', context.state.tabs)
-      await Vue.prototype.$util.send('appdb/tabs/remove', { obj: context.state.tabs })
       context.commit('remove', context.state.tabs)
       context.commit('setActive', null)
     },
@@ -106,7 +106,9 @@ export const TabModule: Module<State, RootState> = {
     },
     async add(context, options: { item: TransportOpenTab, endOfPosition?: boolean }) {
       const { usedConfig } = context.rootState
-      let { item, endOfPosition } = options
+      const { endOfPosition } = options
+      let { item } = options
+
       if (endOfPosition) {
         item.position = (context.getters.sortedTabs.reverse()[0]?.position || 0) + 1
       }
@@ -114,6 +116,8 @@ export const TabModule: Module<State, RootState> = {
         log.info("saving tab", item)
         item.workspaceId = context.rootState.workspaceId
         item.connectionId = usedConfig.id
+        item.deletedAt = null
+        item.active = true
         item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item })
       }
       context.commit('add', item)
@@ -127,20 +131,20 @@ export const TabModule: Module<State, RootState> = {
     },
     async remove(context, rawItems: TransportOpenTab | TransportOpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
-      items.forEach((tab) => context.commit('remove', tab))
+      items.forEach((tab) => {
+        tab.deletedAt = new Date()
+        tab.position = 99
+        return context.commit('remove', tab)
+      })
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
-        await Vue.prototype.$util.send('appdb/tabs/remove', { obj: items })
+        await Vue.prototype.$util.send('appdb/tabs/save', { obj: items })
       }
-      await Vue.prototype.$util.send('appdb/tabhistory/closetab', items)
     },
     async save(context, rawTabs: TransportOpenTab[] | TransportOpenTab) {
       try {
         if (rawTabs == null) return
         const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
-
-        console.log('~~~ save ~~~')
-        console.log(tabs)
         const { usedConfig } = context.rootState
         if (usedConfig?.id) {
           await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs })
@@ -165,8 +169,9 @@ export const TabModule: Module<State, RootState> = {
       }
       tab.active = true
       tab.lastActive = new Date()
+      tab.deletedAt = null
 
-      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))  
+      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))
     }
 
   }
