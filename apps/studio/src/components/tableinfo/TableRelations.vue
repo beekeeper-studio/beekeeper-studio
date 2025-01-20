@@ -111,7 +111,7 @@ import { TableColumn, TableOrView } from '@/lib/db/models'
 import _ from 'lodash'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'

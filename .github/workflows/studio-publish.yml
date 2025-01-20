@@ -39,7 +39,7 @@ jobs:
     runs-on: "ubuntu-20.04"
     outputs:
       channel: ${{steps.extract_channel.outputs.channel}}
-      deb_codename: ${{steps.extract_channel.outputs.codename}}
+      deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -73,6 +73,7 @@ jobs:
             arch: arm64
             type: linux
             setup_python: true
+            clean_zfs: true
           - name: macos-13
             arch: x64
             type: macos
@@ -92,6 +93,13 @@ jobs:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: matrix.os.type == 'linux'
 
+        # Oh the hacks I put in place for the snap build
+        # Why does it fill up zfs? I don't understand what it does at all
+      - name: Free Up ZFS Space
+        run: |
+          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+          sudo zfs list -H -o name | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+        if: matrix.os.clean_zfs
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
@@ -106,7 +114,13 @@ jobs:
         if: matrix.os.setup_ruby
 
       - name: Install fpm
-        run: sudo gem install fpm
+        run: sudo gem install fpm -v 1.15.1
+        if: matrix.os.setup_ruby
+
+      - name: Install deb-s3 from GitHub
+        run: |
+          curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
+          gem install -N ./deb-s3.gem
         if: matrix.os.setup_ruby
 
       - name: Update repository
@@ -129,19 +143,14 @@ jobs:
             fs.writeFileSync(path, JSON.stringify(packageJson, null, 2) + '\n');
 
 
-      - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux'
-
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
           vs-version: '16.11.14'
         if: matrix.os.type == 'windows'
 
-      - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: matrix.os.type == 'linux'
 
-      - name: "Install python 3.11 (NOT Mac"
+      - name: "Install python 3.11 (NOT Mac)"
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
@@ -394,38 +403,11 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
-        # this way we can fix this script without a full redeploy
-        with:
-          ref: master
-
-        # Requires us to use a github token with more power (to create drafts on another repo)
-      - name: Create or check draft release (ultimate)
-        id: create_release
-        uses: actions/github-script@v7
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-          OWNER: 'beekeeper-studio'
-          REPO: 'ultimate-releases'
-        with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
-          script: |
-            const script = require('./.github/scripts/create_draft_release.js')
-            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
       - name: Copy community release to ultimate
-        uses: actions/github-script@v7
         env:
           TAG_NAME: ${{ github.ref_name }}
-          SOURCE: ${{ needs.create_draft_release.outputs.id }}
-          DEST: ${{ steps.create_release.outputs.id }}
           GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
-        with:
-          script: |
-            const script = require('./.github/scripts/duplicate_release.js')
-            await script(
-              github,
-              'beekeeper-studio/beekeeper-studio',
-              'beekeeper-studio/ultimate-releases',
-              process.env.SOURCE,
-              process.env.DEST
-            )
-
+          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          SOURCE: beekeeper-studio/beekeeper-studio
+          DEST: beekeeper-studio/ultimate-releases
+        run: 'bin/sync-release.sh "$SOURCE" "$DEST" "$TAG_NAME"'
