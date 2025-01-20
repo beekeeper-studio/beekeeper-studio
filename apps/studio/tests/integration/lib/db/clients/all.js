@@ -1022,6 +1022,7 @@ export const itShouldGenerateSQLWithBinary = async function (util) {
 
 export async function prepareImportTests (util) {
   const dialect = util().dialect
+  const schema = util().defaultSchema ?? null
   let tableName = 'importstuff'
 
   const importScriptOptions = {
@@ -1076,12 +1077,13 @@ export async function prepareImportTests (util) {
     ]
   }
   const table = {
-    schema: util().defaultSchema ?? null,
+    schema,
     name: tableName,
     entityType: 'table'
   }
   const formattedData = data.map(d => ({
     table: tableName,
+    schema,
     data: [d]
   }))
 
