@@ -257,7 +257,6 @@ export default Vue.extend({
       this.selectedItem = this.selectedItem + 1
     },
     async submit(result, persistSearch = false) {
-      console.log('submit')
       if(!result?.item) return
       switch (result.type) {
         case 'table':

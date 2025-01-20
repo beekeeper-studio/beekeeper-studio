@@ -159,7 +159,6 @@ export const TabModule: Module<State, RootState> = {
       } catch (ex) {
         console.error("tab/saveAll", ex)
       }
-      
     },
     async setActive(context, tab: TransportOpenTab) {
       const oldActive = context.state.active
