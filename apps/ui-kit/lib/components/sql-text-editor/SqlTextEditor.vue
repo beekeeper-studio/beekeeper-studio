@@ -1,5 +1,5 @@
 <template>
-  <div class="BksTextEditor BksSqlTextEditor">
+  <div class="BksUiKit BksTextEditor BksSqlTextEditor">
     <textarea
       name="editor"
       class="BksTextEditor-textarea BksSqlTextEditor-textarea editor"
@@ -12,7 +12,6 @@
 </template>
 
 <script lang="ts">
-import "./SqlTextEditor.scss";
 import _ from "lodash";
 import Vue, { PropType } from "vue";
 import textEditorMixin from "../text-editor/mixin";
@@ -85,7 +84,7 @@ export default Vue.extend({
       const thirdTables = {};
 
       this.tables.forEach((table) => {
-        const columns = table.columns?.map((c) => c.name) ?? [];
+        const columns = table.columns?.map((c) => c.field) ?? [];
         // don't add table names that can get in conflict with database schema
         if (/\./.test(table.name)) return;
 

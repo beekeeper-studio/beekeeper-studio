@@ -1,6 +1,10 @@
+@use "../../styles/variables" as *;
+
 .BksDataEditor {
   display: flex;
   height: 33rem;
+  background-color: $query-editor-bg;
+  color: $text-dark;
 
   .BksTableList {
     height: 100%;

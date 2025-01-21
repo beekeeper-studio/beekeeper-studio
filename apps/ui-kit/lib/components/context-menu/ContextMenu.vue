@@ -32,7 +32,6 @@
 </template>
 
 <script lang="ts">
-import "./ContextMenu.scss";
 import { MenuItem } from './menu'
 import Vue from 'vue'
 

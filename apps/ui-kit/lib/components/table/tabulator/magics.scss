@@ -1,6 +1,6 @@
+@use '../../../styles/variables' as *;
 
-
-.tabulator-row {
+.BksTable .tabulator-row {
   .tabulator-cell {
     &.magic-link {
       a {

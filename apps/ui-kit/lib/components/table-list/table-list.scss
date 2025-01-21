@@ -1,18 +1,17 @@
-// @import "../../styles/xel.scss";
-@import "../../styles/variables";
-@import "../../styles/light-theme.scss";
-@import "../../styles/mixins";
-@import "../../styles/base";
-@import "../../styles/layout";
+// @use "../../styles/xel.scss";
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+@use "../../styles/base";
+@use "../../styles/layout";
 
 .BksTableList {
   display: flex;
   flex-direction: column;
   height: 100%;
+  background-color: $theme-bg;
 
   .filter {
     position: relative;
-    padding: 0 $gutter-w;
     margin-bottom: $gutter-h;
   }
 
@@ -100,6 +99,14 @@
         color: rgba($theme-base, 0.5);
       }
     }
+  }
+
+  .list-group {
+    min-height: 0px;
+  }
+
+  .virtual-table-list {
+    overflow: auto;
   }
 
   .virtual-table-list .item-wrapper {
@@ -288,6 +295,7 @@
     height: 1.8rem;
     width: -webkit-fill-available;
     border-radius: 4px;
+    user-select: none;
 
     &:hover,
     &:focus {

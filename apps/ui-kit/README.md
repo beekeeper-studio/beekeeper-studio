@@ -48,20 +48,14 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
    npm install @bks/ui-kit
    ```
 
-2. Import the desired component and styles:
+2. Import the desired component and the style:
 
    ```js
+   // Import components individually
    import "@bks/ui-kit/bks-table.js";
-   import "@bks/ui-kit/bks-table.css";
-
    import "@bks/ui-kit/bks-table-list.js";
-   import "@bks/ui-kit/bks-table-list.css";
-
    import "@bks/ui-kit/bks-sql-text-editor.js";
-   import "@bks/ui-kit/bks-sql-text-editor.css";
-
    import "@bks/ui-kit/bks-data-editor.js";
-   import "@bks/ui-kit/bks-data-editor.css";
 
    // or import the whole library
    import "@bks/ui-kit";
@@ -100,6 +94,7 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 | Name                           | Type                     | Description                                                                                                          | Default     |
 | ------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `name`                         | `string`                 | The name of the table.                                                                                               | `table`     |
 | `data`                         | `object[]`               | An array of objects representing the table data.                                                                     | `[]`        |
 | `columns`                      | `object[]`               | An array of objects representing the table columns.                                                                  | `[]`        |
 | `tabulatorOptions`             | `object`                 | Extend the tabulator definition. See [tabulator docs](https://tabulator.info/docs/6.3/options) for more information. | `undefined` |

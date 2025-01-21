@@ -2,17 +2,6 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue2";
 import { resolve } from "path";
 
-function capitalizeFirstLetter(val: string) {
-  return String(val).charAt(0).toUpperCase() + String(val).slice(1);
-}
-
-function camelCase(val: string) {
-  return val.split("-").map(capitalizeFirstLetter).join("");
-}
-
-/** Pass `COMPONENT` env to build a specific component. Expects kebab-case. */
-const component = process.env.COMPONENT || "main";
-
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
@@ -22,29 +11,29 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist",
-    emptyOutDir: false,
     lib: {
-      ...(component === "main"
-        ? {
-            entry: resolve(__dirname, "lib/components/index.ts"),
-            name: "BksComponents",
-            fileName: () => "main.js",
-          }
-        : {
-            entry: resolve(__dirname, `lib/components/${component}/index.ts`),
-            name: `Bks${camelCase(component)}`,
-            fileName: () => `${component}.js`,
-          }),
-      formats: ["iife"],
+      entry: resolve(__dirname, "lib/index.ts"),
+      name: "BksUiKit",
+      formats: ["es"],
+      fileName: () => `[name].js`,
     },
     rollupOptions: {
-      output: {
-        ...(component !== "main" && {
-          assetFileNames: `${component}.[ext]`,
-        }),
+      input: {
+        "index": resolve(__dirname, "lib/components/define.ts"),
+        "table": resolve(__dirname, "lib/components/table/define.ts"),
+        "table-list": resolve(__dirname, "lib/components/table-list/define.ts"),
+        "sql-text-editor": resolve(
+          __dirname,
+          "lib/components/sql-text-editor/define.ts"
+        ),
+        "data-editor": resolve(
+          __dirname,
+          "lib/components/data-editor/define.ts"
+        ),
+        style: resolve(__dirname, "lib/style.scss"),
       },
     },
+    outDir: "dist",
     sourcemap: true,
   },
 });

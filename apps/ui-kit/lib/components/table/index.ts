@@ -1,16 +1,8 @@
-import Table from "./Table.vue";
-export { Table };
-export * from "./types";
+import Vue from "vue";
+import wrap from "@vue/web-component-wrapper";
+import Component from "./Table.vue";
 
-// FIXME These should probably be removed once we're finished extracting tables
-export { HeaderSortTabulatorModule } from "./plugins/HeaderSortTabulatorModule";
-export { EventBridgeTabulatorModule as KeyListenerTabulatorModule } from "./plugins/EventBridgeTabulatorModule";
-export * from "./mixins/data_mutators";
-export { default as Mutators } from "./mixins/data_mutators";
-export * from "./mixins/tabulator";
-export { default as Mutators2 } from "./mixins/tabulator";
-export { Mutators as JsonFriendlyMutators } from "./mixins/jsonFriendlyMutators";
-export * from "./tabulator";
-export * from "./menu";
-
-import "./web-component-wrapper";
+export const Table = wrap(Vue, Component, {
+    disableShadowDom: true,
+    exposeMethods: ["getTabulator"],
+}) as unknown as CustomElementConstructor;

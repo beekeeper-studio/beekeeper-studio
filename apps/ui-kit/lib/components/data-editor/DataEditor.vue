@@ -1,9 +1,9 @@
 <template>
-  <div class="BksDataEditor" ref="main">
+  <div class="BksUiKit BksDataEditor" ref="main">
     <table-list
       v-bind="tableListProps"
       :tables="tables"
-      :proxyEmit="$emit"
+      proxyEmit="true"
       @bks-item-dblclick="handleItemDblClick"
     />
     <div class="BksDataEditor-right-container" ref="right">
@@ -13,7 +13,7 @@
           focus
           :tables="tables"
           :keybindings="keybindings"
-          :proxyEmit="$emit"
+          proxyEmit="true"
           @bks-value-change="handleValueChange"
         />
         <div class="BksDataEditor-run">
@@ -32,7 +32,7 @@
           v-bind="tableProps"
           :columns="columns"
           :data="data"
-          :proxyEmit="$emit"
+          proxyEmit="true"
           @bks-foreign-key-go-to="handleForeignKeyGoTo"
         />
       </div>
@@ -41,7 +41,6 @@
 </template>
 
 <script lang="ts">
-import "./DataEditor.scss";
 import _ from "lodash";
 import Vue, { PropType } from "vue";
 import TableList from "../table-list/TableList.vue";

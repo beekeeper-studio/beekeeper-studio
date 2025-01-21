@@ -5,10 +5,9 @@
 @use "../../../../../node_modules/codemirror/addon/search/matchesonscrollbar";
 @use "../../../../../node_modules/codemirror/addon/fold/foldgutter";
 @use "dialog.scss";
-@import '../../styles/mixins';
-@import '../../styles/variables';
-@import '../../styles/light-variables';
-@import "../../styles/base";
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+@use "../../styles/base";
 
 .BksTextEditor {
   --bks-text-editor-activeline-bg-color: #373831;

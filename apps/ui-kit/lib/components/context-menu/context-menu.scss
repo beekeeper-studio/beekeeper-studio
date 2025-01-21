@@ -1,8 +1,7 @@
 // Original file source copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
 
-@import "../../styles/variables";
-@import "../../styles/light-theme.scss";
-@import "../../styles/mixins";
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
 
 .BksContextMenu-list {
   top: 0;

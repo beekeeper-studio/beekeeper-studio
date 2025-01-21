@@ -1,9 +1,8 @@
 <template>
-  <div class="BksTable" ref="table" />
+  <div class="BksUiKit BksTable" ref="table" />
 </template>
 
 <script lang="ts">
-import "./Table.scss";
 import Vue, { PropType } from "vue";
 import _ from "lodash";
 import { tabulatorForTableData, Options } from "./tabulator";
@@ -34,9 +33,9 @@ export default Vue.extend({
   mixins: [Mutators, ProxyEmit],
   props: {
     /** The name of the table. */
-    table: {
+    name: {
       type: String,
-      required: true,
+      default: "table",
     },
     /** The id for the table component. If provided, the columns' width and visibility
     will be persisted based on this id. */
@@ -96,6 +95,7 @@ export default Vue.extend({
       rangesInfo: [],
       columnWidths: null,
       preLoadScrollPosition: null,
+      initialized: false,
     };
   },
   computed: {
@@ -106,7 +106,7 @@ export default Vue.extend({
       const cellMenu = (event, cell) => {
         const defaultItems = copyActionsMenu({
           ranges: cell.getRanges(),
-          table: this.table,
+          table: this.name,
           schema: this.defaultSchema,
         })
         const items = useCustomMenuItems(event, defaultItems, this.cellContextMenuItems, cell)
@@ -118,7 +118,7 @@ export default Vue.extend({
         const defaultItems = [
           ...copyActionsMenu({
             ranges: column.getRanges(),
-            table: this.table,
+            table: this.name,
             schema: this.defaultSchema,
           }),
           divider,
@@ -289,7 +289,7 @@ export default Vue.extend({
         rowHeaderContextMenu: (event, cell) => {
           const defaultItems = copyActionsMenu({
             ranges: cell.getRanges(),
-            table: this.table,
+            table: this.name,
             schema: this.schema,
           })
           const items = useCustomMenuItems(event, defaultItems, this.rowHeaderContextMenuItems, cell)
@@ -300,7 +300,7 @@ export default Vue.extend({
           const defaultItems = [
             ...copyActionsMenu({
               ranges: column.getTable().getRanges(),
-              table: this.table,
+              table: this.name,
               schema: this.schema,
             }),
             divider,
@@ -326,30 +326,37 @@ export default Vue.extend({
         defaultOptions,
         this.tabulatorOptions
       );
-      this.tabulator = tabulatorForTableData(
+      const tabulator = tabulatorForTableData(
         this.$refs.table,
         options,
         tabulatorOptions
       );
-      this.$refs.table.addEventListener("keydown", this.keydown);
-      this.tabulator.on("tableBuilt", () => {
+      tabulator.on("tableBuilt", () => {
         if (this.isFirstInitialization) {
           this.isFirstInitialization = false
           if (this.hasFocus) {
             this.focus();
           }
         }
+
+        this.tabulator = tabulator
+
+        tabulator.on("sortChanged", (sorters) => {
+          this.$emit("bks-sorters-change", sorters.map(({ field, dir }) => ({ field, dir })));
+        });
+        tabulator.on("cellMouseUp", this.checkRangeChanges);
+        tabulator.on("headerMouseUp", this.checkRangeChanges);
+        tabulator.on("keyNavigate", this.checkRangeChanges);
+        // Tabulator range is reset after data is processed
+        tabulator.on("dataProcessed", this.checkRangeChanges);
+        tabulator.on('dataProcessed', this.maybeScrollAndSetWidths);
+        tabulator.on("tableDestroyed", () => {
+          this.$refs.table.removeEventListener("keydown", this.keydown);
+        })
+
+        this.$refs.table.addEventListener("keydown", this.keydown);
         this.$emit("bks-initialized", this.tabulator)
       });
-      this.tabulator.on("sortChanged", (sorters) => {
-        this.$emit("bks-sorters-change", sorters.map(({ field, dir }) => ({ field, dir })));
-      });
-      this.tabulator.on("cellMouseUp", this.checkRangeChanges);
-      this.tabulator.on("headerMouseUp", this.checkRangeChanges);
-      this.tabulator.on("keyNavigate", this.checkRangeChanges);
-      // Tabulator range is reset after data is processed
-      this.tabulator.on("dataProcessed", this.checkRangeChanges);
-      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths);
     },
     maybeScrollAndSetWidths() {
       if (this.columnWidths) {

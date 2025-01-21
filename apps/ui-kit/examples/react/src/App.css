@@ -40,8 +40,17 @@ h2 {
 
 .card {
   padding: 2em;
+  border-radius: 0.75rem;
+  border-color: rgb(163 163 163);
+  border-width: 1px;
+  border-style: dashed;
 }
 
+@media (prefers-color-scheme: dark) {
+  .card {
+    background-color: rgb(255 255 255);
+  }
+}
 .read-the-docs {
   color: #888;
 }

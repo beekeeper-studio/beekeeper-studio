@@ -3,11 +3,11 @@
 // we explicitly defined in the component with v-on or @.
 export default {
   beforeCreate() {
-    if (!this.$attrs.proxyEmit) return
+    if (!Boolean(this.$attrs.proxyEmit)) return
 
     const emit = this.$emit
     this.$emit = function (name, ...args) {
-      this.$attrs.proxyEmit(name, ...args)
+      this.$parent.$emit(name, ...args)
       emit.call(this, name, ...args)
     }
   }

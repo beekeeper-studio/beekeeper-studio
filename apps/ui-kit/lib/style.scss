@@ -1,4 +1,6 @@
-@import "./components/sql-text-editor/SqlTextEditor.scss";
-@import "./components/table/Table.scss";
-@import "./components/context-menu/ContextMenu.scss";
-@import "./components/table-list/TableList.scss";
+@use "./components/context-menu/context-menu.scss";
+@use "./components/data-editor/data-editor.scss";
+@use "./components/sql-text-editor/sql-text-editor.scss";
+@use "./components/table/table.scss";
+@use "./components/table-list/table-list.scss";
+@use "./components/text-editor/text-editor.scss";

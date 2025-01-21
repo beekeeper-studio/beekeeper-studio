@@ -1,4 +1,5 @@
-import SqlTextEditor from "./SqlTextEditor.vue";
-export { SqlTextEditor };
+import Vue from "vue";
+import wrap from "@vue/web-component-wrapper";
+import Component from "./SqlTextEditor.vue";
 
-import "./web-component-wrapper";
+export const SqlTextEditor = wrap(Vue, Component, { disableShadowDom: true }) as unknown as CustomElementConstructor;

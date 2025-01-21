@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@bks/ui-kit</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="node_modules/@bks/ui-kit/dist/style.css" />
+  </head>
+  <body>
+    <div id="root">
+      <div>
+        <a href="https://www.beekeeperstudio.io/" target="_blank">
+          <img
+            src="/assets/bks.svg"
+            class="logo bks"
+            alt="Beekeeper Studio logo"
+          />
+        </a>
+      </div>
+      <h1>@bks/ui-kit</h1>
+      <h2>Sql Text Editor</h2>
+      <div class="card">
+        <bks-sql-text-editor></bks-sql-text-editor>
+      </div>
+      <h2>Table</h2>
+      <div class="card">
+        <bks-table></bks-table>
+      </div>
+      <h2>Table List</h2>
+      <div class="card">
+        <bks-table-list></bks-table-list>
+      </div>
+      <h2>Data Editor</h2>
+      <div class="card">
+        <bks-data-editor></bks-data-editor>
+      </div>
+    </div>
+    <script type="module">
+      import { getTables } from "./data.js";
+      const tables = getTables();
+      const textEditor = document.querySelector("bks-sql-text-editor");
+      const table = document.querySelector("bks-table");
+      const tableList = document.querySelector("bks-table-list");
+      const dataEditor = document.querySelector("bks-data-editor");
+
+      textEditor.value = "select * from users u\nwhere u.id = 1;";
+      textEditor.tables = tables;
+
+      table.columns = tables[0].columns;
+      table.data = tables[0].data;
+
+      tableList.tables = tables;
+      tableList.addEventListener("bks-item-dblclick", (e) => {
+        const [table] = e.detail;
+        const idx = tables.findIndex((t) => t === table);
+        if (idx > -1) {
+          table.data = tables[idx].data;
+          table.columns = tables[idx].columns;
+        }
+      });
+
+      dataEditor.tables = tables;
+      dataEditor.addEventListener("bks-query-submit", (event) => {
+        alert(`Query: ${event.detail[0]}`);
+      });
+    </script>
+    <script type="module" src="node_modules/@bks/ui-kit/dist/index.js"></script>
+  </body>
+</html>

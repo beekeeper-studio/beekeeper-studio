@@ -1,5 +1,5 @@
 <template>
-  <div class="BksTextEditor">
+  <div class="BksUiKit BksTextEditor">
     <textarea
       name="editor"
       class="BksTextEditor-textarea editor"

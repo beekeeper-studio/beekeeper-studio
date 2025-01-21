@@ -1,6 +1,5 @@
-@import "./variables";
-@import "./light-theme.scss";
-@import "./mixins";
+@use "./variables" as *;
+@use "./mixins" as *;
 
 /*
  * @copyright

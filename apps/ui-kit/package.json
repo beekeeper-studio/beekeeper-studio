@@ -1,26 +1,23 @@
 {
   "name": "@bks/ui-kit",
   "private": true,
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "files": ["dist"],
-  "main": "./dist/main.js",
+  "main": "./dist/index.js",
   "style": "./dist/style.css",
   "exports": {
-    ".": "./dist/main.js",
+    ".": "./dist/index.js",
     "./style.css": "./dist/style.css",
-    "./table": "./dist/table.js",
-    "./table.css": "./dist/table.css",
-    "./table-list": "./dist/table-list.js",
-    "./table-list.css": "./dist/table-list.css",
-    "./sql-text-editor": "./dist/sql-text-editor.js",
-    "./sql-text-editor.css": "./dist/sql-text-editor.css"
+    "./table.js": "./dist/table/define.js",
+    "./table-list.js": "./dist/table-list/define.js",
+    "./sql-text-editor.js": "./dist/sql-text-editor/define.js"
   },
   "scripts": {
     "dev": "vite",
     "lib:dev": "vite build -c vite.config.ts --watch --mode development",
     "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
-    "build": "node build.mjs",
+    "build": "vite build -c vite.config.ts --mode production",
     "preview": "vite preview"
   },
   "dependencies": {

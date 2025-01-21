@@ -1,25 +1,22 @@
 // Fonts
 $material-icons-font-path: 'material-icons/iconfont/';
-$font-family:        'Roboto';
-$font-family-mono:   'Source Code Pro';
 $base-font-size:      0.875rem; // ~14px
 
+@use 'variables' as *;
+@use "./custom-icons.scss";
 @import 'material-icons/iconfont/material-icons';
-@import "./custom-icons.scss";
 
-*, *:after, *:before {
-  box-sizing: border-box;
-}
-:root {
+.BksUiKit {
   font-size: $base-font-size;
   font-family: $font-family, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-weight: normal;
-  -webkit-user-select: none;
-}
-body {
-  font-size: 1rem;
-}
-.material-icons {
-  transform: rotate(0.03deg);
+
+  *, *:after, *:before {
+    box-sizing: border-box;
+  }
+
+  .material-icons {
+    transform: rotate(0.03deg);
+  }
 }

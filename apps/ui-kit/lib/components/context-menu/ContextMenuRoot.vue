@@ -1,7 +1,7 @@
 <template>
   <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
   <teleport :to="targetElement ?? 'body'">
-    <div ref="container">
+    <div class="BksUiKit" ref="container">
       <context-menu :options="options" :event="event" :item="item" @close="$emit('close')" />
     </div>
   </teleport>
@@ -9,7 +9,6 @@
 
 <script lang="ts">
 import ContextMenu from "./ContextMenu.vue";
-import "./ContextMenu.scss";
 import Teleport from "vue2-teleport"
 import Vue from 'vue'
 

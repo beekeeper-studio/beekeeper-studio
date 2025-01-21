@@ -1,6 +1,6 @@
 <template>
   <div
-    class="BksTableList"
+    class="BksUiKit BksTableList"
     ref="wrapper"
   >
 
@@ -150,7 +150,6 @@
 
 <script lang="ts">
 // import "xel/xel";
-import "./TableList.scss";
 import Vue, { PropType } from 'vue';
 import _ from 'lodash'
 import TableFilter from './mixins/table_filter'
@@ -172,7 +171,7 @@ import ProxyEmit from "../mixins/ProxyEmit";
 // TODO(@azmi): make new types instead
 // import { TableOrView, Routine } from "@/lib/db/models";
 
-export default {
+export default Vue.extend({
   mixins: [TableFilter, RootEventMixin, ProxyEmit],
   components: { VirtualTableList },
   props: {
@@ -353,5 +352,5 @@ export default {
       this.$emit('bks-item-update-columns', item.entity)
     },
   },
-}
+})
 </script>
