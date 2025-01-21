@@ -254,11 +254,9 @@ export default {
 
       cm.getWrapperElement().classList.add(...classNames);
 
-      cm.setValue(this.value);
+      cm.setSize(null, this.height);
 
-      if (typeof this.height === "number") {
-        cm.setSize(null, this.height);
-      }
+      cm.setValue(this.value);
 
       cm.addKeyMap({
         "Ctrl-/": () => this.editor.execCommand("toggleComment"),

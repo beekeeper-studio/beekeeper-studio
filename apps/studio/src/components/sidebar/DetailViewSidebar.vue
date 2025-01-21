@@ -63,6 +63,7 @@
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
       :plugins="textEditorPlugins"
+      :height="'100%'"
     />
     <div class="empty-state" v-show="empty">
       No Data
