@@ -108,6 +108,8 @@ export function buildFilterString(filters: TableFilter[], columns = []) {
     })
     filterString = "WHERE " + joinFilters(allFilters, filters)
 
+    log.info('FILTER: ', filterString)
+
     filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
     })

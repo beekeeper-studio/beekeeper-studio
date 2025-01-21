@@ -130,9 +130,17 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
   }
 
   private async getCollectionCols(collection: Collection<Document>) {
-    // not sure how I feel about this, could be real bad on big collections
+    // Take the last 10 docs from a collection and hope that's an accurate representation of the whole collection lol
     return await collection.aggregate(
       [
+        {
+          "$sort": {
+            "_id": -1
+          }
+        },
+        {
+          "$limit": 10
+        },
         {
           "$project": {
             "fields": {
@@ -170,6 +178,69 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     ).toArray();
   }
 
+  private translateOperator(type: string): string {
+    const opMap = {
+      "=": "$eq",
+      "!=": "$ne",
+      "like": "$regex", // special case for regex
+      "<": "$lt",
+      "<=": "$lte",
+      ">": "$gt",
+      ">=": "$gte",
+      "in": "$in",
+      "is": "$eq",
+      "is not": "$neq"
+    };
+    return opMap[type] || null;
+  }
+
+  private convertFilters(filters: TableFilter[]) {
+
+    let result = null;
+    filters.forEach((filter, index) => {
+      const mongoOp = this.translateOperator(filter.type);
+      if (!mongoOp) {
+        log.warn(`Unsupported operator: ${filter.type}`);
+        return;
+      }
+
+      let condition: Document;
+      if (filter.type === "in") {
+        if (!_.isArray(filter.value)) {
+          log.warn(`Value for "in" must be an array: ${JSON.stringify(filter)}`);
+        }
+        condition = { [filter.field]: { [mongoOp]: filter.value }};
+      } else if (filter.type === "like" && _.isString(filter.value)) {
+        const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
+        condition = {
+          [filter.field]: {
+            [mongoOp]: reg,
+            $options: "i" // case-insensitive
+          }
+        };
+      } else if (filter.type.includes('is')) {
+        condition = {
+          [filter.field]: { [mongoOp]: null }
+        };
+      } else {
+        condition = { [filter.field]: { [mongoOp]: filter.value }};
+      }
+
+      if (index === 0) {
+        result = condition;
+      } else {
+        if (filter.op === "AND") {
+          result = { $and: [result, condition] };
+        } else if (filter.op === "OR") {
+          result = { $or: [result, condition] };
+        }
+      }
+
+    });
+
+    return result;
+  }
+
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
     const collection = this.conn.db(this.database.database).collection(table);
 
@@ -177,7 +248,8 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
       ...all,
       [ord.field]: ord.dir.toLowerCase() === 'asc' ? 1 : -1 
     }), {} as any) : {};
-    // const convertedFilters = !_.isString(filters) && filters.length > 0 ? filters.
+    const convertedFilters = !_.isString() && filters.length > 0 ? this.convertFilters(filters as TableFilter[]) : {};
+    log.info('convertedFilters: ', JSON.stringify(convertedFilters));
     let selectProject = [];
     if (selects.length > 0 && !selects.includes('*')) {
       
@@ -200,6 +272,9 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
 
 
     const result = await collection.aggregate([
+      {
+        "$match": convertedFilters
+      },
       {
         "$sort": convertedOrders
       },
