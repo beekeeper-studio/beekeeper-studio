@@ -78,6 +78,7 @@ export class RedshiftClient extends PostgresClient {
       generated: null, // Redshift does not support generated columns in svv_columns
       array: null, // Redshift does not support arrays
       comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -267,7 +268,7 @@ export class RedshiftClient extends PostgresClient {
 
   protected async getTypes(): Promise<any> {
     const sql = `
-      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::integer as typeid
       FROM        pg_type t
       LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
       WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))

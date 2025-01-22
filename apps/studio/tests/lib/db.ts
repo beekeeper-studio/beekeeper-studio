@@ -1,7 +1,7 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import log from 'electron-log'
+import log from '@bksLogger'
 import platformInfo from '../../src/common/platform_info'
 import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
@@ -10,7 +10,6 @@ import { TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
-import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { Client_DuckDB } from '@shared/lib/knex-duckdb'
@@ -23,6 +22,9 @@ import Papa from 'papaparse'
 import { FirebirdData } from '@/shared/lib/dialects/firebird'
 import { LicenseKey } from '@/common/appdb/models/LicenseKey'
 import { TestOrmConnection } from './TestOrmConnection'
+import { buffer as b, uint8 as u } from '@tests/utils'
+import Client_Oracledb from '@shared/lib/knex-oracledb'
+import Client_Firebird from '@shared/lib/knex-firebird'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -65,8 +67,8 @@ const KnexTypes: any = {
   "sqlite": "sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",
-  "firebird": knexFirebirdDialect,
-  "oracle": "oracledb",
+  "firebird": Client_Firebird,
+  "oracle": Client_Oracledb,
   "duckdb": Client_DuckDB,
 }
 
@@ -78,6 +80,7 @@ export interface Options {
   /** Skip creation of table with generated columns and the tests */
   skipGeneratedColumns?: boolean
   skipCreateDatabase?: boolean
+  skipTransactions?: boolean
   supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
   beforeCreatingTables?: () => void | Promise<void>
@@ -89,7 +92,8 @@ export interface Options {
    **/
   singleClient?: boolean
   knex?: Knex
-  nullDateTime?: any
+  knexClient?: Knex.Client
+  queryTestsTableCreationQuery?: string
 }
 
 export class DBTestUtil {
@@ -100,7 +104,7 @@ export class DBTestUtil {
   public options: Options
   private dbType: ConnectionType | 'generic'
 
-  private dialect: Dialect
+  public dialect: Dialect
   public data: DialectData
 
   public preInitCmd: string | undefined
@@ -128,10 +132,6 @@ export class DBTestUtil {
     this.dbType = config.client || 'generic'
     this.options = options
 
-    if (_.isUndefined(options.nullDateTime)) {
-      options.nullDateTime = null
-    }
-
     if (options.knex) {
       this.knex = options.knex
     } else if (config.client === 'sqlite' || config.client === 'duckdb') {
@@ -143,7 +143,7 @@ export class DBTestUtil {
       })
     } else if (config.client === 'oracle') {
       this.knex = knex({
-        client: 'oracledb',
+        client: Client_Oracledb,
         connection: {
           user: config.user,
           password: config.password,
@@ -153,7 +153,7 @@ export class DBTestUtil {
       })
     } else {
       this.knex = knex({
-        client: KnexTypes[config.client || ""] || config.client,
+        client: options.knexClient || KnexTypes[config.client || ""] || config.client,
         version: options?.version,
         connection: {
           host: config.socketPathEnabled ? undefined : config.host,
@@ -793,13 +793,13 @@ export class DBTestUtil {
 
   async columnFilterTests() {
     let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
-    expect(rowobj(r.result)).toEqual([{
-      // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
-      person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
-      job_id: this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId,
-      created_at: this.options.nullDateTime,
-      updated_at: this.options.nullDateTime,
-    }])
+
+    const row = rowobj(r.result)[0]
+    // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
+    expect(row.person_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId)
+    expect(row.job_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId)
+    expect(row.created_at).toBeDefined()
+    expect(row.updated_at).toBeDefined()
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
     expect(rowobj(r.result)).toEqual([{
@@ -834,7 +834,7 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    await this.connection.executeQuery('create table one_record(one integer primary key)')
+    await this.connection.executeQuery(this.options.queryTestsTableCreationQuery || 'create table one_record(one integer primary key)')
     await this.connection.executeQuery('insert into one_record values(1)')
 
     const tables = await this.connection.listTables({ schema: this.defaultSchema})
@@ -1195,10 +1195,6 @@ export class DBTestUtil {
       let batch = []
       const maxBatch = this.dbType === 'firebird' ? 255 : 233
 
-      if (this.dbType === 'sqlserver') {
-        await this.knex.schema.raw('SET IDENTITY_INSERT organizations ON')
-      }
-
       const execBatch = async (batch: Record<string, any>[]) => {
         if (this.dbType === 'firebird') {
           const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
@@ -1386,6 +1382,70 @@ export class DBTestUtil {
     expect(Number(dataLength)).toBe(expectedLength)
   }
 
+  async serializationBinary() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+    const n = (i) => this.dialect === 'sqlite' ? BigInt(i) : i
+
+    await this.knex('contains_binary').insert({ id: 1 })
+    await this.knex('contains_binary').insert({ id: 2, bin: b`` })
+    await this.knex('contains_binary').insert({ id: 3, bin: b`0` })
+    await this.knex('contains_binary').insert({ id: 4, bin: b`deadbeef` })
+
+    let result = await this.connection.selectTop('contains_binary', 0, 10, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema, [BIN])
+    expect(result.result).toMatchObject([
+      { [BIN]: null },
+      { [BIN]: u`` },
+      { [BIN]: u`0` },
+      { [BIN]: u`deadbeef` },
+    ])
+
+    result = await this.connection.selectTop('contains_binary', 3, 1, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema)
+    let data = result.result[0][BIN]
+    expect(ArrayBuffer.isView(data)).toBe(true)
+    expect(Buffer.from(data)).toEqual(b`deadbeef`)
+    expect(result.fields).toEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+
+    await this.connection.applyChanges({
+      inserts: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        // frontend sends binary as Uint8Array, or any TypedArray is possible
+        data: [{ id: 5, bin: u`beefdeed` }],
+      }],
+      updates: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        primaryKeys: [{ column: ID, value: 4 }],
+        column: BIN,
+        value: u`eeffeeff`,
+      }],
+      deletes: [],
+    })
+
+    const rows = await this.knex('contains_binary').select('bin').offset(3).limit(2).orderBy(ID)
+    expect(rows.map((r) => Buffer.from(r.bin))).toEqual([
+      b`eeffeeff`,
+      b`beefdeed`,
+    ])
+  }
+
+  async resolveTableColumns() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+
+    const columns = await this.connection.listTableColumns('contains_binary', this.defaultSchema)
+    const bksFields = columns.map(c => c.bksField)
+
+    expect(bksFields).toStrictEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
@@ -1399,7 +1459,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable('addresses', (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("street")
       table.string("city")
       table.string("state")
@@ -1426,7 +1486,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("people", (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("firstname")
       table.string("lastname")
       table.string("email").notNullable()
@@ -1436,7 +1496,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("jobs", (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
     })
@@ -1455,7 +1515,7 @@ export class DBTestUtil {
       table.foreign("person_id").references("people.id")
       table.foreign("job_id").references("jobs.id")
       table.primary(['person_id', "job_id"])
-      table.timestamps(true)
+      table.timestamps(true, true)
     })
 
     await this.knex.schema.createTable('with_composite_pk', (table) => {
@@ -1482,6 +1542,11 @@ export class DBTestUtil {
       table.string('industry', 255).notNullable();
       table.integer('number_of_employees').notNullable();
     });
+
+    await this.knex.schema.createTable('contains_binary', (table) => {
+      table.integer("id").primary().notNullable()
+      table.binary('bin', 8).nullable()
+    })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {

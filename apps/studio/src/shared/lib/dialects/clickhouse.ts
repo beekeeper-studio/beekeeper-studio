@@ -82,8 +82,15 @@ export const ClickHouseData: DialectData = {
     alter: {
       multiStatement: true,
       renameSchema: true,
+      reorderColumn: true
     },
     transactions: true,
     chunkSizeStream: true,
+    // Clickhouse doesn't have binary types
+    binaryColumn: true,
+    // Sorting can slow down queries
+    initialSort: true,
+    // TODO (azmi): in progress
+    importFromFile: true,
   },
 }

@@ -1,6 +1,6 @@
 import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
-import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn } from "../models";
+import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
@@ -78,6 +78,7 @@ export class CockroachClient extends PostgresClient {
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -197,7 +198,7 @@ export class CockroachClient extends PostgresClient {
 
   protected async getTypes(): Promise<any> {
     const sql = `
-      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::integer as typeid
       FROM        pg_type t
       LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
       WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
@@ -213,5 +214,12 @@ export class CockroachClient extends PostgresClient {
     _.merge(result, _.invert(pg.types.builtins))
     result[1009] = 'array'
     return result
+  }
+
+  parseTableColumn(column: { column_name: string, data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type === 'bytea' ? 'BINARY' : 'UNKNOWN',
+    }
   }
 }

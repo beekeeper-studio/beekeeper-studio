@@ -7,10 +7,9 @@ import { homedir } from 'os';
 import tls, { SecureVersion } from 'tls';
 import username from 'username';
 import { execSync } from 'child_process';
-import rawLog from 'electron-log/renderer';
+import 'electron-log/preload';
 import pluralize from 'pluralize';
 
-const log = rawLog.scope('preload.ts');
 
 const electron = require('@electron/remote');
 
@@ -98,6 +97,18 @@ export const api = {
   openLink(link: string) {
     return electron.shell.openExternal(link);
   },
+  onMaximize(func: any, sId: string) {
+    ipcRenderer.on(`maximize-${sId}`, func);
+  },
+  onUnmaximize(func: any, sId: string) {
+    ipcRenderer.on(`unmaximize-${sId}`, func);
+  },
+  onEnterFullscreen(func: any, sId: string) {
+    ipcRenderer.on(`enter-full-screen-${sId}`, func);
+  },
+  onLeaveFullscreen(func: any, sId: string) {
+    ipcRenderer.on(`leave-full-screen-${sId}`, func);
+  },
   async isMaximized() {
     return await ipcRenderer.invoke('isMaximized');
   },
@@ -145,7 +156,6 @@ export const api = {
   },
   attachPortListener() {
     ipcRenderer.on('port', (event, { sId, utilDied }) => {
-      log.log('Received port in renderer with sId: ', sId);
       window.postMessage({ type: 'port', sId }, '*', event.ports);
 
       if (utilDied) {

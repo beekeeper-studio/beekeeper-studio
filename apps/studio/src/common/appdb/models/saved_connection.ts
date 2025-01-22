@@ -2,7 +2,7 @@ import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
-import log from 'electron-log'
+import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions } from "@/lib/db/types"
@@ -217,7 +217,13 @@ export class DbConnectionBase extends ApplicationEntity {
 export class SavedConnection extends DbConnectionBase implements IConnection {
 
   withProps(props?: any): SavedConnection {
-    if (props) SavedConnection.merge(this, props);
+
+    if (props) {
+      if (props.connectionType) {
+        this.connectionType = props.connectionType;
+      }
+      SavedConnection.merge(this, props);
+    }
 
     if (!this.createdAt) {
       this.createdAt = new Date();

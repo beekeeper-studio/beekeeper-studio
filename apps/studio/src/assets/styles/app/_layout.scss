@@ -127,6 +127,7 @@ x-buttons > x-button[menu].btn {
 .btn-icon {
   .material-icons:first-child {
     margin-right: $gutter-h * 0.65;
+    margin-left: 0;
   }
 
   .material-icons:last-child {
@@ -156,13 +157,12 @@ x-buttons > x-button[menu].btn {
 .btn-small {
   @include btn-small;
 }
-x-buttons > x-button.btn-small:first-of-type {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-x-buttons > x-button.btn-small:last-of-type {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+x-buttons {
+  border-radius: 6px;
+  overflow: hidden;
+  > x-button.btn-small {
+    border-radius: 0;
+  }
 }
 .btn-block {
   display: flex;
@@ -405,7 +405,8 @@ input[type="checkbox"] {
   display: inline-flex;
 	-webkit-appearance: none;
 	background-color: transparent;
-  box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
+  outline: 2px solid rgba($theme-base, 0.2);
+  outline-offset: -2px;
   height: $checkbox-size;
   line-height: $checkbox-size;
   width: $checkbox-size;
@@ -422,6 +423,7 @@ input[type="checkbox"] {
     background: $theme-base;
     color: $theme-bg;
     box-shadow: none;
+    outline: none;
   }
   &:checked:after {
     font-family: 'Material Icons';
@@ -608,15 +610,16 @@ input[type=file] {
   &.gutter-horizontal,
   &.gutter-vertical {
     display: flex;
-    background-color: tranparent;
-    z-index: 10;
+    background-color: transparent;
+    z-index: 20;
   }
   &.gutter-horizontal {
     width: 0!important;
     cursor: ew-resize;
     &:after {
       height: 100%;
-      width: 5px;
+      width: var(--gutter-size, 10px);
+      transform: translateX(-50%);
       background-color: inherit;
     }
   }

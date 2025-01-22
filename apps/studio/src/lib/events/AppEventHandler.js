@@ -1,5 +1,5 @@
 import { AppEvent } from "../../common/AppEvent"
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope("AppEventHandler")
@@ -13,7 +13,6 @@ export default class {
 
   registerCallbacks() {
     window.main.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
-    window.main.on(AppEvent.menuStyleChanged, this.menuStyle.bind(this))
     window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
@@ -42,7 +41,7 @@ export default class {
   }
 
   async addBeekeeper() {
-    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
+    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: { defaultDatabase: platformInfo.appDbPath }});
     if (!existing) {
       const nu = {};
       nu.connectionType = 'sqlite'
@@ -61,10 +60,6 @@ export default class {
 
   settingsChanged() {
     this.vueApp.$store.dispatch("settings/initializeSettings")
-  }
-
-  menuStyle() {
-    this.vueApp.$noty.success("Restart Beekeeper for the change to take effect")
   }
 
   async switchLicenseState(_event, state) {

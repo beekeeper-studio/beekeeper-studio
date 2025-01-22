@@ -1,4 +1,4 @@
-import type { Version } from '@/lib/license';
+import type { BksVersion } from '@/lib/license';
 
 export interface IPlatformInfo {
   isWindows: boolean,
@@ -32,7 +32,7 @@ export interface IPlatformInfo {
   appDbPath: string,
   updatesDisabled: boolean,
   appVersion: string,
-  parsedAppVersion: Version,
+  parsedAppVersion: BksVersion,
   cloudUrl: string,
   locale: string,
 };

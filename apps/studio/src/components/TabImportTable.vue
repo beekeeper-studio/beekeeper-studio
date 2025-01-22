@@ -1,14 +1,23 @@
 <template>
-  <div class="tabcontent">
-    <div
-      v-if="isSupported"
-      class="tabcontent"
-    >
-      <div v-if="isCommunity" style="padding: 0 1rem;">
-        <upsell-content />
-      </div>
+  <div
+    v-if="!isSupported"
+    class="tab-content"
+  >
+    <div class="not-supported">
+      <p>
+        Beekeeper does not currently support Import from File for {{ this.dialectTitle }} ☹️
+      </p>
+    </div>
+  </div>
+  <div
+    v-else-if="isCommunity"
+    class="tab-upsell-wrapper"
+  >
+    <upsell-content />
+  </div>
+  <div v-else class="tab-content">
+    <div class="import-table-container">
       <stepper
-        v-else
         :steps="importSteps"
         :button-portal-target="portalName"
         wrapper-class="import-export-wrapper"
@@ -48,10 +57,10 @@
         </div>
         <div v-else-if="this.importError">
           <p>The whole import was aborted with a transaction rollback</p>
-          <p>
-            <span class="import-error-message">
+          <div>
+            <p class="import-error-message">
               {{ importError }}
-            </span>
+            </p>
             <span class="buttons">
               <a
                 @click.prevent="goBack"
@@ -76,17 +85,9 @@
                 {{ copyMessage }}
               </a>
             </span>
-          </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div
-      class="not-supported"
-      v-else
-    >
-      <p>
-        Beekeeper does not currently support Import from File for {{ this.dialectTitle }} ☹️
-      </p>
     </div>
 
     <status-bar>
@@ -114,7 +115,7 @@
   import ImportFile from './importtable/ImportFile.vue'
   import ImportMapper from './importtable/ImportMapper.vue'
   import ImportPreview from './importtable/ImportPreview.vue'
-  import UpsellContent from '@/components/connection/UpsellContent.vue'
+  import UpsellContent from '@/components/upsell/UpsellContent.vue'
   import { DialectTitles } from '@shared/lib/dialects/models'
 
   import { ExportStatus } from '../lib/export/models'
@@ -197,7 +198,7 @@
       }
     },
     computed: {
-      ...mapGetters(['schemaTables', 'dialectData', 'dialect', 'isCommunity']),
+      ...mapGetters(['schemaTables', 'dialectData', 'dialect', 'isCommunity', 'isUltimate']),
       ...mapState(['tables', 'connection']),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
       isSpinning() {

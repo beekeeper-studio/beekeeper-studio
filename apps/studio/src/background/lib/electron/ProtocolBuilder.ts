@@ -3,15 +3,16 @@ import * as path from 'path'
 import { readFile } from 'fs'
 import * as fs from 'fs'
 import { URL } from 'url'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 
-const log = rawLog.scope('ProtocolBuilder')
+const log = rawLog.scope('app:// ProtocolBuilder')
 
 
 
 export const ProtocolBuilder = {
 
+  // app:// loads from dist/renderer
   createAppProtocol: () => {
     protocol.registerBufferProtocol(
       'app',
@@ -31,7 +32,8 @@ export const ProtocolBuilder = {
         // our app runs from dist/, regardless of whether this is inside of the
         // app.asar file, but we want to not allow loading of content from outside of
         // the dist directory
-        let normalizedPath = path.normalize(path.join(__dirname, pathName))
+        let normalizedPath = path.normalize(path.join(__dirname, 'renderer', pathName))
+        log.debug("resolving", pathName, 'to', normalizedPath)
         const extension = path.extname(pathName).toLowerCase()
         if (extension === '.map' && platformInfo.isDevelopment) {
           // we want to check the directory and resolve it

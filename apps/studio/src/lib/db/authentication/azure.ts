@@ -1,7 +1,7 @@
 import * as msal from '@azure/msal-node';
 import axios, { AxiosResponse } from 'axios';
 import { wait } from '@shared/lib/wait';
-import rawLog from 'electron-log';
+import rawLog from '@bksLogger';
 import { TokenCache } from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
 import { AzureAuthType } from '../types';
@@ -73,7 +73,7 @@ export class AzureAuthService {
       throw new Error("No TokenCache entry found in database");
     }
 
-    localCache = await TokenCache.findOne(authId);
+    localCache = await TokenCache.findOneBy({ id: authId });
 
     const clientConfig = {
      auth: {

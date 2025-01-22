@@ -1,0 +1,80 @@
+.connection-upsell-content {
+  margin-top: 1.64rem;
+  font-size: 0.9rem;
+  .intro {
+
+  }
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+    padding-bottom: 1.25rem;
+    border-radius: 0.5rem;
+    background-color: rgba($theme-base, 0.08);
+    color: $text-dark;
+
+    .main-content-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+      }
+    }
+
+    p {
+      margin: 0;
+      line-height: 2.01;
+    }
+
+    .intro {
+      font-weight: 700;
+      font-size: 1rem;
+      display: flex;
+      gap: 0.85rem;
+
+      .material-icons {
+        padding-top: 0.25rem;
+      }
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      gap: 0.71rem;
+      margin: 0;
+      padding: 0;
+      margin-left: 2rem;
+      list-style-type: none;
+
+      .bullet {
+        margin-right: 1rem;
+      }
+    }
+
+    .bottom {
+      margin-left: 2rem;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.43rem;
+    margin-top: 1rem;
+
+    .primary .material-icons {
+      font-size: 0.85rem;
+      margin-right: 0.14rem;
+    }
+
+    .primary:hover {
+      background-color: $theme-primary;
+      color: #000000;
+    }
+  }
+}

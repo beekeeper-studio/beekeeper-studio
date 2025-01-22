@@ -1,5 +1,9 @@
+import rawLog from '@bksLogger';
+rawLog.info("initializing utility");
+
+const log = rawLog.scope('UtilityProcess');
+
 import { MessagePortMain } from 'electron';
-import rawLog from 'electron-log'
 import ORMConnection from '@/common/appdb/Connection'
 import platformInfo from '@/common/platform_info';
 import { AppDbHandlers } from '@/handlers/appDbHandlers';
@@ -20,8 +24,13 @@ import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { CloudClient } from '@/lib/cloud/CloudClient';
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import globals from '@/common/globals';
+import _ from 'lodash';
 
-const log = rawLog.scope('UtilityProcess');
+import * as sms from 'source-map-support'
+
+if (platformInfo.env.development || platformInfo.env.test) {
+  sms.install()
+}
 
 let ormConnection: ORMConnection;
 
@@ -33,7 +42,7 @@ interface Reply {
   stack?: string
 }
 
-export let handlers: Handlers = {
+export const handlers: Handlers = {
   ...ConnHandlers,
   ...QueryHandlers,
   ...GeneratorHandlers,
@@ -47,6 +56,25 @@ export let handlers: Handlers = {
   ...LicenseHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
+
+_.mixin({
+  'deepMapKeys': function (obj, fn) {
+
+    const x = {};
+
+    _.forOwn(obj, function (rawV, k) {
+      let v = rawV
+      if (_.isPlainObject(v)) {
+        v = _.deepMapKeys(v, fn);
+      } else if (_.isArray(v)) {
+        v = v.map((item) => _.deepMapKeys(item, fn))
+      }
+      x[fn(v, k)] = v;
+    });
+
+    return x;
+  }
+});
 
 process.on('uncaughtException', (error) => {
   log.error(error);
@@ -75,7 +103,7 @@ process.parentPort.on('message', async ({ data, ports }) => {
 
 async function runHandler(id: string, name: string, args: any) {
   log.info('RECEIVED REQUEST FOR NAME, ID: ', name, id);
-  let replyArgs: Reply = {
+  const replyArgs: Reply = {
     id,
     type: 'reply',
   };
@@ -89,6 +117,7 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.type = 'error';
         replyArgs.stack = e?.stack;
         replyArgs.error = e?.message ?? e;
+        log.error("HANDLER: ERROR", e)
       })
       .finally(() => {
         try {
@@ -107,7 +136,6 @@ async function runHandler(id: string, name: string, args: any) {
       log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
     }
   }
-
 }
 
 async function initState(sId: string, port: MessagePortMain) {
