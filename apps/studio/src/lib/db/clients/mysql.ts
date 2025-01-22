@@ -423,7 +423,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         schema: "",
         name: row.Key_name as string,
         columns,
-        unique: row.Non_unique === "0",
+        unique: row.Non_unique === "0" || row.Non_unique === 0,
         primary: row.Key_name === "PRIMARY",
       };
     });
