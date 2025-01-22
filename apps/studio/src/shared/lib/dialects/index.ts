@@ -9,6 +9,7 @@ import { SqliteData } from "./sqlite";
 import { SqlServerData } from "./sqlserver";
 import { CassandraData } from './cassandra'
 import { ClickHouseData } from "./clickhouse";
+import { MongoDBData } from "./mongodb";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -32,6 +33,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return FirebirdData
     case 'clickhouse':
       return ClickHouseData
+    case 'mongodb':
+      return MongoDBData
     default:
       return SqliteData
   }

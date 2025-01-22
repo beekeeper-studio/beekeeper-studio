@@ -27,6 +27,7 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ]
 
+// if you update this, you may need to update `translateOperator` in the mongodb driver
 export const TableFilterSymbols = [
   { value: '=', label: 'equals' },
   { value: '!=', label: 'does not equal'},
@@ -38,7 +39,6 @@ export const TableFilterSymbols = [
   { value: "in", label: 'in', arrayInput: true },
   { value: "is", label: "is null", nullOnly: true },
   { value: "is not", label: "is not null", nullOnly: true }
-
 ]
 
 export enum AzureAuthType {

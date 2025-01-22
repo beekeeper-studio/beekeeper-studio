@@ -4,7 +4,7 @@ import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabas
 import { IDbConnectionDatabase } from "@/lib/db/types";
 import { Collection, Document, MongoClient } from 'mongodb';
 import rawLog from '@bksLogger';
-import { ExtendedTableColumn, OrderBy, PrimaryKeyColumn, Routine, SupportedFeatures, TableFilter, TableOrView, TableResult } from "@/lib/db/models";
+import { ExtendedTableColumn, OrderBy, PrimaryKeyColumn, Routine, SupportedFeatures, TableFilter, TableIndex, TableOrView, TableProperties, TableResult } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 
@@ -67,7 +67,7 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     return {
       customRoutines: false,
       comments: false,
-      properties: false,
+      properties: true,
       partitions: false,
       editPartitions: false,
       backups: false,
@@ -300,5 +300,29 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
     return await this.conn.db(this.database.database).collection(table).estimatedDocumentCount();
+  }
+
+  async getTableProperties(table: string, _schema?: string): Promise<TableProperties> {
+    const indexes = await this.listTableIndexes(table);
+
+    return {
+      indexes,
+      relations: [],
+      triggers: [],
+      partitions: []
+    }
+  }
+
+  async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
+    const collection = this.conn.db(this.database.database).collection(table);
+
+    const indexes = await collection.indexes({ full: true });
+
+    return indexes.map((index) => ({
+      table,
+      columns: Object.entries(index.key).map((key) => ({ name: key[0], order: key[1]})),
+      name: index.name,
+      unique: index.unique,
+    } as TableIndex));
   }
 }
