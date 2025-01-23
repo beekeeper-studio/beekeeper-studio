@@ -87,10 +87,13 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async connect(): Promise<void> {
     await super.connect();
 
+    // verify that the connection is valid
+    await this.driverExecuteSingle('PRAGMA schema_version', { overrideReadonly: true });
+
     // set sqlite version
     const version = await this.driverExecuteSingle('SELECT sqlite_version() as version');
-
     this.version = version;
+
     return;
   }
 
@@ -190,10 +193,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
     const sql = `PRAGMA index_list('${SD.escapeString(table)}')`;
 
-    const { rows } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
 
     const allSQL = rows.map((row) => `PRAGMA index_xinfo('${SD.escapeString(row.name)}')`).join(";");
-    const infos = await this.driverExecuteMultiple(allSQL);
+    const infos = await this.driverExecuteMultiple(allSQL, { overrideReadonly: true });
 
     const indexColumns: IndexColumn[][] = infos.map((result) => {
       return result.rows.filter((r) => !!r.name).map((r) => ({ name: r.name, order: r.desc ? 'DESC' : 'ASC' }))
@@ -220,7 +223,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`
-    const { rows } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
     return rows.map(row => ({
       constraintName: row.id,
       constraintType: 'FOREIGN',
@@ -307,7 +310,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const result = await this.driverExecuteSingle('PRAGMA database_list;');
+    const result = await this.driverExecuteSingle('PRAGMA database_list;', { overrideReadonly: true });
 
     return result.rows.map((row) => row.file || ':memory:');
   }
