@@ -1,32 +1,31 @@
-name: Studio - PR Build
+name: Studio - Master copy for PR
 
 on:
-  pull_request:
+  push:
+    branches:
+      - "more-installers"
     paths-ignore:
-      - apps/sqltools/**
-      - docs/**
+      - 'apps/sqltools/**'
+
+concurrency:
+  group: master-build
+  cancel-in-progress: true
 
 jobs:
-  build:
+  masterbuild:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [macos-14, ubuntu-20.04, windows-2019, ubuntu-arm64]
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-          cache: yarn
-
-      - name: Install flatpak tools
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
         if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
-        run: bash ./.github/scripts/install-build-deps.sh
 
       - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v5
@@ -34,15 +33,24 @@ jobs:
           python-version: 3.11
         if: "!startsWith(matrix.os, 'macos')"
 
+
+      - name: Install flatpak tools
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+        run: bash ./.github/scripts/install-build-deps.sh
+
+      - name: Install fpm
+        run: sudo gem install fpm
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+
       - name: Install python 3.11 (mac)
         if: "startsWith(matrix.os, 'macos')"
         run: |
           # Install Python 3.11
           brew install python@3.11
           # Add Python 3.11 to PATH
-          echo "/usr/local/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
-          export PATH="/usr/local/opt/python@3.11/libexec/bin:$PATH"
-          export PYTHON_PATH="/usr/local/opt/python@3.11/libexec/bin/python3"
+          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+          export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
+          export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
 
       - name: Verify Python Version
         if: "startsWith(matrix.os, 'windows')"
@@ -65,6 +73,11 @@ jobs:
             exit 1
           fi
 
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
 
       - name: Clean cache
         run: yarn cache clean
@@ -73,9 +86,13 @@ jobs:
         run: "yarn install --frozen-lockfile --network-timeout 100000"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
-
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
+        env:
+          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+          USE_SYSTEM_FPM: true
 
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
