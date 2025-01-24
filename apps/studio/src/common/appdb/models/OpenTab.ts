@@ -1,6 +1,6 @@
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
-import { Column, Entity } from "typeorm";
+import { Column, Entity, LessThan } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
@@ -10,6 +10,10 @@ type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-buil
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
 
+interface ConnectionIds {
+  connectionId: number,
+  workspaceId: number
+}
 
 @Entity({ name: 'tabs'})
 export class OpenTab extends ApplicationEntity {
@@ -162,7 +166,7 @@ export class OpenTab extends ApplicationEntity {
     }
   }
 
-  static async getHistory(connectionIds): Promise<TransportOpenTab[]> {
+  static async getHistory(connectionIds: ConnectionIds): Promise<TransportOpenTab[]> {
     const { connectionId, workspaceId } = connectionIds
     return await this.find({
       where: {
@@ -175,10 +179,25 @@ export class OpenTab extends ApplicationEntity {
       take: 10
     })
   }
+  
+  static async clearOldDeletedTabs(connectionIds: ConnectionIds, xDays: number): Promise<void> {
+    const { connectionId, workspaceId } = connectionIds
+    const deletedAtThreshold = new Date()
+    deletedAtThreshold.setDate(deletedAtThreshold.getDate() - xDays)
+
+    await this.delete({
+      connectionId,
+      workspaceId,
+      deletedAt: LessThan(deletedAtThreshold)
+    })
+  }
 }
 
 export const TabHistoryHandlers = {
   'appdb/tabhistory/get': async (connectionIds): Promise<TransportOpenTab[]> => {
     return await OpenTab.getHistory(connectionIds) 
+  },
+  'appdb/tabhistory/clearDeletedTabs': async (connectionIds: ConnectionIds, xDays = 7): Promise<void> => {
+    return await OpenTab.clearOldDeletedTabs(connectionIds, xDays) 
   }
 }
