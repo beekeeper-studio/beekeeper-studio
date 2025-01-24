@@ -157,5 +157,8 @@ module.exports = {
   },
   nsis: {
     oneClick: false
+  },
+  appx: {
+    applicationId: "beekeeperstudio"
   }
 }
