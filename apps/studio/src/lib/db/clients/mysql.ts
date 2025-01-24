@@ -8,6 +8,7 @@ import {
 } from "./BasicDatabaseClient";
 import mysql, { Connection } from "mysql2";
 import rawLog from "@bksLogger";
+import ed25519AuthPlugin from "@coresql/mysql2-auth-ed25519";
 import knexlib from "knex";
 import { readFileSync } from "fs";
 import _ from "lodash";
@@ -133,6 +134,9 @@ async function configDatabase(
 ): Promise<mysql.PoolOptions> {
 
   const config: mysql.PoolOptions = {
+    authPlugins: {
+      'client_ed25519': ed25519AuthPlugin(),
+    },
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
