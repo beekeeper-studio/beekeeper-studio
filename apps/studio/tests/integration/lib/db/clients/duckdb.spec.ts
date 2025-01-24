@@ -40,10 +40,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         // information whether a column is generated or not. Be aware that we
         // can get the definition of it from the default value.
         skipGeneratedColumns: true,
-
-        // FIXME duckdb doesn't support array mode but it returns the columns
-        // correctly https://github.com/duckdb/duckdb-node/issues/122
-        supportsArrayMode: false,
       };
 
       util = new DBTestUtil(
@@ -70,6 +66,32 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     describe("Common Tests", () => {
       runCommonTests(() => util);
     });
+
+    it("should parse all binary columns", async () => {
+      await util.knex.raw(`
+        CREATE TABLE binary_data_types (
+            id INT PRIMARY KEY,
+            blob BLOB,
+            blob_alias BYTEA,               -- alias of BLOB
+            blob_alias2 BINARY,             -- alias of BLOB
+            blob_alias3 VARBINARY           -- alias of BLOB
+        );
+      `);
+
+      const expectedBksFields = [
+        { name: 'id', bksType: 'UNKNOWN' },
+        { name: 'blob', bksType: 'BINARY' },
+        { name: 'blob_alias', bksType: 'BINARY' },
+        { name: 'blob_alias2', bksType: 'BINARY' },
+        { name: 'blob_alias3', bksType: 'BINARY' },
+      ]
+
+      const columns = await util.connection.listTableColumns('binary_data_types')
+      expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields)
+
+      const { fields } = await util.connection.selectTop('binary_data_types', 0, 10, [], [], util.defaultSchema, ["*"])
+      expect(fields).toStrictEqual(expectedBksFields)
+    })
 
     describe("Index Tests", () => {
       beforeAll(async () => {

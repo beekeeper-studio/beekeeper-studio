@@ -15,6 +15,10 @@ class TableCompiler_DuckDB extends TableCompiler_SQLite3 {
       return `,${constraintName} primary key (${this.formatter.columnize(columns)})`;
     }
   }
+
+  tableName() {
+    return this.formatter.wrap(this.tableNameRaw);
+  }
 }
 
 module.exports = TableCompiler_DuckDB;

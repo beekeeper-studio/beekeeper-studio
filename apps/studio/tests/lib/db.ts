@@ -25,6 +25,7 @@ import { TestOrmConnection } from './TestOrmConnection'
 import { buffer as b, uint8 as u } from '@tests/utils'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
+import { DuckDBBlobValue } from '@duckdb/node-api'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -852,7 +853,7 @@ export class DBTestUtil {
     try {
       const result = await q.execute()
 
-      // FIXME (azmi): we need this until array mode is fixed in libsql and duckdb
+      // FIXME (azmi): we need this until array mode is fixed in libsql
       if (this.supportsArrayMode) {
         expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
       } else {
@@ -1427,7 +1428,8 @@ export class DBTestUtil {
     })
 
     const rows = await this.knex('contains_binary').select('bin').offset(3).limit(2).orderBy(ID)
-    expect(rows.map((r) => Buffer.from(r.bin))).toEqual([
+    const sanitize = (b) => b instanceof DuckDBBlobValue ? b.bytes : b
+    expect(rows.map((r) => Buffer.from(sanitize(r.bin)))).toEqual([
       b`eeffeeff`,
       b`beefdeed`,
     ])
