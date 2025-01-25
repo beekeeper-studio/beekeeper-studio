@@ -12,7 +12,7 @@ import {
 } from "@/lib/db/clients/utils";
 import knexlib, { Knex } from "knex";
 import _ from "lodash";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { Client_DuckDB as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
 import { DuckDBInstance as Database, DuckDBConnection as Connection, DuckDBMaterializedResult, DuckDBType, DuckDBValue, DuckDBListValue, DuckDBTypeId, DuckDBBlobValue, DuckDBBlobType } from "@duckdb/node-api";
 import { identify } from "sql-query-identifier";

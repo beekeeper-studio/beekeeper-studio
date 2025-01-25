@@ -1,5 +1,5 @@
 import { BeeCursor, OrderBy, TableFilter } from "@/lib/db/models";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { DuckDBClient } from "../duckdb";
 
 const log = rawLog.scope("DuckDBCursor");
