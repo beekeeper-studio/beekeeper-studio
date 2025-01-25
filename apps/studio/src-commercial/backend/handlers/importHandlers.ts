@@ -3,7 +3,7 @@ import ImportClass from '@/lib/import'
 import { getImporterClass } from '@commercial/backend/lib/import/utils'
 import { ImportOptions } from '@commercial/backend/lib/import/models'
 import { checkConnection, errorMessages, state } from "@/handlers/handlerState"
-import rawLog from 'electron-log';
+import rawLog from '@bksLogger';
 import { uuidv4 } from "@/lib/uuid";
 
 const log = rawLog.scope('ImportHandler');

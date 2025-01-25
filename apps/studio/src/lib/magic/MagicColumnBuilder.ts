@@ -2,7 +2,7 @@ import { TableOrView } from '../db/models'
 import { Magic } from './Magic'
 import { MagicColumn } from './MagicColumn'
 import magics from './magics'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import _ from 'lodash';
 
 const log = rawLog.scope('MagicColumnBuilder')

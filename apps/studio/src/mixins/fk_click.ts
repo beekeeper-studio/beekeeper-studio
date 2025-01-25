@@ -1,6 +1,6 @@
+import rawLog from '@bksLogger'
 import { monthAgo } from '@/common/date';
 import { SmartLocalStorage } from '@/common/LocalStorage';
-import rawLog from 'electron-log'
 import { CellComponent } from 'tabulator-tables';
 
 const log = rawLog.scope('fk_click');
