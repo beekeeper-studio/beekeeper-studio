@@ -2727,6 +2727,11 @@
   dependencies:
     "@clickhouse/client-common" "1.8.1"
 
+"@coresql/mysql2-auth-ed25519@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@coresql/mysql2-auth-ed25519/-/mysql2-auth-ed25519-1.0.0.tgz#692c8a9cbf2a1d2850c9bb9c6d1c736af9ab7b79"
+  integrity sha512-pqH/XGycnw5QrVf/SmU2vhsGp6B4E898/4IjACQ2ENA7wZpiN4sQjNXA6C+mjW5xJuH3ss7NCSab2NX7s2DkNg==
+
 "@develar/schema-utils@~2.6.5":
   version "2.6.5"
   resolved "https://registry.yarnpkg.com/@develar/schema-utils/-/schema-utils-2.6.5.tgz#3ece22c5838402419a6e0425f85742b961d9b6c6"
