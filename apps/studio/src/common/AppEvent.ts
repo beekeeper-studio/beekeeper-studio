@@ -50,7 +50,8 @@ export enum AppEvent {
   /** Triggered when the license support date has expired */
   licenseSupportDateExpired = 'licenseSupportDateExpired',
   switchLicenseState = 'switchLicenseState',
-  toggleBeta = 'toggleBeta'
+  toggleBeta = 'toggleBeta',
+  switchUserKeymap = 'switchUserKeymap',
 }
 
 export interface RootBinding {

@@ -22,10 +22,11 @@ export const ConnectionTypes = [
   { name: 'ClickHouse', value: 'clickhouse' },
 ]
 
+/** `value` should be recognized by codemirror */
 export const keymapTypes = [
   { name: "Default", value: "default" },
   { name: "Vim", value: "vim" }
-]
+] as const
 
 export const TableFilterSymbols = [
   { value: '=', label: 'equals' },
