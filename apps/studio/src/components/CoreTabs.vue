@@ -384,12 +384,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         { event: AppEvent.exportTables, handler: this.importExportTables },
         { event: AppEvent.backupDatabase, handler: this.backupDatabase },
         { event: AppEvent.beginImport, handler: this.beginImport },
-<<<<<<< HEAD
-        { event: AppEvent.restoreDatabase, handler: this.restoreDatabase }
-=======
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
->>>>>>> 46204797fa98cb9f1ddb9152a306afa676d8e46a
       ]
     },
     lastTab() {
