@@ -110,7 +110,6 @@
     },
     methods: {
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
-      ...mapState({ connectionType: 'connectionType' }),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
         // FIXME: move this comparison to the DialectData
@@ -135,7 +134,7 @@
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList'}),
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType'}),
     },
     watch: {
       currentDatabase(newValue) {
@@ -144,7 +143,7 @@
         }
       },
       selectedDatabase() {
-        if (this.selectedDatabase != this.currentDatabase) {
+        if (this.selectedDatabase != this.currentDatabase && this.dbs.includes(this.selectedDatabase)) {
           this.$emit('databaseSelected', this.selectedDatabase)
         }
       }
