@@ -384,7 +384,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         { event: AppEvent.exportTables, handler: this.importExportTables },
         { event: AppEvent.backupDatabase, handler: this.backupDatabase },
         { event: AppEvent.beginImport, handler: this.beginImport },
-        { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
+        { event: AppEvent.restoreDatabase, handler: this.restoreDatabase }
       ]
     },
     lastTab() {
@@ -398,7 +398,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     keymap() {
       const result = {
-        'ctrl+shift+T': this.reopenLastClosedTab,
+        'ctrl+shift+t': this.reopenLastClosedTab,
         'ctrl+tab': this.nextTab,
         'ctrl+shift+tab': this.previousTab,
         'alt+1': this.handleAltNumberKeyPress,
@@ -413,8 +413,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
 
       if(this.$config.isMac) {
-         result['shift+meta+['] = this.previousTab
-         result['shift+meta+]'] = this.nextTab
+        result['meta+shift+t'] = this.reopenLastClosedTab
+        result['shift+meta+['] = this.previousTab
+        result['shift+meta+]'] = this.nextTab
       }
 
       return result

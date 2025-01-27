@@ -1,6 +1,6 @@
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
-import { Column, Entity, LessThan } from "typeorm";
+import { Column, Entity, LessThan, Not, IsNull } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
@@ -166,7 +166,7 @@ export class OpenTab extends ApplicationEntity {
     }
   }
 
-  static async getHistory(connectionIds: ConnectionIds): Promise<TransportOpenTab[]> {
+  static async getHistory(connectionIds: ConnectionIds, limit = 10): Promise<TransportOpenTab[]> {
     const { connectionId, workspaceId } = connectionIds
     return await this.find({
       where: {
@@ -176,7 +176,7 @@ export class OpenTab extends ApplicationEntity {
       order: {
         lastActive: 'DESC'
       },
-      take: 10
+      take: limit
     })
   }
   
@@ -191,11 +191,28 @@ export class OpenTab extends ApplicationEntity {
       deletedAt: LessThan(deletedAtThreshold)
     })
   }
+
+  static async getClosedHistory(connectionIds: ConnectionIds): Promise<TransportOpenTab> {
+    const { connectionId, workspaceId } = connectionIds
+    return await this.findOne({
+          where: {
+            deletedAt: Not(IsNull()),
+            connectionId,
+            workspaceId
+          },
+          order: {
+            deletedAt: 'DESC'
+          }
+        })
+  }
 }
 
 export const TabHistoryHandlers = {
-  'appdb/tabhistory/get': async (connectionIds): Promise<TransportOpenTab[]> => {
-    return await OpenTab.getHistory(connectionIds) 
+  'appdb/tabhistory/get': async (connectionIds, limit = 10): Promise<TransportOpenTab[]> => {
+    return await OpenTab.getHistory(connectionIds, limit) 
+  },
+  'appdb/tabhistory/getLastDeletedTab': async (connectionIds): Promise<TransportOpenTab> => {
+    return await OpenTab.getClosedHistory(connectionIds) 
   },
   'appdb/tabhistory/clearDeletedTabs': async (connectionIds: ConnectionIds, xDays = 7): Promise<void> => {
     return await OpenTab.clearOldDeletedTabs(connectionIds, xDays) 

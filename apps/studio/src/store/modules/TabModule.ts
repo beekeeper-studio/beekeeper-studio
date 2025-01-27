@@ -85,7 +85,6 @@ export const TabModule: Module<State, RootState> = {
           }
         })
         tabs = tabs.filter(tab => !tab.deletedAt)
-        tabs.forEach(t => console.log(`${t.id} - ${t.deletedAt}`))
         context.commit('set', tabs || [])
         if (tabs?.length) {
           const active = tabs.find((t) => t.active) || tabs[0]
@@ -98,15 +97,17 @@ export const TabModule: Module<State, RootState> = {
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
-      // Walk through array in reverse to check if it belongs to the current connection
-      for (let i = context.state.lastClosedTabs.length - 1; i >= 0; i--) {
-        const tab = context.state.lastClosedTabs[i]
-        // Does this tab belong to the current connection?
-        if (tab.connectionId === context.rootState.usedConfig?.id && tab.workspaceId === context.rootState.workspaceId) {
+      const { usedConfig, workspaceId } = context.rootState
+
+      try {
+        const tab = await Vue.prototype.$util.send('appdb/tabhistory/getLastDeletedTab', { workspaceId: workspaceId, connectionId: usedConfig.id });
+        if (tab) {
+          tab.deletedAt = null
           await context.dispatch('add', { item: tab })
           await context.dispatch('setActive', tab)
-          break
         }
+      }catch (err) {
+        console.error(err)
       }
     },
     async add(context, options: { item: TransportOpenTab, endOfPosition?: boolean }) {
