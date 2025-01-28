@@ -1,9 +1,8 @@
 <template>
   <div class="fixed">
     <div class="data-select-wrap">
-      <!-- FIXME: move this comparison to the DialectData -->
       <p
-        v-if="this.connectionType === 'sqlite'"
+        v-if="dialectData.disabledFeatures?.multipleDatabase"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,9 +17,8 @@
         placeholder="Select a database..."
         class="dropdown-search"
       />
-      <!-- FIXME: move this comparison to the DialectData -->
       <a
-        v-if="this.connectionType !== 'sqlite'"
+        v-if="!dialectData.disabledFeatures?.multipleDatabase"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -44,7 +42,7 @@
       >
         <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
         <div
-          v-if="this.connectionType === 'oracle'"
+          v-if="connectionType === 'oracle'"
           class="dialog-content"
           v-kbd-trap="true"
         >
@@ -92,7 +90,7 @@
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
   import AddDatabaseForm from "@/components/connection/AddDatabaseForm.vue"
-  import { mapActions, mapState } from 'vuex'
+  import { mapActions, mapState, mapGetters } from 'vuex'
 
   export default {
     props: [ ],
@@ -110,11 +108,9 @@
     },
     methods: {
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
-      ...mapState({ connectionType: 'connectionType' }),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        // FIXME: move this comparison to the DialectData
-        if (['sqlite', 'firebird'].includes(this.connectionType)) {
+        if (this.dialectData.disabledFeatures?.multipleDatabase) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
@@ -135,7 +131,8 @@
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList'}),
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList', dialectData: 'dialectData'}),
+      ...mapGetters(['dialectData']),
     },
     watch: {
       currentDatabase(newValue) {
