@@ -387,6 +387,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         { event: AppEvent.backupDatabase, handler: this.backupDatabase },
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
+        { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
       ]
     },
     lastTab() {
@@ -864,6 +865,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema);
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
+    },
+    switchUserKeymap(value) {
+      this.$store.dispatch('settings/save', { key: 'keymap', value: value });
     },
     openTableBuilder() {
       const tab = {} as TransportOpenTab;

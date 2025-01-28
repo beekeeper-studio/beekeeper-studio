@@ -1,7 +1,7 @@
 import CodeMirror from "codemirror";
 import { removeQueryQuotes } from "@/lib/db/sql_tools";
 import MagicColumnBuilder from "@/lib/magic/MagicColumnBuilder";
-import electronLog from "electron-log";
+import electronLog from "@bksLogger";
 import { TableOrView } from "../db/models";
 import _ from "lodash";
 

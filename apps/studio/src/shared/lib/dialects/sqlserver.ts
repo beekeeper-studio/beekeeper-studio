@@ -53,6 +53,7 @@ export const SqlServerData: DialectData = {
     alter: {
       multiStatement: true,
       renameSchema: true,
+      reorderColumn: true,
     },
     informationSchema: {
       extra: true

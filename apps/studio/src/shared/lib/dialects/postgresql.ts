@@ -47,6 +47,9 @@ export const PostgresData: DialectData = {
   disabledFeatures: {
     informationSchema: {
       extra: true
+    },
+    alter: {
+      reorderColumn: true
     }
   },
   charsets
