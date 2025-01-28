@@ -99,6 +99,7 @@ export interface DialectData {
   usesOffsetPagination?: boolean
   requireDataset?: boolean,
   disabledFeatures?: {
+    queryEditor?: boolean
     informationSchema?: {
       extra?: boolean
     }
@@ -126,8 +127,11 @@ export interface DialectData {
       onDelete?: boolean
     }
     index?: {
-      desc?: boolean
+      id?: boolean,
+      desc?: boolean,
+      primary?: boolean
     }
+    primary?: boolean // for mongo
     defaultValue?: boolean
     nullable?: boolean
     createIndex?: boolean

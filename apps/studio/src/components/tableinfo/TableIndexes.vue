@@ -208,7 +208,7 @@ export default Vue.extend({
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
       const result = [
-        {title: 'Id', field: 'id', widthGrow: 0.5},
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5}),
         {
           title:'Name',
           field: 'name',
@@ -227,7 +227,7 @@ export default Vue.extend({
           editable,
           editor: vueEditor(CheckboxEditorVue),
         },
-        {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
+        (this.dialectData?.disabledFeatures?.index?.primary ? null : {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85}),
         // TODO (@day): fix
         (
           this.connection.supportedFeatures().indexNullsNotDistinct

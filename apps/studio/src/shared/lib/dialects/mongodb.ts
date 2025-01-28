@@ -4,7 +4,18 @@ export const MongoDBData: DialectData = {
   columnTypes: [],
   usesOffsetPagination: true,
   disabledFeatures: {
+    queryEditor: true,
+    nullable: true,
+    defaultValue: true,
+    primary: true,
     comments: true,
+    index: {
+      id: true,
+      primary: true
+    },
+    informationSchema: {
+      extra: true
+    },
     alter: {
       addColumn: true,
       dropColumn: true,

@@ -36,8 +36,6 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    // configDatabase
-
     this.conn = new MongoClient(this.server.config.url);
 
     this.conn.on('connectionCreated', (event) => {
@@ -318,8 +316,9 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
 
     const indexes = await collection.indexes({ full: true });
 
+    // TODO (@day): convert 1, -1 to ASC and DESC
     return indexes.map((index) => ({
-      table,
+      table, 
       columns: Object.entries(index.key).map((key) => ({ name: key[0], order: key[1]})),
       name: index.name,
       unique: index.unique,
