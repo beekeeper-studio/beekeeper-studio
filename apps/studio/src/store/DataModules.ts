@@ -39,7 +39,7 @@ export const DataModules = [
   },
   {
     path: 'data/usedconnections',
-    cloud: null,
+    cloud: UtilUsedConnectionModule,
     local: UtilUsedConnectionModule
   }
 

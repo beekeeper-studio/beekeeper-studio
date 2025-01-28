@@ -1,6 +1,6 @@
 import _, { defaults } from 'lodash'
 import { Module } from "vuex";
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { State as RootState } from '../index'
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { TransportLicenseKey } from '@/common/transport';
