@@ -103,6 +103,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async createDatabase(databaseName, charset) {
     const sql = `CREATE DATABASE ${this.wrapIdentifier(databaseName)} CHARACTER SET ${this.wrapIdentifier(charset)};`
     await this.driverExecuteSingle(sql)
+    return databaseName
   }
 
   async importTruncateCommand (table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {

@@ -111,9 +111,13 @@
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
         if (this.dialectData.disabledFeatures?.multipleDatabase) {
-          const fileLocation = this.selectedDatabase.split('/')
-          fileLocation.pop()
-          const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
+          const c = this.usedConfig
+          // We'll need the auth credentials for databases like firebird
+          const username = c.username ?? ''
+          const password = c.password ? `:${c.password}` : ''
+          const host = c.host ? `@${c.host}` : ''
+          const port = c.port ? `:${c.port}` : ''
+          const url = this.connectionType === 'sqlite' ? db : `${this.connectionType}://${username}${password}${host}${port}/${db}`;
           return window.main.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()
@@ -131,7 +135,7 @@
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList', dialectData: 'dialectData'}),
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType', dialectData: 'dialectData', usedConfig: 'usedConfig'}),
       ...mapGetters(['dialectData']),
     },
     watch: {
