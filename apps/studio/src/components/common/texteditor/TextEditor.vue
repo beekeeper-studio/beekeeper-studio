@@ -199,6 +199,30 @@ export default {
     async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
+      function open() {
+        const el = document.createElement("span");
+        el.classList.add("foldgutter", "btn-fab", "open-close");
+        const i = document.createElement("i");
+        i.classList.add("dropdown-icon", "material-icons");
+        i.innerText = "keyboard_arrow_down";
+        el.appendChild(i);
+        return el;
+      }
+
+      function folded() {
+        const el = document.createElement("span");
+        el.classList.add("foldgutter", "btn-fab", "open-close");
+    //     margin-left: -0.7rem;
+    // width: 22px;
+    // height: 22px;
+    // min-width: 22px;
+        const i = document.createElement("i");
+        i.classList.add("dropdown-icon", "material-icons");
+        i.innerText = "keyboard_arrow_right";
+        el.appendChild(i);
+        return el;
+      }
+
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
@@ -221,11 +245,18 @@ export default {
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
           gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          foldGutter: true,
+          // foldGutter: true,
+          foldGutter: {
+            indicatorOpen: open(),
+            indicatorFolded: folded(),
+          },
         }),
         ...(this.foldWithoutLineNumbers && {
           // gutters: ["CodeMirror-foldgutter"],
-          foldGutter: true,
+          foldGutter: {
+            indicatorOpen: open(),
+            indicatorFolded: folded(),
+          },
         }),
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {
