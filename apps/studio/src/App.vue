@@ -196,6 +196,9 @@ export default Vue.extend({
       const isValidDateExpired = compare ? !prev.isValidDateExpired && curr.isValidDateExpired : this.status.isValidDateExpired
       const isSupportDateExpired = compare ? !prev.isSupportDateExpired && curr.isSupportDateExpired : this.status.isSupportDateExpired
       const status = compare ? curr : this.status
+      if (curr?.fromFile && curr?.noLicenseKey) {
+        this.$noty.error(`Something is wrong with your license file: ${curr?.condition.join(", ") }`)
+      }
 
       if (isValidDateExpired) {
         this.$root.$emit(AppEvent.licenseValidDateExpired, status)

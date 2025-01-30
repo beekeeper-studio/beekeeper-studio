@@ -6,6 +6,16 @@
     <div class="card-body">
       <table class="simple-table">
         <tr>
+          <td>License Type <a href="https://docs.beekeeperstudio.io/">learn more</a></td>
+          <td>{{ licenseStatus.fromFile ? "File" : "Online" }}</td>
+        </tr>
+        <template v-if="licenseStatus.fromFile">
+          <tr>
+            <td>File Path</td>
+            <td>{{ licenseStatus.filePath }}</td>
+          </tr>
+        </template>
+        <tr>
           <td>Status</td>
           <td>{{ status }}</td>
         </tr>

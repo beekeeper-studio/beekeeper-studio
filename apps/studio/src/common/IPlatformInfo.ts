@@ -35,4 +35,4 @@ export interface IPlatformInfo {
   parsedAppVersion: BksVersion,
   cloudUrl: string,
   locale: string,
-};
+}
