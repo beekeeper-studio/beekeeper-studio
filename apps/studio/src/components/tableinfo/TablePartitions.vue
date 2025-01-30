@@ -213,6 +213,8 @@ export default Vue.extend({
       await this.$emit('refresh');
     },
     async addRow(): Promise<void> {
+      if (!this.editable) return;
+
       const data = this.tabulator.getData();
       const name = `${this.table.name}_partition_${data.length + 1}`;
       const row: RowComponent = await this.tabulator.addRow({name, expression: this.expressionTemplate, num: 0});
@@ -263,6 +265,8 @@ export default Vue.extend({
       };
     },
     async submitApply(): Promise<void> {
+      if (!this.editable) return;
+
       try {
         this.error = null;
         const changes = this.collectChanges();
@@ -278,6 +282,8 @@ export default Vue.extend({
       }
     },
     async submitSql(): Promise<void> {
+      if (!this.editable) return;
+
       try {
         this.error = null;
         const changes = this.collectChanges();
