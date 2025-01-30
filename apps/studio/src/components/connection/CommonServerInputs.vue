@@ -1,5 +1,6 @@
 <template>
   <div class="host-port-user-password">
+    <slot name="header"></slot>
     <div class="row">
       <div
         class="form-group col"
@@ -198,8 +199,8 @@
 </template>
 
 <script>
-import FilePicker from '@/components/common/form/FilePicker'
-import ExternalLink from '@/components/common/ExternalLink'
+import FilePicker from '@/components/common/form/FilePicker.vue'
+import ExternalLink from '@/components/common/ExternalLink.vue'
 import { findClient } from '@/lib/db/clients'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 
@@ -241,11 +242,14 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
       },
     },
     methods: {
-      onPaste(event) {
-          const data = event.clipboardData.getData('text')
-          if (this.config.parse(data)) {
-            event.preventDefault()
-          }
+      async onPaste(event) {
+        const data = event.clipboardData.getData('text')
+        try {
+          await this.$util.send('appdb/saved/parseUrl', { url: data });
+          event.preventDefault();
+        } catch {
+          return;
+        }
       },
       toggleSsl() {
         this.config.ssl = !this.config.ssl

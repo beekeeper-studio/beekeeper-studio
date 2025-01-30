@@ -1,21 +1,25 @@
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
-import ConnectionProvider from '../../../../../src/lib/connection-provider';
+import ConnectionProvider from '@commercial/backend/lib/connection-provider';
 import { dbtimeout } from '../../../../lib/db'
+import { TestOrmConnection } from '@tests/lib/TestOrmConnection';
 
 
 
 describe("SSH Tunnel Tests", () => {
+  jest.setTimeout(dbtimeout)
+
   let container;
   let connection
   let database
   let environment
-  // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
   beforeAll(async () => {
+    await TestOrmConnection.connect()
+
     const timeoutDefault = 5000
-    jest.setTimeout(dbtimeout)
     environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
-      .withWaitStrategy(Wait.forHealthCheck())
+      .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
+      .withWaitStrategy('test_ssh', Wait.forListeningPorts())
       .up()
 
     container = environment.getContainer('test_ssh')
@@ -31,6 +35,10 @@ describe("SSH Tunnel Tests", () => {
       password: 'example',
       connectionType: 'postgresql'
     }
+
+    // NB: If this fails it's due to ipv4 vs ipv6 mixup.
+    // as of Node 17+ DNS defaults to v6 instead of v4.
+    let host = container.getHost()
     const config = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -47,9 +55,11 @@ describe("SSH Tunnel Tests", () => {
     const qc = ConnectionProvider.for(quickConfig)
     const qdb = qc.createConnection('integration_test')
     await qdb.connect()
-    await qdb.query('select 1').execute()
+    const query = await qdb.query('select 1');
+    await query.execute()
     await qdb.disconnect();
 
+    console.log("Starting SSH test with config", config)
     connection = ConnectionProvider.for(config)
     database = connection.createConnection('integration_test')
     await database.connect()
@@ -57,7 +67,8 @@ describe("SSH Tunnel Tests", () => {
 
   describe("Can SSH and run a query", () => {
     it("should work", async () => {
-      await database.query('select 1').execute()
+      const query = await database.query('select 1');
+      await query.execute()
     } )
   })
 
@@ -71,5 +82,6 @@ describe("SSH Tunnel Tests", () => {
     if (environment) {
       await environment.stop()
     }
+    await TestOrmConnection.disconnect()
   })
 })

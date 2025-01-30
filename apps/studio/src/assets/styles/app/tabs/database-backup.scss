@@ -1,0 +1,256 @@
+.backup-stepper-wrapper {
+  max-height: 90vh;
+  overflow-y: scroll;
+}
+
+.backup-wrapper {
+  @include layout-center;
+  flex-direction: column;
+  padding: 0 1.5rem 3rem;
+  overflow: hidden;
+  overflow-y: auto;
+
+  & > div {
+    width: 100%;
+  }
+
+  .backup-header {
+    height: 3.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .backup-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+
+    .review-container {
+      display: inline-block;
+      position: relative;
+
+      .command-note {
+        margin-bottom: 1rem;
+      }
+
+      .card {
+        margin-bottom: 1rem;
+      }
+
+      .command {
+        border-radius: 8px;
+        padding: 2rem;
+        width: 100%;
+        resize: none;
+        background-color: darken($theme-bg, 2%);
+        display: block;
+        position: relative;
+        overflow-wrap: break-word;
+        margin-bottom: 2rem;
+
+        &:hover {
+          .copy-button {
+            opacity: 1;
+          }
+        }
+
+        .copy-button {
+          opacity: 0.5;
+          background-color: lighten($theme-bg, 2%);
+          border-radius: 5px;
+          padding-top: 0.25rem;
+          border: none;
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          transition: all 0.2s ease-in-out;
+
+          .material-icons {
+            color: $text;
+          }
+
+          &:hover {
+            background-color: lighten($theme-bg, 4%);
+            cursor: pointer;
+            margin-bottom: 0.15rem;
+            margin-top: -0.15rem;
+          }
+        }
+      }
+
+    }
+
+    .form-group {
+      margin-bottom: 0.5rem;
+    }
+
+    .card-title {
+      margin-bottom: 0.5rem;
+    }
+
+    select:not(.selected) {
+      color: $text-lighter;
+    }
+
+    form {
+      width: 90%;
+    }
+  }
+
+  .label-left {
+    margin-right: 1rem;
+  }
+
+  .backup-log {
+    padding: 2rem 2rem 1rem 2rem;
+    width: 90%;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    margin-top: 2rem;
+    background-color: darken($theme-bg, 2%);
+
+    .system-logs {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+
+      .log {
+        margin-top: 0.15rem;
+        margin-bottom: 0.15rem;
+        overflow-wrap: break-word;
+      }
+
+      .last-log {
+        display: flex;
+        height: 18px;
+        overflow: hidden;
+      }
+
+      .expand-button {
+        cursor: pointer;
+
+        &:hover {
+          color: $text-dark;
+        }
+      }
+    }
+
+    .beekeeper-log {
+      padding: 1rem;
+      background-color: lighten($theme-bg, 4%);
+      border-radius: 5px;
+      // margin-top: 1rem;
+      margin-bottom: 1rem;
+
+      .title {
+        font-size: 12px;
+        margin-bottom: 0.25rem;
+        color: $text-light;
+      }
+
+      .content {
+        color: $text-dark;
+      }
+    }
+  }
+}
+
+.backup-tab-progress {
+  height: 100%;
+  overflow-y: scroll;
+
+  .bottom {
+    height: 10%;
+    position: relative;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 2rem;
+  }
+}
+
+
+.not-supported {
+  height: 100%;
+  flex-direction: column;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+// Backup tab layout things:
+
+.portal-stepper-buttons {
+  width: 10%;
+}
+
+// Status modals.
+.v--modal-overlay.relative.job-status {
+  .v--modal {
+    width: 380px !important;
+    text-align: center !important;
+
+    .outer-circle {
+      margin: auto;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      width: 4.5rem;
+      height: 4.5rem;
+      .inner-circle {
+        opacity: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+        color: $theme-bg;
+        font-size: 20px
+      }
+    }
+
+
+
+    .primary-action {
+      margin-top: 1rem;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: lighten($theme-bg, 1%);
+      padding: 0;
+      color: $text-light;
+      border: none;
+      cursor: pointer;
+
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+
+  &.success {
+    .outer-circle {
+      background-color: rgba($brand-success, 0.15);
+      .inner-circle {
+        background-color: $brand-success;
+      }
+    }
+  }
+  &.fail {
+    .outer-circle {
+      background-color: rgba($brand-danger, 0.15);
+      .inner-circle {
+        background-color: $brand-danger;
+      }
+    }
+  }
+}

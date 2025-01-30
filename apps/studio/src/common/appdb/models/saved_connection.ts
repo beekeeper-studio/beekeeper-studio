@@ -1,56 +1,15 @@
-
 import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
-
 import { ApplicationEntity } from './application_entity'
-import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
-import log from 'electron-log'
-import { EncryptTransformer } from '../transformers/Transformers'
+import log from '@bksLogger'
+import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { ConnectionType } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions } from "@/lib/db/types"
+import { resolveHomePathToAbsolute } from "@/handlers/utils"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
-
-export const ConnectionTypes = [
-  { name: 'MySQL', value: 'mysql' },
-  { name: 'TiDB', value: 'tidb' },
-  { name: 'MariaDB', value: 'mariadb' },
-  { name: 'Postgres', value: 'postgresql' },
-  { name: 'SQLite', value: 'sqlite' },
-  { name: 'SQL Server', value: 'sqlserver' },
-  { name: 'Amazon Redshift', value: 'redshift' },
-  { name: 'CockroachDB', value: 'cockroachdb' },
-  { name: 'Oracle', value: 'oracle' },
-  { name: 'Cassandra', value: 'cassandra' },
-  { name: 'BigQuery', value: 'bigquery' },
-  { name: 'Firebird', value: 'firebird'},
-]
-
-export const keymapTypes = [
-  { name: "Default", value: "default" },
-  { name: "Vim", value: "vim" }
-]
-
-export interface RedshiftOptions {
-  iamAuthenticationEnabled?: boolean
-  accessKeyId?: string;
-  secretAccessKey?: string;
-  awsRegion?: string;
-  clusterIdentifier?: string;
-  databaseGroup?: string;
-  tokenDurationSeconds?: number;
-}
-
-export interface CassandraOptions {
-  localDataCenter?: string
-}
-
-export interface BigQueryOptions {
-  keyFilename?: string;
-  projectId?: string;
-  devMode?: boolean
-}
+const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
@@ -73,6 +32,9 @@ function parseConnectionType(t: Nullable<ConnectionType>) {
 }
 
 export class DbConnectionBase extends ApplicationEntity {
+  withProps(_props?: any): DbConnectionBase {
+    return this;
+  }
 
   _connectionType: Nullable<ConnectionType> = null
 
@@ -102,8 +64,6 @@ export class DbConnectionBase extends ApplicationEntity {
   public get port(): Nullable<number> {
     return this._port
   }
-
-
 
   public get defaultPort() : Nullable<number> {
     let port
@@ -231,8 +191,18 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({type: 'simple-json', nullable: false})
   cassandraOptions: CassandraOptions = {}
+
   @Column({ type: 'simple-json', nullable: false })
   bigQueryOptions: BigQueryOptions = {}
+
+  @Column({ type: 'simple-json', nullable: false, transformer: [azureEncrypt]})
+  azureAuthOptions: AzureAuthOptions = {}
+
+  @Column({ type: 'integer', nullable: true})
+  authId: Nullable<number> = null
+
+  @Column({ type: 'simple-json', nullable: false })
+  libsqlOptions: LibSQLOptions = { mode: 'url' }
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })
@@ -245,6 +215,26 @@ export class DbConnectionBase extends ApplicationEntity {
 
 @Entity({ name: 'saved_connection' })
 export class SavedConnection extends DbConnectionBase implements IConnection {
+
+  withProps(props?: any): SavedConnection {
+
+    if (props) {
+      if (props.connectionType) {
+        this.connectionType = props.connectionType;
+      }
+      SavedConnection.merge(this, props);
+    }
+
+    if (!this.createdAt) {
+      this.createdAt = new Date();
+    }
+
+    if (!this.updatedAt) {
+      this.updatedAt = new Date();
+    }
+
+    return this;
+  }
 
   @Column("varchar")
   name!: string

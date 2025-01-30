@@ -1,11 +1,11 @@
 import DefaultMenu from './BaseMenuBuilder'
-import platformInfo from '../platform_info'
-import { IGroupedUserSettings } from '../appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
+import { IGroupedUserSettings } from '../transport/TransportUserSetting'
+import { IPlatformInfo } from '../IPlatformInfo'
 
 export default class extends DefaultMenu {
-  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler) {
-    super(settings, handler)
+  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo) {
+    super(settings, handler, platformInfo)
   }
 
   viewMenu(): Electron.MenuItemConstructorOptions {
@@ -19,16 +19,47 @@ export default class extends DefaultMenu {
         this.menuItems.themeToggle,
         this.menuItems.sidebarToggle,
         this.menuItems.reload,
+        // Disable this for now in favor of #2380
+        // this.menuItems.minimalModeToggle,
       ]
     }
-    if (!platformInfo.isMac)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
     return result
+  }
+
+  devMenu() {
+    return {
+      label: 'Dev',
+      submenu: [
+        this.menuItems.reload,
+        this.menuItems.licenseState,
+      ],
+    }
+  }
+
+  helpMenu() {
+    const helpMenu = {
+      label: "Help",
+      submenu: [
+        this.menuItems.enterLicense,
+        this.menuItems.checkForUpdate,
+        this.menuItems.opendocs,
+        this.menuItems.support,
+        this.menuItems.addBeekeeper,
+        this.menuItems.devtools,
+        this.menuItems.about,
+      ]
+    };
+
+    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
+      helpMenu.submenu.push(this.menuItems.toggleBeta)
+    }
+
+    return helpMenu;
   }
 
   buildTemplate(): Electron.MenuItemConstructorOptions[] {
     const appMenu: Electron.MenuItemConstructorOptions[] = []
-    if (platformInfo.isMac) {
+    if (this.platformInfo.isMac) {
       appMenu.push({
         label: "Beekeeper Studio",
         submenu: [
@@ -48,13 +79,22 @@ export default class extends DefaultMenu {
         this.menuItems.newWindow,
         this.menuItems.newTab,
         this.menuItems.closeTab,
+        this.menuItems.importSqlFiles,
         this.menuItems.quickSearch,
         this.menuItems.disconnect,
         this.menuItems.quit
       ]
     }
 
-    return [
+    const windowMenu: Electron.MenuItemConstructorOptions[] = []
+    if (this.platformInfo.isMac) {
+      windowMenu.push({
+        label: 'Window',
+        role: 'windowMenu'
+      })
+    }
+
+    const menu = [
       ...appMenu,
       fileMenu,
       {
@@ -72,21 +112,19 @@ export default class extends DefaultMenu {
       {
         label: "Tools",
         submenu: [
-          this.menuItems.upgradeModal("Data Export"),
-          this.menuItems.upgradeModal("Create a Backup"),
-          this.menuItems.upgradeModal("Restore a Backup")
+          this.menuItems.backupDatabase,
+          this.menuItems.restoreDatabase,
+          this.menuItems.exportTables
         ]
       },
-      {
-        label: "Help",
-        submenu: [
-          this.menuItems.opendocs,
-          this.menuItems.checkForUpdate,
-          this.menuItems.addBeekeeper,
-          this.menuItems.devtools,
-          this.menuItems.about,
-        ]
-      }
+      ...windowMenu,
+      this.helpMenu()
     ]
+
+    if (this.platformInfo.isDevelopment) {
+      menu.push(this.devMenu())
+    }
+
+    return menu
   }
 }

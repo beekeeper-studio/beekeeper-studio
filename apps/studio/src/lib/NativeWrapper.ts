@@ -2,7 +2,6 @@
 import Noty from 'noty'
 import _ from 'lodash'
 
-const remote = require('@electron/remote'); // eslint-disable-line 
 /*
   Ok this is a little late in the game, but starting to move electron
   remote calls to this object. The hope is that when we support other platforms
@@ -30,7 +29,6 @@ export interface NativePlugin {
     showItemInFolder(path: string): void
   },
 
-  getCurrentWindow(): Electron.BrowserWindow | null
   openLink(link: string): void
   dialog: IWindowDialog
 
@@ -40,14 +38,11 @@ export interface NativePlugin {
 
 export const ElectronPlugin: NativePlugin = {
   dialog: {
-    showOpenDialogSync: (any) => remote.dialog.showOpenDialogSync(any),
-    showSaveDialogSync: (any) => remote.dialog.showSaveDialogSync(any)
+    showOpenDialogSync: (any) => window.main.showOpenDialogSync(any),
+    showSaveDialogSync: (any) => window.main.showSaveDialogSync(any)
   },
   openLink(link: string) {
-    remote.shell.openExternal(link);
-  },
-  getCurrentWindow() {
-    return remote.getCurrentWindow()
+    window.main.openLink(link);
   },
   clipboard: {
     writeText(rawText: any, notify = true) {
@@ -59,21 +54,21 @@ export const ElectronPlugin: NativePlugin = {
       })
       const text = _.toString(rawText)
       Noty.closeAll('clipboard')
-      remote.clipboard.writeText(text)
+      window.main.writeTextToClipboard(text)
 
       if (!notify) return;
       copyNotification.show()
     },
     readText(): string {
-      return remote.clipboard.readText()
+      return window.main.readTextFromClipboard()
     }
   },
   files: {
     open(path: string) {
-      return remote.shell.openPath(path)
+      return window.main.openPath(path)
     },
     showItemInFolder(path: string) {
-      remote.shell.showItemInFolder(path)
+      window.main.showItemInFolder(path)
     }
   }
 }

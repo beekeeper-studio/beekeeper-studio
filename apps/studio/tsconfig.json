@@ -1,23 +1,25 @@
 {
   "extends": "../../tsconfig.base.json",
-  "files": ["src/main.ts"],
-  "vueCompilerOptions": {
+ "vueCompilerOptions": {
     "target": 2.7
   },
   "compilerOptions": {
+    "rootDirs": [
+      "src", "src-commercial", "tests"
+    ],
     "target": "es2018",
     "module": "esnext",
     "outDir": "dist",
     "baseUrl": ".",
     "types": [
-      "webpack-env",
       "jest"
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@shared/*": ["../../shared/src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@commercial/*": ["./src-commercial/*"],
+      "@tests/*": ["./tests/*"],
+      "@bksLogger": ["./src/lib/log/bksLogger.ts"]
     },
     "lib": [
       "esnext",
@@ -26,18 +28,7 @@
       "scripthost"
     ]
   },
-  "include": [
-    "src/*.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "tests/**/*.ts",
-    "../../shared/src/**/*.ts",
-    "../../shared/src/**/*.tsx",
-    "../../shared/src/**/*.vue",
-    "src/*.js",
-    "src/**/*.js"
-  ],
+
   "exclude": [
     "node_modules", "dist", "dist_electron"
   ],

@@ -1,9 +1,12 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
-import logRaw from 'electron-log'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
+import logRaw from '@bksLogger'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, TableColumn } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import {fromIni} from "@aws-sdk/credential-providers";
+import {Signer} from "@aws-sdk/rds-signer";
+import globals from "@/common/globals";
 
 const log = logRaw.scope('db/util')
 
@@ -98,12 +101,14 @@ export function buildFilterString(filters: TableFilter[], columns = []) {
           : '?'
 
         return `${field} ${item.type.toUpperCase()} (${questionMarks})`
+      } else if (item.type.includes('is')) {
+        return `${field} ${item.type.toUpperCase()} NULL`
       }
       return `${field} ${item.type.toUpperCase()} ?`
     })
     filterString = "WHERE " + joinFilters(allFilters, filters)
 
-    filterParams = filters.flatMap((item) => {
+    filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
     })
   }
@@ -183,7 +188,7 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
     const insertColumns = Object.keys(item)
     insertColumns.forEach((ic) => {
       const matching = _.find(columns, (c) => c.columnName === ic)
-      if (matching && matching.dataType && matching.dataType.startsWith('bit(')) {
+      if (matching && matching.dataType && matching.dataType.startsWith('bit(') && !_.isNil(item[ic])) {
         if (matching.dataType === 'bit(1)') {
           item[ic] = bitConversionFunc(item[ic])
         } else {
@@ -274,7 +279,6 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
-
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   if (!deletes) return []
   return deletes.map(deleteRow => {
@@ -300,4 +304,44 @@ export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], rea
 
 export const errorMessages = {
   readOnly: 'Write action(s) not allowed in Read-Only Mode.'
+}
+
+export async function getIAMPassword(awsProfile: string, region: string, hostname: string, port: number, username: string): Promise<string> {
+  const nodeProviderChainCredentials = fromIni({
+    profile: awsProfile ?? "default",
+  });
+  const signer = new Signer({
+    credentials: nodeProviderChainCredentials,
+    region,
+    hostname,
+    port,
+    username,
+  });
+  return  await signer.getAuthToken();
+}
+
+let resolvedPw: string | undefined;
+let tokenExpiryTime: number | null = null;
+
+export async function refreshTokenIfNeeded(redshiftOptions: any, server: any, port: number): Promise<string> {
+  if(!redshiftOptions?.iamAuthenticationEnabled){
+    return null
+  }
+
+  const now = Date.now();
+
+  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime) { // Refresh 2 minutes before expiry
+    log.info("Refreshing IAM token...");
+    resolvedPw = await getIAMPassword(
+      redshiftOptions.awsProfile ?? "default",
+      redshiftOptions?.awsRegion,
+      server.config.host,
+      server.config.port || port,
+      server.config.user
+    );
+
+    tokenExpiryTime = now + globals.iamExpiryTime; // Tokens last 15 minutes
+  }
+
+  return resolvedPw;
 }

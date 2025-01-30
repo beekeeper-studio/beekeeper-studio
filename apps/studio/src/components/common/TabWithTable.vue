@@ -26,8 +26,9 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { mapState } from 'vuex'
+import { findTable } from '@/common/transport/TransportOpenTab'
 
 const log = rawLog.scope('TabWithTable')
 
@@ -36,7 +37,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded']),
     table() {
-      return this.tab.findTable(this.tables)
+      return findTable(this.tab, this.tables)
     },
   },
   watch: {

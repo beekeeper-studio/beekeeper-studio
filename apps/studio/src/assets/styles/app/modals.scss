@@ -14,6 +14,9 @@
   }
 
   &.upgrade-modal {
+    .dialog-content {
+      padding: 2rem 2rem 1rem;
+    }
     .dialog-c-title {
       font-size: 1.2em;
     }
@@ -34,10 +37,32 @@
           list-style: none;
         }
       }
+      > p {
+        margin-bottom: 0;
+      }
+    }
+    .check-list {
+      margin-bottom: 0;
+    }
+    .vue-dialog-buttons {
+      justify-content: stretch;
+      padding-left: 0;
+      padding-right: 0;
+      padding-top: 1rem;
+      & > div {
+        width: 100%;
+      }
+      .actions {
+        justify-content: flex-end;
+      }
+    }
+    .close-btn {
+      top: 1.5rem;
+      right: 1.5rem;
     }
   }
 
-  &.confirmation-modal {
+  &.confirmation-modal, &.sql-files-import-modal, &.wait-sso-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;
@@ -52,6 +77,39 @@
       padding-left: 1.5rem;
       padding-right: 1.5rem;
       padding-bottom: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+
+      & > .btn:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  &.sql-files-import-modal {
+    .message {
+      line-height: 1.5;
+    }
+
+    .file-picker-wrapper {
+      margin-top: 1rem;
+    }
+  }
+
+  &.wait-sso-modal {
+    .dialog-content {
+      padding-top: 2rem;
+      padding-bottom: 0.5rem;
+    }
+    .dialog-c-title {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-right: 0;
+    }
+    .vue-dialog-buttons {
+      padding-bottom: 2rem;
+      justify-content: center;
     }
   }
 }

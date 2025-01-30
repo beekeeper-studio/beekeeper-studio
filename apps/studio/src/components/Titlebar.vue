@@ -64,54 +64,51 @@
 
 <script>
 import { mapState } from 'vuex'
-import AppMenu from './menu/NewAppMenu'
-import platformInfo from '@/common/platform_info'
+import AppMenu from './menu/NewAppMenu.vue'
 export default {
   components: { AppMenu },
   data() {
     return {
-      maximized: this.$native.getCurrentWindow()?.isMaximized(),
-      fullscreen: this.$native.getCurrentWindow()?.isFullScreen(),
+      maximized: false,
+      fullscreen: false
     }
   },
   computed: {
-    ...mapState(['windowTitle']),
+    ...mapState(['windowTitle'])
   },
   mounted() {
-    this.getWindow()?.on('maximize', () => {
+    window.main.onMaximize(() => {
       this.maximized = true
-    })
-    this.getWindow()?.on('unmaximize', () => {
+    }, this.$util.sId);
+
+    window.main.onUnmaximize(() => {
       this.maximized = false
-    })
-    this.getWindow()?.on('enter-full-screen', () => {
+    }, this.$util.sId);
+
+    window.main.onEnterFullscreen(() => {
       this.fullscreen = true
-    })
-    this.getWindow()?.on('leave-full-screen', () => {
+    }, this.$util.sId);
+
+    window.main.onLeaveFullscreen(() => {
       this.fullscreen = false
-    })
+    }, this.$util.sId);
   },
   methods: {
-    getWindow() {
-      return this.$native.getCurrentWindow()
+    async minimizeWindow() {
+      await window.main.minimizeWindow();
     },
-    isMaximized() {
-      return this.getWindow()?.isMaximized()
-    },
-    minimizeWindow() {
-      this.getWindow()?.minimize();
-    },
-    maximizeWindow() {
+    async maximizeWindow() {
+      const isMaximized = await window.main.isMaximized();
       if (this.fullscreen) {
-        this.getWindow()?.setFullScreen(false);
-      } else if (this.isMaximized()) {
-        this.getWindow()?.unmaximize();
+        await window.main.setFullScreen(false)
+      } else if (isMaximized) {
+        await window.main.unmaximizeWindow()
       } else {
-        this.getWindow()?.maximize();
+        await window.main.maximizeWindow();
       }
     },
-    closeWindow() {
-      this.getWindow()?.close()
+    async closeWindow() {
+      await window.main.closeWindow();
     }
   }
 }

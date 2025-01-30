@@ -1,5 +1,6 @@
 
 .tabletable {
+  padding-bottom: 0;
 
   .tabulator {
     .tabulator-header {
@@ -82,5 +83,16 @@
     font-weight: bold;
     font-size: 1.5rem;
     color: $text;
+  }
+
+  .table-view-wrapper {
+    min-height: 0;
+    display: flex;
+    height: 100%;
+    width: 100%;
+  }
+
+  .statusbar {
+    position: relative;
   }
 }

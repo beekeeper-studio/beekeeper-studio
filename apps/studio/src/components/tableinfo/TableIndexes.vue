@@ -107,7 +107,7 @@
   </div>
 </template>
 <script lang="ts">
-import { Tabulator, TabulatorFull } from 'tabulator-tables'
+import { Tabulator, TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
@@ -116,20 +116,22 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { CreateIndexSpec, FormatterDialect, IndexAlterations } from '@shared/lib/dialects/models'
-import rawLog from 'electron-log'
+import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
+import rawLog from '@bksLogger'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
+import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 
 interface State {
+  mysqlTypes: string[]
   tabulator: Tabulator
-  newRows: Tabulator.RowComponent[]
-  removedRows: Tabulator.RowComponent[],
+  newRows: RowComponent[]
+  removedRows: RowComponent[],
   loading: boolean,
   error: any | null
 }
@@ -140,9 +142,10 @@ export default Vue.extend({
     ErrorAlert,
   },
   mixins: [data_mutators],
-  props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
+  props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
+      mysqlTypes: ['mysql', 'mariadb', 'tidb'],
       tabulator: null,
       newRows: [],
       removedRows: [],
@@ -157,6 +160,7 @@ export default Vue.extend({
     }
   },
   computed: {
+    ...mapState(['connectionType', 'connection']),
     ...mapGetters(['dialect', 'dialectData']),
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
@@ -189,13 +193,20 @@ export default Vue.extend({
       return (this.properties.indexes || []).map((i: TableIndex) => {
         return {
           ...i,
-          columns: i.columns.map((c) => `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`)
+          info: i.nullsNotDistinct ? 'NULLS NOT DISTINCT' : undefined,
+          columns: i.columns.map((c: IndexColumn) => {
+            // In mysql, we can specify the prefix length
+            if (this.mysqlTypes.includes(this.connectionType) && !_.isNil(c.prefix)) {
+              return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
+            }
+            return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
+          })
         }
       })
     },
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
-      return [
+      const result = [
         {title: 'Id', field: 'id', widthGrow: 0.5},
         {
           title:'Name',
@@ -216,19 +227,30 @@ export default Vue.extend({
           editor: vueEditor(CheckboxEditorVue),
         },
         {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
+        // TODO (@day): fix
+        (
+          this.connection.supportedFeatures().indexNullsNotDistinct
+            ? { title: 'Info', field: 'info' }
+            : null
+        ),
         {
           title: 'Columns',
           field: 'columns',
           editable,
-          editor: 'select',
+          editor: 'list',
           formatter: this.cellFormatter,
           editorParams: {
             multiselect: true,
             values: this.indexColumnOptions,
+            autocomplete: true,
+            listOnEmpty: true,
+            freetext: true,
           }
         },
         trashButton(this.removeRow)
       ]
+
+      return result.filter((c) => c !== null)
     }
   },
   methods: {
@@ -245,7 +267,7 @@ export default Vue.extend({
       // ideally we could drop users into the first cell to make editing easier
       // but right now if it fails it breaks the whole table.
     },
-    async removeRow(_e: any, cell: Tabulator.CellComponent) {
+    async removeRow(_e: any, cell: CellComponent) {
       if (this.loading) return
       const row = cell.getRow()
       if (this.newRows.includes(row)) {
@@ -267,12 +289,21 @@ export default Vue.extend({
       this.clearChanges()
     },
     getPayload(): IndexAlterations {
-        const additions = this.newRows.map((row: Tabulator.RowComponent) => {
+        const additions = this.newRows.map((row: RowComponent) => {
           const data = row.getData()
-          const columns = data.columns.map((c: string)=> {
+          let dataColumns: string[]
+          try {
+            dataColumns = JSON.parse(data.columns)
+          } catch (e) {
+            dataColumns = [data.columns]
+          }
+          const columns = dataColumns.map((c: string)=> {
+            if (this.mysqlTypes.includes(this.connectionType)) {
+              return mysqlParseIndexColumn(c)
+            }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')
-            return { name, order }
+            return { name, order } as IndexColumn
           })
           const payload: CreateIndexSpec = {
             unique: data.unique,
@@ -281,7 +312,7 @@ export default Vue.extend({
           }
           return payload
         })
-      const drops = this.removedRows.map((row: Tabulator.RowComponent) => ({ name: row.getData()['name']}))
+      const drops = this.removedRows.map((row: RowComponent) => ({ name: row.getData()['name']}))
       return { additions, drops, table: this.table.name, schema: this.table.schema }
     },
     async submitApply() {
@@ -304,9 +335,9 @@ export default Vue.extend({
       }
 
     },
-    submitSql() {
+    async submitSql() {
       const payload = this.getPayload()
-      const sql = this.connection.alterIndexSql(payload)
+      const sql = await this.connection.alterIndexSql(payload)
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

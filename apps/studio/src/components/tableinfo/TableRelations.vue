@@ -100,10 +100,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import { Tabulator, TabulatorFull } from 'tabulator-tables'
-type CellComponent = Tabulator.CellComponent
-type RowComponent = Tabulator.RowComponent
-type ColumnDefinition = Tabulator.ColumnDefinition
+import { Tabulator, TabulatorFull, CellComponent, RowComponent, ColumnDefinition } from 'tabulator-tables'
 
 import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
@@ -114,13 +111,13 @@ import { TableColumn, TableOrView } from '@/lib/db/models'
 import _ from 'lodash'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 
 export default Vue.extend({
-  props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
+  props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
     ErrorAlert
@@ -135,7 +132,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['tables']),
+    ...mapState(['tables', 'connection']),
     ...mapGetters(['schemas', 'dialect', 'schemaTables', 'dialectData']),
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything
@@ -226,7 +223,7 @@ export default Vue.extend({
           field: 'toColumn',
           title: "FK Column",
           editable,
-          editor: 'select',
+          editor: 'list',
           editorParams: {
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getColumns
@@ -235,7 +232,7 @@ export default Vue.extend({
         {
           field: 'onUpdate',
           title: "On Update",
-          editor: 'select',
+          editor: 'list',
           editable,
           editorParams: {
             values: this.dialectData.constraintActions,
@@ -246,7 +243,7 @@ export default Vue.extend({
           field: 'onDelete',
           title: 'On Delete',
           editable,
-          editor: 'select',
+          editor: 'list',
           // @ts-expect-error Bad Type
           editorParams: {
             values: this.dialectData.constraintActions,
@@ -352,7 +349,7 @@ export default Vue.extend({
         this.loading = true
         this.error = null
         const payload = this.getPayload()
-        await this.connection.alterRelation(payload)
+        await this.connection.alterRelation(payload);
         this.$noty.success("Relations Updated")
         this.$emit('actionCompleted')
         this.newRows = []
@@ -366,9 +363,9 @@ export default Vue.extend({
       }
 
     },
-    submitSql() {
+    async submitSql() {
       const payload = this.getPayload()
-      const sql = this.connection.alterRelationSql(payload)
+      const sql = await this.connection.alterRelationSql(payload);
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },

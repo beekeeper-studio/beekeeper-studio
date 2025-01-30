@@ -1,13 +1,14 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import fs from 'fs'
 import path from 'path'
-import pf from 'portfinder'
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
-import appConfig from '../../config'
+import appConfig from '@/common/platform_info'
+import pf from 'portfinder'
 
-import { resolveHomePathToAbsolute } from '../../common/utils'
-import { IDbConnectionServerConfig, IDbSshTunnel } from './types';
+import { IDbConnectionServerConfig } from './types';
+import { resolveHomePathToAbsolute } from '@/handlers/utils';
+import { IDbSshTunnel } from './backendTypes';
 
 const log = rawLog.scope('db:tunnel');
 const logger = () => log;
@@ -22,6 +23,10 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           throw new Error('Missing ssh config')
         }
 
+        // BUG FIX: As of Node 17, node prefers to resolve hostnames (eg 'localhost') using ipv6 by default rather than ipv4
+        // So we need to make sure we're consistent with what hostname we return
+        // localhost can be 127.0.0.1:port (ipv4), or :::port (ipv6) by default, depending.
+
         const sshConfig: Options = {
           endHost: config.ssh.host || '',
           endPort: config.ssh.port,
@@ -32,7 +37,9 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           password: config.ssh.password || undefined,
           skipAutoPrivateKey: true,
           noReadline: true,
-          keepaliveInterval: config.ssh.keepaliveInterval
+          keepaliveInterval: config.ssh.keepaliveInterval,
+          // TODO: Move this to configuration defaults in the ini file
+          bindHost: '127.0.0.1'
         }
 
         if (config.ssh.useAgent && appConfig.sshAuthSock) {
@@ -61,7 +68,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         logger().debug('tunnel created!')
         const result = {
           connection: connection,
-          localHost: '127.0.0.1',
+          localHost: sshConfig.bindHost,
           localPort: localPort,
           tunnel: tunnel
         } as IDbSshTunnel

@@ -8,6 +8,9 @@ import addSc from './20200707-add-sc-to-used-connections'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
 import dev3 from './dev-3'
+import dev4 from './dev-4'
+import dev5 from './dev-5'
+import dev6 from './dev-6'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -34,11 +37,23 @@ import fixKeymapType from './20230619_fix_keymap_type'
 import bigQueryOptions from './20230426_add_bigquery_options'
 import firebirdConnection from './20240107_add_firebird_dev_connection'
 import exportPath from './20240122_add_default_export_path'
+import demoSetup from './20240421_seed_with_demo_data'
+import tokenCache from './20240430_add_token_cache'
+import minimalMode from './20240514_user_settings_minimal_mode'
+import libsqlOptions from './20240528_add_libsql_options'
+import nameTokenCache from './20240715_add_name_to_token_cache'
+import maxAllowedAppRelease from './20240920_add_max_allowed_app_release'
+import lastUsedWorkspace from './20240923_user_settings_default_workspace'
+import userSettingKeymap from './20241017_add_user_setting_keymap'
+import missingUserSettings from './20241017_add_missing_user_settings'
+import useBeta from './20241009_add_beta_toggle'
+import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
+
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 
 
 const logger = rawLog.scope('migrations');
@@ -57,7 +72,9 @@ const realMigrations = [
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   firebirdConnection, exportPath, UserSettingsWindowPosition,
-
+  demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
+  maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
+  useBeta, deleteDuplicateConnections
 ]
 
 // fixtures require the models
@@ -66,7 +83,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3
+  dev1, dev2, dev3, dev4, dev5, dev6,
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]
@@ -92,27 +109,44 @@ export default class {
     this.env = env
   }
 
+  async isFreshInstall() {
+
+    const runner = this.connection.connection.createQueryRunner()
+
+    try {
+      const sql = `SELECT name FROM sqlite_master WHERE type='table' AND name='bk_migrations';`
+      const runPreviously = await runner.query(sql)
+      return runPreviously.length === 0
+    } finally {
+      runner.release()
+    }
+  }
+
   async run() {
     console.log("running migrations")
     const runner = this.connection.connection.createQueryRunner()
-    await runner.query(setupSQL)
-    for(let i = 0; i < migrations.length; i++) {
-      const migration = migrations[i]
-      logger.debug(`Checking migration ${migration.name}`)
-      if(migration.env && migration.env !== this.env) {
-        // env defined, and does not match
-        logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
-        continue
-      }
-      const hasRun = await Manager.checkExists(runner, migration.name)
-      if (!hasRun) {
-        try {
-          await migration.run(runner, this.env)
-          await Manager.markExists(runner, migration.name)
-        } catch (err) {
-          console.log(`Migration ${migration.name} failed with`, err.name, err.message)
+    try {
+      await runner.query(setupSQL)
+      for(let i = 0; i < migrations.length; i++) {
+        const migration = migrations[i]
+        logger.debug(`Checking migration ${migration.name}`)
+        if(migration.env && migration.env !== this.env) {
+          // env defined, and does not match
+          logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
+          continue
+        }
+        const hasRun = await Manager.checkExists(runner, migration.name)
+        if (!hasRun) {
+          try {
+            await migration.run(runner, this.env)
+            await Manager.markExists(runner, migration.name)
+          } catch (err) {
+            console.log(`Migration ${migration.name} failed with`, err.name, err.message)
+          }
         }
       }
+    } finally {
+      runner.release()
     }
   }
 

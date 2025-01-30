@@ -30,12 +30,12 @@ theme:
     - navigation.sections
     - navigation.footer
     - navigation.top
-    - navigation.expand
     - search.suggest
     - search.highlight
     - content.action.edit
     - content.action.view
     - content.code.copy
+    - content.tooltips
 
   palette:
     scheme: slate
@@ -44,14 +44,16 @@ theme:
 
 extra_css:
   - stylesheets/extra.css
+extra_javascript:
+  - javascript/extra.js
 plugins:
   - search
+  - include-markdown
 #  - social:
 #      cards_layout_options:
 #        background_color: "#2c2c2c"
 #        color: "#ffffff"
 #        font_family: Rubik
-
 
 markdown_extensions:
   - admonition
@@ -65,25 +67,34 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - tables
+  - abbr
   - attr_list
   - md_in_html
   - nl2br
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 nav:
   - Introduction: index.md
   - getting-started-guide.md
-  - Upgrading: support/upgrading-from-the-community-edition.md
-  - Installation:
+  - purchasing-a-license.md
+  - Installing:
     - installation/index.md
-    - installation/windows.md
-    - installation/macos-m1-intel.md
-    - installation/linux.md
-  - Connecting To Databases:
-    - user_guide/connecting/first-page.md
-    - user_guide/connecting/sqlite.md
-    - user_guide/connecting/google-bigquery.md
-    - user_guide/connecting/oracle-database.md
-  - Using The App:
+    - Supported Platforms:
+      - installation/windows.md
+      - installation/macos-m1-intel.md
+      - installation/linux.md
+  - Databases:
+    - user_guide/connecting/supported-databases.md
+    - Connecting To A Database: user_guide/connecting/connecting.md
+    - DB Specific Guides:
+      - user_guide/connecting/sqlite.md
+      - user_guide/connecting/google-bigquery.md
+      - user_guide/connecting/oracle-database.md
+      - user_guide/connecting/amazon-rdb.md
+      - user_guide/connecting/firebird.md
+  - User Guide:
     - user_guide/using-the-sql-editor.md
     - user_guide/editing-data.md
     - user_guide/data-export.md
@@ -94,6 +105,7 @@ nav:
     - user_guide/importing-data-csv-json-etc.md
     - user_guide/query-magics.md
   - Support:
+    - Upgrading: support/upgrading-from-the-community-edition.md
     - support/subscription-management.md
     - support/contact-support.md
     - support/open-source.md

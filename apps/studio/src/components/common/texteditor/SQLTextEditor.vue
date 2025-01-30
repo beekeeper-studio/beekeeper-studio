@@ -3,13 +3,14 @@
     v-bind="$attrs"
     :value="value"
     @input="$emit('input', $event)"
-    :lang="connectionType || 'sql'"
+    :hint="hint"
+    :mode="dialectData.textEditorMode"
     :extra-keybindings="keybindings"
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
-    :forced-value="dataForcedValue"
     :plugins="plugins"
+    :auto-focus="true"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
     @update:cursorIndex="$emit('update:cursorIndex', $event)"
@@ -24,18 +25,18 @@ import { mapState, mapGetters } from "vuex";
 import { plugins } from "@/lib/editor/utils";
 import { format } from "sql-formatter";
 import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
+import CodeMirror from "codemirror";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions", "forcedValue"],
-  data() {
-    return {
-      dataForcedValue: this.value,
-    };
-  },
+  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions"],
   computed: {
-    ...mapGetters(['defaultSchema']),
+    ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
+    hint() {
+      // @ts-expect-error not fully typed
+      return CodeMirror.hint.sql;
+    },
     hintOptions() {
       // We do this so we can order the autocomplete options
       const firstTables = {};
@@ -76,24 +77,22 @@ export default Vue.extend({
       };
     },
     plugins() {
-      return [
+      const editorPlugins = [
         plugins.autoquote,
         plugins.autoComplete,
         plugins.autoRemoveQueryQuotes(this.connectionType),
+        plugins.queryMagic(() => this.defaultSchema, () => this.tables)
       ];
-    },
-  },
-  watch: {
-    async forcedValue() {
-      await this.setEditorValue(this.forcedValue);
+
+      return editorPlugins;
     },
   },
   methods: {
-    async formatSql() {
+    formatSql() {
       const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.lang)),
+        language: FormatterDialect(dialectFor(this.connectionType)),
       });
-      await this.setEditorValue(formatted);
+      this.$emit("input", formatted);
     },
     async columnsGetter(tableName: string) {
       let tableToFind = this.tables.find(
@@ -123,7 +122,7 @@ export default Vue.extend({
         {
           type: "divider",
         },
-        ...options.slice(pivot + 1),
+        ...options.slice(pivot),
       ];
 
       if (this.contextMenuOptions) {
@@ -131,11 +130,6 @@ export default Vue.extend({
       }
 
       return newOptions;
-    },
-    async setEditorValue(value: string) {
-      this.dataForcedValue = this.value;
-      await this.$nextTick();
-      this.dataForcedValue = value;
     },
   },
 });

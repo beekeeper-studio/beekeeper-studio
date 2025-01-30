@@ -57,7 +57,7 @@
   </div>
 </template>
 <script>
-import ColorPicker from '../common/form/ColorPicker';
+import ColorPicker from '../common/form/ColorPicker.vue';
 export default {
   components: { ColorPicker },
   props: ['config', 'canCancel', 'selectInput'],

@@ -2,35 +2,52 @@
 
 import { readFileSync } from 'fs';
 
-import pg, { QueryResult, PoolConfig, PoolClient } from 'pg';
+import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
 import { identify } from 'sql-query-identifier';
-import _  from 'lodash'
+import _ from 'lodash'
 import knexlib from 'knex'
-import logRaw from 'electron-log'
+import logRaw from '@bksLogger'
 
-import { DatabaseElement, IDbConnectionServer, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, applyChangesSql, joinQueries } from './utils';
+import { DatabaseElement, IDbConnectionDatabase } from '../types'
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import {
+  buildDatabaseFilter,
+  buildDeleteQueries,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  refreshTokenIfNeeded
+} from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
+// FIXME (azmi): use BkConfig
+import globals from '../../../common/globals';
 import { HasPool, VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterPartitionsSpec, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, IndexColumn, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import { BkConfig } from '@/lib/bkConfig';
+import { IDbConnectionServer } from '../backendTypes';
+import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
-
-const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
 
 const log = logRaw.scope('postgresql')
-const logger = () => log
 
-const knex = knexlib({ client: 'pg'})
+const knex = knexlib({ client: 'pg' })
+const escapeBinding = knex.client._escapeBinding;
+knex.client._escapeBinding = function(value: any, context: any) {
+  if (Buffer.isBuffer(value)) {
+    return `'\\x${value.toString('hex')}'`;
+  }
+  return escapeBinding.call(this, value, context);
+};
 
 const pgErrors = {
   CANCELED: '57014',
@@ -58,6 +75,15 @@ interface STQResults {
 
 }
 
+interface QueryResult {
+  pgResult: PgQueryResult
+  rows: any[]
+  columns: FieldDef[]
+  command: PgQueryResult['command']
+  rowCount: PgQueryResult['rowCount']
+  arrayMode: boolean
+}
+
 const postgresContext = {
   getExecutionContext(): ExecutionContext {
     return null;
@@ -72,6 +98,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   conn: HasPool;
   _defaultSchema: string;
   dataTypes: any;
+  transcoders = [GenericBinaryTranscoder];
+  interval: NodeJS.Timeout;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -79,11 +107,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return this.version.version.split(" on ")[0];
   }
 
-  defaultSchema(): string | null {
+  async defaultSchema(): Promise<string | null> {
     return this._defaultSchema;
   }
 
@@ -91,7 +119,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return new PostgresqlChangeBuilder(table, schema);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     const hasPartitions = this.version.number >= 100000;
     return {
       customRoutines: true,
@@ -101,7 +129,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       editPartitions: hasPartitions,
       backups: true,
       backDirFormat: true,
-      restore: true
+      restore: true,
+      indexNullsNotDistinct: this.version.number >= 150_000,
+      transactions: true
     };
   }
 
@@ -118,6 +148,36 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       pool: new pg.Pool(dbConfig)
     };
 
+    const test = await this.conn.pool.connect()
+
+    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
+      this.interval = setInterval(async () => {
+        try {
+          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
+
+          const newPool = new pg.Pool({
+            ...dbConfig,
+            password: newPassword,
+          });
+
+          const test = await newPool.connect();
+          test.release();
+
+          if (this.conn?.pool) {
+            await this.conn.pool.end();
+          }
+          this.conn = { pool: newPool };
+
+          log.info('Token refreshed successfully and connection pool updated.');
+        } catch (err) {
+          log.error('Could not refresh token or update connection pool!', err);
+        }
+        // FIXME (azmi): use BkConfig
+      }, globals.iamRefreshTime);
+    }
+
+    test.release();
+
     this.conn.pool.on('acquire', (_client) => {
       log.debug('Pool event: connection acquired')
     })
@@ -132,7 +192,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     })
 
 
-    logger().debug('connected');
+    log.debug('connected');
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
@@ -140,6 +200,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
     await super.disconnect();
     this.conn.pool.end();
   }
@@ -274,7 +337,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         id: row.id,
         routineParams: params.map((p, i) => {
           return {
-            name: p.parameter_name || `arg${i+1}`,
+            name: p.parameter_name || `arg${i + 1}`,
             type: p.data_type,
             length: p.char_length || undefined
           };
@@ -311,10 +374,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     // if you provide table, you have to provide schema
-    const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
-    const params = table ? [schema, table] : []
+    const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : "";
+    const params = table ? [schema, table] : [];
     if (table && !schema) {
-      throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
+      throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`);
     }
 
     const sql = `
@@ -323,20 +386,25 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         table_name,
         column_name,
         is_nullable,
-        ${this.version.number > 120_000 ? 'is_generated,' : ''}
+        ${this.version.number > 120_000 ? "is_generated," : ""}
         ordinal_position,
         column_default,
         CASE
           WHEN character_maximum_length is not null  and udt_name != 'text'
             THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
           WHEN numeric_precision is not null and numeric_scale is not null
-          	THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
+            THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
           WHEN numeric_precision is not null and numeric_scale is null
             THEN udt_name || '(' || numeric_precision::varchar(255) || ')'
           WHEN datetime_precision is not null AND udt_name != 'date' THEN
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
-        END as data_type
+        END as data_type,
+        CASE
+          WHEN data_type = 'ARRAY' THEN 'YES'
+          ELSE 'NO'
+        END as is_array,
+        pg_catalog.col_description(format('%I.%I', table_schema, table_name)::regclass::oid, ordinal_position) as column_comment
       FROM information_schema.columns
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position
@@ -349,11 +417,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       tableName: row.table_name,
       columnName: row.column_name,
       dataType: row.data_type,
-      nullable: row.is_nullable === 'YES',
+      nullable: row.is_nullable === "YES",
       defaultValue: row.column_default,
       ordinalPosition: Number(row.ordinal_position),
       hasDefault: !_.isNil(row.column_default),
-      generated: row.is_generated === 'ALWAYS' || row.is_generated === 'YES',
+      generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
+      array: row.is_array === "YES",
+      comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -394,12 +465,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
+    const supportedFeatures = await this.supportedFeatures();
     const sql = `
-    SELECT i.indexrelid::regclass AS indexname,
+    SELECT (SELECT relname FROM pg_class c WHERE c.oid = i.indexrelid) as indexname,
         k.i AS index_order,
         i.indexrelid as id,
         i.indisunique,
         i.indisprimary,
+        ${supportedFeatures.indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
         coalesce(a.attname,
                   (('{' || pg_get_expr(
                               i.indexprs,
@@ -434,19 +507,21 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       const unique = blob[0].indisunique
       const id = blob[0].id
       const primary = blob[0].indisprimary
-      const columns: IndexedColumn[] = _.sortBy(blob, 'index_order').map((b) => {
+      const columns: IndexColumn[] = _.sortBy(blob, 'index_order').map((b) => {
         return {
           name: b.index_column,
           order: b.ascending ? 'ASC' : 'DESC'
         }
       })
+      const nullsNotDistinct = blob[0].indnullsnotdistinct
       const item: TableIndex = {
         table, schema,
         id,
         name: indexName,
         unique,
         primary,
-        columns
+        columns,
+        nullsNotDistinct,
       }
       return item
     })
@@ -553,7 +628,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }));
   }
 
-  query(queryText: string): CancelableQuery {
+  async query(queryText: string): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
@@ -568,12 +643,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, {arrayMode: true}),
+            this.executeQuery(queryText, { arrayMode: true }),
           ]);
 
           pid = null;
 
-          if(!data) {
+          if (!data) {
             return []
           }
 
@@ -640,11 +715,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.datname);
   }
 
-  applyChangesSql(changes: TableChanges): string {
-    return applyChangesSql(changes, this.knex)
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
     await this.runWithTransaction(async (connection) => {
@@ -664,7 +735,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return results
   }
 
-  getQuerySelectTop(table: string, limit: number, schema: string = this._defaultSchema): string {
+  async getQuerySelectTop(table: string, limit: number, schema: string = this._defaultSchema): Promise<string> {
     return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
@@ -673,8 +744,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const statements = [
       `pg_indexes_size('${identifier}') as index_size`,
-        `pg_relation_size('${identifier}') as table_size`,
-        `obj_description('${identifier}'::regclass) as description`
+      `pg_relation_size('${identifier}') as table_size`,
+      `obj_description('${identifier}'::regclass) as description`
     ]
 
     if (this.version.number < 90000) {
@@ -683,7 +754,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const sql = `SELECT ${statements.join(",")}`
 
-    const detailsPromise =  this.driverExecuteSingle(sql);
+    const detailsPromise = this.driverExecuteSingle(sql);
 
     const triggersPromise = this.listTableTriggers(table, schema);
     const partitionsPromise = this.listTablePartitions(table, schema);
@@ -729,7 +800,19 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const data = await this.driverExecuteSingle(sql, { params });
 
-    return data.rows.map((row) => row.createtable)[0];
+    const createTableScript = data.rows[0].createtable;
+    const primaryKeys = data.rows.reduce((keys, row) => {
+      const match = row.createtable.match(/PRIMARY KEY \((.+?)\)/);
+
+      if (match) {
+        const [_, key] = match;
+        keys.push(key);
+      }
+      return keys;
+    }, []);
+
+    const primaryKeyCombined = `PRIMARY KEY (${primaryKeys.join(', ')})`;
+    return createTableScript.replace(/PRIMARY KEY \(.+?\)/, primaryKeyCombined);
   }
 
   async getViewCreateScript(view: string, schema: string = this._defaultSchema): Promise<string[]> {
@@ -799,7 +882,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         schemaname as schema,
         matviewname as name
       FROM pg_matviews
-      ${schemaFilter ? `WHERE ${schemaFilter}`: ''}
+      ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
       order by schemaname, matviewname;
     `
 
@@ -845,7 +928,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async getTableLength(table: string, schema: string = this._defaultSchema): Promise<number> {
     const tableType = await this.getEntityType(table, schema)
     const forceSlow = !tableType || tableType !== 'BASE_TABLE'
-    const { countQuery, params } = this.buildSelectTopQueries({ table, schema, filters: undefined, version: this.version, forceSlow})
+    const { countQuery, params } = this.buildSelectTopQueries({ table, schema, filters: undefined, version: this.version, forceSlow })
     const countResults = await this.driverExecuteSingle(countQuery, { params: params })
     const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
     const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -855,10 +938,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<TableResult> {
     const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params })
-    return {
-      result: result.rows,
-      fields: result.fields.map(f => f.name)
-    }
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
+    return { result: rows, fields }
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<string> {
@@ -871,7 +953,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       table, orderBy, filters, version: this.version, schema
     })
     // const cursor = new Cursor(qs.query, qs.params)
-    const countResults = await this.driverExecuteSingle(qs.countQuery, {params: qs.params})
+    const countResults = await this.driverExecuteSingle(qs.countQuery, { params: qs.params })
     const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
     const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
     const columns = await this.listTableColumns(table, schema)
@@ -898,9 +980,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       chunkSize
     }
 
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
+
     return {
-      totalRows: undefined, // totalRecords,
-      columns: undefined, // columns,
+      totalRows,
+      columns,
       cursor: new PsqlCursor(cursorOpts)
     }
   }
@@ -914,11 +998,29 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async setTableDescription(table: string, description: string, schema: string = this._defaultSchema): Promise<string> {
     const identifier = this.wrapTable(table, schema)
-    const comment  = escapeString(description)
+    const comment = escapeString(description)
     const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`
     await this.driverExecuteSingle(sql)
     const result = await this.getTableProperties(table, schema)
     return result?.description
+  }
+
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
+    elementName = this.wrapIdentifier(elementName)
+    newElementName = this.wrapIdentifier(newElementName)
+    schema = this.wrapIdentifier(schema)
+
+    let sql = ''
+
+    if (typeOfElement === DatabaseElement.TABLE) {
+      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName};`
+    } else if (typeOfElement === DatabaseElement.VIEW) {
+      sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName};`
+    } else if (typeOfElement === DatabaseElement.SCHEMA) {
+      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName};`
+    }
+
+    return sql
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
@@ -927,19 +1029,17 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
-    const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
-
-    await this.driverExecuteSingle(sql)
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
+    return `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<void> {
-    const sql = this.duplicateTableSql(tableName, duplicateTableName, schema);
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema);
 
     await this.driverExecuteSingle(sql);
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): string {
+  async duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<string> {
     const sql = `
       CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
       SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
@@ -974,12 +1074,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     await this.driverExecuteSingle(sql)
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error('Method not implemented.');
   }
 
 
-  alterPartitionSql(payload: AlterPartitionsSpec): string {
+  async alterPartitionSql(payload: AlterPartitionsSpec): Promise<string> {
     const { table } = payload;
     const builder = new PostgresqlChangeBuilder(table);
     const creates = builder.createPartitions(payload.adds);
@@ -989,7 +1089,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async alterPartition(payload: AlterPartitionsSpec): Promise<void> {
-    const query = this.alterPartitionSql(payload)
+    const query = await this.alterPartitionSql(payload)
     await this.driverExecuteSingle(query);
   }
 
@@ -1006,30 +1106,26 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async importData(sql: string): Promise<any> {
-    const fullQuery = joinQueries([
-      'BEGIN', sql, 'COMMIT'
-    ]);
-    try {
-      return await this.driverExecuteSingle(fullQuery);
-    } catch (ex) {
-      log.error("importData", fullQuery, ex);
-      await this.driverExecuteSingle('ROLLBACK');
-      throw ex;
-    }
+  async importBeginCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
+    return await this.rawExecuteQuery('BEGIN;', importOptions.executeOptions)
   }
 
-  getImportSQL(importedData: TableInsert[], isTruncate: boolean): string {
-    const { schema, table } = importedData[0];
-    const queries = [];
-    if (isTruncate) {
-      queries.push(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`);
-    }
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'));
-    return joinQueries(queries);
+  async importTruncateCommand(table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    return await this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, importOptions.executeOptions)
   }
 
+  async importLineReadCommand(_table: TableOrView, sqlString: string, importOptions: ImportFuncOptions): Promise<any> {
+    return await this.rawExecuteQuery(sqlString, importOptions.executeOptions)
+  }
+
+  async importCommitCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {
+    return await this.rawExecuteQuery('COMMIT;', importOptions.executeOptions)
+  }
+
+  async importRollbackCommand(_table: TableOrView, importOptions?: ImportFuncOptions): Promise<any> {
+    return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
+  }
 
   protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
 
@@ -1037,6 +1133,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     if (options.connection) {
       return await this.runQuery(options.connection, q, options)
     } else {
+      log.info('Acquiring new connection for: ', q)
       // the simple case where we manage the connection ourselves
       return await this.runWithConnection(async (connection) => {
         return await this.runQuery(connection, q, options)
@@ -1085,7 +1182,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
-    const fields = this.parseFields(data.fields, rowResults)
+    const fields = this.parseFields(data.columns, rowResults)
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
@@ -1129,6 +1226,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           })
           paramIdx += values.length
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
+        } else if (item.type.includes('is')) {
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
         const value = options.inlineParams
           ? knex.raw('?', [item.value]).toQuery()
@@ -1138,7 +1237,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
 
-      params = filters.flatMap((item) => {
+      params = filters.filter((item) => !!item.value).flatMap((item) => {
         return _.isArray(item.value) ? item.value : [item.value]
       })
     }
@@ -1185,7 +1284,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return !options.filters && !options.forceSlow ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`;
   }
 
-  protected tableName(table: string, schema: string = this._defaultSchema): string{
+  protected tableName(table: string, schema: string = this._defaultSchema): string {
     return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
   }
 
@@ -1196,20 +1295,30 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async getTableOwner(table: string, schema: string) {
     const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
-    const result = await this.driverExecuteSingle(sql, { params: [table, schema]});
+    const result = await this.driverExecuteSingle(sql, { params: [table, schema] });
     return result.rows[0]?.tableowner;
   }
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: server.config.password || undefined,
+      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BkConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BkConfig.db.postgres.idleTimeout,
     };
+
+    if (
+      server.config.client === "postgresql" &&
+      // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
+      // we only need SSL for iam authentication
+      server.config?.redshiftOptions?.iamAuthenticationEnabled
+    ){
+      server.config.ssl = true;
+    }
 
     return this.configurePool(config, server, null);
   }
@@ -1223,7 +1332,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       config.user = server.config.osUser
     }
 
-    if(server.config.socketPathEnabled) {
+    if (server.config.socketPathEnabled) {
       config.host = server.config.socketPath;
       config.port = null;
       return config;
@@ -1236,7 +1345,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     if (server.config.ssl) {
 
-      config.ssl = { }
+      config.ssl = {}
 
       if (server.config.sslCaFile) {
         config.ssl.ca = readFileSync(server.config.sslCaFile);
@@ -1267,7 +1376,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async getTypes(): Promise<any> {
     let sql = `
-      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::integer as typeid
       FROM        pg_type t
       LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
       WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
@@ -1301,13 +1410,29 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
       log.info('RUNNING', query, options.params);
-      connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
+      connection.query(args, (err: Error, data: PgQueryResult | PgQueryArrayResult[]) => {
         if (err) return reject(err);
         let qr: QueryResult | QueryResult[];
         if (args.multiResult) {
-          qr = Array.isArray(data) ? data : [data];
+          const rows = Array.isArray(data) ? data : [data];
+          qr = rows.map((r) => ({
+            pgResult: r,
+            rows: r.rows,
+            columns: r.fields,
+            command: r.command,
+            rowCount: r.rowCount,
+            arrayMode: options.arrayMode,
+          }))
         } else {
-          qr = Array.isArray(data) ? data[0] : data;
+          const row = Array.isArray(data) ? data[0] : data;
+          qr = {
+            pgResult: row,
+            rows: row.rows,
+            columns: row.fields,
+            command: row.command,
+            rowCount: row.rowCount,
+            arrayMode: options.arrayMode,
+          };
         }
         resolve(qr);
       });
@@ -1319,14 +1444,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       return this.listTableColumns(insert.table, insert.schema);
     }));
     const fixedInserts = rawInserts.map((insert, idx) => {
-      const result = { ...insert};
+      const result = { ...insert };
       const columns = columnsList[idx];
       result.data = result.data.map((obj) => {
         return _.mapValues(obj, (value, key) => {
           const column = columns.find((c) => c.columnName === key);
           // fix: we used to serialize arrays before this, now we pass them as
           // json arrays properly
-          return this.normalizeValue(value, column?.dataType);
+          return this.normalizeValue(value, column);
         })
       })
       return result;
@@ -1340,7 +1465,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   private async updateValues(rawUpdates: TableUpdate[], connection): Promise<TableUpdateResult[]> {
     const updates = rawUpdates.map((update) => {
       const result = { ...update };
-      result.value = this.normalizeValue(update.value, update.columnType);
+      result.value = this.normalizeValue(update.value, update.columnObject);
       return result;
     })
     log.info("applying updates", updates);
@@ -1385,9 +1510,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const isRedshift = version.toLowerCase().includes('redshift')
     const isPostgres = !isCockroach && !isRedshift
     const number = parseInt(
-        version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
-        10
-      );
+      version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
+      10
+    );
     return {
       version,
       number,
@@ -1405,8 +1530,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       select table_type as tt from information_schema.tables
       where table_name = $1 and table_schema = $2
       `
-    const result = await this.driverExecuteSingle(query, { params: [table, schema]})
-    return result.rows[0]? result.rows[0]['tt'] : null
+    const result = await this.driverExecuteSingle(query, { params: [table, schema] })
+    return result.rows[0] ? result.rows[0]['tt'] : null
   }
 
   private async _selectTopSql(
@@ -1438,12 +1563,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
-  // if a type is BYTEA, decodes BASE64 URL encoded to hex
-  private normalizeValue(value: string, columnType: string) {
-    if (columnType?.startsWith('_') && _.isString(value)) {
+  private normalizeValue(value: string, column?: ExtendedTableColumn) {
+    if (column?.array && _.isString(value)) {
       return JSON.parse(value)
-    } else if (columnType === 'bytea' && value) {
-      return '\\x' + base64.decode(value, 'hex')
     }
     return value
   }
@@ -1463,6 +1585,22 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
+  parseQueryResultColumns(qr: QueryResult): BksField[] {
+    return qr.columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      if (column.dataTypeID === pg.types.builtins.BYTEA) {
+        bksType = 'BINARY'
+      }
+      return { name: column.name, bksType };
+    })
+  }
+
+  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type === 'bytea' ? 'BINARY' : 'UNKNOWN',
+    };
+  }
 }
 
 
@@ -1476,15 +1614,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
  *
  * TODO: do not convert as well these same types with array (types 1115, 1182, 1185)
  */
-pg.types.setTypeParser(pg.types.builtins.DATE,        'text', (val) => val); // date
-pg.types.setTypeParser(pg.types.builtins.TIMESTAMP,   'text', (val) => val); // timestamp without timezone
+pg.types.setTypeParser(pg.types.builtins.DATE, 'text', (val) => val); // date
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // timestamp
-pg.types.setTypeParser(pg.types.builtins.INTERVAL,    'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
-
-/**
- * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
- */
-pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
+pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 export function wrapIdentifier(value: string): string {
   if (value === '*') return value;

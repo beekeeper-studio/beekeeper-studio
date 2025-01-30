@@ -1,29 +1,21 @@
-import tmp from 'tmp';
-import fs from 'fs'
+import Vue from 'vue';
+import { TransportTempFile } from '@/common/transport';
 
 export class TempFileManager {
   ready = false;
 
-  fileObject: tmp.FileSyncObject = null;
-  fileHandle: fs.promises.FileHandle = null;
-
-  constructor() {
-    this.fileObject = tmp.fileSync({ postfix: '.txt'});
-  }
+  file: TransportTempFile = null;
 
   get path() {
     if (!this.ready) {
       throw new Error('File Manager not ready');
     }
-    return this.fileObject.name;
+    return this.file.name;
   }
 
   async init(): Promise<TempFileManager> {
-    if (!this.fileObject) {
-      throw new Error('Failed to create temp file');
-    }
-
-    this.fileHandle = await fs.promises.open(this.fileObject.name, 'w+');
+    this.file = await Vue.prototype.$util.send('temp/create');
+    await Vue.prototype.$util.send('temp/open', { id: this.file.id });
     this.ready = true;
     return this;
   }
@@ -31,14 +23,16 @@ export class TempFileManager {
   async reset(): Promise<void> {
     this.ready = false;
 
-    this.deleteFile();
-    this.fileObject = tmp.fileSync();
+    await this.deleteFile();
 
     await this.init();
   }
 
-  deleteFile(): void {
-    this.fileObject.removeCallback();
+  async deleteFile(): Promise<void> {
+    if (!this.file) return;
+    await Vue.prototype.$util.send('temp/delete', { id: this.file.id });
+    this.file = null;
+    this.ready = false;
   }
 
   async write(content: string): Promise<void> {
@@ -46,7 +40,7 @@ export class TempFileManager {
       throw new Error('File Manager not ready');
     }
 
-    await this.fileHandle.write(content);
+    await Vue.prototype.$util.send('temp/write', { id: this.file.id, content });
   }
 
 }

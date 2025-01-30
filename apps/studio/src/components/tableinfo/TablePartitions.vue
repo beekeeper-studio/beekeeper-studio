@@ -89,9 +89,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import DataMutators from '../../mixins/data_mutators'
-import { TabulatorFull, Tabulator } from 'tabulator-tables'
-type RowComponent = Tabulator.RowComponent;
-type CellComponent = Tabulator.CellComponent;
+import { TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
 import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
 import StatusBar from '../common/StatusBar.vue'
@@ -100,6 +98,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import { AppEvent } from '@/common/AppEvent';
 import { FormatterDialect } from '@shared/lib/dialects/models';
 import { format } from 'sql-formatter';
+import { mapState } from 'vuex';
 
 export default Vue.extend({
 	components: {
@@ -107,7 +106,7 @@ export default Vue.extend({
     ErrorAlert
   },
   mixins: [DataMutators],
-  props: ['table', 'connection', 'tabID', 'active', 'tabState', 'properties'],
+  props: ['table', 'tabID', 'active', 'tabState', 'properties'],
   data() {
     return {
       tabulator: null,
@@ -126,6 +125,7 @@ export default Vue.extend({
     ...TabulatorStateWatchers
   },
   computed: {
+    ...mapState(['supportedFeatures', 'connection']),
     hotkeys() {
       if (!this.active) return {};
       return this.$vHotkeyKeymap({
@@ -173,7 +173,7 @@ export default Vue.extend({
       });
     },
     editable() {
-      return this.connection.supportedFeatures().editPartitions;
+      return this.supportedFeatures.editPartitions;
     }
   },
   methods: {

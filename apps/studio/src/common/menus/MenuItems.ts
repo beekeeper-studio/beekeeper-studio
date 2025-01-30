@@ -1,10 +1,10 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
-import { IGroupedUserSettings } from '../appdb/models/user_setting';
-import platformInfo from "../platform_info";
+import { DevLicenseState } from '@/lib/license';
+import { IPlatformInfo } from '../IPlatformInfo';
+import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
 
-
-export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings) {
+export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings, platformInfo: IPlatformInfo) {
   return {
     upgradeModal: (label: string) => {
       return {
@@ -104,8 +104,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     opendocs : {
       id: 'opendocs',
-      label: 'Documentation and Support',
+      label: 'Documentation',
       click: actionHandler.opendocs
+    },
+    support: {
+      id: 'contactSupport',
+      label: 'Contact Support',
+      click: actionHandler.contactSupport
     },
     reload: {
       id: 'reload-window',
@@ -137,6 +142,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.closeTab,
       registerAccelerator: false
     },
+    importSqlFiles: {
+      id: 'import-sql-files',
+      label: "Import SQL Files",
+      accelerator: "CommandOrControl+I",
+      click: actionHandler.importSqlFiles,
+      showWhenConnected: true,
+    },
     quickSearch: {
       id: 'go-to',
       label: "Quick Search",
@@ -155,26 +167,6 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       accelerator: "Alt+S",
       click: actionHandler.toggleSidebar,
     },
-    menuStyleToggle: {
-      id: 'menu-style-toggle-menu',
-      label: "Menu Style",
-      submenu: [
-        {
-          id: "ms-native",
-          type: 'radio',
-          label: 'Native',
-          click: actionHandler.switchMenuStyle,
-          checked: settings.menuStyle.value === 'native'
-        },
-        {
-          id: "ms-client",
-          type: 'radio',
-          label: 'Client',
-          click: actionHandler.switchMenuStyle,
-          checked: settings.menuStyle.value === 'client'
-        }
-      ]
-    },
     themeToggle: {
       id: "theme-toggle-menu",
       label: "Theme",
@@ -183,19 +175,106 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: "System",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'system'
+          checked: settings?.theme?.value === 'system'
         },
         {
           type: "radio",
           label: "Light",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'light'
+          checked: settings?.theme?.value === 'light'
         },
         {
           type: 'radio',
           label: "Dark",
           click: actionHandler.switchTheme,
-          checked: settings.theme.value === 'dark'
+          checked: settings?.theme?.value === 'dark'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized',
+          click: actionHandler.switchTheme,
+          checked: settings?.theme?.value === 'solarized'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized Dark',
+          click: actionHandler.switchTheme,
+          checked: settings?.theme?.value === 'solarized-dark'
+        }
+      ]
+    },
+    enterLicense: {
+      id: 'enter-license',
+      label: "Manage License Keys",
+      click: actionHandler.enterLicense,
+
+    },
+    backupDatabase: {
+      id: 'backup-database',
+      label: "Create a Database Backup",
+      click: actionHandler.backupDatabase
+    },
+    restoreDatabase: {
+      id: 'restore-database',
+      label: "Restore a Database Backup",
+      click: actionHandler.restoreDatabase
+    },
+    exportTables: {
+      id: 'export-tables',
+      label: 'Export Data',
+      click: actionHandler.exportTables
+    },
+    minimalModeToggle: {
+      id: "minimal-mode-toggle",
+      label: "Toggle Minimal Mode",
+      click: actionHandler.toggleMinimalMode,
+    },
+    licenseState: {
+      id: "license-state",
+      label: "DEV Switch License State",
+      submenu: [
+        { label: ">>> BEWARE: ALL LICENSES WILL BE LOST! <<<" },
+        {
+          label: "First time install, no license, no trial.",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.firstInstall),
+        },
+        {
+          label: "On a trial license",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
+        },
+        {
+          label: "Trial expired",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
+        },
+        {
+          label: "On an active paid license",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.activePaidLicense),
+        },
+        {
+          label: "On an expired, lifetime license, that covers this version",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversThisVersion),
+        },
+        {
+          label: "On an expired, lifetime license, that covers an earlier version",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversEarlierVersion),
+        },
+      ],
+    },
+    toggleBeta: {
+      id: "toggle-beta",
+      label: "Release Channel",
+      submenu: [
+        {
+          type: 'radio',
+          label: 'Stable',
+          click: actionHandler.toggleBeta,
+          checked: settings?.useBeta?.value == false
+        },
+        {
+          type: 'radio',
+          label: 'Beta',
+          click: actionHandler.toggleBeta,
+          checked: settings?.useBeta?.value == true
         }
       ]
     }

@@ -1,35 +1,46 @@
-import { LocalConnectionModule } from "@/store/modules/data/connection/LocalConnectionModule";
 import { LocalConnectionFolderModule } from "@/store/modules/data/connection_folder/LocalConnectionFolderModule";
-import { LocalQueryModule } from "@/store/modules/data/query/LocalQueryModule";
 import { LocalQueryFolderModule } from "@/store/modules/data/query_folder/LocalQueryFolderModule";
-import { LocalUsedQueryModule } from "@/store/modules/data/used_query/LocalUsedQueryModule";
+import { CloudConnectionModule } from "./modules/data/connection/CloudConnectionModule";
+import { UtilConnectionModule } from "./modules/data/connection/UtilityConnectionModule";
+import { CloudConnectionFolderModule } from "./modules/data/connection_folder/CloudConnectionFolderModule";
+import { CloudQueryModule } from "./modules/data/query/CloudQueryModule";
+import { UtilQueryModule } from "./modules/data/query/UtilityQueryModule";
+import { CloudQueryFolderModule } from "./modules/data/query_folder/CloudQueryFolderModule";
+import { UtilUsedConnectionModule } from "./modules/data/used_connection/UtilityUsedConnectionModule";
+import { CloudUsedQueryModule } from "./modules/data/used_query/CloudUsedQueryModule";
+import { UtilUsedQueryModule } from "./modules/data/used_query/UtilityUsedQueryModule";
 
 
 export const DataModules = [
   {
     path: 'data/queries',
-    local: LocalQueryModule,
-    cloud: null,
+    local: UtilQueryModule,
+    cloud: CloudQueryModule,
   },
   {
     path: 'data/connections',
-    cloud: null,
-    local: LocalConnectionModule
+    cloud: CloudConnectionModule,
+    local: UtilConnectionModule
   },
   {
     path: 'data/queryFolders',
-    cloud: null,
+    cloud: CloudQueryFolderModule,
     local: LocalQueryFolderModule
   },
   {
     path: 'data/connectionFolders',
-    cloud: null,
+    cloud: CloudConnectionFolderModule,
     local: LocalConnectionFolderModule
   },
   {
     path: 'data/usedQueries',
-    cloud: null,
-    local: LocalUsedQueryModule,
+    cloud: CloudUsedQueryModule,
+    local: UtilUsedQueryModule,
+  },
+  {
+    path: 'data/usedconnections',
+    cloud: UtilUsedConnectionModule,
+    local: UtilUsedConnectionModule
   }
 
 ]

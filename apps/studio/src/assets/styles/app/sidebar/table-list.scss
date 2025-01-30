@@ -50,6 +50,9 @@
     padding-top: $gutter-w;
     padding-bottom: $gutter-w;
   }
+  &.pinned .list-item-btn .actions {
+    margin-right: 0.3rem;
+  }
 }
 
 .hidden-indicator {
@@ -75,5 +78,18 @@
         align-items: center;
         height: auto;
       }
+  }
+}
+
+.table-list-component .virtual-table-list .sub-item {
+  .title {
+    flex-grow: 0;
+    flex-shrink: 0;
+  }
+  .badge {
+    min-width: auto;
+    flex-grow: 1;
+    max-width: none;
+    text-align: right;
   }
 }

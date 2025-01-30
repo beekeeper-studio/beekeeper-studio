@@ -1,6 +1,7 @@
 <template>
   <div class="sidebar-wrap row">
     <global-sidebar
+      v-if="!minimalMode"
       @selected="click"
       v-on="$listeners"
       :active-item="activeItem"
@@ -16,7 +17,6 @@
       >
         <database-dropdown
           @databaseSelected="databaseSelected"
-          :connection="connection"
         />
         <table-list />
       </div>
@@ -46,14 +46,14 @@
 
 <script>
   import _ from 'lodash'
-  import GlobalSidebar from './GlobalSidebar'
-  import TableList from './core/TableList'
-  import HistoryList from './core/HistoryList'
-  import FavoriteList from './core/FavoriteList'
-  import DatabaseDropdown from './core/DatabaseDropdown'
+  import GlobalSidebar from './GlobalSidebar.vue'
+  import TableList from './core/TableList.vue'
+  import HistoryList from './core/HistoryList.vue'
+  import FavoriteList from './core/FavoriteList.vue'
+  import DatabaseDropdown from './core/DatabaseDropdown.vue'
 
-  import { mapState } from 'vuex'
-  import rawLog from 'electron-log'
+  import { mapState, mapGetters } from 'vuex'
+  import rawLog from '@bksLogger'
 
   const log = rawLog.scope('core-sidebar')
 
@@ -84,7 +84,15 @@
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },
-      ...mapState(['tables', 'connection', 'database']),
+      ...mapState(['tables', 'database']),
+      ...mapGetters(['minimalMode']),
+    },
+    watch: {
+      minimalMode() {
+        if (this.minimalMode) {
+          this.activeItem = 'tables'
+        }
+      },
     },
     methods: {
       tabClasses(item) {
@@ -101,7 +109,9 @@
       },
       async databaseSelected(db) {
         log.info("Pool database selected", db)
-        this.$store.dispatch('changeDatabase', db)
+        this.$store.dispatch('changeDatabase', db).catch((e) => {
+          this.$noty.error(e.message);
+        })
         this.allExpanded = false
       },
       async disconnect() {

@@ -29,6 +29,15 @@
             <i class="material-icons">save</i>Save Connection
           </x-label>
         </x-menuitem>
+        <!-- FIXME: Let's not use connection.connectionType -->
+        <x-menuitem
+          v-if="connection.connectionType === 'libsql' && connection.server.config.libsqlOptions.syncUrl"
+          @click.prevent="syncDatabase"
+        >
+          <x-label>
+            <i class="material-icons">sync</i>Sync Database
+          </x-label>
+        </x-menuitem>
       </x-menu>
     </x-button>
 
@@ -39,7 +48,10 @@
         height="auto"
         :scrollable="true"
       >
-        <div class="dialog-content">
+        <div
+          class="dialog-content"
+          v-kbd-trap="true"
+        >
           <div
             v-if="errors"
             class="alert alert-danger"
@@ -73,8 +85,12 @@
         name="running-exports-modal"
         height="auto"
         :scrollable="true"
+        @opened="$refs.cancel.focus()"
       >
-        <form @submit.prevent="disconnect(true)">
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="disconnect(true)"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">
               Confirm Disconnect
@@ -85,6 +101,7 @@
             <button
               class="btn btn-flat"
               type="button"
+              ref="cancel"
               @click.prevent="$modal.hide('running-exports-modal')"
             >
               Cancel
@@ -103,7 +120,11 @@
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex'
-import SaveConnectionForm from '../../connection/SaveConnectionForm'
+import SaveConnectionForm from '../../connection/SaveConnectionForm.vue'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('app.vue')
+
 export default {
   components: {
     SaveConnectionForm
@@ -114,8 +135,8 @@ export default {
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'versionString': 'versionString'}),
+      ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
+      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
       connectionName() {
         return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
       },
@@ -146,6 +167,15 @@ export default {
         this.$modal.show('running-exports-modal')
       } else {
         this.$store.dispatch('disconnect')
+      }
+    },
+    async syncDatabase() {
+      try {
+        await this.$store.dispatch('syncDatabase')
+        this.$noty.success("Database Synced")
+      } catch (error) {
+        log.error(error)
+        this.$noty.error(error.message)
       }
     }
   }

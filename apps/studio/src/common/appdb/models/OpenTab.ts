@@ -3,20 +3,23 @@ import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
+import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
 
 type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table'
 
-const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
+const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
 
 
 @Entity({ name: 'tabs'})
 export class OpenTab extends ApplicationEntity {
-
-
-  constructor(tabType: TabType) {
-    super()
-    this.tabType = tabType
+  withProps(init: TabType | TransportOpenTab): OpenTab {
+    if (_.isString(init)) {
+      this.tabType = init
+      return this;
+    }
+    OpenTab.merge(this, init)
+    return this;
   }
 
   get type(): TabType {
@@ -100,7 +103,7 @@ export class OpenTab extends ApplicationEntity {
   }
 
   duplicate(): OpenTab {
-    const result = new OpenTab(this.tabType)
+    const result = new OpenTab().withProps(this.tabType);
     _.assign(result, _.pick(this, pickable))
     return result
   }

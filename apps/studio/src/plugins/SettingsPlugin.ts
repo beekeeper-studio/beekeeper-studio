@@ -1,11 +1,13 @@
-import { UserSetting } from "@/common/appdb/models/user_setting"
+import Vue from 'vue';
+import rawLog from '@bksLogger'
 
-
+const log = rawLog.scope('settings-plugin')
 
 export const SettingsPlugin = {
 
   async get(key: string, defaultValue?: any) {
-    const result = await UserSetting.findOne({key})
+    const result = await Vue.prototype.$util.send('appdb/setting/get', { key });
+    log.info("get", JSON.stringify(result))
     if (result) {
       return result.value
     }
@@ -13,27 +15,14 @@ export const SettingsPlugin = {
   },
 
   async set(key: string, value: string) {
-    const existing = await UserSetting.findOne({key})
-    if (existing) {
-      existing.userValue = value
-      await existing.save()
-    } else {
-      const nu = new UserSetting()
-      nu.key = key
-      nu.defaultValue = ''
-      nu.valueType = 0
-      nu.userValue = value
-      await nu.save()
-    }
+    log.info("set", key, value)
+    await Vue.prototype.$util.send('appdb/setting/set', { key, value });
   }
-
-
 }
 
 
 export default {
   install(Vue) {
-    Vue.prototype.$settings = SettingsPlugin
     Vue.prototype.$settings = SettingsPlugin
   }
 }

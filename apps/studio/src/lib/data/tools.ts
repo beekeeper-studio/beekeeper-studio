@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
+import { friendlyUint8Array, uint8ArrayToHex, friendlyJsonObject } from '@/common/utils';
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
 function dec28bits(num: any): string {
@@ -48,7 +49,9 @@ export const Mutators = {
    */
   genericMutator(value: any, preserveComplex = false): JsonFriendly {
     const mutate = Mutators.genericMutator
-    if (_.isBuffer(value)) return value.toString('hex')
+    if (ArrayBuffer.isView(value)) {
+      return friendlyUint8Array(value as Uint8Array)
+    }
     if (_.isDate(value)) return value.toISOString()
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
@@ -56,13 +59,17 @@ export const Mutators = {
     return value
   },
   /**
-   * Stringify bit(1) data for use in UIs and JSON.
+   * Convert bit(1) data to a number for use in UIs and JSON.
    * Typically Bit1 data is like a true/false flag.
    * @param  {any} value
    * @returns JsonFriendly
    */
   bit1Mutator(value: any): JsonFriendly {
     if (!value) return 0
+
+    // No need to convert if it's number
+    if (_.isNumber(value)) return value
+
     return Number(value[0])
   },
 
@@ -76,7 +83,12 @@ export const Mutators = {
     // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead
     // of futzing around in here too much? The goal is to keep the true/false as showing
 
+    if (!value) return value
+
     if (dialect && dialect === 'sqlserver') return value
+
+    // No need to convert if it's string
+    if (_.isString(value)) return value
 
     const result = []
     for (let index = 0; index < value.length; index++) {
@@ -90,6 +102,6 @@ export const Mutators = {
   /** Stringify json data for MySQL column */
   jsonMutator(value: any): JsonFriendly {
     if (_.isString(value) || _.isNull(value)) return value
-    return JSON.stringify(value)
+    return friendlyJsonObject(value)
   },
 }

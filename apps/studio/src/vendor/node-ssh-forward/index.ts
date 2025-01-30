@@ -20,7 +20,7 @@ import { Client } from 'ssh2'
 import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
 
@@ -37,6 +37,7 @@ interface Options {
   skipAutoPrivateKey?: boolean
   noReadline?: boolean
   keepaliveInterval?: number
+  bindHost?: string
 }
 
 interface ForwardingOptions {
@@ -56,6 +57,10 @@ class SSHConnection {
     this.log = rawLog.scope('vendor/node-ssh-forward')
     if (!options.username) {
       this.options.username = process.env['SSH_USERNAME'] || process.env['USER']
+    }
+
+    if (!options.bindHost) {
+      this.options.bindHost = '127.0.0.1'
     }
     if (!options.endPort) {
       this.options.endPort = 22
@@ -104,7 +109,9 @@ class SSHConnection {
         if (err) {
           return reject(err)
         }
-        stream.on('close', async () => {
+        stream.on('exit', (code) => this.debug('EVENT exit:', code))
+        stream.on('close', async (...args) => {
+          this.debug('EVENT close:', ...args)
           stream.end()
           process.stdin.unpipe(stream)
           process.stdin.destroy()
@@ -228,14 +235,14 @@ class SSHConnection {
     return new Promise<any>((resolve, reject) => {
       this.server = net.createServer((socket) => {
         this.debug('Forwarding connection from "localhost:%d" to "%s:%d"', options.fromPort, options.toHost, options.toPort)
-        connection.forwardOut('localhost', options.fromPort, options.toHost || 'localhost', options.toPort, (error, stream) => {
+        connection.forwardOut(this.options.bindHost, options.fromPort, options.toHost || '127.0.0.1', options.toPort, (error, stream) => {
           if (error) {
             return reject(error)
           }
           socket.pipe(stream)
           stream.pipe(socket)
         })
-      }).listen(options.fromPort, 'localhost', () => {
+      }).listen(options.fromPort, this.options.bindHost, () => {
         this.debug("Tunnel listening configured")
         resolve({})
       })

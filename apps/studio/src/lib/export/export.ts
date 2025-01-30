@@ -3,7 +3,7 @@ import path from 'path'
 import crypto from 'crypto'
 import { promises } from 'fs'
 import { dialectFor } from '@shared/lib/dialects/models'
-import rawlog from 'electron-log'
+import rawlog from '@bksLogger'
 import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 import _ from 'lodash'
@@ -34,7 +34,6 @@ export abstract class Export {
     progress: Array<ProgressCallback>()
   }
 
-  managerNotify = true
   constructor(
     public filePath: string,
     public connection: BasicDatabaseClient<any>,
@@ -42,7 +41,8 @@ export abstract class Export {
     public query: string,
     public queryName: string,
     public filters: TableFilter[] | any[],
-    public options: ExportOptions
+    public options: ExportOptions,
+    public managerNotify = true
   ) {
     this.id = this.generateId()
   }
@@ -137,34 +137,23 @@ export abstract class Export {
         this.options.chunkSize,
         this.table.schema,
       )
-      this.columns = results.columns
-      this.cursor = results.cursor
-
-      this.countTotal = results.totalRows
-      await this.cursor?.start()
-      const header = await this.getHeader(results.columns)
-
-      if (header) {
-        await this.fileHandle.write(header)
-      }
     }
     else {
-      // string sql query, not table
       results = await this.connection.queryStream(
         this.query,
         this.options.chunkSize,
       )
-      this.columns = results.columns
-      this.cursor = results.cursor
+    }
 
-      this.countTotal = results.totalRows
-      await this.cursor?.start()
-      const header = await this.getHeader(results.columns)
+    this.columns = results.columns
+    this.cursor = results.cursor
 
-      if (header) {
-        await this.fileHandle.write(header)
-      }
+    this.countTotal = results.totalRows
+    await this.cursor?.start()
+    const header = await this.getHeader(results.columns)
 
+    if (header) {
+      await this.fileHandle.write(header)
     }
   }
 

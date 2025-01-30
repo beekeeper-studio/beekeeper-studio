@@ -2,37 +2,43 @@
   <portal to="modals">
     <modal
       class="vue-dialog beekeeper-modal confirmation-modal"
-      :name="name"
-      @before-open="beforeOpen"
+      :name="id"
+      @opened="opened"
       @before-close="beforeClose"
     >
-      <div class="dialog-content">
-        <slot name="title">
-          <div
-            class="dialog-c-title"
-            v-html="titleHtml"
-          />
-        </slot>
-        <slot name="message">
-          <div v-html="messageHtml" />
-        </slot>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button
-          class="btn btn-flat"
-          type="button"
-          @click.prevent="cancel"
-        >
-          Cancel
-        </button>
-        <button
-          class="btn btn-primary"
-          type="button"
-          @click.prevent="onClickConfirm"
-          autofocus
-        >
-          Confirm
-        </button>
+      <div v-kbd-trap="true">
+        <div class="dialog-content">
+          <div class="dialog-c-title">
+            <slot name="title">
+              Are you sure?
+            </slot>
+          </div>
+          <slot name="message">
+            <div>This action cannot be undone.</div>
+          </slot>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button
+            class="btn btn-flat"
+            type="button"
+            ref="cancelBtn"
+            autofocus
+            @click.prevent="cancel"
+          >
+            <slot name="cancel-label">
+              Cancel
+            </slot>
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            @click.prevent="confirm"
+          >
+            <slot name="confirm-label">
+              Confirm
+            </slot>
+          </button>
+        </div>
       </div>
     </modal>
   </portal>
@@ -40,55 +46,31 @@
 
 <script lang="ts">
 import Vue from "vue";
-
-const DEFAULT_TITLE = "Are you sure?";
-const DEFAULT_MESSAGE = "This action cannot be undone.";
+import { MODAL_CLOSE_EVENT, ModalCloseEventData } from "@/components/common/modals/utils";
 
 export default Vue.extend({
-  props: ['name'],
-  data() {
-    return {
-      onConfirm: null,
-      onCancel: null,
-      titleHtml: "",
-      messageHtml: "",
-    };
-  },
+  props: ['id'],
   methods: {
-    beforeOpen(event: any) {
-      this.onConfirm = event.params?.onConfirm;
-      this.onCancel = event.params?.onCancel;
-      this.titleHtml = event.params?.title || DEFAULT_TITLE;
-      this.messageHtml = event.params?.message || DEFAULT_MESSAGE;
+    opened() {
+      this.$refs.cancelBtn.focus()
     },
-    onClickConfirm() {
-      this.$modal.hide(this.name, { confirmed: true });
+    beforeClose(e: { params?: boolean }) {
+      const event: ModalCloseEventData = {
+        modalId: this.id,
+        confirmed: e.params ?? false,
+      };
+      this.trigger(MODAL_CLOSE_EVENT, event);
+    },
+    confirm() {
+      this.$modal.hide(this.id, true);
     },
     cancel() {
-      this.$modal.hide(this.name, { confirmed: false });
-    },
-    beforeClose(event: any) {
-      if (event.params?.confirmed) this.onConfirm?.();
-      else this.onCancel?.();
-    },
-    confirm(title?: string, message?: string) {
-      return new Promise<boolean>((resolve, reject) => {
-        try {
-          this.$modal.show(this.name, {
-            title,
-            message,
-            onConfirm: () => resolve(true),
-            onCancel: () => resolve(false),
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
+      this.$modal.hide(this.id, false);
     },
   },
   mounted() {
-    if (!this.name) {
-      console.warn("No name provided for ConfirmationModal.");
+    if (!this.id) {
+      throw new Error("No id provided for ConfirmationModal.");
     }
   },
 });

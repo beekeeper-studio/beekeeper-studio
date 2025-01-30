@@ -1,4 +1,5 @@
 import CodeMirror from "codemirror";
+import "codemirror/mode/sql/sql";
 
 CodeMirror.defineMIME("text/x-pgsql", {
   // eslint-disable-next-line
@@ -8,7 +9,7 @@ CodeMirror.defineMIME("text/x-pgsql", {
   hooks: {
     // eslint-disable-next-line
     // @ts-ignore
-    '"': CodeMirror.resolveMode("text/x-sqlite").hooks['"'],
+    '"': CodeMirror.resolveMode("text/x-sqlite")?.hooks['"'],
   },
 });
 

@@ -1,15 +1,14 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { ipcRenderer } from 'electron'
 import _ from 'lodash'
 import {AppEvent} from '../../common/AppEvent'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope("ClientMenuActionHandler")
 
 
 function send(name: string, arg?: any) {
   log.debug("Sending menu action to electron thread", name, arg)
-  ipcRenderer.send(AppEvent.menuClick, name, arg)
+  window.main.send(AppEvent.menuClick, name, arg);
 }
 
 export default class ClientMenuActionHandler implements IMenuActionHandler {
@@ -33,6 +32,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   about = () => send('about')
   devtools = () => send('devtools')
   opendocs = () => send('opendocs')
+  contactSupport = () => send('contactSupport')
   newWindow = () => send('newWindow')
   newQuery = () => send('newQuery')
   newTab = () => send('newTab')
@@ -41,10 +41,6 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   switchTheme = (menuItem: Electron.MenuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     send('switchTheme', label.toLowerCase().replaceAll(" ", "-"))
-  }
-  switchMenuStyle = (menuItem: Electron.MenuItem) => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    send('switchMenuStyle', label.toLowerCase())
   }
   reload = () => send('reload')
   disconnect = () => send('disconnect')
@@ -55,4 +51,10 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   restoreDatabase = () => send('restoreDatabase')
   exportTables = () => send('exportTables')
   checkForUpdates = () => send('checkForUpdates')
+  importSqlFiles = () => send('importSqlFiles')
+  toggleMinimalMode = () => send('toggleMinimalMode')
+  switchLicenseState = (_menuItem, _win, type) => send('switchLicenseState', type)
+  toggleBeta = (menuItem) => {
+    send('toggleBeta', menuItem);
+  }
 }

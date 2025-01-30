@@ -1,4 +1,6 @@
-import { OpenOptions } from "@/background/WindowBuilder"
+// import { OpenOptions } from "@/background/WindowBuilder"
+
+import { DevLicenseState } from "@/lib/license";
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -19,13 +21,13 @@ export interface IMenuActionHandler {
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  newWindow: (menuItem: Electron.MenuItem|OpenOptions, win: ElectronWindow) => void
+  contactSupport: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newQuery: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   closeTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   quickSearch: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchTheme: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  switchMenuStyle: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -35,4 +37,8 @@ export interface IMenuActionHandler {
   exportTables: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   upgradeModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
+  toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }

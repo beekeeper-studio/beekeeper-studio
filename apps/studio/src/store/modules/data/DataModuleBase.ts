@@ -7,8 +7,9 @@ import { havingCli, safely, safelyDo, upsert } from "./StoreHelpers";
 import { ClientError } from '@/store/modules/data/StoreHelpers'
 import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
-import { ApplicationEntity } from "@/common/appdb/models/application_entity";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import Vue from "vue";
+import { Transport } from "@/common/transport";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -23,6 +24,7 @@ export interface DataState<T> {
   loading: boolean
   error: ClientError
   pollError: ClientError
+  filter?: string
 }
 
 
@@ -70,6 +72,11 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   pollError(state, error: Error | null) {
     state.pollError = error
   },
+  set(state, items: T[] | T) {
+    items = _.isArray(items) ? items : [items];
+    const sorted = sortBy ? _.sortBy(items, sortBy.field) : items;
+    state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted;
+  },
   upsert(state, items: T[] | T) {
     const stateItems = [...state.items]
     const list = _.isArray(items) ? items : [items]
@@ -102,14 +109,67 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   },
 })
 
-export function mutationsFor<T extends HasId>(obj: any, sortBy?: SortSpec) {
+export function mutationsFor<T extends HasId>(obj: any = {}, sortBy?: SortSpec) {
   return {
     ...buildBasicMutations<T>(sortBy),
     ...obj
   }
 }
 
-export function localActionsFor<T extends ApplicationEntity>(cls: any, other: any, loadOptions: any = {}) {
+export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}) {
+  return {
+    async load(context) {
+      context.commit("error", null);
+      await safely(context, async () => {
+        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
+        if (context.rootState.workspaceId === LocalWorkspace.id) {
+          context.commit('upsert', items);
+        }
+      })
+    },
+    async poll() {
+      // do nothing, locally we don't need to poll.
+      // nothing else can change anything.
+    },
+
+    async clearError(context) {
+      context.commit('error', null)
+    },
+
+    async clone(_context, item: T) {
+      const result: T = _.cloneDeep(item)
+      result['id'] = null
+      result['createdAt'] = null
+      return result
+    },
+
+    async save(context, item: T) {
+      const updated = await Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item });
+      context.commit('upsert', updated);
+      return updated.id;
+    },
+
+    async remove(context, item: T) {
+      await Vue.prototype.$util.send(`appdb/${type}/remove`, { obj: item });
+      context.commit('remove', item)
+    },
+
+    async reload(context, id: number) {
+      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, { options: { id } })
+      if (item) {
+        context.commit('upsert', item)
+        return item.id
+      } else {
+        context.commit('remove', id)
+        return null
+      }
+    },
+    ...other
+  }
+}
+
+
+export function localActionsFor<T extends Transport>(cls: any, other: any, loadOptions: any = {}) {
   return {
     async load(context) {
       context.commit("error", null)
@@ -133,7 +193,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
 
     async clone(_context, item: T) {
       const result = new cls()
-      cls.merge(result, item)
+      Object.assign(result, item);
       result.id = null
       result.createdAt = new Date()
       return result
@@ -141,7 +201,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
 
     async create(context, item: T) {
       const q = new cls()
-      cls.merge(q, item)
+      Object.assign(q, item);
       await q.save()
       context.commit('upsert', q)
       return q.id
@@ -150,7 +210,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     async update(context, item: T) {
       const existing = context.state.items.find((i) => i.id === item.id)
       if (!existing) throw new Error("Could not find this item")
-      cls.merge(existing, item)
+      Object.assign(existing, item);
       await existing.save()
       return existing.id
     },
@@ -169,7 +229,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     },
 
     async reload(context, id: number) {
-      const item = await cls.findOne(id)
+      const item = await cls.findOneBy({ id: id })
       if (item) {
         context.commit('upsert', item)
         return item.id

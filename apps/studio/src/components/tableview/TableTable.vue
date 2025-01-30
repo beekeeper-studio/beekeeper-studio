@@ -4,7 +4,7 @@
     class="tabletable tabcontent flex-col"
     :class="{'view-only': !editable}"
   >
-    <EditorModal
+    <editor-modal
       ref="editorModal"
       @save="onSaveEditorModal"
     />
@@ -13,7 +13,7 @@
     </template>
     <template v-else>
       <row-filter-builder
-        v-if="table.columns?.length"
+        v-if="table.columns && table.columns.length"
         :columns="table.columns"
         :reactive-filters="tableFilters"
         @input="handleRowFilterBuilderInput"
@@ -26,9 +26,24 @@
         No Data
       </div>
       <div
-        ref="table"
-        class="spreadsheet-table"
-      />
+        class="table-view-wrapper"
+        ref="tableViewWrapper"
+      >
+        <div
+          ref="table"
+          class="spreadsheet-table"
+        />
+        <detail-view-sidebar
+          :title="detailViewTitle"
+          :value="selectedRowData"
+          :data-id="selectedRowIndex"
+          :hidden="!openDetailView"
+          :expandable-paths="expandablePaths"
+          :reinitialize="reinitializeDetailView"
+          @expandPath="expandForeignKey"
+          @close="toggleOpenDetailView(false)"
+        />
+      </div>
       <ColumnFilterModal
         :modal-name="columnFilterModalName"
         :columns-with-filter-and-order="columnsWithFilterAndOrder"
@@ -48,15 +63,15 @@
         </x-button>
         <!-- Info -->
         <table-length
+          v-if="!minimalMode"
           :table="table"
-          :connection="connection"
         />
         <a
           @click="refreshTable"
           tabindex="0"
           role="button"
           class="statusbar-item hoverable"
-          v-if="lastUpdatedText && !error"
+          v-if="lastUpdatedText && !error && !minimalMode"
           :title="'Updated' + ' ' + lastUpdatedText"
         >
           <i class="material-icons">update</i>
@@ -73,7 +88,10 @@
       </div>
 
       <!-- Pagination -->
-      <div class="tabulator-paginator">
+      <div
+        v-if="!minimalMode"
+        class="tabulator-paginator"
+      >
         <div class="flex-center flex-middle flex">
           <a
             v-if="(this.page > 1)"
@@ -174,6 +192,13 @@
 
         <!-- Actions -->
         <x-button
+          v-tooltip="`Toggle Right Sidebar`"
+          class="btn btn-flat"
+          @click="toggleOpenDetailView()"
+        >
+          <i class="material-icons material-icons-round">view_sidebar</i>
+        </x-button>
+        <x-button
           v-tooltip="`Refresh Table (${$bkConfig.keybindings.tableTable.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
@@ -215,7 +240,10 @@
             <x-menuitem @click="importTab">
               <x-label>
                 Import from file
-                <span class="badge badge-info">Beta</span>
+                <i
+                  v-if="$store.getters.isCommunity"
+                  class="material-icons menu-icon"
+                >stars</i>
               </x-label>
             </x-menuitem>
             <x-menuitem @click="openQueryTab">
@@ -231,31 +259,33 @@
         class="vue-dialog beekeeper-modal"
         :name="`discard-changes-modal-${tab.id}`"
       >
-        <div class="dialog-content">
-          <div class="dialog-c-title">
-            Confirmation
+        <div v-kbd-trap="true">
+          <div class="dialog-content">
+            <div class="dialog-c-title">
+              Confirmation
+            </div>
+            <div class="modal-form">
+              Sorting or Filtering will discard {{ pendingChangesCount }} pending change(s) to <b>{{ table.name }}</b>.
+              Are you sure?
+            </div>
           </div>
-          <div class="modal-form">
-            Sorting or Filtering will discard {{ pendingChangesCount }} pending change(s) to <b>{{ table.name }}</b>.
-            Are you sure?
+          <div class="vue-dialog-buttons">
+            <button
+              class="btn btn-flat"
+              type="button"
+              @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click.prevent="forceFilter"
+              autofocus
+            >
+              I'm Sure
+            </button>
           </div>
-        </div>
-        <div class="vue-dialog-buttons">
-          <button
-            class="btn btn-flat"
-            type="button"
-            @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)"
-          >
-            Cancel
-          </button>
-          <button
-            class="btn btn-primary"
-            type="button"
-            @click.prevent="forceFilter"
-            autofocus
-          >
-            I'm Sure
-          </button>
         </div>
       </modal>
     </portal>
@@ -268,12 +298,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.material-icons.menu-icon {
+  margin-left: 10px !important;
+}
 </style>
 
 <script lang="ts">
 import Vue from 'vue'
-import pluralize from 'pluralize'
-import { Tabulator, TabulatorFull } from 'tabulator-tables'
+import { ColumnComponent, CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
@@ -281,36 +314,37 @@ import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import EditorModal from './EditorModal.vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters, mapState, mapActions } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
-import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { normalizeFilters, safeSqlFormat } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent } from '@/lib/menu/tableMenu';
-import { rowHeaderField } from '@/lib/table-grid/utils';
+import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { tabulatorForTableData } from "@/common/tabulator";
+import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
+import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
+import Split from 'split.js'
+import { ExpandablePath } from '@/lib/data/detail_view'
+import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
-function createTableFilter(field: string) {
-  return { op: "AND", field, type: "=", value: "" }
-}
-
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "active", 'tab', 'table'],
+  props: ["active", 'tab', 'table'],
   data() {
     return {
       filters: [],
@@ -318,7 +352,6 @@ export default Vue.extend({
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
-      actualTableHeight: "100%",
       loading: false,
 
       // table data
@@ -348,11 +381,22 @@ export default Vue.extend({
       initialized: false,
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
+
+      /** This is true when we switch to minimal mode while TableTable is not active */
+      enabledMinimalModeWhileInactive: false,
+
+      selectedRow: null,
+      selectedRowIndex: null,
+      selectedRowData: {},
+      expandablePaths: {},
+      split: null,
+      detailViewTitle: undefined,
+      reinitializeDetailView: 0,
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
-    ...mapGetters(['dialectData', 'dialect']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
+    ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'openDetailView']),
     limit() {
       return this.$bkConfig.ui.tableTable.pageSize
     },
@@ -360,7 +404,7 @@ export default Vue.extend({
       return _.isEmpty(this.data);
     },
     isCassandra() {
-      return this.connection?.connectionType === 'cassandra'
+      return this.connectionType === 'cassandra'
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -400,7 +444,8 @@ export default Vue.extend({
     },
     keymap() {
       if (!this.active) return {}
-
+        // FIXME (azmi): from merge conflicts
+      // result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshTable.bind(this),
         'general.addRow': this.cellAddRow.bind(this),
@@ -425,7 +470,7 @@ export default Vue.extend({
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
     },
     hiddenColumnMessage() {
-      return `${pluralize("column", this.hiddenColumnCount, true)} hidden`
+      return `${window.main.pluralize('column', this.hiddenColumnCount, true)} hidden`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
@@ -480,15 +525,16 @@ export default Vue.extend({
       if (!this.table) return []
 
       const cellMenu = (keyDatas?: any[]) => {
-        return (_e, cell: Tabulator.CellComponent) => {
-          const range = _.last(cell.getRanges())
+        return (_e, cell: CellComponent) => {
+          const ranges = cell.getRanges();
+          const range = _.last(ranges)
           const menu = [
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(range),
             { separator: true },
+            this.quickFilterMenuItem(cell),
             ...copyActionsMenu({
-              range,
-              connection: this.connection,
+              ranges,
               table: this.table.name,
               schema: this.table.schema,
             }),
@@ -499,11 +545,10 @@ export default Vue.extend({
           ]
 
           if (keyDatas?.length > 0) {
-            menu.push({ separator: true })
             keyDatas.forEach(keyData => {
               menu.push({
                 label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
-                action: (e, cell) => this.fkClick(keyData, cell)
+                action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
           }
@@ -512,8 +557,9 @@ export default Vue.extend({
         }
       }
 
-      const columnMenu = (_e, column: Tabulator.ColumnComponent) => {
-        const range = _.last(column.getRanges())
+      const columnMenu = (_e, column: ColumnComponent) => {
+        const ranges = (column as any).getRanges();
+        const range = _.last(ranges) as RangeComponent;
         let hideColumnLabel = `Hide ${column.getDefinition().title}`
 
         if (hideColumnLabel.length > 33) {
@@ -524,8 +570,7 @@ export default Vue.extend({
           this.setAsNullMenuItem(range),
           { separator: true },
           ...copyActionsMenu({
-            range,
-            connection: this.connection,
+            ranges,
             table: this.table.name,
             schema: this.table.schema,
           }),
@@ -535,6 +580,10 @@ export default Vue.extend({
           {
             label: createMenuItem(hideColumnLabel),
             action: () => this.hideColumnByField(column.getField()),
+          },
+          {
+            label: createMenuItem(`Reset layout`),
+            action: () => column.getTable().setColumnLayout(this.tableColumns),
           },
           this.openColumnFilterMenuItem,
         ]
@@ -593,7 +642,7 @@ export default Vue.extend({
             dataType: column.dataType,
             generated: column.generated,
           },
-          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
+          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
           dataType: column.dataType,
           minWidth: this.$bkConfig.ui.tableTable.minColumnWidth,
           width: columnWidth,
@@ -621,19 +670,21 @@ export default Vue.extend({
             dataType: column.dataType,
             search: true,
             allowEmpty: true,
-            preserveObject: column.dataType?.startsWith('_'),
+            preserveObject: column.array,
             onPreserveObjectFail: (value: unknown) => {
               log.error('Failed to preserve object for', value)
               return true
             },
-            typeHint: column.dataType.toLowerCase()
+            typeHint: column.dataType.toLowerCase(),
+            bksField: column.bksField,
           },
         }
 
         if (column.dataType && /^(bool|boolean)$/i.test(column.dataType)) {
-          const trueVal = this.dialectData.boolean?.true ?? true
-          const falseVal = this.dialectData.boolean?.false ?? false
-          const values = [falseVal, trueVal]
+          const values = [
+            { label: 'false', value: this.dialectData.boolean?.false ?? false },
+            { label: 'true', value: this.dialectData.boolean?.true ?? true },
+          ]
           if (column.nullable) values.push({ label: '(NULL)', value: null })
           result.editorParams['values'] = values
         }
@@ -657,55 +708,6 @@ export default Vue.extend({
       }
       results.push(result)
 
-      const rowHeader = {
-        field: rowHeaderField,
-        resizable: false,
-        frozen: true,
-        headerSort: false,
-        editor: false,
-        htmlOutput: false,
-        print: false,
-        clipboard: false,
-        download: false,
-        width: 40,
-        hozAlign: 'center',
-        formatter: 'rownum',
-        formatterParams: { relativeToPage: true },
-        contextMenu: (_e, cell: Tabulator.CellComponent) => {
-          const range = _.last(cell.getRanges())
-          return [
-            this.setAsNullMenuItem(range),
-            { separator: true },
-            ...copyActionsMenu({
-              range,
-              connection: this.connection,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
-            { separator: true },
-            ...this.rowActionsMenu(range),
-          ]
-        },
-        headerContextMenu: () => {
-          const range: Tabulator.RangeComponent = _.last(this.tabulator.getRanges())
-          return [
-            this.setAsNullMenuItem(range),
-            { separator: true },
-            ...copyActionsMenu({
-              range,
-              connection: this.connection,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
-            { separator: true },
-            resizeAllColumnsToFitContent,
-            resizeAllColumnsToFixedWidth,
-            this.openColumnFilterMenuItem,
-          ]
-        },
-      }
-      results.unshift(rowHeader)
-
       return results
     },
 
@@ -714,28 +716,16 @@ export default Vue.extend({
       if (!this.usedConfig.id) return null;
       return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
     },
-    persistenceOptions() {
-      // return {}
-      if (!this.tableId) return {}
-
-      return {
-        persistence: {
-          sort: false,
-          filter: false,
-          group: false,
-          columns: ['visible', 'width'],
-
-        },
-        persistenceMode: 'local',
-        persistenceID: this.tableId,
-      }
-    },
     initialSort() {
       // FIXME: Don't specify an initial sort order
       // because it can slow down some databases.
       // However - some databases require an 'order by' for limit, so needs some
       // integration tests first.
       if (!this.table?.columns?.length) {
+        return [];
+      }
+
+      if (this.dialectData.disabledFeatures?.initialSort) {
         return [];
       }
 
@@ -756,6 +746,9 @@ export default Vue.extend({
   },
 
   watch: {
+    filters() {
+      this.tabulator?.setData()
+    },
     allColumnsSelected() {
       this.resetPendingChanges()
     },
@@ -768,6 +761,14 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
+      this.updateSplit()
+
+      if (this.active) {
+        this.reinitializeDetailView++
+        const splitSizes = this.$store.state.tableTableSplitSizes
+        this.split?.setSizes(splitSizes)
+      }
+
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -777,15 +778,26 @@ export default Vue.extend({
             this.tabulator.redraw(true)
           })
         } else {
-          this.$nextTick(() => this.tabulator.redraw())
+          // Commenting this because it can cause the column widths to reset
+          // this.$nextTick(() => this.tabulator.redraw())
         }
 
         // If the filters in this.tab have changed, reapply them. We probably
         // clicked a foreign key cell from other tab.
-        if (!_.isEqual(this.tab.getFilters(), this.tableFilters)) {
-          this.tableFilters = this.tab.getFilters()
+        if (!_.isEqual(getFilters(this.tab), this.tableFilters)) {
+          this.tableFilters = getFilters(this.tab)
           this.triggerFilter(this.tableFilters)
         }
+
+        if (this.enabledMinimalModeWhileInactive) {
+          this.enabledMinimalModeWhileInactive = false
+          resizeAllColumnsToFitContentAction(this.tabulator)
+        }
+
+        // $nextTick doesn't work here
+        setTimeout(() => {
+          this.tabulator.modules.selectRange.restoreFocus()
+        })
       } else {
         this.tabulator.blockRedraw()
       }
@@ -802,7 +814,7 @@ export default Vue.extend({
       const primaryFilter: TableFilter | false = _.isArray(this.filters) &&
         this.filters.find((filter: TableFilter) => this.isPrimaryKey(filter.field));
       let result = 'all'
-      if (this.primaryKeys?.length && primaryFilter) {
+      if (this.primaryKeys?.length && primaryFilter && primaryFilter.value) {
         log.info("setting scope", primaryFilter.value)
         result = _.truncate(primaryFilter.value.toString())
       } else if (_.isString(this.filters)) {
@@ -813,7 +825,19 @@ export default Vue.extend({
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
-    }
+    },
+    minimalMode() {
+      // Auto resize the columns when the tab is active (not hidden in the DOM)
+      // so tabulator can do it correctly.
+      if (this.tabulator && this.active) {
+        resizeAllColumnsToFitContentAction(this.tabulator)
+      }
+
+      // If the tab is not active, we can auto resize later when it's active
+      if (!this.active) {
+        this.enabledMinimalModeWhileInactive = this.minimalMode
+      }
+    },
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
@@ -843,13 +867,13 @@ export default Vue.extend({
     },
     copySelection() {
       if (!this.focusingTable()) return
-      copyRange({ range: _.last(this.tabulator.getRanges()), type: 'plain' })
+      copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
     },
     pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
       pasteRange(_.last(this.tabulator.getRanges()))
     },
-    deleteTableSelection(_e: Event, range?: Tabulator.RangeComponent) {
+    deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
       if (!range) range = _.last(this.tabulator.getRanges())
       this.addRowsToPendingDeletes(range.getRows());
@@ -868,7 +892,7 @@ export default Vue.extend({
       return `
         <span class="title">
           ${escapeHtml(columnName)}
-          <span class="badge">${dataType}</span>
+          <span class="badge column-data-type">${dataType}</span>
         </span>`
     },
     maybeScrollAndSetWidths() {
@@ -905,22 +929,49 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
+      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.tableFilters = this.tab.getFilters() || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
-      this.tabulator = new TabulatorFull(this.$refs.table, {
-        selectableRange: true,
-        selectableRangeColumns: true,
-        selectableRangeRows: true,
-        resizableColumnGuide: true,
-        editTriggerEvent:"dblclick",
-        height: this.actualTableHeight,
+      this.tabulator = tabulatorForTableData(this.$refs.table, {
+        persistenceID: this.tableId,
+        rowHeader: {
+          contextMenu: (_e, cell: CellComponent) => {
+            const ranges = cell.getRanges();
+            const range = _.last(ranges);
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              ...this.rowActionsMenu(range),
+            ]
+          },
+          headerContextMenu: () => {
+            const ranges = this.tabulator.getRanges();
+            const range: RangeComponent = _.last(ranges)
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              resizeAllColumnsToFitContent,
+              resizeAllColumnsToFixedWidth,
+              this.openColumnFilterMenuItem,
+            ]
+          },
+        },
         columns: this.tableColumns,
-        nestedFieldSeparator: false,
-        renderHorizontal: 'virtual',
         ajaxURL: "http://fake",
         sortMode: 'remote',
         filterMode: 'remote',
@@ -932,7 +983,6 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: this.initialFilters ?? [{}],
-        ...this.persistenceOptions,
 
         // callbacks
         ajaxRequestFunc: this.dataFetch,
@@ -946,14 +996,18 @@ export default Vue.extend({
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
-
-      this.$nextTick(() => {
-        if (this.$refs.valueInput) {
-          this.$refs.valueInput.focus()
-        }
+      this.tabulator.on('tableBuilt', () => {
+        this.tabulator.modules.selectRange.restoreFocus()
       })
+      this.tabulator.on("cellMouseUp", this.updateDetailView);
+      this.tabulator.on("headerMouseUp", this.updateDetailView);
+      this.tabulator.on("keyNavigate", this.updateDetailView);
+      // Tabulator range is reset after data is processed
+      this.tabulator.on("dataProcessed", this.updateDetailView);
+
+      this.updateSplit()
     },
-    rowActionsMenu(range: Tabulator.RangeComponent) {
+    rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
       return [
         {
@@ -975,41 +1029,91 @@ export default Vue.extend({
           },
           disabled: !this.editable,
         },
+        { separator: true },
+        {
+          label: createMenuItem('See details'),
+          action: () => {
+            this.updateDetailView({ range })
+            this.toggleOpenDetailView(true)
+          },
+        },
       ]
     },
-    setAsNullMenuItem(range: Tabulator.RangeComponent) {
+    setAsNullMenuItem(range: RangeComponent) {
       const areAllCellsPrimarykey = range
         .getColumns()
         .every((col) => this.isPrimaryKey(col.getField()));
       return {
         label: createMenuItem("Set as NULL"),
         action: () => range.getCells().flat().forEach((cell) => {
-          // FIXME getCells must return components, fix from tabulator
-          cell = cell.getComponent()
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
         disabled: areAllCellsPrimarykey || !this.editable,
       }
     },
-    openEditorMenu(cell: Tabulator.CellComponent) {
-      const disabled = (cell: Tabulator.CellComponent) => {
-        if (this.isPrimaryKey(cell.getField())) return true
-        return !this.editable && !this.insertionCellCheck(cell)
-      }
+    isEditorMenuDisabled (cell: CellComponent) {
+      if (this.isPrimaryKey(cell.getField())) return true
+      return !this.editable && !this.insertionCellCheck(cell)
+    },
+    openEditorMenuByShortcut() {
+      const range: RangeComponent = _.last(this.tabulator.getRanges())
+      const cell = range.getCells().flat()[0];
+      if (this.isEditorMenuDisabled(cell)) return
+      // FIXME maybe we can avoid calling child methods directly like this?
+      // it should be done by calling an event using this.$modal.show(modalName)
+      // or this.$trigger(AppEvent.something) if possible
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+    },
+    quickFilterMenuItem(cell: CellComponent) {
+      const me = this
+      const symbols = [
+        '=', '!=', '<', '<=', '>', '>='
+      ]
       return {
-        label: createMenuItem("Edit in modal"),
-        disabled,
+        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
+        disabled: _.isNil(cell.getValue()),
+        menu: symbols.map((s) => {
+          return {
+            label: createMenuItem(`${cell.getField()} ${s} value`),
+            disabled: this.$store.getters.isCommunity,
+            action: async (e, cell: CellComponent) => {
+              const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
+              this.tableFilters = newFilter
+              this.triggerFilter(this.tableFilters)
+            }
+          }
+        })
+      }
+    },
+    openEditorMenu(cell: CellComponent) {
+      return {
+        label: createMenuItem("Edit in modal", "Shift + Enter"),
+        disabled: this.isEditorMenuDisabled(cell),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
           this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
         }
       }
     },
-    onSaveEditorModal(content: string, _: LanguageData, cell: Tabulator.CellComponent){
-      cell.setValue(content)
+    onSaveEditorModal(content: string, _: LanguageData, cell: CellComponent){
+      if (ArrayBuffer.isView(cell.getValue())) {
+        cell.setValue(friendlyUint8Array(hexToUint8Array(content)))
+      } else {
+        cell.setValue(content)
+      }
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
+    },
+    buildPendingDeletes() {
+      return this.pendingChanges.deletes.map((update) => {
+        return _.omit(update, ['row'])
+      });
+    },
+    buildPendingUpdates() {
+      return this.pendingChanges.updates.map((update) => {
+        return _.omit(update, ['key', 'oldValue', 'cell'])
+      });
     },
     buildPendingInserts() {
       if (!this.table) return
@@ -1019,7 +1123,7 @@ export default Vue.extend({
         const result = {}
         columnNames.forEach((c) => {
           const d = rowData[c]
-          if (this.isPrimaryKey(c) && !d) {
+          if (this.isPrimaryKey(c) && (!d && d != 0)) {
             // do nothing
           } else {
             result[c] = d
@@ -1074,16 +1178,15 @@ export default Vue.extend({
         case 'text':
         case 'json':
         case 'jsonb':
-        case 'bytea':
         case 'tsvector':
           return 'textarea'
         case 'bool':
         case 'boolean':
-          return 'select'
+          return 'list'
         default: return ne
       }
     },
-    cellEditCheck(cell: Tabulator.CellComponent) {
+    cellEditCheck(cell: CellComponent) {
       if (this.isGeneratedColumn(cell.getField())) return false;
 
       if (this.insertionCellCheck(cell)) return true;
@@ -1107,7 +1210,7 @@ export default Vue.extend({
 
       return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
     },
-    insertionCellCheck(cell: Tabulator.CellComponent) {
+    insertionCellCheck(cell: CellComponent) {
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
       return pendingInsert
         ? this.table.entityType === 'table' && !this.dialectData.disabledFeatures?.tableTable
@@ -1128,6 +1231,13 @@ export default Vue.extend({
         cell.restoreOldValue()
         return
       }
+
+      // reflect changes in the detail view
+      if (this.indexRowOf(cell.getRow()) === this.selectedRowIndex) {
+        cell.getRow().invalidateForeignCache(cell.getField())
+        this.updateDetailView()
+      }
+
       // Dont handle cell edit if made on a pending insert
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() })
       if (pendingInsert) {
@@ -1166,6 +1276,7 @@ export default Vue.extend({
           dataset: this.dialectData.requireDataset ? this.database: null,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
+          columnObject: column,
           primaryKeys,
           oldValue: cell.getOldValue(),
           cell: cell,
@@ -1177,7 +1288,7 @@ export default Vue.extend({
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
       }
     },
-    cloneSelection(range?: Tabulator.RangeComponent) {
+    cloneSelection(range?: RangeComponent) {
       if (!range) range = _.last(this.tabulator.getRanges())
 
       range.getRows().forEach((row) => {
@@ -1196,7 +1307,7 @@ export default Vue.extend({
 
       })
     },
-    cellCloneRow(_e, cell: Tabulator.CellComponent) {
+    cellCloneRow(_e, cell: CellComponent) {
       this.cloneSelection(_.last(cell.getRanges()))
     },
     cellAddRow() {
@@ -1220,7 +1331,7 @@ export default Vue.extend({
 
       this.pendingChanges.inserts.push(payload)
     },
-    addRowsToPendingDeletes(rows: Tabulator.RowComponent[]) {
+    addRowsToPendingDeletes(rows: RowComponent[]) {
       if (_.isEmpty(this.primaryKeys)) {
         this.$noty.error("Can't delete row -- couldn't figure out primary key")
         return
@@ -1292,10 +1403,10 @@ export default Vue.extend({
       try {
         const changes = {
           inserts: this.buildPendingInserts(),
-          updates: this.pendingChanges.updates,
-          deletes: this.pendingChanges.deletes
+          updates: this.buildPendingUpdates(),
+          deletes: this.buildPendingDeletes()
         }
-        const sql = this.connection.applyChangesSql(changes)
+        const sql = await this.connection.applyChangesSql(changes);
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
@@ -1327,14 +1438,13 @@ export default Vue.extend({
         let replaceData = false
 
         try {
-
           const payload = {
             inserts: this.buildPendingInserts(),
-            updates: this.pendingChanges.updates,
-            deletes: this.pendingChanges.deletes
+            updates: this.buildPendingUpdates(),
+            deletes: this.buildPendingDeletes()
           }
 
-          const result = await this.connection.applyChanges(payload)
+          const result = await this.connection.applyChanges(payload);
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
@@ -1354,7 +1464,7 @@ export default Vue.extend({
           }
 
           if (replaceData) {
-            const niceChanges = pluralize('change', this.pendingChangesCount, true)
+            const niceChanges = window.main.pluralize('change', this.pendingChangesCount, true);
             this.$noty.success(`${niceChanges} successfully applied`)
             this.tabulator.replaceData()
           }
@@ -1405,7 +1515,7 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
     importTab() {
-      this.trigger(AppEvent.upgradeModal)
+      this.trigger(AppEvent.beginImport, { table: this.table })
     },
     openQueryTab() {
       const page = this.tabulator.getPage();
@@ -1448,7 +1558,6 @@ export default Vue.extend({
         return;
       }
       this.filters = filters
-      this.tabulator?.setData()
     },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
@@ -1495,10 +1604,22 @@ export default Vue.extend({
               orderBy,
               filters,
               this.table.schema,
-              selects,
-              // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
-              { allowFilter: this.isCassandra }
+              selects
             );
+
+            // TODO(@day): it has come to my attention that the below comment does not properly explain my confusion, where is this allowFilter business coming from and WHY
+            // the fuck is this??
+            //const response = await this.connection.selectTop(
+            //  this.table.name,
+            //  offset,
+            //  this.limit,
+            //  orderBy,
+            //  filters,
+            //  this.table.schema,
+            //  selects,
+            //  // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
+            //  { allowFilter: this.isCassandra }
+            //);
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1573,6 +1694,54 @@ export default Vue.extend({
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
+    async toggleOpenDetailView(open?: boolean) {
+      if (typeof open === 'undefined') {
+        open = !this.openDetailView
+      }
+      this.updateSplit(open)
+      this.rootToggleOpenDetailView(open)
+    },
+    indexRowOf(row: RowComponent) {
+      return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
+    },
+    updateDetailView(options: { range?: RangeComponent } = {}) {
+      const range = options.range ?? this.tabulator.getRanges()[0]
+      const row = range.getRows()[0]
+      if (!row) {
+        this.selectedRow = null
+        this.selectedRowIndex = null
+        this.selectedRowData = {}
+        return
+      }
+      const position = this.indexRowOf(row)
+      const data = row.getData("withForeignData")
+      const cachedExpandablePaths = row.getExpandablePaths()
+      this.detailViewTitle = `Row ${position}`
+      this.selectedRow = row
+      this.selectedRowIndex = position
+      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      this.expandablePaths = this.rawTableKeys
+        .filter((key) => !row.hasForeignData([key.fromColumn]))
+        .map((key) => ({
+          path: [key.fromColumn],
+          tableKey: key,
+        }))
+      this.expandablePaths.push(...cachedExpandablePaths)
+    },
+    initializeSplit() {
+      const components = this.$refs.tableViewWrapper.children
+      const splitSizes = this.$store.state.tableTableSplitSizes
+      this.split = Split(components, {
+        elementStyle: (_dimension, size) => ({
+          'flex-basis': `calc(${size}%)`,
+        }),
+        sizes: splitSizes,
+        expandToMin: true,
+        onDragEnd: () => {
+          this.$store.dispatch("setTableTableSplitSizes", this.split.getSizes())
+        }
+      } as Split.Options)
+    },
     exportTable() {
       this.trigger(AppEvent.beginExport, { table: this.table })
     },
@@ -1626,12 +1795,70 @@ export default Vue.extend({
       return classes.some(c => c.startsWith('tabulator'))
     },
     handleRowFilterBuilderInput(filters: TableFilter[]) {
-      this.tab.setFilters(filters)
+      setFilters(this.tab, filters)
       this.debouncedSaveTab(this.tab)
+    },
+    // FIXME rename to expandForeignKeys (with s at the end), and it should be able
+    // to fetch multiple paths
+    async expandForeignKey(expandablePath: ExpandablePath) {
+      const { path, tableKey } = expandablePath
+      try {
+        const table = await this.connection.selectTop(
+          tableKey.toTable,
+          0,
+          1,
+          [],
+          [{
+            field: tableKey.toColumn,
+            type: '=',
+            value: _.get(this.selectedRowData, path),
+          }],
+          tableKey.toSchema
+        )
+
+        if (table.result.length > 0) {
+          _.set(this.selectedRowData, path, table.result[0])
+          this.selectedRow.setForeignData(path, table.result[0])
+
+          // Add new expandable paths for the new table
+          const tableKeys = await this.connection.getTableKeys(tableKey.toTable, tableKey.toSchema)
+          const expandablePaths = tableKeys.map((key: TableKey) => ({
+            path: [...path, key.fromColumn],
+            tableKey: key,
+          }))
+          this.expandablePaths.push(...expandablePaths)
+          this.selectedRow.pushExpandablePaths(...expandablePaths)
+        }
+      } catch (e) {
+        log.error(e)
+      }
+
+      // Remove the path from the list of expandable paths
+      const filteredExpandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
+      this.expandablePaths = filteredExpandablePaths
+      this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
+    },
+    /**
+     * This should be called before showing/hiding the detail view
+     * @param {boolean} open - true if we want to open the detail view
+     */
+    updateSplit(open?: boolean) {
+      if (typeof open === 'undefined') {
+        open = this.openDetailView
+      }
+      if (open && !this.split) {
+        this.initializeSplit()
+      } else if (!open) {
+        this.split?.destroy()
+        this.split = null
+      }
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
     }, 300),
+    ...mapActions({
+      rootToggleOpenDetailView: "toggleOpenDetailView",
+    }),
   }
 });
 </script>

@@ -18,7 +18,6 @@
         <core-sidebar
           @databaseSelected="databaseSelected"
           @toggleSidebar="toggleSidebar"
-          :connection="connection"
           :sidebar-shown="sidebarShown"
         />
         <statusbar>
@@ -30,14 +29,16 @@
         class="page-content flex-col"
         id="page-content"
       >
-        <core-tabs :connection="connection" />
+        <core-tabs />
       </div>
     </div>
     <quick-search
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
     />
-    <ExportManager :connection="connection" />
+    <ExportManager />
+    <lost-connection-modal />
+    <rename-database-element-modal />
   </div>
 </template>
 
@@ -52,12 +53,14 @@
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
+  import LostConnectionModal from './LostConnectionModal.vue'
   import Vue from 'vue'
-import { SmartLocalStorage } from '@/common/LocalStorage'
+  import { SmartLocalStorage } from '@/common/LocalStorage'
+  import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
+  import { mapGetters } from 'vuex'
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
-    props: ['connection'],
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal },
     data() {
       /* eslint-disable */
       return {
@@ -75,6 +78,7 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
       /* eslint-enable */
     },
     computed: {
+      ...mapGetters(['minimalMode']),
       keymap() {
         return this.$vHotkeyKeymap({
           'general.openQuickSearch': this.showQuickSearch
@@ -91,7 +95,7 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const lastSavedSplitSizes = SmartLocalStorage.getItem("coreInterfaceSplitSizes")
+          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
           const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
 
           this.split = Split(this.splitElements, {
@@ -99,16 +103,21 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
                 'flex-basis': `calc(${size}%)`,
             }),
             sizes: splitSizes,
-            minSize: 280,
+            minSize: [25, 75],
             expandToMin: true,
             gutterSize: 5,
             onDragEnd: () => {
               const splitSizes = this.split.getSizes()
-              SmartLocalStorage.addItem("coreInterfaceSplitSizes", splitSizes)
+              SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
             }
           })
         })
-      }
+      },
+      minimalMode() {
+        if (this.minimalMode) {
+          this.sidebarShown = true
+        }
+      },
     },
     mounted() {
       this.$store.dispatch('pins/loadPins')
@@ -136,7 +145,12 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
         this.$emit('databaseSelected', database)
       },
       toggleSidebar() {
-        this.sidebarShown = !this.sidebarShown
+        if (this.minimalMode) {
+          // Always show sidebar (table list) in minimal mode
+          this.sidebarShown = true
+        } else {
+          this.sidebarShown = !this.sidebarShown
+        }
       },
     }
   })

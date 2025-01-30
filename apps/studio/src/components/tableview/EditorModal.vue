@@ -4,119 +4,130 @@
       :name="modalName"
       class="beekeeper-modal vue-dialog editor-dialog"
       @opened="onOpen"
+      @before-close="onBeforeClose"
     >
       <!-- Trap the key events so it doesn't conflict with the parent elements -->
       <div
-        class="dialog-content"
+        v-kbd-trap="true"
+        @click.stop
         tabindex="0"
         @keydown.stop
         @keyup.stop="handleKeyUp"
         @keypress.stop
       >
-        <div class="top">
-          <div class="dialog-c-title">
-            Editing as
-          </div>
+        <div class="dialog-content">
+          <div class="top">
+            <div class="dialog-c-title">
+              Editing as
+            </div>
 
-          <select
-            class="form-control language-select"
-            v-model="languageName"
-          >
-            <option
-              disabled
-              value=""
-              v-if="!languageName"
+            <select
+              class="form-control language-select"
+              v-model="languageName"
             >
-              Select a language
-            </option>
-            <option
-              v-for="(lang, idx) in languages"
-              :key="idx"
-              :value="lang.name"
-            >
-              {{ lang.label }}
-            </option>
-          </select>
-
-          <x-button
-            class="btn btn-flat"
-            title="Actions"
-          >
-            <i class="material-icons">settings</i>
-            <i class="material-icons">arrow_drop_down</i>
-            <x-menu style="--align: end">
-              <x-menuitem
-                @click.prevent="format"
-                v-show="!language.noBeautify"
+              <option
+                disabled
+                value=""
+                v-if="!languageName"
               >
-                <x-label>Format {{ language?.label }}</x-label>
-              </x-menuitem>
-              <x-menuitem @click.prevent="minify">
-                <x-label>Minify text</x-label>
-              </x-menuitem>
-              <x-menuitem @click.prevent="toggleWrapText">
-                <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </div>
+                Select a language
+              </option>
+              <option
+                v-for="lang in languages"
+                :key="lang.name"
+                :value="lang.name"
+              >
+                {{ lang.label }}
+              </option>
+            </select>
 
-        <div class="editor-container">
-          <text-editor
-            v-model="content"
-            :lang="languageName"
-            :line-wrapping="wrapText"
-            :height="editorHeight"
-            @interface="editorInterface = $event"
-          />
-        </div>
-      </div>
-      <div class="bottom">
-        <span
-          class="error-message"
-          v-show="error"
-        >{{ error }}</span>
-
-        <div class="vue-dialog-buttons">
-          <span class="expand" />
-          <button
-            @click.prevent="$modal.hide(modalName)"
-            class="btn btn-sm btn-flat"
-          >
-            Cancel
-          </button>
-          <button
-            class="btn btn-sm btn-flat"
-            @click.prevent="copy"
-          >
-            Copy
-          </button>
-          <x-button
-            v-if="language.noMinify"
-            class="btn btn-primary btn-sm"
-            @click.prevent="save"
-          >
-            <x-label>Apply</x-label>
-          </x-button>
-          <x-buttons v-else>
             <x-button
-              class="btn btn-primary btn-small"
-              @click.prevent="saveAndMinify"
+              class="btn btn-flat"
+              title="Actions"
             >
-              <x-label>Minify & Apply</x-label>
-            </x-button>
-            <x-button
-              class="btn btn-primary btn-small"
-              menu
-            >
+              <i class="material-icons">settings</i>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu style="--align: end">
-                <x-menuitem @click.prevent="save">
-                  <x-label>Apply (no minify)</x-label>
+                <x-menuitem
+                  @click.prevent="format"
+                  v-show="!language.noBeautify"
+                >
+                  <x-label>Format {{ language.label }}</x-label>
+                </x-menuitem>
+                <x-menuitem @click.prevent="minify">
+                  <x-label>Minify text</x-label>
+                </x-menuitem>
+                <x-menuitem @click.prevent="toggleWrapText">
+                  <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
-          </x-buttons>
+          </div>
+
+          <!-- Prevent tabbing into the next element, caused by v-kbd-trap -->
+          <div
+            ref="editorContainer"
+            class="editor-container"
+            @keydown="$event.key === 'Tab' && $event.stopPropagation()"
+            @keyup="$event.key === 'Tab' && $event.stopPropagation()"
+          >
+            <text-editor
+              v-model="content"
+              :mode="language.editorMode"
+              :line-wrapping="wrapText"
+              :height="editorHeight"
+              :focus="editorFocus"
+              @focus="editorFocus = $event"
+            />
+          </div>
+        </div>
+        <div class="bottom">
+          <span
+            class="error-message"
+            v-show="error"
+          >{{ error }}</span>
+
+          <div class="vue-dialog-buttons">
+            <span class="expand" />
+            <button
+              @click.prevent="$modal.hide(modalName)"
+              class="btn btn-sm btn-flat"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-sm btn-flat"
+              @click.prevent="copy"
+            >
+              Copy
+            </button>
+            <x-button
+              v-if="language.noMinify"
+              class="btn btn-primary btn-sm"
+              @click.prevent="save"
+            >
+              <x-label>Apply</x-label>
+            </x-button>
+            <x-buttons v-else>
+              <x-button
+                class="btn btn-primary btn-small"
+                @click.prevent="saveAndMinify"
+              >
+                <x-label>Minify & Apply</x-label>
+              </x-button>
+              <x-button
+                class="btn btn-primary btn-small"
+                menu
+              >
+                <i class="material-icons">arrow_drop_down</i>
+                <x-menu style="--align: end">
+                  <x-menuitem @click.prevent="save">
+                    <x-label>Apply (no minify)</x-label>
+                  </x-menuitem>
+                </x-menu>
+              </x-button>
+            </x-buttons>
+          </div>
         </div>
       </div>
     </modal>
@@ -135,20 +146,17 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
-import { Languages, LanguageData, TextLanguage, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
+import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../../lib/editor/languageData'
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
-import rawlog from 'electron-log'
 import TextEditor from '@/components/common/texteditor/TextEditor.vue'
-
-const log = rawlog.scope('EditorModal')
 
 export default Vue.extend({
   name: "CellEditorModal",
   data() {
     return {
-      editorInterface: {},
+      editorFocus: false,
       editorHeight: 100,
       error: "",
       languageName: "text",
@@ -164,7 +172,7 @@ export default Vue.extend({
       return uuidv4()
     },
     userKeymap() {
-      const value = this.settings?.keymap?.value;
+      const value = this.settings?.keymap.value;
       const keymapTypes = this.$config.defaults.keymapTypes
       return value && keymapTypes.map(k => k.value).includes(value) ? value : 'default';
     },
@@ -172,7 +180,7 @@ export default Vue.extend({
       return Languages
     },
     language() {
-      return getLanguageByName(this.languageName) || TextLanguage
+      return Languages.find((lang) => lang.name === this.languageName);
     },
   },
 
@@ -189,8 +197,9 @@ export default Vue.extend({
     openModal(content: any, language: LanguageData, eventParams?: any) {
       if (content === null) {
         content = ""
-      }
-      if (typeof content !== 'string') {
+      } else if (ArrayBuffer.isView(content)) {
+        content = content.toString()
+      } else if (typeof content !== 'string') {
         content = JSON.stringify(content)
       }
       language = language ? language : getLanguageByContent(content)
@@ -221,11 +230,17 @@ export default Vue.extend({
 
     async onOpen() {
       await this.$nextTick();
-      this.editorInterface.focus()
+      this.$refs.editorContainer.style.height = undefined
+      this.editorFocus = true
       this.$nextTick(this.resizeHeightToFitContent)
     },
+    async onBeforeClose() {
+      // Hack: keep the modal height as it was before.
+      this.$refs.editorContainer.style.height = this.$refs.editorContainer.offsetHeight + 'px'
+      this.editorFocus = false
+    },
     resizeHeightToFitContent() {
-      const wrapperEl = this.editorInterface.getWrapperElement()
+      const wrapperEl = this.$refs.editorContainer.querySelector('.CodeMirror')
       const wrapperStyle = window.getComputedStyle(wrapperEl)
 
       const minHeight = parseInt(wrapperStyle.minHeight)
@@ -254,14 +269,14 @@ export default Vue.extend({
         this.$modal.hide(this.modalName)
       }
     }
-  },
+  }
 });
 </script>
 
 
 
 <style lang="scss" scoped>
-@import '@shared/assets/styles/_variables';
+@import '../../shared/assets/styles/_variables';
 
 div.vue-dialog div.dialog-content {
   padding: 0;
@@ -346,7 +361,7 @@ div.vue-dialog div.dialog-content {
     .CodeMirror {
       height: 300px;
       min-height: 300px;
-      max-height: 556px;
+      max-height: 55vh;
       resize: vertical;
     }
   }

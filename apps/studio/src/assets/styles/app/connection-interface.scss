@@ -58,6 +58,14 @@
   .bigquery-form {
     margin-bottom: $gutter-h;
   }
+  .sql-server-form {
+    .signed-in-as .advanced-body {
+      padding-top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
   .text-connect {
     padding-top: 0.25rem;
   }
@@ -166,6 +174,10 @@
     transition: color 0.15s ease-in-out;
     cursor: pointer;
   }
+  i.material-icons {
+    margin-right: 1rem;
+    font-size: 1.2em;
+  }
   &.enabled {
     i {
       color: $theme-primary;
@@ -186,7 +198,8 @@
   display: inline-block;
 }
 .password-icon {
-  position: absolute; 
+  position: absolute;
   right: 12px;
   bottom: 5px;
 }
+

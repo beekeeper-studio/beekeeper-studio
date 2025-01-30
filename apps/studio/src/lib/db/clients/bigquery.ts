@@ -1,28 +1,30 @@
 import * as bq from '@google-cloud/bigquery';
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete } from "../models";
-import { DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../types";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete, BksField } from "../models";
+import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
 import Client from 'knex/lib/client';
 import { BigQueryClient as BigQueryKnexClient } from '@shared/lib/knex-bigquery';
 import { BigQueryChangeBuilder } from "@shared/lib/sql/change_builder/BigQueryChangeBuilder";
 import platformInfo from "@/common/platform_info";
-import rawLog from 'electron-log';
+import rawLog from '@bksLogger';
 import { applyChangesSql, buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
+import { IDbConnectionServer } from '../backendTypes';
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
-const logger = () => log
 
 interface BigQueryResult {
   data: any,
   rows: any[],
   rowCount: number
+  arrayMode: boolean
+  columns: bq.SchemaField[]
 }
 
 const bigqueryContext = {
@@ -44,7 +46,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     super(null, bigqueryContext, server, database);
   }
 
-  versionString(): string {
+  async versionString(): Promise<string> {
     return null
   }
 
@@ -52,7 +54,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return new BigQueryChangeBuilder(table, database);
   }
 
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return { 
       customRoutines: false, 
       comments: false, 
@@ -61,7 +63,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false 
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 
@@ -79,7 +82,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // For testing purposes
     this.config.apiEndpoint = this.bigQueryEndpoint(this.server.config)
 
-    logger().debug("configDatabase config: ", this.config)
+    log.debug("configDatabase config: ", this.config)
 
     
     this.knex = knexlib({
@@ -116,7 +119,11 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     // Lists all columns in a table
     const [metadata] = await this.client.dataset(this.db).table(table).getMetadata()
-    const data = metadata.schema.fields.map((field) => ({ columnName: field.name, dataType: field.type }))
+    const data = metadata.schema.fields.map((field) => ({
+      columnName: field.name,
+      dataType: field.type,
+      bksField: this.parseTableColumn(field),
+    }))
     return data
   }
 
@@ -176,8 +183,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     }));
   }  
 
-  query(queryText: string, options: any = {}): CancelableQuery {
-    logger().debug('bigQuery query: ' + queryText);
+  async query(queryText: string, options: any = {}): Promise<CancelableQuery> {
+    log.debug('bigQuery query: ' + queryText);
     let job = null;
     const cancelable = createCancelablePromise({
       ...errors.CANCELED_BY_USER,
@@ -191,8 +198,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         // Get a query job first
         const jobOptions = { query: queryText, ...options };
         [job] = await this.client.createQueryJob(jobOptions)
-        logger().debug("created job: ", job.id)
-        console.log('JOB METADATA: ', job.metadata)
+        log.debug("created job: ", job.id)
 
         if (options.dryRun) {
           const metadata = job.metadata;
@@ -200,7 +206,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         }
 
         try {
-          logger().debug("wait for executeQuery job.id: ", job.id)
+          log.debug("wait for executeQuery job.id: ", job.id)
           const data = await Promise.race([
             cancelable.wait(),
             this.driverExecuteSingle(queryText, job),
@@ -217,7 +223,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         }
         try {
           const [jobCancelResponse] = await job.cancel()
-          logger().debug("query jobCancelResponse: ", jobCancelResponse)
+          log.debug("query jobCancelResponse: ", jobCancelResponse)
           cancelable.cancel()
         } finally {
           cancelable.discard()
@@ -249,11 +255,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return data;
   }
 
-  applyChangesSql(changes: TableChanges): string {
-    return applyChangesSql(changes, this.knex);
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
 
     try {
@@ -269,7 +271,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         await this.deleteRows(changes.deletes);
       }
     } catch (ex) {
-      logger().error("Query Exception: ", ex);
+      log.error("Query Exception: ", ex);
 
       throw ex;
     }
@@ -277,12 +279,12 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return results;
   }
 
-  getQuerySelectTop(table: string, limit: number, _schema?: string): string {
+  async getQuerySelectTop(table: string, limit: number, _schema?: string): Promise<string> {
     return `SELECT * FROM ${wrapIdentifier(this.database.database)}.${wrapIdentifier(table)} LIMIT ${limit}`;
   }
 
   async getTableProperties(table: string, _schema?: string): Promise<TableProperties> {
-    logger().debug("getTableProperties: ", table)
+    log.debug("getTableProperties: ", table)
 
     const [
       length,
@@ -334,15 +336,15 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return data.rows.map((row) => row.createtable)[0];
   }
 
-  getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+  async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
     throw new Error("Method not implemented.");
   }
 
-  getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
+  async getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
     throw new Error("Method not implemented.");
   }
 
-  truncateAllTables(_schema?: string): void {
+  async truncateAllTables(_schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
@@ -395,11 +397,12 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const queriesResult = await this.driverExecuteMultiple(query, { countQuery, params });
     const data = queriesResult[0];
     const rowCount = Number(data.rowCount);
-    const fields = Object.keys(data.rows[0] || {});
+    const fields = this.parseQueryResultColumns(data);
+    const rows = await this.serializeQueryResult(data, fields);
 
     const result = {
       totalRows: rowCount,
-      result: data.rows,
+      result: rows,
       fields
     };
     return result;
@@ -428,11 +431,12 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     const theCursor = new BigQueryCursor(this.client, query, [], chunkSize);
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     log.debug('results', theCursor);
 
     return {
-      totalRows: undefined, // rowCount,
-      columns: undefined, // theCursor.result.columns,
+      totalRows,
+      columns,
       cursor: theCursor
     };
   }
@@ -441,23 +445,27 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return wrapIdentifier(value);
   }
 
-  setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
+  async setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
-  dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+  async setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
+    return ''
+  }
+
+  async dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  truncateElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+  async truncateElementSql(): Promise<string> {
+    return ''
+  }
+
+  async duplicateTable(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  duplicateTable(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-
-  duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): string {
+  async duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
@@ -477,16 +485,16 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // Create a new dataset/database
     const options = {}
     const [dataset] = await this.client.createDataset(databaseName, options);
-    logger().debug(`Dataset ${dataset.id} created.`);
+    log.debug(`Dataset ${dataset.id} created.`);
   }
 
-  createDatabaseSQL(): string {
+  async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<BigQueryResult | BigQueryResult[]> {
     log.info("BIGQUERY, executing", q);
-    let job = options?.job;
+    let job: bq.Job = options?.job;
     const queryArgs = {query: q, ...options };
     if (!job) {
       [job] = await this.client.createQueryJob(queryArgs);
@@ -494,7 +502,15 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     // Wait for the query to finish
     const results = await job.getQueryResults();
-    return results.map((data) => this.parseRowQueryResult(data))
+    return results.map((data) => {
+      const parsed = this.parseRowQueryResult(data)
+      return {
+        ...parsed,
+        arrayMode: false,
+        data: parsed.rows,
+        columns: parsed.fields,
+      }
+    })
   }
 
   private bigQueryEndpoint(config: any) {
@@ -509,7 +525,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const [tables] = await this.client.dataset(db).getTables();
     let data = tables.map((table) => ({ name: table.id, entityType: table.metadata.type, metadata: table.metadata, table: table }));
     data = data.filter((table) => table.metadata.type === type);
-    logger().debug(`listTablesOrViews for type:${type} data: `, data);
+    log.debug(`listTablesOrViews for type:${type} data: `, data);
     return data;
   }
   
@@ -551,7 +567,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const isSelect = Array.isArray(data)
     const rows = this.parseRowData(data) || []
     const fields = Object.keys(rows[0] || {}).map((name) => ({ name, id: name }))
-    logger().debug("parseRowQueryResult data length: ", data.length)
+    log.debug("parseRowQueryResult data length: ", data.length)
 
     return {
       command: isSelect ? 'SELECT' : 'UNKNOWN',
@@ -605,5 +621,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     }
 
     return true;
+  }
+
+  parseTableColumn(column: any): BksField {
+    return { name: column.name, bksType: 'UNKNOWN' }
   }
 }

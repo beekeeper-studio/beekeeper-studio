@@ -1,4 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
 import _ from "lodash";
 import { Column, Entity } from "typeorm";
 import { DatabaseEntity } from "../../../lib/db/models";
@@ -9,12 +10,19 @@ function schemaMatch(a: string | null | undefined, b: string | null | undefined)
   return a === b
 }
 
+type InitInput = {table?: DatabaseEntity, db?: string | null, saved?: IConnection};
+
 @Entity({ name: 'pins'})
 export class PinnedEntity extends ApplicationEntity {
 
-  constructor(table?: DatabaseEntity, db?: string | null, saved?: IConnection) {
-    super()
-     if (table) {
+  withProps(input: InitInput | TransportPinnedEntity): PinnedEntity {
+    if (!input) return;
+    if ("databaseName" in input) {
+      PinnedEntity.merge(this, input);
+      return this;
+    }
+    const { table, db, saved } = input;
+    if (table) {
       this.entityName = table.name
       this.schemaName = table.schema
       this.entityType = table.entityType
@@ -24,6 +32,7 @@ export class PinnedEntity extends ApplicationEntity {
       this.connectionId = saved.id
       this.workspaceId = saved.workspaceId
     }
+    return this;
   }
 
   matches(entity: DatabaseEntity, database?: string): boolean {

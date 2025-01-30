@@ -1,0 +1,350 @@
+name: Studio - Test Build & Publish
+
+on:
+  push:
+    tags:
+      - "test*"
+    paths-ignore:
+      - "apps/sqltools/**"
+jobs:
+
+  create_draft_release:
+    strategy:
+      matrix:
+        edition:
+          - name: test
+            owner: beekeeper-studio
+            repo: test-releases
+    runs-on: "ubuntu-20.04"
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      assets_url: ${{ steps.create_release.outputs.assets_url }}
+      id: ${{ steps.create_release.outputs.id }}
+      json: ${{ steps.create_release.outputs.json }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+        # Requires us to use a github token with more power (to create drafts on another repo)
+      - name: Create or check draft release
+        id: create_release
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          OWNER: ${{matrix.edition.owner}}
+          REPO: ${{matrix.edition.repo}}
+        with:
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
+          script: |
+            const script = require('./.github/scripts/create_draft_release.js')
+            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+  # electron-builder comes built in with channels -- latest, beta, alpha.
+  # To support these for deb, rpm, and snap, we need to extract the channel from the package version
+  identify_channel:
+    runs-on: "ubuntu-20.04"
+    outputs:
+      channel: ${{steps.extract_channel.outputs.channel}}
+      deb_codename: ${{steps.extract_channel.outputs.codename}}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+      - name: Extract Channel from package.json
+        id: extract_channel
+        run: bash ./.github/scripts/extract_channel.sh
+
+  release:
+    runs-on: ${{ matrix.os.name }}
+    needs: [create_draft_release, identify_channel]
+    outputs:
+      mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x86_64_yml }}
+      mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        edition:
+          - name: test
+            owner: beekeeper-studio
+            repo: test-releases
+        os:
+          - name: ubuntu-20.04
+            arch: x64
+            type: linux
+            setup_python: true
+          - name: windows-2019
+            arch: x64
+            type: windows
+            setup_python: true
+          - name: macos-13
+            arch: x64
+            type: macos
+          - name: macos-14
+            arch: arm64
+            type: macos
+        # macos-13 is Intel, macos-14 is arm (obviously)
+        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+        # os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
+        # os: [macos-13, macos-14 ]
+
+    steps:
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.gpg_key }}
+        if: matrix.os.type == 'linux'
+
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+        if: matrix.os.type == 'linux'
+
+      - name: Install azuresigntool
+        run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
+        if: matrix.os.type == 'windows'
+
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'x64'
+
+      - name: Update repository based on the edition we're publishing
+        env:
+          OWNER: ${{matrix.edition.owner}}
+          REPO: ${{matrix.edition.repo}}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const path = `apps/studio/package.json`
+            const githubUrl = `git@github.com/${process.env.OWNER}/${process.env.REPO}.git`
+
+            const packageJson = JSON.parse(fs.readFileSync(path, 'utf8'));
+
+            // Update the 'repository' field
+            packageJson.repository = githubUrl;
+
+            // Write the updated package.json back to the file
+            fs.writeFileSync(path, JSON.stringify(packageJson, null, 2) + '\n');
+
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '16.11.14'
+        if: matrix.os.type == 'windows'
+
+      - name: "Install python 3.11 (NOT Mac, NOT Ubuntu-arm)"
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+        if: matrix.os.setup_python
+
+      - name: Install python 3.11 (mac arm64)
+        if: matrix.os.type == 'macos'
+        id: mac_python
+        env:
+          ARCH: ${{ matrix.os.arch }}
+        run: |
+          brew install python@3.11
+          if [ "$ARCH" = "arm64" ]; then
+              # Add Python 3.11 to PATH for arm64
+              echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+              export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
+              export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
+              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
+          else
+              # Add Python 3.11 to PATH for other architectures
+              echo "/usr/local/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+              export PATH="/usr/local/opt/python@3.11/libexec/bin:$PATH"
+              export PYTHON_PATH="/usr/local/opt/python@3.11/libexec/bin/python3"
+              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify Python Version
+        if: matrix.os.type == 'windows'
+        run: |
+          $PYTHON_VERSION = python --version | Out-String
+          Write-Output "Installed Python version: $PYTHON_VERSION"
+          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
+            Write-Output "Error: Python version does not start with 3.11"
+            exit 1
+          }
+        shell: powershell
+
+        # Verify on everything except windows and ubuntu arm
+      - name: Verify Python Version
+        if: matrix.os.type != 'windows' && !(matrix.os.type != 'linux' && matrix.os.arch == 'arm64')
+        run: |
+          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
+          echo "Installed Python version: $PYTHON_VERSION"
+          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
+            echo "Error: Python version does not start with 3.11"
+            exit 1
+          fi
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+
+      - name: Clean cache
+        run: yarn cache clean --all
+
+      # FIXME (matthew) Windows needs retries. It sometimes fails to build
+      # the native oracledb package.
+      # But only sometimes. I cannot figure out why.
+      # Someone should at some point.
+      - name: yarn install (with retry)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: "yarn install --frozen-lockfile --network-timeout 100000"
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+
+      - name: Remove dist directory
+        if: matrix.os.type != 'windows'
+        run: rm -rf ./apps/studio/dist_electron
+
+      - name: Remove dist directory windows
+        if: matrix.os.type == 'windows'
+        run: Remove-Item dist_electron -Recurse -ErrorAction Ignore
+
+      - name: Prepare for app notarization
+        if: matrix.os.type == 'macos'
+        # Import Apple API key for app notarization on macOS
+        run: |
+          mkdir -p ~/private_keys/
+          echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
+
+      - name: Build and Publish
+        if: ${{!startsWith(matrix.os.name, 'ubuntu-arm64')}}
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          package_root: apps/studio
+          # GitHub token, automatically provided to the action
+          # (No need to define this secret in the repo settings)
+          github_token: ${{ secrets.GH_DEPLOY_TOKEN }}
+          skip_build: false
+          build_script_name: "build"
+          use_vue_cli: false
+          max_attempts: 2
+          args: "--config ./electron-builder-config-test.js"
+
+          # If the commit is tagged with a version (e.g. "v1.0.0"),
+          # release the app after building
+          release: true
+          mac_certs: ${{ secrets.mac_dev }}
+          mac_certs_password: ${{ secrets.mac_dev_pw }}
+        env:
+          APPLE_ID: ${{ secrets.apple_id }}
+          APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
+          APPLE_TEAM_ID: "7KK583U8H2"
+          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
+          PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
+
+        # this only works becuase the m1 build is faster, so the m1 build deletes
+        # it's latest-mac.yml before the intel build finishes, so it doesnt crash
+        # and can continue.
+      - name: Delete latest-mac.yml
+        if: matrix.os.type == 'macos'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
+        with:
+          script: |
+            const script = require('./.github/scripts/delete_latest_yml.js')
+            const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
+            const channel = '${{needs.identify_channel.outputs.channel}}'
+            await script({ github, core, context }, assetsUrl, channel)
+
+      - name: Cleanup artifacts
+        if: ${{!startsWith(matrix.os.name, 'windows')}}
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml)"
+      - name: Cleanup artifacts Win
+        if: startsWith(matrix.os.name, 'windows')
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
+        continue-on-error: true
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os.name }}
+          path: apps/studio/dist_electron
+
+      - name: Set yaml files
+        id: set_yaml
+        if: matrix.os.type == 'macos'
+        uses: actions/github-script@v7
+        env:
+          ARCH: ${{ matrix.os.arch }}
+          CHANNEL: ${{needs.identify_channel.outputs.channel}}
+        with:
+          script: |
+            const fs = require('fs')
+            const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.CHANNEL}-mac.yml`, 'utf8')
+            core.setOutput(`mac_${process.env.ARCH}_yml`, content)
+  post-release:
+    needs: [release, create_draft_release, identify_channel]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm install js-yaml
+      - name: Merge yml files
+        uses: actions/github-script@v7
+        env:
+          INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
+          ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            const intelContent = process.env.INTEL_YML
+            const armContent = process.env.ARM_YML
+
+            const mergeFiles = () => {
+              const intelObject = yaml.load(intelContent);
+              const armObject = yaml.load(armContent);
+
+              const mergedObject = {
+                ...intelObject,
+              };
+
+              mergedObject.files = [
+                ...intelObject.files,
+                ...armObject.files,
+              ];
+
+              const dumpOptions = {
+                // avoids moving the sha512 checksum into its own line
+                lineWidth: -1,
+              };
+
+              const mergedString = yaml.dump(mergedObject, dumpOptions);
+              return mergedString;
+            };
+
+            const merge = mergeFiles();
+            fs.writeFileSync('mac.yml', merge, 'utf8');
+      - name: Upload fixed mac yml
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
+          asset_path: "./mac.yml"
+          asset_name: "${{needs.identify_channel.outputs.channel}}-mac.yml"
+          asset_content_type: 'application/octet-stream'

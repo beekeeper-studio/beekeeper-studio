@@ -1,0 +1,90 @@
+name: Create A Tag (and thus a release) of Beekeeper Studio
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'What version do you want to release (no v)? Check the latest version on releases first please. Beta example: x.x.x-beta.x'
+        required: true
+        default: 0.0.1
+        type: string
+      ref:
+        description: What branch/github ref do you want to build the release from?
+        required: true
+        default: master
+        type: string
+      sure:
+        description: Are you REALLY sure you want to make a release?
+        required: true
+        type: boolean
+
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate Version Format
+        id: validate_version
+        shell: bash
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          # Ensure version does not start with 'v'
+          if [[ "$VERSION" =~ ^v ]]; then
+            echo "Error: Version should not start with 'v'"
+            exit 1
+          fi
+
+          # Validate version format
+          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            CHANNEL="none"
+          elif [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta)\.[0-9]+$ ]]; then
+            CHANNEL="${BASH_REMATCH[2]}"
+          else
+            echo "Error: Invalid version format. Expected x.x.x or x.x.x-alpha.x or x.x.x-beta.x"
+            exit 1
+          fi
+
+          echo "Version is valid: $VERSION"
+
+      - name: Tag name
+        id: identify_tag
+        env:
+          VERSION: ${{github.event.inputs.version}}
+        run: |
+          echo "tag_name=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version in package.json
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          # Update version in package.json
+          jq '.version = "'"$VERSION"'"' apps/studio/package.json > tmp.json && mv tmp.json apps/studio/package.json
+
+      - name: Commit version change
+        run: |
+          git add apps/studio/package.json
+          git commit -m "Update version to ${{ github.event.inputs.version }}"
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Create tag
+        run: |
+          git tag "${{ steps.identify_tag.outputs.tag_name }}"
+
+      - name: Push changes and tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin "${{ steps.identify_tag.outputs.tag_name }}"

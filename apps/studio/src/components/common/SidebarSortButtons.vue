@@ -54,10 +54,13 @@ import Vue from 'vue'
 
 export default Vue.extend({
   props: ['value', 'sortOptions', 'noOrder'],
-  data: () => ({
-    sortBy: '',
-    sortOrder: 'asc',
-  }),
+  data() {
+    const valid = ['asc', 'desc']
+    return {
+      sortBy: this.value.field,
+      sortOrder: valid.includes(this.value.order) ? this.value.order : 'asc',
+    }
+  },
   computed: {
     sortOrderTooltip() {
       return this.sortOrder === 'desc' ? 'Descending' : 'Ascending'
@@ -70,11 +73,6 @@ export default Vue.extend({
     sortBy() {
       this.emit()
     }
-  },
-  mounted() {
-    const valid = ['asc', 'desc']
-    this.sortOrder = valid.includes(this.value.order) ? this.value.order : 'asc'
-    this.sortBy = this.value.field
   },
   methods: {
     emit() {

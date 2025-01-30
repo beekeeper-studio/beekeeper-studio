@@ -26,15 +26,15 @@
                 :key="index"
                 :value="index"
               >
-                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row',
-                                                                                                 resultOption.rows.length, false) }}</option>
+                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row', resultOption.rows.length, false) }}
+              </option>
             </select>
           </div>
         </span>
         <div
           class="statusbar-item row-counts"
           v-if="rowCount > 0"
-          v-tooltip="`${rowCount} Records${result?.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
+          v-tooltip="`${rowCount} Records${result && result.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
         >
           <i class="material-icons">list_alt</i>
           <span class="num-rows">{{ rowCount }}</span>
@@ -92,11 +92,11 @@
           >
             <x-menuitem
               @click.prevent="$event => submitCurrentQueryToFile()"
-              :disabled="!result?.truncated"
+              :disabled="!(result && result.truncated)"
             >
               <x-label>Download Full Resultset</x-label>
               <i
-                v-if="$config.isCommunity"
+                v-if="$store.getters.isCommunity"
                 class="material-icons menu-icon"
               >stars</i>
             </x-menuitem>
@@ -151,12 +151,10 @@
   </statusbar>
 </template>
 <script>
-// import Pluralize from 'pluralize'
 import humanizeDuration from 'humanize-duration'
-import Statusbar from '../common/StatusBar'
-import pluralize from 'pluralize'
-import { UserSetting } from '@/common/appdb/models/user_setting';
-import { mapState } from 'vuex';
+import Statusbar from '../common/StatusBar.vue'
+import { mapState, mapGetters } from 'vuex';
+import { AppEvent } from '@/common/AppEvent'
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -180,7 +178,7 @@ export default {
   data() {
     return {
       showHint: false,
-      selectedResult: 0,
+      selectedResult: 0
     }
   },
 
@@ -209,14 +207,12 @@ export default {
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
-        const value = this.settings?.keymap?.value;
+        const value = this.settings?.keymap.value;
         return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
       },
       set(value) {
         if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-        this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
-          this.initialize();
-        });
+        this.trigger(AppEvent.switchUserKeymap, value)
       }
     },
     keymapTypes() {
@@ -224,8 +220,7 @@ export default {
     },
     hasUsedDropdown: {
       get() {
-        const s = this.settings.hideResultsDropdown
-        return s ? s.value : false
+        return this.settings?.hideResultsDropdown.value ?? false
       },
       set(value) {
         this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
@@ -249,7 +244,8 @@ export default {
         return null
       }
       const executeTime = this.executeTime || 0
-      return shortEnglishHumanizer(executeTime)
+
+      return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
     },
     executionTimeTitle() {
       if (!this.executeTime) {
@@ -278,7 +274,7 @@ export default {
       }
     },
     pluralize(word, amount, flag) {
-      return pluralize(word, amount, flag)
+      return window.main.pluralize(word, amount, flag)
     },
     // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
     shortNum(num, fixed) {

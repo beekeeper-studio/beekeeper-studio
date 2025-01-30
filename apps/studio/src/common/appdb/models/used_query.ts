@@ -3,6 +3,11 @@ import { ApplicationEntity  } from './application_entity'
 
 @Entity({ name: 'used_query'})
 export class UsedQuery extends ApplicationEntity {
+  withProps(props?: any): UsedQuery {
+    if (props) UsedQuery.merge(this, props);
+    return this;
+  }
+
   @Column({type: "text", nullable: false})
   text!: string
 

@@ -3,6 +3,8 @@ import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all';
 
 describe("CockroachDB Tests", () => {
+  jest.setTimeout(dbtimeout)
+
   let container;
   let util
   let environment
@@ -10,7 +12,6 @@ describe("CockroachDB Tests", () => {
 
   beforeAll(async () => {
     const timeoutDefault = 5000
-    jest.setTimeout(dbtimeout)
     environment = await new DockerComposeEnvironment("tests/docker", "cockroachdb.yml").up()
     container = environment.getContainer('test_cockroachdb')
     jest.setTimeout(timeoutDefault)
@@ -20,15 +21,13 @@ describe("CockroachDB Tests", () => {
       port: container.getMappedPort(26257),
       user: 'root',
     }
-    util = new DBTestUtil(config, "defaultdb", {version: '7.2', skipPkQuote: true, defaultSchema: 'public'})
+    util = new DBTestUtil(config, "defaultdb", {dialect: 'postgresql', version: '7.2', skipPkQuote: true, defaultSchema: 'public'})
     await util.setupdb()
 
   })
 
   afterAll(async () => {
-    if (util.connection) {
-      await util.connection.disconnect()
-    }
+    await util.disconnect()
     if (container) {
       await container.stop()
     }

@@ -1,0 +1,39 @@
+.import-table-wrapper {
+  @include small-wrap;
+  padding: 0 1.5rem 3rem;
+  overflow: hidden;
+  overflow-y: auto;
+  margin: 2rem auto 0 auto;
+}
+
+.import-table-container {
+  flex-grow: 1;
+  min-height: 0; // This prevents overflowing
+  overflow: auto;
+
+  // reset
+  .import-table-wrapper {
+    padding: 0;
+    margin: 0;
+    overflow: unset;
+    &.import-progress{
+      margin: 2rem auto 0 auto;
+    }
+  }
+
+  .stepper-box {
+    overflow-y: unset;
+  }
+}
+
+.import-export-wrapper {
+  min-width: 550px;
+}
+
+.import-table-wrapper .tabulator,
+.file-picker-wrapper.tabulator {
+  .tabulator-cell:first-of-type,
+  .tabulator-col:first-of-type .tabulator-col-content {
+    padding-left: 0;
+  }
+}

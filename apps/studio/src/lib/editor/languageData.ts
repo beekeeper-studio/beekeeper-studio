@@ -1,5 +1,10 @@
 import CodeMirror from 'codemirror'
-import { ConnectionType } from '../db/types';
+
+// According to the HTML spec, comments end at the forst -->
+// So nested comments aren't a thing.
+function removeHtmlComments(input) {
+  return input.replace(/<!--[\s\S]*?(?:-->)/g, '');
+}
 
 export interface LanguageData {
   isValid: (raw: string) => boolean;
@@ -7,7 +12,7 @@ export interface LanguageData {
   minify: (beautified: string) => string;
   name: string;
   label: string;
-  editorMode: Record<string, unknown>;
+  editorMode: CodeMirror.EditorConfiguration['mode'];
   wrapTextByDefault?: boolean;
   noMinify?: boolean;
   noBeautify?: boolean
@@ -110,9 +115,7 @@ export const Languages: LanguageData[] = [
       return result;
     },
     minify: (value: string) => {
-      return value
-        .replace(/<!--\s*?[^\s?[][\s\S]*?-->/g, "")
-        .replace(/>\s*</g, "><");
+      return removeHtmlComments(value).replace(/>\s*</g, "><");
     },
   },
 ];
@@ -120,102 +123,4 @@ export const Languages: LanguageData[] = [
 export function getLanguageByContent(content: string): LanguageData | undefined {
   const lang = Languages.find((lang) => lang !== TextLanguage && lang.isValid(content));
   return lang ? lang : TextLanguage
-}
-
-export function getLanguageByName(name: string): LanguageData | undefined {
-  return Languages.find((lang) => lang.name === name);
-}
-
-type Language = ConnectionType | "sql" | "text" | "html" | "json";
-
-interface CodeMirrorLanguage {
-  mode: string | Record<string, unknown>;
-  hint?: unknown;
-}
-
-export function resolveLanguage(lang: Language): CodeMirrorLanguage {
-  switch (lang) {
-    case "mysql":
-      return {
-        mode: "text/x-mysql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "mariadb":
-      return {
-        mode: "text/x-mariadb",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "tidb":
-      return {
-        mode: "text/x-mysql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "postgresql":
-    case "redshift":
-    case "cockroachdb":
-      return {
-        mode: "text/x-pgsql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "sqlserver":
-      return {
-        // Fix #1985 by using text/x-sql instead of text/x-mssql.
-        // For some reason, text/x-mssql messes up the editor.getToken()
-        // function which is used for autocomplete.
-        mode: "text/x-sql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "sqlite":
-      return {
-        mode: "text/x-sqlite",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "cassandra":
-      return {
-        mode: "text/x-cassandra",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "oracle":
-    case "firebird":
-    case "bigquery":
-    case "sql":
-      return {
-        mode: "text/x-sql",
-        // @ts-expect-error TODO not fully typed
-        hint: CodeMirror.hint.sql,
-      };
-    case "html":
-      return {
-        mode: {
-          name: "htmlmixed",
-          tags: {
-            style: [
-              ["type", /^text\/(x-)?scss$/, "text/x-scss"],
-              [null, null, "css"],
-            ],
-            custom: [[null, null, "customMode"]],
-          },
-        },
-      };
-    case "json":
-      return {
-        mode: {
-          name: "javascript",
-          json: true,
-          statementIndent: 2,
-        },
-      };
-    case "text":
-    default:
-      return {
-        mode: "text",
-      };
-  }
 }

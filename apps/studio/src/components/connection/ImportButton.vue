@@ -3,6 +3,7 @@
     <a
       class="btn btn-link btn-small"
       @click.prevent="$modal.show('import-modal')"
+      href="#"
     ><slot /></a>
     <portal to="modals">
       <modal
@@ -12,7 +13,10 @@
         :scrollable="true"
         @opened="$refs.importInput.select()"
       >
-        <form @submit.prevent="importFromUrl">
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="importFromUrl"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">
               Import from URL
@@ -64,15 +68,17 @@ export default {
       }
     },
     methods: {
-      importFromUrl() {
-        if(this.config.parse(this.url)) {
-          if(!this.config.connectionType) {
-            this.importError = "Unable to determine database type from the URL"
+      async importFromUrl() {
+        try {
+          const conf = await this.$util.send('appdb/saved/parseUrl', { url: this.url });
+          Object.assign(this.config, conf);
+          if (!this.config.connectionType) {
+            this.importError = "Unable to determine database type from the URL";
           } else {
-            this.url = null
+            this.url = null;
             this.$modal.hide('import-modal')
           }
-        } else {
+        } catch {
           this.importError = "Unable to parse url"
         }
       },

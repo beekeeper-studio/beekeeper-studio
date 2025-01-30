@@ -3,17 +3,33 @@ import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 
+// SQL Server testing policy:
+// We test against SQL Server until it leaves mainstream support
+//
+
 const TEST_VERSIONS = [
-  { version: '2017-latest', readonly: false },
-  { version: '2017-latest', readonly: true },
+  // In July 2024 Microsoft released images that moved the bin location of sqlcmd:
+  // https://github.com/elastic/apm-agent-nodejs/issues/4147
+  // Microsoft's response to this:
+  // https://github.com/microsoft/mssql-docker/issues/892#issuecomment-2249029917
+  // FIXME 2022-latest has a breaking change. We'll use the previous build
+  // 2017 crashes. I don't know why
+  // { version: '2017-CU31-GDR2-ubuntu-18.04', readonly: false },
+  // { version: '2017-CU30-ubuntu-18.04', readonly: true },
+
+  // FYI - this might break when mssql-tools upgrades to version 19, as it affects the path
+  // of sqlcmd
   { version: '2019-latest', readonly: false },
   { version: '2019-latest', readonly: true },
   { version: '2022-latest', readonly: false },
   { version: '2022-latest', readonly: true },
+
 ]
 
 function testWith(dockerTag: string, readonly: boolean) {
   describe(`SQL Server [${dockerTag}] - read-only mode? ${readonly}`, () => {
+    jest.setTimeout(dbtimeout)
+
     let container;
     let util
     // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
@@ -22,22 +38,25 @@ function testWith(dockerTag: string, readonly: boolean) {
 
     beforeAll(async () => {
       const timeoutDefault = 5000
-      jest.setTimeout(dbtimeout)
+
+      const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
 
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
-        .withName(`mssql-${dockerTag}`)
-        .withEnv("MSSQL_PID", "Express")
-        .withEnv("SA_PASSWORD", "Example*1")
-        .withEnv("MSSQL_SA_PASSWORD", "Example*1")
-        .withEnv("ACCEPT_EULA", "Y")
+        // .withResourcesQuota({ memory: 2, cpu: 1 })
+        .withEnvironment({
+          "MSSQL_PID": "Express",
+          "SA_PASSWORD": "Example*1",
+          "MSSQL_SA_PASSWORD": "Example*1",
+          "ACCEPT_EULA": "Y"
+        })
         .withExposedPorts(1433)
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
-          test: `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`,
-          interval: 2000,
+          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
+          interval: 5000,
           timeout: 3000,
           retries: 10,
-          startPeriod: 5000,
+          startPeriod: 7000,
         })
         .withStartupTimeout(dbtimeout)
         .start()
@@ -59,12 +78,12 @@ function testWith(dockerTag: string, readonly: boolean) {
       await util.knex.schema.raw("CREATE TABLE hello.world(id int, name varchar(255))")
       await util.knex.schema.raw("INSERT INTO hello.world(id, name) VALUES(1, 'spiderman')")
       await util.knex.schema.raw("CREATE TABLE withbits(id int, bitcol bit NOT NULL)");
+      await util.knex.schema.raw("CREATE TABLE [my[socks]]](id int, name varchar(20))");
+      await util.knex.schema.raw("INSERT INTO [my[socks]]](id, name) VALUES (1, 'blue')");
     })
 
     afterAll(async () => {
-      if (util.connection) {
-        await util.connection.disconnect()
-      }
+      await util.disconnect()
       if (container) {
         await container.stop()
       }
@@ -76,6 +95,11 @@ function testWith(dockerTag: string, readonly: boolean) {
       } else {
         runCommonTests(getUtil, { dbReadOnlyMode: readonly })
       }
+    })
+
+    it("Can select top from table with square brackets in name", async () => {
+      const top = await util.connection.selectTop("my[socks]", 0, 1, [{dir: 'ASC', field: 'id'}], [])
+      expect(top.result.length).toBe(1)
     })
 
     describe("Multi schema", () => {

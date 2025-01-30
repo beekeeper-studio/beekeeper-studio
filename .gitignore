@@ -20,3 +20,7 @@ yarn-error.log
 .env
 .instant/
 cli.zip
+apps/studio/test-results
+*.db
+*.log
+*.orig

@@ -22,7 +22,7 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-@import '@shared/assets/styles/_variables';
+@import '../../../shared/assets/styles/_variables';
 
 .spinner {
   display: inline-block;

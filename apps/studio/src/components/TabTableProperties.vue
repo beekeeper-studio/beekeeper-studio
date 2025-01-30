@@ -43,7 +43,6 @@
           :primary-keys="primaryKeys"
           :tab-state="pill"
           :properties="properties"
-          :connection="connection"
           :active="pill.id === activePill && active"
           v-show="pill.id === activePill"
           v-for="(pill) in pills"
@@ -63,7 +62,6 @@
               <template v-if="properties">
                 <table-length
                   :table="table"
-                  :connection="connection"
                 />
                 <span
                   class="statusbar-item"
@@ -130,7 +128,7 @@
 
 <script>
 import {Tabulator} from 'tabulator-tables'
-import Statusbar from './common/StatusBar'
+import Statusbar from './common/StatusBar.vue'
 import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
@@ -138,14 +136,13 @@ import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import TablePartitionsVue from './tableinfo/TablePartitions.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
-import platformInfo from '../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
 import { mapState } from 'vuex'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('TabTableProperties')
 export default {
-  props: ["connection", "tabId", "active", "tab", "table"],
+  props: ["tabId", "active", "tab", "table"],
   components: { Statusbar, TableLength },
   data() {
     return {
@@ -219,7 +216,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -237,7 +234,6 @@ export default {
       // TODO (day): when we support more dbs, this will need to be an array of all the possible types.
       // Postgres table type for a partitioned table.
       const partitionTableType = 'p';
-      const supportedFeatures = this.connection.supportedFeatures();
       return this.rawPills.filter((p) => {
 
         if (!this.properties) {
@@ -246,13 +242,13 @@ export default {
           }
         }
 
-        if (p.needsProperties && !supportedFeatures.properties) {
+        if (p.needsProperties && !this.supportedFeatures.properties) {
           return false
         }
 
-        if (p.needsPartitions && (!supportedFeatures.partitions ||
-          ((!supportedFeatures.editPartitions && !this.properties.partitions?.length) ||
-          (supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
+        if (p.needsPartitions && (!this.supportedFeatures.partitions ||
+          ((!this.supportedFeatures.editPartitions && !this.properties.partitions?.length) ||
+          (this.supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
         if(p.tableOnly) {
@@ -282,7 +278,7 @@ export default {
     async fetchTotalRecords() {
       this.fetchingTotalRecords = true
       try {
-        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema)
+        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema);
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0
@@ -304,10 +300,10 @@ export default {
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
         console.log("getting primary keys")
-        this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
+        this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
         if (this.table.entityType === 'table') {
           console.log("calling getTableProperties")
-          this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
+          this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema);
         }
         this.loading = false
       } catch (ex) {

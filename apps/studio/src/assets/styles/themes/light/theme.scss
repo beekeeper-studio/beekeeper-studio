@@ -1,4 +1,4 @@
-@import "~codemirror/theme/xq-light";
+@import "codemirror/theme/xq-light";
 
 // Global
 $badge-bg:                 rgba($theme-base, 0.1);
@@ -549,7 +549,7 @@ x-buttons {
     color: $brand-warning;
   }
   .CodeMirror-line .cm-string {
-    color: $brand-success;
+    color: darken($brand-success, 20%);
   }
   .CodeMirror-cursor {
     border-color: $text-dark;

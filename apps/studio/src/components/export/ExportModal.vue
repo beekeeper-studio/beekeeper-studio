@@ -7,7 +7,11 @@
       :scrollable="true"
       @closed="$emit('closed')"
     >
-      <form @submit.prevent="submit">
+      <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
+      <form
+        v-kbd-trap="true"
+        @submit.prevent="submit"
+      >
         <div class="dialog-content">
           <div class="dialog-c-title flex flex-middle">
             <div>
@@ -111,7 +115,7 @@
                 v-model="outputOptions"
               />
               <div class="modal-form export-form export-advanced-options">
-                <div class="form-group row">
+                <div class="form-group row" v-if="!this.dialectData.disabledFeatures.chunkSizeStream">
                   <label title="How many records to read at once from the cursor">Chunk size</label>
                   <input
                     v-model="options.chunkSize"
@@ -145,7 +149,7 @@
           <button
             class="btn btn-flat btn-icon"
             type="button"
-            @click.prevent="upgradeModal"
+            @click.prevent="importExportTables"
           >
             <i class="material-icons">tab</i>
             Export multiple tables
@@ -163,13 +167,11 @@
   </div>
 </template>
 <script>
-import * as path from 'path'
 import dateFormat from 'dateformat'
-import { mapMutations } from "vuex"
-import rawlog from 'electron-log'
+import { mapMutations, mapGetters } from "vuex"
+import rawlog from '@bksLogger'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
-import FilePicker from '../common/form/FilePicker'
-import platformInfo from '../../common/platform_info'
+import FilePicker from '../common/form/FilePicker.vue'
 import { AppEvent } from '@/common/AppEvent'
 const log = rawlog.scope('export/export-modal')
 
@@ -198,7 +200,7 @@ const exportFormats = [
 
 export default {
   components: { FilePicker },
-  props: ['table', 'query', 'queryName', 'filters', 'connection'],
+  props: ['table', 'query', 'queryName', 'filters'],
   data() {
     return {
       selectedExportFormat: exportFormats[0],
@@ -257,7 +259,7 @@ export default {
     },
     filePath() {
       if (!this.fileDirectory || !this.fileName) return null
-      return path.join(this.fileDirectory, this.fileName)
+      return window.main.join(this.fileDirectory, this.fileName)
     },
     dialogOptions() {
       const result = { buttonLabel: 'Choose Directory', properties: [ 'openDirectory', 'createDirectory'] }
@@ -269,7 +271,7 @@ export default {
     defaultPath() {
       let previous = localStorage.getItem('export/directory')
       if (previous === 'undefined' || previous === 'null') previous = null
-      return previous || platformInfo.downloadsDirectory
+      return previous || this.$config.downloadsDirectory
     },
     filterTooltip() {
       if (!this.hasFilters) {
@@ -289,9 +291,9 @@ export default {
     toggleIcon() {
       return this.advancedToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
     },
+    ...mapGetters(['dialectData']),
   },
   methods: {
-    ...mapMutations({ addExport: "exports/addExport" }),
     async submit() {
       this.error = null;
 
@@ -315,7 +317,11 @@ export default {
       this.$emit('export', payload) // handled by ExportManager
       this.$modal.hide('export-modal')
     },
-    closeModal () {
+    importExportTables() {
+      this.$root.$emit(AppEvent.exportTables);
+      this.closeModal();
+    },
+    closeModal() {
       this.$modal.hide('export-modal')
     },
     upgradeModal() {

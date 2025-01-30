@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex-col expand"
+    class="flex-col expand table-list-component"
     ref="wrapper"
   >
     <!-- Filter -->
@@ -71,7 +71,6 @@
       <pinned-table-list
         :all-expanded="allExpanded"
         :all-collapsed="allCollapsed"
-        :connection="connection"
       />
     </div>
 
@@ -171,12 +170,14 @@
   import { AppEvent } from '@/common/AppEvent'
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
+import { matches } from '@/common/transport/TransportPinnedEntity'
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
     components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList },
     data() {
       return {
+        isDev: window.platformInfo.isDevelopment,
         tableLoadError: null,
         allExpanded: null,
         allCollapsed: null,
@@ -189,6 +190,10 @@
       }
     },
     computed: {
+      ...mapGetters(['dialectData']),
+      createDisabled() {
+        return !!this.dialectData.disabledFeatures.createTable
+      },
       totalEntities() {
         return this.tables.length + this.routines.length - this.hiddenEntities.length
       },
@@ -239,8 +244,8 @@
           this.$refs.tables
         ]
       },
-      supportsRoutines() {
-        return this.connection.supportedFeatures().customRoutines
+      async supportsRoutines() {
+        return this.supportedFeatures.customRoutines
       },
       canCreateTable() {
         return !this.dialectData.disabledFeatures?.createTable
@@ -253,7 +258,7 @@
           { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
         ]
       },
-      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
+      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
       ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',
@@ -290,7 +295,7 @@
       },
       refreshPinnedColumns() {
         this.orderedPins.forEach((p) => {
-          const t = this.tables.find((table) => p.matches(table))
+          const t = this.tables.find((table) => matches(p, table))
           if (t) {
             this.$store.dispatch('updateTableColumns', t)
           }
@@ -355,6 +360,10 @@
   }
 </script>
 <style scoped>
+  .table-action-wrapper{
+    display: flex;
+    flex-direction: row;
+  }
   p.no-entities {
     width: 100%;
     white-space:normal;

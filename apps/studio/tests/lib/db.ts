@@ -1,20 +1,34 @@
 import {Knex} from 'knex'
 import knex from 'knex'
-import { DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import { createServer } from '../../src/lib/db/index'
-import log from 'electron-log'
+import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
+import log from '@bksLogger'
 import platformInfo from '../../src/common/platform_info'
-import { IDbConnectionPublicServer } from '../../src/lib/db/server'
-import { AlterTableSpec, Dialect, DialectData, FormatterDialect, SchemaItemChange } from '../../../../shared/src/lib/dialects/models'
-import { getDialectData } from '../../../../shared/src/lib/dialects/'
+import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
+import { getDialectData } from '@shared/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex, TableOrView } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
-import knexFirebirdDialect from 'knex-firebird-dialect'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { BkConfig } from '@/lib/bkConfig'
+import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
+import { IDbConnectionPublicServer } from './db/serverTypes'
+// TODO (@day): this may need to be moved uggh
+import { createServer } from '@commercial/backend/lib/db/server'
+import fs from 'fs'
+import path from 'path'
+import Papa from 'papaparse'
+import { FirebirdData } from '@/shared/lib/dialects/firebird'
+import { LicenseKey } from '@/common/appdb/models/LicenseKey'
+import { TestOrmConnection } from './TestOrmConnection'
+import { buffer as b, uint8 as u } from '@tests/utils'
+import Client_Oracledb from '@shared/lib/knex-oracledb'
+import Client_Firebird from '@shared/lib/knex-firebird'
+
+type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
+type DialectQueries = Record<Dialect, string>
+type Queries = ConnectionTypeQueries & DialectQueries
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -53,8 +67,8 @@ const KnexTypes: any = {
   "sqlite": "sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",
-  "firebird": knexFirebirdDialect,
-  "oracle": "oracledb",
+  "firebird": Client_Firebird,
+  "oracle": Client_Oracledb,
 }
 
 export interface Options {
@@ -64,7 +78,13 @@ export interface Options {
   skipPkQuote?: boolean
   /** Skip creation of table with generated columns and the tests */
   skipGeneratedColumns?: boolean
+  skipCreateDatabase?: boolean
+  skipTransactions?: boolean
+  supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
+  knex?: Knex
+  knexClient?: Knex.Client
+  queryTestsTableCreationQuery?: string
 }
 
 export class DBTestUtil {
@@ -72,10 +92,10 @@ export class DBTestUtil {
   public server: IDbConnectionPublicServer
   public connection: BasicDatabaseClient<any>
   public extraTables = 0
-  private options: Options
-  private dbType: string
+  public options: Options
+  private dbType: ConnectionType | 'generic'
 
-  private dialect: Dialect
+  public dialect: Dialect
   public data: DialectData
 
   public preInitCmd: string | undefined
@@ -88,6 +108,10 @@ export class DBTestUtil {
     return this.extraTables + 8
   }
 
+  get supportsArrayMode() {
+    return this.options.supportsArrayMode == undefined || this.options.supportsArrayMode
+  }
+
   constructor(config: IDbConnectionServerConfig, database: string, options: Options) {
     log.transports.console.level = 'error'
     if (platformInfo.debugEnabled) {
@@ -98,7 +122,10 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
-    if (config.client === 'sqlite') {
+
+    if (options.knex) {
+      this.knex = options.knex
+    } else if (config.client === 'sqlite') {
       this.knex = knex({
         client: "better-sqlite3",
         connection: {
@@ -107,7 +134,7 @@ export class DBTestUtil {
       })
     } else if (config.client === 'oracle') {
       this.knex = knex({
-        client: 'oracledb',
+        client: Client_Oracledb,
         connection: {
           user: config.user,
           password: config.password,
@@ -117,7 +144,7 @@ export class DBTestUtil {
       })
     } else {
       this.knex = knex({
-        client: KnexTypes[config.client || ""] || config.client,
+        client: options.knexClient || KnexTypes[config.client || ""] || config.client,
         version: options?.version,
         connection: {
           host: config.socketPathEnabled ? undefined : config.host,
@@ -137,6 +164,13 @@ export class DBTestUtil {
     this.connection = this.server.createConnection(database)
   }
 
+  async disconnect() {
+    if (this.connection) await this.connection.disconnect();
+    // https://github.com/jestjs/jest/issues/11463
+    if (this.knex) await this.knex.destroy();
+    await TestOrmConnection.disconnect()
+  }
+
   maybeArrayToObject(items, key) {
     // Only 'firebird knex' returns an object instead of an array.
     if (!Array.isArray(items)) {
@@ -150,23 +184,66 @@ export class DBTestUtil {
     })
   }
 
+  buildImportData(tableName, schemaName = null) {
+    const data = [
+      {
+        'name': 'biff',
+        'hat': 'beret'
+      },
+      {
+        'name': 'spud',
+        'hat': 'fez'
+      },
+      {
+        'name': 'chuck',
+        'hat': 'barretina'
+      },
+      {
+        'name': 'lou',
+        'hat': 'tricorne'
+      }
+    ]
+    return data.map(d => ({
+      table: tableName,
+      schema: schemaName,
+      data: [d]
+    }))
+  }
+
+  /** Format the SQL with the correct dialect */
+  fmt(sql: string) {
+    return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
+  }
+
   async setupdb() {
     await BkConfig.initialize();
 
+    await TestOrmConnection.connect()
+    await LicenseKey.createTrialLicense()
     await this.connection.connect()
     await this.createTables()
+
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
     const isOracle = this.connection.connectionType === 'oracle'
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
-    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
-    const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
+    let people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
+    let jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
+
+    if (this.dialect === 'clickhouse') {
+      people = (await this.knex("people").select("id").where({email: "foo@bar.com"}))[0]
+      jobs = (await this.knex("jobs").select("id").where({job_name: "Programmer"}))[0]
+    }
 
     // Oracle or Knex has decided in its infinite wisdom to return the ids as strings, so make em numbers for the id because that's what they are in the table itself.
     this.jobId = isOracle ? Number(jobs[0].id) : jobs[0].id
     this.personId = isOracle ? Number(people[0].id) : people[0].id
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
 
-    if (!this.options.skipGeneratedColumns) {
+    // See createTables for why this is commented out
+    // await this.knex("foo.bar").insert({ id: 1, name: "Dots are evil" });
+
+
+    if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
       await this.knex('with_generated_cols').insert([
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
       ])
@@ -211,7 +288,7 @@ export class DBTestUtil {
     }
     await this.connection.createDatabase('new-db_2', charset, collation)
 
-    if (this.dbType.match(/sqlite|firebird/)) {
+    if (this.dialect.match(/sqlite|firebird/)) {
       // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
       return expect.anything()
     }
@@ -222,7 +299,7 @@ export class DBTestUtil {
 
   async badCreateDatabaseTests() {
     // sqlserver seems impervious to bad database names or bad charsets or anything.
-    if (this.dbType === 'sqlserver') {
+    if (this.dbType === 'sqlserver' || this.dbType === 'clickhouse') {
       return expect.anything()
     }
 
@@ -243,7 +320,12 @@ export class DBTestUtil {
     const initialRowCount = await this.knex.select().from('group_table')
 
     await this.connection.truncateElement('group_table', DatabaseElement.TABLE, this.defaultSchema)
-    const newRowCount = await this.knex.select().from('group_table')
+    let newRowCount = await this.knex.select().from('group_table')
+    // For whatever reason clickhouse knex returns the whole meta info instead
+    // of just the row data like normal knex
+    if (this.dbType === 'clickhouse') {
+      newRowCount = newRowCount[0]
+    }
 
     expect(newRowCount.length).toBe(0)
     expect(initialRowCount.length).toBeGreaterThan(newRowCount.length)
@@ -335,20 +417,31 @@ export class DBTestUtil {
     expect(columns.length).toBe(7)
   }
 
+  async listIndexTests() {
+    const indexes = await this.connection.listTableIndexes("has_index", this.defaultSchema)
+    expect(indexes.find((i) => i.name.toLowerCase() === 'has_index_foo_idx')).toBeDefined()
+  }
+
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
+    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql']
 
-    if (this.dbType === 'mariadb') expect(defaultValues).toEqual([true,  true])
-    else if (this.dbType === 'mysql') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'tidb') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'postgresql') expect(defaultValues).toEqual([true,  false])
-    else if (this.dbType === 'cockroachdb') expect(defaultValues).toEqual([true,  false])
+    if (trueFalseDBs.indexOf(this.dbType) !== -1) expect(defaultValues).toEqual([true,  false])
     else expect(defaultValues).toEqual([false, false])
 
     const groupColumns = columns.filter((row) => row.tableName.toLowerCase() === 'group_table')
     expect(groupColumns.length).toBe(2)
+  }
+
+
+  async testDotTable() {
+    // FIXME: Make this generic to all tables.
+    // see 'createTables' for why this is commented out
+    // const r = await this.connection.selectTop("foo.bar", 0, 10, [{field: 'id', dir: 'ASC'}], this.defaultSchema)
+    // const result = r.result.map((r: any) => r.name || r.NAME)
+    // expect(result).toMatchObject(['Dots are evil'])
   }
 
   /**
@@ -372,6 +465,7 @@ export class DBTestUtil {
     await this.knex("group_table").insert({select_col: "bar"})
     await this.knex("group_table").insert({select_col: "abc"})
 
+
     let r = await this.connection.selectTop("group_table", 0, 10, [{field: "select_col", dir: 'ASC'}], [], this.defaultSchema)
     let result = r.result.map((r: any) => r.select_col || r.SELECT_COL)
     expect(result).toMatchObject(["abc", "bar"])
@@ -391,6 +485,8 @@ export class DBTestUtil {
     r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(["pears"])
+
+    await this.testDotTable()
 
     await this.knex("group_table").where({select_col: "bar"}).delete()
     await this.knex("group_table").where({select_col: "abc"}).delete()
@@ -453,7 +549,7 @@ export class DBTestUtil {
 
     await this.knex.schema.dropTableIfExists("alter_test")
     await this.knex.schema.createTable("alter_test", (table) => {
-      table.specificType("id", 'varchar(255)').notNullable()
+      table.specificType("id", 'varchar(255)').notNullable().primary()
       table.specificType("first_name", "varchar(255)").nullable()
       table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rathbone')
       table.specificType("age", "varchar(255)").defaultTo('8').nullable()
@@ -489,7 +585,7 @@ export class DBTestUtil {
         table.specificType('last_name', "VARCHAR(255) DEFAULT 'Rath''bone' NOT NULL")
         table.specificType('age', "VARCHAR(255) DEFAULT '8'")
       } else {
-        table.specificType("id", 'varchar(255)').notNullable()
+        table.specificType("id", 'varchar(255)').notNullable().primary()
         table.specificType("first_name", "varchar(255)").nullable()
         table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rath\'bone')
         table.specificType("age", "varchar(255)").defaultTo('8').nullable()
@@ -509,7 +605,7 @@ export class DBTestUtil {
         {
           columnName: 'first_name',
           changeType: 'dataType',
-          newValue: 'varchar(256)'
+          newValue: this.dialect === 'clickhouse' ? 'Nullable(String)' : 'varchar(256)'
         },
         {
           columnName: 'first_name',
@@ -524,7 +620,7 @@ export class DBTestUtil {
         {
           columnName: 'age',
           changeType: 'defaultValue',
-          newValue: '99'
+          newValue: "'99'"
         },
         {
           columnName: 'age',
@@ -540,7 +636,7 @@ export class DBTestUtil {
       columnName: string
       dataType: string,
       nullable: boolean,
-      defaultValue: string,
+      defaultValue: string | number,
     }
     const rawResult: MiniColumn[] = schema.map((c) =>
       _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType') as any
@@ -554,13 +650,13 @@ export class DBTestUtil {
     // this is different in each database.
     const defaultValue = (s: any) => {
       if (s === null) return null
-      if (this.dialect === 'postgresql' && _.isNumber(s)) return s.toString()
-      if (this.dialect === 'postgresql') return `'${s.replaceAll("'", "''")}'::character varying`
-      if (this.dialect === 'oracle' && _.isNumber(s)) return s.toString()
-      if (this.dialect === 'oracle') return `'${s.replaceAll("'", "''")}'`
-      if (this.dialect === 'sqlserver' && _.isNumber(s)) return `((${s}))`
-      if (this.dialect === 'sqlserver') return `('${s.replaceAll("'", "''")}')`
-      if (this.dialect === 'firebird' && _.isString(s)) return `'${s.replaceAll("'", "''")}'`
+      if (this.dbType === 'cockroachdb' && _.isNumber(s)) return `'${s.toString().replaceAll("'", "''")}':::STRING`
+      if (this.dbType === 'cockroachdb') return `e'${s.replaceAll("'", "\\'")}':::STRING`
+      if (this.dialect === 'postgresql') return `'${s.toString().replaceAll("'", "''")}'::character varying`
+      if (this.dialect === 'oracle') return `'${s.toString().replaceAll("'", "''")}'`
+      if (this.dialect === 'sqlserver') return `('${s.toString().replaceAll("'", "''")}')`
+      if (this.dialect === 'firebird') return `'${s.toString().replaceAll("'", "''")}'`
+      if (this.dialect === 'clickhouse') return `'${s.toString().replaceAll("'", "\\'")}'`
       return s.toString()
     }
 
@@ -571,6 +667,10 @@ export class DBTestUtil {
       if (this.dbType === 'firebird') {
         columnName = columnName.toUpperCase()
         dataType = dataType.toUpperCase()
+      } else if (this.dialect === 'oracle') {
+        dataType = dataType.replace('varchar', 'VARCHAR2')
+      } else if (this.dialect === 'clickhouse') {
+        dataType = o.nullable ? 'Nullable(String)' : 'String'
       }
 
 
@@ -591,25 +691,25 @@ export class DBTestUtil {
     const expected = [
       tbl({
         columnName: 'id',
-        dataType: varchar(255),
+        dataType: 'varchar(255)',
         nullable: false,
         defaultValue: null,
       }),
       tbl({
         columnName: 'first_name',
-        dataType: varchar(256),
+        dataType: 'varchar(256)',
         nullable: true,
         defaultValue: "Foo'bar",
       }),
       tbl({
         columnName: 'family_name',
-        dataType: varchar(255),
+        dataType: 'varchar(255)',
         nullable: false,
         defaultValue: 'Rath\'bone',
       }),
       tbl({
         columnName: 'age',
-        dataType: varchar(256),
+        dataType: 'varchar(256)',
         nullable: false,
         defaultValue: 99,
       }),
@@ -618,12 +718,43 @@ export class DBTestUtil {
 
   }
 
+  async renameElementsTests() {
+    if (!this.data.disabledFeatures?.alter?.renameSchema) {
+      await this.knex.schema.dropSchemaIfExists("rename_schema")
+      await this.knex.schema.createSchema("rename_schema")
+
+      await this.connection.setElementName('rename_schema', 'renamed_schema', DatabaseElement.SCHEMA)
+
+      expect(await this.connection.listSchemas()).toContain('renamed_schema')
+    }
+
+    if (!this.data.disabledFeatures?.alter?.renameTable) {
+      await this.knex.schema.dropTableIfExists("rename_table")
+      await this.knex.schema.createTable("rename_table", (table) => {
+        table.increments('id').primary()
+      })
+
+      await this.connection.setElementName('rename_table', 'renamed_table', DatabaseElement.TABLE, this.defaultSchema)
+
+      expect(await this.knex.schema.hasTable('renamed_table')).toBe(true)
+    }
+
+    if (!this.data.disabledFeatures?.alter?.renameView) {
+      await this.knex.schema.dropViewIfExists("rename_view");
+      await this.knex.schema.createView("rename_view", (view) => {
+        view.columns(["id"])
+        view.as(this.knex("renamed_table").select("id"))
+      })
+
+      await this.connection.setElementName('rename_view', 'renamed_view', DatabaseElement.VIEW, this.defaultSchema)
+
+      const views = await this.connection.listViews()
+      expect(views.find((view) => view.name === 'renamed_view')).toBeTruthy()
+    }
+  }
+
   async filterTests() {
     // filter test - builder
-
-    const tables = await this.connection.listTables({ schema: this.defaultSchema })
-
-    console.log("tables during filter tests", tables)
 
     let r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: '=', value: "pears" }], this.defaultSchema)
     let result = r.result.map((r: any) => r.bananas || r.BANANAS)
@@ -655,23 +786,23 @@ export class DBTestUtil {
 
   async columnFilterTests() {
     let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
-    expect(rowobj(r.result)).toEqual([{
-      // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
-      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
-      job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
-      created_at: null,
-      updated_at: null,
-    }])
+
+    const row = rowobj(r.result)[0]
+    // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
+    expect(row.person_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId)
+    expect(row.job_id).toEqual(this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId)
+    expect(row.created_at).toBeDefined()
+    expect(row.updated_at).toBeDefined()
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
     expect(rowobj(r.result)).toEqual([{
-      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
+      person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
     }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
     expect(rowobj(r.result)).toEqual([{
-      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
-      job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
+      person_id: this.dialect === 'sqlite' ? BigInt(this.personId) : this.personId,
+      job_id: this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId,
     }])
   }
 
@@ -696,35 +827,46 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    console.log('query tests')
-
-    await this.connection.executeQuery('create table one_record(one integer)')
+    await this.connection.executeQuery(this.options.queryTestsTableCreationQuery || 'create table one_record(one integer primary key)')
     await this.connection.executeQuery('insert into one_record values(1)')
 
     const tables = await this.connection.listTables({ schema: this.defaultSchema})
 
-    console.log("tables during query tests", tables)
     expect(tables.map((t) => t.name.toLowerCase())).toContain('one_record')
 
-    console.log("testing the query")
-
-    const q = this.connection.query(
-      this.dbType === 'firebird' ?
-        "select trim('a') as total, trim('b') as total from rdb$database" :
-        "select 'a' as total, 'b' as total from one_record"
-    )
+    const sql1 = {
+      common: "select 'a' as total, 'b' as total from one_record",
+      firebird: "select trim('a') as total, trim('b') as total from rdb$database",
+      // Clickhouse doesn't support same column name
+      clickhouse: "select 'a' as total, 'b' as total2 from one_record",
+    }
+    const q = await this.connection.query(sql1[this.dialect] || sql1.common)
     if(!q) throw new Error("no query result")
     try {
       const result = await q.execute()
-      console.log("done first query")
 
-      expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
+      // FIXME (azmi): we need this until array mode is fixed in libsql
+      if (this.supportsArrayMode) {
+        expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
+      } else {
+        expect(result[0].rows).toMatchObject([{ c0: "b" }])
+      }
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
-      expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
+      const expectedResults = {
+        common: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
+        noArrayMode: [{ id: 'c0', name: 'total' }],
+        clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
+        oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
+      }
+      expect(fields).toMatchObject(expectedResults[this.dialect] || (this.supportsArrayMode ? expectedResults.common : expectedResults.noArrayMode))
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex
+    }
+
+    if (this.data.disabledFeatures?.alter?.multiStatement) {
+      return;
     }
 
     const q2 = await this.connection.query(
@@ -751,24 +893,47 @@ export class DBTestUtil {
       tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      libsql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
       cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
       oracle: `insert into "BEEKEEPER"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      clickhouse: `insert into "jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
     }
 
     expect(insertQuery).toBe(expectedQueries[this.dbType])
   }
 
-  async buildSelectTopQueryTests() {
-    const dbType = ['mariadb','tidb'].includes(this.dbType) ? 'mysql' : this.dbType
-    const fmt = (sql: string) => safeSqlFormat(sql, {
-      language: FormatterDialect(dbType === 'cockroachdb'
-          ? 'postgresql'
-          : this.dialect
-        )
-      })
+  async buildCreatePrimaryKeysAndAutoIncrementTests() {
+    const generator = new SqlGenerator(this.dialect, {
+      dbConfig: this.connection.server.config,
+      dbName: this.connection.database.database,
+    })
+    const schema: Schema = {
+      name: 'test_table',
+      columns: [{
+        columnName: 'id',
+        dataType: 'autoincrement',
+        primaryKey: true,
+        nullable: false,
+      }],
+    }
+    const query = generator.buildSql(schema)
+    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+      postgresql: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
+      mysql: "create table `test_table` (`id` int unsigned not null, primary key (`id`)); alter table `test_table` modify column `id` int unsigned not null auto_increment",
+      sqlite: "create table `test_table` (`id` integer not null primary key autoincrement, unique (`id`))",
+      sqlserver: "CREATE TABLE [test_table] ([id] int identity(1,1) not null, CONSTRAINT [test_table_pkey] PRIMARY KEY ([id]))",
+      cockroachdb: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
+      firebird: `create table test_table (id integer not null primary key);alter table test_table add constraint test_table_pkey primary key (id)`,
+      oracle: `create table "test_table" ("id" integer not null); DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE ('CREATE SEQUENCE "test_table_seq"'); SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = 'P'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = 'test_table';  execute immediate ('create or replace trigger "test_table_autoinc_trg"  BEFORE INSERT on "test_table"  for each row  declare  checking number := 1;  begin    if (:new."' || PK_NAME || '" is null) then      while checking >= 1 loop        select "test_table_seq".nextval into :new."' || PK_NAME || '" from dual;        select count("' || PK_NAME || '") into checking from "test_table"        where "' || PK_NAME || '" = :new."' || PK_NAME || '";      end loop;    end if;  end;'); END; alter table "test_table" add constraint "test_table_pkey" primary key ("id")`,
+      clickhouse: `create table "my_database"."test_table" ("id" integer, primary key ("id")) engine = MergeTree()`,
+    }
+    const expectedQuery = expectedQueries[this.dbType] || expectedQueries[this.dialect]
+    expect(this.fmt(query)).toBe(this.fmt(expectedQuery))
+  }
 
+  async buildSelectTopQueryTests() {
     const query = await this.connection.selectTopSql(
       'jobs',
       0,
@@ -778,17 +943,18 @@ export class DBTestUtil {
       'public',
       ['*']
     )
-    const expectedQueries = {
+    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon\\'s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
-      // mariadb: same as mysql
       sqlite: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon''s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
       sqlserver: "SELECT * FROM [public].[jobs] WHERE [job_name] IN ('Programmer','Surgeon''s Assistant') ORDER BY [hourly_rate] ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE job_name IN ('Programmer','Surgeon''s Assistant') ORDER BY hourly_rate ASC",
-      oracle: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`
+      oracle: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      clickhouse: `SELECT * FROM "jobs" WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
     }
-    expect(fmt(query)) .toBe(fmt(expectedQueries[dbType]))
+    const expectedQuery = expectedQueries[this.dbType] || expectedQueries[this.dialect]
+    expect(this.fmt(query)) .toBe(this.fmt(expectedQuery))
 
     const multipleFiltersQuery = await this.connection.selectTopSql(
       'jobs',
@@ -803,7 +969,7 @@ export class DBTestUtil {
       'public',
       ['*']
     )
-    const expectedFiltersQueries = {
+    const expectedFiltersQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
       postgresql: `
         SELECT * FROM "public"."jobs"
           WHERE "job_name" IN ('Programmer','Surgeon''s Assistant')
@@ -818,7 +984,6 @@ export class DBTestUtil {
           OR \`hourly_rate\` >= '31'
         ORDER BY \`hourly_rate\` ASC LIMIT 100 OFFSET 0
       `,
-      // mariadb: same as mysql
       sqlite: `
         SELECT * FROM \`jobs\`
           WHERE \`job_name\` IN ('Programmer','Surgeon''s Assistant')
@@ -848,23 +1013,77 @@ export class DBTestUtil {
         ORDER BY hourly_rate ASC
       `,
       oracle: `
-        SELECT
-          *
-        FROM
-          "public"."jobs"
-        WHERE
-          "job_name" IN ('Programmer', 'Surgeon''s Assistant')
+        SELECT * FROM "public"."jobs"
+        WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant')
           AND "hourly_rate" >= '41'
           OR "hourly_rate" >= '31'
-        ORDER BY
-          "hourly_rate" ASC
-        OFFSET
-          0 ROWS
-        FETCH NEXT
-          100 ROWS ONLY
-      `
+        ORDER BY "hourly_rate" ASC
+        OFFSET 0 ROWS
+        FETCH NEXT 100 ROWS ONLY
+      `,
+      clickhouse: `
+        SELECT * FROM "jobs"
+        WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant')
+          AND "hourly_rate" >= '41'
+          OR "hourly_rate" >= '31'
+        ORDER BY "hourly_rate" ASC
+        LIMIT 100 OFFSET 0
+      `,
     }
-    expect(fmt(multipleFiltersQuery)).toBe(fmt(expectedFiltersQueries[dbType]))
+    const expectedFiltersQuery = expectedFiltersQueries[this.dbType] || expectedFiltersQueries[this.dialect]
+    expect(this.fmt(multipleFiltersQuery)).toBe(this.fmt(expectedFiltersQuery))
+  }
+
+  async buildIsNullTests() {
+    const queryIsNull = await this.connection.selectTopSql(
+      'jobs',
+      0,
+      100,
+      [],
+      [{ field: 'hourly_rate', type: 'is' }],
+      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
+      ['*']
+    );
+
+    const expectedQueriesIsNull: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
+      sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NULL",
+      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      clickhouse: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+    }
+    const expectedQueryIsNull = expectedQueriesIsNull[this.dbType] || expectedQueriesIsNull[this.dialect]
+    expect(this.fmt(queryIsNull)).toBe(this.fmt(expectedQueryIsNull))
+
+    await expect(this.connection.executeQuery(queryIsNull)).resolves.not.toThrow();
+
+    const queryIsNotNull = await this.connection.selectTopSql(
+      'jobs',
+      0,
+      100,
+      [],
+      [{ field: 'hourly_rate', type: 'is not' }],
+      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
+      ['*']
+    );
+
+    const expectedQueriesIsNotNull: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
+      sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NOT NULL",
+      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      clickhouse: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+    }
+    const expectedQueryIsNotNull = expectedQueriesIsNotNull[this.dbType] || expectedQueriesIsNotNull[this.dialect]
+    expect(this.fmt(queryIsNotNull)).toBe(this.fmt(expectedQueryIsNotNull))
+
+    await expect(this.connection.executeQuery(queryIsNotNull)).resolves.not.toThrow();
   }
 
   // lets start simple, it should resolve for all connection types
@@ -925,47 +1144,122 @@ export class DBTestUtil {
 
   }
 
-  async streamTests() {
-    const names = [
-      { name: "Matthew" },
-      { name: "Nicoll" },
-      { name: "Gregory" },
-      { name: "Alex" },
-      { name: "Alethea" },
-      { name: "Elias" }
-    ]
+  async prepareStreamTests() {
+    return new Promise<void>(async (resolve, reject) => {
+      const fileLocation = path.join(__dirname, '../fixtures/organizations-100000.csv')
+      const fileStream = fs.createReadStream(fileLocation)
+      const promises = []
+      const useStep = !!this.dbType.match(/firebird|sqlserver/i)
 
-    if (this.dbType === 'firebird') {
-      for (const name of names) {
-        await this.knex('streamtest').insert(name)
+      let batch = []
+      const maxBatch = this.dbType === 'firebird' ? 255 : 233
+
+      const execBatch = async (batch: Record<string, any>[]) => {
+        if (this.dbType === 'firebird') {
+          const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
+          await this.knex.schema.raw(`
+            EXECUTE BLOCK AS BEGIN
+              ${inserts}
+            END
+          `)
+        } else if (this.dbType === 'sqlserver') {
+          const { bindings, sql } = this.knex('organizations').insert(batch).toSQL()
+          await this.knex.raw(`
+            SET IDENTITY_INSERT organizations ON;
+              ${sql}
+            SET IDENTITY_INSERT organizations OFF;
+          `, bindings)
+        } else {
+          await this.knex('organizations').insert(batch)
+        }
       }
-    } else {
-      await this.knex('streamtest').insert(names)
-    }
-    const result = await this.connection.selectTopStream(
-      'streamtest',
-      [{ field: 'id', dir: 'ASC' }],
-      [],
-      5,
-      undefined,
-    )
-    expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
-    if (this.connection.connectionType !== 'tidb') {
-      // tiDB doesn't always update statistics, so this might not
-      // be correct
-      expect(result.totalRows).toBe(6)
-    }
-    const cursor = result.cursor
+
+      Papa.parse(fileStream, {
+        header: true,
+        ...(useStep
+          ? {
+              step(results: { data: Record<string, any> }) {
+                batch.push(results.data);
+                if (batch.length >= maxBatch) {
+                  promises.push(execBatch(batch));
+                  batch = [];
+                }
+              },
+            }
+          : {
+              chunk(results: { data: Record<string, any>[] }) {
+                if (results.data.length === 0) {
+                  return;
+                }
+                promises.push(execBatch(results.data));
+              },
+            }),
+        complete() {
+          // Clear up the last batch
+          if (batch.length > 0) {
+            promises.push(execBatch(batch));
+            batch = [];
+          }
+          Promise.all(promises).then(() => resolve()).catch(reject);
+        },
+        error: (err) => reject(err),
+      });
+    })
+  }
+
+  async streamColumnsTest() {
+    const { columns } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    expect(columns.map(c => c.columnName.toLowerCase())).toMatchObject([
+      'id', 'organization_id', 'name', 'website', 'country', 'description', 'founded', 'industry', 'number_of_employees',
+    ])
+  }
+
+  async streamCountTest() {
+    const result = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    expect(result.totalRows).toBe(100_000)
+  }
+
+  async streamStopTest() {
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
     await cursor.start()
-    const b1 = await cursor.read()
-    expect(b1.length).toBe(5)
-    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
-    const b2 = await cursor.read()
-    expect(b2.length).toBe(1)
-    expect(b2[0][1]).toBe(names[names.length - 1].name)
-    const b3 = await cursor.read()
-    expect(b3).toMatchObject([])
+    await cursor.read()
     await cursor.close()
+    // If the test runs despite closing the cursor, it wasn't closed properly.
+    expect.anything()
+  }
+
+  async streamChunkTest() {
+    // FIXME this is a hack to keep knex alive because of the STREAM_EXPIRED error
+    // see https://github.com/libsql/knex-libsql/issues/3
+    if (this.dbType === 'libsql') {
+      await this.knex.schema.raw("SELECT 1;")
+    }
+    const chunkSize = 389
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], chunkSize, this.defaultSchema)
+    await cursor.start()
+    const rows = await cursor.read()
+    expect(rows.length).toBe(chunkSize)
+    await cursor.close()
+  }
+
+  async streamReadTest() {
+    // FIXME this is a hack to keep knex alive because of the STREAM_EXPIRED error
+    // see https://github.com/libsql/knex-libsql/issues/3
+    if (this.dbType === 'libsql') {
+      await this.knex.schema.raw("SELECT 1;")
+    }
+    let count = 0;
+    const { cursor } = await this.connection.selectTopStream('organizations', [], [], 1000, this.defaultSchema)
+    await cursor.start()
+    while (true) {
+      const len = (await cursor.read()).length
+      count += len
+      if (len === 0) {
+        break
+      }
+    }
+    await cursor.close()
+    expect(count).toBe(100_000)
   }
 
   async generatedColumnsTests() {
@@ -983,10 +1277,138 @@ export class DBTestUtil {
     expect(rows.result.map((r) => r.full_name)).toEqual(['Tom Tester'])
   }
 
+  async importScriptsTests({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
+    // cassandra and big query don't allow import so no need to test!
+    // oracle doesn't want to find the table, so it doesn't get to have nice things
+    if (['cassandra', 'bigquery', 'oracle', 'clickhouse'].includes(this.dialect)) {
+      return expect.anything()
+    }
+
+    const read = async (_options: any, executeOptions: any) => {
+      const updatedImportScriptOptions = {
+        ...importScriptOptions,
+        executeOptions: {
+          multiple: true,
+          ...executeOptions
+        }
+      };
+      const importSQL = await this.connection.getImportSQL(formattedData);
+      await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
+      return { aborted: false }
+    }
+
+    await this.connection.importFile(table, importScriptOptions, read)
+
+    const [hats] = await this.knex(tableName).count(hatColumn)
+    const [dataLength] = _.values(hats)
+    expect(Number(dataLength)).toBe(4)
+  }
+
+  async importScriptRollbackTest({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
+    // cassandra and big query don't allow import so no need to test!
+    // mysql was added to the list because a timeout was required to get the rollback number ot show
+    // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
+    let expectedLength = 0
+    if (['cassandra','bigquery', 'mysql', 'oracle', 'clickhouse'].includes(this.dialect)) {
+      return expect.anything()
+    }
+
+    if (['sqlite'].includes(this.dialect)) {
+      expectedLength = 4
+    }
+    const read = async (_options: any, executeOptions: any) => {
+      const updatedImportScriptOptions = {
+        ...importScriptOptions,
+        executeOptions: {
+          multiple: true,
+          ...executeOptions
+        }
+      };
+      const importSQL = await this.connection.getImportSQL(formattedData);
+      await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
+      return { aborted: true, error: "Forced abort" }
+    }
+
+    try {
+      await this.connection.importFile(table, importScriptOptions, read)
+    } catch {
+      // empty on purpose
+    }
+
+    const [hats] = await this.knex(tableName).count(hatColumn)
+    const [dataLength] = _.values(hats)
+    expect(Number(dataLength)).toBe(expectedLength)
+  }
+
+  async serializationBinary() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+    const n = (i) => this.dialect === 'sqlite' ? BigInt(i) : i
+
+    await this.knex('contains_binary').insert({ id: 1 })
+    await this.knex('contains_binary').insert({ id: 2, bin: b`` })
+    await this.knex('contains_binary').insert({ id: 3, bin: b`0` })
+    await this.knex('contains_binary').insert({ id: 4, bin: b`deadbeef` })
+
+    let result = await this.connection.selectTop('contains_binary', 0, 10, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema, [BIN])
+    expect(result.result).toMatchObject([
+      { [BIN]: null },
+      { [BIN]: u`` },
+      { [BIN]: u`0` },
+      { [BIN]: u`deadbeef` },
+    ])
+
+    result = await this.connection.selectTop('contains_binary', 3, 1, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema)
+    let data = result.result[0][BIN]
+    expect(ArrayBuffer.isView(data)).toBe(true)
+    expect(Buffer.from(data)).toEqual(b`deadbeef`)
+    expect(result.fields).toEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+
+    await this.connection.applyChanges({
+      inserts: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        // frontend sends binary as Uint8Array, or any TypedArray is possible
+        data: [{ id: 5, bin: u`beefdeed` }],
+      }],
+      updates: [{
+        table: 'contains_binary',
+        schema: this.defaultSchema,
+        primaryKeys: [{ column: ID, value: 4 }],
+        column: BIN,
+        value: u`eeffeeff`,
+      }],
+      deletes: [],
+    })
+
+    const rows = await this.knex('contains_binary').select('bin').offset(3).limit(2).orderBy(ID)
+    expect(rows.map((r) => Buffer.from(r.bin))).toEqual([
+      b`eeffeeff`,
+      b`beefdeed`,
+    ])
+  }
+
+  async resolveTableColumns() {
+    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
+    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+
+    const columns = await this.connection.listTableColumns('contains_binary', this.defaultSchema)
+    const bksFields = columns.map(c => c.bksField)
+
+    expect(bksFields).toStrictEqual([
+      { name: ID, bksType: 'UNKNOWN' },
+      { name: BIN, bksType: 'BINARY' },
+    ])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {
       if (this.dbType === 'firebird') {
+        // FIXME can we do this from knex internally?
         table.specificType('id', 'integer generated by default as identity primary key')
       } else {
         table.increments().primary()
@@ -995,12 +1417,20 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable('addresses', (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("street")
       table.string("city")
       table.string("state")
       table.string("country").notNullable()
     })
+
+    // FIXME: Knex doesn't support tables with dots in the name
+    // https://github.com/knex/knex/issues/2762
+    // Should be used in the dot table tests
+    // await this.knex.schema.createTable(knex.raw('`foo.bar`'), (table) => {
+    //   table.integer('id')
+    //   table.string('name')
+    // })
 
     await this.knex.schema.createTable('MixedCase', (table) => {
       primary(table)
@@ -1014,7 +1444,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("people", (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("firstname")
       table.string("lastname")
       table.string("email").notNullable()
@@ -1024,12 +1454,13 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("jobs", (table) => {
       primary(table)
-      table.timestamps(true)
+      table.timestamps(true, true)
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
     })
 
     await this.knex.schema.createTable('has_index', (table) => {
+      primary(table)
       table.integer('foo')
       if (!this.data.disabledFeatures?.createIndex) {
         table.index('foo', 'has_index_foo_idx')
@@ -1042,7 +1473,7 @@ export class DBTestUtil {
       table.foreign("person_id").references("people.id")
       table.foreign("job_id").references("jobs.id")
       table.primary(['person_id', "job_id"])
-      table.timestamps(true)
+      table.timestamps(true, true)
     })
 
     await this.knex.schema.createTable('with_composite_pk', (table) => {
@@ -1058,13 +1489,25 @@ export class DBTestUtil {
       })
     }
 
-    await this.knex.schema.createTable('streamtest', (table) => {
+    await this.knex.schema.createTable('organizations', (table) => {
       primary(table)
-      table.string("name")
+      table.string('organization_id', 255).notNullable();
+      table.string('name', 255).notNullable();
+      table.string('website', 255).nullable(); // Since 'NA', '-', and 'NULL' appear in the website field
+      table.string('country', 255).notNullable();
+      table.string('description').notNullable();
+      table.integer('founded').notNullable();
+      table.string('industry', 255).notNullable();
+      table.integer('number_of_employees').notNullable();
+    });
+
+    await this.knex.schema.createTable('contains_binary', (table) => {
+      table.integer("id").primary().notNullable()
+      table.binary('bin', 8).nullable()
     })
 
-    if (!this.options.skipGeneratedColumns) {
-      const generatedDefs = {
+    if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
+      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
         tidb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
@@ -1074,17 +1517,18 @@ export class DBTestUtil {
         postgresql: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         cockroachdb: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
       }
+      const generatedDef = generatedDefs[this.dbType] || generatedDefs[this.dialect]
       await this.knex.schema.createTable('with_generated_cols', (table) => {
         table.integer('id').primary()
         table.string('first_name')
         table.string('last_name')
-        table.specificType('full_name', generatedDefs[this.dbType])
+        table.specificType('full_name', generatedDef)
       })
     }
   }
 
   async databaseVersionTest() {
-    const version = this.connection.versionString();
+    const version = await this.connection.versionString();
     expect(version).toBeDefined()
   }
 }

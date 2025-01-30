@@ -1,0 +1,38 @@
+import type { BksVersion } from '@/lib/license';
+
+export interface IPlatformInfo {
+  isWindows: boolean,
+  isMac: boolean,
+  isArm: boolean,
+  oracleSupported: boolean,
+  parsedArgs: any,
+  isLinux: boolean,
+  sessionType: string,
+  isWayland: boolean,
+  isSnap: string,
+  isPortable: string,
+  isDevelopment: boolean,
+  isAppImage: boolean,
+  sshAuthSock: string,
+  environment: string,
+  resourcesPath: string,
+  env: {
+    development: boolean,
+    test: boolean,
+    production: boolean
+  },
+  debugEnabled: boolean,
+  DEBUG: string,
+  platform: "linux" | "windows" | "mac",
+  darkMode: boolean,
+  userDirectory: string,
+  downloadsDirectory: string,
+  homeDirectory: string,
+  testMode: boolean,
+  appDbPath: string,
+  updatesDisabled: boolean,
+  appVersion: string,
+  parsedAppVersion: BksVersion,
+  cloudUrl: string,
+  locale: string,
+};

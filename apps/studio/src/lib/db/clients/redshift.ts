@@ -1,16 +1,18 @@
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
-import { IDbConnectionServer } from "../types";
-import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties } from "../models";
+import { DatabaseElement } from "../types";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
 import { BkConfig } from "@/lib/bkConfig";
 import { TableKey } from "@shared/lib/dialects/models";
+import { IDbConnectionServer } from "../backendTypes";
+import _ from "lodash";
 
 export class RedshiftClient extends PostgresClient {
-  supportedFeatures(): SupportedFeatures {
+  async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,
       comments: true,
@@ -19,13 +21,67 @@ export class RedshiftClient extends PostgresClient {
       editPartitions: false,
       backups: false,
       backDirFormat: false,
-      restore: false
+      restore: false,
+      indexNullsNotDistinct: false,
     };
   }
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     return [];
   }
+
+  async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+    // Reference: https://docs.aws.amazon.com/redshift/latest/dg/r_SVV_COLUMNS.html
+    if (table && !schema) {
+      throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`);
+    }
+
+    const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : "";
+    const params = table ? [schema, table] : [];
+
+    const sql = `
+      SELECT
+        table_schema,
+        table_name,
+        column_name,
+        is_nullable,
+        ordinal_position,
+        column_default,
+        CASE
+          WHEN character_maximum_length IS NOT NULL AND data_type != 'text'
+            THEN data_type || '(' || character_maximum_length::VARCHAR(255) || ')'
+          WHEN numeric_precision IS NOT NULL AND numeric_scale IS NOT NULL
+            THEN data_type || '(' || numeric_precision::VARCHAR(255) || ',' || numeric_scale::VARCHAR(255) || ')'
+          WHEN numeric_precision IS NOT NULL AND numeric_scale IS NULL
+            THEN data_type || '(' || numeric_precision::VARCHAR(255) || ')'
+          WHEN datetime_precision IS NOT NULL AND data_type NOT IN ('date', 'time')
+            THEN data_type || '(' || datetime_precision::VARCHAR(255) || ')'
+          ELSE data_type
+        END AS data_type,
+        remarks AS column_comment
+      FROM svv_columns
+      ${clause}
+      ORDER BY table_schema, table_name, ordinal_position;
+    `;
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    return data.rows.map((row: any) => ({
+      schemaName: row.table_schema,
+      tableName: row.table_name,
+      columnName: row.column_name,
+      dataType: row.data_type,
+      nullable: row.is_nullable === "YES",
+      defaultValue: row.column_default,
+      ordinalPosition: Number(row.ordinal_position),
+      hasDefault: row.column_default !== null,
+      generated: null, // Redshift does not support generated columns in svv_columns
+      array: null, // Redshift does not support arrays
+      comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
+    }));
+  }
+
 
   async getTableProperties(_table: string, _schema?: string): Promise<TableProperties> {
     return null;
@@ -139,6 +195,22 @@ export class RedshiftClient extends PostgresClient {
     await this.driverExecuteSingle(sql);
   }
 
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema) {
+    elementName = this.wrapIdentifier(elementName)
+    newElementName = this.wrapIdentifier(newElementName)
+    schema = this.wrapIdentifier(schema)
+
+    let sql = ''
+
+    if (typeOfElement === DatabaseElement.TABLE || typeOfElement === DatabaseElement.VIEW) {
+      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName};`
+    } else if (typeOfElement === DatabaseElement.SCHEMA) {
+      sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName};`
+    }
+
+    return sql
+  }
+
   protected countQuery(_options: STQOptions, baseSQL: string): string {
     return `SELECT COUNT(*) as total ${baseSQL}`;
   }
@@ -175,7 +247,7 @@ export class RedshiftClient extends PostgresClient {
       tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
 
       // Set the password resolver to resolve the Redshift credentials and return the password.
-      passwordResolver = async() => {
+      passwordResolver = async () => {
         return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
       }
     }
@@ -196,7 +268,7 @@ export class RedshiftClient extends PostgresClient {
 
   protected async getTypes(): Promise<any> {
     const sql = `
-      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::integer as typeid
       FROM        pg_type t
       LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
       WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))

@@ -8,9 +8,7 @@ export class MariaDBClient extends MysqlClient {
     // adapted from https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/pull/998/files
     if (!defaultValue) return null;
 
-    if (defaultValue.toString().toLowerCase() === "'null'") {
-      return null;
-    }
+    if (defaultValue.toString().toLowerCase() === 'null') return null;
 
     if (
       defaultValue.startsWith("'") &&

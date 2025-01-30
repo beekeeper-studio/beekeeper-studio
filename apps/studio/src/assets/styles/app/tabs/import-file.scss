@@ -1,0 +1,65 @@
+.import {
+  .import-section-wrapper {
+    @include small-wrap;
+  }
+  .autodetect-wrapper {
+    width: 50%;
+    display: flex;
+    padding-top: 1rem;
+    > span {
+      padding-right: 1rem;
+    }
+  }
+
+  form {
+    margin-top:2rem;
+    .options-wrapper {
+      display: block;
+      justify-content: space-between;
+      margin-top: .5rem;
+      fieldset {
+        margin-top: 1rem;
+        padding: 0;
+        border: none;
+        label {
+          margin-top:0.5rem;
+        }
+      }
+    }
+  }
+}
+.import-cta-button-wrapper {
+  margin-top:2rem;
+  display: flex;
+  justify-content: space-between;
+  .close-tab-btn {
+    margin-right: 0.5rem;
+  }
+}
+
+.import-progress{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.import-progress-wrapper {
+  align-items: center;
+  button {
+    margin: 0 0 1rem auto !important;
+    .material-icons {
+      font-size: 1.5rem !important;
+    }
+  }
+  .loading-icon {
+    font-size: 4rem;
+    color: $brand-success;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background-color: rgba($brand-success, .1);
+    border-radius: 9999px;
+    &.error {
+      color: $brand-danger;
+      background-color: rgba($brand-danger, .1);
+    }
+  }
+}

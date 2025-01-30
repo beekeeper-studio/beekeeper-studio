@@ -1,7 +1,6 @@
-import * as path from 'path'
-import yargs from 'yargs-parser'
-
-let p, e
+import { IPlatformInfo } from "./IPlatformInfo"
+import { mainPlatformInfo } from "./platform_info/mainPlatformInfo"
+import { utilityPlatformInfo } from "./platform_info/utilityPlatformInfo"
 
 function isRenderer() {
   // running in a web browser
@@ -16,84 +15,13 @@ function isRenderer() {
   return process.type === 'renderer'
 }
 
-if (isRenderer()) {
-  e = require('@electron/remote')
-  p = e.process
-} else {
-  e = require('electron')
-  p = process
+function isUtility() {
+  return process.type === 'utility'
 }
 
+if (isRenderer()) throw new Error("Importing platform_info inside the renderer is banned!")
 
-const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
-const testMode = p.env.TEST_MODE ? true : false
-const isDevEnv = !(e.app && e.app.isPackaged);
-const isWindows = platform === 'win32'
-const isMac = platform === 'darwin'
-const isArm = p.arch.startsWith('arm')
-const easyPlatform: 'windows' | 'mac' | 'linux' = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
-const locale = e.app?.getLocale();
-let windowPrefersDarkMode = false
-if (isRenderer()) {
-  windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
-}
-const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
+const result: IPlatformInfo = isUtility() ? utilityPlatformInfo() : mainPlatformInfo()
 
-const oracleSupported = isMac && isArm ? false : true
+export default result
 
-let userDirectory =  testMode ? './tmp' : e.app.getPath("userData")
-const downloadsDirectory = testMode ? './tmp' : e.app.getPath('downloads')
-const homeDirectory = testMode ? './tmp' : e.app.getPath('home')
-if (p.env.PORTABLE_EXECUTABLE_DIR) {
-  userDirectory = path.join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
-}
-
-const sessionType = p.env.XDG_SESSION_TYPE
-
-const slice = isDevEnv ? 2 : 1
-const parsedArgs = yargs(p.argv.slice(slice))
-// TODO: Automatically enable wayland without flags once
-// we're confident it will 'just work' for all Wayland users.
-function isWaylandMode() {
-  return parsedArgs['ozone-platform-hint'] === 'auto' &&
-    sessionType === 'wayland' && !isWindows && !isMac
-}
-
-const platformInfo = {
-  isWindows, isMac, isArm, oracleSupported,
-  parsedArgs,
-  isLinux: !isWindows && !isMac,
-  sessionType,
-  isWayland: isWaylandMode(),
-  isSnap: p.env.ELECTRON_SNAP,
-  isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
-  isDevelopment: isDevEnv,
-  isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
-  sshAuthSock: p.env.SSH_AUTH_SOCK,
-  environment: p.env.NODE_ENV,
-  resourcesPath: p.resourcesPath,
-  env: {
-    development: isDevEnv,
-    test: testMode,
-    production: !isDevEnv && !testMode && !p.env.WEBPACK_DEV_SERVER_URL
-  },
-  debugEnabled: !!p.env.DEBUG,
-  DEBUG: p.env.DEBUG,
-  platform: easyPlatform,
-  darkMode: testMode? true : e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
-  userDirectory,
-  downloadsDirectory,
-  homeDirectory,
-  testMode,
-  appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
-  updatesDisabled,
-  appVersion: testMode ? 'test-mode' : e.app.getVersion(),
-  cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
-  locale,
-  isCommunity: true,
-  isUltimate: false,
-
-  // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
-}
-
-export default platformInfo

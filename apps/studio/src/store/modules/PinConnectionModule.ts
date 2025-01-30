@@ -1,10 +1,12 @@
-import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { Module } from "vuex";
 import { State as RootState } from '../index';
+import _ from 'lodash';
+import { IConnection } from "@/common/interfaces/IConnection";
+import Vue from 'vue'
+import { TransportPinnedConn } from "@/common/transport";
 
 interface State {
-  pins: PinnedConnection[]
+  pins: TransportPinnedConn[]
 }
 
 export const PinConnectionModule: Module<State, RootState> = {
@@ -13,37 +15,40 @@ export const PinConnectionModule: Module<State, RootState> = {
     pins: []
   }),
   getters: {
-    pinned(state: State): PinnedConnection[] {
+    pinned(state: State): TransportPinnedConn[] {
       return state.pins;
     },
-    orderedPins(_state, getters, rootState): PinnedConnection[] {
+    orderedPins(_state, getters, rootState): TransportPinnedConn[] {
       const connections = rootState['data/connections'].items;
-      return getters.pinned.sort((a, b) => a.position - b.position).map((pin: PinnedConnection) => {
+      return getters.pinned.sort((a, b) => a.position - b.position).map((pin: TransportPinnedConn) => {
         const c = connections.find((c) => c.id === pin.connectionId && c.workspaceId === rootState.workspaceId);
         if (c) pin.connection = c;
         return c ? pin : null
       }).filter((p) => !!p);
     },
-    pinnedConnections(_state: State, getters): SavedConnection[] {
-      return getters.orderedPins.map((pin) => pin.connection);
+    pinnedConnections(_state: State, getters, rootState): IConnection[] {
+      const connections = rootState['data/connections'].items;
+      return getters.orderedPins.map((pin) => connections.find((c) => c.id === pin.connectionId && c.workspaceId === rootState.workspaceId));
     }
   },
   mutations: {
-    set(state, pins: PinnedConnection[]) {
+    set(state, pins: TransportPinnedConn[]) {
       state.pins = pins;
     },
-    add(state, newPin: PinnedConnection) {
+    add(state, newPin: TransportPinnedConn) {
       state.pins.push(newPin);
     },
-    remove(state, pin: PinnedConnection) {
+    remove(state, pin: TransportPinnedConn) {
       state.pins = _.without(state.pins, pin);
     }
   },
   actions: {
     async loadPins(context) {
-      const pins = await PinnedConnection.find({
-        where: {
-          workspaceId: context.rootState.workspaceId
+      const pins = await Vue.prototype.$util.send('appdb/pinconn/find', {
+        options: {
+          where: {
+            workspaceId: context.rootState.workspaceId
+          }
         }
       });
       context.commit('set', pins || []);
@@ -51,27 +56,27 @@ export const PinConnectionModule: Module<State, RootState> = {
     async unloadPins(context) {
       context.commit('set', []);
     },
-    async add(context, item: SavedConnection) {
+    async add(context, item: IConnection) {
       const existing = context.state.pins.find((p) => p.connectionId === item.id && p.workspaceId === context.rootState.workspaceId)
       if (existing) {
         return;
       }
 
-      const newPin = new PinnedConnection(item);
+      const newPin = await Vue.prototype.$util.send('appdb/pinconn/new', { init: item });
       newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1;
-      await newPin.save();
+      await Vue.prototype.$util.send('appdb/pinconn/save', { obj: newPin })
       context.commit('add', newPin);
     },
     async reorder(context) {
       const pins = context.state.pins;
       pins.forEach((p, idx) => p.position = idx);
       context.commit('set', pins)
-      await PinnedConnection.save(pins);
+      await Vue.prototype.$util.send('appdb/pinconn/save', { obj: pins });
     },
-    async remove(context, item: SavedConnection) {
+    async remove(context, item: IConnection) {
       const existing = context.state.pins.find((p) => p.connectionId === item.id && p.workspaceId === context.rootState.workspaceId);
       if (existing) {
-        if (existing.id) await existing.remove();
+        if (existing.id) await Vue.prototype.$util.send('appdb/pinconn/remove', { obj: existing });
         context.commit('remove', existing);
       }
     }
