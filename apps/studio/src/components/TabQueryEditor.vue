@@ -270,7 +270,7 @@
                   :key="index"
                 >
                   <div class="form-group row">
-                    <label>{{ param }}</label>
+                    <label>{{ isNumber(param) ? `? ${param + 1}` : param }}</label>
                     <input
                       type="text"
                       class="form-control"
@@ -516,7 +516,14 @@
           params = this.currentlySelectedQuery.parameters
         }
 
-        if (params.length && params[0] === '?') return []
+        if (params.length && params.includes('?')) {
+          let posIndex = 0; // number doesn't matter, this just distinguishes positional from other types
+          params = params.map((param) => {
+            if (param != '?') return param;
+
+            return posIndex++;
+          })
+        }
 
         return _.uniq(params)
       },
@@ -526,7 +533,11 @@
           return query;
         }
         _.each(this.queryParameterPlaceholders, param => {
-          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`, 'g'), `$1${this.queryParameterValues[param]}$2`)
+          if (_.isNumber(param)) { // is positional
+            query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp('?')}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`);
+          } else {
+            query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`, 'g'), `$1${this.queryParameterValues[param]}$2`)
+          }
         });
         return query;
       },
@@ -664,7 +675,9 @@
       },
     },
     methods: {
-
+      isNumber(value: any) {
+        return _.isNumber(value);
+      },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
         // 2.
