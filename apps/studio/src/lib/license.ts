@@ -20,8 +20,10 @@ export class LicenseStatus {
   condition: string[]
   license?: TransportLicenseKey
   fromFile?: boolean = false
+  noLicenseKey?: boolean = false
+  filePath?: string = undefined
 
-  constructor(licenses: any[]) {
+  constructor(licenses: any[], missingError = null) {
     this.condition = []
 
     const currentDate = new Date();
@@ -31,7 +33,9 @@ export class LicenseStatus {
     // Do they have a license at all?
     if (licenses.length === 0) {
       this.edition = "community";
-      this.condition.push("No license found");
+      this.noLicenseKey = true
+      const errorMessage = missingError ?? "No license found"
+      this.condition.push(errorMessage);
       return
     }
 

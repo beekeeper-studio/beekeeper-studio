@@ -52,8 +52,10 @@ export class OfflineLicense {
   }
 
   toLicenseStatus(): LicenseStatus {
-    const result = new LicenseStatus([this.toLicenseKey()])
+    const result = new LicenseStatus([this.toLicenseKey()], "License file found, but it was invalid")
+    // we keep this, becuase if licenseKey is null, we still need LicenseStatus to know it was from a file
     result.fromFile = true
+    result.filePath = this.path
     return result
   }
 
