@@ -27,7 +27,7 @@ export interface ISimpleConnection extends Transport {
   username: Nullable<string>
   domain: Nullable<string>
   defaultDatabase: Nullable<string>
-  uri: Nullable<string>
+  url: Nullable<string>
   sshEnabled: boolean
   sshHost: Nullable<string>
   sshPort: Nullable<number>

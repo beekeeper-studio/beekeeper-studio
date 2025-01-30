@@ -6,7 +6,7 @@
         Database URL
       </label>
       <input
-        v-model="config.uri"
+        v-model="config.url"
         id="url"
         type="text"
         class="form-control"
