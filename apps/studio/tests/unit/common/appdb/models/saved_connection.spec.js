@@ -41,6 +41,7 @@ describe("Saved Connection", () => {
       "some/path.sqlite3": {connectionType: 'sqlite', defaultDatabase: 'some/path.sqlite3'},
       "/Path/to file/with space.sqlite": { connectionType: 'sqlite', defaultDatabase: "/Path/to file/with space.sqlite"},
       "postgresql://database.db": {connectionType: 'postgresql', host: 'database.db'},
+      "firebird://user:password@localhost:3050/database.fdb": {connectionType: 'firebird', host: 'localhost', port: 3050, username: 'user', password: 'password', defaultDatabase: 'database.fdb'},
     }
 
     Object.keys(testCases).forEach(url => {
