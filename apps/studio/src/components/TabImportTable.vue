@@ -113,6 +113,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import Stepper from './stepper/Stepper.vue'
   import ImportFile from './importtable/ImportFile.vue'
+  import TableBuilder from './TabTableBuilder.vue'
   import ImportMapper from './importtable/ImportMapper.vue'
   import ImportPreview from './importtable/ImportPreview.vue'
   import UpsellContent from '@/components/upsell/UpsellContent.vue'

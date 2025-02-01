@@ -2,7 +2,7 @@
   <div class="import mini-wrap">
     <form class="import-section-wrapper card-flat padding">
       <h3 class="card-title">
-        Import Data Into Table '{{ stepperProps.table }}'
+        {{ this.getTitle }}
       </h3>
       <div class="form-group">
         <label for="fileName">Select File To Import (.csv, .xlsx, .json, .jsonl only)</label>
@@ -243,6 +243,13 @@
             { name: 'Import Files', extensions: ['csv', 'json', 'jsonl', 'xlsx']}
           ]
         }
+      },
+      getTitle() {
+        if (this.stepperProps.table) {
+          return `Import Data Into Table ${ this.stepperProps.table }`
+        }
+
+        return `Import Data and Create Table`
       },
       fileType() {
         if (this.fileName === null) return null

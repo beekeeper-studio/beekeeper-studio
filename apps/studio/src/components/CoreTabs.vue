@@ -662,10 +662,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.addTab(t);
     },
     beginImport(data = {}) {
-      console.log(data)
       const { table } = data
-      console.log('~~ oh hi ~~')
-      console.log(table)
       if (table && table.entityType !== 'table') {
         this.$noty.error("You can only import data into a table")
         return;
