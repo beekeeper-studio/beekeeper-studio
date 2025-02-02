@@ -17,7 +17,7 @@
           :key="tab.id"
           :tab="tab"
           :tabs-count="tabItems.length"
-          :selected="activeTab === tab"
+          :selected="activeTab.id === tab.id"
           @click="click"
           @close="close"
           @closeAll="closeAll"

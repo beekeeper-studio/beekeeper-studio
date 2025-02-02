@@ -76,7 +76,7 @@ export const TabModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
         log.info("Loading tabs for ", context.rootState.workspaceId, usedConfig.id)
-        let tabs = await Vue.prototype.$util.send('appdb/tabs/find', {
+        const tabs = await Vue.prototype.$util.send('appdb/tabs/find', {
           options: {
             where: {
               connectionId: usedConfig.id,
@@ -84,7 +84,6 @@ export const TabModule: Module<State, RootState> = {
             }
           }
         })
-        tabs = tabs.filter(tab => !tab.deletedAt)
         context.commit('set', tabs || [])
         if (tabs?.length) {
           const active = tabs.find((t) => t.active) || tabs[0]

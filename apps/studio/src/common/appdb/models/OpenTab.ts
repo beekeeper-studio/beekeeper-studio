@@ -1,6 +1,6 @@
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
-import { Column, Entity, LessThan, Not, IsNull } from "typeorm";
+import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
@@ -81,7 +81,7 @@ export class OpenTab extends ApplicationEntity {
   @Column({type: 'datetime', nullable: true})
   lastActive?: Date
 
-  @Column({type: 'datetime', nullable: true})
+  @DeleteDateColumn()
   deletedAt?: Date
 
   public setFilters(filters: Nullable<TableFilter[]>) {
@@ -176,7 +176,8 @@ export class OpenTab extends ApplicationEntity {
       order: {
         lastActive: 'DESC'
       },
-      take: limit
+      take: limit,
+      withDeleted: true
     })
   }
   
@@ -202,7 +203,8 @@ export class OpenTab extends ApplicationEntity {
           },
           order: {
             deletedAt: 'DESC'
-          }
+          },
+          withDeleted: true
         })
   }
 }
