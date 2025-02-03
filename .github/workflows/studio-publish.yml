@@ -413,9 +413,6 @@ jobs:
         with:
           path: ./artifacts
 
-        # TODO - finish deb and rpm upload to R2
-        # See https://chatgpt.com/c/679ac7bf-c864-8000-ba58-6c1224d5a309
-
         # Only publishing the DEB for the stable channel (for now)
       - name: Publish DEB to R2
         if: needs.identify_channel.outputs.channel == 'latest'
