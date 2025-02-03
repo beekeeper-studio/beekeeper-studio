@@ -303,7 +303,7 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak)"
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
 
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
