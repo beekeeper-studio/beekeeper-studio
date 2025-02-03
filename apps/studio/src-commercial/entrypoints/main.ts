@@ -18,6 +18,7 @@ import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
+import bkConfig from '@/common/bkConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -31,6 +32,21 @@ if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
 
+// if (platformInfo.isDevelopment) {
+//   function watchConfig(name: "default" | "local") {
+//     const watcher = fs.watch(path.join(bkConfigSource.configDir, `${name}.config.ini`));
+//     watcher.on("change", async () => {
+//     // FIXME reset here
+//     // callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
+//     });
+//     watcher.on("error", (error) => {
+//       log.error(error);
+//     });
+//     return () => watcher.close()
+//   }
+//   watchConfig("default")
+//   watchConfig("local")
+// }
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -47,7 +63,8 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    bksPlatformInfo: JSON.stringify(platformInfo)
+    bksPlatformInfo: JSON.stringify(platformInfo),
+    bkConfigSource: JSON.stringify(bkConfig.source),
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -167,6 +184,10 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('platformInfo', () => {
   return platformInfo;
+})
+
+ipcMain.handle('bkConfigSource', () => {
+  return bkConfig.source;
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {

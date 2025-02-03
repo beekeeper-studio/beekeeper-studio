@@ -26,7 +26,6 @@ declare interface IBkConfig {
     general: {
         checkForUpdatesInterval: number;
         dataSyncInterval: number;
-        maxQueryEditorResults: number;
         workspaceSyncInterval: number;
     };
     keybindings: {
@@ -48,6 +47,7 @@ declare interface IBkConfig {
             selectPreviousResult: string;
             submitCurrentQueryToFile: string;
             submitQueryToFile: string;
+            switchPaneFocus: string;
         };
         quickSearch: {
             altOpen: string;
@@ -63,6 +63,7 @@ declare interface IBkConfig {
             closeTab: string;
             nextTab: string;
             previousTab: string;
+            reopenLastClosedTab: string;
             switchTab1: string;
             switchTab2: string;
             switchTab3: string;
@@ -82,6 +83,9 @@ declare interface IBkConfig {
     ui: {
         export: {
             errorNoticeTimeout: number;
+        };
+        queryEditor: {
+            maxResults: number;
         };
         tableList: {
             itemHeight: number;

@@ -2,8 +2,8 @@ import {
   parseIni,
   convertKeybinding,
   checkConfigWarnings,
-  BkConfig,
-} from "../../src/lib/bkConfig"
+  BkConfigProvider,
+} from "@/common/bkConfig/BkConfigProvider";
 import _ from "lodash";
 
 describe("Config", () => {
@@ -105,6 +105,6 @@ minRes = 10
   });
 
   it("should initialize config", () => {
-    expect(BkConfig.initialize()).resolves.toBeTruthy()
+    expect(BkConfigProvider.initialize()).resolves.toBeTruthy()
   })
 });

@@ -6,7 +6,7 @@ import rawlog from '@bksLogger'
 const log = rawlog.scope('update-manager')
 
 import platformInfo from '../common/platform_info'
-import { BkConfig } from '@/lib/bkConfig'
+import BkConfig from '@/common/bkConfig'
 
 autoUpdater.autoDownload = false
 autoUpdater.logger = log

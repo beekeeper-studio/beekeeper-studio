@@ -17,6 +17,8 @@
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml } from '@shared/lib/tabulator'
   import { dialectFor } from '@shared/lib/dialects/models'
+  import { FkLinkMixin } from '@/mixins/fk_click'
+  import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import Papa from 'papaparse'
   import { mapState, mapGetters } from 'vuex'
   import { markdownTable } from 'markdown-table'

@@ -1,6 +1,6 @@
 import { MysqlClient } from "./mysql";
 import mysql from "mysql2";
-import { BkConfig } from "@/lib/bkConfig";
+import BkConfig from "@/common/bkConfig";
 import { IDbConnectionDatabase, IDbConnectionServer } from '@/lib/db/types';
 
 export class MariaDBClient extends MysqlClient {

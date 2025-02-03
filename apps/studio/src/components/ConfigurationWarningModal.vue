@@ -3,27 +3,43 @@
     <modal class="vue-dialog beekeeper-modal" :name="modalName">
       <div class="dialog-content">
         <div class="dialog-c-title">
-          Found {{ $bkConfig.warnings.length }} invalid configuration{{
-            $bkConfig.warnings.length > 1 ? "s" : ""
-          }}
+          <i class="material-icons alert-warning">warning</i>
+          Configuration Warnings
         </div>
-        <div class="alert alert-warning config-modal-warnings">
-          <div
-            v-for="(warning, idx) in $bkConfig.warnings"
-            :key="`${idx}-${warning.type}-${warning.section}-${warning.key}`"
-          >
-            <template v-if="warning.type === 'section'">
-              <span>Unexpected section
-                <span style="font-weight: bold">[{{ warning.section }}]</span></span>
-            </template>
-            <template v-else-if="warning.type === 'key'">
-              <span>
-                Unexpected key
-                <span style="font-weight: bold">{{ warning.key }}</span> at section
+        <div class="alert config-modal-warnings">
+          <template v-if="'unrecognized-key' in groupedWarnings">
+            <span>Unrecognized keys</span>
+            <ul>
+              <li
+                v-for="warning in groupedWarnings['unrecognized-key']"
+                :key="`${warning.sourceName}-${warning.path}-${warning.section}`"
+              >
+                <template v-if="warning.section === warning.path">
+                  <span style="font-weight: bold">[{{ warning.section }}]</span>
+                </template>
+                <template v-else>
+                  <span style="font-weight: bold">{{ warning.path }}</span> at
+                  <span style="font-weight: bold">[{{ warning.section }}]</span>
+                </template>
+                in {{ warning.sourceName }} config.
+              </li>
+            </ul>
+          </template>
+          <template v-if="'system-user-conflict' in groupedWarnings">
+            <span>
+              System settings can't be overridden. The following keys is
+              ignored:
+            </span>
+            <ul>
+              <li
+                v-for="warning in groupedWarnings['system-user-conflict']"
+                :key="`${warning.sourceName}-${warning.path}-${warning.section}`"
+              >
+                <span style="font-weight: bold">{{ warning.path }}</span> at
                 <span style="font-weight: bold">[{{ warning.section }}]</span>
-              </span>
-            </template>
-          </div>
+              </li>
+            </ul>
+          </template>
         </div>
       </div>
       <div class="vue-dialog-buttons">
@@ -49,12 +65,18 @@
 
 <script lang="ts">
 import Vue from "vue";
+import _ from "lodash";
 
 export default Vue.extend({
   data() {
     return {
       modalName: "configuration-modal",
     };
+  },
+  computed: {
+    groupedWarnings() {
+      return _.groupBy(this.$bkConfig.warnings, "type");
+    },
   },
   async mounted() {
     if (this.$bkConfig.warnings.length > 0) {

@@ -6,7 +6,7 @@ import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
-import { BkConfig } from "@/lib/bkConfig";
+import BkConfig from "@/common/bkConfig";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";

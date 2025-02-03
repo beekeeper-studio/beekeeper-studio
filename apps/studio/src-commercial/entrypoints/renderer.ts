@@ -31,11 +31,11 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
-import { BkConfig } from '@/lib/bkConfig'
 
 (async () => {
 
   await window.main.requestPlatformInfo();
+  await window.main.requestBkConfigSource();
   rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
@@ -46,8 +46,6 @@ import { BkConfig } from '@/lib/bkConfig'
     log.debug("####################################")
     log.debug("Platform Information (App)")
     log.debug(JSON.stringify(window.platformInfo, null, 2))
-
-    await BkConfig.initialize();
 
     _.mixin({
       'deepMapKeys': function (obj, fn) {

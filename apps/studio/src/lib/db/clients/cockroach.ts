@@ -3,7 +3,7 @@ import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartiti
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
-import { BkConfig } from '@/lib/bkConfig';
+import BkConfig from '@/common/bkConfig';
 import { IDbConnectionServer } from "../backendTypes";
 
 

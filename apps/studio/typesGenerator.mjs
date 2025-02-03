@@ -1,3 +1,5 @@
+/** Run this file to generate the types for the config */
+
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import fs from "fs";

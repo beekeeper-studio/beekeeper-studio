@@ -1,10 +1,7 @@
 import config from "@/config";
 import _ from "lodash";
-import platformInfo from "@/common/platform_info";
-import { AppEvent } from "@/common/AppEvent";
-import { ipcRenderer } from "electron";
-import { VueConstructor } from "vue/types/umd";
-import { BkConfig, KeybindingPath } from "@/lib/bkConfig";
+import { BkConfigProvider, KeybindingPath } from "@/common/bkConfig/BkConfigProvider";
+import type { VueConstructor } from "vue/types/umd";
 
 export function createVHotkeyKeymap(
   obj: Partial<Record<KeybindingPath, any>>
@@ -13,7 +10,7 @@ export function createVHotkeyKeymap(
 
   for (const path of Object.keys(obj) as KeybindingPath[]) {
     const value = obj[path];
-    const keybindings = BkConfig.getKeybindings("v-hotkey", path);
+    const keybindings = window.bkConfig.getKeybindings("v-hotkey", path);
     if (typeof keybindings === "string") {
       keymap[keybindings] = value;
     } else {
@@ -28,20 +25,8 @@ export function createVHotkeyKeymap(
 
 export default {
   install(Vue: VueConstructor) {
-    if (platformInfo.isDevelopment) {
-      BkConfig.watchConfigFile({
-        type: "default",
-        callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
-      });
-
-      BkConfig.watchConfigFile({
-        type: "user",
-        callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
-      });
-    }
-
-    window.BkConfig = BkConfig;
-
+    const BkConfig = BkConfigProvider.create(window.bkConfigSource, window.platformInfo);
+    window.bkConfig = BkConfig;
     Vue.prototype.$bkConfig = BkConfig;
     Vue.prototype.$config = config;
     Vue.prototype.$vHotkeyKeymap = createVHotkeyKeymap;

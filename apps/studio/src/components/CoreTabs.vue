@@ -400,16 +400,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       return _.indexOf(this.tabItems, this.activeTab)
     },
     keymap() {
-      // FIXME(azmi): from merge conflicts
-        // 'ctrl+shift+T': this.reopenLastClosedTab,
-      // if(this.$config.isMac) {
-      //    result['shift+meta+['] = this.previousTab
-      //    result['shift+meta+]'] = this.nextTab
-      // }
-
-      return this.$vHotkeyKeymap({
+      const result = this.$vHotkeyKeymap({
         'tab.nextTab': this.nextTab,
         'tab.previousTab': this.previousTab,
+        'tab.reopenLastClosedTab': this.reopenLastClosedTab,
         'tab.switchTab1': this.handleSwitchTab.bind(this, 0),
         'tab.switchTab2': this.handleSwitchTab.bind(this, 1),
         'tab.switchTab3': this.handleSwitchTab.bind(this, 2),
@@ -420,6 +414,12 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
         'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
       })
+      // FIXME (azmi): move this to default config file
+      if(this.$config.isMac) {
+         result['shift+meta+['] = this.previousTab
+         result['shift+meta+]'] = this.nextTab
+      }
+      return result
     },
   },
   created() {

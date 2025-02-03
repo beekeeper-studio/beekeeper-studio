@@ -503,8 +503,7 @@
       keymap() {
         if (!this.active) return {}
         return this.$vHotkeyKeymap({
-          // FIXME(azmi): from merge conflicts
-        // result[this.ctrlOrCmd('`')] = this.switchPaneFocus.bind(this)
+          'queryEditor.switchPaneFocus': this.switchPaneFocus,
           'queryEditor.selectEditor': this.selectEditor,
           'queryEditor.submitQueryToFile': this.submitQueryToFile,
           'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
@@ -907,8 +906,8 @@
 
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$bkConfig.general.maxQueryEditorResults) {
-              result.rows = _.take(result.rows, this.$bkConfig.general.maxQueryEditorResults)
+            if (result.rowCount > this.$bkConfig.ui.queryEditor.maxResults) {
+              result.rows = _.take(result.rows, this.$bkConfig.ui.queryEditor.maxResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
             }
