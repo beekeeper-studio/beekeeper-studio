@@ -388,6 +388,9 @@ jobs:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.0.2

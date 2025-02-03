@@ -28,6 +28,11 @@ function dealWithAppImage() {
   }
 }
 
+function shouldSkipUpdater() {
+  if (platformInfo.isLinux && !platformInfo.isAppImage) return true
+  return false
+}
+
 function checkForUpdates() {
   log.info('checking for updates right now')
   try {
@@ -51,6 +56,11 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
   setAllowBeta(allowBeta);
 
   dealWithAppImage();
+
+  if (shouldSkipUpdater()) {
+    log.info("Skipping auto-updater for this platform");
+    return;
+  }
 
   autoUpdater.logger?.debug?.(JSON.stringify(process.env))
 
