@@ -406,7 +406,7 @@ jobs:
         with:
           gpg-private-key: ${{ secrets.gpg_key }}
 
-      - run: "rm -rf ./artifacts"
+      - run: "rm -rf ./artifacts; mkdir artifacts"
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
