@@ -4,7 +4,7 @@ import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabas
 import { IDbConnectionDatabase } from "@/lib/db/types";
 import { Collection, Document, MongoClient } from 'mongodb';
 import rawLog from '@bksLogger';
-import { ExtendedTableColumn, OrderBy, PrimaryKeyColumn, Routine, SupportedFeatures, TableFilter, TableIndex, TableOrView, TableProperties, TableResult } from "@/lib/db/models";
+import { BksField, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableColumn, TableFilter, TableIndex, TableOrView, TableProperties, TableResult, TableTrigger } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 
@@ -57,7 +57,11 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     await super.disconnect();
   }
 
-  async getVersion() {
+  async versionString() {
+    const db = this.conn.db(this.database.database);
+    const buildInfo = await db.command({ buildInfo: 1 });
+
+    return buildInfo.version;
   }
 
 
@@ -76,11 +80,7 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     }
   }
 
-  async listDatabases(): Promise<string[]> {
-    const admin = this.conn.db().admin();
-    const dbInfo = await admin.listDatabases();
-    return dbInfo.databases.map((d) => d.name);
-  }
+  
 
   async listTables(): Promise<TableOrView[]> {
     const db = this.conn.db(this.database.database);
@@ -96,11 +96,15 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     return [];
   }
 
+  async listRoutines(): Promise<Routine[]> {
+    return [];
+  }
+
   async listMaterializedViews(): Promise<TableOrView[]> {
     return [];
   }
 
-  async listRoutines(): Promise<Routine[]> {
+  async listMaterializedViewColumns(_table: string, _schema?: string): Promise<TableColumn[]> {
     return [];
   }
 
@@ -127,6 +131,168 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     }
   }
 
+  async listTableTriggers(_table: string, _schema?: string): Promise<TableTrigger[]> {
+    return [];
+  }
+
+  async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
+    const collection = this.conn.db(this.database.database).collection(table);
+
+    const indexes = await collection.indexes({ full: true });
+
+    // TODO (@day): convert 1, -1 to ASC and DESC
+    return indexes.map((index) => ({
+      table, 
+      columns: Object.entries(index.key).map((key) => ({ name: key[0], order: key[1]})),
+      name: index.name,
+      unique: index.unique,
+    } as TableIndex));
+  }
+
+  async listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
+    return [];
+  }
+
+  async getTableReferences(_table: string, _schema?: string): Promise<string[]> {
+    return [];
+  }
+
+  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return [];
+  }
+
+  async listDatabases(): Promise<string[]> {
+    const admin = this.conn.db().admin();
+    const dbInfo = await admin.listDatabases();
+    return dbInfo.databases.map((d) => d.name);
+  }
+
+  async selectTopSql(_table: string, _offset: number, _limit: number, _orderBy: OrderBy[], _filters: string | TableFilter[], _schema?: string, _selects?: string[]): Promise<string> {
+    log.error("MongoDB does not support generating SQL scripts");
+    return '';
+  }
+
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
+    const collection = this.conn.db(this.database.database).collection(table);
+
+    const convertedOrders = orderBy.length > 0 ? orderBy.reduce((all, ord) => ({
+      ...all,
+      [ord.field]: ord.dir.toLowerCase() === 'asc' ? 1 : -1 
+    }), {} as any) : null;
+    const convertedFilters = !_.isString() && filters.length > 0 ? this.convertFilters(filters as TableFilter[]) : {};
+    let convertedSelects = null;
+    if (selects && selects?.length > 0 && !selects.includes('*')) {
+      let init = {} as any;
+      if (!selects.includes('_id')) {
+        init = {
+          _id: 0
+        };
+      }
+      selects = _.without(selects, '_id');
+      convertedSelects = selects.reduce((all, sel) => ({
+        ...all,
+        [sel]: 1
+      }), init);
+    }
+
+
+    const result = await collection.aggregate([
+      {
+        "$match": convertedFilters
+      },
+      convertedOrders ? {
+        "$sort": convertedOrders
+      } : null,
+      {
+        "$skip": offset
+      },
+      {
+        "$limit": limit
+      },
+      convertedSelects ? {
+        "$project": convertedSelects
+      } : null
+    ].filter((v) => !!v)).toArray();
+
+    return { result, fields: [] }
+  }
+
+  
+
+  async getPrimaryKeys(_table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
+    return [];
+  }
+
+  async getTableLength(table: string, _schema?: string): Promise<number> {
+    return await this.conn.db(this.database.database).collection(table).estimatedDocumentCount();
+  }
+
+  async getTableProperties(table: string, _schema?: string): Promise<TableProperties> {
+    const indexes = await this.listTableIndexes(table);
+
+    return {
+      indexes,
+      relations: [],
+      triggers: [],
+      partitions: []
+    }
+  }
+
+  // ********************** UNSUPPORTED ***************************
+
+  async executeQuery(_queryText: string, _options?: any): Promise<NgQueryResult[]> {
+    log.error('MongoDB does not support executing queries');
+    return [];
+  }
+
+  async getQuerySelectTop(_table: string, _limit: number, _schema?: string): Promise<string> {
+    log.error('MongoDB does not support generating queries');
+    return '';
+  }
+
+  async getPrimaryKey(_table: string, _schema?: string): Promise<string> {
+    log.error('MongoDB does not support keys');
+    return '';
+  }
+
+  async listCharsets(): Promise<string[]> {
+    return [];
+  }
+
+  async getDefaultCharset(): Promise<string> {
+    return null;
+  }
+
+  async listCollations(_charset: string): Promise<string[]> {
+    return [];
+  }
+
+  async selectTopStream(_table: string, _orderBy: OrderBy[], _filters: string | TableFilter[], _chunkSize: number, _schema?: string): Promise<StreamResults> {
+    log.error('MongoDB does not currently support streaming results');
+    return null;
+  }
+
+  async queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
+    log.error('MongoDB does not support querying');
+    return null;
+  }
+
+  wrapIdentifier(_value: string): string {
+    log.error('MongoDB does not support querying');
+    return '';
+  }
+
+  protected async rawExecuteQuery(_q: string, _options: any): Promise<QueryResult | QueryResult[]> {
+    log.error('MongoDB does not support querying');
+    return null;
+  }
+
+  protected parseTableColumn(_column: any): BksField {
+      throw new Error("Method not implemented.");
+  }
+
+  // ******************* UTILS *******************************
+  
   private async getCollectionCols(collection: Collection<Document>) {
     // Take the last 10 docs from a collection and hope that's an accurate representation of the whole collection lol
     return await collection.aggregate(
@@ -237,91 +403,5 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     });
 
     return result;
-  }
-
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
-    const collection = this.conn.db(this.database.database).collection(table);
-
-    const convertedOrders = orderBy.length > 0 ? orderBy.reduce((all, ord) => ({
-      ...all,
-      [ord.field]: ord.dir.toLowerCase() === 'asc' ? 1 : -1 
-    }), {} as any) : {};
-    const convertedFilters = !_.isString() && filters.length > 0 ? this.convertFilters(filters as TableFilter[]) : {};
-    log.info('convertedFilters: ', JSON.stringify(convertedFilters));
-    let selectProject = [];
-    if (selects.length > 0 && !selects.includes('*')) {
-      
-      let init = {} as any;
-      if (!selects.includes('_id')) {
-        init = {
-          _id: 0
-        };
-      }
-      selects = _.without(selects, '_id');
-      const convertedSelects = selects.reduce((all, sel) => ({
-        ...all,
-        [sel]: 1
-      }), init);
-
-      selectProject = [{
-        "$project": convertedSelects
-      }];
-    }
-
-
-    const result = await collection.aggregate([
-      {
-        "$match": convertedFilters
-      },
-      {
-        "$sort": convertedOrders
-      },
-      {
-        "$skip": offset
-      },
-      {
-        "$limit": limit
-      },
-      ...selectProject
-    ]).toArray();
-
-    return { result, fields: [] }
-  }
-
-  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
-    return [];
-  }
-
-  async getPrimaryKeys(_table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
-    return [];
-  }
-
-  async getTableLength(table: string, _schema?: string): Promise<number> {
-    return await this.conn.db(this.database.database).collection(table).estimatedDocumentCount();
-  }
-
-  async getTableProperties(table: string, _schema?: string): Promise<TableProperties> {
-    const indexes = await this.listTableIndexes(table);
-
-    return {
-      indexes,
-      relations: [],
-      triggers: [],
-      partitions: []
-    }
-  }
-
-  async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
-    const collection = this.conn.db(this.database.database).collection(table);
-
-    const indexes = await collection.indexes({ full: true });
-
-    // TODO (@day): convert 1, -1 to ASC and DESC
-    return indexes.map((index) => ({
-      table, 
-      columns: Object.entries(index.key).map((key) => ({ name: key[0], order: key[1]})),
-      name: index.name,
-      unique: index.unique,
-    } as TableIndex));
   }
 }
