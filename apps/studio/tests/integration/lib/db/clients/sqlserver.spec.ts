@@ -30,6 +30,8 @@ function testWith(dockerTag: string, readonly: boolean) {
   describe(`SQL Server [${dockerTag}] - read-only mode? ${readonly}`, () => {
     jest.setTimeout(dbtimeout)
 
+    const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
+
     let container;
     let util
     // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
@@ -50,7 +52,7 @@ function testWith(dockerTag: string, readonly: boolean) {
         .withExposedPorts(1433)
         .withWaitStrategy(Wait.forHealthCheck())
         .withHealthCheck({
-          test: ["CMD-SHELL", `/opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
+          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
           interval: 5000,
           timeout: 3000,
           retries: 10,
