@@ -11,7 +11,7 @@ export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
-import BkConfig from '@/common/bkConfig'
+import BksConfig from '@/common/bksConfig'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { IDbConnectionPublicServer } from './db/serverTypes'
 // TODO (@day): this may need to be moved uggh
@@ -216,7 +216,7 @@ export class DBTestUtil {
   }
 
   async setupdb() {
-    await BkConfig.initialize();
+    await BksConfig.initialize();
 
     await TestOrmConnection.connect()
     await LicenseKey.createTrialLicense()

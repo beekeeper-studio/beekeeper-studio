@@ -1,4 +1,4 @@
-import { BkConfig, BkConfigSource } from '@/common/bkConfig/BkConfigProvider';
+import { BksConfig, BksConfigSource } from '@/common/bksConfig/BksConfigProvider';
 import { IPlatformInfo } from '@/common/IPlatformInfo';
 import { api } from '../preload';
 
@@ -6,7 +6,7 @@ declare global {
   interface Window {
     main: typeof api,
     platformInfo: IPlatformInfo
-    bkConfigSource: BkConfigSource
-    bkConfig: BkConfig
+    bksConfigSource: BksConfigSource
+    bksConfig: BksConfig
   }
 }

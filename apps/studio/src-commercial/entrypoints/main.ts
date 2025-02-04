@@ -18,7 +18,7 @@ import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
-import bkConfig from '@/common/bkConfig'
+import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -34,7 +34,7 @@ if (platformInfo.env.development || platformInfo.env.test) {
 
 // if (platformInfo.isDevelopment) {
 //   function watchConfig(name: "default" | "local") {
-//     const watcher = fs.watch(path.join(bkConfigSource.configDir, `${name}.config.ini`));
+//     const watcher = fs.watch(path.join(bksConfigSource.configDir, `${name}.config.ini`));
 //     watcher.on("change", async () => {
 //     // FIXME reset here
 //     // callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
@@ -64,7 +64,7 @@ async function createUtilityProcess() {
 
   const args = {
     bksPlatformInfo: JSON.stringify(platformInfo),
-    bkConfigSource: JSON.stringify(bkConfig.source),
+    bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -186,8 +186,8 @@ ipcMain.handle('platformInfo', () => {
   return platformInfo;
 })
 
-ipcMain.handle('bkConfigSource', () => {
-  return bkConfig.source;
+ipcMain.handle('bksConfigSource', () => {
+  return bksConfig.source;
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {

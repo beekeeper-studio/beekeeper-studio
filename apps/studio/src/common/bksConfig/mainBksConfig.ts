@@ -3,24 +3,23 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync } from "fs";
-// @ts-expect-error
-import { parseIni } from "../../../typesGenerator.mjs";
+import { parseIni } from "../../../src/config/helpers";
 import {
-  BkConfigProvider,
+  BksConfigProvider,
   ConfigEntryDetailWarning,
-  BkConfigSource,
-  BkConfig,
-} from "./BkConfigProvider";
+  BksConfigSource,
+  BksConfig,
+} from "./BksConfigProvider";
 
-const log = rawLog.scope("BkConfig");
+const log = rawLog.scope("BksConfig");
 
 /**
  * Check any config keys from `newConfig` that we don't recognize based on
  * `defaultConfig`.
  **/
 export function checkUnrecognized(
-  defaultConfig: IBkConfig,
-  newConfig: Partial<IBkConfig>,
+  defaultConfig: IBksConfig,
+  newConfig: Partial<IBksConfig>,
   sourceName: "system" | "user"
 ): ConfigEntryDetailWarning[] {
   const results: ConfigEntryDetailWarning[] = [];
@@ -52,8 +51,8 @@ export function checkUnrecognized(
 
 /** Check if any config keys from `source` conflict with `target`. **/
 export function checkConflicts(
-  source: Partial<IBkConfig>,
-  target: Partial<IBkConfig>,
+  source: Partial<IBksConfig>,
+  target: Partial<IBksConfig>,
   sourceName: "system" | "user"
 ): ConfigEntryDetailWarning[] {
   const results: ConfigEntryDetailWarning[] = [];
@@ -64,7 +63,7 @@ export function checkConflicts(
       const value = obj[key];
       if (typeof value === "object") {
         traverse(value, path);
-      } else if (_.has(source, path)) {
+      } else if (_.has(target, path)) {
         results.push({
           type: "system-user-conflict",
           sourceName,
@@ -75,7 +74,7 @@ export function checkConflicts(
     }
   }
 
-  traverse(target);
+  traverse(source);
 
   return results;
 }
@@ -121,13 +120,13 @@ function resolveConfigDir() {
 }
 
 function loadConfigs(dir: string) {
-  const defaultConfig: IBkConfig = loadConfig(
+  const defaultConfig: IBksConfig = loadConfig(
     path.join(dir, "default.config.ini")
   );
-  const systemConfig: Partial<IBkConfig> = loadConfig(
+  const systemConfig: Partial<IBksConfig> = loadConfig(
     path.join(dir, "system.config.ini")
   );
-  const userConfig: Partial<IBkConfig> = loadConfig(
+  const userConfig: Partial<IBksConfig> = loadConfig(
     path.join(
       dir,
       platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini"
@@ -137,9 +136,9 @@ function loadConfigs(dir: string) {
 }
 
 function collectConfigWarnings(
-  defaultConfig: IBkConfig,
-  systemConfig: Partial<IBkConfig>,
-  userConfig: Partial<IBkConfig>
+  defaultConfig: IBksConfig,
+  systemConfig: Partial<IBksConfig>,
+  userConfig: Partial<IBksConfig>
 ) {
   const systemConfigWarnings = checkUnrecognized(
     defaultConfig,
@@ -151,7 +150,7 @@ function collectConfigWarnings(
     userConfig,
     "user"
   );
-  const systemUserConflicts = checkConflicts(systemConfig, userConfig, "user");
+  const systemUserConflicts = checkConflicts(userConfig, systemConfig, "user");
   const warnings = systemConfigWarnings.concat(
     userConfigWarnings,
     systemUserConflicts
@@ -159,7 +158,7 @@ function collectConfigWarnings(
   return warnings;
 }
 
-export function mainBkConfig(): BkConfig {
+export function mainBksConfig(): BksConfig {
   const configDir = resolveConfigDir();
   log.info(`Loading configs from ${configDir}.`);
   const { defaultConfig, systemConfig, userConfig } = loadConfigs(configDir);
@@ -168,7 +167,7 @@ export function mainBkConfig(): BkConfig {
     systemConfig,
     userConfig
   );
-  const source: BkConfigSource = {
+  const source: BksConfigSource = {
     configDir,
     defaultConfig,
     systemConfig,
@@ -184,5 +183,5 @@ export function mainBkConfig(): BkConfig {
   log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
   log.info(`User config: ${JSON.stringify(userConfig, null, 2)}`);
 
-  return BkConfigProvider.create(source, platformInfo);
+  return BksConfigProvider.create(source, platformInfo);
 }

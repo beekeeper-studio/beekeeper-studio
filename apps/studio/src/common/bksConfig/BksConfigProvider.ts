@@ -2,15 +2,15 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { IPlatformInfo } from "../IPlatformInfo";
 
-export interface BkConfigSource {
+export interface BksConfigSource {
   configDir: string;
-  defaultConfig: IBkConfig;
-  systemConfig: Partial<IBkConfig>;
-  userConfig: Partial<IBkConfig>;
+  defaultConfig: IBksConfig;
+  systemConfig: Partial<IBksConfig>;
+  userConfig: Partial<IBksConfig>;
   warnings: ConfigEntryDetailWarning[];
 }
 
-export type BkConfig = BkConfigProvider & IBkConfig;
+export type BksConfig = BksConfigProvider & IBksConfig;
 
 export type IniArray = {
   [key: number]: string | number;
@@ -25,19 +25,19 @@ export interface ConfigEntryDetailWarning {
 
 type ConfigValue = string | number | IniArray | undefined;
 
-export type KeybindingPath = DeepKeyOf<IBkConfig["keybindings"]>;
+export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
-interface IBkConfigDebugInfo {
+interface IBksConfigDebugInfo {
   path: string;
   value: string | number | undefined;
   config: Config;
   configs: {
-    user: Partial<IBkConfig>;
-    default: IBkConfig;
+    user: Partial<IBksConfig>;
+    default: IBksConfig;
   };
 }
 
-const log = rawLog.scope("BkConfigProvider");
+const log = rawLog.scope("BksConfigProvider");
 
 const electronModifierMap = {
   CTRL: "Control",
@@ -55,7 +55,7 @@ const electronModifierMap = {
   SUPER: "Super",
   META: "Meta",
   WINDOWS: "Meta",
-};
+} as const;
 
 const vHotkeyModifierMap = {
   CTRL: "ctrl",
@@ -73,7 +73,7 @@ const vHotkeyModifierMap = {
   SUPER: "super",
   META: "meta",
   WINDOWS: "windows",
-};
+} as const;
 
 export function convertKeybinding(
   target: "electron" | "v-hotkey",
@@ -87,67 +87,19 @@ export function convertKeybinding(
   for (const _key of keybinding.split("+")) {
     const key = _key.toUpperCase().trim();
 
-    const mod = modifierMap[key];
+    let mod: string = modifierMap[key] ?? key;
 
-    if (target === "v-hotkey" && mod === "ctrlOrCmd") {
-      combination.push(platform === "mac" ? "meta" : "ctrl");
-      continue;
-    }
-
-    if (mod) {
-      combination.push(mod);
-      continue;
-    }
-
-    if (target === "electron") {
-      combination.push(mod.toUpperCase());
-      continue;
+    if (target === "v-hotkey") {
+      mod = mod.toLowerCase();
+      if (mod === "ctrlorcmd") {
+        mod = platform === "mac" ? "meta" : "ctrl";
+      }
     }
 
     combination.push(mod);
   }
 
   return combination.join("+");
-}
-
-/**
- * Check any config keys from `userConfig` that we don't recognize based on
- * `defaultConfig`.
- **/
-export function checkConfigWarnings(
-  defaultConfig: IBkConfig,
-  userConfig: Partial<IBkConfig>
-): ConfigEntryDetailWarning[] {
-  const results = [];
-
-  function traverse(obj: Record<string, any>, parentPath = "") {
-    for (const key of Object.keys(obj)) {
-      const path = parentPath ? `${parentPath}.${key}` : key;
-      const recognized = _.has(defaultConfig, path);
-
-      if (!recognized) {
-        if (typeof obj[key] === "object") {
-          results.push({ type: "section", section: path });
-        } else {
-          results.push({
-            type: "key",
-            section: parentPath,
-            key,
-            value: obj[key],
-          });
-        }
-        continue;
-      }
-
-      if (typeof obj[key] === "object") {
-        traverse(obj[key], path);
-      }
-    }
-  }
-
-  traverse(userConfig);
-
-  return results;
 }
 
 /**
@@ -168,9 +120,9 @@ class Config {
 
   constructor(
     public readonly name: string,
-    public readonly config: Partial<IBkConfig>
+    public readonly config: Partial<IBksConfig>
   ) {
-    this.log = rawLog.scope(`BkConfig:${this.name}`);
+    this.log = rawLog.scope(`BksConfig:${this.name}`);
     Object.assign(this, config);
   }
 
@@ -187,13 +139,13 @@ class Config {
   }
 }
 
-export class BkConfigProvider {
+export class BksConfigProvider {
   private defaultConfig: Config;
   private systemConfig: Config;
   private userConfig: Config;
-  private mergedConfig: IBkConfig;
+  private mergedConfig: IBksConfig;
 
-  constructor(public readonly source: BkConfigSource, private platformInfo: IPlatformInfo) {
+  constructor(public readonly source: BksConfigSource, private platformInfo: IPlatformInfo) {
     this.defaultConfig = new Config("default", source.defaultConfig);
     this.systemConfig = new Config("system", source.systemConfig);
     this.userConfig = new Config(
@@ -208,10 +160,10 @@ export class BkConfigProvider {
     );
   }
 
-  static create(source: BkConfigSource, platformInfo: IPlatformInfo) {
-    const provider = new BkConfigProvider(source, platformInfo);
+  static create(source: BksConfigSource, platformInfo: IPlatformInfo) {
+    const provider = new BksConfigProvider(source, platformInfo);
     Object.assign(provider, provider.mergedConfig);
-    return provider as BkConfig;
+    return provider as BksConfig;
   }
 
   has(path: string): boolean {
@@ -223,7 +175,7 @@ export class BkConfigProvider {
     return value;
   }
 
-  getAll(): IBkConfig {
+  getAll(): IBksConfig {
     return this.mergedConfig;
   }
 
@@ -243,12 +195,12 @@ export class BkConfigProvider {
 
   get debugAll() {
     const getDebugAll = (obj: Record<string, any>, path = "") => {
-      const result: IBkConfigDebugInfo[] = [];
+      const result: IBksConfigDebugInfo[] = [];
       Object.keys(obj).forEach((key) => {
         const type = typeof obj[key];
         if (type === "string" || type === "number" || _.isArray(obj[key])) {
           result.push(
-            this.debug(path ? `${path}.${key}` : key) as IBkConfigDebugInfo
+            this.debug(path ? `${path}.${key}` : key) as IBksConfigDebugInfo
           );
         } else {
           result.push(...getDebugAll(obj[key], path ? `${path}.${key}` : key));

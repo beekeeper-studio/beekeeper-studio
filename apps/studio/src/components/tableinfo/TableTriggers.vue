@@ -95,7 +95,7 @@ export default {
       columnDefaults: {
         tooltip: true,
         headerSort: true,
-        maxInitialWidth: this.$bkConfig.ui.tableTriggers.maxColumnWidth,
+        maxInitialWidth: this.$bksConfig.ui.tableTriggers.maxColumnWidth,
       },
       placeholder: "No triggers",
       layout: 'fitColumns'

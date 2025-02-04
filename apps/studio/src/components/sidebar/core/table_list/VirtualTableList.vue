@@ -83,7 +83,7 @@ export default Vue.extend({
       items: [],
       displayItems: [],
       itemComponent: ItemComponent,
-      estimateItemHeight: this.$bkConfig.ui.tableList.itemHeight, // height of collapsed item
+      estimateItemHeight: this.$bksConfig.ui.tableList.itemHeight, // height of collapsed item
       keeps: 30,
       generated: false,
     };
@@ -188,7 +188,7 @@ export default Vue.extend({
 
           // Summarizing the total height of all list items to get the average height
 
-          totalHeight += this.$bkConfig.ui.tableList.itemHeight; // height of list item
+          totalHeight += this.$bksConfig.ui.tableList.itemHeight; // height of list item
 
           if (item.expanded) {
             if (item.type === "table") {
@@ -205,7 +205,7 @@ export default Vue.extend({
       if (displayItems.length > 0) {
         this.estimateItemHeight = totalHeight / displayItems.length;
       } else {
-        this.estimateItemHeight = this.$bkConfig.ui.tableList.itemHeight;
+        this.estimateItemHeight = this.$bksConfig.ui.tableList.itemHeight;
       }
       this.displayItems = displayItems;
     },

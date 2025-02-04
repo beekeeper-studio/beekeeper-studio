@@ -6,7 +6,7 @@ import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
 import { defaultCreateScript } from "./postgresql/scripts";
-import BkConfig from "@/common/bkConfig";
+import BksConfig from "@/common/bksConfig";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
@@ -259,8 +259,8 @@ export class RedshiftClient extends PostgresClient {
       password: passwordResolver || server.config.password || undefined,
       database: database.database,
       max: 5, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: BkConfig.db.redshift.connectionTimeout,
-      idleTimeoutMillis: BkConfig.db.redshift.connectionTimeout,
+      connectionTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
+      idleTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
     };
 
     return this.configurePool(config, server, tempUser);

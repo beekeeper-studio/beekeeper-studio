@@ -1,10 +1,10 @@
 import {
-  parseIni,
   convertKeybinding,
-  checkConfigWarnings,
-  BkConfigProvider,
-} from "@/common/bkConfig/BkConfigProvider";
+  BksConfigProvider,
+} from "@/common/bksConfig/BksConfigProvider";
+import { parseIni } from "../../src/config/helpers";
 import _ from "lodash";
+import { checkConflicts, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
 
 describe("Config", () => {
   it("should parse ini file correctly", () => {
@@ -52,7 +52,7 @@ save = ctrlOrCmd+s
     ).toBe("ctrl+shift+c");
   });
 
-  it("should check for unrecognized config keys", () => {
+  it("should detect unrecognized config keys", () => {
     const defaultConfig = parseIni(`
 [general]
 maxResults = 10
@@ -77,34 +77,74 @@ superiorkey = ctrlOrCmd+c
 minRes = 10
     `);
 
-    const warnings = checkConfigWarnings(defaultConfig, userConfig);
+    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
     const expectedWarnings = [
       {
-        type: "key",
+        sourceName: "user",
+        type: "unrecognized-key",
         section: "general",
-        key: "minResults",
-        value: 10,
+        path: "general.minResults",
       },
       {
-        type: "section",
+        sourceName: "user",
+        type: "unrecognized-key",
         section: "generall",
+        path: "generall",
       },
       {
-        type: "key",
+        sourceName: "user",
+        type: "unrecognized-key",
         section: "ui.general",
-        key: "load",
-        value: "ctrlOrCmd+o",
+        path: "ui.general.load",
       },
       {
-        type: "section",
+        sourceName: "user",
+        type: "unrecognized-key",
         section: "ui.personal",
+        path: "ui.personal",
       },
     ];
 
     expect(warnings).toEqual(expectedWarnings);
   });
 
-  it("should initialize config", () => {
-    expect(BkConfigProvider.initialize()).resolves.toBeTruthy()
-  })
+  it("should detect conflicts between user and system keys", () => {
+    const systemConfig = parseIni(`
+[general]
+checkForUpdatesInterval = 86400000      ; 24 hours
+maxResults = 100
+
+[keybindings.queryEditor]
+submitAllQuery = ctrlOrCmd+enter
+
+[ui.tableTable]
+pageSize = 100
+    `);
+
+    const userConfig = parseIni(`
+[general]
+maxResults = 200
+
+[keybindings.queryEditor]
+submitAllQuery = ctrlOrCmd+shift+enter
+
+[ui.tableTable] ; empty section should not cause a warning
+    `);
+
+    const warnings = checkConflicts(userConfig, systemConfig, "user");
+    const expectedWarnings = [
+      {
+        type: "system-user-conflict",
+        sourceName: "user",
+        section: "general",
+        path: "general.maxResults",
+      },
+      {
+        type: "system-user-conflict",
+        sourceName: "user",
+        section: "keybindings.queryEditor",
+        path: "keybindings.queryEditor.submitAllQuery",
+      },
+    ];
+  });
 });

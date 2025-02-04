@@ -78,7 +78,7 @@
           return this.result.truncated
       },
       tableColumns() {
-        const columnWidth = this.result.fields.length > 30 ? this.$bkConfig.ui.tableTable.defaultColumnWidth : undefined
+        const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
         const cellMenu = (_e, cell) => {
           return copyActionsMenu({
@@ -132,7 +132,7 @@
             width: columnWidth,
             mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
             formatter: this.cellFormatter,
-            maxInitialWidth: this.$bkConfig.ui.tableTable.maxColumnWidth,
+            maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
             tooltip: this.cellTooltip,
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,

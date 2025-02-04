@@ -1,6 +1,6 @@
 import { MysqlClient } from "./mysql";
 import mysql from "mysql2";
-import BkConfig from "@/common/bkConfig";
+import BksConfig from "@/common/bksConfig";
 import { IDbConnectionDatabase, IDbConnectionServer } from '@/lib/db/types';
 
 export class MariaDBClient extends MysqlClient {
@@ -39,7 +39,7 @@ export class MariaDBClient extends MysqlClient {
       dateStrings: true,
       supportBigNumbers: true,
       bigNumberStrings: true,
-      connectTimeout: BkConfig.db.mariadb.connectTimeout,
+      connectTimeout: BksConfig.db.mariadb.connectTimeout,
     };
 
     if (server.config.socketPathEnabled) {

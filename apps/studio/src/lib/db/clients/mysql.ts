@@ -60,7 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import BkConfig from "@/common/bkConfig";
+import BksConfig from "@/common/bksConfig";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
@@ -147,7 +147,7 @@ async function configDatabase(
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,
-    connectTimeout: BkConfig.db.mysql.connectTimeout,
+    connectTimeout: BksConfig.db.mysql.connectTimeout,
   };
 
   if (server.config.socketPathEnabled) {

@@ -6,7 +6,7 @@ import rawlog from '@bksLogger'
 const log = rawlog.scope('update-manager')
 
 import platformInfo from '../common/platform_info'
-import BkConfig from '@/common/bkConfig'
+import BksConfig from '@/common/bksConfig'
 
 autoUpdater.autoDownload = false
 autoUpdater.logger = log
@@ -80,5 +80,5 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
 
   setInterval(() => {
     checkForUpdates()
-  }, BkConfig.general.checkForUpdatesInterval)
+  }, BksConfig.general.checkForUpdatesInterval)
 }

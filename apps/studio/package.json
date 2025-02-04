@@ -184,7 +184,7 @@
     "ignorePatterns": [
       "node_modules",
       "../**/dist",
-      "bkConfig.d.ts$"
+      "bksConfig.d.ts$"
     ]
   },
   "browserslist": [

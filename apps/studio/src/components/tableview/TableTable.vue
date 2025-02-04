@@ -96,7 +96,7 @@
           <a
             v-if="(this.page > 1)"
             @click="page = page - 1"
-            v-tooltip="$bkConfig.keybindings.tableTable.previousPage"
+            v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
           ><i
             class="material-icons"
           >navigate_before</i></a>
@@ -106,7 +106,7 @@
           >
           <a
             @click="page = page + 1"
-            v-tooltip="$bkConfig.keybindings.tableTable.nextPage"
+            v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
@@ -199,7 +199,7 @@
           <i class="material-icons material-icons-round">view_sidebar</i>
         </x-button>
         <x-button
-          v-tooltip="`Refresh Table (${$bkConfig.keybindings.tableTable.refresh})`"
+          v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -207,7 +207,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${$bkConfig.keybindings.tableTable.addRow})`"
+          v-tooltip="`Add row (${$bksConfig.keybindings.tableTable.addRow})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -398,7 +398,7 @@ export default Vue.extend({
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'openDetailView']),
     limit() {
-      return this.$bkConfig.ui.tableTable.pageSize
+      return this.$bksConfig.ui.tableTable.pageSize
     },
     isEmpty() {
       return _.isEmpty(this.data);
@@ -604,7 +604,7 @@ export default Vue.extend({
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
-          this.defaultColumnWidth(slimDataType, this.$bkConfig.ui.tableTable.defaultColumnWidth) :
+          this.defaultColumnWidth(slimDataType, this.$bksConfig.ui.tableTable.defaultColumnWidth) :
           undefined;
 
         let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
@@ -644,10 +644,10 @@ export default Vue.extend({
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
           dataType: column.dataType,
-          minWidth: this.$bkConfig.ui.tableTable.minColumnWidth,
+          minWidth: this.$bksConfig.ui.tableTable.minColumnWidth,
           width: columnWidth,
-          maxWidth: this.$bkConfig.ui.tableTable.maxColumnWidth,
-          maxInitialWidth: this.$bkConfig.ui.tableTable.maxInitialWidth,
+          maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
           resizable: 'header',
           cssClass,
           editable: this.cellEditCheck,
@@ -696,8 +696,8 @@ export default Vue.extend({
       const result = {
         title: this.internalIndexColumn,
         field: this.internalIndexColumn,
-        maxWidth: this.$bkConfig.ui.tableTable.maxColumnWidth,
-        maxInitialWidth: this.$bkConfig.ui.tableTable.maxInitialWidth,
+        maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+        maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
         editable: false,
         cellEditCancelled: cell => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
@@ -1149,7 +1149,7 @@ export default Vue.extend({
     },
     defaultColumnWidth(slimType, defaultValue) {
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
-      if (chunkyTypes.includes(slimType)) return this.$bkConfig.ui.tableTable.largeFieldWidth
+      if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
     },
     // TODO: this is not attached to anything. but it might be needed?

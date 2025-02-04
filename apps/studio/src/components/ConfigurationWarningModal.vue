@@ -75,11 +75,11 @@ export default Vue.extend({
   },
   computed: {
     groupedWarnings() {
-      return _.groupBy(this.$bkConfig.warnings, "type");
+      return _.groupBy(this.$bksConfig.warnings, "type");
     },
   },
   async mounted() {
-    if (this.$bkConfig.warnings.length > 0) {
+    if (this.$bksConfig.warnings.length > 0) {
       await this.$nextTick();
       this.$modal.show(this.modalName);
     }
