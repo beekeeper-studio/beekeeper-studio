@@ -6,7 +6,6 @@ import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableP
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
-import { defaultCreateScript } from "./postgresql/scripts";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
@@ -179,14 +178,9 @@ export class RedshiftClient extends PostgresClient {
     }));
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
-    const params = [
-      table,
-      schema,
-    ];
+    const data = await this.driverExecuteSingle(`show table ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`);
 
-    const data = await this.driverExecuteSingle(defaultCreateScript, { params });
-
-    return data.rows.map((row) => row.createtable)[0];
+    return data.rows.map((row) => row[data.columns[0].name])[0];
   }
 
   async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
