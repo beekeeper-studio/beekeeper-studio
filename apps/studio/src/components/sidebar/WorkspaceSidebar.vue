@@ -71,6 +71,13 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
       ]
       if (blob.workspace.isOwner) {
         result.push({
+          name: "Rename Workspace",
+          slug: 'rename',
+          handler: () => this.$root.$emit(AppEvent.promptRenameWorkspace, {
+            workspace: blob.workspace,
+            client: blob.client,
+          }),
+        }, {
           name: "Add Users",
           slug: 'invite',
           handler: ({item}) => window.location.href = `${item.workspace.url}/invitations/new`
