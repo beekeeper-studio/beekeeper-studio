@@ -216,8 +216,6 @@ export class DBTestUtil {
   }
 
   async setupdb() {
-    await BksConfig.initialize();
-
     await TestOrmConnection.connect()
     await LicenseKey.createTrialLicense()
     await this.connection.connect()

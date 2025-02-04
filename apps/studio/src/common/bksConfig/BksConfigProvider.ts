@@ -3,7 +3,6 @@ import _ from "lodash";
 import type { IPlatformInfo } from "../IPlatformInfo";
 
 export interface BksConfigSource {
-  configDir: string;
   defaultConfig: IBksConfig;
   systemConfig: Partial<IBksConfig>;
   userConfig: Partial<IBksConfig>;

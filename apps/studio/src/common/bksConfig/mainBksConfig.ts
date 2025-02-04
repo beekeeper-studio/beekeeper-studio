@@ -2,7 +2,7 @@ import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, copyFileSync } from "fs";
 import { parseIni } from "../../../src/config/helpers";
 import {
   BksConfigProvider,
@@ -10,6 +10,12 @@ import {
   BksConfigSource,
   BksConfig,
 } from "./BksConfigProvider";
+
+type ConfigFileName =
+  | "default.config.ini"
+  | "system.config.ini"
+  | "user.config.ini"
+  | "local.config.ini";
 
 const log = rawLog.scope("BksConfig");
 
@@ -79,17 +85,23 @@ export function checkConflicts(
   return results;
 }
 
-export function loadConfig(filePath: string) {
-  log.debug(`Loading config ${filePath}.`);
+const bundledConfigPath = path.join(process.resourcesPath);
 
-  if (!existsSync(filePath)) {
-    throw new Error(`Failed loading config. File not found: ${filePath}.`);
+function copyBundledConfig(file: ConfigFileName, dest: string) {
+  log.info(`Copying bundled config ${file} to ${filePath}.`);
+  const src = path.join(bundledConfigPath, file);
+  if (!existsSync(src)) {
+    throw new Error(
+      `Bundled config file not found: ${src}. This should not happen. Please report an issue.`
+    );
   }
+  copyFileSync(src, dest);
+}
 
+function readConfig(filePath: string) {
   try {
-    log.debug(`Reading config ${filePath}.`);
     const config = parseIni(readFileSync(filePath, "utf-8"));
-    log.debug("Config successfully read.");
+    log.debug(`Successfully read config ${filePath}.`);
     return config;
   } catch (error) {
     log.error(`Failed reading config ${filePath}.`, error);
@@ -97,12 +109,42 @@ export function loadConfig(filePath: string) {
   }
 }
 
+export function loadConfig(file: ConfigFileName): IBksConfig {
+  log.debug(`Loading config ${file}.`);
+
+  const filePath = path.join(resolveConfigDir(), file);
+
+  if (
+    !platformInfo.isDevelopment &&
+    (file === "default.config.ini" || file === "system.config.ini")
+  ) {
+    // We always read the bundled version of default.config.ini and
+    // system.config.ini so it's not possible for users to modify it. However,
+    // we want to make sure they can read them for reference.
+    copyBundledConfig(file, filePath);
+    return readConfig(path.join(bundledConfigPath, file));
+  }
+
+  if (!existsSync(filePath)) {
+    if (platformInfo.isDevelopment) {
+      throw new Error(`Failed loading config. File not found: ${filePath}.`);
+    }
+    copyBundledConfig(file, filePath);
+  }
+
+  return readConfig(filePath);
+}
+
 function resolveConfigDir() {
+  const dirpath = path.resolve(__dirname);
+
+  if (platformInfo.testMode) {
+    return path.resolve(dirpath, "../../..");
+  }
+
   if (!platformInfo.isDevelopment) {
     return platformInfo.userDirectory;
   }
-
-  const dirpath = path.resolve(__dirname);
 
   if (dirpath.includes("node_modules")) {
     return dirpath.split("node_modules")[0];
@@ -112,27 +154,7 @@ function resolveConfigDir() {
     return path.resolve(dirpath, "../..");
   }
 
-  if (platformInfo.testMode) {
-    return path.resolve(dirpath, "../../../..");
-  }
-
   return path.resolve(__dirname, "../../..");
-}
-
-function loadConfigs(dir: string) {
-  const defaultConfig: IBksConfig = loadConfig(
-    path.join(dir, "default.config.ini")
-  );
-  const systemConfig: Partial<IBksConfig> = loadConfig(
-    path.join(dir, "system.config.ini")
-  );
-  const userConfig: Partial<IBksConfig> = loadConfig(
-    path.join(
-      dir,
-      platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini"
-    )
-  );
-  return { defaultConfig, systemConfig, userConfig };
 }
 
 function collectConfigWarnings(
@@ -159,25 +181,27 @@ function collectConfigWarnings(
 }
 
 export function mainBksConfig(): BksConfig {
-  const configDir = resolveConfigDir();
-  log.info(`Loading configs from ${configDir}.`);
-  const { defaultConfig, systemConfig, userConfig } = loadConfigs(configDir);
+  log.info(`Loading configs.`);
+
+  const defaultConfig: IBksConfig = loadConfig("default.config.ini");
+  const systemConfig: Partial<IBksConfig> = loadConfig("system.config.ini");
+  const userConfig: Partial<IBksConfig> = loadConfig(
+    platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini"
+  );
+
   const warnings = collectConfigWarnings(
     defaultConfig,
     systemConfig,
     userConfig
   );
   const source: BksConfigSource = {
-    configDir,
     defaultConfig,
     systemConfig,
     userConfig,
     warnings,
   };
 
-  log.info(
-    `Configs successfully loaded with ${warnings.length} warnings conflicts.`
-  );
+  log.info(`Configs successfully loaded with ${warnings.length} warnings.`);
   log.warn("Warnings:", warnings);
   log.info(`Default config: ${JSON.stringify(defaultConfig, null, 2)}`);
   log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
