@@ -21,7 +21,7 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 
 const UNWRAPPER = /^(?:`(.*)`|'(.*)'|"(.*)")$/
 
-export const SqliteData: DialectData = {
+export const DuckDBData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   escapeString: defaultEscapeString,
@@ -35,29 +35,19 @@ export const SqliteData: DialectData = {
     if (matched) return matched[1] || matched[2] || matched[3];
     return value;
   },
-  textEditorMode: "text/x-sqlite",
+  textEditorMode: "text/x-sql",
   disabledFeatures: {
-    schema: true,
-    comments: true,
-    alter: {
-      alterColumn: true,
-      multiStatement: true,
-      addConstraint: true,
-      dropConstraint: true,
-      renameView: true,
-      renameSchema: true,
-      reorderColumn: true,
-    },
-    informationSchema: {
-      extra: true
-    },
+    triggers: true,
     multipleDatabase: true,
+    alter: {
+      multiStatement: true,
+      renameSchema: true, // FIXME: Altering schemas is not yet supported by duckdb
+    },
+    index: {
+      desc: true,
+    },
   },
   notices: {
-    infoSchema: "Note: SQLite does not support any column alterations except renaming"
-  },
-  boolean: {
-    true: BigInt(1),
-    false: BigInt(0),
+    infoTriggers: "Note: DuckDB does not support triggers",
   },
 }
