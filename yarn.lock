@@ -2324,6 +2324,11 @@
   dependencies:
     "@clickhouse/client-common" "1.8.1"
 
+"@coresql/mysql2-auth-ed25519@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@coresql/mysql2-auth-ed25519/-/mysql2-auth-ed25519-1.0.0.tgz#692c8a9cbf2a1d2850c9bb9c6d1c736af9ab7b79"
+  integrity sha512-pqH/XGycnw5QrVf/SmU2vhsGp6B4E898/4IjACQ2ENA7wZpiN4sQjNXA6C+mjW5xJuH3ss7NCSab2NX7s2DkNg==
+
 "@develar/schema-utils@~2.6.5":
   version "2.6.5"
   resolved "https://registry.yarnpkg.com/@develar/schema-utils/-/schema-utils-2.6.5.tgz#3ece22c5838402419a6e0425f85742b961d9b6c6"
@@ -2331,6 +2336,49 @@
   dependencies:
     ajv "^6.12.0"
     ajv-keywords "^3.4.1"
+
+"@duckdb/node-api@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-api/-/node-api-1.1.3-alpha.10.tgz#463a88ecfb478829d9991952b5a8fedc15c3e0b1"
+  integrity sha512-M28eiCIpLQWej1kt6h9A4culiM+N47H2HAH/dhULMgaI3vE5IpAGXIahkrcliseJW/pz4ve1rq4KJ6JFS/3vcQ==
+  dependencies:
+    "@duckdb/node-bindings" "1.1.3-alpha.10"
+
+"@duckdb/node-bindings-darwin-arm64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-arm64/-/node-bindings-darwin-arm64-1.1.3-alpha.10.tgz#8450c36a3b523790bd67bbf436c204e8158af8e0"
+  integrity sha512-gNLfDZAoXUDSD4B/qOQTyPHmmjdPVXzEf3D4uEWsNuJQ9fLMzNY4gAkE8lyXWhMYJwJQSTtkXU3pQ5airPn1OA==
+
+"@duckdb/node-bindings-darwin-x64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-x64/-/node-bindings-darwin-x64-1.1.3-alpha.10.tgz#5fd51abc09d07c6807e4f622591b6773a0a3ad15"
+  integrity sha512-4Dlo99a3UnRd5Zl0ghJh1aZ6i9Khx/lIGEzZnajN+TvwI1n2+XXDo5ApEunU9AqvQofVzJKX+8T57mcOkF9uyA==
+
+"@duckdb/node-bindings-linux-arm64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-arm64/-/node-bindings-linux-arm64-1.1.3-alpha.10.tgz#17db0ddbc6081eada28cbef1bba0b256b4cc6b40"
+  integrity sha512-BDBDiuBR7dW+P/N5MugyURblkMaeqD/Fx6hJWcLCPptoayalvzr9x+ijgt04FUDkwOF1gDJigc8UMgiTVA+RhA==
+
+"@duckdb/node-bindings-linux-x64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-x64/-/node-bindings-linux-x64-1.1.3-alpha.10.tgz#8957ddcf5b57d01a41bc3a12d26af50ef398da8b"
+  integrity sha512-XuMKDGgx3bJ+rSYnkonP/TWk79rRYE0mbfPBDJSx2M2SjyqIVETJWT7mvtqUvsdyIxkYn2bWMOAUd3O+nEUeHQ==
+
+"@duckdb/node-bindings-win32-x64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-x64/-/node-bindings-win32-x64-1.1.3-alpha.10.tgz#2ee320bbb3fde8921a4ca97484bdd910410cede1"
+  integrity sha512-JCCPPzil2JbK7my4ZPoKuJEYQs7ztsGSzGpj9XnJhKGltDXpZQBYjXd1RWKSb/ut6NwSwmdaBjjHP/+JkvE8SA==
+
+"@duckdb/node-bindings@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings/-/node-bindings-1.1.3-alpha.10.tgz#bd8bf8e46099e1a184746d4c999decbc92175432"
+  integrity sha512-wivhuZTsVlhz5HHLzu4yPatDE/q4W3E+93pg6s7Oma7OoljKOlRWsn33YDdEPNo6NcnPx1MFtMTuz8kt8cp0SQ==
+  optionalDependencies:
+    "@duckdb/node-bindings-darwin-arm64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-darwin-x64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-linux-arm64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-linux-x64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-win32-x64" "1.1.3-alpha.10"
 
 "@electron/asar@^3.2.7":
   version "3.2.10"
@@ -5101,7 +5149,7 @@ bluebird-lst@^1.0.9:
   dependencies:
     bluebird "^3.5.5"
 
-bluebird@^3.1.1, bluebird@^3.5.5:
+bluebird@^3.1.1, bluebird@^3.5.1, bluebird@^3.5.5:
   version "3.7.2"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.7.2.tgz#9f229c15be272454ffa973ace0dbee79a1b0c36f"
   integrity sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==
@@ -6854,6 +6902,15 @@ fs-extra@^11.1.1:
     jsonfile "^6.0.1"
     universalify "^2.0.0"
 
+fs-extra@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-7.0.1.tgz#4f189c44aa123b895f722804f55ea23eadc348e9"
+  integrity sha512-YJDaCJZEnBmcbw13fvdAM9AwNOJwOzrE4pqMqBq5nFiEqXUqHwlK4B+3pUw6JNvfSPtX05xFHtYy/1ni01eGCw==
+  dependencies:
+    graceful-fs "^4.1.2"
+    jsonfile "^4.0.0"
+    universalify "^0.1.0"
+
 fs-extra@^8.1.0:
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-8.1.0.tgz#49d43c45a88cd9677668cb7be1b46efdb8d2e1c0"
@@ -7201,15 +7258,15 @@ got@^11.7.0, got@^11.8.5:
     p-cancelable "^2.0.0"
     responselike "^2.0.0"
 
+graceful-fs@^4.1.2, graceful-fs@^4.2.4, graceful-fs@^4.2.6, graceful-fs@^4.2.9:
+  version "4.2.11"
+  resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.11.tgz#4183e4e8bf08bb6e05bbb2f7d2e0c8f712ca40e3"
+  integrity sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==
+
 graceful-fs@^4.1.6, graceful-fs@^4.2.0:
   version "4.2.10"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.10.tgz#147d3a006da4ca3ce14728c7aefc287c367d7a6c"
   integrity sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA==
-
-graceful-fs@^4.2.4, graceful-fs@^4.2.6, graceful-fs@^4.2.9:
-  version "4.2.11"
-  resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.11.tgz#4183e4e8bf08bb6e05bbb2f7d2e0c8f712ca40e3"
-  integrity sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==
 
 gtoken@^6.1.0:
   version "6.1.2"
@@ -9025,6 +9082,20 @@ mkdirp@^2.1.3:
   version "2.1.6"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-2.1.6.tgz#964fbcb12b2d8c5d6fbc62a963ac95a273e2cc19"
   integrity sha512-+hEnITedc8LAtIP9u3HJDFIdcLV2vXP33sqLLIzkv1Db1zO/1OxbvYf0Y1OC/S/Qo5dxHXepofhmxL02PsKe+A==
+
+mock-aws-s3@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/mock-aws-s3/-/mock-aws-s3-4.0.2.tgz#40b1d984b6b897f157224c2dc65874ac344b6cc8"
+  integrity sha512-J6g3MMCuKHeuqVEOgvQfRGIfVmg6KKrED48Bux/L9rTY3NPK9TFRh/9bCf5AuzjJm9PIlwhDEO99tD8+smnTyQ==
+  dependencies:
+    bluebird "^3.5.1"
+    fs-extra "^7.0.1"
+    underscore "1.12.1"
+
+module-alias@^2.2.3:
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/module-alias/-/module-alias-2.2.3.tgz#ec2e85c68973bda6ab71ce7c93b763ec96053221"
+  integrity sha512-23g5BFj4zdQL/b6tor7Ji+QY4pEfNH784BMslY9Qb0UnJWRAt+lQGLYmRaM0KDBwIG23ffEBELhZDP2rhi9f/Q==
 
 moo@^0.5.0:
   version "0.5.1"
@@ -11543,6 +11614,11 @@ typescript@~4.3.0:
   version "4.3.5"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.3.5.tgz#4d1c37cc16e893973c45a06886b7113234f119f4"
   integrity sha512-DqQgihaQ9cUrskJo9kIyW/+g0Vxsk8cDtZ52a3NGh0YNTfpUSArXSohyUGnvbPazEPLu398C0UxmKSOrPumUzA==
+
+underscore@1.12.1:
+  version "1.12.1"
+  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.12.1.tgz#7bb8cc9b3d397e201cf8553336d262544ead829e"
+  integrity sha512-hEQt0+ZLDVUMhebKxL4x1BTtDY7bavVofhZ9KZ4aI26X9SRaE+Y3m83XUL1UP2jn8ynjndwCCpEHdUG+9pP1Tw==
 
 underscore@^1.13.1:
   version "1.13.4"

@@ -6,6 +6,7 @@ import knexlib from 'knex'
 const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
 import { identify } from 'sql-query-identifier'
+import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import Client_Firebird from '@shared/lib/knex-firebird'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
@@ -33,7 +34,7 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse'].includes(v)
+    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse', 'duckdb'].includes(v)
     this.createKnexLib()
   }
 
@@ -111,6 +112,10 @@ export class SqlGenerator {
         this.knex = knexlib({ client: Client_Oracledb })
     } else if (this.isNativeKnex) {
         this.knex = knexlib({ client: this.knexDialect })
+    } else if (this.dialect === 'duckdb') {
+      this.knex = knexlib({
+        client: Client_DuckDB as any,
+      })
     } else if (this.dialect === 'cassandra') {
       this.knex  = knexlib({
         client: CassandraKnex,

@@ -298,16 +298,21 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   parse(url: string): boolean {
     try {
-      const goodEndings = ['.db', '.sqlite', '.sqlite3']
+      const endings = [
+        { connectionType: 'sqlite', options: ['.db', '.sqlite', '.sqlite3']},
+        { connectionType: 'duckdb', options: ['.duckdb', '.ddb']}
+      ]
+      // const goodEndings = ['.db', '.sqlite', '.sqlite3']
+      // const duckDbEndings = ['.duckdb', '.ddb']
       if (!this.smellsLikeUrl(url)) {
         // it's a sqlite file
-        if (goodEndings.find((e) => url.endsWith(e))) {
-          // it's a valid sqlite file
-          this.connectionType = 'sqlite'
-          this.defaultDatabase = url
-          return true
-        } else {
-          // do nothing, continue url parsing
+        for (let i = 0; i < endings.length; i++) {
+          const { connectionType, options } = endings[i];
+          if(options.find((e) => url.endsWith(e))) {
+            this.connectionType = connectionType as any
+            this.defaultDatabase = url
+            return
+          }
         }
       }
 
