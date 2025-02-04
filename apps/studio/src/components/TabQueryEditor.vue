@@ -397,6 +397,7 @@
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
+        'userKeymap': 'settings/userKeymap',
       }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
@@ -404,21 +405,6 @@
       ...mapState('tabs', { 'activeTab': 'active' }),
       enabled() {
         return !this.dialectData?.disabledFeatures?.queryEditor;
-      },
-      userKeymap: {
-        get() {
-          const value = this.settings?.keymap?.value;
-          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
-        },
-        set(value) {
-          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
-            this.initialize();
-          });
-        }
-      },
-      keymapTypes() {
-        return this.$config.defaults.keymapTypes
       },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized

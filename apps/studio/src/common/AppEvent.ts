@@ -20,6 +20,8 @@ export enum AppEvent {
   loadTable = 'loadTable',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
+  promptCreateWorkspace = 'cloud_create_workspace',
+  promptRenameWorkspace = 'cloud_rename_workspace',
   promptQueryImport = 'cloud_q_import',
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
@@ -50,7 +52,8 @@ export enum AppEvent {
   /** Triggered when the license support date has expired */
   licenseSupportDateExpired = 'licenseSupportDateExpired',
   switchLicenseState = 'switchLicenseState',
-  toggleBeta = 'toggleBeta'
+  toggleBeta = 'toggleBeta',
+  switchUserKeymap = 'switchUserKeymap',
 }
 
 export interface RootBinding {

@@ -39,6 +39,12 @@ import {
   applyConfig,
   Register,
 } from "@/lib/editor/vim";
+import { AppEvent } from "@/common/AppEvent";
+import { keymapTypes } from "@/lib/db/types"
+
+interface InitializeOptions {
+  userKeymap?: typeof keymapTypes[number]['value']
+}
 
 export default {
   props: [
@@ -65,7 +71,7 @@ export default {
     "foldGutter",
     "foldWithoutLineNumbers",
     "removeJsonRootBrackets",
-    "forceInitizalize",
+    "forceInitialize",
     "bookmarks",
     "foldAll",
     "unfoldAll",
@@ -77,18 +83,12 @@ export default {
       bookmarkInstances: [],
       markInstances: [],
       wasEditorFocused: false,
+      firstInitialization: true,
     };
   },
   computed: {
     keymapTypes() {
       return this.$config.defaults.keymapTypes;
-    },
-    userKeymap() {
-      const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap?.value;
-      return value && this.keymapTypes.map((k) => k.value).includes(value)
-        ? value
-        : "default";
     },
     hasSelectedText() {
       return this.editorInitialized ? !!this.editor.getSelection() : false;
@@ -104,7 +104,12 @@ export default {
         value: this.value,
         status: this.editor != null
       }
-    }
+    },
+    rootBindings() {
+      return [
+        { event: AppEvent.switchUserKeymap, handler: this.handleSwitchUserKeymap },
+      ]
+    },
   },
   watch: {
     valueAndStatus() {
@@ -116,14 +121,10 @@ export default {
       this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
-    forceInitizalize() {
-      this.initialize();
-    },
-    userKeymap() {
-      this.initialize();
-    },
-    vimConfig() {
-      this.initialize();
+    forceInitialize() {
+      this.initialize({
+        userKeymap: this.$store.getters['settings/userKeymap'],
+      });
     },
     mode() {
       this.editor?.setOption("mode", this.mode);
@@ -195,7 +196,7 @@ export default {
         this.wasEditorFocused = true;
       }
     },
-    async initialize() {
+    async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
@@ -216,7 +217,7 @@ export default {
         mode: this.mode,
         hint: this.hint,
         hintOptions: this.hintOptions,
-        keyMap: this.userKeymap,
+        keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
           gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
@@ -316,7 +317,7 @@ export default {
 
       cmEl.addEventListener("contextmenu", this.showContextMenu);
 
-      if (this.userKeymap === "vim") {
+      if (options.userKeymap === "vim") {
         const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
 
         if (!codeMirrorVimInstance) {
@@ -345,7 +346,12 @@ export default {
         });
       }
 
+      if (this.firstInitialization && this.focus) {
+        cm.focus();
+      }
+
       this.editor = cm;
+      this.firstInitialization = false;
 
       this.$nextTick(() => {
         this.initializeMarkers();
@@ -536,19 +542,23 @@ export default {
         });
       }
     },
+    handleSwitchUserKeymap(value) {
+      this.initialize({ userKeymap: value });
+    },
   },
-  mounted() {
-    this.initialize();
-    if (this.focus) {
-      this.editor.focus();
-    }
+  async mounted() {
+    await this.initialize({
+      userKeymap: this.$store.getters['settings/userKeymap'],
+    });
     window.addEventListener('focus', this.focusEditor);
     window.addEventListener('blur', this.handleBlur);
+    this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
     window.removeEventListener('focus', this.focusEditor);
     window.removeEventListener('blur', this.handleBlur);
     this.destroyEditor();
+    this.unregisterHandlers(this.rootBindings);
   },
 };
 </script>

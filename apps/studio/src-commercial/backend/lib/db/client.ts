@@ -14,6 +14,7 @@ import { FirebirdClient } from "./clients/firebird";
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
 import { LibSQLClient } from "./clients/libsql";
+import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
 import { MongoDBClient } from "./clients/mongodb";
 
@@ -31,6 +32,7 @@ const clients = new Map<ConnectionType, any>([
   ['oracle', OracleClient],
   ['cassandra', CassandraClient],
   ['libsql', LibSQLClient],
+  ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
   ['mongodb', MongoDBClient]
 ], );
