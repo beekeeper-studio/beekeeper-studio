@@ -27,7 +27,7 @@
           </template>
           <template v-if="'system-user-conflict' in groupedWarnings">
             <span>
-              System settings can't be overridden. The following keys is
+              System settings can't be overridden. The following keys are
               ignored:
             </span>
             <ul>
