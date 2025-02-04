@@ -444,8 +444,6 @@ export default Vue.extend({
     },
     keymap() {
       if (!this.active) return {}
-        // FIXME (azmi): from merge conflicts
-      // result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshTable.bind(this),
         'general.addRow': this.cellAddRow.bind(this),
@@ -457,6 +455,7 @@ export default Vue.extend({
         'general.deleteSelection': this.deleteTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
+        'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
       })
     },
 

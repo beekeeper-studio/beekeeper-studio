@@ -88,7 +88,7 @@ export function checkConflicts(
 const bundledConfigPath = path.join(process.resourcesPath);
 
 function copyBundledConfig(file: ConfigFileName, dest: string) {
-  log.info(`Copying bundled config ${file} to ${filePath}.`);
+  log.info(`Copying bundled config ${file} to ${dest}.`);
   const src = path.join(bundledConfigPath, file);
   if (!existsSync(src)) {
     throw new Error(
@@ -112,10 +112,11 @@ function readConfig(filePath: string) {
 export function loadConfig(file: ConfigFileName): IBksConfig {
   log.debug(`Loading config ${file}.`);
 
+  const isDev = platformInfo.isDevelopment || platformInfo.testMode;
   const filePath = path.join(resolveConfigDir(), file);
 
   if (
-    !platformInfo.isDevelopment &&
+    !isDev &&
     (file === "default.config.ini" || file === "system.config.ini")
   ) {
     // We always read the bundled version of default.config.ini and
@@ -126,8 +127,8 @@ export function loadConfig(file: ConfigFileName): IBksConfig {
   }
 
   if (!existsSync(filePath)) {
-    if (platformInfo.isDevelopment) {
-      throw new Error(`Failed loading config. File not found: ${filePath}.`);
+    if (isDev) {
+      throw new Error(`Failed loading config. File not found: ${filePath}`);
     }
     copyBundledConfig(file, filePath);
   }
@@ -151,10 +152,10 @@ function resolveConfigDir() {
   }
 
   if (process.env.CLI_MODE) {
-    return path.resolve(dirpath, "../..");
+    return path.resolve(dirpath);
   }
 
-  return path.resolve(__dirname, "../../..");
+  return path.resolve(__dirname, "..");
 }
 
 function collectConfigWarnings(
