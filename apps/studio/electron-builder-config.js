@@ -60,6 +60,16 @@ module.exports = {
       ext: 'sqlite',
       name: 'SQLite sqlite file',
       mimeType: 'application/vnd.sqlite3'
+    },
+    {
+      ext: 'duckdb',
+      name: 'DuckDB file',
+      mimeType: 'application/vnd.duckdb'
+    },
+    {
+      ext: 'ddb',
+      name: 'DuckDB file',
+      mimeType: 'application/vnd.duckdb'
     }
   ],
   protocols: [
