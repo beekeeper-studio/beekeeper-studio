@@ -303,7 +303,7 @@ export class DBTestUtil {
     }
     const createdDbName = await this.connection.createDatabase('new-db_2', charset, collation)
 
-    if (this.dialect.match(/sqlite|firebird/)) {
+    if (this.dialect.match(/sqlite|firebird|duckdb/)) {
       const connection = this.server.createConnection(createdDbName)
       await expect(connection.connect()).resolves.not.toThrow()
       await connection.disconnect()
