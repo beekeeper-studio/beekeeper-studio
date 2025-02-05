@@ -217,17 +217,14 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
       } : null
     ].filter((v) => !!v)).toArray();
 
-    log.info('VALUE: ', result[0]['_id'])
-    log.info('MAYBE?: ', result[0]['_id'].id)
-    log.info('INSTANCE?: ', result[0]['_id'] instanceof ObjectId)
-    log.info('TYPE: ', typeof result[0]['_id'])
-    const fields = this.parseQueryResultColumns(result[0]);
+    const fields = this.parseQueryResultColumns(result[0] || {});
     const rows = await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)
 
     return { result: rows, fields: [] }
   }
 
-  private parseQueryResultColumns(row: any): BksField[] {
+  parseQueryResultColumns(row: any): BksField[] {
+    if (!row) return;
     return Object.keys(row).map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';
       if (row[column] instanceof ObjectId) {
