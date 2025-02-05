@@ -6,11 +6,20 @@ import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResul
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
-import logRaw from 'electron-log'
+import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
+import {
+  buildDatabaseFilter,
+  buildDeleteQueries,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  refreshTokenIfNeeded
+} from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -23,14 +32,11 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicD
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import { IDbConnectionServer } from '../backendTypes';
-import { Signer } from "@aws-sdk/rds-signer";
-import { fromIni } from "@aws-sdk/credential-providers";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 const PD = PostgresData
 
 const log = logRaw.scope('postgresql')
-const logger = () => log
 
 const knex = knexlib({ client: 'pg' })
 const escapeBinding = knex.client._escapeBinding;
@@ -91,6 +97,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   _defaultSchema: string;
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
+  interval: NodeJS.Timeout;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -122,6 +129,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       backDirFormat: true,
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
+      transactions: true
     };
   }
 
@@ -138,8 +146,33 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       pool: new pg.Pool(dbConfig)
     };
 
-    //test connection
     const test = await this.conn.pool.connect()
+
+    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
+      this.interval = setInterval(async () => {
+        try {
+          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
+
+          const newPool = new pg.Pool({
+            ...dbConfig,
+            password: newPassword,
+          });
+
+          const test = await newPool.connect();
+          test.release();
+
+          if (this.conn?.pool) {
+            await this.conn.pool.end();
+          }
+          this.conn = { pool: newPool };
+
+          log.info('Token refreshed successfully and connection pool updated.');
+        } catch (err) {
+          log.error('Could not refresh token or update connection pool!', err);
+        }
+      }, globals.iamRefreshTime);
+    }
+
     test.release();
 
     this.conn.pool.on('acquire', (_client) => {
@@ -156,7 +189,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     })
 
 
-    logger().debug('connected');
+    log.debug('connected');
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
@@ -164,6 +197,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async disconnect(): Promise<void> {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
     await super.disconnect();
     this.conn.pool.end();
   }
@@ -1262,31 +1298,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
-    let resolvedPw = null;
-    const redshiftOptions = server.config.redshiftOptions;
-
-    if (
-      server.config.client === "postgresql" &&
-      redshiftOptions?.iamAuthenticationEnabled
-    ) {
-      const nodeProviderChainCredentials = fromIni({
-        profile: redshiftOptions.awsProfile ?? "default",
-      });
-      const signer = new Signer({
-        credentials: nodeProviderChainCredentials,
-        region: redshiftOptions?.awsRegion,
-        hostname: server.config.host,
-        port: server.config.port || 5432,
-        username: server.config.user,
-      });
-
-      resolvedPw = await signer.getAuthToken();
-    }
-
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: resolvedPw || server.config.password || undefined,
+      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: globals.psqlTimeout,
@@ -1296,7 +1311,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     if (
       server.config.client === "postgresql" &&
-      redshiftOptions?.iamAuthenticationEnabled
+      // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
+      // we only need SSL for iam authentication
+      server.config?.redshiftOptions?.iamAuthenticationEnabled
     ){
       server.config.ssl = true;
     }

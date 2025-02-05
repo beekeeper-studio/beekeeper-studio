@@ -1,6 +1,6 @@
 import _, { defaults } from 'lodash'
 import { Module } from "vuex";
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { State as RootState } from '../index'
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { TransportLicenseKey } from '@/common/transport';
@@ -90,7 +90,12 @@ export const LicenseModule: Module<State, RootState>  = {
         return
       }
       await context.dispatch('sync')
-      setInterval(() => context.dispatch('sync'), globals.licenseCheckInterval)
+      if (!window.platformInfo.isDevelopment) {
+        // refreshing in dev mode resets the dev credentials added by the menu
+        setInterval(() => context.dispatch('sync'), globals.licenseCheckInterval)
+      } else {
+        log.warn("Credential refreshing is disabled (dev mode detected)")
+      }
       context.commit('setInitialized', true)
     },
     async add(context, { email, key, trial }) {

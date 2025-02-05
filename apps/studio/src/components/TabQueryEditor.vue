@@ -320,7 +320,7 @@
   import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
-  import rawlog from 'electron-log'
+  import rawlog from '@bksLogger'
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
@@ -389,26 +389,12 @@
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
+        'userKeymap': 'settings/userKeymap',
       }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
-      userKeymap: {
-        get() {
-          const value = this.settings?.keymap?.value;
-          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
-        },
-        set(value) {
-          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
-            this.initialize();
-          });
-        }
-      },
-      keymapTypes() {
-        return this.$config.defaults.keymapTypes
-      },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
       },

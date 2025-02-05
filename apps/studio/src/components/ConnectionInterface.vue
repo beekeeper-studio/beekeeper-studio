@@ -69,6 +69,11 @@
                 <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
                               :testing="testing"
                 />
+                <duck-db-form
+                  v-else-if="config.connectionType === 'duckdb'"
+                  :config="config"
+                  :testing="testing"
+                />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
@@ -143,6 +148,7 @@ import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
 import ClickHouseForm from './connection/ClickHouseForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
+import DuckDBForm from './connection/DuckDBForm.vue'
 import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
 import Split from 'split.js'
@@ -150,7 +156,7 @@ import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
@@ -165,7 +171,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, DuckDbForm: DuckDBForm },
 
   data() {
     return {

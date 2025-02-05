@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'duckdb'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -40,6 +40,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   bigquery: "BigQuery",
   firebird: "Firebird",
   oracle: "Oracle Database",
+  duckdb: "DuckDB",
   clickhouse: "ClickHouse"
 }
 
@@ -63,6 +64,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'postgresql') return 'postgresql'
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
+  if (d === 'duckdb') return 'sql'
   return 'mysql' // we want this as the default
 }
 
@@ -116,6 +118,7 @@ export interface DialectData {
       renameSchema?: boolean
       renameTable?: boolean
       renameView?: boolean
+      reorderColumn?: boolean
     },
     triggers?: boolean,
     relations?: boolean,
@@ -143,6 +146,7 @@ export interface DialectData {
       sql?: boolean
     }
     schema?: boolean
+    multipleDatabase?: boolean
     generatedColumns?: boolean
     transactions?: boolean
     chunkSizeStream?: boolean
@@ -216,7 +220,7 @@ export interface Schema {
 }
 
 export interface SchemaItemChange {
-  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment' | 'extra'
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment' | 'extra' | 'position'
   columnName: string
   newValue: string | boolean | null
 }
@@ -228,6 +232,7 @@ export interface AlterTableSpec {
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]
+  reorder? : { newOrder: SchemaItem[], oldOrder: SchemaItem[] } | null
 }
 
 export interface PartitionExpressionChange {
@@ -249,7 +254,7 @@ export interface AlterPartitionsSpec {
 
 export interface IndexColumn {
   name: string
-  order: 'ASC' | 'DESC'
+  order?: 'ASC' | 'DESC'
   prefix?: number | null // MySQL Only
 }
 
