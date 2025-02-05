@@ -10,9 +10,9 @@
       @closed="handleDeadModal"
     />
     <ExportNotification
-      v-for="exportId in exports"
-      :key="exportId"
-      :exportId="exportId"
+      v-for="e in exports"
+      :key="e.id"
+      :exportId="e.id"
     />
   </div>
 </template>

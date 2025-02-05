@@ -4,7 +4,6 @@
       class="advanced-heading flex"
     >
       <span class="expand">IAM Authentication</span>
-
     </h4>
     <div class="advanced-body">
       <div class="row gutter">
@@ -15,8 +14,7 @@
             credentials.
             <a
               href="https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html"
-            >Amazon Docs</a
-            > - <a href="https://https://docs.beekeeperstudio.io//user_guide/connecting/amazon-rdb">Beekeeper Docs</a>
+            >Amazon Docs</a> - <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rdb">Beekeeper Docs</a>
           </div>
         </div>
       </div>
@@ -27,7 +25,7 @@
           type="text"
           class="form-control"
           v-model="config.redshiftOptions.awsRegion"
-        />
+        >
       </div>
       <div class="form-group">
         <label for="awsProfile"> AWS Profile </label>
@@ -36,7 +34,7 @@
           type="text"
           class="form-control"
           v-model="config.redshiftOptions.awsProfile"
-        />
+        >
       </div>
     </div>
   </div>

@@ -1,5 +1,9 @@
+import rawLog from '@bksLogger';
+rawLog.info("initializing utility");
+
+const log = rawLog.scope('UtilityProcess');
+
 import { MessagePortMain } from 'electron';
-import rawLog from 'electron-log'
 import ORMConnection from '@/common/appdb/Connection'
 import platformInfo from '@/common/platform_info';
 import { AppDbHandlers } from '@/handlers/appDbHandlers';
@@ -11,6 +15,7 @@ import { newState, removeState, state } from '@/handlers/handlerState';
 import { QueryHandlers } from '@/handlers/queryHandlers';
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
+import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
@@ -19,8 +24,13 @@ import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { CloudClient } from '@/lib/cloud/CloudClient';
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import globals from '@/common/globals';
+import _ from 'lodash';
 
-const log = rawLog.scope('UtilityProcess');
+import * as sms from 'source-map-support'
+
+if (platformInfo.env.development || platformInfo.env.test) {
+  sms.install()
+}
 
 let ormConnection: ORMConnection;
 
@@ -32,11 +42,12 @@ interface Reply {
   stack?: string
 }
 
-export let handlers: Handlers = {
+export const handlers: Handlers = {
   ...ConnHandlers,
   ...QueryHandlers,
   ...GeneratorHandlers,
   ...ExportHandlers,
+  ...ImportHandlers,
   ...AppDbHandlers,
   ...BackupHandlers,
   ...FileHandlers,
@@ -45,6 +56,29 @@ export let handlers: Handlers = {
   ...LicenseHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
+
+_.mixin({
+  'deepMapKeys': function (obj, fn) {
+
+    const x = {};
+
+    _.forOwn(obj, function (rawV, k) {
+      let v = rawV
+      if (_.isPlainObject(v)) {
+        v = _.deepMapKeys(v, fn);
+      } else if (_.isArray(v)) {
+        v = v.map((item) => _.deepMapKeys(item, fn))
+      }
+      x[fn(v, k)] = v;
+    });
+
+    return x;
+  }
+});
+
+process.on('uncaughtException', (error) => {
+  log.error(error);
+});
 
 process.parentPort.on('message', async ({ data, ports }) => {
   const { type, sId } = data;
@@ -69,25 +103,39 @@ process.parentPort.on('message', async ({ data, ports }) => {
 
 async function runHandler(id: string, name: string, args: any) {
   log.info('RECEIVED REQUEST FOR NAME, ID: ', name, id);
-  let replyArgs: Reply = {
+  const replyArgs: Reply = {
     id,
     type: 'reply',
   };
 
   if (handlers[name]) {
-    try {
-      replyArgs.data = await handlers[name](args)
-    } catch (e) {
-      replyArgs.type = 'error';
-      replyArgs.stack = e?.stack
-      replyArgs.error = e?.message ?? e
-    }
+    return handlers[name](args)
+      .then((data) => {
+        replyArgs.data = data;
+      })
+      .catch((e) => {
+        replyArgs.type = 'error';
+        replyArgs.stack = e?.stack;
+        replyArgs.error = e?.message ?? e;
+        log.error("HANDLER: ERROR", e)
+      })
+      .finally(() => {
+        try {
+          state(args.sId).port.postMessage(replyArgs);
+        } catch (e) {
+          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+        }
+      });
   } else {
     replyArgs.type = 'error';
     replyArgs.error = `Invalid handler name: ${name}`;
-  }
 
-  state(args.sId).port.postMessage(replyArgs);
+    try {
+      state(args.sId).port.postMessage(replyArgs);
+    } catch (e) {
+      log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+    }
+  }
 }
 
 async function initState(sId: string, port: MessagePortMain) {

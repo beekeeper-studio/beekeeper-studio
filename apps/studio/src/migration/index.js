@@ -43,11 +43,17 @@ import minimalMode from './20240514_user_settings_minimal_mode'
 import libsqlOptions from './20240528_add_libsql_options'
 import nameTokenCache from './20240715_add_name_to_token_cache'
 import maxAllowedAppRelease from './20240920_add_max_allowed_app_release'
+import lastUsedWorkspace from './20240923_user_settings_default_workspace'
+import userSettingKeymap from './20241017_add_user_setting_keymap'
+import missingUserSettings from './20241017_add_missing_user_settings'
+import useBeta from './20241009_add_beta_toggle'
+import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
+
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 
 
 const logger = rawLog.scope('migrations');
@@ -66,8 +72,9 @@ const realMigrations = [
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
   createHiddenEntities, createHiddenSchemas, cassandraOptions, readOnlyMode, connectionPins, fixKeymapType, bigQueryOptions,
   firebirdConnection, exportPath, UserSettingsWindowPosition,
-  demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache,
-  maxAllowedAppRelease,
+  demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
+  maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
+  useBeta, deleteDuplicateConnections
 ]
 
 // fixtures require the models

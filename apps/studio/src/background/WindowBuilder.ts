@@ -4,7 +4,7 @@ import { BrowserWindow, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import querystring from 'query-string'
 
 
@@ -27,19 +27,18 @@ class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
   private appUrl: string
+  public sId: string;
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
     const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
-    let showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
-    let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
+    let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows ? 'default' : 'hidden'
 
     if (platformInfo.isWayland) {
-      showFrame = false
       titleBarStyle = 'hidden'
     }
 
-      log.info('constructing the window')
+    log.info('constructing the window')
     const preloadPath = path.join(__dirname, 'preload.js')
     console.log("PRELOAD PATH:", preloadPath)
     this.win = new BrowserWindow({
@@ -48,7 +47,7 @@ class BeekeeperWindow {
       minHeight: 600,
       backgroundColor: dark ? "#252525" : '#ffffff',
       titleBarStyle,
-      frame: showFrame,
+      frame: false,
       webPreferences: {
         preload: preloadPath,
         nodeIntegration: false,
@@ -60,8 +59,8 @@ class BeekeeperWindow {
     })
 
     const devUrl = 'http://localhost:3003'
-    const startUrl = 'app://./renderer/index.html'
-    let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
+    const startUrl = 'app://./index.html'
+    const appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
@@ -99,6 +98,22 @@ class BeekeeperWindow {
         this.win.setTitle(args[0])
         e.preventDefault()
       }
+    })
+
+    this.win.on('maximize', () => {
+      this.win.webContents.send(`maximize-${this.sId}`)
+    })
+
+    this.win.on('unmaximize', () => {
+      this.win.webContents.send(`unmaximize-${this.sId}`)
+    })
+
+    this.win.on('enter-full-screen', () => {
+      this.win.webContents.send(`enter-full-screen-${this.sId}`)
+    })
+
+    this.win.on('leave-full-screen', () => {
+      this.win.webContents.send(`leave-full-screen-${this.sId}`)
     })
 
     this.initialize()

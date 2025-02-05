@@ -100,6 +100,7 @@ export interface ExtendedTableColumn extends SchemaItem {
   hasDefault?: boolean
   generated?: boolean
   array?: boolean
+  bksField: BksField
 }
 
 export interface PrimaryKeyColumn {
@@ -150,8 +151,15 @@ export interface IDbInsert {
 
 export interface TableResult {
   result: any[];
-  fields: string[];
+  fields: BksField[];
 }
+
+export interface BksField {
+  name: string;
+  bksType: BksFieldType;
+}
+
+export type BksFieldType = 'BINARY' | 'UNKNOWN';
 
 export interface TableChanges {
   inserts: TableInsert[];
@@ -338,6 +346,8 @@ export interface CommandSettingSection {
 export interface ImportFuncOptions {
   clientExtras?: {[key: string]: any}
   executeOptions?: {[key: string]: any}
+  importerOptions?: {[key: string]: any}
+  storeValues?: {[key: string]: any}
 }
 
 export interface ImportScriptFunctions {

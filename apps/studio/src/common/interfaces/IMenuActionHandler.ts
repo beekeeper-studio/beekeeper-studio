@@ -21,13 +21,13 @@ export interface IMenuActionHandler {
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  contactSupport: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newQuery: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   closeTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   quickSearch: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchTheme: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  switchMenuStyle: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -40,4 +40,5 @@ export interface IMenuActionHandler {
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
+  toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }

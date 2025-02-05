@@ -60,6 +60,7 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
   computed: {
     ...mapState('credentials', ['credentials', 'loading']),
     ...mapState(['workspaceId']),
+    ...mapState('settings', ['settings']),
     ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'}),
 
   },
@@ -70,6 +71,13 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
       ]
       if (blob.workspace.isOwner) {
         result.push({
+          name: "Rename Workspace",
+          slug: 'rename',
+          handler: () => this.$root.$emit(AppEvent.promptRenameWorkspace, {
+            workspace: blob.workspace,
+            client: blob.client,
+          }),
+        }, {
           name: "Add Users",
           slug: 'invite',
           handler: ({item}) => window.location.href = `${item.workspace.url}/invitations/new`
@@ -98,6 +106,13 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
         return
       }
       this.$store.commit('workspaceId', blob.workspace.id)
+      const defaultWorkspace = {
+        ...this.settings['lastUsedWorkspace'],
+        ...{
+          _userValue: blob.workspace.id.toString()
+        }
+      }
+      this.$store.dispatch('settings/saveSetting', defaultWorkspace)
     }
   },
   mounted() {

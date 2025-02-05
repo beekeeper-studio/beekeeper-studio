@@ -187,7 +187,7 @@
         } else {
           if (this.$store.getters.isCommunity) {
             // we want to display a modal
-            this.$root.$emit(AppEvent.upgradeModal);
+            this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
             this.authType = 'default'
           } else {
             this.azureAuthEnabled = true

@@ -1,6 +1,6 @@
 import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
-import oracle from 'oracledb'
+import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
 
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
@@ -12,7 +12,6 @@ import {
   FieldDescriptor,
   FilterOptions,
   ImportFuncOptions,
-  ImportScriptFunctions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -20,6 +19,8 @@ import {
   StreamResults,
   TableChanges,
   TableColumn,
+  BksField,
+  BksFieldType,
   TableFilter,
   TableIndex,
   TableOrView,
@@ -33,9 +34,8 @@ import {
   buildUpdateQueries,
   withClosable,
   buildDeleteQueries,
-  applyChangesSql
 } from '@/lib/db/clients/utils';
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { identify as rawIdentify } from 'sql-query-identifier'
@@ -45,14 +45,16 @@ import { OracleCursor } from './oracle/OracleCursor';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
+import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
+import Client_Oracledb from '@shared/lib/knex-oracledb';
 
 const log = rawLog.scope('oracle')
 
 
+oracle.fetchAsString = [oracle.CLOB]
+oracle.fetchAsBuffer = [oracle.BLOB]
 
 export class OracleClient extends BasicDatabaseClient<DriverResult> {
-  connectionBaseType = 'oracle' as const;
-
   pool: oracle.Pool;
   server: IDbConnectionServer
   database: IDbConnectionDatabase
@@ -60,9 +62,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   instantClientLocation: string
   version: string
   readOnlyMode: boolean
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knexLib({ client: 'oracledb'}), NoOpContextProvider, server, database);
+    super(knexLib({ client: Client_Oracledb }), NoOpContextProvider, server, database);
     this.defaultSchema = async (): Promise<string> => server.config.user.toUpperCase()
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
@@ -118,17 +121,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
   }
-  
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { schema, name } = table
-    return {
-      beginCommand: (_executeOptions: any): Promise<any> => null,
-      truncateCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery(`TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sql: string, executeOptions: any): Promise<any> => this.rawExecuteQuery(sql, executeOptions),
-      commitCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('COMMIT;', executeOptions),
-      rollbackCommand: (executeOptions: any): Promise<any> => this.rawExecuteQuery('ROLLBACK;', executeOptions)
-    }
-  }
 
   async createDatabaseSQL() {
     return `
@@ -163,12 +155,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return this.version
   }
 
-  async applyChangesSql(changes: TableChanges): Promise<string> {
-    return applyChangesSql(changes, this.knex);
-  }
-
-  async applyChanges(changes: TableChanges): Promise<any[]> {
-
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     const insertQueries = buildInsertQueries(this.knex, changes.inserts)
     const updateQueries = buildUpdateQueries(this.knex, changes.updates)
     const deleteQueries = buildDeleteQueries(this.knex, changes.deletes)
@@ -287,9 +274,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = null, selects: string[] = ['*']): Promise<TableResult> {
     schema = schema ? schema : await this.defaultSchema();
     const query = this.genSelect(table, offset, limit, orderBy, filters, schema, false, selects)
-    const result = await this.driverExecuteSimple(query)
-    const fields = Object.keys(result[0] || {})
-    return { result, fields }
+    const result = await this.driverExecuteSingle(query)
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
+    return { result: await this.convertRowsToObjects(rows, result.result.metaData), fields }
   }
   async selectTopStream(table, orderBy, filters, chunkSize, schema): Promise<StreamResults> {
     const q = this.genSelect(table, null, null, orderBy, filters, schema)
@@ -531,8 +519,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       if (configLocation) payload['configDir'] = configLocation
       oracle.initOracleClient(payload)
       // oracle.initOracleClient()
-      oracle.fetchAsString = [oracle.CLOB]
-      oracle.fetchAsBuffer = [oracle.BLOB]
     } catch {
       // do nothing
     }
@@ -674,6 +660,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         defaultValue: this.parseDefault(row.DATA_DEFAULT),
         hasDefault: !_.isNil(this.parseDefault(row.DATA_DEFAULT)),
         generated: row.VIRTUAL_COLUMN === 'YES',
+        bksField: this.parseTableColumn(row),
       }
     })
     return _.sortBy(result, 'ordinalPosition')
@@ -776,11 +763,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   private async driverExecuteSimple(query) {
     const {result} = await this.driverExecuteSingle(query)
+    return this.convertRowsToObjects(result.rows, result.metaData)
+  }
+
+  private async convertRowsToObjects(rows: any[], metaData: oracle.Metadata<unknown>[]) {
     const allRows = []
-    result.rows.forEach((r: any[]) => {
+    rows.forEach((r: any[]) => {
       const nuRow = {}
       r.forEach((item, idx) => {
-        const field = result.metaData[idx].name
+        const field = metaData[idx].name
         nuRow[field] = item
       })
       allRows.push(nuRow)
@@ -788,13 +779,23 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return allRows
   }
 
+  protected async runWithConnection(child: (c: oracle.Connection) => Promise<any>): Promise<any> {
+    const c = await this.pool.getConnection();
+    try {
+      return await child(c);
+    } finally {
+      await c.close()
+    }
+  }
+
   protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {
       const realQueries: string[] = _.isArray(query) ? query : [query]
       const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
       // TODO - use `executeMany` if no SELECT queries are present
       // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
-      const c = await this.pool.getConnection()
-      return await withClosable(c, async (c: oracle.Connection) => {
+
+      const c = options.connection ?? await this.pool.getConnection();
+      const runQuery = async (c: oracle.Connection) => {
         const results: DriverResult[] = []
         for (let qi = 0; qi < infos.length; qi++) {
           const q: IdentifyResult = infos[qi];
@@ -803,15 +804,33 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           log.debug("Execute Query", queryText, options)
           const data = await c.execute(queryText, {}, { outFormat: oracle.OUT_FORMAT_ARRAY})
 
-          results.push({ result: data, info: q})
+          results.push({ result: data, info: q, rows: data.rows, columns: data.metaData, arrayMode: true })
         }
         await c.commit()
         return results
-      })
+      };
+      return options.connection ? await runQuery(c) : await withClosable(c, runQuery)
   }
 
   private identify(query: string): IdentifyResult[] {
     return rawIdentify(query, {strict: false, dialect: 'oracle'})
+  }
+
+  parseQueryResultColumns(qr: DriverResult): BksField[] {
+    return qr.columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      if (column.dbType === oracle.DB_TYPE_BLOB) {
+        bksType = 'BINARY'
+      }
+      return { name: column.name, bksType }
+    })
+  }
+
+  parseTableColumn(column: { COLUMN_NAME: string; DATA_TYPE: string }): BksField {
+    return {
+      name: column.COLUMN_NAME,
+      bksType: column.DATA_TYPE === 'BLOB' ? 'BINARY' : 'UNKNOWN',
+    }
   }
 }
 
@@ -821,4 +840,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 interface DriverResult {
   result: oracle.Result<unknown>,
   info: IdentifyResult
+  rows: unknown[]
+  columns: Metadata<unknown>[]
+  arrayMode: true
 }

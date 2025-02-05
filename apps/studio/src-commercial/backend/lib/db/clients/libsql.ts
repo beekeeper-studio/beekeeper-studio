@@ -1,5 +1,5 @@
 import _ from "lodash";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { SqliteClient, SqliteResult } from "@/lib/db/clients/sqlite";
 import Client_Libsql from "@libsql/knex-libsql";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
@@ -9,24 +9,28 @@ import { IDbConnectionDatabase } from "@/lib/db/types";
 import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { NgQueryResult } from "@/lib/db/models";
+import { NgQueryResult, BksField } from "@/lib/db/models";
+import { LibSQLBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);
 
 /**
  * FIXME: This class doesn't support returning query data as arrays so
- * "select 1 as a, 2 as a" will be returned as [{a:2}]. Two ways we can resolve
- * this:
+ * "select 1 as a, 2 as a" will be returned as [{a:2}]. There are three ways
+ * to solve this:
  * 1. Fix this in libsql-js https://github.com/tursodatabase/libsql-js/issues/116
  * 2. Use @libsql/client instead of libsql-js, but this seems to require us
  *    to use node >= 18
+ * 3. Treat the object like arrays. If we run the above query, we can get both
+ *    values by doing row[0] and row[1].
  */
 export class LibSQLClient extends SqliteClient {
   private isRemote: boolean;
   /** Use this connection only when we need to sync to remote database */
   // @ts-expect-error not fully typed
   _rawConnection: Database.Database;
+  transcoders = [LibSQLBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);
@@ -77,10 +81,6 @@ export class LibSQLClient extends SqliteClient {
     }
   }
 
-  async versionString(): Promise<string> {
-    return this.version?.data[0]["version"] || "";
-  }
-
   async truncateElementSql(elementName: string): Promise<string> {
     // FIXME libsql doesn't expose `vacuum` yet. We'll need to run vacuum after
     // delete according to SqliteClient.
@@ -99,7 +99,7 @@ export class LibSQLClient extends SqliteClient {
     const arrayMode: boolean = options.arrayMode;
     const result = await this.driverExecuteMultiple(queryText, options);
 
-    return (result || []).map(({ data, columns, statement, changes }) => {
+    return (result || []).map(({ rows: data, columns, statement, changes }) => {
       // Fallback in case the identifier could not reconize the command
       const isSelect = Array.isArray(data);
       let rows: any[];
@@ -163,13 +163,15 @@ export class LibSQLClient extends SqliteClient {
     });
   }
 
-  protected checkReader(arg0: any, arg1: any): boolean {
+  protected checkReader(
+    ...args: Parameters<SqliteClient["checkReader"]>
+  ): boolean {
     if (this.isRemote) {
       // statement.reader will always return false in remote connection, which
-      // cause `rawExecuteQuery` to always return empty data.
+      // cause `rawExecuteQuery` to return an empty data.
       return true;
     }
-    return super.checkReader(arg0, arg1);
+    return super.checkReader(...args);
   }
 
   protected createCursor(
@@ -198,5 +200,29 @@ export class LibSQLClient extends SqliteClient {
 
   private get libsqlOptions() {
     return this.server.config.libsqlOptions;
+  }
+
+  parseQueryResultColumns(qr: SqliteResult): BksField[] {
+    if (qr.columns.length > 0) {
+      return super.parseQueryResultColumns(qr);
+    }
+
+    const columns: BksField[] = [];
+
+    if (qr.rows[0]) {
+      Object.keys(qr.rows[0]).forEach((key) => {
+        const isBlob = qr.rows.some(
+          (row: any) =>
+            !_.isNil(row[key]) &&
+              (_.isBuffer(row[key]) || _.isArrayBuffer(row[key]))
+        );
+        columns.push({
+          name: key,
+          bksType: isBlob ? "BINARY" : "UNKNOWN",
+        });
+      });
+    }
+
+    return columns;
   }
 }

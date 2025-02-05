@@ -34,11 +34,13 @@ export const BigQueryData: DialectData = {
     },
     alter: {
       addConstraint: true,
-      dropConstraint: true
+      dropConstraint: true,
+      reorderColumn: true,
     },
     importFromFile: true,
     createIndex: true,
-    comments: true
+    comments: true,
+    initialSort: true,
   },
   notices: {
     infoIndexes: 'BigQuery: table indexes are not supported.',

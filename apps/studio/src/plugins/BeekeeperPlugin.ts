@@ -4,6 +4,7 @@ import ContextMenu from '@/components/common/ContextMenu.vue'
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
+import TimeAgo from "javascript-time-ago"
 
 export interface ContextOption {
   name: string,
@@ -23,6 +24,15 @@ interface MenuProps {
 }
 
 export const BeekeeperPlugin = {
+  timeAgo(date: Date) {
+    if (date > new Date('2888-01-01')) {
+      return 'forever'
+    }
+    const ta = new TimeAgo('en-US')
+
+    return ta.format(date)
+
+  },
   closeTab(id?: string) {
     this.$root.$emit(AppEvent.closeTab, id)
   },
@@ -53,7 +63,7 @@ export const BeekeeperPlugin = {
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
-    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
+    if (config.connectionType.match(/sqlite|libsql|duckdb/)) {
       return config.defaultDatabase || "./unknown.db"
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
@@ -73,7 +83,7 @@ export const BeekeeperPlugin = {
     if (config.socketPathEnabled) return config.socketPath;
 
     let connectionString = `${config.host}:${config.port}`;
-    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
+    if (config.connectionType.match(/sqlite|libsql|duckdb/)) {
       return window.main.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`

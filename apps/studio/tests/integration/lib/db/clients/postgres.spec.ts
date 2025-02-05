@@ -10,7 +10,8 @@ import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
-import { createServer } from '@/lib/db'
+import { createServer } from '@commercial/backend/lib/db/server'
+import { PostgresTestDriver } from './postgres/container'
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -23,6 +24,7 @@ const TEST_VERSIONS = [
 ] as const
 
 type TestVersion = typeof TEST_VERSIONS[number]['version']
+let configUsed = null
 
 function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
   describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
@@ -35,67 +37,12 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
 
-      const startupTimeout = dbtimeout * 2;
-      const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
-      container = await new GenericContainer(`postgres:${dockerTag}`)
-        .withEnvironment({
-          "POSTGRES_PASSWORD": "example",
-          "POSTGRES_DB": "banana"
-        })
-        .withHealthCheck({
-          test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d banana > /dev/null"],
-          interval: 2000,
-          timeout: 3000,
-          retries: 10,
-          startPeriod: 5000,
-        })
-        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
-        // .withWaitStrategy(Wait.forHealthCheck())
-        .withExposedPorts(5432)
-        .withBindMounts([{
-          source: path.join(temp, "postgresql"),
-          target: "/var/run/postgresql",
-          mode: "rw"
-        }])
-        .withStartupTimeout(startupTimeout)
-        .start()
-      const config: IDbConnectionServerConfig = {
-        client: 'postgresql',
-        host: container.getHost(),
-        port: container.getMappedPort(5432),
-        user: 'postgres',
-        password: 'example',
-        osUser: 'foo',
-        ssh: null,
-        sslCaFile: null,
-        sslCertFile: null,
-        sslKeyFile: null,
-        sslRejectUnauthorized: false,
-        ssl: false,
-        domain: null,
-        socketPath: null,
-        socketPathEnabled: false,
-        readOnlyMode: readonly
-      }
+      await PostgresTestDriver.start(dockerTag, socket, readonly)
 
-      if (socket) {
-        config.host = 'notarealhost'
-        config.socketPathEnabled = true
-        config.socketPath = path.join(temp, "postgresql")
-      }
-
-      const utilOptions: Options = {
-        dialect: 'postgresql',
-        defaultSchema: 'public',
-      }
-
-      if (dockerTag !== 'latest') {
-        // Generated columns was introduced in postgres 12
-        utilOptions.skipGeneratedColumns = true
-      }
-
-      util = new DBTestUtil(config, "banana", utilOptions)
+      container = PostgresTestDriver.container
+      util = new DBTestUtil(PostgresTestDriver.config, "banana", PostgresTestDriver.utilOptions)
       await util.setupdb()
+      configUsed = PostgresTestDriver.config
 
       await util.knex.schema.createTable('witharrays', (table) => {
         table.integer("id").primary()
@@ -123,7 +70,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           );
       `)
 
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         await util.knex.raw(`
           CREATE TABLE partitionedtable (
             recordId SERIAL,
@@ -177,7 +124,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           first_key character varying(255) NOT NULL,
           second_key character varying(255) NOT NULL,
           PRIMARY KEY (first_key, second_key)
-        ); 
+        );
       `)
     })
 
@@ -189,6 +136,13 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     })
 
+    it("Should connect to localhost without SSL even if redshiftOptions isn't empty", async () => {
+      configUsed.redshiftOptions = { iamAuthenticationEnabled: false }
+      const server = createServer(configUsed)
+      const connection = server.createConnection('banana')
+      await connection.connect()
+      await connection.listTables()
+    })
 
     it("Should allow me to update rows with an empty array", async () => {
       const columns = await util.connection.listTableColumns("witharrays")

@@ -34,7 +34,7 @@ export default Vue.extend({
       this.$root.$emit(AppEvent.promptLogin)
     },
     createWorkspace() {
-      document.location.href = `${this.$config.cloudUrl}/workspaces/new`
+      this.$root.$emit(AppEvent.promptCreateWorkspace)
     },
     signup() {
       document.location.href = `${this.$config.cloudUrl}/users/sign_up`

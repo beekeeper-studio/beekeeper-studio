@@ -6,9 +6,9 @@ import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableP
 import { PostgresClient, STQOptions } from "./postgresql";
 import { escapeString } from "./utils";
 import pg from 'pg';
-import { defaultCreateScript } from "./postgresql/scripts";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
+import _ from "lodash";
 
 export class RedshiftClient extends PostgresClient {
   async supportedFeatures(): Promise<SupportedFeatures> {
@@ -77,6 +77,7 @@ export class RedshiftClient extends PostgresClient {
       generated: null, // Redshift does not support generated columns in svv_columns
       array: null, // Redshift does not support arrays
       comment: row.column_comment || null,
+      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -177,14 +178,9 @@ export class RedshiftClient extends PostgresClient {
     }));
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
-    const params = [
-      table,
-      schema,
-    ];
+    const data = await this.driverExecuteSingle(`show table ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`);
 
-    const data = await this.driverExecuteSingle(defaultCreateScript, { params });
-
-    return data.rows.map((row) => row.createtable)[0];
+    return data.rows.map((row) => row[data.columns[0].name])[0];
   }
 
   async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
@@ -266,7 +262,7 @@ export class RedshiftClient extends PostgresClient {
 
   protected async getTypes(): Promise<any> {
     const sql = `
-      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::integer as typeid
       FROM        pg_type t
       LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
       WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))

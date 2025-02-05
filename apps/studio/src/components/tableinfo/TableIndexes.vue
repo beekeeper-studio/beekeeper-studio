@@ -117,7 +117,7 @@ import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
@@ -180,6 +180,9 @@ export default Vue.extend({
     },
     indexColumnOptions() {
       const normal = this.table.columns.map((c) => escapeHtml(c.columnName))
+      if (this.dialectData.disabledFeatures?.index?.desc) {
+        return normal
+      }
       const desc = this.table.columns.map((c) => `${escapeHtml(c.columnName)} DESC`)
       return [...normal, ...desc]
     },
@@ -199,6 +202,9 @@ export default Vue.extend({
             // In mysql, we can specify the prefix length
             if (this.mysqlTypes.includes(this.connectionType) && !_.isNil(c.prefix)) {
               return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
+            }
+            if (this.dialectData.disabledFeatures?.index?.desc) {
+              return c.name
             }
             return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
           })
@@ -301,6 +307,9 @@ export default Vue.extend({
           const columns = dataColumns.map((c: string)=> {
             if (this.mysqlTypes.includes(this.connectionType)) {
               return mysqlParseIndexColumn(c)
+            }
+            if (this.dialectData.disabledFeatures?.index?.desc) {
+              return { name: c } as IndexColumn
             }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')

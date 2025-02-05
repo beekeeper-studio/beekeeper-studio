@@ -17,35 +17,50 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-20.04, windows-2019]
+        os: [macos-14, ubuntu-20.04, windows-2019, ubuntu-arm64]
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
 
-      - name: Install python 3.8 (not Mac)
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+
+      - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.11
         if: "!startsWith(matrix.os, 'macos')"
 
-      - name: Install python 3.8 (mac)
+
+      - name: Install flatpak tools
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+        run: |
+          sudo apt install -y flatpak flatpak-builder rpm
+          flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Install fpm
+        run: sudo gem install fpm
+        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+
+      - name: Install python 3.11 (mac)
         if: "startsWith(matrix.os, 'macos')"
         run: |
-          # Install Python 3.8
-          brew install python@3.8
-          # Add Python 3.8 to PATH
-          echo "/opt/homebrew/opt/python@3.8/libexec/bin" >> $GITHUB_PATH
-          export PATH="/opt/homebrew/opt/python@3.8/libexec/bin:$PATH"
-          export PYTHON_PATH="/opt/homebrew/opt/python@3.8/libexec/bin/python3"
+          # Install Python 3.11
+          brew install python@3.11
+          # Add Python 3.11 to PATH
+          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+          export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
+          export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
 
       - name: Verify Python Version
         if: "startsWith(matrix.os, 'windows')"
         run: |
           $PYTHON_VERSION = python --version | Out-String
           Write-Output "Installed Python version: $PYTHON_VERSION"
-          if (-not $PYTHON_VERSION.StartsWith("Python 3.8")) {
-            Write-Output "Error: Python version does not start with 3.8"
+          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
+            Write-Output "Error: Python version does not start with 3.11"
             exit 1
           }
         shell: powershell
@@ -55,8 +70,8 @@ jobs:
         run: |
           PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
           echo "Installed Python version: $PYTHON_VERSION"
-          if [[ ! $PYTHON_VERSION == 3.8* ]]; then
-            echo "Error: Python version does not start with 3.8"
+          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
+            echo "Error: Python version does not start with 3.11"
             exit 1
           fi
 
@@ -76,8 +91,10 @@ jobs:
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
         env:
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.8/libexec/bin/python3' || '$PYTHONPATH' }}"
+          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+          USE_SYSTEM_FPM: true
 
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"

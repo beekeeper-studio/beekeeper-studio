@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import globals from '../common/globals'
 import { getActiveWindows } from './WindowBuilder'
-import rawlog from 'electron-log'
+import rawlog from '@bksLogger'
 
 const log = rawlog.scope('update-manager')
 
@@ -28,6 +28,11 @@ function dealWithAppImage() {
   }
 }
 
+function shouldSkipUpdater() {
+  if (platformInfo.isLinux && !platformInfo.isAppImage) return true
+  return false
+}
+
 function checkForUpdates() {
   log.info('checking for updates right now')
   try {
@@ -37,13 +42,25 @@ function checkForUpdates() {
   }
 }
 
-export function manageUpdates(debug?: boolean): void {
+export function setAllowBeta(allowBeta: boolean) {
+  autoUpdater.allowPrerelease = allowBeta;
+  autoUpdater.channel = allowBeta ? 'beta' : 'latest';
+}
+
+export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
 
   if (platformInfo.environment === 'development' || platformInfo.isSnap || (platformInfo.isLinux && !platformInfo.isAppImage)) {
     log.info("not doing any updates, didn't meet conditional")
     return
   }
+  setAllowBeta(allowBeta);
+
   dealWithAppImage();
+
+  if (shouldSkipUpdater()) {
+    log.info("Skipping auto-updater for this platform");
+    return;
+  }
 
   autoUpdater.logger?.debug?.(JSON.stringify(process.env))
 

@@ -10,7 +10,7 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
-import RawLog from 'electron-log/renderer'
+import RawLog from '@bksLogger'
 import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
@@ -33,6 +33,7 @@ import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
+import { ConnectionTypes } from '@/lib/db/types'
 
 
 const log = RawLog.scope('store/index')
@@ -72,7 +73,6 @@ export interface State {
   expandFKDetailsByDefault: boolean
   openDetailView: boolean
   tableTableSplitSizes: number[]
-  showBeginTrialModal: boolean
 }
 
 Vue.use(Vuex)
@@ -126,14 +126,16 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
-    openDetailView: SmartLocalStorage.getBool('openDetailView'),
+    openDetailView: SmartLocalStorage.getBool('openDetailView', true),
     tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
-    showBeginTrialModal: SmartLocalStorage.getBool('showBeginTrialModal', true),
   },
 
   getters: {
     defaultSchema(state) {
       return state.defaultSchema;
+    },
+    friendlyConnectionType(state) {
+      return ConnectionTypes.find((ct) => ct.value == state.connectionType)?.name ?? "Default Connection"
     },
     workspace(state, getters): IWorkspace {
       if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
@@ -249,16 +251,13 @@ const store = new Vuex.Store<State>({
     openDetailView(state) {
       return state.openDetailView
     },
-    showBeginTrialModal(state, _getters, _rootState, rootGetters) {
-      return state.showBeginTrialModal && rootGetters['licenses/noLicensesFound']
-    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
       state.storeInitialized = b
     },
     workspaceId(state, id: number) {
-      state.workspaceId = id
+      state.workspaceId = Number(id)
     },
     selectSidebarItem(state, item: string) {
       state.selectedSidebarItem = item
@@ -391,9 +390,6 @@ const store = new Vuex.Store<State>({
     },
     tableTableSplitSizes(state, value: number[]) {
       state.tableTableSplitSizes = value
-    },
-    showBeginTrialModal(state, value: boolean) {
-      state.showBeginTrialModal = value
     },
   },
   actions: {
@@ -622,9 +618,6 @@ const store = new Vuex.Store<State>({
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
-    },
-    toggleShowBeginTrialModal(context, value?: boolean) {
-      context.dispatch('toggleFlag', { flag: 'showBeginTrialModal', value })
     },
   },
   plugins: []

@@ -70,7 +70,7 @@ export default {
           }
         },
         {
-          name: "Import from CSV",
+          name: "Import from File",
           class: isBQClass,
           slug: 'import',
           ultimate: true,

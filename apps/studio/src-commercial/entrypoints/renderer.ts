@@ -24,16 +24,18 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
+import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
 
 (async () => {
 
   await window.main.requestPlatformInfo();
+  rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 
@@ -69,7 +71,7 @@ import App from '@/App.vue'
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule]);
+    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
 
     (window as any).$ = $;
@@ -135,9 +137,6 @@ import App from '@/App.vue'
     const app = new Vue({
       render: h => h(App),
       store,
-      beforeMount() {
-        store.dispatch('initRootStates')
-      },
     })
 
     Vue.prototype.$util = new UtilityConnection();
@@ -146,8 +145,8 @@ import App from '@/App.vue'
       if (event.source === window && event.data.type === 'port') {
         const [port] = event.ports;
         const { sId } = event.data;
+        log.log('Received port in renderer with sId: ', sId);
 
-        log.log('GOT PORT: ', port, sId)
         Vue.prototype.$util.setPort(port, sId);
         app.$store.dispatch('settings/initializeSettings');
       }
@@ -155,6 +154,7 @@ import App from '@/App.vue'
 
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
+    await store.dispatch('initRootStates')
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")
