@@ -31,6 +31,8 @@
     <configuration-warning-modal />
     <enter-license-modal />
     <workspace-sign-in-modal />
+    <workspace-create-modal />
+    <workspace-rename-modal />
     <import-queries-modal />
     <import-connections-modal />
     <confirmation-modal-manager />
@@ -55,6 +57,8 @@ import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vue'
 
+import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
+import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
 import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
@@ -85,7 +89,8 @@ export default Vue.extend({
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, ConfigurationWarningModal,
+    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
+    ConfigurationWarningModal,
   },
   data() {
     return {
