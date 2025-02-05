@@ -2,11 +2,12 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BaseV1DatabaseClient } from "@/lib/db/clients/BaseV1DatabaseClient";
 import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { IDbConnectionDatabase } from "@/lib/db/types";
-import { Collection, Document, MongoClient } from 'mongodb';
+import { Collection, Document, MongoClient, ObjectId } from 'mongodb';
 import rawLog from '@bksLogger';
-import { BksField, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableColumn, TableFilter, TableIndex, TableOrView, TableProperties, TableResult, TableTrigger } from "@/lib/db/models";
+import { BksField, BksFieldType, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableColumn, TableFilter, TableIndex, TableOrView, TableProperties, TableResult, TableTrigger } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
+import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope('mongodb');
 
@@ -28,6 +29,7 @@ const mongoContext = {
 export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
 
   conn: MongoClient;
+  transcoders = [MongoDBObjectIdTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, mongoContext, server, database);
@@ -125,7 +127,8 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
         return cols.map((col) => ({
           tableName: value.collectionName,
           columnName: col.field,
-          dataType: col.types[0]
+          dataType: col.types[0],
+          bksField: this.parseTableColumn({ field: col.field, type: col.types[0] })
         } as ExtendedTableColumn))
       }))).flat();
     }
@@ -214,9 +217,25 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
       } : null
     ].filter((v) => !!v)).toArray();
 
-    return { result, fields: [] }
+    log.info('VALUE: ', result[0]['_id'])
+    log.info('MAYBE?: ', result[0]['_id'].id)
+    log.info('INSTANCE?: ', result[0]['_id'] instanceof ObjectId)
+    log.info('TYPE: ', typeof result[0]['_id'])
+    const fields = this.parseQueryResultColumns(result[0]);
+    const rows = await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)
+
+    return { result: rows, fields: [] }
   }
 
+  private parseQueryResultColumns(row: any): BksField[] {
+    return Object.keys(row).map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      if (row[column] instanceof ObjectId) {
+        bksType = 'OBJECTID';
+      }
+      return { name: column, bksType };
+    })
+  }
   
 
   async getPrimaryKeys(_table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
@@ -287,8 +306,11 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     return null;
   }
 
-  protected parseTableColumn(_column: any): BksField {
-      throw new Error("Method not implemented.");
+  protected parseTableColumn(column: { field: string, type: string }): BksField {
+    return {
+      name: column.field,
+      bksType: column.type === 'objectid' ? 'OBJECTID' : 'UNKNOWN'
+    }
   }
 
   // ******************* UTILS *******************************
