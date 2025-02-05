@@ -35,7 +35,7 @@ Curtiu o Beekeeper Studio e quer contribuir, mas não com código? [Temos alguma
 | [ClickHouse](https://clickhouse.tech/)                   | ⏳ Coming Soon                |           |    ✅    |  -- |
 | [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
 | [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⏳ Coming Soon                |           |    ✅    |      -- |
-| [DuckDB](https://duckdb.org/)                            | ⏳ Coming Soon                |           |    ✅    |      -- |
+| [DuckDB](https://duckdb.org/)                            | 🅱 Beta Support               |           |    ✅    |    [Features](https://beekeeperstudio.io/db/duckdb-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
 | [MongoDB](https://www.mongodb.com/)                      | 🗓️ Planned for V5               |           |    ✅    |     -- |
 | [Redis](https://redis.io/)                               | 🗓️ Planned for V5               |           |    ✅    |       -- |
 | [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🗓️ Planned for V5               |           |    ✅    |       -- |
