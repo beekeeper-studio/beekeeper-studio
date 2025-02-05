@@ -32,22 +32,6 @@ if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
 
-// if (platformInfo.isDevelopment) {
-//   function watchConfig(name: "default" | "local") {
-//     const watcher = fs.watch(path.join(bksConfigSource.configDir, `${name}.config.ini`));
-//     watcher.on("change", async () => {
-//     // FIXME reset here
-//     // callback: () => ipcRenderer.send(AppEvent.menuClick, "reload"),
-//     });
-//     watcher.on("error", (error) => {
-//       log.error(error);
-//     });
-//     return () => watcher.close()
-//   }
-//   watchConfig("default")
-//   watchConfig("local")
-// }
-
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
