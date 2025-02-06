@@ -9,9 +9,13 @@
   "exports": {
     ".": "./dist/index.js",
     "./style.css": "./dist/style.css",
-    "./table.js": "./dist/table/define.js",
-    "./table-list.js": "./dist/table-list/define.js",
-    "./sql-text-editor.js": "./dist/sql-text-editor/define.js"
+    "./table": "./dist/table/define.js",
+    "./table-list": "./dist/table-list/define.js",
+    "./sql-text-editor": "./dist/sql-text-editor/define.js",
+    "./vue/table": "./dist/vue/table.js",
+    "./vue/table-list": "./dist/vue/table-list.js",
+    "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",
+    "./vue/data-editor": "./dist/vue/data-editor.js"
   },
   "scripts": {
     "dev": "vite",

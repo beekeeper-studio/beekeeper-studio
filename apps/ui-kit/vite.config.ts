@@ -19,6 +19,7 @@ export default defineConfig({
     },
     rollupOptions: {
       input: {
+        style: resolve(__dirname, "lib/style.scss"),
         "index": resolve(__dirname, "lib/components/define.ts"),
         "table": resolve(__dirname, "lib/components/table/define.ts"),
         "table-list": resolve(__dirname, "lib/components/table-list/define.ts"),
@@ -30,7 +31,16 @@ export default defineConfig({
           __dirname,
           "lib/components/data-editor/define.ts"
         ),
-        style: resolve(__dirname, "lib/style.scss"),
+        "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
+        "vue/table-list": resolve(__dirname, "lib/components/table-list/TableList.vue"),
+        "vue/sql-text-editor": resolve(
+          __dirname,
+          "lib/components/sql-text-editor/SqlTextEditor.vue"
+        ),
+        "vue/data-editor": resolve(
+          __dirname,
+          "lib/components/data-editor/DataEditor.vue"
+        ),
       },
     },
     outDir: "dist",
