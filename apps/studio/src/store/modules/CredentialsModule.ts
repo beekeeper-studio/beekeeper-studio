@@ -94,6 +94,18 @@ export const CredentialsModule: Module<State, RootState> = {
     add(state, cred: CredentialBlob) {
       upsert(state.credentials, cred)
     },
+    pushWorkspace(state, payload: { blobId: number, workspace: IWorkspace }) {
+      state.credentials
+        .find((c) => c.id === payload.blobId)
+        ?.workspaces.push(payload.workspace)
+    },
+    renameWorkspace(state, payload: { workspace: IWorkspace, name: string }) {
+      state.credentials.forEach((c) => c.workspaces.forEach((ws) => {
+        if (ws.id === payload.workspace.id) {
+          ws.name = payload.name
+        }
+      }))
+    },
   },
 
   actions: {
@@ -145,6 +157,20 @@ export const CredentialsModule: Module<State, RootState> = {
       if (lastUsedWorkspace !== -1 && workspaces.length > 1) {
         if (workspaces.filter(v => v?.workspace?.id === lastUsedWorkspace) != null) context.commit('workspaceId', lastUsedWorkspace, { root: true })
       }
+    },
+    async createWorkspace(context, payload: { blobId: number, name: string }) {
+      const client = context.state.credentials.find((c) => c.id === payload.blobId).client
+      const workspace = await client.workspaces.create({
+        name: payload.name,
+      } as IWorkspace)
+      context.commit('pushWorkspace', { blobId: payload.blobId, workspace })
+    },
+    async renameWorkspace(context, payload: { client: CloudClient, workspace: IWorkspace, name: string }) {
+      const workspace = await payload.client.workspaces.update({
+        ...payload.workspace,
+        name: payload.name,
+      })
+      context.commit('renameWorkspace', { workspace, name: payload.name })
     },
   }
 }

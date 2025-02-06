@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { BksField } from "../models";
 import rawLog from "@bksLogger";
+import { DuckDBBlobValue } from "@duckdb/node-api";
 
 const log = rawLog.scope("transcoders");
 
@@ -57,6 +58,29 @@ export const LibSQLBinaryTranscoder: Transcoder<
       },
     });
     return buffer;
+  },
+  serializeCheckByField(field: BksField): boolean {
+    return field.bksType === "BINARY";
+  },
+  deserializeCheckByValue(value): value is Uint8Array {
+    return _.isTypedArray(value);
+  },
+};
+
+export const DuckDBBinaryTranscoder: Transcoder<DuckDBBlobValue, Uint8Array> = {
+  serialize(value) {
+    if (_.isNil(value)) return value;
+    return new Uint8Array(value.bytes, 0, value.bytes.byteLength);
+  },
+  deserialize(value) {
+    if (_.isNil(value)) return value;
+    const blob = new DuckDBBlobValue(value);
+    Object.assign(blob, {
+      toSQL() {
+        return `'${this.toString("hex")}'`;
+      },
+    })
+    return blob;
   },
   serializeCheckByField(field: BksField): boolean {
     return field.bksType === "BINARY";
