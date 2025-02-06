@@ -32,21 +32,21 @@
         </div>
       </div>
       <bks-sql-text-editor
-        ref="editor"
-        :value.prop="unsavedText"
-        :height.prop="editor.height"
-        :read-only.prop="editor.readOnly"
-        :markers.prop="editorMarkers"
-        :formatter-dialect.prop="formatterDialect"
-        :identifier-dialect.prop="identifierDialect"
-        :keybindings.prop="keybindings"
-        :vim-config.prop="vimConfig"
-        :keymap.prop="userKeymap"
-        :tables.prop="editorTables"
-        :columns-getter.prop="columnsGetter"
-        :default-schema.prop="defaultSchema"
+        :value="unsavedText"
+        :height="editor.height"
+        :read-only="editor.readOnly"
+        :markers="editorMarkers"
+        :formatter-dialect="formatterDialect"
+        :identifier-dialect="identifierDialect"
+        :keybindings="keybindings"
+        :vim-config="vimConfig"
+        :keymap="userKeymap"
+        :tables="editorTables"
+        :columns-getter="columnsGetter"
+        :default-schema="defaultSchema"
+        :mode="dialectData.textEditorMode"
         @bks-initialized="handleEditorInitialized"
-        @bks-value-change="unsavedText = $event.detail[0]"
+        @bks-value-change="unsavedText = $event"
         @bks-blur="onTextEditorBlur?.()"
       />
       <span class="expand" />
@@ -324,6 +324,7 @@
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
+  import BksSqlTextEditor from "@bks/ui-kit/vue/sql-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -343,7 +344,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, BksSqlTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -398,7 +399,6 @@
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
-        'userKeymap': 'settings/userKeymap',
       }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
@@ -414,9 +414,7 @@
         },
         set(value) {
           if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
-            this.initialize();
-          });
+          this.trigger(AppEvent.switchUserKeymap, value)
         }
       },
       keymapTypes() {

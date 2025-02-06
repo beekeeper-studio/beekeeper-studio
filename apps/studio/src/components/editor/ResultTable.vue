@@ -5,14 +5,14 @@
   >
     <bks-table
       ref="table"
-      :table-id.prop="tableId"
-      :height.prop="actualTableHeight"
-      :cell-context-menu-items.prop="contextMenuItems"
-      :column-header-context-menu-items.prop="contextMenuItems"
-      :row-header-context-menu-items.prop="contextMenuItems"
-      :corner-header-context-menu-items.prop="contextMenuItems"
-      :tabulator-options.prop="tabulatorOptions"
-      :dialect.prop="dialect"
+      :table-id="tableId"
+      :height="actualTableHeight"
+      :cell-context-menu-items="contextMenuItems"
+      :column-header-context-menu-items="contextMenuItems"
+      :row-header-context-menu-items="contextMenuItems"
+      :corner-header-context-menu-items="contextMenuItems"
+      :tabulator-options="tabulatorOptions"
+      :dialect="dialect"
       @bks-initialized="handleTableInitialized"
       @bks-foreign-key-go-to="handleFkClick"
     />
@@ -160,9 +160,6 @@
         }
       },
     },
-    beforeDestroy() {
-      this.$refs.table.vueComponent.$destroy();
-    },
     methods: {
       async handleTableInitialized(event) {
         this.tabulator = event.detail[0]
@@ -291,8 +288,7 @@
       triggerFocus() {
         this.tabulator.rowManager.getElement().focus();
       },
-      handleFkClick(event) {
-        const { field, cell } = event.detail[0]
+      handleFkClick({ field, cell }) {
         const magic = this.tableColumns.find((c) => c.field === field).magic
         if (magic.formatterParams?.fk) {
           this.fkClick(magic.formatterParams.fk[0], cell)

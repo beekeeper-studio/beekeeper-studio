@@ -19,7 +19,7 @@
           @databaseSelected="databaseSelected"
         />
         <bks-table-list
-          :tables.prop="tables"
+          :tables="tables"
           @bks-item-dblclick="handleTableListItemDblClick"
           @bks-item-update-columns="handleItemUpdateColumns"
           @bks-refresh-btn-click="handleRefreshBtnClick"
@@ -53,11 +53,11 @@
 <script>
   import _ from 'lodash'
   import GlobalSidebar from './GlobalSidebar.vue'
-  import TableList from './core/TableList.vue'
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
   import { AppEvent } from "@/common/AppEvent";
+  import BksTableList from "@bks/ui-kit/vue/table-list";
 
   import { mapState, mapGetters } from 'vuex'
   import rawLog from '@bksLogger'
@@ -66,7 +66,7 @@
 
   export default {
     props: ['sidebarShown'],
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
+    components: { BksTableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
         tableLoadError: null,
@@ -122,15 +122,13 @@
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
       },
-      handleTableListItemDblClick(event) {
-        this.throttledLoadTable(event)
+      handleTableListItemDblClick(table) {
+        this.throttledLoadTable(table)
       },
-      throttledLoadTable: _.throttle(function(event) {
-        const table = event.detail[0]
+      throttledLoadTable: _.throttle(function(table) {
         this.$root.$emit(AppEvent.loadTable, { table })
       }, 500),
-      async handleItemUpdateColumns(event) {
-        const table = event.detail[0]
+      async handleItemUpdateColumns(table) {
         if (!table.columns?.length) {
           await this.$store.dispatch("updateTableColumns", table)
         }

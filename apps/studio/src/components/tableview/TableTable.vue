@@ -32,13 +32,13 @@
         <bks-table
           v-if="mountBksTable"
           :ref="table"
-          :table-id.prop="tableId"
-          :tabulator-options.prop="tabulatorOptions"
-          :columns.prop="tableColumns"
-          :corner-header-context-menu-items.prop="cornerHeaderContextMenuItems"
-          :row-header-context-menu-items.prop="rowHeaderContextMenuItems"
-          :cell-context-menu-items.prop="cellContextMenuItems"
-          :column-header-context-menu-items.prop="columnHeaderContextMenuItems"
+          :table-id="tableId"
+          :tabulator-options="tabulatorOptions"
+          :columns="tableColumns"
+          :corner-header-context-menu-items="cornerHeaderContextMenuItems"
+          :row-header-context-menu-items="rowHeaderContextMenuItems"
+          :cell-context-menu-items="cellContextMenuItems"
+          :column-header-context-menu-items="columnHeaderContextMenuItems"
           @bks-initialized="handleTableInitialized"
         />
         <detail-view-sidebar
@@ -342,13 +342,14 @@ import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { ExpandablePath } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
+import BksTable from "@bks/ui-kit/vue/table";
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar, BksTable },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -971,8 +972,8 @@ export default Vue.extend({
         this.openColumnFilterMenuItem,
       ]
     },
-    handleTableInitialized(event) {
-      this.tabulator = event.detail[0]
+    handleTableInitialized(tabulator) {
+      this.tabulator = tabulator
       this.tabulator.modules.selectRange.restoreFocus()
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
