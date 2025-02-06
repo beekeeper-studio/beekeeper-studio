@@ -1,7 +1,6 @@
 import { QueryLike } from '../common/appdb/models/base'
 import { TableOrView } from "../lib/db/models"
 
-// TODO(@day): possibly remove
 export interface EntityFilter {
   filterQuery?: string
   showTables: boolean
