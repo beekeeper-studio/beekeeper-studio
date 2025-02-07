@@ -127,7 +127,7 @@ export const LicenseModule: Module<State, RootState>  = {
         license.maxAllowedAppRelease = data.maxAllowedAppRelease
         await Vue.prototype.$util.send('appdb/license/save', { obj: license });
       } catch (error) {
-        if (error instanceof CloudError || [403, 404].includes(error.status)) {
+        if (error instanceof CloudError) {
           // eg 403, 404, license not valid
           license.validUntil = new Date()
           await Vue.prototype.$util.send('appdb/license/save', { obj: license });

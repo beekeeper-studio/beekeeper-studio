@@ -1,7 +1,5 @@
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import platformInfo from "@/common/platform_info";
 import { TransportLicenseKey } from "@/common/transport";
-import { CloudClient } from "@/lib/cloud/CloudClient";
 import { LicenseStatus } from "@/lib/license";
 
 export interface ILicenseHandlers {
