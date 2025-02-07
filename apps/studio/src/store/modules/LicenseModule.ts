@@ -106,7 +106,6 @@ export const LicenseModule: Module<State, RootState>  = {
       } else {
         const result = await CloudClient.getLicense(window.platformInfo.cloudUrl, email, key);
         // if we got here, license is good.
-        await Vue.prototype.$util.send('license/wipe');
         let license = {} as TransportLicenseKey;
         license.key = key;
         license.email = email;
@@ -126,12 +125,12 @@ export const LicenseModule: Module<State, RootState>  = {
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
         license.maxAllowedAppRelease = data.maxAllowedAppRelease
-        license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
+        await Vue.prototype.$util.send('appdb/license/save', { obj: license });
       } catch (error) {
-        if (error instanceof CloudError) {
+        if (error instanceof CloudError || [403, 404].includes(error.status)) {
           // eg 403, 404, license not valid
           license.validUntil = new Date()
-          license = await Vue.prototype.$util.send('appdb/license/save', { obj: license });
+          await Vue.prototype.$util.send('appdb/license/save', { obj: license });
         } else {
           // eg 500 errors
           // do nothing
@@ -143,6 +142,7 @@ export const LicenseModule: Module<State, RootState>  = {
         const license = context.getters.realLicenses[index];
         await context.dispatch('update', license);
       }
+      await context.dispatch('sync');
     },
     async remove(context, license) {
       await Vue.prototype.$util.send('license/remove', { id: license.id })
