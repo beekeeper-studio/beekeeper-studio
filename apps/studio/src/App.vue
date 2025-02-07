@@ -138,6 +138,11 @@ export default Vue.extend({
   async mounted() {
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
+    this.$store.dispatch('licenses/updateAll');
+    this.licenseInterval = setInterval(
+      () => this.$store.dispatch('licenses/updateAll'),
+      globals.licenseCheckInterval
+    )
     const query = querystring.parse(window.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
