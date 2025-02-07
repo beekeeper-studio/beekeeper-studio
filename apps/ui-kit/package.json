@@ -1,7 +1,7 @@
 {
   "name": "@bks/ui-kit",
   "private": true,
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "files": ["dist"],
   "main": "./dist/index.js",
@@ -9,9 +9,9 @@
   "exports": {
     ".": "./dist/index.js",
     "./style.css": "./dist/style.css",
-    "./table": "./dist/table/define.js",
-    "./table-list": "./dist/table-list/define.js",
-    "./sql-text-editor": "./dist/sql-text-editor/define.js",
+    "./table": "./dist/table.js",
+    "./table-list": "./dist/table-list.js",
+    "./sql-text-editor": "./dist/sql-text-editor.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/table-list": "./dist/vue/table-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",

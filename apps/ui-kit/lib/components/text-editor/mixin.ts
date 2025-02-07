@@ -56,7 +56,6 @@ export default {
     },
     cursor: String,
     initialized: Boolean,
-    plugins: Array,
     autoFocus: Boolean,
     lineNumbers: {
       type: Boolean,
@@ -101,6 +100,7 @@ export default {
   data() {
     return {
       editor: null,
+      selectedText: "",
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
@@ -110,11 +110,13 @@ export default {
 
       // Add our own keybindings
       internalKeybindings: {},
+      internalMarkers: [],
+      plugins: [],
     };
   },
   computed: {
     hasSelectedText() {
-      return this.editorInitialized ? !!this.editor.getSelection() : false;
+      return this.editorInitialized ? this.selectedText : false;
     },
     heightAndStatus() {
       return {
@@ -130,6 +132,9 @@ export default {
     },
     hintOptions() {
       return {}
+    },
+    allMarkers() {
+      return this.internalMarkers.concat(this.markers);
     },
   },
   watch: {
@@ -220,7 +225,7 @@ export default {
           .classList.remove("remove-json-root-brackets");
       }
     },
-    markers() {
+    allMarkers() {
       this.initializeMarkers();
     },
     bookmarks() {
@@ -362,6 +367,10 @@ export default {
         }, 0);
       });
 
+      cm.on("cursorActivity", (cm) => {
+        this.selectedText = cm.getSelection()
+      });
+
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
 
       cmEl.addEventListener("contextmenu", this.showContextMenu);
@@ -418,7 +427,7 @@ export default {
       })
     },
     initializeMarkers() {
-      const markers = this.markers;
+      const markers = this.allMarkers;
       if (!this.editor) return;
 
       // Cleanup existing bookmarks

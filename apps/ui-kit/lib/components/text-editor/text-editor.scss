@@ -45,7 +45,7 @@
   height: 100%;
 
   .CodeMirror {
-    font-family: $font-family-mono, monospace;
+    font-family: $font-family-mono;
     padding: 0.75rem 0;
     z-index: 1;
     height: 100%;
@@ -210,7 +210,7 @@
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
   --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
 
-  font-family: $font-family-mono, monospace;
+  font-family: $font-family-mono;
   padding: $gutter-h 0;
   border: 0;
   border-radius: 6px;

@@ -17,6 +17,7 @@ import Vue, { PropType } from "vue";
 import textEditorMixin from "../text-editor/mixin";
 import { format, FormatOptions } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
+import { querySelection, QuerySelectionChangeParams } from "./querySelectionPlugin";
 import { Options } from "sql-query-identifier";
 import { BaseTable } from "../types";
 import { ctrlOrCmd } from "../../utils/platform";
@@ -32,16 +33,6 @@ export default Vue.extend({
     hint: {
       type: textEditorMixin.props.hint,
       default: "sql",
-    },
-    plugins: {
-      type: textEditorMixin.props.plugins,
-      default() {
-        return [
-          autoquote,
-          autoComplete,
-          autoRemoveQueryQuotes(this.identifierDialect),
-        ];
-      }
     },
     contextMenuItems: {
       type: textEditorMixin.props.contextMenuItems,
@@ -134,10 +125,19 @@ export default Vue.extend({
         ...items.slice(pivot),
       ];
     },
+    handleQuerySelectionChange(params: QuerySelectionChangeParams) {
+      this.$emit("bks-query-selection-change", params);
+    },
   },
   mounted() {
     this.internalKeybindings["Shift-Ctrl-F"] = this.formatSql;
     this.internalKeybindings["Shift-Cmd-F"] = this.formatSql;
+    this.plugins = [
+      autoquote,
+      autoComplete,
+      autoRemoveQueryQuotes(this.identifierDialect),
+      querySelection(this.identifierDialect, this.handleQuerySelectionChange),
+    ]
   }
 });
 </script>

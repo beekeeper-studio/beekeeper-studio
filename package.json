@@ -5,11 +5,9 @@
   "author": "Matthew Rathbone <matthew.rathbone@gmail.com>",
   "license": "MIT",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "apps/*"
-    ]
-  },
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "bks:build": "yarn workspace beekeeper-studio electron:build",
     "bks:dev": "yarn workspace beekeeper-studio electron:serve",
