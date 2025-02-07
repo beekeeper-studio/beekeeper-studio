@@ -1,6 +1,6 @@
 import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-redshift';
 import { RedshiftServerlessClient, GetCredentialsCommand } from "@aws-sdk/client-redshift-serverless";
-import rawLog from "electron-log";
+import rawLog from '@bksLogger';
 
 // The number of minutes to consider credentials expired *before* their actual expiration.
 // This accounts for potential client clock drift.
