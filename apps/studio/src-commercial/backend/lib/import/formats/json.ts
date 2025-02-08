@@ -34,7 +34,7 @@ export default class extends Import {
         for (let i = 0; i < data.length; i += chunkSize) {
           const chunkEnd = i + chunkSize;
           const slice = _.slice(data, i, chunkEnd > data.length ? data.length  : chunkEnd);
-          const importSql = await this.connection.getImportSQL([this.buildDataObj(slice)], this.table.name, this.table.schema || null)
+          const importSql = await this.connection.getImportSQL([this.buildDataObj(slice)], this.table.name, this.table.schema || null, updatedImportScriptOptions.storeValues.runAsUpsert)
           await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
         }
       }

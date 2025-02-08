@@ -361,12 +361,12 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     })
   }
 
-  async getImportSQL(importedData: any[], tableName: string, schema: string = null): Promise<string | string[]> {
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
     const queries = []
     const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
     const primaryKeys = primaryKeysPromise.map(v => v.columnName)
     const createUpsertFunc = this.createUpsertFunc ?? null
-    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: true, primaryKeys, createUpsertFunc }).join(';'))
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys, createUpsertFunc }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************

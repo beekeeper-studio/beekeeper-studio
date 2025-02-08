@@ -1094,12 +1094,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async getImportSQL(importedData: any[], tableName: string, schema: string = null): Promise<string | string[]> {
-    const runAsUpsert = this.version.number >= 90500
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
+    let setRunAsUpsert = runAsUpsert
+    if ( setRunAsUpsert ) {
+      setRunAsUpsert = this.version.number >= 90500
+    }
     const queries = []
     const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
     const primaryKeys = primaryKeysPromise.map(v => v.columnName)
-    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys }).join(';'))
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: setRunAsUpsert, primaryKeys }).join(';'))
     return joinQueries(queries)
   }
 
