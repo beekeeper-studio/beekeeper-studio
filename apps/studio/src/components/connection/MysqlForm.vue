@@ -9,7 +9,7 @@
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="!iamAuthenticationEnabled" :config="config" />
+    <common-server-inputs v-show="!iamAuthenticationEnabled || !azureAuthEnabled" :config="config" />
 
     <div v-show="iamAuthenticationEnabled" class="host-port-user-password">
       <div class="row gutter">
@@ -37,6 +37,7 @@
     </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
+    <common-entra-id :config="config" />
   </div>
 </template>
 
@@ -45,19 +46,24 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import CommonIam from './CommonIam.vue'
+import CommonEntraId from './CommonEntraId.vue'
 import {AppEvent} from "@/common/AppEvent";
 import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import _ from "lodash";
 import { mapGetters } from 'vuex';
 
 export default {
-  components: {CommonServerInputs, CommonAdvanced, CommonIam},
+  components: {CommonEntraId, CommonServerInputs, CommonAdvanced, CommonIam},
   props: ['config'],
+  mounted() {
+    this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+  },
   data() {
     return {
+      azureAuthEnabled: this.config?.azureAuthOptions?.azureAuthEnabled,
       iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
       authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
+      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes],
       accountName: null,
       signingOut: false,
       errorSigningOut: null,

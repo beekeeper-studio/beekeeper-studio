@@ -11,6 +11,7 @@ import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
+import {AuthOptions} from "@/lib/db/authentication/azure";
 
 const log = logRaw.scope('db/util')
 
@@ -88,6 +89,16 @@ function wrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
+export function getEntraOptions(server, extra): AuthOptions {
+  return {
+    password: server.config.password,
+    userName: server.config.user,
+    tenantId: server.config.azureAuthOptions.tenantId,
+    clientSecret: server.config.azureAuthOptions.clientSecret,
+    msiEndpoint: server.config.azureAuthOptions.msiEndpoint,
+    ...extra
+  };
+}
 
 export function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = ""

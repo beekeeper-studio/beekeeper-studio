@@ -18,7 +18,7 @@ import {
   buildSelectTopQuery,
   escapeString,
   getIAMPassword,
-  ClientError, refreshTokenIfNeeded
+  ClientError, refreshTokenIfNeeded, getEntraOptions
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -65,6 +65,7 @@ import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
+import {AzureAuthService} from "@/lib/db/authentication/azure";
 
 type ResultType = {
   tableName?: string
@@ -148,6 +149,19 @@ async function configDatabase(
     bigNumberStrings: true,
     connectTimeout: 60 * 60 * 1000,
   };
+
+  if (this.server.config.azureAuthOptions?.azureAuthEnabled) {
+    const authService = new AzureAuthService();
+    await authService.init(this.server.config.authId)
+
+    const options = getEntraOptions(this.server, { signal: 0 })
+
+    const authentication = await authService.auth(this.server.config.azureAuthOptions.azureAuthType, options);
+    config.password = authentication.options.token
+    server.config.ssl = true
+
+    return config;
+  }
 
   if (server.config.socketPathEnabled) {
     config.socketPath = server.config.socketPath;
