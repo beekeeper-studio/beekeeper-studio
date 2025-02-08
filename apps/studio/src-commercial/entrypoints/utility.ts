@@ -20,10 +20,6 @@ import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
-import { LicenseKey } from '@/common/appdb/models/LicenseKey';
-import { CloudClient } from '@/lib/cloud/CloudClient';
-import { CloudError } from '@/lib/cloud/ClientHelpers';
-import globals from '@/common/globals';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
@@ -155,31 +151,5 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
-  await updateLicenses();
-  setInterval(updateLicenses, globals.licenseUtilityCheckInterval);
-
   process.parentPort.postMessage({ type: 'ready' });
-}
-
-async function updateLicenses() {
-  const licenses = await LicenseKey.all()
-  const promises = licenses.map(async (license) => {
-    try {
-      const data = await CloudClient.getLicense(platformInfo.cloudUrl, license.email, license.key)
-      license.validUntil = new Date(data.validUntil)
-      license.supportUntil = new Date(data.supportUntil)
-      license.maxAllowedAppRelease = data.maxAllowedAppRelease
-      await license.save()
-    } catch (error) {
-      if (error instanceof CloudError) {
-        // eg 403, 404, license not valid
-        license.validUntil = new Date()
-        await license.save()
-      } else {
-        // eg 500 errors
-        // do nothing
-      }
-    }
-  })
-  await Promise.all(promises)
 }

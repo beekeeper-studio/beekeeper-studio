@@ -7,6 +7,10 @@ import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import {fromIni} from "@aws-sdk/credential-providers";
 import {Signer} from "@aws-sdk/rds-signer";
 import globals from "@/common/globals";
+import {
+  AWSCredentials
+} from "@/lib/db/authentication/amazon-redshift";
+import {RedshiftOptions} from "@/lib/db/types";
 
 const log = logRaw.scope('db/util')
 
@@ -165,7 +169,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
     ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
     `
-    return {query: sql, countQuery: countSQL, params: filterParams}
+  return {query: sql, countQuery: countSQL, params: filterParams}
 }
 
 export async function executeSelectTop(queries, conn, executor) {
@@ -306,10 +310,39 @@ export const errorMessages = {
   readOnly: 'Write action(s) not allowed in Read-Only Mode.'
 }
 
-export async function getIAMPassword(awsProfile: string, region: string, hostname: string, port: number, username: string): Promise<string> {
-  const nodeProviderChainCredentials = fromIni({
-    profile: awsProfile ?? "default",
+export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): Promise<AWSCredentials> {
+  if (redshiftOptions.accessKeyId && redshiftOptions.secretAccessKey) {
+    return {
+      accessKeyId: redshiftOptions.accessKeyId,
+      secretAccessKey: redshiftOptions.secretAccessKey,
+    };
+  }
+
+  // Fallback to AWS profile-based credentials
+  const provider = fromIni({
+    profile: redshiftOptions.awsProfile || "default",
   });
+  return provider();
+}
+
+export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
+  const {awsProfile, awsRegion: region, accessKeyId, secretAccessKey} = redshiftOptions
+  let credentials: {
+    profile?: string,
+    accessKeyId?: string,
+    secretAccessKey?: string,
+  } = {
+    profile: awsProfile || "default"
+  }
+
+  if(accessKeyId && secretAccessKey) {
+    credentials = {
+      accessKeyId,
+      secretAccessKey
+    }
+  }
+
+  const nodeProviderChainCredentials = fromIni(credentials);
   const signer = new Signer({
     credentials: nodeProviderChainCredentials,
     region,
@@ -323,7 +356,7 @@ export async function getIAMPassword(awsProfile: string, region: string, hostnam
 let resolvedPw: string | undefined;
 let tokenExpiryTime: number | null = null;
 
-export async function refreshTokenIfNeeded(redshiftOptions: any, server: any, port: number): Promise<string> {
+export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, server: any, port: number): Promise<string> {
   if(!redshiftOptions?.iamAuthenticationEnabled){
     return null
   }
@@ -333,8 +366,7 @@ export async function refreshTokenIfNeeded(redshiftOptions: any, server: any, po
   if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime) { // Refresh 2 minutes before expiry
     log.info("Refreshing IAM token...");
     resolvedPw = await getIAMPassword(
-      redshiftOptions.awsProfile ?? "default",
-      redshiftOptions?.awsRegion,
+      redshiftOptions,
       server.config.host,
       server.config.port || port,
       server.config.user

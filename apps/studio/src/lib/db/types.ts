@@ -1,7 +1,7 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -18,6 +18,7 @@ export const ConnectionTypes = [
   { name: 'Cassandra', value: 'cassandra' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
+  { name: 'DuckDB', value: 'duckdb' },
   { name: 'ClickHouse', value: 'clickhouse' },
 ]
 
@@ -50,7 +51,8 @@ export enum AzureAuthType {
 }
 
 export const IamAuthTypes = [
-  { name: 'IAM Authentication Using Credentials File', value: 'iam' }
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -72,6 +74,8 @@ export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;
+  isServerless?: boolean;
+  authType?: string;
 }
 
 export interface CassandraOptions {
