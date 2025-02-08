@@ -40,6 +40,7 @@ import {
   TableColumn,
   BksField,
   BksFieldType,
+  DatabaseEntity,
 } from "@/lib/db/models";
 import { joinFilters } from "@/common/utils";
 import { DuckDBCursor } from "./duckdb/DuckDBCursor";
@@ -205,6 +206,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     this.dialect = "generic";
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.databasePath = database?.database;
+    this.createUpsertFunc = this.createUpsertSQL;
   }
 
   getBuilder(table: string, schema: string): ChangeBuilderBase {
@@ -1050,6 +1052,16 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   ): Promise<void> {
     const query = await this.duplicateTableSql(tableName, duplicateTableName, schema);
     await this.driverExecuteSingle(query);
+  }
+
+  // took this approach because Typescript wasn't liking the base function could be a null value or a function
+  createUpsertSQL({ name: tableName }: DatabaseEntity, data: {[key: string]: any}[]): string {
+    const [firstObj] = data
+    console.log('~~~ what is that data yo? ~~~')
+    console.log(data)
+    const columns = Object.keys(firstObj)
+    const values = data.map(d => `(${columns.map(c => `'${d[c]}'`).join()})`).join()
+    return `INSERT OR REPLACE \`${tableName}\`, (${columns.map(cpk => `\`${cpk}\``).join(', ')}) VALUES ${values}`.trim()
   }
 
   async duplicateTableSql(
