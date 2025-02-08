@@ -12,7 +12,7 @@ export default class Import {
   logger: () => rawLog.LogFunctions;
   importScriptOptions: any;
 
-  constructor(fileName, options, connection, table) {
+  constructor(fileName, options, connection, table = null) {
     this.fileName = fileName
     this.options = options
     this.connection = connection

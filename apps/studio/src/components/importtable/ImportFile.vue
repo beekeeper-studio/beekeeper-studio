@@ -173,6 +173,7 @@
           <button
             class="btn btn-primary btn-icon"
             type="button"
+            :disabled="!this.table"
             @click.prevent="$emit('finish')"
           >
             <span>Map To Table</span>
@@ -264,9 +265,13 @@
           fileType: this.fileType,
         }
 
+        // the filename changes, so see if there is a table. if not, then do something else I suppose
+
         this.table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', this.table)
-        importOptions.table = this.table
+        if (this.table) {
+          await this.$store.dispatch('updateTableColumns', this.table)
+          importOptions.table = this.table
+        }
 
         this.importerId = await this.$util.send('import/init', { options: importOptions, table: this.table })
         this.tabulator = null
@@ -306,9 +311,11 @@
         }
 
         this.table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', this.table)
+        if (this.table) {
+          await this.$store.dispatch('updateTableColumns', this.table)
+          importOptions.table = this.table
+        }
 
-        importOptions.table = this.table
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
         const tableColumns = columns.map(column =>
@@ -351,7 +358,7 @@
         }
       },
       canContinue() {
-        return Boolean(this.fileName)
+        return Boolean(this.fileName && !this.table)
       },
       getTable() {
         let foundSchema = ''
