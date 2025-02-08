@@ -3,6 +3,7 @@ import esbuild from 'esbuild';
 import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
+import fs from 'fs'
 
 const isWatching = process.argv[2] === 'watch';
 
@@ -31,6 +32,8 @@ const externals = ['better-sqlite3', 'sqlite3',
       ]
 
 let electron = null
+/** @type {fs.FSWatcher[]} */
+const configWatchers = {}
 
 const restartElectron = _.debounce(() => {
   if (electron) {
@@ -46,6 +49,14 @@ const restartElectron = _.debounce(() => {
 
 }, 500)
 
+function watchConfig(file) {
+  if (configWatchers[file]) return
+  const watcher = fs.watch(file, () => {
+    console.log(`Detected change in ${file}, rebuilding...`);
+    restartElectron()
+  })
+  configWatchers[file] = watcher
+}
 
 function getElectronPlugin(name, action = () => restartElectron()) {
   return {
@@ -56,6 +67,9 @@ function getElectronPlugin(name, action = () => restartElectron()) {
       build.onEnd(() => {
         console.log(`ESBUILD: Built ${name} ✅`)
         action()
+        watchConfig('default.config.ini')
+        watchConfig('local.config.ini')
+        watchConfig('system.config.ini')
       })
     }
   }

@@ -25,7 +25,6 @@ import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { ExportProgress, ExportStatus, StartExportOptions } from '../../lib/export/models'
-import globals from '@/common/globals'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
@@ -74,7 +73,7 @@ export default Vue.extend({
                 error_notice.close()
               })
             ]
-          }).setTimeout(globals.errorNoticeTimeout)
+          }).setTimeout(this.$bksConfig.ui.export.errorNoticeTimeout)
           return
         }
         if (status !== ExportStatus.Completed) return;

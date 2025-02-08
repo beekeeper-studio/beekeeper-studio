@@ -11,6 +11,7 @@ export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import BksConfig from '@/common/bksConfig'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { IDbConnectionPublicServer } from './db/serverTypes'

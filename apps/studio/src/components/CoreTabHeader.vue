@@ -150,12 +150,11 @@ import TabIcon from './tab/TabIcon.vue'
         return null
       },
       keymap() {
-        const result = {}
-        if (this.selected) {
-          result[this.ctrlOrCmd('w')] = this.maybeClose
-        }
+        if (!this.selected) return {}
 
-        return result
+        return this.$vHotkeyKeymap({
+          'tab.closeTab': this.maybeClose,
+        })
       },
       cleanText() {
         // no spaces
