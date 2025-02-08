@@ -1,0 +1,56 @@
+@use "../../styles/variables" as *;
+
+.BksDataEditor {
+  display: flex;
+  height: 33rem;
+  background-color: $query-editor-bg;
+  color: $text-dark;
+
+  .BksTableList {
+    height: 100%;
+    min-width: 16rem;
+  }
+}
+
+.BksDataEditor-right-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 22rem;
+
+  &>*:not(.BksDataEditor-gutter) {
+    min-height: 13rem;
+  }
+}
+
+.BksDataEditor-sql-editor {
+  display: flex;
+  flex-direction: column;
+
+  .BksDataEditor-run {
+    display: flex;
+    padding: 0.5rem;
+
+    button {
+      margin-left: auto;
+      border-style: none;
+      border-radius: 0.25rem;
+      padding: 0.25rem 0.75rem;
+
+      &:hover {
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+.BksDataEditor-gutter {
+  outline: 1px solid #eee;
+}
+
+.BksDataEditor-initial-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
