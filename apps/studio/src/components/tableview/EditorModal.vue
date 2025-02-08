@@ -113,11 +113,13 @@
             <x-buttons v-else>
               <x-button
                 class="btn btn-primary btn-small"
+                :disabled="isReadOnly"
                 @click.prevent="saveAndMinify"
               >
                 <x-label>Minify & Apply</x-label>
               </x-button>
               <x-button
+                :disabled="isReadOnly"
                 class="btn btn-primary btn-small"
                 menu
               >
