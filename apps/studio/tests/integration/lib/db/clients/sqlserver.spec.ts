@@ -30,6 +30,8 @@ function testWith(dockerTag: string, readonly: boolean) {
   describe(`SQL Server [${dockerTag}] - read-only mode? ${readonly}`, () => {
     jest.setTimeout(dbtimeout)
 
+    const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
+
     let container;
     let util
     // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
@@ -38,8 +40,6 @@ function testWith(dockerTag: string, readonly: boolean) {
 
     beforeAll(async () => {
       const timeoutDefault = 5000
-
-      const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
 
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
         // .withResourcesQuota({ memory: 2, cpu: 1 })

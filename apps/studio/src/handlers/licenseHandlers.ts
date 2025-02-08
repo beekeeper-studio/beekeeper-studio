@@ -1,15 +1,13 @@
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import platformInfo from "@/common/platform_info";
 import { TransportLicenseKey } from "@/common/transport";
-import { CloudClient } from "@/lib/cloud/CloudClient";
 import { LicenseStatus } from "@/lib/license";
 
 export interface ILicenseHandlers {
   "license/createTrialLicense": () => Promise<void>;
   "license/getStatus": () => Promise<LicenseStatus>;
-  "license/add": ({ email, key }: { email: string; key: string; }) => Promise<TransportLicenseKey>;
   "license/get": () => Promise<TransportLicenseKey[]>;
-  "license/remove": (({ id }: { id: number }) => Promise<void>)
+  "license/remove": (({ id }: { id: number }) => Promise<void>);
+  "license/wipe": () => Promise<void>;
 }
 
 export const LicenseHandlers: ILicenseHandlers = {
@@ -34,21 +32,10 @@ export const LicenseHandlers: ILicenseHandlers = {
       maxAllowedVersion: status.maxAllowedVersion,
     };
   },
-  "license/add": async function ({ email, key }: { email: string; key: string; }) {
-    const result = await CloudClient.getLicense( platformInfo.cloudUrl, email, key);
-    // if we got here, license is good.
-    await LicenseKey.wipe();
-    const license = new LicenseKey();
-    license.key = key;
-    license.email = email;
-    license.validUntil = new Date(result.validUntil);
-    license.supportUntil = new Date(result.supportUntil);
-    license.maxAllowedAppRelease = result.maxAllowedAppRelease;
-    license.licenseType = result.licenseType;
-    await license.save();
-    return license;
-  },
   "license/get": async function () {
     return await LicenseKey.find();
+  },
+  "license/wipe": async function() {
+    await LicenseKey.wipe();
   }
 };
