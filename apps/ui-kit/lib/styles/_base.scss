@@ -1,0 +1,22 @@
+// Fonts
+$material-icons-font-path: 'material-icons/iconfont/';
+$base-font-size:      0.875rem; // ~14px
+
+@use 'variables' as *;
+@use "./custom-icons.scss";
+@import 'material-icons/iconfont/material-icons';
+
+.BksUiKit {
+  font-size: $base-font-size;
+  font-family: $font-family;
+  -webkit-font-smoothing: antialiased;
+  font-weight: normal;
+
+  *, *:after, *:before {
+    box-sizing: border-box;
+  }
+
+  .material-icons {
+    transform: rotate(0.03deg);
+  }
+}
