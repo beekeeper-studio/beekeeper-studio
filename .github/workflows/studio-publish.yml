@@ -301,14 +301,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
           DISTRIBUTION: ${{secrets.cloudfront_distribution}}
           AWS_DEFAULT_REGION: "us-east-1"
-      - name: Cleanup artifacts
-        if: ${{!startsWith(matrix.os.name, 'windows')}}
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
-
-      - name: Cleanup artifacts Win
-        if: startsWith(matrix.os.name, 'windows')
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
-        continue-on-error: true
 
       - name: Set yaml files
         id: set_yaml
@@ -325,11 +317,21 @@ jobs:
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
       - name: Upload DEB/RPM artifacts
         uses: actions/upload-artifact@v4
+        if: matrix.os.type == 'linux'
         with:
-          name: ${{ matrix.os }}
           path: |
             apps/studio/dist_electron/*.deb
             apps/studio/dist_electron/*.rpm
+
+      - name: Cleanup artifacts
+        if: ${{!startsWith(matrix.os.name, 'windows')}}
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
+
+      - name: Cleanup artifacts Win
+        if: startsWith(matrix.os.name, 'windows')
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
+        continue-on-error: true
+
 
   finalize_mac_yml:
     needs: [release, create_draft_release, identify_channel]
