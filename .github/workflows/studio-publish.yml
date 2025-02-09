@@ -319,6 +319,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: matrix.os.type == 'linux'
         with:
+          name: "${{matrix.os.type}}-${{matrix.os.arch}}"
           path: |
             apps/studio/dist_electron/*.deb
             apps/studio/dist_electron/*.rpm
@@ -415,14 +416,14 @@ jobs:
         with:
           path: ./artifacts
 
-        # Only publishing the DEB for the stable channel (for now)
+      # Only publishing the DEB for the stable channel (for now)
       - name: Publish DEB to R2
         if: needs.identify_channel.outputs.channel == 'latest'
         run: |
-          deb-s3 ./artifacts/*.deb \
+          deb-s3 upload $(find ./artifacts -type f -name "*.deb") \
             --bucket=beekeeper-deb-repo \
             --codename=${{needs.identify_channel.outputs.deb_codename}} \
-            --endpoint=${{secrets.cloudflare_endpoint}}
+            --endpoint=${{secrets.cloudflare_endpoint}} \
             --lock \
             --sign=${{steps.import_gpg.outputs.keyid}} \
             --preserve-versions
@@ -434,7 +435,7 @@ jobs:
       - name: Publish RPM to R2
         if: needs.identify_channel.outputs.channel == 'latest'
         run: |
-          .github/scripts/publish_rpm.sh ./artifacts/*.rpm
+          .github/scripts/publish_rpm.sh $(find ./artifacts -type f -name "*.rpm")
         env:
           GPG_KEY_ID: "${{steps.import_gpg.outputs.keyid}}"
           R2_BUCKET: "beekeeper-rpm-repo/repo"
