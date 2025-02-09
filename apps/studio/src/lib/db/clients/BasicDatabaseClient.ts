@@ -146,7 +146,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     if (this.server.db[this.database.database]) {
       // delete this.server.db[this.database.database]
     }
-    await this.knex.destroy();
+    await this.knex?.destroy();
   }
   // ****************************************************************************
 
