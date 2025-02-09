@@ -175,6 +175,8 @@ module.exports = {
     oneClick: false
   },
   appx: {
-    applicationId: "beekeeperstudio"
+    applicationId: "beekeeperstudio",
+    publisher: "CN=Rathbone Labs, LLC",
+    publisherDisplayName: "Beekeeper Studio"
   }
 }
