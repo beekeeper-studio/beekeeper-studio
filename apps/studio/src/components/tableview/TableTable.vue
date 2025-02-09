@@ -1570,7 +1570,10 @@ export default Vue.extend({
       let filters = this.filters
 
       if (params.sort) {
-        orderBy = params.sort
+        orderBy = params.sort.map((obj) => ({
+          ...obj,
+          dataType: this.table.columns.find((col) => col.columnName === obj.field)?.dataType
+        }));
       }
 
       if (params.size) {

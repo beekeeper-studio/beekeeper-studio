@@ -128,6 +128,7 @@ export interface SchemaFilterOptions {
 }
 
 export interface OrderBy {
+  dataType?: string;
   dir: 'ASC' | 'DESC';
   field: string;
 }

@@ -1201,13 +1201,20 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     let params: (string | string[])[] = []
 
     if (orderBy && orderBy.length > 0) {
-      orderByString = "ORDER BY " + (orderBy.map((item) => {
-        if (_.isObject(item)) {
-          return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
-        } else {
-          return wrapIdentifier(item)
+      const orderByColumns = orderBy.reduce((acc, item) => {
+        if (item.dataType === 'json' || item.dataType === 'jsonb') {
+          return acc;
         }
-      })).join(",")
+        if (_.isObject(item)) {
+          acc.push(`${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`)
+        } else {
+          acc.push(wrapIdentifier(item))
+        }
+        return acc;
+      }, [])
+      if (orderByColumns.length > 0) {
+        orderByString = "ORDER BY " + orderByColumns.join(",")
+      }
     }
 
     if (_.isString(filters)) {
