@@ -35,7 +35,7 @@
         </div>
       </div>
     </div>
-    <common-iam v-show="iamAuthenticationEnabled" :config="config" />
+    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
   </div>
 </template>
@@ -55,8 +55,8 @@ export default {
   props: ['config'],
   data() {
     return {
-      iamAuthenticationEnabled: false,
-      authType: 'default',
+      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
+      authType: this.config.redshiftOptions?.authType || 'default',
       authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
       accountName: null,
       signingOut: false,
@@ -77,7 +77,8 @@ export default {
           this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
           this.authType = 'default'
         } else {
-          this.iamAuthenticationEnabled = true
+          this.config.redshiftOptions.authType = this.authType
+          this.iamAuthenticationEnabled = this.authType.includes('iam')
         }
       }
 

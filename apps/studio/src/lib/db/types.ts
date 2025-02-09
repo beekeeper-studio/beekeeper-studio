@@ -52,7 +52,8 @@ export enum AzureAuthType {
 }
 
 export const IamAuthTypes = [
-  { name: 'IAM Authentication Using Credentials File', value: 'iam' }
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -74,6 +75,8 @@ export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;
+  isServerless?: boolean;
+  authType?: string;
 }
 
 export interface CassandraOptions {
