@@ -1,5 +1,5 @@
 export default {
-  name: "2025_add_new_url_field",
+  name: "2025_add_new_url_field_take_2",
   async run(runner) {
     const queries = [
       `
@@ -15,5 +15,9 @@ export default {
           "uri" TO "url";
       `
     ]
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+      await runner.query(query);
+    }
   }
 }
