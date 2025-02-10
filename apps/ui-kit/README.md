@@ -242,12 +242,13 @@ If you want to add a divider between context menu items, you can add an object `
 
 #### Events
 
-| Name               | Description                                      | Event Detail   |
-| ------------------ | ------------------------------------------------ | -------------- |
-| `bks-value-change` | Emitted when the SQL query is changed.           | `[string]`     |
-| `bks-initialized`  | Emitted when the SQL text editor is initialized. | `[CodeMirror]` |
-| `bks-focus`        | Emitted when the SQL text editor is focused.     | -              |
-| `bks-blur`         | Emitted when the SQL text editor is blurred.     | -              |
+| Name                         | Description                                      | Event Detail                                     |
+| ---------------------------- | ------------------------------------------------ | ------------------------------------------------ |
+| `bks-value-change`           | Emitted when the SQL query is changed.           | `[string]`                                       |
+| `bks-initialized`            | Emitted when the SQL text editor is initialized. | `[CodeMirror]`                                   |
+| `bks-focus`                  | Emitted when the SQL text editor is focused.     | -                                                |
+| `bks-blur`                   | Emitted when the SQL text editor is blurred.     | -                                                |
+| `bks-query-selection-change` | Emitted when the query selection is changed.     | `[{ queries: Object[]; selectedQuery: Object }]` |
 
 ### Data Editor
 

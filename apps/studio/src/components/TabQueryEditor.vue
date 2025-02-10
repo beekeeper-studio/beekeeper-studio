@@ -48,6 +48,7 @@
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event"
         @bks-blur="onTextEditorBlur?.()"
+        @bks-query-selection-change="handleQuerySelectionChange"
       />
       <span class="expand" />
       <div class="toolbar text-right">
@@ -327,7 +328,6 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import { splitQueries } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -381,7 +381,6 @@
         tableHeight: 0,
         savePrompt: false,
         lastWord: null,
-        marker: null,
         queryParameterValues: {},
         queryForExecution: null,
         executeTime: 0,
@@ -391,6 +390,8 @@
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
+        individualQueries: [],
+        currentlySelectedQuery: null,
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -490,37 +491,6 @@
       result() {
         return this.results[this.selectedResult]
       },
-      individualQueries() {
-        if (!this.unsavedText) return []
-        return splitQueries(this.unsavedText, this.identifyDialect)
-      },
-      currentlySelectedQueryIndex() {
-        const queries = this.individualQueries
-        for (let i = 0; i < queries.length; i++) {
-          if (this.editor.cursorIndex <= queries[i].end + 1) return i
-        }
-        return null
-      },
-      currentlySelectedQuery() {
-        if (this.currentlySelectedQueryIndex === null) return null
-        return this.individualQueries[this.currentlySelectedQueryIndex]
-      },
-      currentQueryPosition() {
-        if(!this.editor.initialized || !this.currentlySelectedQuery || !this.individualQueries) {
-          return null
-        }
-        const qi = this.currentlySelectedQueryIndex
-        const previousQuery = qi === 0 ? null : this.individualQueries[qi - 1]
-        // adding 1 to account for semicolon
-        const start = previousQuery ? previousQuery.end + 1: 0
-        const end = this.currentlySelectedQuery.end
-
-        return {
-          from: start,
-          to: end + 1
-        }
-
-      },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
@@ -617,7 +587,6 @@
       },
       editorMarkers() {
         const markers = []
-        if (this.marker) markers.push(this.marker)
         if (this.errorMarker) markers.push(this.errorMarker)
         return markers
       },
@@ -679,24 +648,6 @@
           this.focusElement = 'none'
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
-      },
-      currentQueryPosition() {
-        this.marker = null
-
-        if(!this.individualQueries || this.individualQueries.length < 2) {
-          return;
-        }
-
-        if (!this.currentQueryPosition) {
-          return
-        }
-        const { from, to } = this.currentQueryPosition
-
-        const editorText = this.unsavedText
-        // const lines = editorText.split(/\n/)
-
-        const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
-        this.marker = { from: markStart, to: markEnd, type: 'highlight' } as EditorMarker
       },
       async focusElement(element, oldElement) {
         if (oldElement === 'text-editor' && element !== 'text-editor') {
@@ -769,8 +720,8 @@
           })
         })
       },
-      handleEditorInitialized(event) {
-        const [cm] = event.detail
+      handleEditorInitialized(cm) {
+        this.editor.initialized = true
 
         cm.on("cursorActivity", (cm) => {
           this.editor.selection = cm.getSelection()
@@ -1063,6 +1014,10 @@
         }
 
         return tableToFind?.columns.map((c) => c.columnName);
+      },
+      handleQuerySelectionChange({ queries, selectedQuery }) {
+        this.individualQueries = queries;
+        this.currentlySelectedQuery = selectedQuery;
       },
     },
     async mounted() {

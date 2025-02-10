@@ -4,7 +4,6 @@
     v-hotkey="keymap"
   >
     <bks-table
-      ref="table"
       :table-id="tableId"
       :height="actualTableHeight"
       :cell-context-menu-items="contextMenuItems"
@@ -13,6 +12,8 @@
       :corner-header-context-menu-items="contextMenuItems"
       :tabulator-options="tabulatorOptions"
       :dialect="dialect"
+      :columns="tableColumns"
+      :data="tableData"
       @bks-initialized="handleTableInitialized"
       @bks-foreign-key-go-to="handleFkClick"
     />
@@ -35,9 +36,11 @@
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyRanges, copyRangeDataAsSqlMenuItem } from '@/lib/menu/tableMenu';
+  import BksTable from "@bks/ui-kit/vue/table";
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
+    components: { BksTable },
     data() {
       return {
         tabulator: null,
@@ -56,11 +59,6 @@
         } else {
           this.tabulator.blockRedraw()
         }
-      },
-      result() {
-        // This is better than just setting data because
-        // the whole dataset has changed.
-        this.setTableData()
       },
       tableHeight() {
         this.tabulator.setHeight(this.actualTableHeight)
@@ -161,9 +159,8 @@
       },
     },
     methods: {
-      async handleTableInitialized(event) {
-        this.tabulator = event.detail[0]
-        this.setTableData()
+      async handleTableInitialized(tabulator) {
+        this.tabulator = tabulator
         if (this.focus) {
           this.triggerFocus()
         }
@@ -173,10 +170,6 @@
         const lastCopyIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
         newItems.splice(lastCopyIndex + 1, 0, copyRangeDataAsSqlMenuItem(this.tabulator.getRanges(), this.result.tableName, this.defaultSchema));
         return newItems;
-      },
-      setTableData() {
-        this.$refs.table.columns = this.tableColumns
-        this.$refs.table.data = this.tableData
       },
       copySelection() {
         if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
