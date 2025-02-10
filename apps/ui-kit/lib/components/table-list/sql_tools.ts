@@ -1,14 +1,13 @@
 import _ from 'lodash';
-import { EntityFilter, RoutineTypeNames, Table } from './models';
+import { EntityFilter, RoutineTypeNames } from './models';
 
-export function entityFilter(rawTables: Table[], allFilters: EntityFilter) {
+export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   const tables = rawTables.filter((table) => {
-    // return (table.entityType === 'table' && allFilters.showTables &&
-    //   ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
-    //   (table.entityType === 'view' && allFilters.showViews) ||
-    //   (table.entityType === 'materialized-view' && allFilters.showViews) ||
-    //   (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)
-    return allFilters.showTables
+    return (table.entityType === 'table' && allFilters.showTables &&
+      ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
+      (table.entityType === 'view' && allFilters.showViews) ||
+      (table.entityType === 'materialized-view' && allFilters.showViews) ||
+      (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)
   })
 
   const { filterQuery } = allFilters

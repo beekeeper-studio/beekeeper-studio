@@ -13,7 +13,12 @@
         :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : ''), option.disabled ? 'disabled' : '']"
         ref="item"
       >
-        <span v-html="option.name" />
+        <i
+          class="material-icons BksContextMenu-item-icon BksContextMenu-checkbox-icon"
+          :class="{ 'BksContextMenu-item-checked': checkedOptions[option.slug] }"
+          v-if="typeof option.checked === 'boolean'"
+        >{{ checkedOptions[option.slug] ? 'check_box' : 'check_box_outline_blank' }}</i>
+        <span class="BksContextMenu-item-name" v-html="option.name" />
         <span>
           <span
             class="shortcut"
@@ -21,7 +26,7 @@
             v-text="option.shortcut"
           />
           <i
-            class="material-icons menu-icon"
+            class="material-icons BksContextMenu-item-icon"
             v-if="option.icon"
           >{{ option.icon }}</i>
         </span>
@@ -44,6 +49,7 @@ export default Vue.extend({
       menuHeight: null,
       menuOpen: false,
       showSubItemsIndex: -1,
+      checkedOptions: {},
     }
   },
 
@@ -76,6 +82,13 @@ export default Vue.extend({
       menu.style.left = left + 'px';
       menu.style.top = top + 'px';
       menu.classList.add('vue-simple-context-menu--active')
+
+      this.options.forEach((option) => {
+        if (typeof option.checked === 'boolean') {
+          this.$set(this.checkedOptions, option.slug, option.checked)
+        }
+      })
+
       this.menuOpen = true
     },
     calculatePosition(event: MouseEvent): { left: number, top: number } {
@@ -131,10 +144,16 @@ export default Vue.extend({
         return
       }
       if (option.disabled) return;
-      option.handler?.({ item: this.item, option, event })
+      const handlerArgs = { item: this.item, option, event }
+      if (typeof this.checkedOptions[option.slug] !== 'undefined') {
+        const checked = !this.checkedOptions[option.slug]
+        this.checkedOptions[option.slug] = checked
+        handlerArgs.checked = checked
+      }
+      option.handler?.(handlerArgs)
       if (option.items?.length > 0) {
         this.showSubItemsIndex = idx
-      } else {
+      } else if (!option.keepOpen) {
         this.hideContextMenu()
       }
     },

@@ -28,7 +28,6 @@
   }
   .vue-simple-context-menu__item, .BksContextMenu-item {
     display: flex;
-    justify-content: space-between;
     padding: 0 $gutter-w;
     font-size: 0.9rem;
     min-height: 28px;
@@ -44,19 +43,25 @@
       background: darken(rgba($theme-base, 0.05), 25%);
     }
     i {
-      height: 24px!important;
-      line-height: 24px!important;
+      height: 24px;
+      line-height: 24px;
       width: 24px;
       opacity: 0.6;
-      margin-right: $gutter-h!important;
+      margin-right: $gutter-h;
     }
     .shortcut {
       padding-left: 5px;
       color: darken($text-dark, 30%);
     }
-    i.material-icons.menu-icon   {
-      margin-right:0!important;
+    .BksContextMenu-item-icon {
+      margin-right:0;
       margin-left: 0.4rem;
+    }
+    .BksContextMenu-checkbox-icon {
+      margin-left: 0;
+    }
+    .BksContextMenu-item-name {
+      margin-right: auto;
     }
   }
   .vue-simple-context-menu__divider, hr {

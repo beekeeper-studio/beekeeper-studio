@@ -298,7 +298,7 @@
   </div>
 </template>
 
-<style>
+<style lang="scss" scoped>
 .item-notice > span {
   overflow: hidden;
   text-overflow: ellipsis;

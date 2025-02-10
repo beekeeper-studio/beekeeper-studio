@@ -22,40 +22,14 @@
           </x-button>
 
           <x-button
-            v-show="false"
             :title="entitiesHidden ? 'Filter active' : 'No filters'"
             class="btn btn-fab btn-link action-item"
             :class="{active: entitiesHidden}"
+            @click="openFilterMenu"
             menu
           >
             <i class="material-icons-outlined">filter_alt</i>
-            <!-- FIXME commenting this because it freezes chrome. but it works in firefox.. -->
-            <!-- <x-menu style="--target-align: right;"> -->
-            <!--   <label> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showTables" -->
-            <!--     > -->
-            <!--     <span>Tables</span> -->
-            <!--   </label> -->
-            <!--   <label> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showViews" -->
-            <!--     > -->
-            <!--     <span>Views</span> -->
-            <!--   </label> -->
-            <!--   <label v-if="supportsRoutines"> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showRoutines" -->
-            <!--     > -->
-            <!--     <span>Routines</span> -->
-            <!--   </label> -->
-            <!--   <x-menuitem /> -->
-            <!-- </x-menu> -->
           </x-button>
-
         </x-buttons>
       </div>
     </div>
@@ -149,7 +123,6 @@
 </template>
 
 <script lang="ts">
-// import "xel/xel";
 import Vue, { PropType } from 'vue';
 import _ from 'lodash'
 import TableFilter from './mixins/table_filter'
@@ -291,7 +264,38 @@ export default Vue.extend({
           },
         },
       ]
-    }
+    },
+    filterMenuOptions() {
+      return [
+        {
+          name: "Tables",
+          slug: 'tables',
+          checked: this.showTables,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showTables = checked
+          },
+        },
+        {
+          name: "Views",
+          slug: 'views',
+          checked: this.showViews,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showViews = checked
+          },
+        },
+        {
+          name: "Routines",
+          slug: 'routines',
+          checked: this.showRoutines,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showRoutines = checked
+          },
+        },
+      ]
+    },
   },
   methods: {
     clearFilter() {
@@ -335,6 +339,9 @@ export default Vue.extend({
     },
     handleUpdateColumns(item: Item) {
       this.$emit('bks-item-update-columns', item.entity)
+    },
+    openFilterMenu(event) {
+      openMenu({ event, options: this.filterMenuOptions })
     },
   },
 })
