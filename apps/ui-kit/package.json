@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.0.9",
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "style": "./dist/style.css",
   "exports": {
@@ -21,17 +23,17 @@
     "dev": "vite",
     "lib:dev": "vite build -c vite.config.ts --watch --mode development",
     "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
+    "test": "vitest",
     "build": "vite build -c vite.config.ts --mode production",
     "preview": "vite preview"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#4a90edd6f2d597e240a2a5c19242ba5d666d0290",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.2.0",
     "@vitejs/plugin-vue2": "^2.3.1",
+    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#4a90edd6f2d597e240a2a5c19242ba5d666d0290",
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
@@ -49,6 +51,7 @@
     "typescript": "~4.3.0",
     "vite": "~5.3.6",
     "vite-plugin-vue2": "^2.0.3",
+    "vitest": "^3.0.5",
     "vue": "^2.7.16",
     "vue-tsc": "^2.1.10",
     "vue-virtual-scroll-list": "^2.3.5",

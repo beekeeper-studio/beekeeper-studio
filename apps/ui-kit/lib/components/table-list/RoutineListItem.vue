@@ -137,9 +137,6 @@ import { RoutineTypeNames } from './models'
           this.showArgs = false
         }
       },
-      showArgs() {
-        this.routine.showArgs = this.showArgs
-      },
       selected() {
         if (this.selected && !this.noSelect) {
           this.$el.scrollIntoView()

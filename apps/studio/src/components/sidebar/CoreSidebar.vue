@@ -79,14 +79,31 @@
     },
     computed: {
       tables() {
-        return this.$store.state.tables.map((table) => ({
-          name: table.name,
-          entityType: table.entityType,
-          columns: table.columns?.map((column) => ({
-            field: column.columnName,
-            dataType: column.dataType,
-          }))
-        }))
+        const entities = []
+        this.$store.getters.schemaTables.forEach(({ tables, routines }) => {
+          tables.forEach((table) => {
+            entities.push({
+              entityType: table.entityType,
+              name: table.name,
+              schema: table.schema,
+              columns: table.columns?.map((column) => ({
+                field: column.columnName,
+                dataType: column.dataType,
+              }))
+            })
+          })
+          routines.forEach((routine) => {
+            entities.push({
+              entityType: 'routine',
+              name: routine.name,
+              schema: routine.schema,
+              returnType: routine.returnType,
+              returnTypeLength: routine.returnTypeLength,
+              routineParams: routine.routineParams,
+            })
+          })
+        })
+        return entities
       },
       ...mapState(['database']),
       ...mapGetters(['minimalMode']),

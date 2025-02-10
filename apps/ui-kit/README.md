@@ -181,11 +181,12 @@ If you want to add a divider between context menu items, you can add an object `
 
 #### Table Definition
 
-| Name                      | Type                                    | Description                                         | Default     |
-| ------------------------- | --------------------------------------- | --------------------------------------------------- | ----------- |
-| `name`<sup>required</sup> | `string`                                | The name of the table.                              |             |
-| `schema`                  | `string`                                | The schema of the table.                            | `undefined` |
-| `columns`                 | `{ field: string; dataType: string }[]` | An array of objects representing the table columns. | `undefined` |
+| Name                      | Type                                                  | Description                                                                     | Default     |
+| ------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- | ----------- |
+| `name`<sup>required</sup> | `string`                                              | The name of the table.                                                          |             |
+| `schema`                  | `string`                                              | The schema of the table.                                                        | `undefined` |
+| `columns`                 | `{ field: string; dataType: string }[]`               | An array of objects representing the table columns.                             | `undefined` |
+| `entityType`              | `table` \| `view` \| `materialized-view` \| `routine` | The type of the entity. If this is not provided, it will be treated as a table. | `undefined` |
 
 #### Events
 
@@ -198,7 +199,7 @@ If you want to add a divider between context menu items, you can add an object `
 | `bks-item-update-columns` | Emitted when an item requests columns update. This is used for lazy loading. | `[object]`   |
 | `bks-expand-all`          | Emitted when all items are expanded.                                         | -            |
 | `bks-collapse-all`        | Emitted when all items are collapsed.                                        | -            |
-| `bks-add-btn-click`       | Emitted when the add button is clicked.                                      | `[object]`   |
+| `bks-add-entity-click`    | Emitted when the add button is clicked.                                      | `[object]`   |
 | `bks-refresh-btn-click`   | Emitted when the refresh button is clicked.                                  | `[object]`   |
 
 ### SQL Text Editor
