@@ -128,6 +128,14 @@
         </div>
       </div>
     </div>
+    <div class="not-supported" v-if="!enabled">
+      <span class="title">
+        Query Editor
+      </span>
+      <div class="body">
+        <p> We don't currently support queries for {{ dialect }} </p>
+      </div>
+    </div>
     <div
       class="bottom-panel"
       ref="bottomPanel"
@@ -419,6 +427,9 @@
       },
       keymapTypes() {
         return this.$config.defaults.keymapTypes
+      },
+      enabled() {
+        return !this.dialectData?.disabledFeatures?.queryEditor;
       },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized

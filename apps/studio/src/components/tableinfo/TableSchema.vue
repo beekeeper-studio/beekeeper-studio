@@ -297,7 +297,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           minWidth: 90,
         }),
-        {
+        (this.disabledFeatures?.primary ? null : {
           title: 'Primary',
           field: 'primary',
           tooltip: false,
@@ -308,7 +308,7 @@ export default Vue.extend({
           },
           width: 70,
           cssClass: 'read-only never-editable',
-        },
+        }),
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
       return result.map((col) => {
@@ -477,7 +477,7 @@ export default Vue.extend({
         this.removedRows = _.without(this.removedRows, row)
       } else {
         if (this.disabledFeatures?.alter?.dropColumn) {
-          this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+          this.$noty.info(`Removing columns is not supported by ${this.dialect}`)
           return
         }
         this.removedRows.push(row)

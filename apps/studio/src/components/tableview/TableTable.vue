@@ -1087,13 +1087,13 @@ export default Vue.extend({
       }
     },
     openEditorMenu(cell: CellComponent) {
+      const isReadOnly = this.isEditorMenuDisabled(cell);
       return {
-        name: "Edit in modal",
+        name: isReadOnly ? "View in modal" : "Edit in modal",
         shortcut: "Shift + Enter",
-        disabled: this.isEditorMenuDisabled(cell),
         handler: () => {
           if (this.isPrimaryKey(cell.getField())) return
-          this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+          this.$refs.editorModal.openModal(cell.getValue(), undefined, { cell, isReadOnly })
         }
       }
     },
