@@ -312,7 +312,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import { splitQueries } from '../lib/db/sql_tools'
+  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, splitQueries } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -532,13 +532,11 @@
         if (_.isEmpty(query)) {
           return query;
         }
-        _.each(this.queryParameterPlaceholders, param => {
-          if (_.isNumber(param)) { // is positional
-            query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp('?')}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`);
-          } else {
-            query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`, 'g'), `$1${this.queryParameterValues[param]}$2`)
-          }
-        });
+
+        const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
+        const values = Object.values(this.queryParameterValues) as string[];
+        const convertedParams = convertParamsForReplacement(placeholders, values);
+        query = deparameterizeQuery(query, this.dialect, convertedParams);
         return query;
       },
       unsavedChanges() {
@@ -890,8 +888,14 @@
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            this.$modal.show(`parameters-modal-${this.tab.id}`)
-            return
+            const params = this.individualQueries.flatMap((qs) => qs.parameters);
+            if (canDeparameterize(params)) {
+              this.$modal.show(`parameters-modal-${this.tab.id}`)
+              return;
+            } else {
+              this.error = `You can't use positional and non-positional parameters at the same time`
+              return;
+            }
           }
 
           const query = this.deparameterizedQuery

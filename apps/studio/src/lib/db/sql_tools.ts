@@ -2,6 +2,10 @@ import _ from 'lodash'
 import { identify } from 'sql-query-identifier'
 import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
+import { ParamTypes } from 'sql-formatter/lib/src/lexer/TokenizerOptions'
+import { format } from 'sql-formatter'
+import { Dialect, FormatterDialect } from '@/shared/lib/dialects/models'
+import { ParamItems } from 'sql-formatter/lib/src/formatter/Params'
 
 export function splitQueries(queryText: string, dialect) {
   if(_.isEmpty(queryText.trim())) {
@@ -9,6 +13,64 @@ export function splitQueries(queryText: string, dialect) {
   }
   const result = identify(queryText, { strict: false, dialect })
   return result
+}
+
+export function defaultParamTypesFor(dialect: string): ParamTypes {
+  switch (dialect) {
+    case 'psql':
+      return {
+        numbered: ['$'],
+      };
+    case 'mssql':
+      return {
+        named: [':'],
+      };
+    case 'bigquery':
+      return {
+        positional: true,
+        named: ['@'],
+        quoted: ['@'],
+      };
+    case 'sqlite':
+      return {
+        positional: true,
+        numbered: ['?'],
+        named: [':', '@'],
+      };
+    default:
+      return {
+        positional: true,
+      };
+  }
+}
+
+// can only have positional params OR non-positional
+export function canDeparameterize(params: string[]) {
+  return !(params.includes('?') && params.some((val) => val != '?'));
+}
+
+export function convertParamsForReplacement(placeholders: string[], values: string[]): ParamItems | string[] {
+  if (placeholders.includes('?')) {
+    return values;
+  } else {
+    // TODO (@day): this might not work with quoted params
+    // this will need to be more complex if we allow truly custom params
+    return placeholders.reduce((obj, val, index) => {
+      obj[val.slice(1)] = values[index];
+      return obj;
+    }, {});
+  }
+}
+
+export function deparameterizeQuery(queryText: string, dialect: Dialect, params: ParamItems | string[]) {
+  // TODO (@day): when we support custom param types this will need to be changed
+  const paramTypes = defaultParamTypesFor(dialect);
+  const result = format(queryText, {
+    language: FormatterDialect(dialect),
+    paramTypes,
+    params
+  });
+  return result;
 }
 
 export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
