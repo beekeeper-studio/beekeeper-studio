@@ -41,7 +41,7 @@
         --trigger-effect: none;
 
         &:before {
-          display: none !important;
+          display: none;
         }
 
         &:hover,
@@ -168,7 +168,7 @@
 
     .list-item {
       &:before {
-        border-left: 0 !important;
+        border-left: 0;
       }
     }
 
@@ -199,7 +199,7 @@
   >.badge {
     display: flex;
     align-items: center;
-    margin: 0 !important;
+    margin: 0;
 
     .material-icons {
       font-size: 1rem;
@@ -424,7 +424,7 @@
       }
 
       &.shown {
-        display: block !important;
+        display: block;
       }
     }
   }
