@@ -9,13 +9,15 @@ const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs');
 import * as cassandra from 'cassandra-driver';
 import { readFileSync } from "fs";
 import { CassandraChangeBuilder } from "@shared/lib/sql/change_builder/CassandraChangeBuilder";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import _ from "lodash";
+
 const log = rawLog.scope("cassandra");
 const logger = () => log;
 
@@ -441,7 +443,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     const fields = columns ? this.parseQueryResultColumns(result) : []
 
     return {
-      result: rows || [],
+      result: this.parseRows(rows, columns) || [],
       fields,
       hasNext,
       pageState: pageState || null
@@ -598,7 +600,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
     return {
       command: command || (isSelect && 'SELECT'),
-      rows: rows || [],
+      rows: this.parseRows(rows, columns)  || [],
       fields: fields,
       // FIXME not sure what this is, this causes the query to fail. .isPaged() is not defined.
       // isPaged: data.isPaged(),
@@ -650,18 +652,15 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     })
   }
 
-  private getParamsAndWhereList(primaryKeys, initialValue = null) {
-    const params = initialValue ? [initialValue] : [];
+  private getParamsAndWhereList(primaryKeys, initialValue = undefined) {
+    const params = initialValue !== undefined ? [initialValue] : [];
     const whereList = [];
     primaryKeys.forEach(({ column, value }) => {
       whereList.push(`${this.wrapIdentifier(column)} = ?`);
       params.push(value);
     });
 
-    return [
-      params,
-      whereList
-    ];
+    return [params, whereList];
   }
 
   private async getSelectUpdatedValues(updates): Promise<Array<any>> {
@@ -675,7 +674,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     const selectPromises: any = await Promise.all(updatePromises);
 
     return selectPromises.reduce((acc: Array<any>, sp: any) => {
-      const [data] = sp.data;
+      const [data] = sp.rows;
       if (data) acc.push(data);
 
       return acc;
@@ -787,5 +786,54 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       name: column.column_name,
       bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
     };
+  }
+
+  private parseRows(rows, columns) {
+    if (!rows || !columns) return [];
+
+    const typeByColumn = columns?.reduce((acc, col) => {
+      acc[col.name] = col.type;
+      return acc;
+    }, {});
+
+    return rows?.map((row) => {
+      Object.keys(row).forEach((key) => {
+        const value = row[key];
+        const typeCode = typeByColumn[key].code;
+
+        if (typeCode == cassandra.types.dataTypes.list) {
+          row[key] = value?.map((v) => this.convertValueByType(v, typeByColumn[key].info.code));
+          return;
+        }
+
+        row[key] = this.convertValueByType(value, typeCode);
+      });
+      return row;
+    });
+  }
+
+  private convertValueByType(value, type) {
+    if (value == null || value === undefined) {
+      return null;
+    }
+
+    switch (type) {
+      case cassandra.types.dataTypes.bigint:
+        return String(value);
+      case cassandra.types.dataTypes.timestamp:
+        return value ? value.toISOString() : null;
+      case cassandra.types.dataTypes.time:
+      case cassandra.types.dataTypes.date:
+        return value ? String(value) : null;
+      case cassandra.types.dataTypes.uuid:
+      case cassandra.types.dataTypes.timeuuid:
+        return value?.buffer
+          ? new cassandra.types.Uuid(Buffer.from(value.buffer)).toString()
+          : value;
+      case cassandra.types.dataTypes.inet:
+        return value ? value.toString() : null;
+      default:
+        return value;
+    }
   }
 }

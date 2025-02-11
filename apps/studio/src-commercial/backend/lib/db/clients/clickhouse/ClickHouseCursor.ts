@@ -1,5 +1,5 @@
 import { BeeCursor } from "@/lib/db/models";
-import rawlog from "electron-log";
+import rawlog from "@bksLogger";
 import type { ClickHouseClient, Row, StreamReadable } from "@clickhouse/client";
 import { uuidv4 } from "@/lib/uuid";
 import { waitFor } from "@/lib/db/clients/base/wait";

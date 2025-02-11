@@ -16,6 +16,9 @@
     padding: 0;
     margin: 0;
     overflow: unset;
+    &.import-progress{
+      margin: 2rem auto 0 auto;
+    }
   }
 
   .stepper-box {

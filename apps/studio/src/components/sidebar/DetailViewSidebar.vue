@@ -59,10 +59,10 @@
       :fold-all="foldAll"
       :unfold-all="unfoldAll"
       :value="text"
-      :forced-value="text"
       :mode="mode"
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
+      :plugins="textEditorPlugins"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -91,8 +91,9 @@ import {
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
 import { EditorMarker } from "@/lib/editor/utils";
+import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
 
@@ -158,9 +159,9 @@ export default Vue.extend({
     },
     processedValue() {
       const clonedValue = _.cloneDeep(this.value)
-      eachPaths(clonedValue, (path, value: string) => {
+      eachPaths(clonedValue, (path, value) => {
         if (this.truncatedPaths.includes(path)) {
-          _.set(clonedValue, path, value.slice(0, globals.maxDetailViewTextLength))
+          _.set(clonedValue, path, (value as string).slice(0, globals.maxDetailViewTextLength))
         }
       })
       return clonedValue
@@ -262,6 +263,9 @@ export default Vue.extend({
         },
 
       ]
+    },
+    textEditorPlugins() {
+      return [persistJsonFold]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },

@@ -1,9 +1,16 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
-import logRaw from 'electron-log'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
+import logRaw from '@bksLogger'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, TableColumn } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import {fromIni} from "@aws-sdk/credential-providers";
+import {Signer} from "@aws-sdk/rds-signer";
+import globals from "@/common/globals";
+import {
+  AWSCredentials
+} from "@/lib/db/authentication/amazon-redshift";
+import {RedshiftOptions} from "@/lib/db/types";
 
 const log = logRaw.scope('db/util')
 
@@ -105,6 +112,8 @@ export function buildFilterString(filters: TableFilter[], columns = []) {
     })
     filterString = "WHERE " + joinFilters(allFilters, filters)
 
+    log.info('FILTER: ', filterString)
+
     filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
     })
@@ -162,7 +171,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
     ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
     `
-    return {query: sql, countQuery: countSQL, params: filterParams}
+  return {query: sql, countQuery: countSQL, params: filterParams}
 }
 
 export async function executeSelectTop(queries, conn, executor) {
@@ -276,7 +285,6 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
-
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   if (!deletes) return []
   return deletes.map(deleteRow => {
@@ -302,4 +310,72 @@ export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], rea
 
 export const errorMessages = {
   readOnly: 'Write action(s) not allowed in Read-Only Mode.'
+}
+
+export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): Promise<AWSCredentials> {
+  if (redshiftOptions.accessKeyId && redshiftOptions.secretAccessKey) {
+    return {
+      accessKeyId: redshiftOptions.accessKeyId,
+      secretAccessKey: redshiftOptions.secretAccessKey,
+    };
+  }
+
+  // Fallback to AWS profile-based credentials
+  const provider = fromIni({
+    profile: redshiftOptions.awsProfile || "default",
+  });
+  return provider();
+}
+
+export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
+  const {awsProfile, awsRegion: region, accessKeyId, secretAccessKey} = redshiftOptions
+  let credentials: {
+    profile?: string,
+    accessKeyId?: string,
+    secretAccessKey?: string,
+  } = {
+    profile: awsProfile || "default"
+  }
+
+  if(accessKeyId && secretAccessKey) {
+    credentials = {
+      accessKeyId,
+      secretAccessKey
+    }
+  }
+
+  const nodeProviderChainCredentials = fromIni(credentials);
+  const signer = new Signer({
+    credentials: nodeProviderChainCredentials,
+    region,
+    hostname,
+    port,
+    username,
+  });
+  return  await signer.getAuthToken();
+}
+
+let resolvedPw: string | undefined;
+let tokenExpiryTime: number | null = null;
+
+export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, server: any, port: number): Promise<string> {
+  if(!redshiftOptions?.iamAuthenticationEnabled){
+    return null
+  }
+
+  const now = Date.now();
+
+  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime) { // Refresh 2 minutes before expiry
+    log.info("Refreshing IAM token...");
+    resolvedPw = await getIAMPassword(
+      redshiftOptions,
+      server.config.host,
+      server.config.port || port,
+      server.config.user
+    );
+
+    tokenExpiryTime = now + globals.iamExpiryTime; // Tokens last 15 minutes
+  }
+
+  return resolvedPw;
 }
