@@ -13,6 +13,10 @@ interface BaseMenuItem<Item = unknown> {
   icon?: string
   disabled?: boolean
   items?: (MenuItem<Item> | Divider)[]
+  /** Set to true or false to make this item a checkbox */
+  checked?: boolean
+  /** Keep the menu open after this item is clicked */
+  keepOpen?: boolean
 }
 
 interface DividerItem {

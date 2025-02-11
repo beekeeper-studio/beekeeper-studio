@@ -1,5 +1,5 @@
-import { BaseTable, BaseData } from "../types";
+import { TableEntity, BaseData } from "../types";
 
-export interface Table extends BaseTable {
+export interface Table extends TableEntity {
   data: BaseData;
 };

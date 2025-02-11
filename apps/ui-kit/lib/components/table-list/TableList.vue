@@ -22,40 +22,14 @@
           </x-button>
 
           <x-button
-            v-show="false"
             :title="entitiesHidden ? 'Filter active' : 'No filters'"
             class="btn btn-fab btn-link action-item"
             :class="{active: entitiesHidden}"
+            @click="openFilterMenu"
             menu
           >
             <i class="material-icons-outlined">filter_alt</i>
-            <!-- FIXME commenting this because it freezes chrome. but it works in firefox.. -->
-            <!-- <x-menu style="--target-align: right;"> -->
-            <!--   <label> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showTables" -->
-            <!--     > -->
-            <!--     <span>Tables</span> -->
-            <!--   </label> -->
-            <!--   <label> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showViews" -->
-            <!--     > -->
-            <!--     <span>Views</span> -->
-            <!--   </label> -->
-            <!--   <label v-if="supportsRoutines"> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showRoutines" -->
-            <!--     > -->
-            <!--     <span>Routines</span> -->
-            <!--   </label> -->
-            <!--   <x-menuitem /> -->
-            <!-- </x-menu> -->
           </x-button>
-
         </x-buttons>
       </div>
     </div>
@@ -115,7 +89,7 @@
             title="New Table"
             class="create-table"
             :disabled="tablesLoading"
-            v-if="canCreateTable"
+            v-if="showCreateEntityBtn"
           >
             <i class="material-icons">add</i>
           </button>
@@ -149,13 +123,13 @@
 </template>
 
 <script lang="ts">
-// import "xel/xel";
 import Vue, { PropType } from 'vue';
 import _ from 'lodash'
 import TableFilter from './mixins/table_filter'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
-import { Item, Table } from "./models";
+import { Item } from "./models";
+import { Entity } from "../types";
 import { TableListEvents } from "./constants";
 import { RootEventMixin } from "../mixins/RootEvent";
 import { writeClipboard } from "../../utils/clipboard";
@@ -176,16 +150,16 @@ export default Vue.extend({
   components: { VirtualTableList },
   props: {
     tables: {
-      type: Array as PropType<Table[]>,
+      type: Array as PropType<Entity[]>,
       default: () => [],
-    },
-    routines: {
-      type: Array,
-      default: () => []
     },
     schemaContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     tableContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     routineContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    showCreateEntityBtn: {
+      type: Boolean,
+      default: true,
+    },
     // this might just be for us, maybe make a default for others and allow overrides?
     dialectData: {
 
@@ -214,10 +188,10 @@ export default Vue.extend({
       // return !!this.dialectData.disabledFeatures.createTable
     },
     totalEntities() {
-      return this.tables.length + this.routines.length
+      return this.tables.length
     },
     shownEntities() {
-      return this.filteredTables.length + this.filteredRoutines.length
+      return this.filteredTables.length
     },
     totalFilteredEntities() {
       return this.totalEntities - this.shownEntities
@@ -227,9 +201,6 @@ export default Vue.extend({
     },
     filteredTables() {
       return entityFilter(this.tables, this.entityFilter);
-    },
-    filteredRoutines() {
-      return entityFilter(this.routines, this.entityFilter);
     },
     filterQuery: {
       get() {
@@ -263,23 +234,10 @@ export default Vue.extend({
         this.entityFilter.showRoutines = !this.entityFilter.showRoutines;
       }
     },
-    supportsRoutines() {
-      // TODO(@azmi): do something
-      // return this.supportedFeatures.customRoutines
-      return false
-    },
-    canCreateTable() {
-      // FIXME
-      return true
-      // return !this.dialectData.disabledFeatures?.createTable
-    },
     // tables() {
     //   return [{"name":"cheeses","entityType":"table","columns":[{"tableName":"cheeses","columnName":"id","dataType":"INTEGER","nullable":true,"defaultValue":null,"ordinalPosition":0,"hasDefault":false,"generated":false,"bksField":{"name":"id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"name","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":1,"hasDefault":false,"generated":false,"bksField":{"name":"name","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"origin_country_id","dataType":"INTEGER","nullable":false,"defaultValue":null,"ordinalPosition":2,"hasDefault":false,"generated":false,"bksField":{"name":"origin_country_id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"cheese_type","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":3,"hasDefault":false,"generated":false,"bksField":{"name":"cheese_type","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"description","dataType":"TEXT","nullable":true,"defaultValue":null,"ordinalPosition":4,"hasDefault":false,"generated":false,"bksField":{"name":"description","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"first_seen","dataType":"DATETIME","nullable":true,"defaultValue":null,"ordinalPosition":5,"hasDefault":false,"generated":false,"bksField":{"name":"first_seen","bksType":"UNKNOWN"}}]},{"name":"countries","entityType":"table"},{"name":"neko","entityType":"table"},{"name":"producers","entityType":"table"},{"name":"reviews","entityType":"table"},{"name":"sqlite_sequence","entityType":"table"},{"name":"stores","entityType":"table"},{"name":"cheese_summary","entityType":"view"}]
     //   return [] // FIXME temp
     // },
-    routines() {
-      return [] // FIXME temp
-    },
     // ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
     // ...mapGetters(['dialectData']),
     // ...mapGetters({
@@ -306,7 +264,38 @@ export default Vue.extend({
           },
         },
       ]
-    }
+    },
+    filterMenuOptions() {
+      return [
+        {
+          name: "Tables",
+          slug: 'tables',
+          checked: this.showTables,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showTables = checked
+          },
+        },
+        {
+          name: "Views",
+          slug: 'views',
+          checked: this.showViews,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showViews = checked
+          },
+        },
+        {
+          name: "Routines",
+          slug: 'routines',
+          checked: this.showRoutines,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showRoutines = checked
+          },
+        },
+      ]
+    },
   },
   methods: {
     clearFilter() {
@@ -317,7 +306,7 @@ export default Vue.extend({
       this.trigger(TableListEvents.toggleExpandTableList, this.isExpanded)
     },
     newTable() {
-      this.$emit('bks-add-btn-click')
+      this.$emit('bks-add-entity-click')
     },
     async handleExpand(item: Item) {
       if (item.expanded) {
@@ -350,6 +339,9 @@ export default Vue.extend({
     },
     handleUpdateColumns(item: Item) {
       this.$emit('bks-item-update-columns', item.entity)
+    },
+    openFilterMenu(event) {
+      openMenu({ event, options: this.filterMenuOptions })
     },
   },
 })

@@ -18,7 +18,13 @@
         <database-dropdown
           @databaseSelected="databaseSelected"
         />
-        <table-list />
+        <bks-table-list
+          :tables="tables"
+          @bks-item-dblclick="handleTableListItemDblClick"
+          @bks-item-update-columns="handleItemUpdateColumns"
+          @bks-refresh-btn-click="handleRefreshBtnClick"
+          @bks-add-btn-click="handleAddBtnClick"
+        />
       </div>
 
       <!-- History -->
@@ -47,10 +53,11 @@
 <script>
   import _ from 'lodash'
   import GlobalSidebar from './GlobalSidebar.vue'
-  import TableList from './core/TableList.vue'
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
+  import { AppEvent } from "@/common/AppEvent";
+  import BksTableList from "@bks/ui-kit/vue/table-list";
 
   import { mapState, mapGetters } from 'vuex'
   import rawLog from '@bksLogger'
@@ -59,7 +66,7 @@
 
   export default {
     props: ['sidebarShown'],
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
+    components: { BksTableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
         tableLoadError: null,
@@ -71,20 +78,34 @@
       }
     },
     computed: {
-      filteredTables() {
-        if (!this.filterQuery) {
-          return this.tables
-        }
-        const startsWithFilter = _(this.tables)
-          .filter((item) => _.startsWith(item.name, this.filterQuery))
-          .value()
-        const containsFilter = _(this.tables)
-          .difference(startsWithFilter)
-          .filter((item) => item.name.includes(this.filterQuery))
-          .value()
-        return _.concat(startsWithFilter, containsFilter)
+      tables() {
+        const entities = []
+        this.$store.getters.schemaTables.forEach(({ tables, routines }) => {
+          tables.forEach((table) => {
+            entities.push({
+              entityType: table.entityType,
+              name: table.name,
+              schema: table.schema,
+              columns: table.columns?.map((column) => ({
+                field: column.columnName,
+                dataType: column.dataType,
+              }))
+            })
+          })
+          routines.forEach((routine) => {
+            entities.push({
+              entityType: 'routine',
+              name: routine.name,
+              schema: routine.schema,
+              returnType: routine.returnType,
+              returnTypeLength: routine.returnTypeLength,
+              routineParams: routine.routineParams,
+            })
+          })
+        })
+        return entities
       },
-      ...mapState(['tables', 'database']),
+      ...mapState(['database']),
       ...mapGetters(['minimalMode']),
     },
     watch: {
@@ -117,6 +138,28 @@
       async disconnect() {
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
+      },
+      handleTableListItemDblClick(table) {
+        this.throttledLoadTable(table)
+      },
+      throttledLoadTable: _.throttle(function(table) {
+        this.$root.$emit(AppEvent.loadTable, { table })
+      }, 500),
+      async handleItemUpdateColumns(table) {
+        if (!table.columns?.length) {
+          await this.$store.dispatch("updateTableColumns", table)
+        }
+      },
+      async handleRefreshBtnClick() {
+        try {
+          this.$store.dispatch('updateRoutines')
+          await this.$store.dispatch('updateTables')
+        } catch (ex) {
+          this.$noty.error(`Unable to refresh tables ${ex.message}`)
+        }
+      },
+      async handleAddBtnClick() {
+        this.$root.$emit(AppEvent.createTable)
       },
     }
   }

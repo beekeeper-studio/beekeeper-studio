@@ -530,7 +530,6 @@ x-buttons {
   }
 }
 
-
 .cm-s-monokai {
   font-weight: 500;
   span.cm-keyword {
@@ -557,6 +556,18 @@ x-buttons {
   span.cm-bracket {
     color: $text;
   }
+}
+
+.BksTextEditor {
+  font-weight: 500;
+  --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
+  --bks-text-editor-selected-bg-color: #{rgba($theme-secondary, 0.25)};
+  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-number-fg-color: #{$brand-warning};
+  --bks-text-editor-string-fg-color: #{darken($brand-success, 20%)};
+  --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-bracket-fg-color: #{$text};
 }
 
 // Noty
