@@ -64,7 +64,7 @@ export default {
     foldGutter: Boolean,
     foldWithoutLineNumbers: Boolean,
     removeJsonRootBrackets: Boolean,
-    forceInitizalize: null,
+    forceInitialize: null,
     bookmarks: Array,
     foldAll: null,
     unfoldAll: null,
@@ -107,6 +107,7 @@ export default {
       wasEditorFocused: false,
       editorInitialized: false,
       initializing: false,
+      firstInitialization: true,
 
       // Add our own keybindings
       internalKeybindings: {},
@@ -147,13 +148,7 @@ export default {
       this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
-    forceInitizalize() {
-      this.initialize();
-    },
-    keymap() {
-      this.initialize();
-    },
-    vimConfig() {
+    forceInitialize() {
       this.initialize();
     },
     vimKeymaps() {
@@ -415,7 +410,12 @@ export default {
         cm.setValue(this.value)
       }
 
+      if (this.firstInitialization && this.focus) {
+        cm.focus();
+      }
+
       this.editor = cm;
+      this.firstInitialization = false;
 
       this.initializing = false
 
