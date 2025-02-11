@@ -121,6 +121,14 @@
         </div>
       </div>
     </div>
+    <div class="not-supported" v-if="!enabled">
+      <span class="title">
+        Query Editor
+      </span>
+      <div class="body">
+        <p> We don't currently support queries for {{ dialect }} </p>
+      </div>
+    </div>
     <div
       class="bottom-panel"
       ref="bottomPanel"
@@ -395,6 +403,9 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
+      enabled() {
+        return !this.dialectData?.disabledFeatures?.queryEditor;
+      },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
       },

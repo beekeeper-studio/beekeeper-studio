@@ -137,7 +137,7 @@ import TablePartitionsVue from './tableinfo/TablePartitions.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import { AppEvent } from '@/common/AppEvent'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import rawLog from '@bksLogger'
 
 const log = rawLog.scope('TabTableProperties')
@@ -175,6 +175,7 @@ export default {
           id: 'relations',
           name: "Relations",
           tableOnly: true,
+          needsRelations: true,
           needsProperties: true,
           needsPartitions: false,
           component: TableRelationsVue,
@@ -184,6 +185,7 @@ export default {
           id: 'triggers',
           name: "Triggers",
           tableOnly: true,
+          needsTriggers: true,
           needsProperties: true,
           needsPartitions: false,
           component: TableTriggersVue,
@@ -217,6 +219,7 @@ export default {
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
+    ...mapGetters(['dialectData']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -243,6 +246,14 @@ export default {
         }
 
         if (p.needsProperties && !this.supportedFeatures.properties) {
+          return false
+        }
+
+        if (p.needsRelations && this.dialectData?.disabledFeatures?.relations) {
+          return false
+        }
+
+        if (p.needsTriggers && this.dialectData?.disabledFeatures?.triggers) {
           return false
         }
 

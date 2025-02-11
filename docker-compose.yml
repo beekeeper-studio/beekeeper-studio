@@ -13,8 +13,20 @@ volumes:
   cassandra:
   bigquery:
   firebird:
+  mongodb:
 
 services:
+
+  mongodb:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: beekeeper
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: sakila
+    volumes:
+      - ./dev/docker_mongodb_init:/docker-entrypoint-initdb.d
+    ports:
+      - 27017:27017
 
   oracle18:
     image: gvenzl/oracle-xe:18
