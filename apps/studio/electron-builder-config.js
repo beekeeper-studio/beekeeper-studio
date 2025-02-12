@@ -7,6 +7,11 @@ const rpmFpmOptions = [
   "--after-install=build/rpm-postinstall"
 ]
 
+
+const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
+
+
+
 module.exports = {
   appId: "io.beekeeperstudio.desktop",
   productName: "Beekeeper Studio",
@@ -176,7 +181,7 @@ module.exports = {
   },
   appx: {
     applicationId: "beekeeperstudio",
-    publisher: "CN=Rathbone Labs\\, LLC",
+    publisher: certSubject.replace('"', "&quot;"),
     publisherDisplayName: "Beekeeper Studio"
   }
 }
