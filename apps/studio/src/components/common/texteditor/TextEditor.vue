@@ -311,6 +311,10 @@ export default {
           "update:cursorIndex",
           cm.getDoc().indexFromPos(cm.getCursor())
         );
+        this.$emit(
+          "update:cursorIndexAnchor",
+          cm.getDoc().indexFromPos(cm.getCursor('anchor'))
+        );
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");

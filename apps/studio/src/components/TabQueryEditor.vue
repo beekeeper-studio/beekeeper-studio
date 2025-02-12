@@ -320,7 +320,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import { splitQueries } from '../lib/db/sql_tools'
+  import { splitQueries, isTextSelected } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -360,6 +360,7 @@
           selection: null,
           readOnly: false,
           cursorIndex: 0,
+          cursorIndexAnchor: 0,
           initialized: false,
         },
         runningQuery: null,
@@ -472,7 +473,13 @@
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
         for (let i = 0; i < queries.length; i++) {
-          if (this.editor.cursorIndex <= queries[i].end + 1) return i
+          // Find a query in between anchor and head cursors
+          if (this.editor.cursorIndex !== this.editor.cursorIndexAnchor) {
+            const isSelected = isTextSelected(queries[i].start, queries[i].end, this.editor.cursorIndexAnchor, this.editor.cursorIndex)
+            if (isSelected) return i
+          }
+          // Otherwise, find a query that sits before the cursor
+          else if (this.editor.cursorIndex <= queries[i].end + 1) return i
         }
         return null
       },
