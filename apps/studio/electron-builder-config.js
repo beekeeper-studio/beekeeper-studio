@@ -181,7 +181,7 @@ module.exports = {
   },
   appx: {
     applicationId: "beekeeperstudio",
-    publisher: certSubject.replace('"', "&quot;"),
+    publisher: certSubject.replaceAll('"', "&quot;"),
     publisherDisplayName: "Beekeeper Studio"
   }
 }
