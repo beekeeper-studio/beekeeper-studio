@@ -8,7 +8,7 @@ const rpmFpmOptions = [
 ]
 
 
-const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
+const certSubject = 'SERIALNUMBER=803010247, C=US, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
 
 
 
