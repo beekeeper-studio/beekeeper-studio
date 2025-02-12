@@ -482,11 +482,12 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return [];
   }
 
-  async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<void> {
+  async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<string> {
     // Create a new dataset/database
     const options = {}
     const [dataset] = await this.client.createDataset(databaseName, options);
     log.debug(`Dataset ${dataset.id} created.`);
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {

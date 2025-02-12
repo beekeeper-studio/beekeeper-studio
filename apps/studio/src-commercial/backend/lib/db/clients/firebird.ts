@@ -860,7 +860,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     databaseName: string,
     _charset: string,
     _collation: string
-  ): Promise<void> {
+  ): Promise<string> {
+    databaseName = databaseName.trimEnd();
+    if (!databaseName.endsWith(".fdb")) {
+      databaseName += ".fdb";
+    }
     await createDatabase({
       host: this.server.config.host,
       port: this.server.config.port,
@@ -869,6 +873,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       password: this.server.config.password,
       // encoding: charset,
     });
+    return databaseName;
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {

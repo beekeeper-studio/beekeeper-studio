@@ -735,8 +735,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     databaseName: string,
     _charset: string,
     _collation: string
-  ): Promise<void> {
+  ): Promise<string> {
+    databaseName = databaseName.trimEnd();
+    if (!databaseName.endsWith(".duckdb")) {
+      databaseName += ".duckdb";
+    }
     await Database.create(databaseName);
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {

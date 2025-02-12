@@ -180,7 +180,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listCharsets(): Promise<string[]>
   abstract getDefaultCharset(): Promise<string>
   abstract listCollations(charset: string): Promise<string[]>
-  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
+  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<string>
   abstract createDatabaseSQL(): Promise<string>
   abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
   abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
