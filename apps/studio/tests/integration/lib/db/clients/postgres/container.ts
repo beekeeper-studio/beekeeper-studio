@@ -58,6 +58,7 @@ export const PostgresTestDriver = {
 
       if (socket) {
         config.host = 'notarealhost'
+        config.port = null
         config.socketPathEnabled = true
         config.socketPath = path.join(temp, "postgresql")
       }
@@ -65,6 +66,12 @@ export const PostgresTestDriver = {
       this.utilOptions = {
         dialect: 'postgresql',
         defaultSchema: 'public',
+        knexConnectionOptions: {
+          // When testing socket connection, knex need to use the host and
+          // port because postgres only accepts one socket connection.
+          host: this.container.getHost(),
+          port: this.container.getMappedPort(5432),
+        },
       }
 
       if (dockerTag !== 'latest') {
