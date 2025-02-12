@@ -10,16 +10,7 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import {
-  buildDatabaseFilter,
-  buildDeleteQueries,
-  buildInsertQueries,
-  buildSchemaFilter,
-  buildSelectQueriesFromUpdates,
-  buildUpdateQueries,
-  escapeString,
-  refreshTokenIfNeeded
-} from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -1101,6 +1092,18 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const data = await this.driverExecuteSingle(sql, { params });
 
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
+  }
+
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
+    let setRunAsUpsert = runAsUpsert
+    if ( setRunAsUpsert ) {
+      setRunAsUpsert = this.version.number >= 90500
+    }
+    const queries = []
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: setRunAsUpsert, primaryKeys }).join(';'))
+    return joinQueries(queries)
   }
 
   async importBeginCommand(_table: TableOrView, importOptions: ImportFuncOptions): Promise<any> {

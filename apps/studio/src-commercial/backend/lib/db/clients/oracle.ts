@@ -7,6 +7,7 @@ import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import {
   CancelableQuery,
+  DatabaseEntity,
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FieldDescriptor,
@@ -69,6 +70,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     this.defaultSchema = async (): Promise<string> => server.config.user.toUpperCase()
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
+    // Typescript wasn't having it that createUpsertFunc could be either a function or null, so this ended up working
+    this.createUpsertFunc = this.createUpsertSQL
   }
 
   getBuilder(table: string, schema?: string): ChangeBuilderBase {
@@ -120,6 +123,38 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
+  }
+
+  // took this approach because Typescript wasn't liking the base function could be a null value or a function
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
+    const [PK] = primaryKeys
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+    const insertSQL = () => `
+      INSERT ("${PK}", ${columnsWithoutPK.map(cpk => `"${cpk}"`).join(', ')})
+      VALUES (source."${PK}", ${columnsWithoutPK.map(cpk => `source."${cpk}"`).join(', ')})
+    `
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `target."${cpk}" = source."${cpk}"`).join(', ')}`
+    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
+    const usingSQLStatement = data.map( (val, idx) => {
+      if (idx === 0) {
+        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM dual`
+      }
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM dual`
+    })
+    .join(' UNION ALL ')
+
+    return `
+      MERGE INTO "${schema}"."${tableName}" target
+      USING (
+        ${usingSQLStatement}
+      ) source
+      ON (target."${PK}" = source."${PK}")
+      WHEN MATCHED THEN
+        UPDATE SET
+          ${updateSet()}
+      WHEN NOT MATCHED THEN
+        ${insertSQL()};
+    `
   }
 
   async createDatabaseSQL() {
@@ -303,6 +338,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     backDirFormat: false,
     restore: false,
     indexNullsNotDistinct: false,
+    transactions: true
   });
 
   // TODO: implement

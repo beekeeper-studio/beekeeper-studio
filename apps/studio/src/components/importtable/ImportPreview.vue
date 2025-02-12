@@ -66,6 +66,7 @@ export default {
       return this.importOptions?.importMap?.length ?? '-'
     },
     columnsIgnoredCount () {
+      // TODO: table columns doesn't seem to be in "this.table" all the time so this will be 0 - mapped columns. Fix that
       const totalColumns = this.table?.columns?.length ?? 0
       const mappedColumns = this.importOptions?.importMap?.length ?? 0
       return totalColumns - mappedColumns

@@ -229,7 +229,7 @@ export interface IBasicDatabaseClient {
   duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>
   duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
 
-  getInsertQuery(tableInsert: TableInsert): Promise<string>
+  getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
   syncDatabase(): Promise<void>
 
   importStepZero(table: TableOrView): Promise<any>
