@@ -24,7 +24,7 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
@@ -145,8 +145,8 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
       if (event.source === window && event.data.type === 'port') {
         const [port] = event.ports;
         const { sId } = event.data;
+        log.log('Received port in renderer with sId: ', sId);
 
-        log.log('GOT PORT: ', port, sId)
         Vue.prototype.$util.setPort(port, sId);
         app.$store.dispatch('settings/initializeSettings');
       }

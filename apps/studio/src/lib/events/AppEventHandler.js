@@ -1,5 +1,5 @@
 import { AppEvent } from "../../common/AppEvent"
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope("AppEventHandler")

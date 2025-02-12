@@ -27,6 +27,24 @@ describe("Saved Connection", () => {
 
   })
 
+  const urls = [
+    { t: 'sqlite', p: '/a/b/c/database.sqlite3'},
+    { t: 'sqlite', p: '/a/b/c/database.sqlite'},
+    { t: 'sqlite', p: '~/a.db'},
+    { t: 'sqlite', p: 'b.sqlite3'},
+    { t: 'duckdb', p: '/a/b/c.duckdb'},
+    { t: 'duckdb', p: '/a.ddb'},
+    { t: 'duckdb', p: 'a.duckdb'},
+  ]
+
+  urls.forEach(({ t, p}) => {
+    it(`Should resolve '${p}' as '${t}'`, () => {
+      const c = new SavedConnection()
+      c.parse(p)
+      expect(c.connectionType).toBe(t)
+    })
+  })
+
   it("demonstrating new databases for each test", async () => {
     const count = await SavedConnection.count()
     expect(count).toBe(0)

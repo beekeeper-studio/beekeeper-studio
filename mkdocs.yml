@@ -94,6 +94,8 @@ nav:
       - user_guide/connecting/oracle-database.md
       - user_guide/connecting/amazon-rdb.md
       - user_guide/connecting/firebird.md
+      - user_guide/connecting/duckdb.md
+      - user_guide/connecting/mongodb.md
   - User Guide:
     - user_guide/using-the-sql-editor.md
     - user_guide/editing-data.md

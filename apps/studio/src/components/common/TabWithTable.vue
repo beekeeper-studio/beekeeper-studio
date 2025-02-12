@@ -26,7 +26,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { mapState } from 'vuex'
 import { findTable } from '@/common/transport/TransportOpenTab'
 

@@ -4,7 +4,7 @@ import { BrowserWindow, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import querystring from 'query-string'
 
 
@@ -60,7 +60,7 @@ class BeekeeperWindow {
 
     const devUrl = 'http://localhost:3003'
     const startUrl = 'app://./index.html'
-    let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
+    const appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
