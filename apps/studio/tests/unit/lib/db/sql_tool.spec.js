@@ -1,4 +1,4 @@
-import { splitQueries, removeQueryQuotes, extractParams } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, removeQueryQuotes, extractParams, isTextSelected } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -58,3 +58,72 @@ describe("Query Unquoter", () => {
   })
 })
 
+describe("Text Selection", () => {
+  function check({query, cursor}) {
+    const [queryStart, queryEnd] = query;
+    const [cursorStart, cursorEnd] = cursor;
+    return expect(isTextSelected(queryStart, queryEnd, cursorStart, cursorEnd))
+  }
+
+  it("should check if text is selected", () => {
+    check({
+      query: [0, 120],
+      cursor: [0, 120],
+    }).toBe(true);
+
+    check({
+      query: [0, 120],
+      cursor: [120, 0],
+    }).toBe(true);
+
+    check({
+      query: [10, 120],
+      cursor: [0, 120],
+    }).toBe(true);
+
+    check({
+      query: [10, 120],
+      cursor: [120, 0],
+    }).toBe(true);
+
+    check({
+      query: [10, 110],
+      cursor: [0, 120],
+    }).toBe(true);
+
+    check({
+      query: [-10, 110],
+      cursor: [0, 120],
+    }).toBe(true);
+
+    check({
+      query: [-10, 110],
+      cursor: [120, 0],
+    }).toBe(true);
+
+    check({
+      query: [-10, 130],
+      cursor: [0, 120],
+    }).toBe(true);
+
+    check({
+      query: [10, 130],
+      cursor: [0, 120],
+    }).toBe(true);
+
+    check({
+      query: [130, 200],
+      cursor: [0, 120],
+    }).toBe(false);
+
+    check({
+      query: [0, 120],
+      cursor: [130, 200],
+    }).toBe(false);
+
+    check({
+      query: [10, 120],
+      cursor: [0, 10],
+    }).toBe(false);
+  });
+});
