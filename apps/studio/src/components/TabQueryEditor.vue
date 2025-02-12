@@ -370,6 +370,7 @@
           selection: null,
           readOnly: false,
           cursorIndex: 0,
+          cursorIndexAnchor: 0,
           initialized: false,
         },
         runningQuery: null,
