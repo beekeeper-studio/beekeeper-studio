@@ -3,6 +3,7 @@ import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, setVa
 import _ from 'lodash'
 import Vue from 'vue'
 import { Module } from 'vuex'
+import config from "@/config";
 
 
 interface State {
@@ -67,6 +68,13 @@ const SettingStoreModule: Module<State, any> = {
         return theme
       }
       return rootGetters.isUltimate ? theme : 'system';
+    },
+    /** The keymap type to be used in text editor */
+    userKeymap(state) {
+      const value = state.settings.keymap?.value as string;
+      return value && config.defaults.keymapTypes.map((k) => k.value).includes(value)
+        ? value
+        : "default";
     },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'

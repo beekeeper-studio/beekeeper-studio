@@ -237,8 +237,11 @@
             </x-menuitem>
             <x-menuitem @click="importTab">
               <x-label>
-                Import from file
-                <span class="badge badge-info">Beta</span>
+                Import from file 
+                <i
+                  v-if="$store.getters.isCommunity"
+                  class="material-icons menu-icon"
+                >stars</i>
               </x-label>
             </x-menuitem>
             <x-menuitem @click="openQueryTab">
@@ -293,6 +296,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.material-icons.menu-icon {
+  margin-left: 10px !important;
+}
 </style>
 
 <script lang="ts">
@@ -305,7 +312,7 @@ import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import EditorModal from './EditorModal.vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
@@ -326,7 +333,6 @@ import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
-import { SmartLocalStorage } from '@/common/LocalStorage'
 import { ExpandablePath } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
@@ -1079,12 +1085,12 @@ export default Vue.extend({
       }
     },
     openEditorMenu(cell: CellComponent) {
+      const isReadOnly = this.isEditorMenuDisabled(cell);
       return {
-        label: createMenuItem("Edit in modal", "Shift + Enter"),
-        disabled: this.isEditorMenuDisabled(cell),
+        label: createMenuItem(isReadOnly? "View in modal" : "Edit in modal", "Shift + Enter"),
         action: () => {
           if (this.isPrimaryKey(cell.getField())) return
-          this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+          this.$refs.editorModal.openModal(cell.getValue(), undefined, { cell, isReadOnly })
         }
       }
     },
@@ -1508,7 +1514,7 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
     importTab() {
-      this.trigger(AppEvent.upgradeModal)
+      this.trigger(AppEvent.beginImport, { table: this.table })
     },
     openQueryTab() {
       const page = this.tabulator.getPage();

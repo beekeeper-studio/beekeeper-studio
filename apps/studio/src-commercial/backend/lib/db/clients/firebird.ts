@@ -1,5 +1,5 @@
-import electronLog from "electron-log";
-import knexlib from "knex";
+import electronLog from "@bksLogger";
+import knexlib, { Knex } from "knex";
 import Client_Firebird from "@shared/lib/knex-firebird";
 import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
@@ -30,6 +30,7 @@ import {
   StreamResults,
   TableColumn,
   Routine,
+  DatabaseEntity,
   ImportFuncOptions,
   BksField,
   BksFieldType,
@@ -166,6 +167,64 @@ function buildFilterString(filters: TableFilter[], columns = []) {
   };
 }
 
+// Only build an insert query from the first index of insert.data
+function buildInsertQuery(
+  knex: Knex,
+  insert: TableInsert,
+  { 
+    columns = [],
+    bitConversionFunc = _.toNumber,
+    runAsUpsert = false,
+    primaryKeys = [],
+    createUpsertFunc = null
+  } = {}
+) {
+  const data = _.cloneDeep(insert.data);
+  data.forEach((item) => {
+    const insertColumns = Object.keys(item);
+    insertColumns.forEach((ic) => {
+      const matching = _.find(columns, (c) => c.columnName === ic);
+      if (
+        matching &&
+        matching.dataType &&
+        matching.dataType.startsWith("bit(")
+      ) {
+        if (matching.dataType === "bit(1)") {
+          item[ic] = bitConversionFunc(item[ic]);
+        } else {
+          item[ic] = parseInt(item[ic].split("'")[1], 2);
+        }
+      }
+
+      // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
+      if (ic.includes("?")) {
+        const newIc = ic.replaceAll("?", "\\?");
+        item[newIc] = item[ic];
+        delete item[ic];
+      }
+    });
+  });
+
+  if (_.intersection(Object.keys(data[0]), primaryKeys).length === primaryKeys.length && runAsUpsert){
+    return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
+  }
+
+  const builder = knex(insert.table);
+  if (insert.schema) {
+    builder.withSchema(insert.schema);
+  }
+  const query = builder
+    // TODO: try extending the builder instead
+    .insert(data[0])
+    .toQuery();
+
+  return query
+}
+
+function buildInsertQueries(knex: Knex, inserts: TableInsert[], { runAsUpsert = false, primaryKeys = [], createUpsertFunc = null } = {}) {
+  return inserts.map((insert) => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }));
+}
+
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   version: any;
   pool: Pool;
@@ -179,6 +238,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     super(null, context, server, database);
     this.dialect = 'generic';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
+    this.createUpsertFunc = this.createUpsertSQL
   }
 
   async checkIsConnected(): Promise<boolean> {
@@ -641,6 +701,22 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert = false): Promise<string> {
+    if (tableInsert.data.length > 1) {
+      // TODO: We can't insert multiple rows at once with Firebird. And
+      // firebird knex only accepts an object instead of an array, while the
+      // other dialects accept arrays. So this must be handled in knex instead?
+      throw new Error("Inserting multiple rows is not supported.");
+    }
+    const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    const columns = await this.listTableColumns(
+      tableInsert.table,
+      tableInsert.schema
+    );
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc });
+  }
+
   async listTableTriggers(
     table: string,
     _schema?: string
@@ -962,6 +1038,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 
@@ -1146,6 +1223,38 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return [];
   }
 
+  // took this approach because Typescript wasn't liking the base function could be a null value or a function
+  createUpsertSQL({ name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
+    const [PK] = primaryKeys
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+    const insertSQL = () => `
+      INSERT ("${PK}", ${columnsWithoutPK.map(cpk => `"${cpk}"`).join(', ')})
+      VALUES (source."${PK}", ${columnsWithoutPK.map(cpk => `source."${cpk}"`).join(', ')})
+    `.trim()
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `"${cpk}" = source."${cpk}"`).join(', ')}`
+    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
+    const usingSQLStatement = data.map( (val, idx) => {
+      if (idx === 0) {
+        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM RDB$DATABASE`
+      }
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM RDB$DATABASE`
+    })
+    .join(' UNION ALL ')
+
+    return `
+      MERGE INTO "${tableName}" AS target
+      USING (
+        ${usingSQLStatement}
+      ) AS source
+      ON (target."${PK}" = source."${PK}")
+      WHEN MATCHED THEN
+        UPDATE SET
+          ${updateSet()}
+      WHEN NOT MATCHED THEN
+        ${insertSQL()};
+    `.trim()
+  }
+
   async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
   }
@@ -1158,6 +1267,12 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     } finally {
       await connection.release()
     }
+  }
+
+  async getImportSQL(importedData: TableInsert[], tableName: string, _schema = null, runAsUpsert = false): Promise<string[]> {
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    return buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc })
   }
 
   async importStepZero(_table: TableOrView, options: { connection: Connection }): Promise<any> {
@@ -1187,10 +1302,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
     return await clientExtras.transaction.rollback()
-  }
-
-  async getImportSQL(importedData: TableInsert[]): Promise<string[]> {
-    return buildInsertQueries(this.knex, importedData)
   }
 
   parseQueryResultColumns(qr: FirebirdResult): BksField[] {

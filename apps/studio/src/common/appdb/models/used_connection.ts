@@ -11,7 +11,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.connectionType = other.connectionType
       this.defaultDatabase = other.defaultDatabase
       this.username = other.username
-      this.uri = other.uri
+      this.url = other.url
       this.port = other.port
       this.host = other.host
       this.sshHost = other.sshHost

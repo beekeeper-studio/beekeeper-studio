@@ -39,6 +39,12 @@ import {
   applyConfig,
   Register,
 } from "@/lib/editor/vim";
+import { AppEvent } from "@/common/AppEvent";
+import { keymapTypes } from "@/lib/db/types";
+
+interface InitializeOptions {
+  userKeymap?: typeof keymapTypes[number]["value"];
+}
 
 export default {
   props: [
@@ -65,7 +71,7 @@ export default {
     "foldGutter",
     "foldWithoutLineNumbers",
     "removeJsonRootBrackets",
-    "forceInitizalize",
+    "forceInitialize",
     "bookmarks",
     "foldAll",
     "unfoldAll",
@@ -77,18 +83,12 @@ export default {
       bookmarkInstances: [],
       markInstances: [],
       wasEditorFocused: false,
+      firstInitialization: true,
     };
   },
   computed: {
     keymapTypes() {
       return this.$config.defaults.keymapTypes;
-    },
-    userKeymap() {
-      const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap?.value;
-      return value && this.keymapTypes.map((k) => k.value).includes(value)
-        ? value
-        : "default";
     },
     hasSelectedText() {
       return this.editorInitialized ? !!this.editor.getSelection() : false;
@@ -96,15 +96,23 @@ export default {
     heightAndStatus() {
       return {
         height: this.height,
-        status: this.editor != null
-      }
+        status: this.editor != null,
+      };
     },
     valueAndStatus() {
       return {
         value: this.value,
-        status: this.editor != null
-      }
-    }
+        status: this.editor != null,
+      };
+    },
+    rootBindings() {
+      return [
+        {
+          event: AppEvent.switchUserKeymap,
+          handler: this.handleSwitchUserKeymap,
+        },
+      ];
+    },
   },
   watch: {
     valueAndStatus() {
@@ -116,14 +124,10 @@ export default {
       this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
-    forceInitizalize() {
-      this.initialize();
-    },
-    userKeymap() {
-      this.initialize();
-    },
-    vimConfig() {
-      this.initialize();
+    forceInitialize() {
+      this.initialize({
+        userKeymap: this.$store.getters["settings/userKeymap"],
+      });
     },
     mode() {
       this.editor?.setOption("mode", this.mode);
@@ -147,7 +151,7 @@ export default {
       this.editor?.setOption("lineWrapping", this.lineWrapping);
     },
     async focus() {
-      if (!this.editor) return
+      if (!this.editor) return;
       if (this.focus) {
         this.editor.focus();
         await this.$nextTick();
@@ -176,26 +180,29 @@ export default {
       this.initializeBookmarks();
     },
     foldAll() {
-      CodeMirror.commands.foldAll(this.editor)
+      CodeMirror.commands.foldAll(this.editor);
     },
     unfoldAll() {
-      CodeMirror.commands.unfoldAll(this.editor)
+      CodeMirror.commands.unfoldAll(this.editor);
     },
   },
   methods: {
     focusEditor() {
-      if(this.editor && this.autoFocus && this.wasEditorFocused){
+      if (this.editor && this.autoFocus && this.wasEditorFocused) {
         this.editor.focus();
         this.wasEditorFocused = false;
-       }
+      }
     },
-    handleBlur(){
+    handleBlur() {
       const activeElement = document.activeElement;
-      if(activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder"){
+      if (
+        activeElement.tagName === "TEXTAREA" ||
+        activeElement.className === "tabulator-tableholder"
+      ) {
         this.wasEditorFocused = true;
       }
     },
-    async initialize() {
+    async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
@@ -216,7 +223,7 @@ export default {
         mode: this.mode,
         hint: this.hint,
         hintOptions: this.hintOptions,
-        keyMap: this.userKeymap,
+        keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
           gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
@@ -242,6 +249,13 @@ export default {
         }),
       });
 
+      cm.on("keydown", (cm, event) => {
+        if (event.key === "Escape") {
+          this.exitMultiLineEditing();
+          event.preventDefault();
+        }
+      });
+
       const classNames = ["text-editor"];
 
       if (this.foldWithoutLineNumbers) {
@@ -263,6 +277,30 @@ export default {
       cm.addKeyMap({
         "Ctrl-/": () => this.editor.execCommand("toggleComment"),
         "Cmd-/": () => this.editor.execCommand("toggleComment"),
+        "Ctrl-Alt-Up": (cm) => {
+          this.enterMultiLineEditing(cm, "up");
+        },
+        "Ctrl-Alt-Down": (cm) => {
+          this.enterMultiLineEditing(cm, "down");
+        },
+        "Cmd-Alt-Up": (cm) => {
+          this.enterMultiLineEditing(cm, "up");
+        },
+        "Cmd-Alt-Down": (cm) => {
+          this.enterMultiLineEditing(cm, "down");
+        },
+        "Shift-Alt-Up": (cm) => {
+          this.duplicateSelection(cm, "up");
+        },
+        "Shift-Alt-Down": (cm) => {
+          this.duplicateSelection(cm, "down");
+        },
+        "Alt-Up": (cm) => {
+          this.moveSelectedLines(cm, "up");
+        },
+        "Alt-Down": (cm) => {
+          this.moveSelectedLines(cm, "down");
+        },
       });
 
       if (this.extraKeybindings) {
@@ -294,8 +332,8 @@ export default {
       cm.on("blur", (_cm, event) => {
         // This isn't really a blur because the receiving element is inside
         // the editor.
-        if ((event.relatedTarget as HTMLElement)?.id.includes('CodeMirror')) {
-          return
+        if ((event.relatedTarget as HTMLElement)?.id.includes("CodeMirror")) {
+          return;
         }
 
         // This makes sure the editor is really blurred before emitting blur
@@ -310,13 +348,17 @@ export default {
           "update:cursorIndex",
           cm.getDoc().indexFromPos(cm.getCursor())
         );
+        this.$emit(
+          "update:cursorIndexAnchor",
+          cm.getDoc().indexFromPos(cm.getCursor("anchor"))
+        );
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
 
       cmEl.addEventListener("contextmenu", this.showContextMenu);
 
-      if (this.userKeymap === "vim") {
+      if (options.userKeymap === "vim") {
         const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
 
         if (!codeMirrorVimInstance) {
@@ -345,13 +387,18 @@ export default {
         });
       }
 
+      if (this.firstInitialization && this.focus) {
+        cm.focus();
+      }
+
       this.editor = cm;
+      this.firstInitialization = false;
 
       this.$nextTick(() => {
         this.initializeMarkers();
         this.initializeBookmarks();
         this.$emit("update:initialized", true);
-      })
+      });
     },
     initializeMarkers() {
       const markers = this.markers || [];
@@ -536,19 +583,153 @@ export default {
         });
       }
     },
+    handleSwitchUserKeymap(value) {
+      this.initialize({ userKeymap: value });
+    },
+    enterMultiLineEditing(cm, direction: string) {
+      const selections = cm.listSelections();
+      const newSelections = [];
+
+      selections.forEach(({ anchor, head }) => {
+        const line = head.line;
+        const ch = head.ch;
+
+        newSelections.push({ anchor, head });
+
+        const newLine = direction === "up" ? line - 1 : line + 1;
+
+        if (newLine >= 0 && newLine < cm.lineCount()) {
+          const newHead = { line: newLine, ch };
+          newSelections.push({ anchor: newHead, head: newHead });
+        }
+      });
+
+      cm.setSelections(newSelections);
+    },
+    exitMultiLineEditing() {
+      if (!this.editor) return;
+
+      const selections = this.editor.listSelections();
+      if (selections.length > 0) {
+        const firstSelection = selections[0];
+        this.editor.setSelection(
+          { line: firstSelection.anchor.line, ch: 0 },
+          { line: firstSelection.anchor.line, ch: firstSelection.anchor.ch }
+        );
+      }
+    },
+    duplicateSelection(cm, direction) {
+      const selections = cm.listSelections();
+      const newSelections = [];
+
+      const linesToDuplicate: Set<number> = new Set();
+      selections.forEach(({ anchor, head }) => {
+        const startLine = Math.min(anchor.line, head.line);
+        const endLine = Math.max(anchor.line, head.line);
+        for (let line = startLine; line <= endLine; line++) {
+          linesToDuplicate.add(line);
+        }
+      });
+
+      const linesArray: number[] = Array.from(linesToDuplicate).sort(
+        (a, b) => a - b
+      );
+      if (linesArray.length === 0) return;
+
+      const content = linesArray.map((line) => cm.getLine(line)).join("\n");
+
+      if (direction === "up") {
+        cm.replaceRange(content + "\n", { line: linesArray[0], ch: 0 });
+        newSelections.push({
+          anchor: { line: linesArray[0], ch: 0 },
+          head: { line: linesArray[linesArray.length - 1] + 1, ch: 0 },
+        });
+      } else if (direction === "down") {
+        const insertLine = linesArray[linesArray.length - 1] + 1;
+        const lastLineIndex = cm.lineCount() - 1;
+
+        const insertContent =
+          insertLine > lastLineIndex ? "\n" + content + "\n" : content + "\n";
+        const insertPos = { line: Math.min(insertLine, cm.lineCount()), ch: 0 };
+
+        cm.replaceRange(insertContent, insertPos);
+        newSelections.push({
+          anchor: { line: linesArray[0] + 1, ch: 0 },
+          head: { line: linesArray[linesArray.length - 1] + 1, ch: 0 },
+        });
+      }
+    },
+    moveSelectedLines(cm, direction) {
+      cm.operation(() => {
+        const selections = cm.listSelections();
+        const linesToMove = new Set<number>();
+
+        selections.forEach(({ anchor, head }) => {
+          for (
+            let line = Math.min(anchor.line, head.line);
+            line <= Math.max(anchor.line, head.line);
+            line++
+          ) {
+            linesToMove.add(line);
+          }
+        });
+
+        const linesArray = Array.from(linesToMove).sort((a, b) => a - b);
+
+        if (direction === "up" && linesArray[0] === 0) return;
+        if (
+          direction === "down" &&
+          linesArray[linesArray.length - 1] === cm.lineCount() - 1
+        )
+          return;
+
+        const selectedLinesContent = linesArray.map((line) => cm.getLine(line));
+
+        if (direction === "up") {
+          const lineAbove = cm.getLine(linesArray[0] - 1);
+          cm.replaceRange(
+            selectedLinesContent.join("\n") + "\n" + lineAbove + "\n",
+            { line: linesArray[0] - 1, ch: 0 },
+            { line: linesArray[linesArray.length - 1] + 1, ch: 0 }
+          );
+        } else if (direction === "down") {
+          const lineBelow = cm.getLine(linesArray[linesArray.length - 1] + 1);
+          cm.replaceRange(
+            lineBelow + "\n" + selectedLinesContent.join("\n") + "\n",
+            { line: linesArray[0], ch: 0 },
+            { line: linesArray[linesArray.length - 1] + 2, ch: 0 }
+          );
+        }
+
+        const newSelections = selections.map(({ anchor, head }) => {
+          const newAnchor = {
+            line: direction === "up" ? anchor.line - 1 : anchor.line + 1,
+            ch: anchor.ch,
+          };
+          const newHead = {
+            line: direction === "up" ? head.line - 1 : head.line + 1,
+            ch: head.ch,
+          };
+          return { anchor: newAnchor, head: newHead };
+        });
+
+        cm.setSelections(newSelections);
+      });
+    },
   },
-  mounted() {
-    this.initialize();
-    if (this.focus) {
-      this.editor.focus();
-    }
-    window.addEventListener('focus', this.focusEditor);
-    window.addEventListener('blur', this.handleBlur);
+  async mounted() {
+    await this.initialize({
+      userKeymap: this.$store.getters["settings/userKeymap"],
+    });
+    window.addEventListener("focus", this.focusEditor);
+    window.addEventListener("blur", this.handleBlur);
+    this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
-    window.removeEventListener('focus', this.focusEditor);
-    window.removeEventListener('blur', this.handleBlur);
+    window.removeEventListener("focus", this.focusEditor);
+    window.removeEventListener("blur", this.handleBlur);
     this.destroyEditor();
+    this.unregisterHandlers(this.rootBindings);
   },
 };
 </script>

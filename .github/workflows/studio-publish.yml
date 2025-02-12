@@ -65,6 +65,7 @@ jobs:
             type: linux
             setup_python: true
             setup_ruby: true
+            setup_flatpak: true
           - name: windows-2019
             arch: x64
             type: windows
@@ -86,12 +87,9 @@ jobs:
         # os: [macos-13, macos-14 ]
 
     steps:
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v3
-        with:
-          gpg-private-key: ${{ secrets.gpg_key }}
-        if: matrix.os.type == 'linux'
+
+      - name: Check out Git repository
+        uses: actions/checkout@v1
 
         # Oh the hacks I put in place for the snap build
         # Why does it fill up zfs? I don't understand what it does at all
@@ -101,12 +99,13 @@ jobs:
           sudo zfs list -H -o name | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
         if: matrix.os.clean_zfs
 
+      - name: Install flatpak tools
+        if: matrix.os.type == 'linux' && matrix.os.arch != 'arm64'
+        run: bash ./.github/scripts/install-build-deps.sh
+
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
         if: matrix.os.type == 'windows'
-
-      - name: Check out Git repository
-        uses: actions/checkout@v1
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -115,12 +114,6 @@ jobs:
 
       - name: Install fpm
         run: sudo gem install fpm -v 1.15.1
-        if: matrix.os.setup_ruby
-
-      - name: Install deb-s3 from GitHub
-        run: |
-          curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
-          gem install -N ./deb-s3.gem
         if: matrix.os.setup_ruby
 
       - name: Update repository
@@ -297,20 +290,6 @@ jobs:
             const channel = '${{needs.identify_channel.outputs.channel}}'
             await script({ github, core, context }, assetsUrl, channel)
 
-        # Only publishing the DEB for the stable channel (for now)
-      - name: Publish DEB to S3
-        if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
-        run: |
-          deb-s3 upload apps/studio/dist_electron/*.deb \
-            --bucket=deb.beekeeperstudio.io \
-            --codename=${{needs.identify_channel.outputs.deb_codename}} \
-            --lock \
-            --sign=${{steps.import_gpg.outputs.keyid}} \
-            --preserve-versions
-        env:
-          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
-          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
-          AWS_DEFAULT_REGION: "us-east-1"
       - name: Invalidate cloudfront cache
         if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
         run: |
@@ -322,14 +301,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
           DISTRIBUTION: ${{secrets.cloudfront_distribution}}
           AWS_DEFAULT_REGION: "us-east-1"
-      - name: Cleanup artifacts
-        if: ${{!startsWith(matrix.os.name, 'windows')}}
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml)"
-
-      - name: Cleanup artifacts Win
-        if: startsWith(matrix.os.name, 'windows')
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
-        continue-on-error: true
 
       - name: Set yaml files
         id: set_yaml
@@ -344,6 +315,25 @@ jobs:
             const fs = require('fs')
             const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
+      - name: Upload DEB/RPM artifacts
+        uses: actions/upload-artifact@v4
+        if: matrix.os.type == 'linux'
+        with:
+          name: "${{matrix.os.type}}-${{matrix.os.arch}}"
+          path: |
+            apps/studio/dist_electron/*.deb
+            apps/studio/dist_electron/*.rpm
+
+      - name: Cleanup artifacts
+        if: ${{!startsWith(matrix.os.name, 'windows')}}
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
+
+      - name: Cleanup artifacts Win
+        if: startsWith(matrix.os.name, 'windows')
+        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
+        continue-on-error: true
+
+
   finalize_mac_yml:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
@@ -397,17 +387,58 @@ jobs:
           asset_name: "latest-mac.yml"
           asset_content_type: 'application/octet-stream'
 
-  upload_to_ultimate:
-    needs: [release, create_draft_release, finalize_mac_yml]
-    runs-on: 'ubuntu-latest'
+  publish_repositories:
+    needs: [release, create_draft_release, identify_channel]
+    runs-on: ubuntu-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
-      - name: Copy community release to ultimate
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.0.2
+
+      - name: Install deb-s3 from GitHub
+        run: |
+          curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
+          gem install -N ./deb-s3.gem
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.gpg_key }}
+
+      - run: "rm -rf ./artifacts; mkdir artifacts"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      # Only publishing the DEB for the stable channel (for now)
+      - name: Publish DEB to R2
+        if: needs.identify_channel.outputs.channel == 'latest'
+        run: |
+          deb-s3 upload $(find ./artifacts -type f -name "*.deb") \
+            --bucket=beekeeper-deb-repo \
+            --codename=${{needs.identify_channel.outputs.deb_codename}} \
+            --endpoint=${{secrets.cloudflare_endpoint}} \
+            --lock \
+            --sign=${{steps.import_gpg.outputs.keyid}} \
+            --preserve-versions
         env:
-          TAG_NAME: ${{ github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
-          SOURCE: beekeeper-studio/beekeeper-studio
-          DEST: beekeeper-studio/ultimate-releases
-        run: 'bin/sync-release.sh "$SOURCE" "$DEST" "$TAG_NAME"'
+          AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
+          AWS_DEFAULT_REGION: "us-east-1"
+
+      - name: Publish RPM to R2
+        if: needs.identify_channel.outputs.channel == 'latest'
+        run: |
+          .github/scripts/publish_rpm.sh $(find ./artifacts -type f -name "*.rpm")
+        env:
+          GPG_KEY_ID: "${{steps.import_gpg.outputs.keyid}}"
+          R2_BUCKET: "beekeeper-rpm-repo/repo"
+          R2_ENDPOINT: ${{secrets.cloudflare_endpoint}}
+          AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
