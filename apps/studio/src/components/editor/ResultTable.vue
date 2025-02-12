@@ -159,8 +159,8 @@
       },
     },
     methods: {
-      async handleTableInitialized(tabulator) {
-        this.tabulator = tabulator
+      async handleTableInitialized(detail) {
+        this.tabulator = detail.tabulator
         if (this.focus) {
           this.triggerFocus()
         }

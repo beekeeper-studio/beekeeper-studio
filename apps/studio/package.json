@@ -158,7 +158,7 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "electron": "31.7.3",
-    "electron-builder": "~25.1.8",
+    "electron-builder": "~26.0.5",
     "esbuild": "^0.21.2",
     "esbuild-node-externals": "^1.13.1",
     "eslint": "^6.7.2",

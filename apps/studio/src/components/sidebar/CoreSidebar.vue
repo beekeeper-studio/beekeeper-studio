@@ -20,10 +20,11 @@
         />
         <bks-table-list
           :tables="tables"
-          @bks-item-dblclick="handleTableListItemDblClick"
-          @bks-item-update-columns="handleItemUpdateColumns"
-          @bks-refresh-btn-click="handleRefreshBtnClick"
-          @bks-add-btn-click="handleAddBtnClick"
+          :context-menu-items="tableMenuOptions"
+          @bks-entity-dblclick="handleEntityDblclick"
+          @bks-entities-request-columns="handleEntitiesRequestColumns"
+          @bks-refresh-click="handleRefreshClick"
+          @bks-add-entity-click="handleAddEntityClick"
         />
       </div>
 
@@ -58,6 +59,7 @@
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
   import { AppEvent } from "@/common/AppEvent";
   import BksTableList from "@bks/ui-kit/vue/table-list";
+  import TableListContextMenusMixin from "@/mixins/TableListContextMenus";
 
   import { mapState, mapGetters } from 'vuex'
   import rawLog from '@bksLogger'
@@ -65,6 +67,7 @@
   const log = rawLog.scope('core-sidebar')
 
   export default {
+    mixins: [TableListContextMenusMixin],
     props: ['sidebarShown'],
     components: { BksTableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
@@ -139,18 +142,19 @@
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
       },
-      handleTableListItemDblClick(table) {
-        this.throttledLoadTable(table)
+      handleEntityDblclick(detail) {
+        this.throttledLoadTable(detail.entity)
       },
       throttledLoadTable: _.throttle(function(table) {
         this.$root.$emit(AppEvent.loadTable, { table })
       }, 500),
-      async handleItemUpdateColumns(table) {
-        if (!table.columns?.length) {
-          await this.$store.dispatch("updateTableColumns", table)
-        }
+      async handleEntitiesRequestColumns(detail) {
+        // FIXME IMPORTANT this will produce a race condition
+        detail.entities.forEach((table) => {
+          this.$store.dispatch("updateTableColumns", table)
+        })
       },
-      async handleRefreshBtnClick() {
+      async handleRefreshClick() {
         try {
           this.$store.dispatch('updateRoutines')
           await this.$store.dispatch('updateTables')
@@ -158,7 +162,7 @@
           this.$noty.error(`Unable to refresh tables ${ex.message}`)
         }
       },
-      async handleAddBtnClick() {
+      async handleAddEntityClick() {
         this.$root.$emit(AppEvent.createTable)
       },
     }

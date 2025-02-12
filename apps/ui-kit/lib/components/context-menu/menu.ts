@@ -4,7 +4,7 @@ import isEmpty from "lodash/isEmpty"
 
 interface BaseMenuItem<Item = unknown> {
   name: string
-  handler: (...any) => void
+  handler: (event: Event, target: Item, option: MenuItem) => void
   slug?: string
   class?: string | ((options: { item: Item }) => string)
   shortcut?: string
@@ -56,18 +56,18 @@ export function openMenu<Item>(args: MenuProps<Item>) {
 }
 
 // Context options that are generated internally should have a slug. This will allow the items to be easily located or modified.
-export type InternalContextItem = MenuItem & Required<Pick<MenuItem, 'slug'>>;
-export type MenuItemsExtension = (event: Event, items: InternalContextItem[], additionalContext?: unknown) => MenuItem[]
+export type InternalContextItem<Target> = MenuItem<Target> & Required<Pick<MenuItem<Target>, 'slug'>>;
+export type MenuItemsExtension<Target = unknown> = (event: Event, target: Target, defaultItems: InternalContextItem<Target>[]) => MenuItem[]
 export type CustomMenuItems = MenuItem[] | MenuItemsExtension
 
-export function useCustomMenuItems(
+export function useCustomMenuItems<Target>(
   event: Event,
-  defaultItems: InternalContextItem[],
+  target: Target,
+  defaultItems: InternalContextItem<Target>[],
   customItems: CustomMenuItems,
-  additionalContext?: unknown
 ): (MenuItem | Divider)[] {
   if (typeof customItems === "function") {
-    return customItems(event, defaultItems, additionalContext);
+    return customItems(event, target, defaultItems);
   }
   if (customItems === undefined) {
     return defaultItems;

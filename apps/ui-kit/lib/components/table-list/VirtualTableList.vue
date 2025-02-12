@@ -30,16 +30,14 @@ import { createTreeItems, ItemStateType } from "./treeItems";
 
 import _ from "lodash";
 import Vue from "vue";
-import { RootEventMixin } from "../mixins/RootEvent";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
-import { TableListEvents } from "./constants";
+import EventBus from "../../utils/EventBus";
 
 import * as globals from "../../utils/constants";
 import "scrollyfills";
 
 export default Vue.extend({
-  mixins: [RootEventMixin],
   components: { VirtualList },
   props: {
     tables: {
@@ -96,20 +94,21 @@ export default Vue.extend({
       }
       this.displayItems = displayItems;
     },
-    updateColumns(item: TableItem) {
-      this.$emit("update-columns", item)
-    },
-    updateTableColumnsInRange(whenEmpty = false) {
+    updateTableColumnsInRange() {
       const range = this.$refs.vList.range;
+      const items = []
 
       for (let i = range.start; i < range.end + 1; i++) {
-        const item = this.displayItems[i];
+        const item: Item = this.displayItems[i];
         if (!item.expanded) continue;
         if (item.type !== "table") continue;
-        if (whenEmpty && item.entity.columns?.length) continue;
-        if (item.loadingColumns) continue;
+        if (typeof item.entity.columns !== 'undefined') continue;
 
-        this.updateColumns(item);
+        items.push(item)
+      }
+
+      if (items.length) {
+        this.$emit("request-items-columns", items)
       }
     },
     updateItemState(item: Item, stateType: ItemStateType) {
@@ -122,11 +121,11 @@ export default Vue.extend({
     handleExpand(_: Event, item: Item) {
       item.expanded = !item.expanded;
       this.updateItemState(item, 'expanded')
-      if (item.expanded && item.type === "table") {
-        this.updateColumns(item);
+      if (item.expanded && item.type === "table" && typeof item.entity.columns === undefined) {
+        this.$emit("request-items-columns", [item])
       }
-      this.$emit("expand", item);
       this.generateDisplayItems();
+      this.$emit("expand", item);
     },
     handlePin(_: Event, item: TableItem) {
       this.updateItemState(item, 'pinned')
@@ -139,7 +138,7 @@ export default Vue.extend({
       this.$emit("contextmenu", e, item);
     },
     handleToggleHidden(
-      entity: Table | Routine | string,
+      entity: Entity,
       hidden?: boolean
     ) {
       const item = this.items.find((item: Item) => item.entity === entity);
@@ -156,6 +155,7 @@ export default Vue.extend({
       }
       this.items.forEach((item: Item) => {
         item.expanded = expand;
+        this.updateItemState(item, 'expanded')
       });
       this.generateDisplayItems();
       this.$emit("expand-all", expand);
@@ -173,7 +173,7 @@ export default Vue.extend({
       item.pinned = !item.pinned;
     },
     handleScrollEnd() {
-      this.updateTableColumnsInRange(true);
+      this.updateTableColumnsInRange();
     },
   },
   computed: {
@@ -188,10 +188,6 @@ export default Vue.extend({
       return [
         // { event: AppEvent.toggleHideSchema, handler: this.handleToggleHidden },
         // { event: AppEvent.toggleHideEntity, handler: this.handleToggleHidden },
-        {
-          event: TableListEvents.toggleExpandTableList,
-          handler: this.handleToggleExpandedAll,
-        },
         // {
         //   // event: AppEvent.togglePinTableList,
         //   handler: this.handleTogglePinned,
@@ -229,10 +225,12 @@ export default Vue.extend({
     },
   },
   mounted() {
+    EventBus.on("toggleExpandTableList", this.handleToggleExpandedAll)
     this.$nextTick(() => this.resizeObserver.observe(this.$refs.vList.$el));
     this.$refs.vList.$el.addEventListener("scrollend", this.handleScrollEnd);
   },
   beforeDestroy() {
+    EventBus.off("toggleExpandTableList", this.handleToggleExpandedAll)
     this.resizeObserver.disconnect();
     this.$refs.vList.$el.removeEventListener("scrollend", this.handleScrollEnd);
   },

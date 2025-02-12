@@ -46,7 +46,7 @@
         :default-schema="defaultSchema"
         :mode="dialectData.textEditorMode"
         @bks-initialized="handleEditorInitialized"
-        @bks-value-change="unsavedText = $event"
+        @bks-value-change="unsavedText = $event.value"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
       />
@@ -720,15 +720,15 @@
           })
         })
       },
-      handleEditorInitialized(cm) {
+      handleEditorInitialized(detail) {
         this.editor.initialized = true
 
-        cm.on("cursorActivity", (cm) => {
+        detail.codemirror.on("cursorActivity", (cm) => {
           this.editor.selection = cm.getSelection()
           this.editor.cursorIndex = cm.getDoc().indexFromPos(cm.getCursor())
         });
 
-        registerQueryMagic(() => this.defaultSchema, () => this.tables, cm)
+        registerQueryMagic(() => this.defaultSchema, () => this.tables, detail.codemirror)
 
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights

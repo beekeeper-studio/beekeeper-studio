@@ -22,10 +22,11 @@ import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
 import { setKeybindings, applyConfig, Register, Config } from "./vim";
-import { divider, openMenu } from "../context-menu/menu";
+import { divider, InternalContextItem, openMenu } from "../context-menu/menu";
 import { writeClipboard, readClipboard } from "../../utils/clipboard";
 import { ctrlOrCmd, cmCtrlOrCmd } from "../../utils/platform"
 import { PropType } from "vue";
+import { CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
 
 const hintMap = {
   sql: CodeMirror.hint.sql,
@@ -49,7 +50,7 @@ export default {
       default: false,
     },
     focus: Boolean,
-    contextMenuItems: [Function, Array],
+    contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     markers: {
       type: Array,
       default: () => [],
@@ -112,6 +113,7 @@ export default {
       // Add our own keybindings
       internalKeybindings: {},
       internalMarkers: [],
+      internalContextMenuItems: [],
       plugins: [],
     };
   },
@@ -334,7 +336,7 @@ export default {
       cm.on("change", async (cm) => {
         await this.$nextTick()
         this.$emit("update:value", cm.getValue());
-        this.$emit("bks-value-change", cm.getValue());
+        this.$emit("bks-value-change", { value: cm.getValue() });
       });
 
       cm.on("keydown", (_cm, e) => {
@@ -343,9 +345,9 @@ export default {
         // }
       });
 
-      cm.on("focus", () => {
+      cm.on("focus", (_cm, event) => {
         this.$emit("update:focus", true);
-        this.$emit("bks-focus");
+        this.$emit("bks-focus", { event });
       });
 
       cm.on("blur", (_cm, event) => {
@@ -358,7 +360,7 @@ export default {
         // This makes sure the editor is really blurred before emitting blur
         setTimeout(() => {
           this.$emit("update:focus", false);
-          this.$emit("bks-blur");
+          this.$emit("bks-blur", { event });
         }, 0);
       });
 
@@ -423,7 +425,7 @@ export default {
         this.initializeMarkers();
         this.initializeBookmarks();
         this.$emit("update:initialized", true);
-        this.$emit("bks-initialized", cm);
+        this.$emit("bks-initialized", { codemirror: cm });
       })
     },
     initializeMarkers() {
@@ -601,19 +603,9 @@ export default {
         menu.options = menu.options.filter((option) => !option.write);
       }
 
-      const customItems =
-        typeof this.contextMenuItems === "function"
-          ? this.contextMenuItems(event, menu.options)
-          : this.contextMenuItems;
-
-      if (customItems === undefined) {
-        openMenu(menu);
-      } else {
-        openMenu({
-          ...menu,
-          options: customItems,
-        });
-      }
+      let items = useCustomMenuItems(event, undefined, menu.options, this.internalContextMenuItems);
+      items = useCustomMenuItems(event, undefined, menu as unknown as InternalContextItem<unknown>[], this.contextMenuItems);
+      openMenu({ event, options: items });
     },
   },
   async mounted() {

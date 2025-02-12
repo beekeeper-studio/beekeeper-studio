@@ -13,15 +13,16 @@
           placeholder="Filter"
           v-model="filterQuery"
         >
-        <x-buttons class="filter-actions">
-          <x-button
+        <div class="filter-actions">
+          <button
+            class="btn btn-fab btn-link action-item"
             @click="clearFilter"
             v-if="filterQuery"
           >
             <i class="clear material-icons">cancel</i>
-          </x-button>
+          </button>
 
-          <x-button
+          <button
             :title="entitiesHidden ? 'Filter active' : 'No filters'"
             class="btn btn-fab btn-link action-item"
             :class="{active: entitiesHidden}"
@@ -29,8 +30,8 @@
             menu
           >
             <i class="material-icons-outlined">filter_alt</i>
-          </x-button>
-        </x-buttons>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -78,7 +79,7 @@
             <i class="material-icons">{{ isExpanded ? 'unfold_less' : 'unfold_more' }}</i>
           </button>
           <button
-            @click.prevent="$emit('bks-refresh-btn-click')"
+            @click.prevent="$emit('bks-refresh-btn-click', { event: $event })"
             :title="'Refresh'"
             :disabled="tablesLoading"
           >
@@ -100,10 +101,10 @@
         :tables="filteredTables"
         :expanded="isExpanded"
         @expand="handleExpand"
-        @expand-all="handleToggleExpandedAll"
+        @expand-all="handleExpandAll"
         @dblclick="handleDblClick"
         @contextmenu="handleContextMenu"
-        @update-columns="handleUpdateColumns"
+        @request-items-columns="handleRequestItemsColumns"
       />
 
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
@@ -111,11 +112,8 @@
         class="empty truncate"
         v-if="!tablesLoading && (!tables || tables.length === 0)"
       >
-        <p class="no-entities" v-if="database">
-          There are no entities in the <strong>{{ database }}</strong> database
-        </p>
-        <p class="no-entities" v-else>
-          Please select a database to see tables, views, and other entities
+        <p class="no-entities">
+          There are no entities
         </p>
       </div>
     </nav>
@@ -130,11 +128,10 @@ import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
 import { Item } from "./models";
 import { Entity } from "../types";
-import { TableListEvents } from "./constants";
-import { RootEventMixin } from "../mixins/RootEvent";
 import { writeClipboard } from "../../utils/clipboard";
-import { openMenu, MenuItem, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
+import { openMenu, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
 import ProxyEmit from "../mixins/ProxyEmit";
+import EventBus from "../../utils/EventBus";
 
 // TODO(@day): to remove
 // import { mapState, mapGetters } from 'vuex'
@@ -146,16 +143,14 @@ import ProxyEmit from "../mixins/ProxyEmit";
 // import { TableOrView, Routine } from "@/lib/db/models";
 
 export default Vue.extend({
-  mixins: [TableFilter, RootEventMixin, ProxyEmit],
+  mixins: [TableFilter, ProxyEmit],
   components: { VirtualTableList },
   props: {
     tables: {
       type: Array as PropType<Entity[]>,
       default: () => [],
     },
-    schemaContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
-    tableContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
-    routineContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     showCreateEntityBtn: {
       type: Boolean,
       default: true,
@@ -178,7 +173,9 @@ export default Vue.extend({
         showViews: true,
         showRoutines: true,
         showPartitions: false
-      }
+      },
+      tablesLoading: false,
+      totalHiddenEntities: 0,
     }
   },
   computed: {
@@ -254,17 +251,6 @@ export default Vue.extend({
         },
       ]
     },
-    routineMenuOptions() {
-      return [
-        {
-          name: "Copy Name",
-          slug: 'copy-name',
-          handler({ item }) {
-            writeClipboard(item.name)
-          },
-        },
-      ]
-    },
     filterMenuOptions() {
       return [
         {
@@ -303,16 +289,16 @@ export default Vue.extend({
     },
     toggleExpandCollapse() {
       this.isExpanded = !this.isExpanded
-      this.trigger(TableListEvents.toggleExpandTableList, this.isExpanded)
+      EventBus.emit('toggleExpandTableList', this.isExpanded)
     },
-    newTable() {
-      this.$emit('bks-add-entity-click')
+    newTable(event: MouseEvent) {
+      this.$emit('bks-add-entity-click', { event })
     },
     async handleExpand(item: Item) {
       if (item.expanded) {
-        this.$emit('bks-item-expand', item.entity)
+        this.$emit('bks-entity-expand', { entity: item.entity })
       } else {
-        this.$emit('bks-item-collapse', item.entity)
+        this.$emit('bks-entity-collapse', { entity: item.entity })
       }
     },
     handleExpandAll(expand: boolean) {
@@ -322,25 +308,18 @@ export default Vue.extend({
         this.$emit('bks-collapse-all')
       }
     },
-    handleDblClick(_e, item: Item) {
-      this.$emit('bks-item-dblclick', item.entity)
+    handleDblClick(event: MouseEvent, item: Item) {
+      this.$emit('bks-entity-dblclick', { event, entity: item.entity })
     },
-    handleContextMenu(event, item: Item) {
-      this.$emit('bks-item-contextmenu', item.entity)
-      let items: MenuItem[]
-      if(item.type === 'schema') {
-        items = useCustomMenuItems(event, [], this.schemaContextMenuItems)
-      } else if(item.type === 'table') {
-        items = useCustomMenuItems(event, this.tableMenuOptions, this.tableContextMenuItems)
-      } else {
-        items = useCustomMenuItems(event, this.routineMenuOptions, this.routineContextMenuItems)
-      }
+    handleContextMenu(event: MouseEvent, item: Item) {
+      this.$emit('bks-entity-contextmenu', { event, entity: item.entity })
+      const items = useCustomMenuItems(event, item.entity, this.tableMenuOptions, this.contextMenuItems)
       openMenu({ options: items, item: item.entity, event })
     },
-    handleUpdateColumns(item: Item) {
-      this.$emit('bks-item-update-columns', item.entity)
+    handleRequestItemsColumns(items: Item[]) {
+      this.$emit('bks-entities-request-columns', { entities: items.map(item => item.entity) })
     },
-    openFilterMenu(event) {
+    openFilterMenu(event: MouseEvent) {
       openMenu({ event, options: this.filterMenuOptions })
     },
   },

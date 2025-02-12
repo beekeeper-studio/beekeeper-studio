@@ -4,7 +4,7 @@
       v-bind="tableListProps"
       :tables="tables"
       proxyEmit="true"
-      @bks-item-dblclick="handleItemDblClick"
+      @bks-entity-dblclick="handleEntityDblclick"
     />
     <div class="BksDataEditor-right-container" ref="right">
       <div class="BksDataEditor-sql-editor">
@@ -48,6 +48,7 @@ import SqlTextEditor from "../sql-text-editor/SqlTextEditor.vue";
 import TableComponent from "../table/Table.vue";
 import Split from "split.js";
 import { Table } from "./types";
+import { Entity } from "../types";
 
 export default Vue.extend({
   components: { TableList, SqlTextEditor, TableComponent },
@@ -94,13 +95,13 @@ export default Vue.extend({
       this.columns = table.columns;
     },
     submitQuery() {
-      this.$emit("bks-query-submit", this.sql);
+      this.$emit("bks-query-submit", { query: this.sql });
     },
-    handleValueChange(value: string) {
-      this.sql = value;
+    handleValueChange(detail: { value: string }) {
+      this.sql = detail.value;
     },
-    handleItemDblClick(table: Table) {
-      this.setTable(table);
+    handleEntityDblclick(detail: { entity: Entity }) {
+      this.setTable(detail.entity);
     },
     handleForeignKeyGoTo({ field }) {
       const foreignTable = this.tables.find(

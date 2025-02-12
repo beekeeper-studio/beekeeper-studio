@@ -4,7 +4,7 @@
   flex-direction: column;
   height: 100%;
   background: $query-editor-bg;
-  bks-sql-text-editor {
+  .BksSqlTextEditor {
     min-height: 0;
   }
   .editor {
@@ -88,7 +88,7 @@
         font-size: 18px;
       }
     }
-   
+
   }
   .top-panel {
     .toolbar {

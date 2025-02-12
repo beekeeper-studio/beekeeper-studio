@@ -19,9 +19,10 @@ import { format, FormatOptions } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { querySelection, QuerySelectionChangeParams } from "./querySelectionPlugin";
 import { Options } from "sql-query-identifier";
-import { BaseTable } from "../types";
+import { Entity } from "../types";
 import { ctrlOrCmd } from "../../utils/platform";
 import ProxyEmit from "../mixins/ProxyEmit";
+import { InternalContextItem } from "../context-menu/menu";
 
 export default Vue.extend({
   mixins: [textEditorMixin, ProxyEmit],
@@ -34,22 +35,9 @@ export default Vue.extend({
       type: textEditorMixin.props.hint,
       default: "sql",
     },
-    contextMenuItems: {
-      type: textEditorMixin.props.contextMenuItems,
-      default() {
-        return this.handleContextMenuItems(...arguments);
-      },
-    },
     /** Tables for autocompletion */
     tables: {
-      type: Array as PropType<BaseTable[]>,
-      default() {
-        return [];
-      },
-    },
-    // FIXME routines are not implemented yet
-    routines: {
-      type: Array,
+      type: Array as PropType<Entity[]>,
       default() {
         return [];
       },
@@ -107,9 +95,9 @@ export default Vue.extend({
       const formatted = format(this.value, {
         language: this.formatterDialect,
       });
-      this.$emit("bks-value-change", formatted);
+      this.$emit("bks-value-change", { value: formatted });
     },
-    handleContextMenuItems(_e: unknown, items: any[]) {
+    contextMenuItemsModifier(items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
       const pivot = items.findIndex((o) => o.slug === "find");
       return [
         ...items.slice(0, pivot),
@@ -121,6 +109,7 @@ export default Vue.extend({
         },
         {
           type: "divider",
+          slug: "divider",
         },
         ...items.slice(pivot),
       ];
@@ -132,6 +121,7 @@ export default Vue.extend({
   mounted() {
     this.internalKeybindings["Shift-Ctrl-F"] = this.formatSql;
     this.internalKeybindings["Shift-Cmd-F"] = this.formatSql;
+    this.internalContextItems = this.contextMenuItemsModifier;
     this.plugins = [
       autoquote,
       autoComplete,

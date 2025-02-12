@@ -972,8 +972,8 @@ export default Vue.extend({
         this.openColumnFilterMenuItem,
       ]
     },
-    handleTableInitialized(tabulator) {
-      this.tabulator = tabulator
+    handleTableInitialized(detail) {
+      this.tabulator = detail.tabulator
       this.tabulator.modules.selectRange.restoreFocus()
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)

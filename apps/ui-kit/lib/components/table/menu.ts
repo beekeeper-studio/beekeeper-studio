@@ -1,5 +1,6 @@
 import {
   CellComponent,
+  ColumnComponent,
   RangeComponent,
   Tabulator,
 } from "tabulator-tables";
@@ -7,10 +8,8 @@ import { markdownTable } from "markdown-table";
 import Papa from "papaparse";
 import { stringifyRangeData, rowHeaderField } from "./tabulator";
 import _ from "lodash";
-// ?? not sure about this but :shrug:
-import Vue from "vue";
 import { readClipboard, writeClipboard } from "../../utils/clipboard";
-import { MenuItem as ColumnMenuItem, divider } from "../context-menu/menu";
+import { InternalContextItem as ColumnMenuItem, divider } from "../context-menu/menu";
 import { ctrlOrCmd } from "../../utils/platform";
 
 type RangeData = Record<string, any>[];
@@ -19,25 +18,25 @@ interface ExtractedData {
   sources: RangeComponent[];
 }
 
-export const sortAscending: ColumnMenuItem = {
+export const sortAscending: ColumnMenuItem<ColumnComponent> = {
   name: "Sort ascending",
   slug: "column-sort-asc",
   handler: (_, column) => column.getTable().setSort(column.getField(), "asc"),
 };
 
-export const sortDescending: ColumnMenuItem = {
+export const sortDescending: ColumnMenuItem<ColumnComponent> = {
   name: "Sort descending",
   slug: "column-sort-desc",
   handler: (_, column) => column.getTable().setSort(column.getField(), "desc"),
 };
 
-export const hideColumn: ColumnMenuItem = {
+export const hideColumn: ColumnMenuItem<ColumnComponent> = {
   name: "Hide column",
   slug: "column-hide",
   handler: (_, column) => column.hide(),
 };
 
-export const resizeAllColumnsToMatch: ColumnMenuItem = {
+export const resizeAllColumnsToMatch: ColumnMenuItem<ColumnComponent> = {
   name: "Resize all columns to match",
   slug: "columns-resize-all-to-match",
   handler: (_, column) => {
@@ -57,13 +56,13 @@ export const resizeAllColumnsToMatch: ColumnMenuItem = {
   },
 };
 
-export const resizeAllColumnsToFitContent: ColumnMenuItem = {
+export const resizeAllColumnsToFitContent: ColumnMenuItem<ColumnComponent> = {
   name: "Resize all columns to fit content",
   slug: "columns-resize-all-to-fit-content",
   handler: (_, column) => resizeAllColumnsToFitContentAction(column.getTable()),
 };
 
-export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
+export const resizeAllColumnsToFixedWidth: ColumnMenuItem<ColumnComponent> = {
   name: "Resize all columns to fixed width",
   slug: "columns-resize-all-to-fixed-width",
   handler: (_, column) => {
@@ -276,7 +275,7 @@ export function copyActionsMenu(options: {
   ranges: RangeComponent[];
   table?: string;
   schema?: string;
-}): ColumnMenuItem[] {
+}): ColumnMenuItem<unknown>[] {
   const { ranges } = options;
   return [
     {
@@ -303,7 +302,7 @@ export function copyActionsMenu(options: {
   ];
 }
 
-export function pasteActionsMenu(range: RangeComponent): ColumnMenuItem[] {
+export function pasteActionsMenu(range: RangeComponent): ColumnMenuItem<unknown>[] {
   return [
     {
       name: "Paste",

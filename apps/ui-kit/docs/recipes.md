@@ -7,7 +7,7 @@ The context menu consists of a list of menu items, each of which has a `slug` pr
 ### Removing menu items
 
 ```js
-contextMenu.contextMenuItems = (event, items) => {
+contextMenu.contextMenuItems = (event, target, items) => {
   return items.filter((item) => !item.slug.includes('-format'));
 };
 ```
@@ -15,12 +15,12 @@ contextMenu.contextMenuItems = (event, items) => {
 ### Adding a new item relative to an existing item
 
 ```js
-table.cellContextMenuItems = (event, items) => {
+table.cellContextMenuItems = (event, target, items) => {
   const newItems = [...items]; // avoid mutating the original array
   const lastCopyIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
   newItems.splice(lastCopyIndex + 1, 0, {
     name: 'Custom Action',
-    handler: () => console.log('Custom action executed!'),
+    handler: () => console.log('Custom action executed!', target),
   });
   return newItems;
 };

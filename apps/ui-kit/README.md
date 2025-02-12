@@ -142,12 +142,12 @@ If you want to add a divider between context menu items, you can add an object `
 
 #### Events
 
-| Name                    | Description                                                                           | Event Detail                                             |
-| ----------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `bks-initialized`       | Emitted when the Table is initialized.                                                | `[Tabulator]`                                            |
-| `bks-sorters-change`    | Emitted when the sorters are changed.                                                 | `[{ field: string, dir: 'asc' \| 'desc' }]`              |
-| `bks-ranges-change`     | [FIXME doesnt work sometimes. fix from tabulator]Emitted when the ranges are changed. | `[TabulatorRange[]]`                                     |
-| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked.                                 | `[{ value: any; field: string; cell: CellCommponent; }]` |
+| Name                    | Description                                           | Event Detail                                                    |
+| ----------------------- | ----------------------------------------------------- | --------------------------------------------------------------- |
+| `bks-initialized`       | Emitted when the Table is initialized.                | `{ tabulator: Tabulator }`                                      |
+| `bks-sorters-change`    | Emitted when the sorters are changed.                 | `{ sorters: { field: string, dir: 'asc' \| 'desc' }[] }`        |
+| `bks-ranges-change`     | Emitted when the ranges are changed.                  | `{ ranges: TabulatorRange[] }`                                  |
+| `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `{ value: any; field: string; cell: Tabulator.CellComponent; }` |
 
 ### Table List
 
@@ -172,12 +172,10 @@ If you want to add a divider between context menu items, you can add an object `
 
 #### Properties
 
-| Name                      | Type                     | Description                                  | Default     |
-| ------------------------- | ------------------------ | -------------------------------------------- | ----------- |
-| `tables`                  | `object[]`               | An array of objects representing the tables. | `[]`        |
-| `schemaContextMenuItems`  | `object[]` \| `function` | Extend the schema context menu items.        | `undefined` |
-| `tableContextMenuItems`   | `object[]` \| `function` | Extend the table context menu items.         | `undefined` |
-| `routineContextMenuItems` | `object[]` \| `function` | Extend the routine context menu items.       | `undefined` |
+| Name               | Type                     | Description                                  | Default     |
+| ------------------ | ------------------------ | -------------------------------------------- | ----------- |
+| `tables`           | `object[]`               | An array of objects representing the tables. | `[]`        |
+| `contextMenuItems` | `object[]` \| `function` | Extend the table context menu items.         | `undefined` |
 
 #### Table Definition
 
@@ -190,17 +188,17 @@ If you want to add a divider between context menu items, you can add an object `
 
 #### Events
 
-| Name                      | Description                                                                  | Event Detail |
-| ------------------------- | ---------------------------------------------------------------------------- | ------------ |
-| `bks-item-expand`         | Emitted when an item is expanded.                                            | `[object]`   |
-| `bks-item-collaps`        | Emitted when an item is collapsed.                                           | `[object]`   |
-| `bks-item-dblclick`       | Emitted when an item is double-clicked.                                      | `[object]`   |
-| `bks-item-contextmenu`    | Emitted when an item is right-clicked.                                       | `[object]`   |
-| `bks-item-update-columns` | Emitted when an item requests columns update. This is used for lazy loading. | `[object]`   |
-| `bks-expand-all`          | Emitted when all items are expanded.                                         | -            |
-| `bks-collapse-all`        | Emitted when all items are collapsed.                                        | -            |
-| `bks-add-entity-click`    | Emitted when the add button is clicked.                                      | `[object]`   |
-| `bks-refresh-btn-click`   | Emitted when the refresh button is clicked.                                  | `[object]`   |
+| Name                           | Description                                                                   | Event Detail                            |
+| ------------------------------ | ----------------------------------------------------------------------------- | --------------------------------------- |
+| `bks-entity-expand`            | Emitted when an entity is expanded.                                           | `{ entity: Entity }`                    |
+| `bks-entity-collapse`          | Emitted when an entity is collapsed.                                          | `{ entity: Entity }`                    |
+| `bks-entity-dblclick`          | Emitted when an entity is double-clicked.                                     | `{ event: MouseEvent, entity: Entity }` |
+| `bks-entity-contextmenu`       | Emitted when an entity is right-clicked.                                      | `{ event: MouseEvent, entity: Entity }` |
+| `bks-entities-request-columns` | Emitted when expanding an entity and its `columns` is `undefined`.            | `{ entity: Entity }`                    |
+| `bks-expand-all`               | Emitted when clicking the expand all button and all entities are expanded.    | -                                       |
+| `bks-collapse-all`             | Emitted when clicking the collapse all button and all entities are collapsed. | -                                       |
+| `bks-add-entity-click`         | Emitted when the add entity button is clicked.                                | `{ event: MouseEvent }`                 |
+| `bks-refresh-click`            | Emitted when the refresh button is clicked.                                   | `{ event: MouseEvent }`                 |
 
 ### SQL Text Editor
 
@@ -242,13 +240,13 @@ If you want to add a divider between context menu items, you can add an object `
 
 #### Events
 
-| Name                         | Description                                      | Event Detail                                     |
-| ---------------------------- | ------------------------------------------------ | ------------------------------------------------ |
-| `bks-value-change`           | Emitted when the SQL query is changed.           | `[string]`                                       |
-| `bks-initialized`            | Emitted when the SQL text editor is initialized. | `[CodeMirror]`                                   |
-| `bks-focus`                  | Emitted when the SQL text editor is focused.     | -                                                |
-| `bks-blur`                   | Emitted when the SQL text editor is blurred.     | -                                                |
-| `bks-query-selection-change` | Emitted when the query selection is changed.     | `[{ queries: Object[]; selectedQuery: Object }]` |
+| Name                         | Description                                      | Event Detail                                                   |
+| ---------------------------- | ------------------------------------------------ | -------------------------------------------------------------- |
+| `bks-value-change`           | Emitted when the SQL query is changed.           | `{ value: string }`                                            |
+| `bks-initialized`            | Emitted when the SQL text editor is initialized. | `{ codemirror: CodeMirror }`                                   |
+| `bks-focus`                  | Emitted when the SQL text editor is focused.     | `{ event: FocusEvent }`                                        |
+| `bks-blur`                   | Emitted when the SQL text editor is blurred.     | `{ event: FocusEvent }`                                        |
+| `bks-query-selection-change` | Emitted when the query selection is changed.     | `{ selectedQuery: IdentifyResult, queries: IdentifyResult[] }` |
 
 ### Data Editor
 
@@ -306,9 +304,9 @@ If you want to add a divider between context menu items, you can add an object `
 
 All events from `bks-table`, `bks-table-list` and `bks-sql-text-editor` are available. In addition, the following events are emitted:
 
-| Name               | Description                          | Event Detail |
-| ------------------ | ------------------------------------ | ------------ |
-| `bks-query-submit` | Emitted when the query is submitted. | `[string]`   |
+| Name               | Description                          | Event Detail        |
+| ------------------ | ------------------------------------ | ------------------- |
+| `bks-query-submit` | Emitted when the query is submitted. | `{ query: string }` |
 
 ## NOTE
 
