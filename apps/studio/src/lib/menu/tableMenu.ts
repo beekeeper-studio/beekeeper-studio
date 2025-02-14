@@ -199,7 +199,7 @@ export function setCellValue(cell: CellComponent, value: string) {
 export function pasteActionsMenu(range: RangeComponent) {
   return [
     {
-      name: "Paste",
+      label: "Paste",
       shortcut: "Control+V",
       handler: () => pasteRange(range),
     },
@@ -208,7 +208,7 @@ export function pasteActionsMenu(range: RangeComponent) {
 
 export function copyRangeDataAsSqlMenuItem(ranges: RangeComponent[], table: string, schema?: string) {
   return {
-    name: 'Copy as SQL',
+    label: 'Copy as SQL',
     type: 'copy',
     handler: () => copyRangeDataAsSql({ data: ranges, table, schema }),
   };

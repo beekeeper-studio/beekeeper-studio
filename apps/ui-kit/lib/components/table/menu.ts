@@ -19,26 +19,26 @@ interface ExtractedData {
 }
 
 export const sortAscending: ColumnMenuItem<ColumnComponent> = {
-  name: "Sort ascending",
-  slug: "column-sort-asc",
+  label: "Sort ascending",
+  id: "column-sort-asc",
   handler: (_, column) => column.getTable().setSort(column.getField(), "asc"),
 };
 
 export const sortDescending: ColumnMenuItem<ColumnComponent> = {
-  name: "Sort descending",
-  slug: "column-sort-desc",
+  label: "Sort descending",
+  id: "column-sort-desc",
   handler: (_, column) => column.getTable().setSort(column.getField(), "desc"),
 };
 
 export const hideColumn: ColumnMenuItem<ColumnComponent> = {
-  name: "Hide column",
-  slug: "column-hide",
+  label: "Hide column",
+  id: "column-hide",
   handler: (_, column) => column.hide(),
 };
 
 export const resizeAllColumnsToMatch: ColumnMenuItem<ColumnComponent> = {
-  name: "Resize all columns to match",
-  slug: "columns-resize-all-to-match",
+  label: "Resize all columns to match",
+  id: "columns-resize-all-to-match",
   handler: (_, column) => {
     try {
       column.getTable().blockRedraw();
@@ -57,14 +57,14 @@ export const resizeAllColumnsToMatch: ColumnMenuItem<ColumnComponent> = {
 };
 
 export const resizeAllColumnsToFitContent: ColumnMenuItem<ColumnComponent> = {
-  name: "Resize all columns to fit content",
-  slug: "columns-resize-all-to-fit-content",
+  label: "Resize all columns to fit content",
+  id: "columns-resize-all-to-fit-content",
   handler: (_, column) => resizeAllColumnsToFitContentAction(column.getTable()),
 };
 
 export const resizeAllColumnsToFixedWidth: ColumnMenuItem<ColumnComponent> = {
-  name: "Resize all columns to fixed width",
-  slug: "columns-resize-all-to-fixed-width",
+  label: "Resize all columns to fixed width",
+  id: "columns-resize-all-to-fixed-width",
   handler: (_, column) => {
     try {
       column.getTable().blockRedraw();
@@ -279,36 +279,25 @@ export function copyActionsMenu(options: {
   const { ranges } = options;
   return [
     {
-      name: "Copy",
-      slug: 'range-copy',
+      label: "Copy",
+      id: 'range-copy',
       handler: () => copyRanges({ ranges, type: "plain" }),
-      shortcut: ctrlOrCmd("c"),
+      shortcut: "Control+C",
     },
     {
-      name: "Copy as TSV for Excel",
-      slug: 'range-copy-tsv',
+      label: "Copy as TSV for Excel",
+      id: 'range-copy-tsv',
       handler: () => copyRanges({ ranges, type: "tsv" }),
     },
     {
-      name: "Copy as JSON",
-      slug: 'range-copy-json',
+      label: "Copy as JSON",
+      id: 'range-copy-json',
       handler: () => copyRanges({ ranges, type: "json" }),
     },
     {
-      name: "Copy as Markdown",
-      slug: 'range-copy-markdown',
+      label: "Copy as Markdown",
+      id: 'range-copy-markdown',
       handler: () => copyRanges({ ranges, type: "markdown" }),
-    },
-  ];
-}
-
-export function pasteActionsMenu(range: RangeComponent): ColumnMenuItem<unknown>[] {
-  return [
-    {
-      name: "Paste",
-      slug: 'range-paste',
-      handler: () => pasteRange(range),
-      shortcut: ctrlOrCmd("v"),
     },
   ];
 }

@@ -243,8 +243,8 @@ export default Vue.extend({
     tableMenuOptions() {
       return [
         {
-          name: "Copy Name",
-          slug: 'copy-name',
+          label: "Copy Name",
+          id: 'copy-name',
           handler({ item }) {
             writeClipboard(item.name)
           },
@@ -254,8 +254,8 @@ export default Vue.extend({
     filterMenuOptions() {
       return [
         {
-          name: "Tables",
-          slug: 'tables',
+          label: "Tables",
+          id: 'tables',
           checked: this.showTables,
           keepOpen: true,
           handler: ({ checked }) => {
@@ -263,8 +263,8 @@ export default Vue.extend({
           },
         },
         {
-          name: "Views",
-          slug: 'views',
+          label: "Views",
+          id: 'views',
           checked: this.showViews,
           keepOpen: true,
           handler: ({ checked }) => {
@@ -272,8 +272,8 @@ export default Vue.extend({
           },
         },
         {
-          name: "Routines",
-          slug: 'routines',
+          label: "Routines",
+          id: 'routines',
           checked: this.showRoutines,
           keepOpen: true,
           handler: ({ checked }) => {

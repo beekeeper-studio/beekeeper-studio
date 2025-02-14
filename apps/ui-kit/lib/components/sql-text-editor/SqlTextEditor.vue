@@ -20,9 +20,8 @@ import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { querySelection, QuerySelectionChangeParams } from "./querySelectionPlugin";
 import { Options } from "sql-query-identifier";
 import { Entity } from "../types";
-import { ctrlOrCmd } from "../../utils/platform";
 import ProxyEmit from "../mixins/ProxyEmit";
-import { InternalContextItem } from "../context-menu/menu";
+import { InternalContextItem, divider } from "../context-menu/menu";
 
 export default Vue.extend({
   mixins: [textEditorMixin, ProxyEmit],
@@ -97,20 +96,17 @@ export default Vue.extend({
       });
       this.$emit("bks-value-change", { value: formatted });
     },
-    contextMenuItemsModifier(items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
-      const pivot = items.findIndex((o) => o.slug === "find");
+    contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
+      const pivot = items.findIndex((o) => o.id === "find");
       return [
         ...items.slice(0, pivot),
         {
-          name: "Format Query",
-          slug: "text-format",
+          label: `Format Query`,
+          id: "text-format",
           handler: this.formatSql,
-          shortcut: ctrlOrCmd("shift+f"),
+          shortcut: "Shift+F",
         },
-        {
-          type: "divider",
-          slug: "divider",
-        },
+        divider,
         ...items.slice(pivot),
       ];
     },
@@ -121,7 +117,7 @@ export default Vue.extend({
   mounted() {
     this.internalKeybindings["Shift-Ctrl-F"] = this.formatSql;
     this.internalKeybindings["Shift-Cmd-F"] = this.formatSql;
-    this.internalContextItems = this.contextMenuItemsModifier;
+    this.internalContextMenuItems = this.contextMenuItemsModifier;
     this.plugins = [
       autoquote,
       autoComplete,

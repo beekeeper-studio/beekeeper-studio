@@ -20,7 +20,7 @@
         />
         <bks-table-list
           :tables="tables"
-          :context-menu-items="tableMenuOptions"
+          :context-menu-items="handleContextMenuItems"
           @bks-entity-dblclick="handleEntityDblclick"
           @bks-entities-request-columns="handleEntitiesRequestColumns"
           @bks-refresh-click="handleRefreshClick"
@@ -119,6 +119,19 @@
       },
     },
     methods: {
+      /** @param entity {import('@/lib/db/models').DatabaseEntity} */
+      handleContextMenuItems(event, entity, defaultItems) {
+        switch(entity.entityType) {
+          case "table":
+          case "view":
+          case "materialized_view":
+            return this.tableMenuOptions;
+          case "routine":
+            return this.routineMenuOptions;
+          default:
+            return defaultItems;
+        }
+      },
       tabClasses(item) {
         return {
           show: (this.activeItem === item),

@@ -135,7 +135,7 @@ export default Vue.extend({
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 // yuck
 $light-grey: #ecf0f1;
 $grey: darken($light-grey, 15%);

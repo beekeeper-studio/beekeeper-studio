@@ -24,7 +24,7 @@ import _ from "lodash";
 import { setKeybindings, applyConfig, Register, Config } from "./vim";
 import { divider, InternalContextItem, openMenu } from "../context-menu/menu";
 import { writeClipboard, readClipboard } from "../../utils/clipboard";
-import { ctrlOrCmd, cmCtrlOrCmd } from "../../utils/platform"
+import { cmCtrlOrCmd } from "../../utils/platform"
 import { PropType } from "vue";
 import { CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
 
@@ -501,44 +501,44 @@ export default {
       const menu = {
         options: [
           {
-            name: "Undo",
-            slug: "text-undo",
+            label: 'Undo',
+            id: "text-undo",
             handler: () => this.editor.execCommand("undo"),
-            shortcut: ctrlOrCmd("z"),
+            shortcut: "Control+Z",
             write: true,
           },
           {
-            name: "Redo",
-            slug: "text-redo",
+            label: "Redo",
+            id: "text-redo",
             handler: () => this.editor.execCommand("redo"),
-            shortcut: ctrlOrCmd("shift+z"),
+            shortcut: "Shift+Z",
             write: true,
           },
           {
-            name: "Cut",
-            slug: "text-cut",
+            label: "Cut",
+            id: "text-cut",
             handler: () => {
               const selection = this.editor.getSelection();
               this.editor.replaceSelection("");
               writeClipboard(selection);
             },
             class: selectionDepClass,
-            shortcut: ctrlOrCmd("x"),
+            shortcut: "Control+X",
             write: true,
           },
           {
-            name: "Copy",
-            slug: "text-copy",
+            label: "Copy",
+            id: "text-copy",
             handler: async () => {
               const selection = this.editor.getSelection();
               await writeClipboard(selection);
             },
             class: selectionDepClass,
-            shortcut: ctrlOrCmd("c"),
+            shortcut: "Control+C",
           },
           {
-            name: "Paste",
-            slug: "text-paste",
+            label: "Paste",
+            id: "text-paste",
             handler: async () => {
               const clipboard = await readClipboard();
               if (this.editor.getSelection()) {
@@ -548,12 +548,12 @@ export default {
                 this.editor.replaceRange(clipboard, cursor);
               }
             },
-            shortcut: ctrlOrCmd("v"),
+            shortcut: "Control+V",
             write: true,
           },
           {
-            name: "Delete",
-            slug: "text-delete",
+            label: "Delete",
+            id: "text-delete",
             handler: () => {
               this.editor.replaceSelection("");
             },
@@ -561,38 +561,38 @@ export default {
             write: true,
           },
           {
-            name: "Select All",
-            slug: "text-select-all",
+            label: "Select All",
+            id: "text-select-all",
             handler: () => {
               this.editor.execCommand("selectAll");
             },
-            shortcut: ctrlOrCmd("a"),
+            shortcut: "Control+A",
           },
           divider,
           {
-            name: "Find",
-            slug: "text-find",
+            label: "Find",
+            id: "text-find",
             handler: () => {
               this.editor.execCommand("find");
             },
-            shortcut: ctrlOrCmd("f"),
+            shortcut: "Control+F",
           },
           {
-            name: "Replace",
-            slug: "text-replace",
+            label: "Replace",
+            id: "text-replace",
             handler: () => {
               this.editor.execCommand("replace");
             },
-            shortcut: ctrlOrCmd("r"),
+            shortcut: "Control+R",
             write: true,
           },
           {
-            name: "Replace All",
-            slug: "text-replace-all",
+            label: "Replace All",
+            id: "text-replace-all",
             handler: () => {
               this.editor.execCommand("replaceAll");
             },
-            shortcut: ctrlOrCmd("shift+r"),
+            shortcut: "Shift+R",
             write: true,
           },
         ],
@@ -604,7 +604,7 @@ export default {
       }
 
       let items = useCustomMenuItems(event, undefined, menu.options, this.internalContextMenuItems);
-      items = useCustomMenuItems(event, undefined, menu as unknown as InternalContextItem<unknown>[], this.contextMenuItems);
+      items = useCustomMenuItems(event, undefined, items as InternalContextItem<unknown>[], this.contextMenuItems);
       openMenu({ event, options: items });
     },
   },

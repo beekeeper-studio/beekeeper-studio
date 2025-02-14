@@ -715,7 +715,7 @@ export default Vue.extend({
     },
     openColumnFilterMenuItem() {
       return {
-        name: "Open Column Filter",
+        label: "Open Column Filter",
         handler: this.showColumnFilterModal,
       }
     }
@@ -897,11 +897,11 @@ export default Vue.extend({
     },
     extendCopyItems(items) {
       const newItems = [...items];
-      const lastCopyIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
+      const lastCopyIndex = newItems.findLastIndex((item) => item.id.includes('range-copy'));
       newItems.splice(lastCopyIndex + 1, 0, copyRangeDataAsSqlMenuItem(this.tabulator.getRanges(), this.table.name, this.table.schema));
       return newItems;
     },
-    cornerHeaderContextMenuItems(_e, defaultItems) {
+    cornerHeaderContextMenuItems(_e, _header, defaultItems) {
       const ranges = this.tabulator.getRanges();
       const range: RangeComponent = _.last(ranges)
       return [
@@ -911,7 +911,7 @@ export default Vue.extend({
         this.openColumnFilterMenuItem,
       ]
     },
-    rowHeaderContextMenuItems(_e, defaultItems, cell: CellComponent) {
+    rowHeaderContextMenuItems(_e, cell: CellComponent, defaultItems) {
       const ranges = cell.getRanges();
       const range = _.last(ranges);
       return [
@@ -921,7 +921,7 @@ export default Vue.extend({
         ...this.rowActionsMenu(range),
       ]
     },
-    cellContextMenuItems(_e, defaultItems, cell: CellComponent) {
+    cellContextMenuItems(_e, cell: CellComponent, defaultItems) {
       const ranges = cell.getRanges();
       const range = _.last(ranges)
       const menu = [
@@ -947,7 +947,7 @@ export default Vue.extend({
 
       return menu
     },
-    columnHeaderContextMenuItems(_e, defaultItems, column: ColumnComponent) {
+    columnHeaderContextMenuItems(_e, column: ColumnComponent, defaultItems) {
       const ranges = (column as ColumnComponent).getRanges();
       const range = _.last(ranges) as RangeComponent;
       let hideColumnLabel = `Hide ${column.getDefinition().title}`
@@ -962,11 +962,11 @@ export default Vue.extend({
         ...this.extendCopyItems(defaultItems),
         { type: 'divider' },
         {
-          name: hideColumnLabel,
+          label: hideColumnLabel,
           handler: () => this.hideColumnByField(column.getField()),
         },
         {
-          name: 'Reset layout',
+          label: 'Reset layout',
           handler: () => column.getTable().setColumnLayout(this.tableColumns),
         },
         this.openColumnFilterMenuItem,
@@ -1009,7 +1009,7 @@ export default Vue.extend({
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
       return [
         {
-          name:
+          label:
             range.getTopEdge() === range.getBottomEdge()
               ? "Clone row"
               : `Clone rows ${rowRangeLabel}`,
@@ -1018,7 +1018,7 @@ export default Vue.extend({
           disabled: !this.editable,
         },
         {
-          name:
+          label:
             range.getTopEdge() === range.getBottomEdge()
               ? "Delete row"
               : `Delete rows ${rowRangeLabel}`,
@@ -1031,7 +1031,7 @@ export default Vue.extend({
         },
         { type: 'divider' },
         {
-          name: 'See details',
+          label: 'See details',
           handler: () => {
             this.updateDetailView({ range })
             this.toggleOpenDetailView(true)
@@ -1044,7 +1044,7 @@ export default Vue.extend({
         .getColumns()
         .every((col) => this.isPrimaryKey(col.getField()));
       return {
-        name: "Set as NULL",
+        label: "Set as NULL",
         handler: () => range.getCells().flat().forEach((cell) => {
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
@@ -1070,12 +1070,13 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>='
       ]
       return {
-        name: "Quick Filter",
-        icon: this.$store.getters.isCommunity ? 'stars' : '',
+        label: {
+          html: `Quick Filter${this.$store.getters.isCommunity ? '<i class="material-icons">stars</i>' : ''}`,
+        },
         disabled: _.isNil(cell.getValue()),
         items: symbols.map((s) => {
           return {
-            name: `${cell.getField()} ${s} value`,
+            label: `${cell.getField()} ${s} value`,
             disabled: this.$store.getters.isCommunity,
             handler: () => {
               const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
@@ -1089,7 +1090,7 @@ export default Vue.extend({
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
       return {
-        name: isReadOnly ? "View in modal" : "Edit in modal",
+        label: isReadOnly ? "View in modal" : "Edit in modal",
         shortcut: "Shift + Enter",
         handler: () => {
           if (this.isPrimaryKey(cell.getField())) return

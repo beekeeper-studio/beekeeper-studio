@@ -121,16 +121,14 @@ To load the `@bks/ui-kit` library in your project, follow these steps:
 
 #### Context Menu Item
 
-| Name                         | Type         | Description                                                      | Default     |
-| ---------------------------- | ------------ | ---------------------------------------------------------------- | ----------- |
-| `name`<sup>required</sup>    | `string`     | The name of the context menu item.                               |             |
-| `handler`<sup>required</sup> | `function`   | The handler function to be called when the item is clicked.      |             |
-| `slug`                       | `string`     | The slug of the context menu item.                               | `undefined` |
-| `class`                      | `string`     | The CSS class to apply to the context menu item.                 | `undefined` |
-| `shortcut`                   | `string`     | The shortcut key to trigger the context menu item.               | `undefined` |
-| `icon`                       | `string`     | The material icon name to display next to the context menu item. | `undefined` |
-| `disabled`                   | `boolean`    | Disable the context menu item.                                   | `false`     |
-| `items`                      | `MenuItem[]` | An array of sub-items.                                           | `undefined` |
+| Name                         | Type                           | Description                                                                                                                                                                                                  | Default     |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| `label`<sup>required</sup>   | `string` \| `{ html: string }` | The label of the context menu item. It can be a plain text string or an object with an html property that contains raw HTML. Please only use raw HTML on trusted content and never on user-provided content. |             |
+| `handler`<sup>required</sup> | `function`                     | The handler function to be called when the item is clicked.                                                                                                                                                  |             |
+| `id`                         | `string`                       | The id of the context menu item to help you identify and customize the default menu items. If you add your own custom menu items, you probably don't need to add this property.                              | `undefined` |
+| `class`                      | `string`                       | The CSS class to apply to the context menu item.                                                                                                                                                             | `undefined` |
+| `disabled`                   | `boolean`                      | Disable the context menu item. Disabled items will not be clickable.                                                                                                                                         | `false`     |
+| `items`                      | `ContextMenuItem[]`            | The sub-items of the context menu item.                                                                                                                                                                      | `undefined` |
 
 If you want to add a divider between context menu items, you can add an object `{ type: "divider" }`.
 
