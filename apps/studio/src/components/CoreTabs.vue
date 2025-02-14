@@ -17,7 +17,7 @@
           :key="tab.id"
           :tab="tab"
           :tabs-count="tabItems.length"
-          :selected="activeTab === tab"
+          :selected="activeTab.id === tab.id"
           @click="click"
           @close="close"
           @closeAll="closeAll"
@@ -55,12 +55,12 @@
         class="tab-pane"
         :id="'tab-' + idx"
         :key="tab.id"
-        :class="{active: (activeTab === tab)}"
-        v-show="activeTab === tab"
+        :class="{active: (activeTab.id === tab.id)}"
+        v-show="activeTab.id === tab.id"
       >
         <QueryEditor
           v-if="tab.tabType === 'query'"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
         />
@@ -72,7 +72,7 @@
           <template v-slot:default="slotProps">
             <TableTable
               :tab="tab"
-              :active="activeTab === tab"
+              :active="activeTab.id === tab.id"
               :table="slotProps.table"
             />
           </template>
@@ -84,7 +84,7 @@
         >
           <template v-slot:default="slotProps">
             <TableProperties
-              :active="activeTab === tab"
+              :active="activeTab.id === tab.id"
               :tab="tab"
               :tab-id="tab.id"
               :table="slotProps.table"
@@ -93,7 +93,7 @@
         </tab-with-table>
         <TableBuilder
           v-if="tab.tabType === 'table-builder'"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
         />
@@ -107,7 +107,7 @@
           v-if="tab.tabType === 'backup'"
           :connection="connection"
           :is-restore="false"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           @close="close"
         />
@@ -115,7 +115,7 @@
           v-if="tab.tabType === 'restore'"
           :connection="connection"
           :is-restore="true"
-          :active="activeTab === tab"
+          :active="activeTab.id === tab.id"
           :tab="tab"
           @close="close"
         />
@@ -265,7 +265,7 @@ import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import { FormatterDialect, DialectTitles } from '@shared/lib/dialects/models'
+import { FormatterDialect } from '@shared/lib/dialects/models'
 import Vue from 'vue';
 import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
 import TabWithTable from './common/TabWithTable.vue';
@@ -277,7 +277,6 @@ import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
-import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
@@ -301,7 +300,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       PendingChangesButton,
     ConfirmationModal,
     SqlFilesImportModal,
-    DetailViewSidebar,
     },
     data() {
       return {
@@ -401,7 +399,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     keymap() {
       const result = {
-        'ctrl+shift+T': this.reopenLastClosedTab,
+        'ctrl+shift+t': this.reopenLastClosedTab,
         'ctrl+tab': this.nextTab,
         'ctrl+shift+tab': this.previousTab,
         'alt+1': this.handleAltNumberKeyPress,
@@ -416,8 +414,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
 
       if(this.$config.isMac) {
-         result['shift+meta+['] = this.previousTab
-         result['shift+meta+]'] = this.nextTab
+        result['meta+shift+t'] = this.reopenLastClosedTab
+        result['shift+meta+['] = this.previousTab
+        result['shift+meta+]'] = this.nextTab
       }
 
       return result
@@ -596,25 +595,26 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     handleCreateTab() {
       this.createQuery()
     },
-    createQuery(optionalText, queryTitle?) {
+    async createQuery(optionalText, queryTitle?) {
       // const text = optionalText ? optionalText : ""
       console.log("Creating tab")
       let qNum = 0
       let tabName = "New Query"
-      do {
-        qNum = qNum + 1
-        tabName = `Query #${qNum}`
-      } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       if (queryTitle) {
         tabName = queryTitle
+      } else {
+        do {
+          qNum = qNum + 1
+          tabName = `Query #${qNum}`
+        } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       }
 
-        const result = {} as TransportOpenTab;
-        result.tabType = 'query'
-        result.title = tabName,
-        result.unsavedChanges = false
-        result.unsavedQueryText = optionalText
-        this.addTab(result)
+      const result = {} as TransportOpenTab;
+      result.tabType = 'query'
+      result.title = tabName,
+      result.unsavedChanges = false
+      result.unsavedQueryText = optionalText
+      await this.addTab(result)
     },
     async loadTableCreate(table) {
       let method = null
@@ -877,9 +877,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openTableProperties({ table }) {
       const t = {} as TransportOpenTab;
       t.tabType = 'table-properties';
-      t.tableName = table.name
-      t.schemaName = table.schema
-      t.title = table.name
+      t.tableName = table.name ?? table.tableName
+      t.schemaName = table.schema ?? table.schemaName
+      t.title = table.name ?? table.tableName
       const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
@@ -887,9 +887,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     async openTable({ table, filters, openDetailView }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
-      tab.title = table.name
-      tab.tableName = table.name
-      tab.schemaName = table.schema
+      tab.title = table.name ?? table.tableName
+      tab.tableName = table.name ?? table.tableName
+      tab.schemaName = table.schema ?? table.schemaName
       tab.entityType = table.entityType
       tab = setFilters(tab, filters)
       tab.titleScope = "all"
@@ -1040,7 +1040,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
 
     },
     createQueryFromItem(item) {
-      this.createQuery(item.text)
+      this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
     }
   },
   beforeDestroy() {

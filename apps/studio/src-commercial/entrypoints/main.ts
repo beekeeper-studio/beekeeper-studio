@@ -193,7 +193,7 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
 
-      installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
+      installExtension(VUEJS_DEVTOOLS)
         .then((name) => console.log(`Added Extension:  ${name}`))
         .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because
