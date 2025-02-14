@@ -13,50 +13,25 @@
           placeholder="Filter"
           v-model="filterQuery"
         >
-        <x-buttons class="filter-actions">
-          <x-button
+        <div class="filter-actions">
+          <button
+            class="btn btn-fab btn-link action-item"
             @click="clearFilter"
             v-if="filterQuery"
           >
             <i class="clear material-icons">cancel</i>
-          </x-button>
+          </button>
 
-          <x-button
-            v-show="false"
+          <button
             :title="entitiesHidden ? 'Filter active' : 'No filters'"
             class="btn btn-fab btn-link action-item"
             :class="{active: entitiesHidden}"
+            @click="openFilterMenu"
             menu
           >
             <i class="material-icons-outlined">filter_alt</i>
-            <!-- FIXME commenting this because it freezes chrome. but it works in firefox.. -->
-            <!-- <x-menu style="--target-align: right;"> -->
-            <!--   <label> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showTables" -->
-            <!--     > -->
-            <!--     <span>Tables</span> -->
-            <!--   </label> -->
-            <!--   <label> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showViews" -->
-            <!--     > -->
-            <!--     <span>Views</span> -->
-            <!--   </label> -->
-            <!--   <label v-if="supportsRoutines"> -->
-            <!--     <input -->
-            <!--       type="checkbox" -->
-            <!--       v-model="showRoutines" -->
-            <!--     > -->
-            <!--     <span>Routines</span> -->
-            <!--   </label> -->
-            <!--   <x-menuitem /> -->
-            <!-- </x-menu> -->
-          </x-button>
-
-        </x-buttons>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -83,16 +58,16 @@
           :class="{active: entitiesHidden}"
         >{{ shownEntities }} / {{ totalEntities }}</span>
         <span
-          v-show="totalHiddenEntities > 0 && !filterQuery"
+          v-show="hiddenEntities.length > 0 && !filterQuery"
           class="hidden-indicator bks-tooltip-wrapper"
         >
           <span class="badge">
             <i class="material-icons">visibility_off</i>
-            <span>{{ totalHiddenEntities > 99 ? '99+' : totalHiddenEntities }}</span>
+            <span>{{ hiddenEntities.length > 99 ? '99+' : hiddenEntities.length }}</span>
           </span>
           <div class="hi-tooltip bks-tooltip bks-tooltip-bottom-center">
             <span>Right click an entity to hide it. </span>
-            <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
+            <a @click="openHiddenEntitiesModal = true">View hidden</a><span>.</span>
           </div>
         </span>
         <div class="actions">
@@ -104,7 +79,7 @@
             <i class="material-icons">{{ isExpanded ? 'unfold_less' : 'unfold_more' }}</i>
           </button>
           <button
-            @click.prevent="$emit('bks-refresh-btn-click')"
+            @click.prevent="$emit('bks-refresh-btn-click', { event: $event })"
             :title="'Refresh'"
             :disabled="tablesLoading"
           >
@@ -115,7 +90,7 @@
             title="New Table"
             class="create-table"
             :disabled="tablesLoading"
-            v-if="canCreateTable"
+            v-if="showCreateEntityBtn"
           >
             <i class="material-icons">add</i>
           </button>
@@ -124,12 +99,13 @@
 
       <virtual-table-list
         :tables="filteredTables"
-        :expanded="isExpanded"
+        :hidden-entities="hiddenEntities"
+        :pinned-entities="pinnedEntities"
         @expand="handleExpand"
-        @expand-all="handleToggleExpandedAll"
+        @expand-all="handleExpandAll"
         @dblclick="handleDblClick"
         @contextmenu="handleContextMenu"
-        @update-columns="handleUpdateColumns"
+        @request-items-columns="handleRequestItemsColumns"
       />
 
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
@@ -137,55 +113,57 @@
         class="empty truncate"
         v-if="!tablesLoading && (!tables || tables.length === 0)"
       >
-        <p class="no-entities" v-if="database">
-          There are no entities in the <strong>{{ database }}</strong> database
-        </p>
-        <p class="no-entities" v-else>
-          Please select a database to see tables, views, and other entities
+        <p class="no-entities">
+          There are no entities
         </p>
       </div>
     </nav>
+    <hidden-entities-modal
+      v-if="openHiddenEntitiesModal"
+      :hidden-entities="hiddenEntities"
+      @unhide-entity="$emit('bks-entity-unhide', { entity: $event })"
+      @close="openHiddenEntitiesModal = false"
+    />
   </div>
 </template>
 
 <script lang="ts">
-// import "xel/xel";
 import Vue, { PropType } from 'vue';
 import _ from 'lodash'
 import TableFilter from './mixins/table_filter'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
-import { Item, Table } from "./models";
-import { TableListEvents } from "./constants";
-import { RootEventMixin } from "../mixins/RootEvent";
+import { Item } from "./models";
+import { Entity } from "../types";
 import { writeClipboard } from "../../utils/clipboard";
-import { openMenu, MenuItem, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
+import { openMenu, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
 import ProxyEmit from "../mixins/ProxyEmit";
-
-// TODO(@day): to remove
-// import { mapState, mapGetters } from 'vuex'
-
-// FIXME(@azmi): do something
-// import { AppEvent } from '@/common/AppEvent'
-
-// TODO(@azmi): make new types instead
-// import { TableOrView, Routine } from "@/lib/db/models";
+import EventBus from "../../utils/EventBus";
+import HiddenEntitiesModal from "./HiddenEntitiesModal.vue";
 
 export default Vue.extend({
-  mixins: [TableFilter, RootEventMixin, ProxyEmit],
-  components: { VirtualTableList },
+  mixins: [TableFilter, ProxyEmit],
+  components: { VirtualTableList, HiddenEntitiesModal },
   props: {
     tables: {
-      type: Array as PropType<Table[]>,
+      type: Array as PropType<Entity[]>,
       default: () => [],
     },
-    routines: {
-      type: Array,
-      default: () => []
+    /** This should reference the same entities as `tables`. */
+    hiddenEntities: {
+      type: Array as PropType<Entity[]>,
+      default: () => [],
     },
-    schemaContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
-    tableContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
-    routineContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    /** This should reference the same entities as `tables`. */
+    pinnedEntities: {
+      type: Array as PropType<Entity[]>,
+      default: () => [],
+    },
+    contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    showCreateEntityBtn: {
+      type: Boolean,
+      default: true,
+    },
     // this might just be for us, maybe make a default for others and allow overrides?
     dialectData: {
 
@@ -204,7 +182,9 @@ export default Vue.extend({
         showViews: true,
         showRoutines: true,
         showPartitions: false
-      }
+      },
+      tablesLoading: false,
+      openHiddenEntitiesModal: false,
     }
   },
   computed: {
@@ -214,10 +194,10 @@ export default Vue.extend({
       // return !!this.dialectData.disabledFeatures.createTable
     },
     totalEntities() {
-      return this.tables.length + this.routines.length
+      return this.tables.length - this.hiddenEntities.length
     },
     shownEntities() {
-      return this.filteredTables.length + this.filteredRoutines.length
+      return this.filteredTables.length
     },
     totalFilteredEntities() {
       return this.totalEntities - this.shownEntities
@@ -227,9 +207,6 @@ export default Vue.extend({
     },
     filteredTables() {
       return entityFilter(this.tables, this.entityFilter);
-    },
-    filteredRoutines() {
-      return entityFilter(this.routines, this.entityFilter);
     },
     filterQuery: {
       get() {
@@ -263,50 +240,50 @@ export default Vue.extend({
         this.entityFilter.showRoutines = !this.entityFilter.showRoutines;
       }
     },
-    supportsRoutines() {
-      // TODO(@azmi): do something
-      // return this.supportedFeatures.customRoutines
-      return false
-    },
-    canCreateTable() {
-      // FIXME
-      return true
-      // return !this.dialectData.disabledFeatures?.createTable
-    },
-    // tables() {
-    //   return [{"name":"cheeses","entityType":"table","columns":[{"tableName":"cheeses","columnName":"id","dataType":"INTEGER","nullable":true,"defaultValue":null,"ordinalPosition":0,"hasDefault":false,"generated":false,"bksField":{"name":"id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"name","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":1,"hasDefault":false,"generated":false,"bksField":{"name":"name","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"origin_country_id","dataType":"INTEGER","nullable":false,"defaultValue":null,"ordinalPosition":2,"hasDefault":false,"generated":false,"bksField":{"name":"origin_country_id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"cheese_type","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":3,"hasDefault":false,"generated":false,"bksField":{"name":"cheese_type","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"description","dataType":"TEXT","nullable":true,"defaultValue":null,"ordinalPosition":4,"hasDefault":false,"generated":false,"bksField":{"name":"description","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"first_seen","dataType":"DATETIME","nullable":true,"defaultValue":null,"ordinalPosition":5,"hasDefault":false,"generated":false,"bksField":{"name":"first_seen","bksType":"UNKNOWN"}}]},{"name":"countries","entityType":"table"},{"name":"neko","entityType":"table"},{"name":"producers","entityType":"table"},{"name":"reviews","entityType":"table"},{"name":"sqlite_sequence","entityType":"table"},{"name":"stores","entityType":"table"},{"name":"cheese_summary","entityType":"view"}]
-    //   return [] // FIXME temp
-    // },
-    routines() {
-      return [] // FIXME temp
-    },
     // ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
     // ...mapGetters(['dialectData']),
-    // ...mapGetters({
-    //     totalHiddenEntities: 'hideEntities/totalEntities',
-    // }),
     tableMenuOptions() {
       return [
         {
-          name: "Copy Name",
-          slug: 'copy-name',
+          label: "Copy Name",
+          id: 'copy-name',
           handler({ item }) {
             writeClipboard(item.name)
           },
         },
       ]
     },
-    routineMenuOptions() {
+    filterMenuOptions() {
       return [
         {
-          name: "Copy Name",
-          slug: 'copy-name',
-          handler({ item }) {
-            writeClipboard(item.name)
+          label: "Tables",
+          id: 'tables',
+          checked: this.showTables,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showTables = checked
+          },
+        },
+        {
+          label: "Views",
+          id: 'views',
+          checked: this.showViews,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showViews = checked
+          },
+        },
+        {
+          label: "Routines",
+          id: 'routines',
+          checked: this.showRoutines,
+          keepOpen: true,
+          handler: ({ checked }) => {
+            this.showRoutines = checked
           },
         },
       ]
-    }
+    },
   },
   methods: {
     clearFilter() {
@@ -314,16 +291,16 @@ export default Vue.extend({
     },
     toggleExpandCollapse() {
       this.isExpanded = !this.isExpanded
-      this.trigger(TableListEvents.toggleExpandTableList, this.isExpanded)
+      EventBus.emit('toggleExpandTableList', this.isExpanded)
     },
-    newTable() {
-      this.$emit('bks-add-btn-click')
+    newTable(event: MouseEvent) {
+      this.$emit('bks-add-entity-click', { event })
     },
     async handleExpand(item: Item) {
       if (item.expanded) {
-        this.$emit('bks-item-expand', item.entity)
+        this.$emit('bks-entity-expand', { entity: item.entity })
       } else {
-        this.$emit('bks-item-collapse', item.entity)
+        this.$emit('bks-entity-collapse', { entity: item.entity })
       }
     },
     handleExpandAll(expand: boolean) {
@@ -333,23 +310,19 @@ export default Vue.extend({
         this.$emit('bks-collapse-all')
       }
     },
-    handleDblClick(_e, item: Item) {
-      this.$emit('bks-item-dblclick', item.entity)
+    handleDblClick(event: MouseEvent, item: Item) {
+      this.$emit('bks-entity-dblclick', { event, entity: item.entity })
     },
-    handleContextMenu(event, item: Item) {
-      this.$emit('bks-item-contextmenu', item.entity)
-      let items: MenuItem[]
-      if(item.type === 'schema') {
-        items = useCustomMenuItems(event, [], this.schemaContextMenuItems)
-      } else if(item.type === 'table') {
-        items = useCustomMenuItems(event, this.tableMenuOptions, this.tableContextMenuItems)
-      } else {
-        items = useCustomMenuItems(event, this.routineMenuOptions, this.routineContextMenuItems)
-      }
+    handleContextMenu(event: MouseEvent, item: Item) {
+      this.$emit('bks-entity-contextmenu', { event, entity: item.entity })
+      const items = useCustomMenuItems(event, item.entity, this.tableMenuOptions, this.contextMenuItems)
       openMenu({ options: items, item: item.entity, event })
     },
-    handleUpdateColumns(item: Item) {
-      this.$emit('bks-item-update-columns', item.entity)
+    handleRequestItemsColumns(items: Item[]) {
+      this.$emit('bks-entities-request-columns', { entities: items.map(item => item.entity) })
+    },
+    openFilterMenu(event: MouseEvent) {
+      openMenu({ event, options: this.filterMenuOptions })
     },
   },
 })

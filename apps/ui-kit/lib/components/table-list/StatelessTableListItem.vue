@@ -94,6 +94,7 @@
   </div>
 </template>
 
+<!-- TODO avoid scoped so it's customizable. Maybe move this to the style file. -->
 <style lang="scss" scoped="true">
 .sub-item {
   .title {

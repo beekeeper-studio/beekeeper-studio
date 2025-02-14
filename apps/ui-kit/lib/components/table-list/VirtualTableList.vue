@@ -24,37 +24,32 @@ should be stored here instead of the item component.
 
 */
 
-import { Routine, Entity, Table, Item, BaseItem, RootItem, SchemaItem, TableItem, RoutineItem } from "./models";
+import { Item, TableItem } from "./models";
+import { Entity } from "../types"
+import { createTreeItems, ItemStateType } from "./treeItems";
 
-// TODO(@azmi): make a new type instead
-// import { TransportPinnedEntity } from "@/common/transport";
-type TransportPinnedEntity = any
-
-// TODO(@azmi): make a new util function insteaed
-// import { entityId } from "@/common/utils";
-/** Useful for identifying an entity item in table list */
-export function entityId(schema: string, entity?: Table | Routine) {
-  if (entity) return `${entity.entityType}.${schema}.${entity.name}`;
-  return `schema.${schema}`;
-}
-
-import Vue from "vue";
-import { RootEventMixin } from "../mixins/RootEvent";
+import _ from "lodash";
+import Vue, { PropType } from "vue";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
-import { TableListEvents } from "./constants";
-// TODO(@azmi): to remove
+import EventBus from "../../utils/EventBus";
 
-// import { mapGetters, mapState } from "vuex";
 import * as globals from "../../utils/constants";
 import "scrollyfills";
 
 export default Vue.extend({
-  mixins: [RootEventMixin],
   components: { VirtualList },
   props: {
     tables: {
       type: Array,
+      default: () => [],
+    },
+    hiddenEntities: {
+      type: Array as PropType<Entity[]>,
+      default: () => [],
+    },
+    pinnedEntities: {
+      type: Array as PropType<Entity[]>,
       default: () => [],
     },
   },
@@ -65,90 +60,10 @@ export default Vue.extend({
       itemComponent: ItemComponent,
       estimateItemHeight: globals.tableListItemHeight, // height of collapsed item
       keeps: 30,
-      generated: false,
+      itemStates: {},
     };
   },
   methods: {
-    generateItems() {
-      const items = [] as Item[];
-      const noFolder = this.schemaTables.length === 1;
-      const root: RootItem = {
-        type: "root",
-        entity: "",
-        key: "",
-        expanded: true,
-        hidden: false,
-        level: 0,
-        pinned: false,
-      };
-
-      this.schemaTables.forEach((schema: any) => {
-        let parent: BaseItem;
-
-        if (noFolder) {
-          parent = root;
-        } else {
-          const key = entityId(schema.schema);
-          const schemaItem: SchemaItem = {
-            type: "schema",
-            key,
-            entity: schema.schema,
-            expanded: !this.generated
-              ? this.defaultSchema === schema.schema
-              : this.items.findIndex(
-                  (item: Item) => item.key === key && item.expanded
-                ) >= 0,
-            // FIXME
-            hidden: false, // hidden: this.hiddenSchemas.includes(schema.schema),
-            parent: root,
-            level: 0,
-            pinned: false,
-          };
-          items.push(schemaItem);
-          parent = schemaItem;
-        }
-
-        schema.tables.forEach((table: Table) => {
-          const key = entityId(schema.schema, table);
-          items.push({
-            type: "table",
-            key,
-            entity: table,
-            expanded:
-              this.items.findIndex(
-                (item: Item) => item.key === key && item.expanded
-              ) >= 0,
-            hidden: this.hiddenEntities.includes(table),
-            parent,
-            level: noFolder ? 0 : 1,
-            pinned: this.pins.find((pin: TransportPinnedEntity) => pin.entity === table),
-            loadingColumns: false,
-          });
-        });
-
-        schema.routines.forEach((routine: Routine) => {
-          const key = entityId(schema.schema, routine);
-          items.push({
-            entity: routine,
-            key,
-            type: "routine",
-            expanded:
-              this.items.findIndex(
-                (item: Item) => item.key === key && item.expanded
-              ) >= 0,
-            hidden: this.hiddenEntities.includes(routine),
-            parent,
-            level: noFolder ? 0 : 1,
-            pinned: this.pins.find(
-              (pin: TransportPinnedEntity) => pin.entity === routine
-            ),
-          });
-        });
-      });
-
-      this.items = items;
-      this.generated = true;
-    },
     generateDisplayItems() {
       let totalHeight = 0;
       const displayItems: Item[] = [];
@@ -160,7 +75,7 @@ export default Vue.extend({
         //   continue;
         // }
 
-        if (!item.hidden && !item.parent.hidden && item.parent.expanded) {
+        if (!this.hiddenEntities.includes(item.entity) && item.parent.expanded) {
           displayItems.push(item);
 
           // Summarizing the total height of all list items to get the average height
@@ -186,31 +101,41 @@ export default Vue.extend({
       }
       this.displayItems = displayItems;
     },
-    updateColumns(item: TableItem) {
-      this.$emit("update-columns", item)
-    },
-    updateTableColumnsInRange(whenEmpty = false) {
+    updateTableColumnsInRange() {
       const range = this.$refs.vList.range;
+      const items = []
 
       for (let i = range.start; i < range.end + 1; i++) {
-        const item = this.displayItems[i];
+        const item: Item = this.displayItems[i];
         if (!item.expanded) continue;
         if (item.type !== "table") continue;
-        if (whenEmpty && item.entity.columns?.length) continue;
-        if (item.loadingColumns) continue;
+        if (typeof item.entity.columns !== 'undefined') continue;
 
-        this.updateColumns(item);
+        items.push(item)
+      }
+
+      if (items.length) {
+        this.$emit("request-items-columns", items)
+      }
+    },
+    updateItemState(item: Item, stateType: ItemStateType) {
+      if (!this.itemStates[item.key]) {
+        this.$set(this.itemStates, item.key, { expanded: item.expanded, hidden: item.hidden, pinned: item.pinned });
+      } else {
+        this.itemStates[item.key][stateType] = item[stateType]
       }
     },
     handleExpand(_: Event, item: Item) {
       item.expanded = !item.expanded;
-      if (item.expanded && item.type === "table") {
-        this.updateColumns(item);
+      this.updateItemState(item, 'expanded')
+      if (item.expanded && item.type === "table" && typeof item.entity.columns === undefined) {
+        this.$emit("request-items-columns", [item])
       }
-      this.$emit("expand", item);
       this.generateDisplayItems();
+      this.$emit("expand", item);
     },
     handlePin(_: Event, item: TableItem) {
+      this.updateItemState(item, 'pinned')
       // this.trigger(AppEvent.togglePinTableList, item.entity, !item.pinned);
     },
     handleDblClick(e: Event, item: Item) {
@@ -219,23 +144,13 @@ export default Vue.extend({
     handleContextMenu(e: Event, item: Item) {
       this.$emit("contextmenu", e, item);
     },
-    handleToggleHidden(
-      entity: Table | Routine | string,
-      hidden?: boolean
-    ) {
-      const item = this.items.find((item: Item) => item.entity === entity);
-      if (typeof hidden === "undefined") {
-        hidden = !item.hidden;
-      }
-      item.hidden = hidden;
-      this.generateDisplayItems();
-    },
     handleToggleExpandedAll(expand?: boolean) {
       if (typeof expand === "undefined") {
         expand = false;
       }
       this.items.forEach((item: Item) => {
         item.expanded = expand;
+        this.updateItemState(item, 'expanded')
       });
       this.generateDisplayItems();
       this.$emit("expand-all", expand);
@@ -253,7 +168,7 @@ export default Vue.extend({
       item.pinned = !item.pinned;
     },
     handleScrollEnd() {
-      this.updateTableColumnsInRange(true);
+      this.updateTableColumnsInRange();
     },
   },
   computed: {
@@ -264,78 +179,33 @@ export default Vue.extend({
         this.keeps = Math.max(30, Math.ceil(minKeeps * 1.3));
       });
     },
-    rootBindings() {
-      return [
-        // { event: AppEvent.toggleHideSchema, handler: this.handleToggleHidden },
-        // { event: AppEvent.toggleHideEntity, handler: this.handleToggleHidden },
-        {
-          event: TableListEvents.toggleExpandTableList,
-          handler: this.handleToggleExpandedAll,
-        },
-        // {
-        //   // event: AppEvent.togglePinTableList,
-        //   handler: this.handleTogglePinned,
-        // },
-      ];
-    },
-    // TODO(@azmi): uuh... this whole thing is unnecessary
-    schemaTables(){
-      const noSchema = Symbol('noSchema')
-      const schemaCollection = Object.groupBy(this.tables, ({ schema }) => {
-        if (!schema) {
-          return noSchema
-        }
-        return schema
-      })
-
-      const schemaList = []
-      if (schemaCollection[noSchema]) {
-        schemaList.push({
-          tables: schemaCollection[noSchema],
-          routines: [],
-        })
-      }
-      Object.keys(schemaCollection).forEach((key) => schemaList.push({
-        schema: key,
-        tables: schemaCollection[key],
-        routines: [],
-      }))
-      return schemaList
-    },
     // FIXME remove this
-    hiddenEntities() {
-      return []
-    },
-    // FIXME remove this
-    pins() {
-      return []
-    },
     // ...mapGetters({
     //   defaultSchema: "defaultSchema",
     //   schemaTables: "schemaTables",
-    //   minimalMode: "minimalMode",
-    //   hiddenEntities: "hideEntities/databaseEntities",
     //   hiddenSchemas: "hideEntities/databaseSchemas",
     // }),
     // ...mapState("pins", ["pins"]),
   },
   watch: {
-    schemaTables: {
+    tables: {
       handler() {
-        this.generateItems();
+        this.items = createTreeItems(this.tables, this.itemStates)
         this.generateDisplayItems();
       },
       immediate: true,
     },
-    minimalMode() {
+    hiddenEntities() {
       this.generateDisplayItems();
     },
   },
   mounted() {
+    EventBus.on("toggleExpandTableList", this.handleToggleExpandedAll)
     this.$nextTick(() => this.resizeObserver.observe(this.$refs.vList.$el));
     this.$refs.vList.$el.addEventListener("scrollend", this.handleScrollEnd);
   },
   beforeDestroy() {
+    EventBus.off("toggleExpandTableList", this.handleToggleExpandedAll)
     this.resizeObserver.disconnect();
     this.$refs.vList.$el.removeEventListener("scrollend", this.handleScrollEnd);
   },

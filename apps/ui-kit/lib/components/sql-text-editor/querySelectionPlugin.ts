@@ -2,6 +2,7 @@ import _ from "lodash";
 import CodeMirror, { TextMarker } from "codemirror";
 import { identify, Options } from "sql-query-identifier";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { isTextSelected } from "../table-list/sql_tools";
 
 export interface QuerySelectionChangeParams {
   queries: IdentifyResult[];
@@ -30,6 +31,17 @@ function getSelectedQueryPosition(
 
 function getSelectedQueryIndex(queries: IdentifyResult[], cursorIndex: number) {
   for (let i = 0; i < queries.length; i++) {
+    // Find a query in between anchor and head cursors
+    if (this.editor.cursorIndex !== this.editor.cursorIndexAnchor) {
+      const isSelected = isTextSelected(
+        queries[i].start,
+        queries[i].end,
+        this.editor.cursorIndexAnchor,
+        this.editor.cursorIndex
+      );
+      if (isSelected) return i;
+    }
+    // Otherwise, find a query that sits before the cursor
     if (cursorIndex <= queries[i].end + 1) return i;
   }
   return -1;

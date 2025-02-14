@@ -656,6 +656,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       return {
         tableName,
         columnName: row.name,
+        field: row.name,
         dataType: row.type,
         nullable: Number(row.notnull || 0) === 0,
         defaultValue,

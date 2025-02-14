@@ -87,6 +87,8 @@ export interface TableProperties {
 }
 
 export interface TableColumn {
+  /** Same as `columnName` but for ui-kit */
+  field: string
   columnName: string
   dataType: string
   schemaName?: string

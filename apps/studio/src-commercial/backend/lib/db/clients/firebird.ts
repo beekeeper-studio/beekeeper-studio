@@ -392,6 +392,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         return {
           tableName: row["RDB$RELATION_NAME"],
           columnName: row["RDB$FIELD_NAME"],
+          field: row["RDB$FIELD_NAME"],
           ordinalPosition: row["RDB$FIELD_POSITION"],
           comment: row["RDB$DESCRIPTION"],
           dataType,

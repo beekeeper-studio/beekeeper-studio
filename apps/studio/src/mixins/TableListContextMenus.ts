@@ -14,14 +14,14 @@ export default {
     return {
       routineMenuOptions: [
         {
-          name: "Copy Name",
-          slug: 'copy-name',
+          label: "Copy Name",
+          id: 'copy-name',
           handler: this.routineMenuClick
         },
         {
-          name: "Hide",
-          slug: 'hide-entity',
-          handler: ({ item }) => {
+          label: "Hide",
+          id: 'hide-entity',
+          handler: (_e, item) => {
             this.trigger(AppEvent.toggleHideEntity, item, true)
           }
         },
@@ -29,8 +29,8 @@ export default {
           type: 'divider',
         },
         {
-          name: "SQL: Create",
-          slug: 'sql-create',
+          label: "SQL: Create",
+          id: 'sql-create',
           class: isBQClass,
           handler: this.routineMenuClick
         },
@@ -48,33 +48,34 @@ export default {
 
       return [
         {
-          name: "View Data",
-          slug: 'view-data',
-          handler: ({ item }) => {
+          label: "View Data",
+          id: 'view-data',
+          handler: (_e, item) => {
             this.$root.$emit(AppEvent.loadTable, { table: item })
           }
         },
         {
-          name: "View Structure",
-          slug: 'view-structure',
-          handler: ({ item }) => {
+          label: "View Structure",
+          id: 'view-structure',
+          handler: (_e, item) => {
             this.$root.$emit(AppEvent.openTableProperties, { table: item })
           }
         },
         {
-          name: "Export To File",
-          slug: 'export',
+          label: "Export To File",
+          id: 'export',
           class: disabled(dialect.disabledFeatures?.exportTable),
-          handler: ({ item }) => {
+          handler: (_e, item) => {
             this.trigger(AppEvent.beginExport, { table: item })
           }
         },
         {
-          name: "Import from File",
+          label: {
+            html: `Import from File${this.$store.getters.isCommunity ? '<i class="material-icons">stars</i>' : ''}`
+          },
           class: isBQClass,
-          slug: 'import',
-          ultimate: true,
-          handler: ({ item }) => {
+          id: 'import',
+          handler: (_e, item) => {
             this.trigger(AppEvent.beginImport, { table: item })
           }
         },
@@ -82,16 +83,16 @@ export default {
           type: 'divider'
         },
         {
-          name: "Copy Name",
-          slug: 'copy-name',
-          handler: ({ item }) => {
+          label: "Copy Name",
+          id: 'copy-name',
+          handler: (_e, item) => {
             this.$copyText(item.name)
           }
         },
         {
-          name: "Hide",
-          slug: 'hide-entity',
-          handler: ({ item }) => {
+          label: "Hide",
+          id: 'hide-entity',
+          handler: (_e, item) => {
             this.trigger(AppEvent.toggleHideEntity, item, true)
           }
         },
@@ -100,16 +101,16 @@ export default {
           type: 'divider'
         },
         {
-          name: "SQL: Create",
-          slug: 'sql-create',
+          label: "SQL: Create",
+          id: 'sql-create',
           class: isBQClass,
-          handler: ({ item }) => {
+          handler: (_e, item) => {
             this.$root.$emit('loadTableCreate', item)
           }
         },
         {
-          name: "Rename",
-          slug: 'rename',
+          label: "Rename",
+          id: 'rename',
           class: ({ item  }) => {
             if (item.entityType === 'table' && dialect.disabledFeatures?.alter?.renameTable) {
               return 'disabled'
@@ -119,7 +120,7 @@ export default {
             }
             return ''
           },
-          handler: ({ item }) => {
+          handler: (_e, item) => {
             const type = item.entityType === 'table'
               ? DatabaseElement.TABLE
               : DatabaseElement.VIEW
@@ -127,26 +128,26 @@ export default {
           }
         },
         {
-          name: "Drop",
-          slug: 'sql-drop',
+          label: "Drop",
+          id: 'sql-drop',
           class: isBQClass,
-          handler: ({ item }) => {
+          handler: (_e, item) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'drop' })
           }
         },
         {
-          name: "Truncate",
-          slug: 'sql-truncate',
+          label: "Truncate",
+          id: 'sql-truncate',
           class: disabled(dialect.disabledFeatures?.truncateElement, isBQ),
-          handler: ({ item }) => {
+          handler: (_e, item) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
         },
         {
-          name: "Duplicate",
-          slug: 'sql-duplicate',
+          label: "Duplicate",
+          id: 'sql-duplicate',
           class: disabled(dialect.disabledFeatures?.duplicateTable, isBQ),
-          handler: ({ item }) => {
+          handler: (_e, item) => {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }
         },
@@ -157,31 +158,31 @@ export default {
 
       return [
         {
-          name: "Hide",
-          slug: 'hide-schema',
-          handler: ({ item }) => {
+          label: "Hide",
+          id: 'hide-schema',
+          handler: (_e, item) => {
             this.trigger(AppEvent.toggleHideSchema, item, true)
           },
         },
         { type: 'divider' },
         {
-          name: "Rename",
-          slug: 'rename',
+          label: "Rename",
+          id: 'rename',
           class: dialect.disabledFeatures?.alter?.renameSchema ? 'disabled' : '',
-          handler: ({ item }) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.SCHEMA, item })
+          handler: (_e, item) => this.trigger(AppEvent.setDatabaseElementName, { type: DatabaseElement.SCHEMA, item })
         },
         {
-          name: "Drop",
-          slug: 'sql-drop',
-          handler: ({ item }) => {
+          label: "Drop",
+          id: 'sql-drop',
+          handler: (_e, item) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'drop'})
           }
         },
         {
-          name: "Truncate",
-          slug: 'sql-truncate',
+          label: "Truncate",
+          id: 'sql-truncate',
           class: disabled(dialect.disabledFeatures?.truncateElement),
-          handler: ({ item }) => {
+          handler: (_e, item) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
           }
         },
@@ -189,8 +190,8 @@ export default {
     }
   },
   methods: {
-    routineMenuClick({ item, option }) {
-      switch (option.slug) {
+    routineMenuClick(_event, item, option) {
+      switch (option.id) {
         case 'copy-name':
           return this.$copyText(item.name)
         case 'sql-create':

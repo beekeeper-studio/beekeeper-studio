@@ -4,7 +4,7 @@ export default function BksDataEditor({ tables }) {
   const dataEditorRef = useRef(null);
 
   function handleQuerySubmit(event) {
-    alert(`Query: ${event.detail[0]}`);
+    alert(`Query: ${event.detail.query}`);
   }
 
   useEffect(() => {

@@ -1,4 +1,3 @@
-// @use "../../styles/xel.scss";
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
 @use "../../styles/base";
@@ -42,7 +41,7 @@
         --trigger-effect: none;
 
         &:before {
-          display: none !important;
+          display: none;
         }
 
         &:hover,
@@ -169,7 +168,7 @@
 
     .list-item {
       &:before {
-        border-left: 0 !important;
+        border-left: 0;
       }
     }
 
@@ -200,7 +199,7 @@
   >.badge {
     display: flex;
     align-items: center;
-    margin: 0 !important;
+    margin: 0;
 
     .material-icons {
       font-size: 1rem;
@@ -425,7 +424,7 @@
       }
 
       &.shown {
-        display: block !important;
+        display: block;
       }
     }
   }
@@ -586,5 +585,97 @@
   }
   x-menuitem .menu-icon {
     padding-left: 0.4rem;
+  }
+}
+
+.BksTableList-modal-container {
+  z-index: 100;
+  position: absolute;
+  inset: 0;
+  background-color: rgba(darken($theme-bg, 3%), 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .dialog-content {
+    position: relative;
+    background-color: lighten($theme-bg, 1%);
+    color: $theme-base;
+    border-radius: 8px;
+    min-height: 8.5rem;
+    max-height: 80vh;
+    max-width: 42rem;
+    width: 100%;
+    padding: $gutter-w * 1.5;
+    padding-bottom: $gutter-w;
+    @include card-shadow;
+  }
+
+  .dialog-c-title {
+    font-size: 1.1rem;
+    line-height: 1;
+    font-weight: 500;
+    padding-bottom: $gutter-w;
+    padding-right: $gutter-w * 2;
+    margin: 0;
+
+    i.material-icons {
+      vertical-align: middle;
+      font-size: 1.1rem;
+    }
+  }
+
+  .close-btn {
+    position: absolute;
+    top: $gutter-w;
+    right: $gutter-w;
+    opacity: 0.5;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .list-container {
+    position: relative;
+    height: 14.5rem;
+    margin-top: 0.75rem;
+    font-size: 13px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+
+  .no-entities {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1rem;
+    text-align: center;
+    opacity: 0.5;
+  }
+
+  .hidden-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+
+    > div {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    button {
+      visibility: hidden;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    &:hover > button {
+      visibility: visible;
+    }
   }
 }
