@@ -7,8 +7,9 @@ const rpmFpmOptions = [
   "--after-install=build/rpm-postinstall"
 ]
 
-
-const certSubject = 'SERIALNUMBER=803010247, C=US, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
+// FIXME: Get a new certificate with a subject line that is a valid AppX publisher
+// support request open to digicert currently (Feb 2025)
+const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
 
 
 
@@ -169,7 +170,8 @@ module.exports = {
   },
   win: {
     icon: './public/icons/png/512x512.png',
-    target: ['nsis', 'portable', 'appx'],
+    // FIXME: Add AppX/MSIX build back in once certificate issues resolved
+    target: ['nsis', 'portable'],
     publish: ['github'],
     sign: "./build/win/sign.js",
   },
