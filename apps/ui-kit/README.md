@@ -170,10 +170,11 @@ If you want to add a divider between context menu items, you can add an object `
 
 #### Properties
 
-| Name               | Type                     | Description                                  | Default     |
-| ------------------ | ------------------------ | -------------------------------------------- | ----------- |
-| `tables`           | `object[]`               | An array of objects representing the tables. | `[]`        |
-| `contextMenuItems` | `object[]` \| `function` | Extend the table context menu items.         | `undefined` |
+| Name               | Type                     | Description                                           | Default     |
+| ------------------ | ------------------------ | ----------------------------------------------------- | ----------- |
+| `tables`           | `object[]`               | An array of objects representing the tables.          | `[]`        |
+| `hiddenEntities`   | `object[]`               | An array of objects representing the hidden entities. | `[]`        |
+| `contextMenuItems` | `object[]` \| `function` | Extend the table context menu items.                  | `undefined` |
 
 #### Table Definition
 

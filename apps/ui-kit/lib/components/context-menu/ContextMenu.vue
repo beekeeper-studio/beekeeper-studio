@@ -16,7 +16,7 @@
         role="menuitem"
       >
         <div
-          v-if="typeof option.checked === 'boolean'"
+          v-if="typeof checkedOptions[option.id] === 'boolean'"
           class="BksContextMenu-item-icon-container BksContextMenu-item-checkbox-icon"
           :class="{ 'BksContextMenu-item-checked': checkedOptions[option.id] }"
         >
@@ -52,7 +52,7 @@
 </template>
 
 <script lang="ts">
-import { MenuItem } from './menu'
+import { BaseMenuItem } from './menu'
 import { formatDisplayKeybinding } from "../..//utils/formatDisplayKeybinding";
 import Vue from 'vue'
 
@@ -155,18 +155,16 @@ export default Vue.extend({
     onClickOutside() {
       this.hideContextMenu()
     },
-    optionClicked(option: MenuItem, idx: number, event: any) {
+    optionClicked(option: BaseMenuItem, idx: number, event: any) {
       if (option.items?.length > 0 && this.showSubItemsIndex === idx) {
         return
       }
-      if (option.disabled) return;
-      const handlerArgs = { item: this.item, option, event }
       if (typeof this.checkedOptions[option.id] !== 'undefined') {
         const checked = !this.checkedOptions[option.id]
         this.checkedOptions[option.id] = checked
-        handlerArgs.checked = checked
       }
-      option.handler?.(handlerArgs)
+      if (option.disabled) return;
+      option.handler?.(event, this.item, option)
       if (option.items?.length > 0) {
         this.showSubItemsIndex = idx
       } else if (!option.keepOpen) {

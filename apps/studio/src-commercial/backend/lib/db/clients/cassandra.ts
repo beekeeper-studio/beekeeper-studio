@@ -168,6 +168,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       .sort((a, b) => b.position - a.position)
       .map((row) => ({
         columnName: row.column_name,
+        field: row.column_name,
         dataType: row.type,
         bksField: this.parseTableColumn(row as any),
       } as ExtendedTableColumn));

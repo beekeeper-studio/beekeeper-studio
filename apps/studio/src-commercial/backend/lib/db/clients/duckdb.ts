@@ -427,6 +427,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         schemaName: row.schema_name as string,
         tableName: row.table_name as string,
         columnName: row.column_name as string,
+        field: row.column_name as string,
         ordinalPosition: row.column_index as number,
         dataType: row.data_type as string,
         nullable: row.is_nullable as boolean,

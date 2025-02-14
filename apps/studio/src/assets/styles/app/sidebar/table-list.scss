@@ -85,3 +85,12 @@
   flex-grow: 1;
   background-color: transparent;
 }
+
+.BksTableList-modal-container {
+  background-color: rgba(darken($theme-bg, 3%), 0.9);
+
+  .dialog-content {
+    background-color: lighten($theme-bg, 1%);
+    color: $theme-base;
+  }
+}

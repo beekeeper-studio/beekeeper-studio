@@ -654,6 +654,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         ordinalPosition: row.COLUMN_ID,
         schemaName: row.OWNER,
         columnName: row.COLUMN_NAME,
+        field: row.COLUMN_NAME,
         tableName: row.TABLE_NAME,
         dataType: this.parseDataType(row.DATA_TYPE, row.CHAR_LENGTH),
         nullable: row.NULLABLE === 'Y',

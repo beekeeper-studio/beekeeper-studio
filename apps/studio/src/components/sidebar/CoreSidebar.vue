@@ -21,7 +21,9 @@
         <bks-table-list
           :tables="tables"
           :context-menu-items="handleContextMenuItems"
+          :hidden-entities="hiddenEntities"
           @bks-entity-dblclick="handleEntityDblclick"
+          @bks-entity-unhide="handleEntityUnhide"
           @bks-entities-request-columns="handleEntitiesRequestColumns"
           @bks-refresh-click="handleRefreshClick"
           @bks-add-entity-click="handleAddEntityClick"
@@ -84,32 +86,16 @@
       tables() {
         const entities = []
         this.$store.getters.schemaTables.forEach(({ tables, routines }) => {
-          tables.forEach((table) => {
-            entities.push({
-              entityType: table.entityType,
-              name: table.name,
-              schema: table.schema,
-              columns: table.columns?.map((column) => ({
-                field: column.columnName,
-                dataType: column.dataType,
-              }))
-            })
-          })
-          routines.forEach((routine) => {
-            entities.push({
-              entityType: 'routine',
-              name: routine.name,
-              schema: routine.schema,
-              returnType: routine.returnType,
-              returnTypeLength: routine.returnTypeLength,
-              routineParams: routine.routineParams,
-            })
-          })
+          tables.forEach((table) => entities.push(table))
+          routines.forEach((routine) => entities.push(routine))
         })
         return entities
       },
       ...mapState(['database']),
       ...mapGetters(['minimalMode']),
+      ...mapGetters({
+        hiddenEntities: "hideEntities/databaseEntities",
+      }),
     },
     watch: {
       minimalMode() {
@@ -128,6 +114,8 @@
             return this.tableMenuOptions;
           case "routine":
             return this.routineMenuOptions;
+          case "schema":
+            return this.schemaMenuOptions;
           default:
             return defaultItems;
         }
@@ -161,6 +149,13 @@
       throttledLoadTable: _.throttle(function(table) {
         this.$root.$emit(AppEvent.loadTable, { table })
       }, 500),
+      handleEntityUnhide(detail) {
+        if (detail.entity.entityType === 'schema') {
+          this.trigger(AppEvent.toggleHideSchema, detail.entity.name, false)
+        } else {
+          this.trigger(AppEvent.toggleHideEntity, detail.entity, false)
+        }
+      },
       async handleEntitiesRequestColumns(detail) {
         // FIXME IMPORTANT this will produce a race condition
         detail.entities.forEach((table) => {

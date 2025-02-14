@@ -22,7 +22,6 @@ export interface BaseItem {
   entity: Entity;
   key: string;
   expanded: boolean;
-  hidden: boolean;
   level: number;
   parent?: RootItem | SchemaItem;
   pinned: boolean;

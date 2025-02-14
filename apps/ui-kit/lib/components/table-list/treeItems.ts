@@ -24,9 +24,8 @@ export function createRootItem(): RootItem {
       entityType: "schema",
       name: "",
     },
-    key: "",
+    key: "root",
     expanded: true,
-    hidden: false,
     level: 0,
     pinned: false,
   };
@@ -122,7 +121,6 @@ function createSchemaItem(
     parent,
     level: 0,
     expanded: states[key] ? states[key].expanded : false,
-    hidden: states[key] ? states[key].hidden : false,
     pinned: states[key] ? states[key].pinned : false,
   };
 }
@@ -141,7 +139,6 @@ function createTableItem(
     level: parent.type === "schema" ? 1 : 0,
     loadingColumns: false,
     expanded: states[key] ? states[key].expanded : false,
-    hidden: states[key] ? states[key].hidden : false,
     pinned: states[key] ? states[key].pinned : false,
   };
 }
@@ -159,7 +156,6 @@ function createRoutineItem(
     parent,
     level: parent.type === "schema" ? 1 : 0,
     expanded: state[key] ? state[key].expanded : false,
-    hidden: state[key] ? state[key].hidden : false,
     pinned: state[key] ? state[key].pinned : false,
   };
 }

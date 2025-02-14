@@ -29,7 +29,7 @@ import { Entity } from "../types"
 import { createTreeItems, ItemStateType } from "./treeItems";
 
 import _ from "lodash";
-import Vue from "vue";
+import Vue, { PropType } from "vue";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
 import EventBus from "../../utils/EventBus";
@@ -44,6 +44,14 @@ export default Vue.extend({
       type: Array,
       default: () => [],
     },
+    hiddenEntities: {
+      type: Array as PropType<Entity[]>,
+      default: () => [],
+    },
+    pinnedEntities: {
+      type: Array as PropType<Entity[]>,
+      default: () => [],
+    },
   },
   data() {
     return {
@@ -52,7 +60,6 @@ export default Vue.extend({
       itemComponent: ItemComponent,
       estimateItemHeight: globals.tableListItemHeight, // height of collapsed item
       keeps: 30,
-      generated: false,
       itemStates: {},
     };
   },
@@ -68,7 +75,7 @@ export default Vue.extend({
         //   continue;
         // }
 
-        if (!item.hidden && !item.parent.hidden && item.parent.expanded) {
+        if (!this.hiddenEntities.includes(item.entity) && item.parent.expanded) {
           displayItems.push(item);
 
           // Summarizing the total height of all list items to get the average height
@@ -137,18 +144,6 @@ export default Vue.extend({
     handleContextMenu(e: Event, item: Item) {
       this.$emit("contextmenu", e, item);
     },
-    handleToggleHidden(
-      entity: Entity,
-      hidden?: boolean
-    ) {
-      const item = this.items.find((item: Item) => item.entity === entity);
-      if (typeof hidden === "undefined") {
-        hidden = !item.hidden;
-      }
-      item.hidden = hidden;
-      this.updateItemState(item, 'hidden')
-      this.generateDisplayItems();
-    },
     handleToggleExpandedAll(expand?: boolean) {
       if (typeof expand === "undefined") {
         expand = false;
@@ -184,29 +179,10 @@ export default Vue.extend({
         this.keeps = Math.max(30, Math.ceil(minKeeps * 1.3));
       });
     },
-    rootBindings() {
-      return [
-        // { event: AppEvent.toggleHideSchema, handler: this.handleToggleHidden },
-        // { event: AppEvent.toggleHideEntity, handler: this.handleToggleHidden },
-        // {
-        //   // event: AppEvent.togglePinTableList,
-        //   handler: this.handleTogglePinned,
-        // },
-      ];
-    },
     // FIXME remove this
-    hiddenEntities() {
-      return []
-    },
-    // FIXME remove this
-    pins() {
-      return []
-    },
     // ...mapGetters({
     //   defaultSchema: "defaultSchema",
     //   schemaTables: "schemaTables",
-    //   minimalMode: "minimalMode",
-    //   hiddenEntities: "hideEntities/databaseEntities",
     //   hiddenSchemas: "hideEntities/databaseSchemas",
     // }),
     // ...mapState("pins", ["pins"]),
@@ -215,12 +191,11 @@ export default Vue.extend({
     tables: {
       handler() {
         this.items = createTreeItems(this.tables, this.itemStates)
-        this.generated = true
         this.generateDisplayItems();
       },
       immediate: true,
     },
-    minimalMode() {
+    hiddenEntities() {
       this.generateDisplayItems();
     },
   },

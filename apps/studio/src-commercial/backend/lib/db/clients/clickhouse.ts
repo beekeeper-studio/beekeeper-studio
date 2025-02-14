@@ -224,6 +224,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       return {
         tableName: row.table,
         columnName: row.name,
+        field: row.name,
         dataType: row.type,
         ordinalPosition: row.position,
         defaultValue: hasDefault ? row.default_expression : null,
@@ -880,6 +881,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     }>;
     return json.data.map((row) => ({
       columnName: row.name,
+      field: row.name,
       dataType: row.type,
       tableName: row.table_name,
     }));

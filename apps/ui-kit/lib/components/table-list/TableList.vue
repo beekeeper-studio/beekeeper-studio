@@ -58,16 +58,16 @@
           :class="{active: entitiesHidden}"
         >{{ shownEntities }} / {{ totalEntities }}</span>
         <span
-          v-show="totalHiddenEntities > 0 && !filterQuery"
+          v-show="hiddenEntities.length > 0 && !filterQuery"
           class="hidden-indicator bks-tooltip-wrapper"
         >
           <span class="badge">
             <i class="material-icons">visibility_off</i>
-            <span>{{ totalHiddenEntities > 99 ? '99+' : totalHiddenEntities }}</span>
+            <span>{{ hiddenEntities.length > 99 ? '99+' : hiddenEntities.length }}</span>
           </span>
           <div class="hi-tooltip bks-tooltip bks-tooltip-bottom-center">
             <span>Right click an entity to hide it. </span>
-            <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
+            <a @click="openHiddenEntitiesModal = true">View hidden</a><span>.</span>
           </div>
         </span>
         <div class="actions">
@@ -99,7 +99,8 @@
 
       <virtual-table-list
         :tables="filteredTables"
-        :expanded="isExpanded"
+        :hidden-entities="hiddenEntities"
+        :pinned-entities="pinnedEntities"
         @expand="handleExpand"
         @expand-all="handleExpandAll"
         @dblclick="handleDblClick"
@@ -117,6 +118,12 @@
         </p>
       </div>
     </nav>
+    <hidden-entities-modal
+      v-if="openHiddenEntitiesModal"
+      :hidden-entities="hiddenEntities"
+      @unhide-entity="$emit('bks-entity-unhide', { entity: $event })"
+      @close="openHiddenEntitiesModal = false"
+    />
   </div>
 </template>
 
@@ -132,21 +139,23 @@ import { writeClipboard } from "../../utils/clipboard";
 import { openMenu, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
 import ProxyEmit from "../mixins/ProxyEmit";
 import EventBus from "../../utils/EventBus";
-
-// TODO(@day): to remove
-// import { mapState, mapGetters } from 'vuex'
-
-// FIXME(@azmi): do something
-// import { AppEvent } from '@/common/AppEvent'
-
-// TODO(@azmi): make new types instead
-// import { TableOrView, Routine } from "@/lib/db/models";
+import HiddenEntitiesModal from "./HiddenEntitiesModal.vue";
 
 export default Vue.extend({
   mixins: [TableFilter, ProxyEmit],
-  components: { VirtualTableList },
+  components: { VirtualTableList, HiddenEntitiesModal },
   props: {
     tables: {
+      type: Array as PropType<Entity[]>,
+      default: () => [],
+    },
+    /** This should reference the same entities as `tables`. */
+    hiddenEntities: {
+      type: Array as PropType<Entity[]>,
+      default: () => [],
+    },
+    /** This should reference the same entities as `tables`. */
+    pinnedEntities: {
       type: Array as PropType<Entity[]>,
       default: () => [],
     },
@@ -175,7 +184,7 @@ export default Vue.extend({
         showPartitions: false
       },
       tablesLoading: false,
-      totalHiddenEntities: 0,
+      openHiddenEntitiesModal: false,
     }
   },
   computed: {
@@ -185,7 +194,7 @@ export default Vue.extend({
       // return !!this.dialectData.disabledFeatures.createTable
     },
     totalEntities() {
-      return this.tables.length
+      return this.tables.length - this.hiddenEntities.length
     },
     shownEntities() {
       return this.filteredTables.length
@@ -231,15 +240,8 @@ export default Vue.extend({
         this.entityFilter.showRoutines = !this.entityFilter.showRoutines;
       }
     },
-    // tables() {
-    //   return [{"name":"cheeses","entityType":"table","columns":[{"tableName":"cheeses","columnName":"id","dataType":"INTEGER","nullable":true,"defaultValue":null,"ordinalPosition":0,"hasDefault":false,"generated":false,"bksField":{"name":"id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"name","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":1,"hasDefault":false,"generated":false,"bksField":{"name":"name","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"origin_country_id","dataType":"INTEGER","nullable":false,"defaultValue":null,"ordinalPosition":2,"hasDefault":false,"generated":false,"bksField":{"name":"origin_country_id","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"cheese_type","dataType":"VARCHAR(255)","nullable":false,"defaultValue":null,"ordinalPosition":3,"hasDefault":false,"generated":false,"bksField":{"name":"cheese_type","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"description","dataType":"TEXT","nullable":true,"defaultValue":null,"ordinalPosition":4,"hasDefault":false,"generated":false,"bksField":{"name":"description","bksType":"UNKNOWN"}},{"tableName":"cheeses","columnName":"first_seen","dataType":"DATETIME","nullable":true,"defaultValue":null,"ordinalPosition":5,"hasDefault":false,"generated":false,"bksField":{"name":"first_seen","bksType":"UNKNOWN"}}]},{"name":"countries","entityType":"table"},{"name":"neko","entityType":"table"},{"name":"producers","entityType":"table"},{"name":"reviews","entityType":"table"},{"name":"sqlite_sequence","entityType":"table"},{"name":"stores","entityType":"table"},{"name":"cheese_summary","entityType":"view"}]
-    //   return [] // FIXME temp
-    // },
     // ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
     // ...mapGetters(['dialectData']),
-    // ...mapGetters({
-    //     totalHiddenEntities: 'hideEntities/totalEntities',
-    // }),
     tableMenuOptions() {
       return [
         {

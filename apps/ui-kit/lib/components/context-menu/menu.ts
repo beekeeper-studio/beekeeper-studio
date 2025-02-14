@@ -2,13 +2,12 @@ import Vue from 'vue'
 import ContextMenu from './ContextMenuRoot.vue'
 import isEmpty from "lodash/isEmpty"
 
-interface BaseMenuItem<Item = unknown> {
+export interface BaseMenuItem<Item = unknown> {
   label: string | { html: string }
   handler: (event: Event, target: Item, option: MenuItem) => void
   id?: string
   class?: string | ((options: { item: Item }) => string)
   shortcut?: string | string[]
-  ultimate?: boolean
   /** Material Icons name. E.g. 'arrow_drop_down' */
   icon?: string
   disabled?: boolean

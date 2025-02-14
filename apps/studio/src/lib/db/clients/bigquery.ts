@@ -121,6 +121,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const [metadata] = await this.client.dataset(this.db).table(table).getMetadata()
     const data = metadata.schema.fields.map((field) => ({
       columnName: field.name,
+      field: field.name,
       dataType: field.type,
       bksField: this.parseTableColumn(field),
     }))

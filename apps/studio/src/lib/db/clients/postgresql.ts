@@ -365,6 +365,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       schemaName: row.nspname,
       tableName: row.relname,
       columnName: row.attname,
+      field: row.attname,
       dataType: row.data_type
     }));
   }
@@ -413,6 +414,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       schemaName: row.table_schema,
       tableName: row.table_name,
       columnName: row.column_name,
+      field: row.column_name,
       dataType: row.data_type,
       nullable: row.is_nullable === "YES",
       defaultValue: row.column_default,

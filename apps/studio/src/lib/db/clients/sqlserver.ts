@@ -177,6 +177,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       schemaName: row.table_schema,
       tableName: row.table_name,
       columnName: row.column_name,
+      field: row.column_name,
       dataType: row.data_type,
       ordinalPosition: Number(row.ordinal_position),
       hasDefault: !_.isNil(row.column_default),

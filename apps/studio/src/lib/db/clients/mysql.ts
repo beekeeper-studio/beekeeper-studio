@@ -466,6 +466,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return rows.map((row) => ({
       tableName: row.table_name,
       columnName: row.column_name,
+      field: row.column_name,
       dataType: row.column_type,
       ordinalPosition: Number(row.ordinal_position),
       nullable: row.is_nullable === "YES",
