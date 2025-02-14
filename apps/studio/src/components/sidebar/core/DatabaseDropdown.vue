@@ -2,7 +2,7 @@
   <div class="fixed">
     <div class="data-select-wrap">
       <p
-        v-if="supportsMultipleDatabase"
+        v-if="dialectData.disabledFeatures?.multipleDatabase"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,7 +18,7 @@
         class="dropdown-search"
       />
       <a
-        v-if="!supportsMultipleDatabase"
+        v-if="!dialectData.disabledFeatures?.multipleDatabase"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -42,7 +42,7 @@
       >
         <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
         <div
-          v-if="this.connectionType === 'oracle'"
+          v-if="connectionType === 'oracle'"
           class="dialog-content"
           v-kbd-trap="true"
         >
@@ -110,10 +110,8 @@
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        if (this.dialect.disabledFeatures?.multipleDatabase) {
-          const fileLocation = this.selectedDatabase.split('/')
-          fileLocation.pop()
-          const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
+        if (this.dialectData.disabledFeatures?.multipleDatabase) {
+          const url = db
           return window.main.send(AppEvent.menuClick, 'newWindow', { url })
         }
         await this.refreshDatabases()
@@ -134,7 +132,7 @@
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
-      ...mapGetters(['dialect']),
+      ...mapGetters(['dialect', 'dialectData']),
       ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType'}),
     },
     watch: {
