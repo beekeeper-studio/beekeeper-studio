@@ -785,7 +785,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     databaseName: string,
     charset: string,
     collation: string
-  ): Promise<void> {
+  ): Promise<string> {
     const sql = `
       create database ${this.wrapIdentifier(databaseName)}
         character set ${this.wrapIdentifier(charset)}
@@ -793,6 +793,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     `;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {
