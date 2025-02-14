@@ -1,14 +1,17 @@
 import _ from 'lodash';
-import { EntityFilter, RoutineTypeNames, Table } from './models';
+import { EntityFilter, RoutineTypeNames } from './models';
 
-export function entityFilter(rawTables: Table[], allFilters: EntityFilter) {
+function isTable(entityType: string) {
+  return entityType === 'table' || entityType === '' || entityType === undefined;
+}
+
+export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   const tables = rawTables.filter((table) => {
-    // return (table.entityType === 'table' && allFilters.showTables &&
-    //   ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
-    //   (table.entityType === 'view' && allFilters.showViews) ||
-    //   (table.entityType === 'materialized-view' && allFilters.showViews) ||
-    //   (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)
-    return allFilters.showTables
+    return (isTable(table.entityType) && allFilters.showTables &&
+      ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
+      (table.entityType === 'view' && allFilters.showViews) ||
+      (table.entityType === 'materialized-view' && allFilters.showViews) ||
+      (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)
   })
 
   const { filterQuery } = allFilters
@@ -23,4 +26,25 @@ export function entityFilter(rawTables: Table[], allFilters: EntityFilter) {
     .filter((item) => item.name.toLowerCase().includes(filterQuery.toLowerCase()))
     .value()
   return _.concat(startsWithFilter, containsFilter)
+}
+
+export function isTextSelected(
+  textStart: number,
+  textEnd: number,
+  selectionStart: number,
+  selectionEnd: number
+) {
+  const cursorMin = Math.min(selectionStart, selectionEnd);
+  const cursorMax = Math.max(selectionStart, selectionEnd);
+  const queryMin = Math.min(textStart, textEnd);
+
+  const queryMax = Math.max(textStart, textEnd);
+  if (
+    (cursorMin >= queryMin && cursorMin <= queryMax) ||
+    (cursorMax > queryMin && cursorMax <= queryMax) ||
+    (cursorMin <= queryMin && cursorMax >= queryMax)
+  ) {
+    return true;
+  }
+  return false;
 }

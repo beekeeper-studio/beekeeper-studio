@@ -51,9 +51,8 @@
       table.data = tables[0].data;
 
       tableList.tables = tables;
-      tableList.addEventListener("bks-item-dblclick", (e) => {
-        const [table] = e.detail;
-        const idx = tables.findIndex((t) => t === table);
+      tableList.addEventListener("bks-entity-dblclick", (e) => {
+        const idx = tables.findIndex((t) => t === e.detail.entity);
         if (idx > -1) {
           table.data = tables[idx].data;
           table.columns = tables[idx].columns;
@@ -62,7 +61,7 @@
 
       dataEditor.tables = tables;
       dataEditor.addEventListener("bks-query-submit", (event) => {
-        alert(`Query: ${event.detail[0]}`);
+        alert(`Query: ${event.detail.query}`);
       });
     </script>
     <script type="module" src="node_modules/@bks/ui-kit/dist/index.js"></script>

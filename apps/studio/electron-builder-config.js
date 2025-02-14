@@ -139,9 +139,9 @@ module.exports = {
       'flatpak',
       'pacman'
     ],
-    desktop: {
-      'StartupWMClass': 'beekeeper-studio'
-    },
+    // desktop: {
+    //   'StartupWMClass': 'beekeeper-studio'
+    // },
     publish: ['github']
   },
   deb: {
@@ -171,7 +171,7 @@ module.exports = {
     icon: './public/icons/png/512x512.png',
     target: ['nsis', 'portable', 'appx'],
     publish: ['github'],
-    sign: "./build/win/sign.js",
+    // sign: "./build/win/sign.js",
   },
   portable: {
     "artifactName": "${productName}-${version}-portable.exe",

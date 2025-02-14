@@ -11,9 +11,8 @@ export default function BksSqlTextEditor({ tables }) {
   }
 
   function handleUpdateValue(event) {
-    const [updatedText] = event.detail;
-    if (text === updatedText) return;
-    setText(updatedText);
+    if (text === event.detail.value) return;
+    setText(event.detail.value);
   }
 
   useEffect(() => {

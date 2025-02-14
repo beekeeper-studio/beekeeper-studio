@@ -4,8 +4,7 @@ export default function BksTableList({ tables, onSelectTable }) {
   const tableListRef = useRef(null);
 
   function handleItemDblClick(event) {
-    const [table] = event.detail;
-    const idx = tableListRef.current.tables.findIndex((t) => t === table);
+    const idx = tableListRef.current.tables.findIndex((t) => t === event.detail.entity);
     if (idx > -1) {
       onSelectTable(idx);
     }
@@ -14,14 +13,14 @@ export default function BksTableList({ tables, onSelectTable }) {
   useEffect(() => {
     if (tableListRef.current) {
       tableListRef.current.addEventListener(
-        "bks-item-dblclick",
+        "bks-entity-dblclick",
         handleItemDblClick
       );
     }
     return () => {
       if (tableListRef.current) {
         tableListRef.current.removeEventListener(
-          "bks-item-dblclick",
+          "bks-entity-dblclick",
           handleItemDblClick
         );
       }

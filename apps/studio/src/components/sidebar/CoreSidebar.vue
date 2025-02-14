@@ -18,7 +18,16 @@
         <database-dropdown
           @databaseSelected="databaseSelected"
         />
-        <table-list />
+        <bks-table-list
+          :tables="tables"
+          :context-menu-items="handleContextMenuItems"
+          :hidden-entities="hiddenEntities"
+          @bks-entity-dblclick="handleEntityDblclick"
+          @bks-entity-unhide="handleEntityUnhide"
+          @bks-entities-request-columns="handleEntitiesRequestColumns"
+          @bks-refresh-click="handleRefreshClick"
+          @bks-add-entity-click="handleAddEntityClick"
+        />
       </div>
 
       <!-- History -->
@@ -47,10 +56,12 @@
 <script>
   import _ from 'lodash'
   import GlobalSidebar from './GlobalSidebar.vue'
-  import TableList from './core/TableList.vue'
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
+  import { AppEvent } from "@/common/AppEvent";
+  import BksTableList from "@bks/ui-kit/vue/table-list";
+  import TableListContextMenusMixin from "@/mixins/TableListContextMenus";
 
   import { mapState, mapGetters } from 'vuex'
   import rawLog from '@bksLogger'
@@ -58,8 +69,9 @@
   const log = rawLog.scope('core-sidebar')
 
   export default {
+    mixins: [TableListContextMenusMixin],
     props: ['sidebarShown'],
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
+    components: { BksTableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
         tableLoadError: null,
@@ -71,21 +83,19 @@
       }
     },
     computed: {
-      filteredTables() {
-        if (!this.filterQuery) {
-          return this.tables
-        }
-        const startsWithFilter = _(this.tables)
-          .filter((item) => _.startsWith(item.name, this.filterQuery))
-          .value()
-        const containsFilter = _(this.tables)
-          .difference(startsWithFilter)
-          .filter((item) => item.name.includes(this.filterQuery))
-          .value()
-        return _.concat(startsWithFilter, containsFilter)
+      tables() {
+        const entities = []
+        this.$store.getters.schemaTables.forEach(({ tables, routines }) => {
+          tables.forEach((table) => entities.push(table))
+          routines.forEach((routine) => entities.push(routine))
+        })
+        return entities
       },
-      ...mapState(['tables', 'database']),
+      ...mapState(['database']),
       ...mapGetters(['minimalMode']),
+      ...mapGetters({
+        hiddenEntities: "hideEntities/databaseEntities",
+      }),
     },
     watch: {
       minimalMode() {
@@ -95,6 +105,21 @@
       },
     },
     methods: {
+      /** @param entity {import('@/lib/db/models').DatabaseEntity} */
+      handleContextMenuItems(event, entity, defaultItems) {
+        switch(entity.entityType) {
+          case "table":
+          case "view":
+          case "materialized_view":
+            return this.tableMenuOptions;
+          case "routine":
+            return this.routineMenuOptions;
+          case "schema":
+            return this.schemaMenuOptions;
+          default:
+            return defaultItems;
+        }
+      },
       tabClasses(item) {
         return {
           show: (this.activeItem === item),
@@ -117,6 +142,36 @@
       async disconnect() {
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
+      },
+      handleEntityDblclick(detail) {
+        this.throttledLoadTable(detail.entity)
+      },
+      throttledLoadTable: _.throttle(function(table) {
+        this.$root.$emit(AppEvent.loadTable, { table })
+      }, 500),
+      handleEntityUnhide(detail) {
+        if (detail.entity.entityType === 'schema') {
+          this.trigger(AppEvent.toggleHideSchema, detail.entity.name, false)
+        } else {
+          this.trigger(AppEvent.toggleHideEntity, detail.entity, false)
+        }
+      },
+      async handleEntitiesRequestColumns(detail) {
+        // FIXME IMPORTANT this will produce a race condition
+        detail.entities.forEach((table) => {
+          this.$store.dispatch("updateTableColumns", table)
+        })
+      },
+      async handleRefreshClick() {
+        try {
+          this.$store.dispatch('updateRoutines')
+          await this.$store.dispatch('updateTables')
+        } catch (ex) {
+          this.$noty.error(`Unable to refresh tables ${ex.message}`)
+        }
+      },
+      async handleAddEntityClick() {
+        this.$root.$emit(AppEvent.createTable)
       },
     }
   }

@@ -215,6 +215,8 @@ export interface SchemaConfig {
 
 // this is the flattened structure we actually render in a component
 export interface SchemaItem extends SchemaConfig {
+  /** Same as `columnName` but for ui-kit */
+  field: string
   columnName: string
 }
 

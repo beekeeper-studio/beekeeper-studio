@@ -805,7 +805,10 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   }
 }
 
-.spreadsheet-table {
+bks-table {
+  width: 100%;
+  overflow: hidden;
+
   .tabulator-header {
     outline: none;
     .tabulator-col {
