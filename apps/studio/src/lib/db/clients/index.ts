@@ -8,6 +8,9 @@ export function findClient(key: string): Client | undefined {
     get supportsSocketPath(): boolean {
       return this.supports('server:socketPath');
     },
+    get supportsSocketPathWithCustomPort(): boolean {
+      return this.supports('server:socketPathWithCustomPort')
+    },
     supports(feature: string): boolean {
       return !client.disabledFeatures?.includes(feature);
     },
@@ -37,7 +40,8 @@ export const CLIENTS: ClientConfig[] = [
     defaultPort: 26257,
     disabledFeatures: [
       'server:domain',
-      'server:socketPath'
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -47,6 +51,7 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:schema',
       'server:domain',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -56,6 +61,7 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:schema',
       'server:domain',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -74,7 +80,8 @@ export const CLIENTS: ClientConfig[] = [
     defaultPort: 5432,
     disabledFeatures: [
       'server:domain',
-      'server:socketPath'
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -82,7 +89,8 @@ export const CLIENTS: ClientConfig[] = [
     name: 'Microsoft SQL Server',
     defaultPort: 1433,
     disabledFeatures: [
-      'server:socketPath'
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -94,6 +102,7 @@ export const CLIENTS: ClientConfig[] = [
       'server:host',
       'server:port',
       'server:socketPath',
+      'server:socketPathWithCustomPort',
       'server:user',
       'server:password',
       'server:schema',
@@ -114,6 +123,7 @@ export const CLIENTS: ClientConfig[] = [
       'server:domain',
       'scriptCreateTable',
       'cancelQuery',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -121,7 +131,8 @@ export const CLIENTS: ClientConfig[] = [
     name: 'Oracle',
     defaultPort: 1521,
     disabledFeatures: [
-      'server:socketPath'
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
     ]
   },
   {
@@ -131,6 +142,7 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:ssl',
       'server:socketPath',
+      'server:socketPathWithCustomPort',
       'server:user',
       'server:password',
       'server:schema',
@@ -146,6 +158,7 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:schema',
       'server:socketPath',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -155,6 +168,7 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:schema',
       'server:domain',
+      'server:socketPathWithCustomPort',
     ],
   },
   {
@@ -167,6 +181,7 @@ export const CLIENTS: ClientConfig[] = [
       'server:host',
       'server:port',
       'server:socketPath',
+      'server:socketPathWithCustomPort',
       'server:user',
       'server:password',
       'server:schema',
