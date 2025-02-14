@@ -26,6 +26,7 @@ import { buffer as b, uint8 as u } from '@tests/utils'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
 import { DuckDBBlobValue } from '@duckdb/node-api'
+import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_tools'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -261,6 +262,14 @@ export class DBTestUtil {
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
       ])
     }
+
+    await this.knex("test_param").insert([
+      { data: "River Song", is_draft: false },
+      { data: "Rose Tyler", is_draft: true },
+      { data: "Rose Tyler", is_draft: false },
+      { data: "John Wick", is_draft: true },
+      { data: "Neo", is_draft: false },
+    ]);
   }
 
   async dropTableTests() {
@@ -1459,6 +1468,12 @@ export class DBTestUtil {
       }
     }
 
+    await this.knex.schema.createTable('test_param', (table) => {
+      primary(table);
+      table.string("data").notNullable();
+      table.boolean("is_draft").notNullable();
+    });
+
     await this.knex.schema.createTable('addresses', (table) => {
       primary(table)
       table.timestamps(true, true)
@@ -1575,5 +1590,50 @@ export class DBTestUtil {
   async databaseVersionTest() {
     const version = await this.connection.versionString();
     expect(version).toBeDefined()
+  }
+
+  async paramTest(params: string[]) {
+    if (params.length === 1) {
+      params = [params[0], params[0], params[0]];
+    }
+    let query = `
+      SELECT * FROM test_param WHERE
+        data = ${params[0]};
+    `;
+    let useBools = this.dialect === "postgresql" || this.dialect === "duckdb";
+    let placeholders = [params[0]];
+    let values = [`'Rose Tyler'`];
+    let convertedParams = convertParamsForReplacement(placeholders, values);
+    query = deparameterizeQuery(query, this.dialect, convertedParams);
+    let result = await this.knex.raw(query);
+    expect(this.convertResult(result)).toMatchObject([
+      { id: 2, data: 'Rose Tyler', is_draft: useBools ? true : 1 },
+      { id: 3, data: 'Rose Tyler', is_draft: useBools ? false : 0 }
+    ]);
+
+    query = `
+      SELECT * FROM test_param WHERE
+        id = ${params[0]} AND
+        data = ${params[1]} AND
+        is_draft = ${params[2]};
+    `;
+
+    placeholders = params;
+    values = ['5', `'Neo'`, 'false'];
+    convertedParams = convertParamsForReplacement(placeholders, values);
+    query = deparameterizeQuery(query, this.dialect, convertedParams);
+    result = await this.knex.raw(query);
+    expect(this.convertResult(result)).toMatchObject([
+      { id: 5, data: 'Neo', is_draft: useBools ? false : 0 }
+    ]);
+  }
+
+  convertResult(result: any) {
+    if (this.dialect === 'mysql') {
+      result = result[0];
+    } else if (this.dialect === 'postgresql' || this.dialect === 'duckdb') {
+      result = result.rows;
+    }
+    return result;
   }
 }

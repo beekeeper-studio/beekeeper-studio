@@ -481,7 +481,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(nameColumn.comment).toBe('Name of the person');
     });
 
-    if (dockerTag === 'latest') {
+    if (dockerTag === '16.4') {
       it("should list indexes with info", async () => {
         await util.knex.schema.createTable('has_indexes_2', (table) => {
           table.specificType("text", "varchar(255) UNIQUE NULLS NOT DISTINCT")
@@ -497,6 +497,12 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       } else {
         runCommonTests(() => util, { dbReadOnlyMode: readonly })
       }
+    })
+
+    describe("Param tests", () => {
+      it("Should be able to handle numbered ($1) params", async () => {
+        await util.paramTest(['$1', '$2', '$3']);
+      })
     })
   })
 }

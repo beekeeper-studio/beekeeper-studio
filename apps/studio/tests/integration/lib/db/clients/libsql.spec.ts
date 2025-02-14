@@ -290,6 +290,14 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         return { ...result[0] };
       };
     }
+
+    if (options.mode !== 'memory') {
+      describe("Param tests", () => {
+        it("Should be able to handle positional (?) params", async () => {
+          await util.paramTest(['?']);
+        })
+      })
+    }
   });
 }
 

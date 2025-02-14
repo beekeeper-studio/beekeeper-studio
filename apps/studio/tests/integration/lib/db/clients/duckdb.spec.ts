@@ -140,6 +140,12 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await util.knex.schema.raw("DROP INDEX col_exp_test_idx");
       });
     });
+
+    describe("Param tests", () => {
+      it("Should be able to handle positional (?) params", async () => {
+        await util.paramTest(['?']);
+      })
+    })
   });
 }
 
