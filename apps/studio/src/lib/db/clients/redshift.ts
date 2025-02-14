@@ -4,7 +4,7 @@ import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResol
 import { DatabaseElement } from "../types";
 import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
-import { escapeString } from "./utils";
+import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
@@ -22,6 +22,7 @@ export class RedshiftClient extends PostgresClient {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 
@@ -56,7 +57,7 @@ export class RedshiftClient extends PostgresClient {
           WHEN datetime_precision IS NOT NULL AND data_type NOT IN ('date', 'time')
             THEN data_type || '(' || datetime_precision::VARCHAR(255) || ')'
           ELSE data_type
-        END AS data_type,
+      END AS data_type,
         remarks AS column_comment
       FROM svv_columns
       ${clause}
@@ -89,22 +90,22 @@ export class RedshiftClient extends PostgresClient {
   async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
     const query = `
       select tco.constraint_schema,
-            tco.constraint_name,
-            kcu.ordinal_position as position,
+             tco.constraint_name,
+             kcu.ordinal_position as position,
             kcu.column_name as column_name,
             kcu.table_schema,
             kcu.table_name
       from information_schema.table_constraints tco
-      join information_schema.key_column_usage kcu
-          on kcu.constraint_name = tco.constraint_name
-          and kcu.constraint_schema = tco.constraint_schema
-          and kcu.constraint_name = tco.constraint_name
+        join information_schema.key_column_usage kcu
+      on kcu.constraint_name = tco.constraint_name
+        and kcu.constraint_schema = tco.constraint_schema
+        and kcu.constraint_name = tco.constraint_name
       where tco.constraint_type = 'PRIMARY KEY'
-      ${schema ? `and kcu.table_schema = '${escapeString(schema)}'` : ''}
-      and kcu.table_name = '${escapeString(table)}'
+        ${schema ? `and kcu.table_schema = '${escapeString(schema)}'` : ''}
+        and kcu.table_name = '${escapeString(table)}'
       order by tco.constraint_schema,
-              tco.constraint_name,
-              kcu.ordinal_position;
+        tco.constraint_name,
+        kcu.ordinal_position;
     `;
 
     const data = await this.driverExecuteSingle(query);
@@ -122,40 +123,40 @@ export class RedshiftClient extends PostgresClient {
     const sql = `
       SELECT
 
-          kcu.constraint_schema AS from_schema,
+        kcu.constraint_schema AS from_schema,
 
-          kcu.table_name AS from_table,
+        kcu.table_name AS from_table,
 
-          kcu.column_name AS from_column,
-          rc.unique_constraint_schema AS to_schema,
-          tc.constraint_name,
-          rc.update_rule,
-          rc.delete_rule,
+        kcu.column_name AS from_column,
+        rc.unique_constraint_schema AS to_schema,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule,
 
-          (SELECT kcu2.table_name
-           FROM information_schema.key_column_usage AS kcu2
-           WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
-          (SELECT kcu2.column_name
-           FROM information_schema.key_column_usage AS kcu2
-           WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+        (SELECT kcu2.table_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
+        (SELECT kcu2.column_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
       FROM
-          information_schema.key_column_usage AS kcu
+        information_schema.key_column_usage AS kcu
 
-      JOIN
-          information_schema.table_constraints AS tc
+          JOIN
+        information_schema.table_constraints AS tc
 
-      ON
+        ON
           tc.constraint_name = kcu.constraint_name
 
-      JOIN
-          information_schema.referential_constraints AS rc
-      ON
+          JOIN
+        information_schema.referential_constraints AS rc
+        ON
           rc.constraint_name = kcu.constraint_name
       WHERE
-          tc.constraint_type = 'FOREIGN KEY' AND
-          kcu.table_schema NOT LIKE 'pg_%' AND
-          kcu.table_schema = $2 AND
-          kcu.table_name = $1;
+        tc.constraint_type = 'FOREIGN KEY' AND
+        kcu.table_schema NOT LIKE 'pg_%' AND
+        kcu.table_schema = $2 AND
+        kcu.table_name = $1;
     `;
 
     const params = [
@@ -219,10 +220,6 @@ export class RedshiftClient extends PostgresClient {
 
     const redshiftOptions = server.config.redshiftOptions;
     if (redshiftOptions?.iamAuthenticationEnabled) {
-      const awsCreds: AWSCredentials = {
-        accessKeyId: redshiftOptions.accessKeyId,
-        secretAccessKey: redshiftOptions.secretAccessKey
-      };
 
       const clusterConfig: ClusterCredentialConfiguration = {
         awsRegion: redshiftOptions.awsRegion,
@@ -230,10 +227,13 @@ export class RedshiftClient extends PostgresClient {
         dbName: database.database,
         dbUser: server.config.user,
         dbGroup: redshiftOptions.databaseGroup,
-        durationSeconds: server.config.options.tokenDurationSeconds
+        durationSeconds: server.config.options.tokenDurationSeconds,
+        isServerLess: redshiftOptions.isServerless
       };
 
       const credentialResolver = RedshiftCredentialResolver.getInstance();
+
+      const awsCreds = await resolveAWSCredentials(redshiftOptions);
 
       // We need resolve credentials once to get the temporary database user, which does not change
       // on each call to get credentials.
@@ -264,10 +264,10 @@ export class RedshiftClient extends PostgresClient {
     const sql = `
       SELECT      n.nspname as schema, t.typname as typename, t.oid::integer as typeid
       FROM        pg_type t
-      LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+        LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
       WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
-      AND     t.typname !~ '^_'
-      AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
+        AND     t.typname !~ '^_'
+        AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
     `;
 
     const data = await this.driverExecuteSingle(sql);

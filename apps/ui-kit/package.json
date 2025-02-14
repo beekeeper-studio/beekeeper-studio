@@ -1,0 +1,58 @@
+{
+  "name": "@bks/ui-kit",
+  "private": true,
+  "version": "0.0.9",
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "style": "./dist/style.css",
+  "exports": {
+    ".": "./dist/index.js",
+    "./style.css": "./dist/style.css",
+    "./table": "./dist/table.js",
+    "./table-list": "./dist/table-list.js",
+    "./sql-text-editor": "./dist/sql-text-editor.js",
+    "./vue/table": "./dist/vue/table.js",
+    "./vue/table-list": "./dist/vue/table-list.js",
+    "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",
+    "./vue/data-editor": "./dist/vue/data-editor.js"
+  },
+  "scripts": {
+    "dev": "vite",
+    "lib:dev": "vite build -c vite.config.ts --watch --mode development",
+    "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
+    "build": "vite build -c vite.config.ts --mode production",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#4a90edd6f2d597e240a2a5c19242ba5d666d0290",
+    "@types/codemirror": "^0.0.97",
+    "@types/lodash": "^4.14.159",
+    "@types/tabulator-tables": "^6.2.0",
+    "@vitejs/plugin-vue2": "^2.3.1",
+    "codemirror": "^5.63.1",
+    "concurrently": "^8.2.2",
+    "cross-spawn": "^7.0.6",
+    "lodash": "^4.17.21",
+    "material-icons": "^1.13.12",
+    "postgres-interval": "^4.0.0",
+    "rimraf": "^6.0.1",
+    "sass": "~1.77.1",
+    "scrollyfills": "^1.0.0",
+    "split.js": "^1.5.11",
+    "sql-formatter": "~10.7.2",
+    "sql-query-identifier": "^2.8.0",
+    "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
+    "tinyduration": "^3.2.4",
+    "typescript": "~4.3.0",
+    "vite": "~5.3.6",
+    "vite-plugin-vue2": "^2.0.3",
+    "vue": "^2.7.16",
+    "vue-tsc": "^2.1.10",
+    "vue-virtual-scroll-list": "^2.3.5",
+    "vue2-teleport": "^1.1.4",
+    "vuedraggable": "^2.24.2"
+  }
+}

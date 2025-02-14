@@ -14,6 +14,7 @@ export interface ImportOptions {
   nullableValues: string[]
   trimWhitespaces: boolean 
   truncateTable: boolean
+  runAsUpsert: boolean
   useHeaders: boolean
   fileType: string
   table: TableOrView

@@ -41,7 +41,7 @@ export default class extends JSONImporter {
           
           if (!isPreview) {
             const importData = this.buildDataObj([lineData])
-            const importSql = await this.connection.getImportSQL([importData])
+            const importSql = await this.connection.getImportSQL([importData], this.table.name, this.table.schema || null, updatedImportScriptOptions.storeValues.runAsUpsert)
             await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
           }
         } catch (err) {
