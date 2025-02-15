@@ -3,7 +3,7 @@ import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterati
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import {getEntraOptions} from "@/lib/db/clients/utils";
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -22,6 +22,7 @@ export const ConnectionTypes = [
   { name: 'Firebird', value: 'firebird'},
   { name: 'DuckDB', value: 'duckdb' },
   { name: 'ClickHouse', value: 'clickhouse' },
+  { name: 'MongoDB', value: 'mongodb' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -30,18 +31,18 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ] as const
 
+// if you update this, you may need to update `translateOperator` in the mongodb driver
 export const TableFilterSymbols = [
   { value: '=', label: 'equals' },
   { value: '!=', label: 'does not equal'},
   { value: 'like', label: 'like' },
   { value: '<', label: 'less than' },
-  { label: 'less than or equal', value: '<=' },
+  { value: '<=', label: 'less than or equal' },
   { value: '>', label: 'greater than'},
-  { label: "greater than or equal", value:">=" },
-  { label: 'in', value:"in", arrayInput: true },
-  { label: "is null", value: "is", nullOnly: true },
-  { label: "is not null", value: "is not", nullOnly: true }
-
+  { value: ">=", label: "greater than or equal" },
+  { value: "in", label: 'in', arrayInput: true },
+  { value: "is", label: "is null", nullOnly: true },
+  { value: "is not", label: "is not null", nullOnly: true }
 ]
 
 export enum AzureAuthType {
@@ -230,7 +231,7 @@ export interface IBasicDatabaseClient {
   duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>
   duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
 
-  getInsertQuery(tableInsert: TableInsert): Promise<string>
+  getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
   syncDatabase(): Promise<void>
 
   importStepZero(table: TableOrView): Promise<any>
