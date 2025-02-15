@@ -451,6 +451,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
 
+        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id }) 
       } else {
         throw "No username provided"
       }
