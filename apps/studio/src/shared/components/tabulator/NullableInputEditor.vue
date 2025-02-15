@@ -127,7 +127,7 @@ export default Vue.extend({
       const floatTypes = [
         'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
       ]
-      if (typeHint.includes('int') && !typeHint.includes('point')) {
+      if (typeHint.includes('int') && !typeHint.includes('point') && !isNaN(this.value)) {
         return this.value > Number.MAX_SAFE_INTEGER ? this.value : parseInt(this.value);
       } else if (floatTypes.includes(typeHint)) {
         return parseFloat(this.value);
