@@ -1,0 +1,239 @@
+@use "../../../../../node_modules/codemirror/lib/codemirror";
+@use "../../../../../node_modules/codemirror/addon/hint/show-hint";
+@use "../../../../../node_modules/codemirror/theme/xq-light";
+@use "../../../../../node_modules/codemirror/addon/merge/merge";
+@use "../../../../../node_modules/codemirror/addon/search/matchesonscrollbar";
+@use "../../../../../node_modules/codemirror/addon/fold/foldgutter";
+@use "dialog.scss";
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+@use "../../styles/base";
+
+.BksTextEditor {
+  --bks-text-editor-activeline-bg-color: #373831;
+  --bks-text-editor-atom-fg-color: #ae81ff;
+  --bks-text-editor-bg-color: #{$query-editor-bg};
+  --bks-text-editor-bracket-fg-color: #{$text};
+  --bks-text-editor-builtin-fg-color: #66d9ef;
+  --bks-text-editor-comment-attribute-fg-color: #97b757;
+  --bks-text-editor-comment-def-fg-color: #bc9262;
+  --bks-text-editor-comment-fg-color: #75715e;
+  --bks-text-editor-comment-tag-fg-color: #bc6283;
+  --bks-text-editor-comment-type-fg-color: #bc6283;
+  --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-def-fg-color: #fd971f;
+  --bks-text-editor-error-bg-color: #f8f8f0;
+  --bks-text-editor-error-fg-color: #f92672;
+  --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-guttermarker-fg-color: #f8f8f2;
+  --bks-text-editor-guttermarker-subtle-fg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-header-fg-color: #ae81ff;
+  --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-link-fg-color: #ae81ff;
+  --bks-text-editor-matchingbracket-fg-color: #ffffff;
+  --bks-text-editor-number-fg-color: #{$brand-warning};
+  --bks-text-editor-property-fg-color: #a6e22e;
+  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-string-fg-color: #{darken($brand-success, 20%)};
+  --bks-text-editor-tag-fg-color: #f92672;
+  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
+  --bks-text-editor-variable-3-fg-color: #66d9ef;
+  --bks-text-editor-variable-fg-color: #f8f8f2;
+
+  height: 100%;
+
+  .CodeMirror {
+    font-family: $font-family-mono;
+    padding: 0.75rem 0;
+    z-index: 1;
+    height: 100%;
+    background-color: var(--bks-text-editor-bg-color);
+    color: var(--bks-text-editor-fg-color);
+  }
+
+  div.CodeMirror-selected {
+    background-color: var(--bks-text-editor-selected-bg-color);
+  }
+
+  .CodeMirror-gutters {
+    background-color: var(--bks-text-editor-gutter-bg-color);
+    border: 0;
+  }
+
+  .CodeMirror-guttermarker {
+    color: var(--bks-text-editor-guttermarker-fg-color);
+  }
+
+  .CodeMirror-guttermarker-subtle {
+    color: var(--bks-text-editor-guttermarker-subtle-fg-color);
+  }
+
+  .CodeMirror-linenumber {
+    color: var(--bks-text-editor-linenumber-fg-color);
+  }
+
+  .CodeMirror-cursor {
+    border-left-width: 1px;
+    border-left-style: solid;
+    border-left-color: var(--bks-text-editor-cursor-bg-color);
+  }
+
+  .CodeMirror span.cm-comment {
+    color: var(--bks-text-editor-comment-fg-color);
+  }
+
+  .CodeMirror span.cm-atom {
+    color: var(--bks-text-editor-atom-fg-color);
+  }
+
+  .CodeMirror span.cm-number {
+    color: var(--bks-text-editor-number-fg-color);
+  }
+
+  .CodeMirror span.cm-comment.cm-attribute {
+    color: var(--bks-text-editor-comment-attribute-fg-color);
+  }
+
+  .CodeMirror span.cm-comment.cm-def {
+    color: var(--bks-text-editor-comment-def-fg-color);
+  }
+
+  .CodeMirror span.cm-comment.cm-tag {
+    color: var(--bks-text-editor-comment-tag-fg-color);
+  }
+
+  .CodeMirror span.cm-comment.cm-type {
+    color: var(--bks-text-editor-comment-type-fg-color);
+  }
+
+  .CodeMirror span.cm-property,
+  .CodeMirror span.cm-attribute {
+    color: var(--bks-text-editor-property-fg-color);
+  }
+
+  .CodeMirror span.cm-keyword {
+    color: var(--bks-text-editor-keyword-fg-color);
+  }
+
+  .CodeMirror span.cm-builtin {
+    color: var(--bks-text-editor-builtin-fg-color);
+  }
+
+  .CodeMirror span.cm-string {
+    color: var(--bks-text-editor-string-fg-color);
+  }
+
+  .CodeMirror span.cm-variable {
+    color: var(--bks-text-editor-variable-fg-color);
+  }
+
+  .CodeMirror span.cm-variable-2 {
+    color: var(--bks-text-editor-variable-2-fg-color);
+  }
+
+  .CodeMirror span.cm-variable-3,
+  .CodeMirror span.cm-type {
+    color: var(--bks-text-editor-variable-3-fg-color);
+  }
+
+  .CodeMirror span.cm-def {
+    color: var(--bks-text-editor-def-fg-color);
+  }
+
+  .CodeMirror span.cm-bracket {
+    color: var(--bks-text-editor-bracket-fg-color);
+  }
+
+  .CodeMirror span.cm-tag {
+    color: var(--bks-text-editor-tag-fg-color);
+  }
+
+  .CodeMirror span.cm-header {
+    color: var(--bks-text-editor-header-fg-color);
+  }
+
+  .CodeMirror span.cm-link {
+    color: var(--bks-text-editor-link-fg-color);
+  }
+
+  .CodeMirror span.cm-error {
+    background-color: var(--bks-text-editor-error-bg-color);
+    color: var(--bks-text-editor-error-fg-color);
+  }
+
+  .CodeMirror-activeline-background {
+    background-color: var(--bks-text-editor-activeline-bg-color);
+  }
+
+  .CodeMirror-matchingbracket {
+    text-decoration: underline;
+    color: var(--bks-text-editor-matchingbracket-fg-color) !important;
+  }
+
+  .CodeMirror-focused .CodeMirror-selected {
+    background: var(--bks-text-editor-selected-bg-color);
+  }
+
+  .CodeMirror-foldmarker {
+    color: $brand-primary;
+    text-shadow: none;
+  }
+
+  .fold-without-line-numbers {
+    margin-left: -2rem;
+    .CodeMirror-linenumber {
+      display: none;
+    }
+  }
+
+  .remove-json-root-brackets .CodeMirror-code {
+    & > div:first-child, & > div:last-child {
+      display: none;
+    }
+  }
+
+  .CodeMirror-code {
+    line-height: 1.3!important;
+  }
+
+  .CodeMirror-scrollbar-filler {
+    background-color: transparent;
+  }
+}
+
+.BksTextEditor-hints {
+  --bks-text-editor-context-menu-bg-color: #{darken($theme-bg, 5%)};
+  --bks-text-editor-context-menu-fg-color: #{$text-dark};
+  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+
+  font-family: $font-family-mono;
+  padding: $gutter-h 0;
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--bks-text-editor-context-menu-bg-color);
+  color: var(--bks-text-editor-context-menu-fg-color);
+  @include card-shadow;
+
+  .CodeMirror-hint {
+    padding: ($gutter-h * 0.5) $gutter-h;
+    border-radius: 0;
+    cursor: pointer;
+  }
+
+  .CodeMirror-hint:hover:not(.CodeMirror-hint-active) {
+    background-color: var(--bks-text-editor-context-menu-item-bg-color-hover);
+  }
+
+  li.CodeMirror-hint-active {
+    background-color: var(--bks-text-editor-context-menu-item-bg-color-active);
+    color: var(--bks-text-editor-context-menu-item-fg-color-active);
+  }
+
+  .CodeMirror-scrollbar-filler {
+    background-color: transparent;
+  }
+}

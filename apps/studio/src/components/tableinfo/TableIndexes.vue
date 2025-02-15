@@ -180,6 +180,9 @@ export default Vue.extend({
     },
     indexColumnOptions() {
       const normal = this.table.columns.map((c) => escapeHtml(c.columnName))
+      if (this.dialectData.disabledFeatures?.index?.desc) {
+        return normal
+      }
       const desc = this.table.columns.map((c) => `${escapeHtml(c.columnName)} DESC`)
       return [...normal, ...desc]
     },
@@ -200,6 +203,9 @@ export default Vue.extend({
             if (this.mysqlTypes.includes(this.connectionType) && !_.isNil(c.prefix)) {
               return `${c.name}(${c.prefix})${c.order === 'DESC' ? ' DESC' : ''}`
             }
+            if (this.dialectData.disabledFeatures?.index?.desc) {
+              return c.name
+            }
             return `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`
           })
         }
@@ -208,7 +214,7 @@ export default Vue.extend({
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
       const result = [
-        {title: 'Id', field: 'id', widthGrow: 0.5},
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5}),
         {
           title:'Name',
           field: 'name',
@@ -227,7 +233,7 @@ export default Vue.extend({
           editable,
           editor: vueEditor(CheckboxEditorVue),
         },
-        {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
+        (this.dialectData?.disabledFeatures?.index?.primary ? null : {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85}),
         // TODO (@day): fix
         (
           this.connection.supportedFeatures().indexNullsNotDistinct
@@ -301,6 +307,9 @@ export default Vue.extend({
           const columns = dataColumns.map((c: string)=> {
             if (this.mysqlTypes.includes(this.connectionType)) {
               return mysqlParseIndexColumn(c)
+            }
+            if (this.dialectData.disabledFeatures?.index?.desc) {
+              return { name: c } as IndexColumn
             }
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
             const name = c.replaceAll(' DESC', '')

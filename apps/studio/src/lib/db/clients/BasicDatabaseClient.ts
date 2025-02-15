@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, BksField } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -146,7 +146,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     if (this.server.db[this.database.database]) {
       // delete this.server.db[this.database.database]
     }
-    await this.knex.destroy();
+    await this.knex?.destroy();
   }
   // ****************************************************************************
 
@@ -256,9 +256,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     const sql = await this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     if (!sql) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
+      throw new Error(`Cannot rename element ${elementName} to ${newElementName} of type ${typeOfElement}`);
     }
-    await this.executeQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
@@ -266,11 +266,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    const sql = this.truncateElementSql(elementName, typeOfElement, schema);
+    const sql = await this.truncateElementSql(elementName, typeOfElement, schema);
     if (!sql) {
       throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
     }
-    await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement, schema));
+    await this.driverExecuteSingle(sql);
   }
 
   abstract truncateAllTables(schema?: string): Promise<void>;
@@ -361,10 +361,12 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     })
   }
 
-  async getImportSQL(importedData: any[]): Promise<string | string[]> {
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
     const queries = []
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    const createUpsertFunc = this.createUpsertFunc ?? null
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys, createUpsertFunc }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
@@ -379,14 +381,18 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     throw new Error("Not implemented");
   }
 
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
+  protected createUpsertFunc: ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string) | null = null
+
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert = false): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
     tableInsert.data.forEach((row) => {
       Object.keys(row).forEach((key) => {
         row[key] = this.deserializeValue(row[key]);
       })
     })
-    return buildInsertQuery(this.knex, tableInsert, columns);
+    const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc });
   }
 
   abstract wrapIdentifier(value: string): string;

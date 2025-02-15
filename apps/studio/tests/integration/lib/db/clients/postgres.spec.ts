@@ -1,11 +1,7 @@
-import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
-import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
+import { StartedTestContainer } from 'testcontainers'
+import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { TableInsert } from '../../../../../src/lib/db/models'
-import os from 'os'
-import fs from 'fs'
-import path from 'path'
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';

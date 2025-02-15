@@ -69,6 +69,12 @@
                 <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
                               :testing="testing"
                 />
+                <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config" :testing="testing" />
+                <duck-db-form
+                  v-else-if="config.connectionType === 'duckdb'"
+                  :config="config"
+                  :testing="testing"
+                />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
@@ -145,6 +151,8 @@ import ClickHouseForm from './connection/ClickHouseForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
 import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
+import MongoDbForm from './connection/MongoDBForm.vue'
+import DuckDbForm from './connection/DuckDBForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -165,7 +173,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm },
 
   data() {
     return {

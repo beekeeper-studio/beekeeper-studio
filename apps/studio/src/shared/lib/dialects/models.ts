@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -40,7 +40,9 @@ export const DialectTitles: {[K in Dialect]: string} = {
   bigquery: "BigQuery",
   firebird: "Firebird",
   oracle: "Oracle Database",
-  clickhouse: "ClickHouse"
+  duckdb: "DuckDB",
+  clickhouse: "ClickHouse",
+  mongodb: "MongoDB"
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -63,6 +65,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'postgresql') return 'postgresql'
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
+  if (d === 'duckdb') return 'sql'
   return 'mysql' // we want this as the default
 }
 
@@ -86,18 +89,19 @@ export class ColumnType {
 }
 
 export interface DialectData {
-  columnTypes: ColumnType[],
-  constraintActions: string[]
-  wrapIdentifier: (s: string) => string
-  editorFriendlyIdentifier: (s: string) => string
-  escapeString: (s: string, quote?: boolean) => string
-  wrapLiteral: (s: string) => string
-  unwrapIdentifier: (s: string) => string
-  textEditorMode: CodeMirror.EditorConfiguration['mode']
+  columnTypes?: ColumnType[],
+  constraintActions?: string[]
+  wrapIdentifier?: (s: string) => string
+  editorFriendlyIdentifier?: (s: string) => string
+  escapeString?: (s: string, quote?: boolean) => string
+  wrapLiteral?: (s: string) => string
+  unwrapIdentifier?: (s: string) => string
+  textEditorMode?: CodeMirror.EditorConfiguration['mode']
   defaultSchema?: string
-  usesOffsetPagination: boolean
+  usesOffsetPagination?: boolean
   requireDataset?: boolean,
   disabledFeatures?: {
+    queryEditor?: boolean
     informationSchema?: {
       extra?: boolean
     }
@@ -125,8 +129,11 @@ export interface DialectData {
       onDelete?: boolean
     }
     index?: {
-      desc?: boolean
+      id?: boolean,
+      desc?: boolean,
+      primary?: boolean
     }
+    primary?: boolean // for mongo
     defaultValue?: boolean
     nullable?: boolean
     createIndex?: boolean
@@ -144,6 +151,7 @@ export interface DialectData {
       sql?: boolean
     }
     schema?: boolean
+    multipleDatabase?: boolean
     generatedColumns?: boolean
     transactions?: boolean
     chunkSizeStream?: boolean
@@ -251,7 +259,7 @@ export interface AlterPartitionsSpec {
 
 export interface IndexColumn {
   name: string
-  order: 'ASC' | 'DESC'
+  order: 'ASC' | 'DESC' | '2d' | '2dsphere' | 'text' | 'geoHaystack' | 'hashed' | number // after DESC is for mongo only
   prefix?: number | null // MySQL Only
 }
 
