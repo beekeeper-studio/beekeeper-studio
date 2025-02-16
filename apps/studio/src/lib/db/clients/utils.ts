@@ -91,11 +91,11 @@ function wrapIdentifier(value) {
 
 export function getEntraOptions(server, extra): AuthOptions {
   return {
-    password: server.config.password,
-    userName: server.config.user,
-    tenantId: server.config.azureAuthOptions.tenantId,
-    clientSecret: server.config.azureAuthOptions.clientSecret,
-    msiEndpoint: server.config.azureAuthOptions.msiEndpoint,
+    password: server.config?.password,
+    userName: server.config?.user,
+    tenantId: server.config?.azureAuthOptions.tenantId,
+    clientSecret: server.config?.azureAuthOptions.clientSecret,
+    msiEndpoint: server.config?.azureAuthOptions.msiEndpoint,
     ...extra
   };
 }

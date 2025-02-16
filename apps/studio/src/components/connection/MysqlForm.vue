@@ -9,7 +9,7 @@
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="!iamAuthenticationEnabled || !azureAuthEnabled" :config="config" />
+    <common-server-inputs v-show="showServerInputs" :config="config" />
 
     <div v-show="iamAuthenticationEnabled" class="host-port-user-password">
       <div class="row gutter">
@@ -37,7 +37,7 @@
     </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
-    <common-entra-id :config="config" />
+    <common-entra-id v-show="azureAuthEnabled" :config="config" />
   </div>
 </template>
 
@@ -60,9 +60,9 @@ export default {
   },
   data() {
     return {
-      azureAuthEnabled: this.config?.azureAuthOptions?.azureAuthEnabled,
-      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
-      authType: this.config.redshiftOptions?.authType || 'default',
+      azureAuthEnabled: !!this.config?.azureAuthOptions?.azureAuthEnabled,
+      iamAuthenticationEnabled: !!this.config.redshiftOptions?.iamAuthenticationEnabled,
+      authType: this.config.redshiftOptions?.authType || this.config.azureAuthOptions?.azureAuthType || 'default',
       authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes],
       accountName: null,
       signingOut: false,
@@ -71,6 +71,11 @@ export default {
   },
   computed: {
     ...mapGetters(['isCommunity']),
+    showServerInputs() {
+      console.log(this.azureAuthEnabled)
+      console.log(this.iamAuthenticationEnabled)
+      return !this.azureAuthEnabled && !this.iamAuthenticationEnabled
+    }
   },
   watch: {
     async authType() {
@@ -84,7 +89,9 @@ export default {
           this.authType = 'default'
         } else {
           this.config.redshiftOptions.authType = this.authType
-          this.iamAuthenticationEnabled = this.authType.includes('iam')
+          this.config.azureAuthOptions.azureAuthType = this.authType
+          this.azureAuthEnabled = this.authType === AzureAuthType.AccessToken
+          this.iamAuthenticationEnabled = typeof this.authType === 'string' && this.authType.includes('iam')
         }
       }
 
@@ -94,6 +101,9 @@ export default {
       } else {
         this.accountName = null
       }
+    },
+    azureAuthEnabled() {
+      this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
     },
     iamAuthenticationEnabled() {
       this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled

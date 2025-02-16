@@ -102,6 +102,8 @@
 </template>
 <script>
 
+import {AzureAuthType} from "@/lib/db/types";
+
 export default {
   props: ['config'],
   data() {
@@ -121,6 +123,25 @@ export default {
     //   const { redshiftOptions } = this.config
     //   return redshiftOptions?.authType && redshiftOptions.authType.includes('file')
     // }
+    showUser() {
+      return [AzureAuthType.Password].includes(this.authType)
+    },
+    showPassword() {
+      return [AzureAuthType.Password].includes(this.authType)
+    },
+    showTenantId() {
+      return [AzureAuthType.Password, AzureAuthType.ServicePrincipalSecret]
+        .includes(this.authType)
+    },
+    showClientSecret() {
+      return [AzureAuthType.ServicePrincipalSecret].includes(this.authType)
+    },
+    showMsiEndpoint() {
+      return [AzureAuthType.MSIVM].includes(this.authType)
+    },
+    hasAccessTokenCache() {
+      return Boolean(this.accountName)
+    },
   },
   methods: {
     toggleIAMAuthentication() {

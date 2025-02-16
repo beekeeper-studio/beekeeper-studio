@@ -147,18 +147,19 @@ async function configDatabase(
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,
-    connectTimeout: 60 * 60 * 1000,
+    connectTimeout: 60 * 60 * 1000
   };
-
-  if (this.server.config.azureAuthOptions?.azureAuthEnabled) {
+console.log(server.config)
+  if (server.config.azureAuthOptions?.azureAuthEnabled) {
+    console.log('WE ARE HERE')
     const authService = new AzureAuthService();
-    await authService.init(this.server.config.authId)
+    await authService.init(server.config.authId)
 
-    const options = getEntraOptions(this.server, { signal: 0 })
+    const options = getEntraOptions(config, { signal: 0 })
 
-    const authentication = await authService.auth(this.server.config.azureAuthOptions.azureAuthType, options);
+    const authentication = await authService.auth(server.config.azureAuthOptions.azureAuthType, options);
     config.password = authentication.options.token
-    server.config.ssl = true
+    config.ssl = {}
 
     return config;
   }
@@ -320,6 +321,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async connect() {
     await super.connect();
+    console.log(this.server, this.database)
+    console.log('--------------------------')
     const dbConfig = await configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
