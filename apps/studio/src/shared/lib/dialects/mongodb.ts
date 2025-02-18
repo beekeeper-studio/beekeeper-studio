@@ -3,8 +3,8 @@ import { DialectData } from "./models";
 export const MongoDBData: DialectData = {
   columnTypes: [],
   usesOffsetPagination: true,
+  textEditorMode: 'javascript',
   disabledFeatures: {
-    queryEditor: true,
     nullable: true,
     defaultValue: true,
     primary: true,

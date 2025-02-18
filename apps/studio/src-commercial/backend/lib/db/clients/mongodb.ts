@@ -2,12 +2,15 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BaseV1DatabaseClient } from "@/lib/db/clients/BaseV1DatabaseClient";
 import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { IDbConnectionDatabase } from "@/lib/db/types";
-import { Collection, Document, MongoClient, ObjectId } from 'mongodb';
+import { Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
 import rawLog from '@bksLogger';
-import { BksField, BksFieldType, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableColumn, TableFilter, TableIndex, TableOrView, TableProperties, TableResult, TableTrigger } from "@/lib/db/models";
+import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
+import vm from "vm";
+import { createCancelablePromise } from "@/common/utils";
+import { errors } from "@/lib/errors";
 
 const log = rawLog.scope('mongodb');
 
@@ -236,7 +239,10 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
   
 
   async getPrimaryKeys(_table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
-    return [];
+    return [{
+      columnName: '_id',
+      position: 0
+    }];
   }
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
@@ -254,11 +260,128 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     }
   }
 
-  // ********************** UNSUPPORTED ***************************
+  async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
+    let results = [];
+    const db = this.conn.db(this.database.database);
 
-  async executeQuery(_queryText: string, _options?: any): Promise<NgQueryResult[]> {
-    log.error('MongoDB does not support executing queries');
-    return [];
+    try {
+      if (changes.inserts) {
+        await this.insertRows(changes.inserts, db);
+      }
+
+      if (changes.updates) {
+        results = await this.updateValues(changes.updates, db);
+      }
+
+      if (changes.deletes) {
+        await this.deleteRows(changes.deletes, db);
+      }
+    } catch (err) {
+      log.error('Error applying changes: ', err)
+    }
+    return results;
+  }
+
+  async insertRows(inserts: TableInsert[], connection: Db) {
+    for (const insert of inserts) {
+      connection.collection(insert.table).insertMany(insert.data);
+    }
+  }
+
+  async updateValues(updates: TableUpdate[], connection: Db) {
+    let results = [];
+    for (const update of updates) {
+      const filter = { _id: update.primaryKeys[0].value };
+      const updateDoc = {
+        $set: {
+          [update.column]: update.value
+        }
+      };
+
+      results.push(await connection.collection(update.table).updateOne(filter, updateDoc));
+    }
+    return results;
+  }
+
+  async deleteRows(deletes: TableDelete[], connection: Db) {
+    for (const del of deletes) {
+      connection.collection(del.table).deleteOne({
+        _id: del.primaryKeys[0].value
+      });
+    }
+  }
+
+  // ********************** UNSUPPORTED ***************************
+  async query(queryText: string, _options?: any): Promise<CancelableQuery> {
+    const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
+    let canceling = false;
+
+    // This doesn't actually cancel the query
+    return {
+      execute: async (): Promise<NgQueryResult[]> => {
+        try {
+          const data = await Promise.race([
+            cancelable.wait(),
+            this.executeQuery(queryText)
+          ])
+
+          return data;
+        } catch (err) {
+          if (canceling) {
+            canceling = false;
+            err.sqlectronError = 'CANCELED_BY_USER';
+          }
+
+          throw err;
+        } finally {
+          cancelable.discard();
+        }
+      },
+      cancel: async (): Promise<void> => {
+        canceling = true;
+
+        cancelable.cancel();
+      }
+    }
+  }
+
+  parseRowQueryResult(data: any): NgQueryResult {
+    const fieldNames = _.isArray(data) ? Object.keys(data[0]) : Object.keys(data);
+    const fields = fieldNames.map((field) => ({
+      dataType: 'user-defined',
+      id: field,
+      name: field
+    }));
+
+    return {
+      rows: data,
+      fields
+    }
+  }
+
+  async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
+    const db = this.conn.db(this.database.database);
+
+    let result = [];
+
+    let display = function (data: any) {
+      result.push(this.parseRowQueryResult(data));
+    }
+    const sandbox = {
+      db,
+      display: display.bind(this)
+    };
+
+    const userScript = `
+      (async () => {
+        ${queryText}
+      })()
+    `
+
+    vm.createContext(sandbox)
+    await vm.runInContext(userScript, sandbox)
+
+    return result;
   }
 
   async getQuerySelectTop(_table: string, _limit: number, _schema?: string): Promise<string> {
