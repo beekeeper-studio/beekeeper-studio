@@ -32,7 +32,6 @@ import _ from "lodash";
 import Vue, { PropType } from "vue";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
-import EventBus from "../../utils/EventBus";
 import { shouldRequestColumns } from "../../utils/entity";
 
 import * as globals from "../../utils/constants";
@@ -41,10 +40,12 @@ import "scrollyfills";
 export default Vue.extend({
   components: { VirtualList },
   props: {
-    tables: Array as PropType<Entity[]>,
+    entities: Array as PropType<Entity[]>,
     hiddenEntities: Array as PropType<Entity[]>,
     pinnedEntities: Array as PropType<Entity[]>,
     enablePinning: Boolean,
+    expandAll: Number,
+    collapseAll: Number,
   },
   data() {
     return {
@@ -129,7 +130,6 @@ export default Vue.extend({
     },
     handlePin(_: Event, item: TableItem) {
       this.$emit("pin", item.entity);
-      // this.trigger(AppEvent.togglePinTableList, item.entity, !item.pinned);
     },
     handleDblClick(e: Event, item: Item) {
       this.$emit("dblclick", e, item);
@@ -172,18 +172,11 @@ export default Vue.extend({
         this.keeps = Math.max(30, Math.ceil(minKeeps * 1.3));
       });
     },
-    // FIXME remove this
-    // ...mapGetters({
-    //   defaultSchema: "defaultSchema",
-    //   schemaTables: "schemaTables",
-    //   hiddenSchemas: "hideEntities/databaseSchemas",
-    // }),
-    // ...mapState("pins", ["pins"]),
   },
   watch: {
-    tables: {
+    entities: {
       handler() {
-        this.items = createTreeItems(this.tables, this.itemStates)
+        this.items = createTreeItems(this.entities, this.itemStates)
         this.generateDisplayItems();
       },
       immediate: true,
@@ -191,21 +184,24 @@ export default Vue.extend({
     hiddenEntities() {
       this.generateDisplayItems();
     },
-    pinnedEntities(oldPins, newPins) {
-      console.log(oldPins.length, newPins.length)
+    pinnedEntities() {
       this.pinnedEntities.forEach((entity: Entity) => {
         const item = this.items.find((item: Item) => item.entity === entity);
         item.pinned = true;
       })
     },
+    expandAll() {
+      this.handleToggleExpandedAll(true)
+    },
+    collapseAll() {
+      this.handleToggleExpandedAll(false)
+    },
   },
   mounted() {
-    EventBus.on("toggleExpandEntityList", this.handleToggleExpandedAll)
     this.$nextTick(() => this.resizeObserver.observe(this.$refs.vList.$el));
     this.$refs.vList.$el.addEventListener("scrollend", this.handleScrollEnd);
   },
   beforeDestroy() {
-    EventBus.off("toggleExpandEntityList", this.handleToggleExpandedAll)
     this.resizeObserver.disconnect();
     this.$refs.vList.$el.removeEventListener("scrollend", this.handleScrollEnd);
   },

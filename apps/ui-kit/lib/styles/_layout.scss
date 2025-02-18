@@ -95,9 +95,6 @@
   .btn {
     @include btn;
   }
-  x-buttons > x-button[menu].btn {
-    border-left: 1px solid rgba(black, 0.35);
-  }
   .btn-primary {
     background: $theme-base;
     color: rgba($theme-bg, 0.87);
@@ -161,13 +158,6 @@
   .btn-small {
     @include btn-small;
   }
-  x-buttons {
-    border-radius: 6px;
-    overflow: hidden;
-    > x-button.btn-small {
-      border-radius: 0;
-    }
-  }
   .btn-block {
     display: flex;
     justify-content: center;
@@ -212,7 +202,7 @@
   .btn-group {
     margin-left: -0.25rem;
     margin-right: -0.25rem;
-    >.btn, > x-buttons, > x-button {
+    >.btn {
       margin-left: 0.25rem;
       margin-right: 0.25rem;
     }

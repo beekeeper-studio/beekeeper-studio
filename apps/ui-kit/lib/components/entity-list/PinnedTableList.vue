@@ -118,7 +118,6 @@ export default Vue.extend({
         return result;
       },
       set(entities: Entity[]) {
-        console.log(entities.map((s) => idOf(s)))
         this.$emit("sort-position", entities);
       },
     },

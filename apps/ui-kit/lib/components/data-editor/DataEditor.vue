@@ -2,8 +2,8 @@
   <div class="BksUiKit BksDataEditor" ref="main">
     <entity-list
       v-bind="entityListProps"
-      :tables="tables"
-      proxyEmit="true"
+      :entities="entities"
+      proxyEmit
       @bks-entity-dblclick="handleEntityDblclick"
     />
     <div class="BksDataEditor-right-container" ref="right">
@@ -11,9 +11,9 @@
         <sql-text-editor
           v-bind="sqlTextEditorProps"
           focus
-          :tables="tables"
+          :entities="entities"
           :keybindings="keybindings"
-          proxyEmit="true"
+          proxyEmit
           @bks-value-change="handleValueChange"
         />
         <div class="BksDataEditor-run">
@@ -32,7 +32,7 @@
           v-bind="tableProps"
           :columns="columns"
           :data="data"
-          proxyEmit="true"
+          proxyEmit
           @bks-foreign-key-go-to="handleForeignKeyGoTo"
         />
       </div>
@@ -53,7 +53,7 @@ import { Entity } from "../types";
 export default Vue.extend({
   components: { EntityList, SqlTextEditor, TableComponent },
   props: {
-    tables: {
+    entities: {
       type: Array as PropType<Table[]>,
       default: () => [{ columns: [], data: [] }],
     },
@@ -104,7 +104,7 @@ export default Vue.extend({
       this.setTable(detail.entity);
     },
     handleForeignKeyGoTo({ field }) {
-      const foreignTable = this.tables.find(
+      const foreignTable = this.entities.find(
         (t) => t === this.columns.find((c) => c.field === field)?.toTable
       );
       if (foreignTable) {
@@ -118,6 +118,7 @@ export default Vue.extend({
 
     this.mainSplit = Split(mainEl.children, {
       direction: "horizontal",
+      gutterStyle: () => '',
       elementStyle: (_dimension, size) => ({
         "flex-basis": `calc(${size}%)`,
       }),
@@ -131,6 +132,7 @@ export default Vue.extend({
 
     this.rightSplit = Split(rightEl.children, {
       direction: "vertical",
+      gutterStyle: () => '',
       elementStyle: (_dimension, size) => ({
         "flex-basis": `calc(${size}%)`,
       }),

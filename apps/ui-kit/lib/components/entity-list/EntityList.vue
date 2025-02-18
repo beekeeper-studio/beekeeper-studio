@@ -1,6 +1,6 @@
 <template>
   <div
-    class="BksUiKit BksTableList"
+    class="BksUiKit BksEntityList"
     ref="wrapper"
   >
 
@@ -109,10 +109,12 @@
       </div>
 
       <virtual-table-list
-        :tables="filteredTables"
+        :entities="filteredEntities"
         :hidden-entities="hiddenEntities"
         :pinned-entities="pinnedEntities"
         :enable-pinning="enablePinning"
+        :expand-all="expandAll"
+        :collapse-all="collapseAll"
         @expand="handleExpand"
         @expand-all="handleExpandAll"
         @pin="handlePin"
@@ -124,7 +126,7 @@
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
       <div
         class="empty truncate"
-        v-if="!tablesLoading && (!tables || tables.length === 0)"
+        v-if="!tablesLoading && emptyEntities"
       >
         <p class="no-entities">
           There are no entities
@@ -143,7 +145,6 @@
 <script lang="ts">
 import Vue, { PropType } from 'vue';
 import _ from 'lodash'
-import TableFilter from './mixins/table_filter'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
 import { Item, SortByValues } from "./models";
@@ -151,16 +152,14 @@ import { Entity } from "../types";
 import { writeClipboard } from "../../utils/clipboard";
 import { openMenu, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
 import ProxyEmit from "../mixins/ProxyEmit";
-import EventBus from "../../utils/EventBus";
 import HiddenEntitiesModal from "./HiddenEntitiesModal.vue";
 import PinnedTableList from "./PinnedTableList.vue";
-import { idOf } from "./treeItems";
 
 export default Vue.extend({
-  mixins: [TableFilter, ProxyEmit],
+  mixins: [ProxyEmit],
   components: { VirtualTableList, HiddenEntitiesModal, PinnedTableList },
   props: {
-    tables: {
+    entities: {
       type: Array as PropType<Entity[]>,
       default: () => [],
     },
@@ -191,10 +190,6 @@ export default Vue.extend({
       type: Boolean,
       default: true,
     },
-    // this might just be for us, maybe make a default for others and allow overrides?
-    dialectData: {
-
-    }
   },
   data() {
     return {
@@ -212,19 +207,24 @@ export default Vue.extend({
       },
       tablesLoading: false,
       openHiddenEntitiesModal: false,
+      expandAll: 0,
+      collapseAll: 0,
     }
   },
   computed: {
+    emptyEntities() {
+      return !this.entities || this.entities.length === 0
+    },
     createDisabled() {
       // FIXME
       return false
       // return !!this.dialectData.disabledFeatures.createTable
     },
     totalEntities() {
-      return this.tables.length - this.hiddenEntities.length
+      return this.entities.length - this.hiddenEntities.length
     },
     shownEntities() {
-      return this.filteredTables.length
+      return this.filteredEntities.length
     },
     totalFilteredEntities() {
       return this.totalEntities - this.shownEntities
@@ -232,8 +232,8 @@ export default Vue.extend({
     entitiesHidden() {
       return !this.showTables || !this.showViews || !this.showRoutines
     },
-    filteredTables() {
-      return entityFilter(this.tables, this.entityFilter);
+    filteredEntities() {
+      return entityFilter(this.entities, this.entityFilter);
     },
     filterQuery: {
       get() {
@@ -318,7 +318,11 @@ export default Vue.extend({
     },
     toggleExpandCollapse() {
       this.isExpanded = !this.isExpanded
-      EventBus.emit('toggleExpandEntityList', this.isExpanded)
+      if (this.isExpanded) {
+        this.expandAll++
+      } else {
+        this.collapseAll++
+      }
     },
     newTable(event: MouseEvent) {
       this.$emit('bks-add-entity-click', { event })

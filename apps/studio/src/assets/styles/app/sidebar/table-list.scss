@@ -81,7 +81,7 @@
   }
 }
 
-.BksTableList {
+.BksEntityList {
   flex-grow: 1;
   background-color: transparent;
   .pinned .list-group .list-item-btn .actions .btn-fab.pinned {
@@ -90,12 +90,12 @@
   .list-group .list-item-btn .actions .btn-fab.pinned i.material-icons {
     display: unset;
   }
-  .main-table-list.list-group .list-item-btn .actions .btn-fab.pinned i.material-icons.unpin {
+  .main-entity-list.list-group .list-item-btn .actions .btn-fab.pinned i.material-icons.unpin {
     display: none;
   }
 }
 
-.BksTableList-modal-container {
+.BksEntityList-modal-container {
   background-color: rgba(darken($theme-bg, 3%), 0.9);
 
   .dialog-content {

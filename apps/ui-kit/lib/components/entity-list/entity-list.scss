@@ -29,67 +29,6 @@
       display: inline-flex;
       padding: 0 0 0 ($gutter-h * 0.5);
 
-      x-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        background: transparent;
-        box-shadow: none;
-        width: 26px;
-        cursor: pointer;
-        --trigger-effect: none;
-
-        &:before {
-          display: none;
-        }
-
-        &:hover,
-        &:focus {
-          box-shadow: none;
-
-          .material-icons,
-          .material-icons-outlined {
-            color: $text-dark;
-          }
-        }
-
-        &.btn-fab {
-          margin-right: 2px;
-          line-height: 22px;
-          height: 22px;
-          width: 22px;
-          min-width: 22px;
-          border-radius: 22px;
-          border: 0;
-
-          &.active {
-            background: rgba($theme-base, 0.1);
-
-            .material-icons {
-              color: $theme-primary;
-            }
-          }
-        }
-      }
-
-      x-menu {
-        padding: $gutter-h 0;
-
-        label {
-          display: flex;
-          justify-content: flex-start;
-          align-items: center;
-          padding: 0 $gutter-w;
-          min-height: $input-height;
-          cursor: pointer;
-        }
-
-        x-menuitem {
-          display: none;
-        }
-      }
-
       .material-icons,
       .material-icons-outlined {
         font-size: 14px;
@@ -199,6 +138,29 @@
         display: flex;
         align-items: center;
         height: auto;
+      }
+    }
+
+    .sub-item {
+      .title {
+        user-select: text;
+        cursor: pointer;
+      }
+    }
+
+    .drag-handle.draggable {
+      .dh {
+        display: none;
+      }
+
+      &:hover {
+        .dh {
+          display: inline-block;
+        }
+
+        .table-icon {
+          display: none;
+        }
       }
     }
   }
@@ -538,10 +500,6 @@
         cursor: pointer;
       }
 
-      x-button {
-        height: auto;
-      }
-
       &>* {
         visibility: hidden;
       }
@@ -564,8 +522,8 @@
     x-menuitem .menu-icon {
       padding-left: 0.4rem;
     }
-  }
 
+  }
   .pinned-entity-list .list-item-btn .bk-pin {
     display: none;
   }

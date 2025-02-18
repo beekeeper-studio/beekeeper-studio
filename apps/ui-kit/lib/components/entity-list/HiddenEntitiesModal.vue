@@ -42,7 +42,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import TableIcon from "@/components/common/TableIcon.vue";
+import TableIcon from "./TableIcon.vue";
 import Teleport from "vue2-teleport";
 
 export default Vue.extend({

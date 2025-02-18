@@ -34,8 +34,8 @@ export default Vue.extend({
       type: textEditorMixin.props.hint,
       default: "sql",
     },
-    /** Tables for autocompletion */
-    tables: {
+    /** Entities for autocompletion */
+    entities: {
       type: Array as PropType<Entity[]>,
       default() {
         return [];
@@ -61,7 +61,7 @@ export default Vue.extend({
       const secondTables = {};
       const thirdTables = {};
 
-      this.tables.forEach((table) => {
+      this.entities.forEach((table) => {
         const columns = table.columns?.map((c) => c.field) ?? [];
         // don't add table names that can get in conflict with database schema
         if (/\./.test(table.name)) return;

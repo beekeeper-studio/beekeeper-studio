@@ -95,32 +95,6 @@
   </div>
 </template>
 
-<!-- TODO avoid scoped so it's customizable. Maybe move this to the style file. -->
-<style lang="scss" scoped="true">
-.sub-item {
-  .title {
-    user-select: text;
-    cursor: pointer;
-  }
-}
-
-.drag-handle.draggable {
-  .dh {
-    display: none;
-  }
-
-  &:hover {
-    .dh {
-      display: inline-block;
-    }
-
-    .table-icon {
-      display: none;
-    }
-  }
-}
-</style>
-
 <script lang="ts">
 import Vue from "vue";
 import _ from "lodash";

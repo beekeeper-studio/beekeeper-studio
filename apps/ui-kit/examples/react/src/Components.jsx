@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getTables } from "./data";
+import { getEntities } from "./data";
 import BksTable from "./BksTable";
 import BksSqlTextEditor from "./BksSqlTextEditor";
 import BksEntityList from "./BksEntityList";
@@ -10,7 +10,8 @@ export default function Components() {
   const [selectedTableIdx, setSelectedTableIdx] = useState(0);
 
   useEffect(() => {
-    setEntities(getTables());
+    const entities = getEntities()
+    setEntities(entities);
   }, []);
 
   const columns = useMemo(
@@ -31,7 +32,7 @@ export default function Components() {
     <>
       <h2>Sql Text Editor</h2>
       <div className="card">
-        <BksSqlTextEditor tables={entities} />
+        <BksSqlTextEditor entities={entities} />
       </div>
       <h2>Table</h2>
       <div className="card">
@@ -43,7 +44,7 @@ export default function Components() {
       </div>
       <h2>Data Editor</h2>
       <div className="card">
-        <BksDataEditor tables={entities} />
+        <BksDataEditor entities={entities} />
       </div>
     </>
   );

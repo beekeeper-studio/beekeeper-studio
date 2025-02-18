@@ -85,28 +85,6 @@
   </div>
 </template>
 
-<style lang="scss">
-.sub-item {
-  .title {
-    user-select: text;
-    cursor: pointer;
-  }
-}
-.drag-handle.draggable {
-  .dh {
-    display: none;
-  }
-  &:hover {
-    .dh {
-      display: inline-block;
-    }
-    .entity-icon {
-      display: none;
-    }
-  }
-}
-</style>
-
 <script lang="ts">
 import Vue from "vue";
 import { RoutineTypeNames } from "./models";

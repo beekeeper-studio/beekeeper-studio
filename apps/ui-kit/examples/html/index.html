@@ -47,10 +47,10 @@
       textEditor.value = "select * from users u\nwhere u.id = 1;";
       textEditor.entities = entities;
 
-      table.columns = entiites[0].columns;
+      table.columns = entities[0].columns;
       table.data = entities[0].data;
 
-      entityList.tables = entities;
+      entityList.entities = entities;
       entityList.addEventListener("bks-entity-dblclick", (e) => {
         const idx = entities.findIndex((t) => t === e.detail.entity);
         if (idx > -1) {

@@ -1,25 +1,24 @@
 import { useEffect, useRef } from "react";
 
 export default function BksEntityList({ entities, onSelectEntities }) {
-  const entitiyListRef = useRef(null);
+  const ref = useRef(null);
 
   function handleItemDblClick(event) {
-    const idx = entitiyListRef.current.entities.findIndex((t) => t === event.detail.entity);
+    const idx = ref.current.entities.findIndex(
+      (entity) => entity === event.detail.entity
+    );
     if (idx > -1) {
       onSelectEntities(idx);
     }
   }
 
   useEffect(() => {
-    if (entitiyListRef.current) {
-      entitiyListRef.current.addEventListener(
-        "bks-entity-dblclick",
-        handleItemDblClick
-      );
+    if (ref.current) {
+      ref.current.addEventListener("bks-entity-dblclick", handleItemDblClick);
     }
     return () => {
-      if (entitiyListRef.current) {
-        entitiyListRef.current.removeEventListener(
+      if (ref.current) {
+        ref.current.removeEventListener(
           "bks-entity-dblclick",
           handleItemDblClick
         );
@@ -28,8 +27,8 @@ export default function BksEntityList({ entities, onSelectEntities }) {
   }, []);
 
   useEffect(() => {
-    entitiyListRef.current.entities = entities;
+    ref.current.entities = entities;
   }, [entities]);
 
-  return <bks-entity-list ref={entityListRef} />;
+  return <bks-entity-list ref={ref} />;
 }

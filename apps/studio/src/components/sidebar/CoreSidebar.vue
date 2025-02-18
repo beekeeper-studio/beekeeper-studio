@@ -18,8 +18,8 @@
         <database-dropdown
           @databaseSelected="databaseSelected"
         />
-        <bks-table-list
-          :tables="tables"
+        <bks-entity-list
+          :entities="entities"
           :context-menu-items="handleContextMenuItems"
           :hidden-entities="hiddenEntities"
           :pinned-entities="pinnedEntities"
@@ -68,7 +68,7 @@
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
   import { AppEvent } from "@/common/AppEvent";
-  import BksTableList from "../../../../ui-kit/lib/components/table-list/TableList.vue";
+  import BksEntityList from "@bks/ui-kit/vue/entity-list";
   import TableListContextMenusMixin from "@/mixins/TableListContextMenus";
   import { shallowEqual } from '@/common/utils'
 
@@ -80,7 +80,7 @@
   export default {
     mixins: [TableListContextMenusMixin],
     props: ['sidebarShown'],
-    components: { BksTableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
+    components: { BksEntityList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
         tableLoadError: null,
@@ -94,7 +94,7 @@
       }
     },
     computed: {
-      tables() {
+      entities() {
         const entities = []
         this.$store.getters.schemaTables.forEach(({ tables, routines }) => {
           tables.forEach((table) => entities.push(table))
