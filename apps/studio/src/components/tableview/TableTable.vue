@@ -40,6 +40,7 @@
           :cell-context-menu-items="cellContextMenuItems"
           :column-header-context-menu-items="columnHeaderContextMenuItems"
           @bks-initialized="handleTableInitialized"
+          @bks-ranges-change="handleRangesChange"
         />
         <detail-view-sidebar
           :title="detailViewTitle"
@@ -336,7 +337,7 @@ import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/uti
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-import { copyRanges, pasteRange, pasteActionsMenu, copyRangeDataAsSqlMenuItem, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { copyRanges, pasteRange, pasteActionsMenu, copyRangesAsSQLMenuItem, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
@@ -898,7 +899,7 @@ export default Vue.extend({
     extendCopyItems(items) {
       const newItems = [...items];
       const lastCopyIndex = newItems.findLastIndex((item) => item.id.includes('range-copy'));
-      newItems.splice(lastCopyIndex + 1, 0, copyRangeDataAsSqlMenuItem(this.tabulator.getRanges(), this.table.name, this.table.schema));
+      newItems.splice(lastCopyIndex + 1, 0, copyRangesAsSQLMenuItem(this.tabulator.getRanges(), this.table.name, this.table.schema));
       return newItems;
     },
     cornerHeaderContextMenuItems(_e, _header, defaultItems) {
@@ -981,6 +982,9 @@ export default Vue.extend({
         this.tabulator.setData()
         this.loadOnTableInitialized = false
       }
+    },
+    handleRangesChange(detail) {
+      this.updateDetailView({ range: detail.ranges[0] })
     },
     async initialize() {
       this.initialized = true

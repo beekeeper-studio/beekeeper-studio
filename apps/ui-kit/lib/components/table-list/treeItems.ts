@@ -13,8 +13,9 @@ const tableEntityTypes = [
 
 /** Useful for identifying an entity item in table list */
 export function idOf(entity: Entity) {
+  if (entity.id) return entity.id;
   if (entity.entityType === "schema") return `schema.${entity.name}`;
-  return `${entity.entityType}.${entity.schema}.${entity.name}`;
+  return `${entity.entityType}.${entity.schema ?? ''}.${entity.name}`;
 }
 
 export function createRootItem(): RootItem {
@@ -33,8 +34,6 @@ export function createRootItem(): RootItem {
 
 export interface ItemState {
   expanded: boolean;
-  hidden: boolean;
-  pinned: boolean;
 }
 
 export type ItemStateType = keyof ItemState;

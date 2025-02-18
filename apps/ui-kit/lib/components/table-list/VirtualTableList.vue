@@ -8,7 +8,7 @@
     :data-component="itemComponent"
     :estimate-size="estimateItemHeight"
     :keeps="keeps"
-    :extra-props="{ onExpand: handleExpand, onPin: handlePin, onDblClick: handleDblClick, onContextMenu: handleContextMenu }"
+    :extra-props="{ onExpand: handleExpand, onPin: handlePin, onDblClick: handleDblClick, onContextMenu: handleContextMenu, enablePinning }"
   />
 </template>
 
@@ -33,6 +33,7 @@ import Vue, { PropType } from "vue";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
 import EventBus from "../../utils/EventBus";
+import { shouldRequestColumns } from "../../utils/entity";
 
 import * as globals from "../../utils/constants";
 import "scrollyfills";
@@ -40,18 +41,10 @@ import "scrollyfills";
 export default Vue.extend({
   components: { VirtualList },
   props: {
-    tables: {
-      type: Array,
-      default: () => [],
-    },
-    hiddenEntities: {
-      type: Array as PropType<Entity[]>,
-      default: () => [],
-    },
-    pinnedEntities: {
-      type: Array as PropType<Entity[]>,
-      default: () => [],
-    },
+    tables: Array as PropType<Entity[]>,
+    hiddenEntities: Array as PropType<Entity[]>,
+    pinnedEntities: Array as PropType<Entity[]>,
+    enablePinning: Boolean,
   },
   data() {
     return {
@@ -120,7 +113,7 @@ export default Vue.extend({
     },
     updateItemState(item: Item, stateType: ItemStateType) {
       if (!this.itemStates[item.key]) {
-        this.$set(this.itemStates, item.key, { expanded: item.expanded, hidden: item.hidden, pinned: item.pinned });
+        this.$set(this.itemStates, item.key, { expanded: item.expanded });
       } else {
         this.itemStates[item.key][stateType] = item[stateType]
       }
@@ -128,14 +121,14 @@ export default Vue.extend({
     handleExpand(_: Event, item: Item) {
       item.expanded = !item.expanded;
       this.updateItemState(item, 'expanded')
-      if (item.expanded && item.type === "table" && typeof item.entity.columns === undefined) {
+      if (item.expanded && item.type === "table" &&  shouldRequestColumns(item.entity)) {
         this.$emit("request-items-columns", [item])
       }
       this.generateDisplayItems();
       this.$emit("expand", item);
     },
     handlePin(_: Event, item: TableItem) {
-      this.updateItemState(item, 'pinned')
+      this.$emit("pin", item.entity);
       // this.trigger(AppEvent.togglePinTableList, item.entity, !item.pinned);
     },
     handleDblClick(e: Event, item: Item) {
@@ -197,6 +190,13 @@ export default Vue.extend({
     },
     hiddenEntities() {
       this.generateDisplayItems();
+    },
+    pinnedEntities(oldPins, newPins) {
+      console.log(oldPins.length, newPins.length)
+      this.pinnedEntities.forEach((entity: Entity) => {
+        const item = this.items.find((item: Item) => item.entity === entity);
+        item.pinned = true;
+      })
     },
   },
   mounted() {

@@ -40,8 +40,19 @@
       style="margin-top: -5px;"
     />
 
+    <pinned-table-list
+      v-if="pinnedEntities.length"
+      :entities="pinnedEntities"
+      :sort-by="pinnedSortBy"
+      :sort-order="pinnedSortOrder"
+      @request-entities-columns="handleRequestEntitiesColumns"
+      @sort-by="handlePinSortBy"
+      @sort-order="handlePinSortOrder"
+      @sort-position="handlePinSortPosition"
+    />
+
     <nav
-      class="list-group flex-col"
+      class="main-table-list list-group flex-col"
       ref="tables"
     >
       <div class="list-heading">
@@ -101,8 +112,10 @@
         :tables="filteredTables"
         :hidden-entities="hiddenEntities"
         :pinned-entities="pinnedEntities"
+        :enable-pinning="enablePinning"
         @expand="handleExpand"
         @expand-all="handleExpandAll"
+        @pin="handlePin"
         @dblclick="handleDblClick"
         @contextmenu="handleContextMenu"
         @request-items-columns="handleRequestItemsColumns"
@@ -133,17 +146,19 @@ import _ from 'lodash'
 import TableFilter from './mixins/table_filter'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
-import { Item } from "./models";
+import { Item, SortByValues } from "./models";
 import { Entity } from "../types";
 import { writeClipboard } from "../../utils/clipboard";
 import { openMenu, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
 import ProxyEmit from "../mixins/ProxyEmit";
 import EventBus from "../../utils/EventBus";
 import HiddenEntitiesModal from "./HiddenEntitiesModal.vue";
+import PinnedTableList from "./PinnedTableList.vue";
+import { idOf } from "./treeItems";
 
 export default Vue.extend({
   mixins: [TableFilter, ProxyEmit],
-  components: { VirtualTableList, HiddenEntitiesModal },
+  components: { VirtualTableList, HiddenEntitiesModal, PinnedTableList },
   props: {
     tables: {
       type: Array as PropType<Entity[]>,
@@ -158,6 +173,18 @@ export default Vue.extend({
     pinnedEntities: {
       type: Array as PropType<Entity[]>,
       default: () => [],
+    },
+    enablePinning: {
+      type: Boolean,
+      default: false,
+    },
+    pinnedSortBy: {
+      type: String as PropType<typeof SortByValues[number]>,
+      default: "position",
+    },
+    pinnedSortOrder: {
+      type: String,
+      default: "asc",
     },
     contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     showCreateEntityBtn: {
@@ -310,6 +337,9 @@ export default Vue.extend({
         this.$emit('bks-collapse-all')
       }
     },
+    handlePin(entity: Entity) {
+      this.$emit('bks-entity-pin', { entity })
+    },
     handleDblClick(event: MouseEvent, item: Item) {
       this.$emit('bks-entity-dblclick', { event, entity: item.entity })
     },
@@ -320,6 +350,18 @@ export default Vue.extend({
     },
     handleRequestItemsColumns(items: Item[]) {
       this.$emit('bks-entities-request-columns', { entities: items.map(item => item.entity) })
+    },
+    handleRequestEntitiesColumns(entities: Entity[]) {
+      this.$emit('bks-entities-request-columns', { entities })
+    },
+    handlePinSortBy(sortBy: typeof SortByValues[number]) {
+      this.$emit("bks-pinned-entities-sort-by", { sortBy })
+    },
+    handlePinSortOrder() {
+      this.$emit("bks-pinned-entities-sort-order")
+    },
+    handlePinSortPosition(entities: Entity[]) {
+      this.$emit("bks-pinned-entities-sort-position", { entities })
     },
     openFilterMenu(event: MouseEvent) {
       openMenu({ event, options: this.filterMenuOptions })

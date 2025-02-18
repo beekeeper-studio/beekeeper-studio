@@ -15,6 +15,7 @@
     :table="source.entity"
     :pinned="source.pinned"
     :loading-columns="source.loadingColumns"
+    :enable-pinning="enablePinning"
     @dblclick="onDblClick($event, source)"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
@@ -26,6 +27,7 @@
     :expanded="source.expanded"
     :routine="source.entity"
     :pinned="source.pinned"
+    :enable-pinning="enablePinning"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="onContextMenu($event, source)"
@@ -43,6 +45,6 @@ export default Vue.extend({
     StatelessRoutineListItem,
     StatelessSidebarFolder,
   },
-  props: ["source", "onExpand", "onPin", "onDblClick", "onContextMenu"],
+  props: ["source", "onExpand", "onPin", "onDblClick", "onContextMenu", "enablePinning"],
 });
 </script>

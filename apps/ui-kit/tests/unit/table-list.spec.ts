@@ -25,7 +25,7 @@ it("should generate items without schema", () => {
   expect(items).toHaveLength(2);
   expect(items[0]).toEqual({
     type: "table",
-    key: "table.undefined.users",
+    key: "table..users",
     entity: entities[0],
     expanded: false,
     hidden: false,
@@ -36,7 +36,7 @@ it("should generate items without schema", () => {
   });
   expect(items[1]).toEqual({
     type: "routine",
-    key: "routine.undefined.get_users",
+    key: "routine..get_users",
     entity: entities[1],
     expanded: false,
     hidden: false,

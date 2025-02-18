@@ -206,16 +206,16 @@ export function pasteActionsMenu(range: RangeComponent) {
   ];
 }
 
-export function copyRangeDataAsSqlMenuItem(ranges: RangeComponent[], table: string, schema?: string) {
+export function copyRangesAsSQLMenuItem(ranges: RangeComponent[], table: string, schema?: string) {
   return {
     label: 'Copy as SQL',
     type: 'copy',
-    handler: () => copyRangeDataAsSql({ data: ranges, table, schema }),
+    handler: () => copyRangesAsSQL({ ranges, table, schema }),
   };
 }
 
-export async function copyRangeDataAsSql(options: {
-  data: RangeData,
+async function copyRangesAsSQL(options: {
+  ranges: RangeComponent[],
   table?: string;
   schema?: string;
 }) {
@@ -224,7 +224,7 @@ export async function copyRangeDataAsSql(options: {
     tableInsert: {
       table: options.table,
       schema: options.schema,
-      data: options.data,
+      data: options.ranges[0].getData(),
     },
   });
   ElectronPlugin.clipboard.writeText(text);

@@ -50,3 +50,6 @@ export interface RoutineItem extends BaseItem {
   entity: RoutineEntity;
   parent: RootItem | SchemaItem;
 }
+
+export const SortByValues = ["position", "name"] as const;
+

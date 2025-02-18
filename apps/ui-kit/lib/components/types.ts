@@ -9,9 +9,12 @@ export type BaseData = Array<Record<string, any>>;
 
 export type Entity = TableEntity | RoutineEntity | SchemaEntity;
 
+export type EntityType = '' | 'table' | 'view' | 'materialized-view' | '' | 'routine' | 'schema';
+
 interface BaseEntity {
+  id?: string;
   name: string;
-  entityType: 'table' | 'view' | 'materialized-view' | '' | 'routine' | 'schema';
+  entityType: EntityType;
 }
 
 export interface TableEntity extends BaseEntity {

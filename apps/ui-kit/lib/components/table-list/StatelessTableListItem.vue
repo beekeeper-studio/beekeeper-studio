@@ -41,20 +41,21 @@
           table.name
         }}</span>
       </span>
-      <!-- <span -->
-      <!--   class="actions" -->
-      <!--   :class="{ pinned: pinned }" -->
-      <!-- > -->
-      <!--   <span -->
-      <!--     class="btn-fab pin" -->
-      <!--     :class="{ pinned: pinned }" -->
-      <!--     :title="pinned ? 'Unpin' : 'Pin'" -->
-      <!--     @mousedown.prevent.stop="$emit('pin', $event)" -->
-      <!--   > -->
-      <!--     <i class="bk-pin" /> -->
-      <!--     <i class="material-icons unpin">clear</i> -->
-      <!--   </span> -->
-      <!-- </span> -->
+      <span
+        v-if="enablePinning"
+        class="actions"
+        :class="{ pinned: pinned }"
+      >
+        <span
+          class="btn-fab pin"
+          :class="{ pinned: pinned }"
+          :title="pinned ? 'Unpin' : 'Pin'"
+          @mousedown.prevent.stop="$emit('pin', $event)"
+        >
+          <i class="bk-pin pin" />
+          <i class="material-icons unpin">clear</i>
+        </span>
+      </span>
     </a>
     <div
       v-if="expanded"
@@ -127,14 +128,13 @@ import TableIcon from "./TableIcon.vue";
 
 export default Vue.extend({
   props: [
-    "id",
     "table",
-    "container",
     "pinned",
     "draggable",
     "level",
     "expanded",
     "loadingColumns",
+    "enablePinning",
   ],
   components: { TableIcon },
 });

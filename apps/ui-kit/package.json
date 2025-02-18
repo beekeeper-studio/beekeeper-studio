@@ -29,6 +29,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.2.0",
@@ -53,6 +54,7 @@
     "vite-plugin-vue2": "^2.0.3",
     "vitest": "^3.0.5",
     "vue": "^2.7.16",
+    "vue-js-modal": "^2.0.1",
     "vue-tsc": "^2.1.10",
     "vue-virtual-scroll-list": "^2.3.5",
     "vue2-teleport": "^1.1.4",

@@ -35,7 +35,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyRangeDataAsSqlMenuItem } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyRangesAsSQLMenuItem } from '@/lib/menu/tableMenu';
   import BksTable from "@bks/ui-kit/vue/table";
 
   export default {
@@ -168,7 +168,7 @@
       contextMenuItems(event, items) {
         const newItems = [...items];
         const lastCopyIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
-        newItems.splice(lastCopyIndex + 1, 0, copyRangeDataAsSqlMenuItem(this.tabulator.getRanges(), this.result.tableName, this.defaultSchema));
+        newItems.splice(lastCopyIndex + 1, 0, copyRangesAsSQLMenuItem(this.tabulator.getRanges(), this.result.tableName, this.defaultSchema));
         return newItems;
       },
       copySelection() {

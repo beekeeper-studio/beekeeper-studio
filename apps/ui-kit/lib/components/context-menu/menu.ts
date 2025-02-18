@@ -4,18 +4,20 @@ import isEmpty from "lodash/isEmpty"
 
 export interface BaseMenuItem<Item = unknown> {
   label: string | { html: string }
-  handler: (event: Event, target: Item, option: MenuItem) => void
+  handler: (event: Event, target: Item, menuItem: MenuItem) => void
   id?: string
   class?: string | ((options: { item: Item }) => string)
   shortcut?: string | string[]
-  /** Material Icons name. E.g. 'arrow_drop_down' */
-  icon?: string
   disabled?: boolean
   items?: (MenuItem<Item> | DividerItem)[]
-  /** Set to true or false to make this item a checkbox */
-  checked?: boolean
   /** Keep the menu open after this item is clicked */
   keepOpen?: boolean
+}
+
+export interface CheckedMenuItem<Item = unknown> extends BaseMenuItem<Item> {
+  /** Set to true or false to make this item a checkbox */
+  checked: boolean
+  id: string
 }
 
 export interface DividerItem {
@@ -23,10 +25,10 @@ export interface DividerItem {
   id: 'divider'
 }
 
-export type MenuItem<Item = unknown> = BaseMenuItem<Item> | DividerItem
+export type MenuItem<Item = unknown> = BaseMenuItem<Item> | CheckedMenuItem<Item> |  DividerItem
 
 export interface MenuProps<Item = unknown> {
-  options: (MenuItem<Item> | DividerItem)[],
+  options: MenuItem<Item>[],
   /** If set, the menu will be attached to this element. The string must be a valid CSS selector.
    *  @default body */
   targetElement?: string
