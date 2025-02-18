@@ -12,10 +12,10 @@
     ".": "./dist/index.js",
     "./style.css": "./dist/style.css",
     "./table": "./dist/table.js",
-    "./table-list": "./dist/table-list.js",
+    "./entity-list": "./dist/entity-list.js",
     "./sql-text-editor": "./dist/sql-text-editor.js",
     "./vue/table": "./dist/vue/table.js",
-    "./vue/table-list": "./dist/vue/table-list.js",
+    "./vue/entity-list": "./dist/vue/entity-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",
     "./vue/data-editor": "./dist/vue/data-editor.js"
   },

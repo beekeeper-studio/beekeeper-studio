@@ -2,7 +2,7 @@ import _ from "lodash";
 import CodeMirror, { TextMarker } from "codemirror";
 import { identify, Options } from "sql-query-identifier";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
-import { isTextSelected } from "../table-list/sql_tools";
+import { isTextSelected } from "../entity-list/sql_tools";
 
 export interface QuerySelectionChangeParams {
   queries: IdentifyResult[];
@@ -29,15 +29,19 @@ function getSelectedQueryPosition(
   };
 }
 
-function getSelectedQueryIndex(queries: IdentifyResult[], cursorIndex: number) {
+function getSelectedQueryIndex(
+  queries: IdentifyResult[],
+  cursorIndex: number,
+  cursorIndexAnchor: number
+) {
   for (let i = 0; i < queries.length; i++) {
     // Find a query in between anchor and head cursors
-    if (this.editor.cursorIndex !== this.editor.cursorIndexAnchor) {
+    if (cursorIndex !== cursorIndexAnchor) {
       const isSelected = isTextSelected(
         queries[i].start,
         queries[i].end,
-        this.editor.cursorIndexAnchor,
-        this.editor.cursorIndex
+        cursorIndexAnchor,
+        cursorIndex
       );
       if (isSelected) return i;
     }
@@ -105,8 +109,13 @@ function querySelectionHandler(
   cm: CodeMirror.Editor
 ) {
   const cursorIndex = cm.getDoc().indexFromPos(cm.getCursor());
+  const cursorIndexAnchor = cm.getDoc().indexFromPos(cm.getCursor("anchor"));
   const queries = splitQueries(cm.getValue(), dialect);
-  const selectedQueryIndex = getSelectedQueryIndex(queries, cursorIndex);
+  const selectedQueryIndex = getSelectedQueryIndex(
+    queries,
+    cursorIndex,
+    cursorIndexAnchor
+  );
   const selectedQueryPosition = getSelectedQueryPosition(
     queries,
     selectedQueryIndex

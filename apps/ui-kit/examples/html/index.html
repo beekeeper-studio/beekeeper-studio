@@ -27,9 +27,9 @@
       <div class="card">
         <bks-table></bks-table>
       </div>
-      <h2>Table List</h2>
+      <h2>Entity List</h2>
       <div class="card">
-        <bks-table-list></bks-table-list>
+        <bks-entity-list></bks-entity-list>
       </div>
       <h2>Data Editor</h2>
       <div class="card">
@@ -37,29 +37,29 @@
       </div>
     </div>
     <script type="module">
-      import { getTables } from "./data.js";
-      const tables = getTables();
+      import { getEntities } from "./data.js";
+      const entities = getEntities();
       const textEditor = document.querySelector("bks-sql-text-editor");
       const table = document.querySelector("bks-table");
-      const tableList = document.querySelector("bks-table-list");
+      const entityList = document.querySelector("bks-entity-list");
       const dataEditor = document.querySelector("bks-data-editor");
 
       textEditor.value = "select * from users u\nwhere u.id = 1;";
-      textEditor.tables = tables;
+      textEditor.entities = entities;
 
-      table.columns = tables[0].columns;
-      table.data = tables[0].data;
+      table.columns = entiites[0].columns;
+      table.data = entities[0].data;
 
-      tableList.tables = tables;
-      tableList.addEventListener("bks-entity-dblclick", (e) => {
-        const idx = tables.findIndex((t) => t === e.detail.entity);
+      entityList.tables = entities;
+      entityList.addEventListener("bks-entity-dblclick", (e) => {
+        const idx = entities.findIndex((t) => t === e.detail.entity);
         if (idx > -1) {
-          table.data = tables[idx].data;
-          table.columns = tables[idx].columns;
+          table.data = entities[idx].data;
+          table.columns = entities[idx].columns;
         }
       });
 
-      dataEditor.tables = tables;
+      dataEditor.entities = entities;
       dataEditor.addEventListener("bks-query-submit", (event) => {
         alert(`Query: ${event.detail.query}`);
       });

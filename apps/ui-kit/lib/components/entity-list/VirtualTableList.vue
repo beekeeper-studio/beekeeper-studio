@@ -51,7 +51,7 @@ export default Vue.extend({
       items: [],
       displayItems: [],
       itemComponent: ItemComponent,
-      estimateItemHeight: globals.tableListItemHeight, // height of collapsed item
+      estimateItemHeight: globals.entityListItemHeight, // height of collapsed item
       keeps: 30,
       itemStates: {},
     };
@@ -73,7 +73,7 @@ export default Vue.extend({
 
           // Summarizing the total height of all list items to get the average height
 
-          totalHeight += globals.tableListItemHeight; // height of list item
+          totalHeight += globals.entityListItemHeight; // height of list item
 
           if (item.expanded) {
             if (item.type === "table") {
@@ -90,7 +90,7 @@ export default Vue.extend({
       if (displayItems.length > 0) {
         this.estimateItemHeight = totalHeight / displayItems.length;
       } else {
-        this.estimateItemHeight = globals.tableListItemHeight;
+        this.estimateItemHeight = globals.entityListItemHeight;
       }
       this.displayItems = displayItems;
     },
@@ -200,12 +200,12 @@ export default Vue.extend({
     },
   },
   mounted() {
-    EventBus.on("toggleExpandTableList", this.handleToggleExpandedAll)
+    EventBus.on("toggleExpandEntityList", this.handleToggleExpandedAll)
     this.$nextTick(() => this.resizeObserver.observe(this.$refs.vList.$el));
     this.$refs.vList.$el.addEventListener("scrollend", this.handleScrollEnd);
   },
   beforeDestroy() {
-    EventBus.off("toggleExpandTableList", this.handleToggleExpandedAll)
+    EventBus.off("toggleExpandEntityList", this.handleToggleExpandedAll)
     this.resizeObserver.disconnect();
     this.$refs.vList.$el.removeEventListener("scrollend", this.handleScrollEnd);
   },

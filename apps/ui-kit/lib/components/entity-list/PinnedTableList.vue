@@ -1,5 +1,5 @@
 <template>
-  <nav class="pinned-table-list list-group flex-col">
+  <nav class="pinned-entity-list list-group flex-col">
     <div class="list-heading">
       <span class="sub">Pinned</span>
       <span class="badge">{{ sortedEntities.length }}</span>

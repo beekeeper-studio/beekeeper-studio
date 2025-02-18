@@ -2,28 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import { getTables } from "./data";
 import BksTable from "./BksTable";
 import BksSqlTextEditor from "./BksSqlTextEditor";
-import BksTableList from "./BksTableList";
+import BksEntityList from "./BksEntityList";
 import BksDataEditor from "./BksDataEditor";
 
 export default function Components() {
-  const [tables, setTables] = useState([]);
+  const [entities, setEntities] = useState([]);
   const [selectedTableIdx, setSelectedTableIdx] = useState(0);
 
   useEffect(() => {
-    setTables(getTables());
+    setEntities(getTables());
   }, []);
 
   const columns = useMemo(
-    () => tables[selectedTableIdx]?.columns || [],
-    [tables, selectedTableIdx]
+    () => entities[selectedTableIdx]?.columns || [],
+    [entities, selectedTableIdx]
   );
 
   const data = useMemo(
-    () => tables[selectedTableIdx]?.data || [],
-    [tables, selectedTableIdx]
+    () => entities[selectedTableIdx]?.data || [],
+    [entities, selectedTableIdx]
   );
 
-  function handleSelectTable(idx) {
+  function handleSelectEntity(idx) {
     setSelectedTableIdx(idx);
   }
 
@@ -31,7 +31,7 @@ export default function Components() {
     <>
       <h2>Sql Text Editor</h2>
       <div className="card">
-        <BksSqlTextEditor tables={tables} />
+        <BksSqlTextEditor tables={entities} />
       </div>
       <h2>Table</h2>
       <div className="card">
@@ -39,11 +39,11 @@ export default function Components() {
       </div>
       <h2>Table List</h2>
       <div className="card">
-        <BksTableList tables={tables} onSelectTable={handleSelectTable} />
+        <BksEntityList entities={entities} onSelectEntity={handleSelectEntity} />
       </div>
       <h2>Data Editor</h2>
       <div className="card">
-        <BksDataEditor tables={tables} />
+        <BksDataEditor tables={entities} />
       </div>
     </>
   );

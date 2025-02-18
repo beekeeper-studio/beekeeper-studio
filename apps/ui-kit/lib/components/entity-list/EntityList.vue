@@ -52,7 +52,7 @@
     />
 
     <nav
-      class="main-table-list list-group flex-col"
+      class="main-entity-list list-group flex-col"
       ref="tables"
     >
       <div class="list-heading">
@@ -318,7 +318,7 @@ export default Vue.extend({
     },
     toggleExpandCollapse() {
       this.isExpanded = !this.isExpanded
-      EventBus.emit('toggleExpandTableList', this.isExpanded)
+      EventBus.emit('toggleExpandEntityList', this.isExpanded)
     },
     newTable(event: MouseEvent) {
       this.$emit('bks-add-entity-click', { event })

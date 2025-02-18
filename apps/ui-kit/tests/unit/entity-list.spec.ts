@@ -3,7 +3,7 @@ import { Entity } from "../../lib/components/types";
 import {
   createTreeItems,
   createRootItem,
-} from "../../lib/components/table-list/treeItems";
+} from "../../lib/components/entity-list/treeItems";
 
 const root = createRootItem();
 

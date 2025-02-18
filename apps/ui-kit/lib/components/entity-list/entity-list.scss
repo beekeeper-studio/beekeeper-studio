@@ -3,7 +3,7 @@
 @use "../../styles/base";
 @use "../../styles/layout";
 
-.BksTableList {
+.BksEntityList {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -203,7 +203,7 @@
     }
   }
 
-  .BksTableList .virtual-table-list .sub-item {
+  .BksEntityList .virtual-table-list .sub-item {
     .title {
       flex-grow: 0;
       flex-shrink: 0;
@@ -566,12 +566,12 @@
     }
   }
 
-  .pinned-table-list .list-item-btn .bk-pin {
+  .pinned-entity-list .list-item-btn .bk-pin {
     display: none;
   }
 }
 
-.BksTableList-modal-container {
+.BksEntityList-modal-container {
   z-index: 100;
   position: absolute;
   inset: 0;

@@ -1,5 +1,5 @@
 interface EventMap {
-  toggleExpandTableList: boolean;
+  toggleExpandEntityList: boolean;
 }
 
 type Callback<T extends keyof EventMap> = (data: EventMap[T]) => void;

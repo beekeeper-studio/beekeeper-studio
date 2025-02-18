@@ -31,7 +31,7 @@ table.cellContextMenuItems = (event, target, items) => {
 A divider is a special item that adds a horizontal line between menu items.
 
 ```js
-tableList.contextMenuItems = [
+entityList.contextMenuItems = [
   action1,
   action2,
   { type: 'divider' },

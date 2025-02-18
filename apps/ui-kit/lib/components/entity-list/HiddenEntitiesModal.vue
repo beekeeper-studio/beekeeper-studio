@@ -3,7 +3,7 @@
     <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
     <!-- FIXME v-kbd-trap is not implemented yet -->
     <!-- v-kbd-trap="true" -->
-    <div class="BksTableList-modal-container" @click.self="$emit('close')">
+    <div class="BksEntityList-modal-container" @click.self="$emit('close')">
       <div class="dialog-content">
         <div class="dialog-c-title flex flex-middle">Hidden Entities</div>
         <a

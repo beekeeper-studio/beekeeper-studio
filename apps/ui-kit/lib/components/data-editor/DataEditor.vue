@@ -1,7 +1,7 @@
 <template>
   <div class="BksUiKit BksDataEditor" ref="main">
-    <table-list
-      v-bind="tableListProps"
+    <entity-list
+      v-bind="entityListProps"
       :tables="tables"
       proxyEmit="true"
       @bks-entity-dblclick="handleEntityDblclick"
@@ -43,7 +43,7 @@
 <script lang="ts">
 import _ from "lodash";
 import Vue, { PropType } from "vue";
-import TableList from "../table-list/TableList.vue";
+import EntityList from "../entity-list/EntityList.vue";
 import SqlTextEditor from "../sql-text-editor/SqlTextEditor.vue";
 import TableComponent from "../table/Table.vue";
 import Split from "split.js";
@@ -51,13 +51,13 @@ import { Table } from "./types";
 import { Entity } from "../types";
 
 export default Vue.extend({
-  components: { TableList, SqlTextEditor, TableComponent },
+  components: { EntityList, SqlTextEditor, TableComponent },
   props: {
     tables: {
       type: Array as PropType<Table[]>,
       default: () => [{ columns: [], data: [] }],
     },
-    tableListProps: {
+    entityListProps: {
       type: Object,
       default: () => ({}),
     },
