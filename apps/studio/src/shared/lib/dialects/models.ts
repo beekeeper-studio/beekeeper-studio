@@ -151,7 +151,7 @@ export interface DialectData {
       sql?: boolean
     }
     schema?: boolean
-    multipleDatabase?: boolean
+    multipleDatabases?: boolean
     generatedColumns?: boolean
     transactions?: boolean
     chunkSizeStream?: boolean
