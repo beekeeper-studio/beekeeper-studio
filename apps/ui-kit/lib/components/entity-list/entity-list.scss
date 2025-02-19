@@ -498,6 +498,7 @@
         background-color: transparent;
         display: flex;
         cursor: pointer;
+        min-width: 0;
       }
 
       &>* {

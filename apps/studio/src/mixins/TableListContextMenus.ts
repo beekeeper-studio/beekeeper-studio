@@ -161,7 +161,7 @@ export default {
           label: "Hide",
           id: 'hide-schema',
           handler: (_e, item) => {
-            this.trigger(AppEvent.toggleHideSchema, item, true)
+            this.trigger(AppEvent.toggleHideSchema, item.name, true)
           },
         },
         { type: 'divider' },

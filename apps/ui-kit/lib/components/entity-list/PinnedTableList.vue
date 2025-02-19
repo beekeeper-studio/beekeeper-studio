@@ -40,6 +40,7 @@
           :no-select="true"
           :draggable="sortBy === 'position'"
           :expanded="isExpanded(entity)"
+          @pin="$emit('pin', entity)"
           @expand="handleExpand(entity)"
           @contextmenu.prevent.stop="$emit('contextmenu', event, entity)"
         />
@@ -52,6 +53,7 @@
           :level="0"
           :draggable="sortBy === 'position'"
           :expanded="isExpanded(entity)"
+          @pin="$emit('pin', entity)"
           @contextmenu.prevent.stop="$emit('contextmenu', event, entity)"
         />
       </template>

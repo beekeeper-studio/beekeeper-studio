@@ -81,8 +81,7 @@ Essentially, hiding an entity can be done by simply filtering the array of
 
 Our implementation provides UI hints and a modal for unhiding an entity.
 To enable this functionality, set the `hiddenEntities` property to an array of
-entity objects that you wish to hide. These objects must be the same references
-as those in the entities property.
+entity objects that you wish to hide.
 
 ```js
 const users = { ... }
@@ -99,32 +98,32 @@ entityList.addEventListener('bks-entity-unhide', (event) => {
 })
 ```
 
-## Pinning
-
-To pin an entity, set the `enablePinning` property to `true` and `pinnedEntities`
-property to an array of objects. These object should have the same reference
-as the ones in the `entities` property.
-
-```js
-const users = { ... }
-const orders = { ... }
-const entities = [users, orders]
-const pinnedEntities = [orders]
-
-entityList.entities = entities
-entityList.pinnedEntities = orders
-entityList.enablePinning = true
-entityList.addEventListener('bks-entity-pin', (event) => {
-  const entity = event.detail.entity
-  const entities = pinnedEntities.concat(entity)
-  entityList.pinnedEntities = entities
-})
-entityList.addEventListener('bks-entity-unpin', (event) => {
-  const entity = event.detail.entity
-  const entities = pinnedEntities.filter((pinnedEntity) => pinnedEntity !== entity)
-  entityList.pinnedEntities = entities
-})
-```
+<!-- ## Pinning -->
+<!--  -->
+<!-- To pin an entity, set the `enablePinning` property to `true` and `pinnedEntities` -->
+<!-- property to an array of objects. These object should have the same reference -->
+<!-- as the ones in the `entities` property. -->
+<!--  -->
+<!-- ```js -->
+<!-- const users = { ... } -->
+<!-- const orders = { ... } -->
+<!-- const entities = [users, orders] -->
+<!-- const pinnedEntities = [orders] -->
+<!--  -->
+<!-- entityList.entities = entities -->
+<!-- entityList.pinnedEntities = orders -->
+<!-- entityList.enablePinning = true -->
+<!-- entityList.addEventListener('bks-entity-pin', (event) => { -->
+<!--   const entity = event.detail.entity -->
+<!--   const entities = pinnedEntities.concat(entity) -->
+<!--   entityList.pinnedEntities = entities -->
+<!-- }) -->
+<!-- entityList.addEventListener('bks-entity-unpin', (event) => { -->
+<!--   const entity = event.detail.entity -->
+<!--   const entities = pinnedEntities.filter((pinnedEntity) => pinnedEntity !== entity) -->
+<!--   entityList.pinnedEntities = entities -->
+<!-- }) -->
+<!-- ``` -->
 
 ## Lazy Loading Columns
 

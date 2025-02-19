@@ -147,7 +147,7 @@ If you want to add a divider between context menu items, you can add an object `
 | `bks-ranges-change`     | Emitted when the ranges are changed.                  | `{ ranges: TabulatorRange[] }`                                  |
 | `bks-foreign-key-go-to` | Emitted when the foreign key go to button is clicked. | `{ value: any; field: string; cell: Tabulator.CellComponent; }` |
 
-### Table List
+### Entity List
 
 #### Example
 

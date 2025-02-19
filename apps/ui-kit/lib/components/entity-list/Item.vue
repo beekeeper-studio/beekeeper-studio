@@ -9,7 +9,6 @@
   />
   <stateless-table-list-item
     v-else-if="source.type === 'table'"
-    :id="source.key"
     :level="source.level"
     :expanded="source.expanded"
     :table="source.entity"

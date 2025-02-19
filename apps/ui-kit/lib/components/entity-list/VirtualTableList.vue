@@ -16,7 +16,7 @@
 /*
 
 In some cases, there are databases that have over 1000 tables or even much
-more. Without optimizing the table list, it can be very slow.
+more. Without optimizing the entity list, it can be very slow.
 
 This component will render the items that are visible. Items that are outside
 the viewport are destroyed. So all the states that need to be persistent
@@ -33,6 +33,7 @@ import Vue, { PropType } from "vue";
 import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
 import { shouldRequestColumns } from "../../utils/entity";
+import { idOf } from "./treeItems";
 
 import * as globals from "../../utils/constants";
 import "scrollyfills";
@@ -55,9 +56,11 @@ export default Vue.extend({
       estimateItemHeight: globals.entityListItemHeight, // height of collapsed item
       keeps: 30,
       itemStates: {},
+      pinnedItems: [],
     };
   },
   methods: {
+    // TODO move this to a file and test
     generateDisplayItems() {
       let totalHeight = 0;
       const displayItems: Item[] = [];
@@ -69,7 +72,17 @@ export default Vue.extend({
         //   continue;
         // }
 
-        if (!this.hiddenEntities.includes(item.entity) && item.parent.expanded) {
+        const isItemHidden = this.hiddenEntities.find((entity: Entity) => {
+          if (idOf(entity) === idOf(item.entity)) {
+            return true
+          }
+          if (item.parent && idOf(entity) === idOf(item.parent.entity)) {
+            return true
+          }
+          return false
+        })
+
+        if (!isItemHidden && item.parent.expanded) {
           displayItems.push(item);
 
           // Summarizing the total height of all list items to get the average height
@@ -154,7 +167,7 @@ export default Vue.extend({
       }
     },
     handleTogglePinned(entity: Entity, pinned?: boolean) {
-      const item = this.items.find((item: Item) => item.entity === entity);
+      const item = this.items.find((item: Item) => idOf(item.entity) === idOf(entity));
       if (typeof pinned === "undefined") {
         pinned = !item.pinned;
       }
@@ -185,10 +198,18 @@ export default Vue.extend({
       this.generateDisplayItems();
     },
     pinnedEntities() {
-      this.pinnedEntities.forEach((entity: Entity) => {
-        const item = this.items.find((item: Item) => item.entity === entity);
-        item.pinned = true;
+      this.pinnedItems.forEach((item: Item) => {
+        item.pinned = false
       })
+
+      const pinnedItems = []
+      this.pinnedEntities.forEach((entity: Entity) => {
+        const item = this.items.find((item: Item) => idOf(item.entity) === idOf(entity));
+        item.pinned = true;
+        pinnedItems.push(item)
+      })
+      this.pinnedItems = pinnedItems
+
     },
     expandAll() {
       this.handleToggleExpandedAll(true)

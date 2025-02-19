@@ -29,6 +29,7 @@
           @bks-entity-dblclick="handleEntityDblclick"
           @bks-entity-unhide="handleEntityUnhide"
           @bks-entity-pin="handleEntityPin"
+          @bks-entity-unpin="handleEntityUnpin"
           @bks-entities-request-columns="handleEntitiesRequestColumns"
           @bks-refresh-click="handleRefreshClick"
           @bks-add-entity-click="handleAddEntityClick"
@@ -102,12 +103,18 @@
         })
         return entities
       },
+      hiddenEntities() {
+        return this.hiddenSchemas
+          .map((name) => ({ entityType: "schema", name }))
+          .concat(this.hiddenEntitiesWithoutSchemas);
+      },
       ...mapState(['database']),
       ...mapGetters(['minimalMode']),
       ...mapGetters({
         pins: 'pins/pinned',
         pinnedEntities: 'pins/pinnedEntities',
-        hiddenEntities: "hideEntities/databaseEntities",
+        hiddenEntitiesWithoutSchemas: "hideEntities/databaseEntities",
+        hiddenSchemas: "hideEntities/databaseSchemas",
       }),
     },
     watch: {
@@ -174,6 +181,9 @@
         if (detail.entity.entityType === 'table' || detail.entity.entityType === 'view') {
           this.$store.dispatch('updateTableColumns', detail.entity)
         }
+      },
+      handleEntityUnpin(detail) {
+        this.$store.dispatch('pins/remove', detail.entity)
       },
       async handleEntitiesRequestColumns(detail) {
         // FIXME IMPORTANT this will produce a race condition

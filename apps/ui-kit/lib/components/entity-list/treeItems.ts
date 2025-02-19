@@ -11,7 +11,7 @@ const tableEntityTypes = [
   null,
 ];
 
-/** Useful for identifying an entity item in table list */
+/** Useful for identifying an entity item in entity list */
 export function idOf(entity: Entity) {
   if (entity.id) return entity.id;
   if (entity.entityType === "schema") return `schema.${entity.name}`;

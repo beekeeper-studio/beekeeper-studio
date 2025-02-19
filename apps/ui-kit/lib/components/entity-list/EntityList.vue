@@ -41,7 +41,7 @@
     />
 
     <pinned-table-list
-      v-if="pinnedEntities.length"
+      v-show="pinnedEntities.length > 0"
       :entities="pinnedEntities"
       :sort-by="pinnedSortBy"
       :sort-order="pinnedSortOrder"
@@ -49,7 +49,12 @@
       @sort-by="handlePinSortBy"
       @sort-order="handlePinSortOrder"
       @sort-position="handlePinSortPosition"
+      @pin="handlePin"
+      ref="pinned"
     />
+
+    <!-- Tables -->
+    <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
 
     <nav
       class="main-entity-list list-group flex-col"
@@ -154,6 +159,7 @@ import { openMenu, CustomMenuItems, useCustomMenuItems } from "../context-menu/m
 import ProxyEmit from "../mixins/ProxyEmit";
 import HiddenEntitiesModal from "./HiddenEntitiesModal.vue";
 import PinnedTableList from "./PinnedTableList.vue";
+import Split from "split.js";
 
 export default Vue.extend({
   mixins: [ProxyEmit],
@@ -209,6 +215,7 @@ export default Vue.extend({
       openHiddenEntitiesModal: false,
       expandAll: 0,
       collapseAll: 0,
+      split: null,
     }
   },
   computed: {
@@ -342,7 +349,11 @@ export default Vue.extend({
       }
     },
     handlePin(entity: Entity) {
-      this.$emit('bks-entity-pin', { entity })
+      if (this.pinnedEntities.includes(entity)) {
+        this.$emit('bks-entity-unpin', { entity })
+      } else {
+        this.$emit('bks-entity-pin', { entity })
+      }
     },
     handleDblClick(event: MouseEvent, item: Item) {
       this.$emit('bks-entity-dblclick', { event, entity: item.entity })
@@ -370,6 +381,16 @@ export default Vue.extend({
     openFilterMenu(event: MouseEvent) {
       openMenu({ event, options: this.filterMenuOptions })
     },
+  },
+  mounted() {
+    const components = [this.$refs.pinned.$el, this.$refs.tables]
+    this.split = Split(components, {
+      elementStyle: (_dimension, size) => ({
+        'flex-basis': `calc(${size}%)`,
+      }),
+      direction: 'vertical',
+      sizes: this.sizes,
+    })
   },
 })
 </script>

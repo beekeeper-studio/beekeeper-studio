@@ -20,7 +20,15 @@
             class="hidden-list-item"
           >
             <div>
-              <table-icon :table="entity" />
+              <i
+                v-if="entity.entityType === 'schema'"
+                title="Schema"
+                class="schema-icon item-icon material-icons"
+              >folder</i>
+              <table-icon
+                v-else
+                :table="entity"
+              />
               <span>{{ entity.name }}</span>
             </div>
             <button

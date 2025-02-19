@@ -38,7 +38,7 @@ export default function Components() {
       <div className="card">
         <BksTable columns={columns} data={data} />
       </div>
-      <h2>Table List</h2>
+      <h2>Entity List</h2>
       <div className="card">
         <BksEntityList entities={entities} onSelectEntity={handleSelectEntity} />
       </div>

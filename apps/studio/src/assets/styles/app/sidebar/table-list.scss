@@ -84,13 +84,16 @@
 .BksEntityList {
   flex-grow: 1;
   background-color: transparent;
+  > .filter {
+    padding-inline: 0.8rem;
+  }
   .pinned .list-group .list-item-btn .actions .btn-fab.pinned {
     display: inline-flex;
   }
   .list-group .list-item-btn .actions .btn-fab.pinned i.material-icons {
     display: unset;
   }
-  .main-entity-list.list-group .list-item-btn .actions .btn-fab.pinned i.material-icons.unpin {
+  .main-entity-list.list-group .list-item-btn .actions .btn-fab.pinned:not(:hover) i.material-icons.unpin {
     display: none;
   }
 }
