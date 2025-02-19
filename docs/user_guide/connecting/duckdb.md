@@ -22,4 +22,4 @@ You can also use your terminal to open a database in Beekeeper Studio so long as
 
 To create a new database, you can click the `Create` button or specify the location of the database file in the `Database File` input field.
 
-![Create a new database](../../assets/images/duckdb-create.png)
+![Create a new database](../../assets/images/duckdb-1.gif)
