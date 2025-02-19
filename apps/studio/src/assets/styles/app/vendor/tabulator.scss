@@ -105,7 +105,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   }
 }
 
-.tabulator-row {
+.tabulator-row, .BksTable .tabulator-tableholder .tabulator-table .tabulator-row {
   background: transparent;
   width: min-content;
   min-width: 100%;
