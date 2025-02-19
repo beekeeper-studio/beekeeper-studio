@@ -41,6 +41,7 @@ export default defineConfig({
           __dirname,
           "lib/components/data-editor/DataEditor.vue"
         ),
+        "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
     },
     outDir: "dist",

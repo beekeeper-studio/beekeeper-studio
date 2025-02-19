@@ -165,9 +165,9 @@
           this.triggerFocus()
         }
       },
-      contextMenuItems(event, items) {
+      contextMenuItems(_event, _target, items) {
         const newItems = [...items];
-        const lastCopyIndex = newItems.findLastIndex((item) => item.slug.includes('range-copy'));
+        const lastCopyIndex = newItems.findLastIndex((item) => item.id.includes('range-copy'));
         newItems.splice(lastCopyIndex + 1, 0, copyRangesAsSQLMenuItem(this.tabulator.getRanges(), this.result.tableName, this.defaultSchema));
         return newItems;
       },

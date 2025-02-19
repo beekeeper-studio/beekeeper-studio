@@ -1,6 +1,6 @@
 <template>
   <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
-  <div class="BksContextMenu-container">
+  <div class="BksUiKit BksContextMenu-container">
     <ul
       class="BksContextMenu-list"
       ref="menu"
@@ -79,7 +79,7 @@ export default Vue.extend({
     }
   },
   methods: {
-    showMenu(event) {
+    async showMenu(event) {
 
       const menu = this.$refs.menu
       if (!menu) {
@@ -89,6 +89,7 @@ export default Vue.extend({
       if (!this.menuWidth || !this.menuHeight) {
         menu.style.visibility = "hidden"
         menu.style.display = "block"
+        await this.$nextTick()
         this.menuWidth = menu.offsetWidth
         this.menuHeight = menu.offsetHeight
         menu.removeAttribute("style")

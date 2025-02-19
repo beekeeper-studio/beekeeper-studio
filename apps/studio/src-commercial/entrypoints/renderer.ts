@@ -4,6 +4,7 @@ import VModal from 'vue-js-modal'
 import VTooltip from 'v-tooltip'
 import 'xel/xel'
 import "@bks/ui-kit/style.css";
+import { setContextMenuContainer } from '@bks/ui-kit/config/context-menu'
 import { TabulatorFull as Tabulator } from 'tabulator-tables'
 import '@/filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
@@ -74,6 +75,7 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
     Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
+    setContextMenuContainer('.style-wrapper');
 
     (window as any).$ = $;
     (window as any).jQuery = $;
