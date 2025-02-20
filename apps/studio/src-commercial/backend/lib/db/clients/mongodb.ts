@@ -127,6 +127,7 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
         return cols.map((col) => ({
           tableName: value.collectionName,
           columnName: col.field,
+          field: col.field,
           dataType: col.types[0],
           bksField: this.parseTableColumn({ field: col.field, type: col.types[0] })
         } as ExtendedTableColumn))

@@ -1,10 +1,4 @@
-import { BaseTable } from "../types";
-
-
-export type Table = BaseTable
-// FIXME not any
-export type Routine = any
-export type Entity = Table | Routine | string;
+import { Entity, RoutineEntity, SchemaEntity, TableEntity } from "../types";
 
 export interface EntityFilter {
   filterQuery?: string;
@@ -21,39 +15,41 @@ export const RoutineTypeNames = {
   procedure: "Stored Procedure",
 };
 
-export type Item = SchemaItem | TableItem | RoutineItem;
+export type Item = RootItem | SchemaItem | TableItem | RoutineItem;
 
 export interface BaseItem {
   type: "schema" | "table" | "routine" | "root";
   entity: Entity;
   key: string;
   expanded: boolean;
-  hidden: boolean;
   level: number;
-  parent?: BaseItem;
+  parent?: RootItem | SchemaItem;
   pinned: boolean;
 }
 
 export interface RootItem extends BaseItem {
   type: "root";
-  entity: string;
+  entity: SchemaEntity;
 }
 
 export interface SchemaItem extends BaseItem {
   type: "schema";
-  entity: string;
-  parent: BaseItem;
+  entity: SchemaEntity;
+  parent: RootItem | SchemaItem;
 }
 
 export interface TableItem extends BaseItem {
   type: "table";
-  entity: Table;
-  parent: BaseItem;
+  entity: TableEntity;
+  parent: RootItem | SchemaItem;
   loadingColumns: boolean;
 }
 
 export interface RoutineItem extends BaseItem {
   type: "routine";
-  entity: Routine;
-  parent: BaseItem;
+  entity: RoutineEntity;
+  parent: RootItem | SchemaItem;
 }
+
+export const SortByValues = ["position", "name"] as const;
+

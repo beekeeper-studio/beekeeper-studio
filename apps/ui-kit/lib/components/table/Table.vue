@@ -12,6 +12,8 @@ import {
   ColumnDefinition,
   TabulatorFull,
   RangeComponent,
+  CellComponent,
+  ColumnComponent,
 } from "tabulator-tables";
 import {
   copyRanges,
@@ -20,7 +22,7 @@ import {
   resizeAllColumnsToFitContent,
   resizeAllColumnsToFixedWidth,
 } from "./menu";
-import { openMenu, divider, useCustomMenuItems } from "../context-menu/menu";
+import { openMenu, divider, useCustomMenuItems, CustomMenuItems } from "../context-menu/menu";
 import Mutators from "./mixins/data_mutators";
 //  FIXME cant import Dialect type here
 // import { Dialect } from "@shared/lib/dialects/models";
@@ -78,10 +80,10 @@ export default Vue.extend({
       type: Array as PropType<Array<OrderBy>>,
       default: () => [],
     },
-    cellContextMenuItems: [Array, Function],
-    columnHeaderContextMenuItems: [Array, Function],
-    rowHeaderContextMenuItems: [Array, Function],
-    cornerHeaderContextMenuItems: [Array, Function],
+    cellContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    columnHeaderContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    rowHeaderContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+    cornerHeaderContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
 
     /** Customize the tabulator's table options. See https://tabulator.info/docs/6.3/options#table */
     tabulatorOptions: {
@@ -103,20 +105,21 @@ export default Vue.extend({
       const columnWidth =
         this.columns.length > 30 ? constants.bigTableColumnWidth : undefined;
 
-      const cellMenu = (event, cell) => {
+      const cellMenu = (event: Event, cell: CellComponent) => {
         const defaultItems = copyActionsMenu({
           ranges: cell.getRanges(),
           table: this.name,
           schema: this.defaultSchema,
         })
-        const items = useCustomMenuItems(event, defaultItems, this.cellContextMenuItems, cell)
+        const items = useCustomMenuItems(event, cell, defaultItems, this.cellContextMenuItems)
         openMenu({ options: items, item: cell, event })
         return false
       };
 
-      const columnMenu = (event, column) => {
+      const columnMenu = (event: Event, column: ColumnComponent) => {
         const defaultItems = [
           ...copyActionsMenu({
+            // @ts-expect-error not fully typed
             ranges: column.getRanges(),
             table: this.name,
             schema: this.defaultSchema,
@@ -124,7 +127,7 @@ export default Vue.extend({
           divider,
           ...commonColumnMenu,
         ]
-        const items = useCustomMenuItems(event, defaultItems, this.columnHeaderContextMenuItems, column)
+        const items = useCustomMenuItems(event, column, defaultItems, this.columnHeaderContextMenuItems)
         openMenu({ options: items, item: column, event })
         return false;
       };
@@ -188,10 +191,15 @@ export default Vue.extend({
           tooltip: this.cellTooltip,
           headerTooltip,
 
-          // FIXME context won't work in shadow dom
+          // HACK: We're not using tabulator context menu. We use our own
+          // context menu component but we must listen to tabulator triggers.
+          // @ts-expect-error HACK
           contextMenu: cellMenu,
+          // @ts-expect-error HACK
           headerContextMenu: columnMenu,
+          // @ts-expect-error HACK
           headerMenu: columnMenu,
+
           resizable: "header",
           cssClass,
           sorter: column.sorter === 'none' ? () => 0 : column.sorter,
@@ -292,7 +300,7 @@ export default Vue.extend({
             table: this.name,
             schema: this.schema,
           })
-          const items = useCustomMenuItems(event, defaultItems, this.rowHeaderContextMenuItems, cell)
+          const items = useCustomMenuItems(event, cell, defaultItems, this.rowHeaderContextMenuItems)
           openMenu({ options: items, item: cell, event })
           return false;
         },
@@ -307,7 +315,7 @@ export default Vue.extend({
             resizeAllColumnsToFitContent,
             resizeAllColumnsToFixedWidth,
           ]
-          const items = useCustomMenuItems(event, defaultItems, this.cornerHeaderContextMenuItems, column)
+          const items = useCustomMenuItems(event, column, defaultItems, this.cornerHeaderContextMenuItems)
           openMenu({ options: items, item: column, event })
           return false
         },
@@ -342,7 +350,9 @@ export default Vue.extend({
         this.tabulator = tabulator
 
         tabulator.on("sortChanged", (sorters) => {
-          this.$emit("bks-sorters-change", sorters.map(({ field, dir }) => ({ field, dir })));
+          this.$emit("bks-sorters-change", {
+            sorters: sorters.map(({ field, dir }) => ({ field, dir }))
+          });
         });
         tabulator.on("cellMouseUp", this.checkRangeChanges);
         tabulator.on("headerMouseUp", this.checkRangeChanges);
@@ -355,7 +365,7 @@ export default Vue.extend({
         })
 
         this.$refs.table.addEventListener("keydown", this.keydown);
-        this.$emit("bks-initialized", this.tabulator)
+        this.$emit("bks-initialized", { tabulator: this.tabulator })
       });
     },
     maybeScrollAndSetWidths() {
@@ -390,7 +400,7 @@ export default Vue.extend({
       }
       if (this.rangesInfo.length !== ranges.length) {
         this.rangesInfo = ranges.map(edgesOfRange)
-        this.$emit("bks-ranges-change", ranges)
+        this.$emit("bks-ranges-change", { ranges })
         return
       }
       const foundDiffRange = ranges.some((range, idx) => {
@@ -400,7 +410,7 @@ export default Vue.extend({
       })
       if (foundDiffRange) {
         this.rangesInfo = ranges.map(edgesOfRange)
-        this.$emit("bks-ranges-change", ranges)
+        this.$emit("bks-ranges-change", { ranges })
         return
       }
     },

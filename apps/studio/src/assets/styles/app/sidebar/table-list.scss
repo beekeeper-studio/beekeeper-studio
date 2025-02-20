@@ -81,15 +81,28 @@
   }
 }
 
-.table-list-component .virtual-table-list .sub-item {
-  .title {
-    flex-grow: 0;
-    flex-shrink: 0;
+.BksEntityList {
+  flex-grow: 1;
+  background-color: transparent;
+  > .filter {
+    padding-inline: 0.8rem;
   }
-  .badge {
-    min-width: auto;
-    flex-grow: 1;
-    max-width: none;
-    text-align: right;
+  .pinned .list-group .list-item-btn .actions .btn-fab.pinned {
+    display: inline-flex;
+  }
+  .list-group .list-item-btn .actions .btn-fab.pinned i.material-icons {
+    display: unset;
+  }
+  .main-entity-list.list-group .list-item-btn .actions .btn-fab.pinned:not(:hover) i.material-icons.unpin {
+    display: none;
+  }
+}
+
+.BksEntityList-modal-container {
+  background-color: rgba(darken($theme-bg, 3%), 0.9);
+
+  .dialog-content {
+    background-color: lighten($theme-bg, 1%);
+    color: $theme-base;
   }
 }

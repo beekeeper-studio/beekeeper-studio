@@ -326,3 +326,10 @@ export function stringifyWithBigInt(value: any): string {
   );
 }
 
+/** aka. shallow object comparison */
+export function shallowEqual(a: any, b: any): boolean {
+  if (Object.keys(a).length !== Object.keys(b).length) {
+    return false;
+  }
+  return Object.keys(a).every((key) => a[key] === b[key]);
+}

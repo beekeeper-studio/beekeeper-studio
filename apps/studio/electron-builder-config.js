@@ -140,9 +140,9 @@ module.exports = {
       'flatpak',
       'pacman'
     ],
-    desktop: {
-      'StartupWMClass': 'beekeeper-studio'
-    },
+    // desktop: {
+    //   'StartupWMClass': 'beekeeper-studio'
+    // },
     publish: ['github']
   },
   deb: {
@@ -173,7 +173,7 @@ module.exports = {
     // FIXME: Add AppX/MSIX build back in once certificate issues resolved
     target: ['nsis', 'portable'],
     publish: ['github'],
-    sign: "./build/win/sign.js",
+    // sign: "./build/win/sign.js",
   },
   portable: {
     "artifactName": "${productName}-${version}-portable.exe",

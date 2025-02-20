@@ -3,9 +3,19 @@
     class="result-table"
     v-hotkey="keymap"
   >
-    <div
-      ref="tabulator"
-      class="spreadsheet-table"
+    <bks-table
+      :table-id="tableId"
+      :height="actualTableHeight"
+      :cell-context-menu-items="contextMenuItems"
+      :column-header-context-menu-items="contextMenuItems"
+      :row-header-context-menu-items="contextMenuItems"
+      :corner-header-context-menu-items="contextMenuItems"
+      :tabulator-options="tabulatorOptions"
+      :dialect="dialect"
+      :columns="tableColumns"
+      :data="tableData"
+      @bks-initialized="handleTableInitialized"
+      @bks-foreign-key-go-to="handleFkClick"
     />
   </div>
 </template>
@@ -25,12 +35,12 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
-  import { rowHeaderField } from '@/common/utils'
-  import { tabulatorForTableData } from '@/common/tabulator';
+  import { copyRanges, copyRangesAsSQLMenuItem } from '@/lib/menu/tableMenu';
+  import BksTable from "@bks/ui-kit/vue/table";
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
+    components: { BksTable },
     data() {
       return {
         tabulator: null,
@@ -50,11 +60,6 @@
           this.tabulator.blockRedraw()
         }
       },
-      result() {
-        // This is better than just setting data because
-        // the whole dataset has changed.
-        this.initializeTabulator()
-      },
       tableHeight() {
         this.tabulator.setHeight(this.actualTableHeight)
       },
@@ -66,7 +71,7 @@
     },
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
-      ...mapGetters(['isUltimate']),
+      ...mapGetters(['isUltimate', 'dialect']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -81,71 +86,40 @@
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
 
-        const cellMenu = (_e, cell) => {
-          return copyActionsMenu({
-            ranges: cell.getRanges(),
-            table: this.result.tableName,
-            schema: this.defaultSchema,
-          })
-        }
-
-        const columnMenu = (_e, column) => {
-          return [
-            ...copyActionsMenu({
-              ranges: column.getRanges(),
-              table: 'mytable',
-              schema: this.defaultSchema,
-            }),
-            { separator: true },
-            ...commonColumnMenu,
-          ]
-        }
-
         const columns = this.result.fields.flatMap((column, index) => {
           const results = []
           const magic = MagicColumnBuilder.build(column.name) || {}
           const title = magic?.title ?? column.name ?? `Result ${index}`
-
-          let cssClass = 'hide-header-menu-icon'
-
-          if (magic.cssClass) {
-            cssClass += ` ${magic.cssClass}`
-          }
-
-          if (magic.formatterParams?.fk) {
-            magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
-          }
-
+          const isForeignKey = Boolean(magic.formatterParams?.fk)
           const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
-          const defaults = {
-            formatter: this.cellFormatter,
-          }
 
           const result = {
-            ...defaults,
             title,
-            titleFormatter() {
-              return `<span class="title">${escapeHtml(title)}</span>`
-            },
             field: column.id,
-            titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
-            width: columnWidth,
-            mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-            formatter: this.cellFormatter,
-            maxInitialWidth: globals.maxColumnWidth,
-            tooltip: this.cellTooltip,
-            contextMenu: cellMenu,
-            headerContextMenu: columnMenu,
-            headerMenu: columnMenu,
-            resizable: 'header',
-            cssClass,
-            ...magicStuff
-          }
+            foreignKey: isForeignKey,
+            magic,
+            tabulatorColumnDefinition: (def) => {
+              let result;
 
-          if (column.dataType === 'INTERVAL') {
-            // add interval sorter
-            result['sorter'] = this.intervalSorter;
+              if (isForeignKey) {
+                // we handle fk click from bks-foreign-key-go-to event
+                result = { ...def, ..._.omit(magicStuff, 'formatterParams') }
+              } else {
+                result = { ...def, ...magicStuff }
+              }
+
+              if (magic.cssClass) {
+                result.cssClass += ` ${magic.cssClass}`
+              }
+
+              if (column.dataType === 'INTERVAL') {
+                // add interval sorter
+                result['sorter'] = this.intervalSorter;
+              }
+
+              return result
+            }
           }
 
           results.push(result)
@@ -176,36 +150,26 @@
         const columns = 'columns-' + this.result.fields.reduce((str, field) => `${str},${field.name}`, '')
         return `${workspace}.${connection}.${table}.${columns}`
       },
-    },
-    beforeDestroy() {
-      if (this.tabulator) {
-        this.tabulator.destroy()
-      }
-    },
-    async mounted() {
-      this.initializeTabulator()
-      if (this.focus) {
-        const onTableBuilt = () => {
-          this.triggerFocus()
-          this.tabulator.off('tableBuilt', onTableBuilt)
+      tabulatorOptions() {
+        return {
+          downloadConfig: {
+            columnHeaders: true,
+          },
         }
-        this.tabulator.on('tableBuilt', onTableBuilt)
-      }
+      },
     },
     methods: {
-      initializeTabulator() {
-        if (this.tabulator) {
-          this.tabulator.destroy()
+      async handleTableInitialized(detail) {
+        this.tabulator = detail.tabulator
+        if (this.focus) {
+          this.triggerFocus()
         }
-        this.tabulator = tabulatorForTableData(this.$refs.tabulator, {
-          persistenceID: this.tableId,
-          data: this.tableData, //link data to table
-          columns: this.tableColumns, //define table columns
-          height: this.actualTableHeight,
-          downloadConfig: {
-            columnHeaders: true
-          },
-        });
+      },
+      contextMenuItems(_event, _target, items) {
+        const newItems = [...items];
+        const lastCopyIndex = newItems.findLastIndex((item) => item.id.includes('range-copy'));
+        newItems.splice(lastCopyIndex + 1, 0, copyRangesAsSQLMenuItem(this.tabulator.getRanges(), this.result.tableName, this.defaultSchema));
+        return newItems;
       },
       copySelection() {
         if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
@@ -316,6 +280,12 @@
       },
       triggerFocus() {
         this.tabulator.rowManager.getElement().focus();
+      },
+      handleFkClick({ field, cell }) {
+        const magic = this.tableColumns.find((c) => c.field === field).magic
+        if (magic.formatterParams?.fk) {
+          this.fkClick(magic.formatterParams.fk[0], cell)
+        }
       },
     }
 	}

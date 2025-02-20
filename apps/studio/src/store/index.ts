@@ -191,7 +191,6 @@ const store = new Vuex.Store<State>({
       if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
         return [{
           schema: g.schemas[0] || null,
-          skipSchemaDisplay: g.schemas.length < 2,
           tables: g.filteredTables,
           routines: g.filteredRoutines
         }]
