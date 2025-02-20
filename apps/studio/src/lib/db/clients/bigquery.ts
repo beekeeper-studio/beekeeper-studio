@@ -259,7 +259,6 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // Lists all datasets in current GCP project.
     const [datasets] = await this.client.getDatasets();
     const data = datasets.map((dataset) => dataset.id);
-    log.info("DATASETS: ", data)
     return data;
   }
 
