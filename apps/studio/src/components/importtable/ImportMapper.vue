@@ -253,7 +253,7 @@ export default {
 
         acc.tableColumnNames[column.columnName] = `${columnText.join(' ')}`
 
-        if (!column.nullable && column.defaultValue === null) {
+        if (!column.nullable && !column.hasDefault) {
           acc.nonNullableColumns.push(column.columnName)
         }
 
