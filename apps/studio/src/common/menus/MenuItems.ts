@@ -224,11 +224,6 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Export Data',
       click: actionHandler.exportTables
     },
-    createImportTable: {
-      id: 'import-table',
-      label: 'Create Table and Import from File',
-      click: actionHandler.createAndImportTable
-    },
     minimalModeToggle: {
       id: "minimal-mode-toggle",
       label: "Toggle Minimal Mode",
