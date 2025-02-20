@@ -1,6 +1,10 @@
-name: Studio - Master build
+name: Studio - Build [non production]
 
 on:
+  pull_request:
+    paths-ignore:
+      - apps/sqltools/**
+      - docs/**
   push:
     branches:
       - "master"
@@ -8,7 +12,7 @@ on:
       - 'apps/sqltools/**'
 
 concurrency:
-  group: master-build
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -90,6 +94,17 @@ jobs:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
+        if: startsWith(matrix.os, 'ubuntu') == false
+        env:
+          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+          USE_SYSTEM_FPM: true
+
+        # just build appimage in master to keep things quick.
+      - name: Build Electron app
+        run: "yarn run electron:build --publish never --linux AppImage"
+        if: startsWith(matrix.os, 'ubuntu')
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
@@ -99,16 +114,16 @@ jobs:
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
-          npx rimraf "apps/studio/dist/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
 
       - name: Cleanup artifacts Win
         if: "startsWith(matrix.os, 'windows')"
         continue-on-error: true
         run: |
-          npx rimraf "apps\studio\dist\!(*.exe)"
+          npx rimraf "apps\studio\dist_electron\!(*.exe)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
-          path: apps/studio/dist
+          path: apps/studio/dist_electron

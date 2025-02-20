@@ -12,13 +12,7 @@
         v-model="config.defaultDatabase"
         input-id="default-database"
         editable
-        open-file-or-folder
-        :options="{
-          filters: [
-            { name: 'DuckDB Files', extensions: ['duckdb', 'db', 'ddb'] },
-            { name: 'All Files', extensions: ['*'] },
-          ],
-        }"
+        show-create-button
       />
       <snap-external-warning />
     </div>

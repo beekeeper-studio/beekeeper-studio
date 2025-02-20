@@ -16,6 +16,7 @@ import { CassandraClient } from "./clients/cassandra";
 import { LibSQLClient } from "./clients/libsql";
 import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
+import { MongoDBClient } from "./clients/mongodb";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -33,12 +34,13 @@ const clients = new Map<ConnectionType, any>([
   ['libsql', LibSQLClient],
   ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
+  ['mongodb', MongoDBClient]
 ], );
 
 
 class FriendlyErrorClient {
   constructor() {
-    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src/lib/db/client.ts")
+    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src-commercial/backend/lib/db/client.ts")
   }
 }
 

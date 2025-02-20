@@ -137,8 +137,8 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: "varchar", nullable: true })
   defaultDatabase: Nullable<string> = null
 
-  @Column({ type: "varchar", nullable: true })
-  uri: Nullable<string> = null
+  @Column({ type: "varchar", nullable: true, transformer: [encrypt] })
+  url: Nullable<string> = null
 
   @Column({ type: "varchar", length: 500, nullable: false })
   uniqueHash = "DEPRECATED"
