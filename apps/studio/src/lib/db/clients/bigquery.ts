@@ -87,9 +87,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     
     this.knex = knexlib({
-          client: BigQueryKnexClient as Client,
-          connection: { ...this.config }
-        });
+      client: BigQueryKnexClient as Client,
+      connection: { ...this.config }
+    });
 
 
     this.client = new bq.BigQuery(this.config);
@@ -101,11 +101,17 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
     // Lists all tables in the dataset
+    if (!this.db) {
+      return [];
+    }
     return await this.listTablesOrViews(this.db, 'TABLE');
   }
 
   async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     // Lists all views in the dataset
+    if (!this.db) {
+      return [];
+    }
     return await this.listTablesOrViews(this.db, 'VIEW');
   }
 
@@ -525,8 +531,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   private async listTablesOrViews(db: string, type: string) {
     // Lists all tables or views in the dataset
     const [tables] = await this.client.dataset(db).getTables();
-    let data = tables.map((table) => ({ name: table.id, entityType: table.metadata.type, metadata: table.metadata, table: table }));
-    data = data.filter((table) => table.metadata.type === type);
+    let data = tables.map((table) => ({ name: table.id, entityType: table.metadata.type }));
+    data = data.filter((table) => table.entityType === type);
     log.debug(`listTablesOrViews for type:${type} data: `, data);
     return data;
   }
