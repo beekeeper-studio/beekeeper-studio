@@ -46,7 +46,9 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
-  const oracleSupported = isMac && isArm ? false : true
+  // previous builds of Beekeeper Studio required native libs for Oracle,
+  // but now it should work on all platforms
+  const oracleSupported = true
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
   let userDirectory = testMode ? './tmp' : e.app.getPath("userData")
