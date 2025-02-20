@@ -1,4 +1,4 @@
-# @bks/ui-kit Entity List
+# Entity List
 
 An Entity List component is a component for displaying a list of database
 entities or objects in a tree structure that can be expanded and collapsed.
@@ -6,7 +6,7 @@ entities or objects in a tree structure that can be expanded and collapsed.
 ## Basic Usage
 
 An entity list gets its data from the `entities` property, which is an array
-of Entity objects.
+of [Entity][entity-api] objects.
 
 ```html
 <bks-entity-list></bks-entity-list>
@@ -25,12 +25,13 @@ of Entity objects.
 </script>
 ```
 
-An entity doesn't require you to provide all props. You can simply put a `name`
-prop to make a table entity.
+The simplest way to make a table entity is to provide a name for the entity.
 
 ```js
-const entities = [{ name: "users" }, { name: "orders" }]
+const entities = [{ name: "users" }, { name: "orders" }];
 ```
+
+## Schemas
 
 You can provide a `schema` prop as a string to the entity objects and they
 will be displayed inside a schema folder.
@@ -48,14 +49,19 @@ const entities = [
 ];
 ```
 
-It also recognizes other entity types such as `view`, `materialized-view`, and
-`routine` entities.
+## Entity types
+
+It also recognizes 4 entity types such as `table`, `view`, `materialized-view`,
+and `routine`.
 
 ```js
 const entities = [
   {
+    name: "users", // This will default to table
+  },
+  {
     name: "users",
-    entityType: "table", // default
+    entityType: "table",
   },
   {
     name: "order_summary",
@@ -71,81 +77,120 @@ const entities = [
     returnType: "integer",
     type: "function",
   },
-]
+];
+```
+
+## Identifier
+
+Entity list uses a combination of `name`, `schema`, and `entityType` as an
+identifier. If you want to use a different identifier, you can add an `id`
+property to the entity object.
+
+```js
+const users = { id: "abc123", name: "users" };
 ```
 
 ## Hiding
 
-Essentially, hiding an entity can be done by simply filtering the array of
-`entities` property before passing it to the component.
+Essentially, hiding an entity can be done by not including it to the `entities`
+prop. However, entity list provides UI hints and a modal to help listing the
+hidden entities.
 
-Our implementation provides UI hints and a modal for unhiding an entity.
-To enable this functionality, set the `hiddenEntities` property to an array of
-entity objects that you wish to hide.
+To enable this, set the `hiddenEntities` property to an array of entities that
+you wish to hide.
 
 ```js
-const users = { ... }
-const orders = { ... }
-const entities = [users, orders]
-const hiddenEntities = [orders]
+const entities = [users, orders];
+const hiddenEntities = [orders];
 
-entityList.entities = entities
-entityList.hiddenEntities = hiddenEntities
-entityList.addEventListener('bks-entity-unhide', (event) => {
-  const entity = event.detail.entity
-  const entities = hiddenEntities.filter((hiddenEntity) => hiddenEntity !== entity)
-  entityList.hiddenEntities = entities
-})
+entityList.entities = entities;
+entityList.hiddenEntities = hiddenEntities;
+
+entityList.addEventListener("bks-entity-unhide", (event) => {
+  const entity = event.detail.entity;
+  const entities = hiddenEntities.filter(
+    (hiddenEntity) => hiddenEntity !== entity
+  );
+  entityList.hiddenEntities = entities;
+});
 ```
 
-<!-- ## Pinning -->
-<!--  -->
-<!-- To pin an entity, set the `enablePinning` property to `true` and `pinnedEntities` -->
-<!-- property to an array of objects. These object should have the same reference -->
-<!-- as the ones in the `entities` property. -->
-<!--  -->
-<!-- ```js -->
-<!-- const users = { ... } -->
-<!-- const orders = { ... } -->
-<!-- const entities = [users, orders] -->
-<!-- const pinnedEntities = [orders] -->
-<!--  -->
-<!-- entityList.entities = entities -->
-<!-- entityList.pinnedEntities = orders -->
-<!-- entityList.enablePinning = true -->
-<!-- entityList.addEventListener('bks-entity-pin', (event) => { -->
-<!--   const entity = event.detail.entity -->
-<!--   const entities = pinnedEntities.concat(entity) -->
-<!--   entityList.pinnedEntities = entities -->
-<!-- }) -->
-<!-- entityList.addEventListener('bks-entity-unpin', (event) => { -->
-<!--   const entity = event.detail.entity -->
-<!--   const entities = pinnedEntities.filter((pinnedEntity) => pinnedEntity !== entity) -->
-<!--   entityList.pinnedEntities = entities -->
-<!-- }) -->
-<!-- ``` -->
+## Pinning
+
+Entity list allows you to show pinned entities above the main list. To enable
+this, set the `enablePinning` property to `true` and `pinnedEntities` property
+to an array of entities.
+
+```js
+const entities = [users, orders];
+const pinnedEntities = [orders];
+
+entityList.enablePinning = true;
+
+entityList.entities = entities;
+entityList.pinnedEntities = pinnedEntities;
+
+entityList.addEventListener("bks-entity-pin", (event) => {
+  const entity = event.detail.entity;
+  const entities = pinnedEntities.concat(entity);
+  entityList.pinnedEntities = entities;
+});
+
+entityList.addEventListener("bks-entity-unpin", (event) => {
+  const entity = event.detail.entity;
+  const entities = pinnedEntities.filter(
+    (pinnedEntity) => pinnedEntity !== entity
+  );
+  entityList.pinnedEntities = entities;
+});
+```
 
 ## Lazy Loading Columns
 
-If a entity entity doesn\'t have a `columns` property, or its value is `undefined`,
-the component will emit the `bks-entities-request-columns` event when the entity
+Enabling lazy loading columns can be done easily. You can simply **_not_** set
+the `columns` property to the entity object or set it to `undefined` and the
+component will request for the columns when needed.
+
+Entity list will emit a `bks-entities-request-columns` event when the entity
 is expanded. An entity can be expanded by clicking the expand icon next to the
 entity icon, or by clicking the expand all icon in the top right corner.
 
 ```js
 entityList.addEventListener("bks-entities-request-columns", (event) => {
   const entities = event.detail.entities;
-  // Load the columns here ...
+  for (const entity of entities) {
+    const columns = await fetchColumns(entity)
+    entity.columns = columns
+  }
 });
 ```
 
-Entity List also supports virtual rendering, so if there are a large number of
-entities and all entities are expanded at once, it will only request for
-entities that are in the DOM which is a reasonable amount.
+This works for other table-like entities (views and materialized views).
 
-This will work for other table-like entities (views and materialized views).
+With virtual rendering, the component will only request for entities that are
+within the viewport.
 
 If you wish to stop the event from being emitted, you can set the `columns`
 property to `[]` (an empty array).
 
+## Virtual Rendering
+
+Entity List uses virtual rendering to render a large list of entities. This
+means that it will only render the entities that are within the viewport and
+update when the user scrolls.
+
 ## Context Menu
+
+More info on how to modify the context menu can be found in
+[Context Menu][context-menu] and the [Entity List API][entity-list-api] docs.
+
+## API
+
+See the API reference below for more details.
+
+- [Entity List Component API][entity-list-api]
+- [Context Menu][context-menu]
+
+[entity-list-api]: ./api/entity-list.md
+[context-menu]: ./context-menu.md
+[entity-api]: ./api/entity.md
