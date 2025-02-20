@@ -146,7 +146,7 @@ export default class Import {
     throw new Error("Method 'read()' must be implemented.")
   }
 
-  async getPreview(_options?: any): Promise<any> {
+  async getPreview(): Promise<any> {
     throw new Error("Method 'getPreview()' must be implemented.")
   }
 
@@ -165,5 +165,51 @@ export default class Import {
 
   async getSheets(): Promise<any> {
     throw new Error("Method 'getSheets()' must be implemented but is Excel only")
+  }
+
+  checkDataType (data) {
+    if (_.isNil(data)) return 'null'
+    if (_.isDate(data)) return 'date'
+    if (_.isBoolean(data)) return 'boolean'
+
+    if (_.isFinite(Number(data))) {
+      if (_.isInteger(data)) return 'integer'
+
+      return 'number'
+    }
+
+    return 'string'
+
+  }
+
+  async generateColumnTypesFromFile (): Promise<any> {
+    const tablePreview = await this.getPreview()
+    const { columns: columnsRaw, data } = this.mapRawData(tablePreview)
+    
+    const { columns, dataAnalysis } = columnsRaw.reduce((acc, v, index) => {
+      const set = new Set()
+
+      if (index === 0) set.add('primary')
+      acc.columns.push(v.title)
+      acc.dataAnalysis.push(set)
+
+      return acc
+    }, { columns: [], dataAnalysis: []})
+    
+    data.forEach(d => {
+      Object.keys(d).forEach(key => {
+        const arrInd = columns.indexOf(key)
+
+        if (arrInd == null) return
+
+        dataAnalysis[arrInd].add(this.checkDataType(d[key]))
+      })
+    })
+
+    return columns.map((col, arrInd) => ({
+      columnName: col,
+      primary: dataAnalysis[arrInd].has('primary'),
+      dataTypes: dataAnalysis[arrInd]
+    }))
   }
 }

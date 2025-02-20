@@ -132,7 +132,7 @@
       schema: {
         type: String,
         required: false,
-        default: ''
+        default: null
       },
       table: {
         type: String,

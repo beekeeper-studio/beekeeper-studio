@@ -29,6 +29,7 @@ export interface IImportHandlers {
   'import/excel/getSheets': ({ sId, id }: { sId: string, id: string }) => Promise<any>,
   'import/setOptions': ({ sId, id, options }: { sId: string, id: string, options: ImportOptions }) => Promise<any>,
   'import/getFilePreview': ({ sId, id }: { sId: string, id: string }) => Promise<PreviewData>,
+  'import/generateColumnTypesFromFile': ({ sId, id }: { sId: string, id: string }) => Promise<PreviewData>,
   'import/getImportPreview': ({ sId, id }: { sId: string, id: string }) => Promise<any>,
   'import/getFileAttributes': ({ sId, id }: { sId: string, id: string }) => Promise<any>,
   'import/getAutodetectedSettings': ({ sId, id }: { sId: string, id: string }) => Promise<any>,
@@ -68,6 +69,11 @@ export const ImportHandlers: IImportHandlers = {
     const previewData: any = await importer.getPreview()
 
     return importer.mapRawData(previewData)
+  },
+
+  'import/generateColumnTypesFromFile': async function({ sId, id }: { sId: string, id: string}) {
+    const importer = getImporter(id, sId)
+    return await importer.generateColumnTypesFromFile()
   },
 
   'import/getImportPreview': async function({ sId, id }: { sId: string, id: string}) {
