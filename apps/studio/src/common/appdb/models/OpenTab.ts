@@ -1,8 +1,8 @@
+import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
-import _ from 'lodash'
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
 
@@ -206,17 +206,5 @@ export class OpenTab extends ApplicationEntity {
           },
           withDeleted: true
         })
-  }
-}
-
-export const TabHistoryHandlers = {
-  'appdb/tabhistory/get': async (connectionIds, limit = 10): Promise<TransportOpenTab[]> => {
-    return await OpenTab.getHistory(connectionIds, limit) 
-  },
-  'appdb/tabhistory/getLastDeletedTab': async (connectionIds): Promise<TransportOpenTab> => {
-    return await OpenTab.getClosedHistory(connectionIds) 
-  },
-  'appdb/tabhistory/clearDeletedTabs': async (connectionIds: ConnectionIds, xDays = 7): Promise<void> => {
-    return await OpenTab.clearOldDeletedTabs(connectionIds, xDays) 
   }
 }

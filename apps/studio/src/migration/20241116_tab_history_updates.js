@@ -1,5 +1,5 @@
 export default {
-  name: '20251116-tab-history-updates',
+  name: '20241116-tab-history-updates',
   async run(runner) {
     const queries = [
       `ALTER TABLE tabs ADD COLUMN lastActive datetime`,
