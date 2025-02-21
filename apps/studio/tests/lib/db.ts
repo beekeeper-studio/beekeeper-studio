@@ -104,6 +104,7 @@ export class DBTestUtil {
   public extraTables = 0
   public options: Options
   private dbType: ConnectionType | 'generic'
+  public databaseName: string
 
   public dialect: Dialect
   public data: DialectData
@@ -132,6 +133,7 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
+    this.databaseName = database
 
     if (options.knex) {
       this.knex = options.knex
@@ -225,7 +227,7 @@ export class DBTestUtil {
     return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
   }
 
-  async setupdb() {
+  async connect() {
     await TestOrmConnection.connect()
     await LicenseKey.createTrialLicense()
     await this.connection.connect()
@@ -233,6 +235,10 @@ export class DBTestUtil {
       this.knex = this.connection.knex
     }
 
+  }
+
+  async setupdb() {
+    await this.connect()
     await this.options.beforeCreatingTables?.()
     await this.createTables()
 
@@ -299,11 +305,13 @@ export class DBTestUtil {
     if (this.dbType === 'postgresql') {
       charset = 'UTF8'
     }
-    await this.connection.createDatabase('new-db_2', charset, collation)
+    const createdDbName = await this.connection.createDatabase('new-db_2', charset, collation)
 
     if (this.dialect.match(/sqlite|firebird|duckdb/)) {
-      // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
-      return expect.anything()
+      const connection = this.server.createConnection(createdDbName)
+      await expect(connection.connect()).resolves.not.toThrow()
+      await connection.disconnect()
+      return
     }
     const newDBsCount = await this.connection.listDatabases()
 
@@ -949,9 +957,9 @@ export class DBTestUtil {
         ) AS source ([id], [job_name], [hourly_rate])
         ON target.id = source.id
         WHEN MATCHED THEN
-          UPDATE SET 
-            target.[job_name] = source.[job_name], 
-            target.[hourly_rate] = source.[hourly_rate] 
+          UPDATE SET
+            target.[job_name] = source.[job_name],
+            target.[hourly_rate] = source.[hourly_rate]
         WHEN NOT MATCHED THEN
           INSERT ([id], [job_name], [hourly_rate])
           VALUES (source.[id], source.[job_name], source.[hourly_rate]);
@@ -999,8 +1007,8 @@ export class DBTestUtil {
       ) AS source ([id], [job_name], [hourly_rate])
       ON target.id = source.id
       WHEN MATCHED THEN
-        UPDATE SET 
-          target.[job_name] = source.[job_name], 
+        UPDATE SET
+          target.[job_name] = source.[job_name],
           target.[hourly_rate] = source.[hourly_rate]
       WHEN NOT MATCHED THEN
         INSERT ([id], [job_name], [hourly_rate])

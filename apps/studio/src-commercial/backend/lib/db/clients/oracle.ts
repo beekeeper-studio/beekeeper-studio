@@ -106,6 +106,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async createDatabase(databaseName, charset) {
     const sql = `CREATE DATABASE ${this.wrapIdentifier(databaseName)} CHARACTER SET ${this.wrapIdentifier(charset)};`
     await this.driverExecuteSingle(sql)
+    return databaseName
   }
 
   async importTruncateCommand (table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
@@ -544,16 +545,20 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async connect() {
     await super.connect();
 
-    const cliLocation = this.platformPath(this.server.config.instantClientLocation)
+    // const cliLocation = this.platformPath(this.server.config.instantClientLocation)
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration
     const configLocation = this.platformPath(this.server.config.oracleConfigLocation)
 
 
     try {
-      const payload = {}
-      if (cliLocation) payload['libDir'] = cliLocation
-      if (configLocation) payload['configDir'] = configLocation
-      oracle.initOracleClient(payload)
+      // FIXME: Remove this entirely (5.1+)
+      // NB: If oracle users have issues, it's likely caused by this change
+      // 5.1 - disabling initOracleClient keeps the driver in THIN mode.
+      // See https://node-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html#oracle-client-library-loading
+      // this is the new all-js implementation
+      // const payload = {}
+      // if (cliLocation) payload['libDir'] = cliLocation
+      // oracle.initOracleClient(payload)
       // oracle.initOracleClient()
     } catch {
       // do nothing
@@ -562,9 +567,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     const connectionMethod = this.server.config.options?.connectionMethod || 'manual'
 
     let poolConfig = {}
+
     if (connectionMethod === 'connectionString') {
       poolConfig = {
-        connectionString: this.server.config.options.connectionString,
+        connectString: this.server.config.options.connectionString,
       }
       const { user, password } = this.server.config
       if (user) poolConfig['user'] = user
@@ -582,6 +588,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         poolMax: 4,
       }
     }
+    if (configLocation) poolConfig['configDir'] = configLocation
+    console.log("Pool Config: ", poolConfig)
     this.pool = await oracle.createPool(poolConfig)
     const vSQL = `
       SELECT BANNER as BANNER FROM v$version
@@ -596,7 +604,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   async disconnect() {
     await this.pool.close(1);
-
     await super.disconnect();
   }
 
@@ -716,14 +723,13 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     let canceling = false
     let connection = null
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER)
-    const getConnection = () => this.pool.getConnection()
     return {
       execute: (async () => {
-        connection = await getConnection()
+        connection = await this.pool.getConnection()
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            await this.driverExecuteMultiple(text)
+            await this.driverExecuteMultiple(text, { connection })
           ])
           if (!data) return []
           return this.parseResults(data)
@@ -738,11 +744,20 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           }
         } finally {
           cancelable.discard()
+          // close is called in driverExecuteMultiple -> rawExecuteQuery
+          // so no need to do it here.
         }
       }).bind(this),
       cancel: (async () => {
         canceling = true
-        if (connection) await connection.break()
+        if (connection) {
+          await connection.break()
+          try {
+            await connection?.close()
+          } catch(err) {
+            // do nothing
+          }
+        }
         else cancelable.cancel()
       }).bind(this)
     }
@@ -815,15 +830,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return allRows
   }
 
-  protected async runWithConnection(child: (c: oracle.Connection) => Promise<any>): Promise<any> {
-    const c = await this.pool.getConnection();
-    try {
-      return await child(c);
-    } finally {
-      await c.close()
-    }
-  }
-
   protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {
       const realQueries: string[] = _.isArray(query) ? query : [query]
       const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
@@ -845,7 +851,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         await c.commit()
         return results
       };
-      return options.connection ? await runQuery(c) : await withClosable(c, runQuery)
+      return await withClosable(c, runQuery)
   }
 
   private identify(query: string): IdentifyResult[] {
