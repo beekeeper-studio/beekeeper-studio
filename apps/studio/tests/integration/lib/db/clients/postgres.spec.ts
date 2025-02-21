@@ -1,4 +1,4 @@
-import { StartedTestContainer } from 'testcontainers'
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { TableInsert } from '../../../../../src/lib/db/models'
@@ -8,6 +8,9 @@ import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
 import { createServer } from '@commercial/backend/lib/db/server'
 import { PostgresTestDriver } from './postgres/container'
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -300,7 +303,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Should be able to list partitions for a table", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const partitions = await util.connection.listTablePartitions('partitionedtable');
 
         expect(partitions.length).toBe(3);
@@ -330,7 +333,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
     it("Inherited tables should NOT behave like partitioned tables", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child'] });
         const partitions = await util.connection.listTablePartitions('parent');
         const parent = tables.find((value) => value.name == 'parent');
@@ -343,7 +346,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Partitions should have parenttype 'p'", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party'] });
         const partition1 = tables.find((value) => value.name == 'partition_1');
         const another = tables.find((value) => value.name == 'another_partition');
@@ -477,7 +480,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(nameColumn.comment).toBe('Name of the person');
     });
 
-    if (dockerTag === 'latest') {
+    if (dockerTag === '16.4') {
       it("should list indexes with info", async () => {
         await util.knex.schema.createTable('has_indexes_2', (table) => {
           table.specificType("text", "varchar(255) UNIQUE NULLS NOT DISTINCT")
