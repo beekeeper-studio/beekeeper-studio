@@ -1,7 +1,7 @@
 # Table
 
-A table component is a component that displays data of a table in a tabular
-form with spreadsheet like selection.
+The Table component displays data of a database table in a tabular form with
+spreadsheet like selection.
 
 ## Basic Usage
 
@@ -74,8 +74,7 @@ More info on how to modify the context menu can be found in
 
 See the API reference below for more details.
 
-- [Table Component API][table-api]
-- [Context Menu][context-menu]
+- [Table API][table-api]
 
-[table-api]: ./api/table
-[context-menu]: ./context-menu
+[table-api]: ./api/table.md
+[context-menu]: ./context-menu.md

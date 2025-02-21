@@ -5,6 +5,9 @@ Data Editor consists of [Table][table], [Entity List][entity-list] and
 
 ## Basic Usage
 
+Similar to other components, Data Editor obtain its data from the `entities`
+property, which is an array of [Entity][entity-api] objects.
+
 ```html
 <bks-data-editor></bks-data-editor>
 <script>
@@ -22,23 +25,22 @@ Data Editor consists of [Table][table], [Entity List][entity-list] and
       ],
     },
   ];
-  dataEditor.addEventListener("bks-query-submit", () => {
-    dataEditor.setTable({
-      name: "result",
-      columns: [
-        { field: "uuid", dataType: "varchar" },
-        { field: "name", dataType: "varchar" },
-        { field: "email", dataType: "varchar" },
-      ],
-      data: [
-        { uuid: "123-456-789", name: "John Doe", email: "H0T4h@example.com" },
-      ],
-    });
-  });
 </script>
 ```
 
+A list of features are including:
+- Double-clicking an entity in Entity List to show its data.
+- Autocomplete for SQL Text Editor.
+- A submit button and keyboard shortcuts for submitting the query.
+
 ## Query Submission
+
+Submitting a query can be triggered by:
+
+- `Ctrl + Enter` or `Cmd + Enter`.
+- Clicking the "Run" button.
+
+You can listen to the `bks-query-submit` event to handle the query submission.
 
 ```js
 dataEditor.addEventListener("bks-query-submit", (event) => {
@@ -50,6 +52,47 @@ dataEditor.addEventListener("bks-query-submit", (event) => {
     data: result.data,
   });
 })
+```
+
+## Changing the Query Result or Table data
+
+You can change the query result or table data using the `setTable` method
+which accepts an [Entity][entity-api] object.
+
+```js
+dataEditor.setTable({
+  name: "result",
+  columns: [
+    { field: "uuid", dataType: "varchar", primaryKey: true },
+    { field: "name", dataType: "varchar" },
+    { field: "email", dataType: "varchar" },
+  ],
+  data: [
+    { uuid: "123-456-789", name: "John Doe", email: "john.doe@example.com" },
+  ],
+});
+```
+
+## Inner Components Properties and Events
+
+You can modify inner components by passing their properties as an object.
+
+```js
+dataEditor.entityListProps = {
+  hiddenEntities: [
+    { name: "users", entityType: "table" },
+  ],
+};
+dataEditor.tableProps = {};
+dataEditor.sqlTextEditorProps = {};
+```
+
+You can listen to inner components events using the same name.
+
+```js
+dataEditor.addEventListener("bks-entities-request-columns", (event) => {
+  console.log("Emitted from Entity List!");
+});
 ```
 
 ## API
@@ -65,4 +108,3 @@ See the API reference below for more details.
 [data-editor-api]: ./api/data-editor.md
 [entity-api]: ./api/entity.md
 [context-menu]: ./context-menu.md
-

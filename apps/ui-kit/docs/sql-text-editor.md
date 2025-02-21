@@ -1,10 +1,8 @@
 # SQL Text Editor
 
-A component for editing SQL queries with syntax highlighting and auto-completion.
+The Text Editor that is specialized for SQL queries.
 
 ## Basic Usage
-
-[TODO]
 
 ```html
 <bks-sql-text-editor></bks-sql-text-editor>
@@ -23,23 +21,21 @@ A component for editing SQL queries with syntax highlighting and auto-completion
   sqlTextEditor.value = "SELECT * FROM users";
 </script>
 ```
-## Value
 
-[TODO]
-reactive, handle the value manually.
+## Keybindings
+
+You can add custom keybindings using the `keybindings` property.
 
 ```js
-let value = "";
-sqlTextEditor.value = value;
-sqlTextEditor.addEventListener("bks-value-change", (event) => {
-  value = event.detail.value;
-});
+sqlTextEditor.keybindings = {
+  "Ctrl-Enter": () => {},
+  "Cmd-Enter": () => {},
+};
 ```
 
 ## Autocompletion
 
-[TODO]
-use entities
+You can add a list of entities to autocomplete using the `entities` property.
 
 ```js
 sqlTextEditor.entities = [
@@ -56,17 +52,16 @@ sqlTextEditor.entities = [
 
 ## Context Menu
 
-More info on how to modify the context menu can be found in
-[Context Menu][context-menu] and the [SQL Text Editor API][sql-text-editor-list-api] docs.
+For info on how to modify the context menu can be found in
+[Context Menu][context-menu] and the [SQL Text Editor API][sql-text-editor-api] docs.
 
 ## API
 
 See the API reference below for more details.
 
-- [SQL Text Editor Component API][sql-text-editor-api]
+- [SQL Text Editor API][sql-text-editor-api]
 - [Entity API][entity-api]
-- [Context Menu][context-menu]
 
 [sql-text-editor-api]: ./api/sql-text-editor
 [entity-api]: ./api/entity.md
-[context-menu]: ./context-menu
+[context-menu]: ./context-menu.md

@@ -1,5 +1,7 @@
 # Context Menu
 
+Context Menu are not exposed as a component, but it's used by other components.
+
 ## Extending the Context Menu
 
 The default context menu can be extended by providing an array of

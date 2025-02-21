@@ -1,7 +1,7 @@
 # Entity List
 
-An Entity List component is a component for displaying a list of database
-entities or objects in a tree structure that can be expanded and collapsed.
+The Entity List displays a list of database objects or entities in a tree
+structure that can be expanded and collapsed.
 
 ## Basic Usage
 
@@ -188,8 +188,7 @@ More info on how to modify the context menu can be found in
 
 See the API reference below for more details.
 
-- [Entity List Component API][entity-list-api]
-- [Context Menu][context-menu]
+- [Entity List API][entity-list-api]
 
 [entity-list-api]: ./api/entity-list.md
 [context-menu]: ./context-menu.md
