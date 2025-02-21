@@ -1000,7 +1000,13 @@ export default Vue.extend({
       })
       this.tabulator.on("cellMouseUp", this.updateDetailView);
       this.tabulator.on("headerMouseUp", this.updateDetailView);
-      this.tabulator.on("keyNavigate", this.updateDetailView);
+      this.tabulator.on(
+        "keyNavigate",
+        // This is slow if we do a long press. Debounce it so it feels good.
+        _.debounce(this.updateDetailView, 100, {
+          leading: true, trailing: true
+        })
+      );
       // Tabulator range is reset after data is processed
       this.tabulator.on("dataProcessed", this.updateDetailView);
 
@@ -1032,8 +1038,8 @@ export default Vue.extend({
         {
           label: createMenuItem('See details'),
           action: () => {
-            this.updateDetailView({ range })
             this.toggleOpenDetailView(true)
+            this.updateDetailView({ range })
           },
         },
       ]
@@ -1704,6 +1710,8 @@ export default Vue.extend({
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
     updateDetailView(options: { range?: RangeComponent } = {}) {
+      if (!this.openDetailView) return
+
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
