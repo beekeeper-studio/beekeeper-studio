@@ -37,6 +37,14 @@ export const SqlServerData: DialectData = {
   editorFriendlyIdentifier: (s) => s,
   wrapLiteral: defaultWrapLiteral,
   requireDataset: false,
+  importDataType: {
+    stringType: 'varchar',
+    dateType: 'date',
+    booleanType: 'bit',
+    integerType: 'int',
+    numberType: 'float',
+    defaultType: 'varchar'
+  },
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;

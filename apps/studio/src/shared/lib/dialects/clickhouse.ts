@@ -74,6 +74,14 @@ export const ClickHouseData: DialectData = {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
+  importDataType: {
+    stringType: 'String',
+    dateType: 'Date',
+    booleanType: 'Bool',
+    integerType: 'INT',
+    numberType: 'DOUBLE',
+    defaultType: 'String'
+  },
   textEditorMode: "text/x-mysql",
   disabledFeatures: {
     triggers: true,

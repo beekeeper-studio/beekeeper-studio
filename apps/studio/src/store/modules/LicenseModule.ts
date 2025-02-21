@@ -53,14 +53,17 @@ export const LicenseModule: Module<State, RootState>  = {
       return state.licenses.length === 0
     },
     isUltimate(state) {
+      return true
       if (!state) return false
       return state.status.isUltimate
     },
     isCommunity(state) {
+      return false
       if (!state) return true
       return state.status.isCommunity
     },
     isTrial(state) {
+      return false
       if (!state) return true
       return state.status.isTrial
     },

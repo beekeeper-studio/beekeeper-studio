@@ -58,6 +58,14 @@ export const CassandraData: DialectData = {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
+  importDataType: {
+    stringType: 'varchar',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'int',
+    numberType: 'decimal',
+    defaultType: 'varchar'
+  },
   usesOffsetPagination: false,
   requireDataset: false,
   textEditorMode: "text/x-cassandra",
