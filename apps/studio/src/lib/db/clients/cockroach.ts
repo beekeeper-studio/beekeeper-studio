@@ -19,6 +19,7 @@ export class CockroachClient extends PostgresClient {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 
@@ -70,7 +71,6 @@ export class CockroachClient extends PostgresClient {
       schemaName: row.table_schema,
       tableName: row.table_name,
       columnName: row.column_name,
-      field: row.column_name,
       dataType: row.data_type,
       nullable: row.is_nullable === "YES",
       defaultValue: row.column_default,
@@ -153,10 +153,11 @@ export class CockroachClient extends PostgresClient {
     };
   }
 
-  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
+  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<string> {
     const sql = `create database ${this.wrapIdentifier(databaseName)} encoding ${this.wrapIdentifier(charset)}`;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {

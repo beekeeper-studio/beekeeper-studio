@@ -18,25 +18,7 @@
         <database-dropdown
           @databaseSelected="databaseSelected"
         />
-        <bks-entity-list
-          :entities="entities"
-          :context-menu-items="handleContextMenuItems"
-          :hidden-entities="hiddenEntities"
-          :pinned-entities="pinnedEntities"
-          :pinned-sort-by="pinSortBy"
-          :pinned-sort-order="pinSortOrder"
-          enable-pinning
-          @bks-entity-dblclick="handleEntityDblclick"
-          @bks-entity-unhide="handleEntityUnhide"
-          @bks-entity-pin="handleEntityPin"
-          @bks-entity-unpin="handleEntityUnpin"
-          @bks-entities-request-columns="handleEntitiesRequestColumns"
-          @bks-refresh-click="handleRefreshClick"
-          @bks-add-entity-click="handleAddEntityClick"
-          @bks-pinned-entities-sort-by="handlePinnedEntitiesSortBy"
-          @bks-pinned-entities-sort-order="handlePinnedEntitiesSortOrder"
-          @bks-pinned-entities-sort-position="handlePinnedEntitiesSortPosition"
-        />
+        <table-list />
       </div>
 
       <!-- History -->
@@ -65,13 +47,10 @@
 <script>
   import _ from 'lodash'
   import GlobalSidebar from './GlobalSidebar.vue'
+  import TableList from './core/TableList.vue'
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
-  import { AppEvent } from "@/common/AppEvent";
-  import BksEntityList from "@bks/ui-kit/vue/entity-list";
-  import TableListContextMenusMixin from "@/mixins/TableListContextMenus";
-  import { shallowEqual } from '@/common/utils'
 
   import { mapState, mapGetters } from 'vuex'
   import rawLog from '@bksLogger'
@@ -79,9 +58,8 @@
   const log = rawLog.scope('core-sidebar')
 
   export default {
-    mixins: [TableListContextMenusMixin],
     props: ['sidebarShown'],
-    components: { BksEntityList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
+    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
         tableLoadError: null,
@@ -90,32 +68,24 @@
         allExpanded: null,
         allCollapsed: null,
         activeItem: 'tables',
-        pinSortBy: 'position',
-        pinSortOrder: 'asc',
       }
     },
     computed: {
-      entities() {
-        const entities = []
-        this.$store.getters.schemaTables.forEach(({ tables, routines }) => {
-          tables.forEach((table) => entities.push(table))
-          routines.forEach((routine) => entities.push(routine))
-        })
-        return entities
+      filteredTables() {
+        if (!this.filterQuery) {
+          return this.tables
+        }
+        const startsWithFilter = _(this.tables)
+          .filter((item) => _.startsWith(item.name, this.filterQuery))
+          .value()
+        const containsFilter = _(this.tables)
+          .difference(startsWithFilter)
+          .filter((item) => item.name.includes(this.filterQuery))
+          .value()
+        return _.concat(startsWithFilter, containsFilter)
       },
-      hiddenEntities() {
-        return this.hiddenSchemas
-          .map((name) => ({ entityType: "schema", name }))
-          .concat(this.hiddenEntitiesWithoutSchemas);
-      },
-      ...mapState(['database']),
+      ...mapState(['tables', 'database']),
       ...mapGetters(['minimalMode']),
-      ...mapGetters({
-        pins: 'pins/pinned',
-        pinnedEntities: 'pins/pinnedEntities',
-        hiddenEntitiesWithoutSchemas: "hideEntities/databaseEntities",
-        hiddenSchemas: "hideEntities/databaseSchemas",
-      }),
     },
     watch: {
       minimalMode() {
@@ -125,21 +95,6 @@
       },
     },
     methods: {
-      /** @param entity {import('@/lib/db/models').DatabaseEntity} */
-      handleContextMenuItems(event, entity, defaultItems) {
-        switch(entity.entityType) {
-          case "table":
-          case "view":
-          case "materialized_view":
-            return this.tableMenuOptions;
-          case "routine":
-            return this.routineMenuOptions;
-          case "schema":
-            return this.schemaMenuOptions;
-          default:
-            return defaultItems;
-        }
-      },
       tabClasses(item) {
         return {
           show: (this.activeItem === item),
@@ -163,72 +118,6 @@
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
       },
-      handleEntityDblclick(detail) {
-        this.throttledLoadTable(detail.entity)
-      },
-      throttledLoadTable: _.throttle(function(table) {
-        this.$root.$emit(AppEvent.loadTable, { table })
-      }, 500),
-      handleEntityUnhide(detail) {
-        if (detail.entity.entityType === 'schema') {
-          this.trigger(AppEvent.toggleHideSchema, detail.entity.name, false)
-        } else {
-          this.trigger(AppEvent.toggleHideEntity, detail.entity, false)
-        }
-      },
-      handleEntityPin(detail) {
-        this.$store.dispatch('pins/add', detail.entity)
-        if (detail.entity.entityType === 'table' || detail.entity.entityType === 'view') {
-          this.$store.dispatch('updateTableColumns', detail.entity)
-        }
-      },
-      handleEntityUnpin(detail) {
-        this.$store.dispatch('pins/remove', detail.entity)
-      },
-      async handleEntitiesRequestColumns(detail) {
-        // FIXME IMPORTANT this will produce a race condition
-        detail.entities.forEach((table) => {
-          this.$store.dispatch("updateTableColumns", table)
-        })
-      },
-      async handleRefreshClick() {
-        try {
-          this.$store.dispatch('updateRoutines')
-          await this.$store.dispatch('updateTables')
-        } catch (ex) {
-          this.$noty.error(`Unable to refresh tables ${ex.message}`)
-        }
-      },
-      async handleAddEntityClick() {
-        this.$root.$emit(AppEvent.createTable)
-      },
-      handlePinnedEntitiesSortBy(detail) {
-        this.$settings.set('pinSortField', detail.sortBy === 'name' ? 'entityName' : detail.sortBy)
-        this.pinSortBy = detail.sortBy
-      },
-      handlePinnedEntitiesSortOrder() {
-        const sortOrder = this.pinSortOrder === 'asc' ? 'desc' : 'asc'
-        this.pinSortOrder = sortOrder
-        this.$settings.set('pinSortOrder', sortOrder)
-      },
-      handlePinnedEntitiesSortPosition(detail) {
-        const reorderedPins = []
-        detail.entities.forEach((entity) => {
-          const pin = this.pins.find((p) => p.entity === entity)
-          if (!pin) {
-            console.warn("Pinned entity not found", entity)
-            return
-          }
-          reorderedPins.push(pin)
-        })
-        this.$store.dispatch('pins/reorder', reorderedPins)
-      },
-    },
-    async mounted() {
-      const pinSortField = await this.$settings.get('pinSortField', 'position')
-      const pinSortOrder = await this.$settings.get('pinSortOrder', 'asc')
-      this.pinSortBy = pinSortField === 'entityName' ? 'name' : pinSortField
-      this.pinSortOrder = pinSortOrder
     }
   }
 </script>

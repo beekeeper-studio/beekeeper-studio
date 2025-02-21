@@ -22,6 +22,7 @@ export class RedshiftClient extends PostgresClient {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 
@@ -69,7 +70,6 @@ export class RedshiftClient extends PostgresClient {
       schemaName: row.table_schema,
       tableName: row.table_name,
       columnName: row.column_name,
-      field: row.column_name,
       dataType: row.data_type,
       nullable: row.is_nullable === "YES",
       defaultValue: row.column_default,
@@ -184,10 +184,11 @@ export class RedshiftClient extends PostgresClient {
     return data.rows.map((row) => row[data.columns[0].name])[0];
   }
 
-  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
+  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<string> {
     const sql = `create database ${this.wrapIdentifier(databaseName)} encoding ${this.wrapIdentifier(charset)}`;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema) {

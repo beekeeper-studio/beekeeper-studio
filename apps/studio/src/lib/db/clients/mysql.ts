@@ -466,7 +466,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return rows.map((row) => ({
       tableName: row.table_name,
       columnName: row.column_name,
-      field: row.column_name,
       dataType: row.column_type,
       ordinalPosition: Number(row.ordinal_position),
       nullable: row.is_nullable === "YES",
@@ -786,7 +785,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     databaseName: string,
     charset: string,
     collation: string
-  ): Promise<void> {
+  ): Promise<string> {
     const sql = `
       create database ${this.wrapIdentifier(databaseName)}
         character set ${this.wrapIdentifier(charset)}
@@ -794,6 +793,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     `;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {
@@ -833,7 +833,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         undefined,
         connection
       );
-      const command = buildInsertQuery(this.knex, insert, columns);
+      const command = buildInsertQuery(this.knex, insert, { columns });
       await this.driverExecuteSingle(command, { connection });
     }
     return true;

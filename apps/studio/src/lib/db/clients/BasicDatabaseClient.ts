@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, BksField } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -180,7 +180,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listCharsets(): Promise<string[]>
   abstract getDefaultCharset(): Promise<string>
   abstract listCollations(charset: string): Promise<string[]>
-  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
+  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<string>
   abstract createDatabaseSQL(): Promise<string>
   abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
   abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
@@ -361,10 +361,12 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     })
   }
 
-  async getImportSQL(importedData: any[]): Promise<string | string[]> {
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
     const queries = []
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    const createUpsertFunc = this.createUpsertFunc ?? null
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys, createUpsertFunc }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
@@ -379,14 +381,18 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     throw new Error("Not implemented");
   }
 
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
+  protected createUpsertFunc: ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string) | null = null
+
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert = false): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
     tableInsert.data.forEach((row) => {
       Object.keys(row).forEach((key) => {
         row[key] = this.deserializeValue(row[key]);
       })
     })
-    return buildInsertQuery(this.knex, tableInsert, columns);
+    const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc });
   }
 
   abstract wrapIdentifier(value: string): string;

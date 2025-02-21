@@ -87,8 +87,6 @@ export interface TableProperties {
 }
 
 export interface TableColumn {
-  /** Same as `columnName` but for ui-kit */
-  field: string
   columnName: string
   dataType: string
   schemaName?: string
@@ -360,4 +358,12 @@ export interface ImportScriptFunctions {
   commitCommand: (args?: any) => Promise<null|any>
   rollbackCommand: (args?: any) => Promise<null|any>
   finalCommand?: (args?: any) => Promise<any|null>
+}
+
+export interface BuildInsertOptions {
+  columns?: any[],
+  bitConversionFunc?: (value: any) => any
+  runAsUpsert?: boolean
+  primaryKeys?: string[]
+  createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
 }

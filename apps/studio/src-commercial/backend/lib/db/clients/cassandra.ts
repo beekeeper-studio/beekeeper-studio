@@ -168,7 +168,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       .sort((a, b) => b.position - a.position)
       .map((row) => ({
         columnName: row.column_name,
-        field: row.column_name,
         dataType: row.type,
         bksField: this.parseTableColumn(row as any),
       } as ExtendedTableColumn));
@@ -325,7 +324,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Array.from({length: 10}, (_e, i) => `${i + 1}`)
   }
 
-  async createDatabase(databaseName: string, charset: string, collation: string): Promise<void> {
+  async createDatabase(databaseName: string, charset: string, collation: string): Promise<string> {
     const datacenters = this.client.getState().getConnectedHosts().map((h) => h.datacenter);
     // THIS FEELS DUMB, BUT :shrug:
     const strategy = charset, replicationFactor = collation;
@@ -335,6 +334,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     const query = `CREATE KEYSPACE ${this.wrapIdentifier(databaseName)} WITH REPLICATION = {'class': '${strategy}', ${rf}};`
 
     await this.driverExecuteSingle(query);
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {

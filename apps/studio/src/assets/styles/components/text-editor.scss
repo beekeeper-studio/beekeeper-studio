@@ -1,55 +1,3 @@
-/* Base styles. Based on Sublime Text's Monokai theme */
-.BksTextEditor {
-  --bks-text-editor-bg-color: #272822;
-  --bks-text-editor-fg-color: #f8f8f2;
-  --bks-text-editor-selected-bg-color: #49483E;
-  .CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: rgba(73, 72, 62, .99); } // FIXME css var doesn't exist
-  .CodeMirror-line::-moz-selection, .CodeMirror-line > span::-moz-selection, .CodeMirror-line > span > span::-moz-selection { background: rgba(73, 72, 62, .99); } // FIXME css var doesn't exist
-  --bks-text-editor-gutter-bg-color: #272822;
-  .CodeMirror-gutters { border-right: 0px; } // FIXME css var doesn't exist
-  --bks-text-editor-guttermaker-bg-color: white;
-  --bks-text-editor-guttermaker-subtle-fg-color: #d0d0d0;
-  --bks-text-editor-linenumber-fg-color: #d0d0d0;
-  --bks-text-editor-cursor-bg-color: #f8f8f0;
-  --bks-text-editor-comment-fg-color: #75715e;
-  --bks-text-editor-atom-fg-color: #ae81ff;
-  --bks-text-editor-number-fg-color: #ae81ff;
-  --bks-text-editor-comment-attribute-fg-color: #97b757;
-  --bks-text-editor-comment-def-fg-color: #bc9262;
-  --bks-text-editor-comment-tag-fg-color: #bc6283;
-  --bks-text-editor-comment-type-fg-color: #5998a6;
-  --bks-text-editor-property-fg-color: #a6e22e;
-  span.cm-attribute { color: #a6e22e; } // FIXME css var doesn't exist
-  --bks-text-editor-keyword-fg-color: #f92672;
-  --bks-text-editor-builtin-fg-color: #66d9ef;
-  --bks-text-editor-string-fg-color: #e6db74;
-  --bks-text-editor-variable-fg-color: #f8f8f2;
-  --bks-text-editor-variable-2-fg-color: #9effff;
-  --bks-text-editor-variable-3-fg-color: #66d9ef;
-  span.cm-type { color: #66d9ef; } // FIXME css var doesn't exist
-  --bks-text-editor-def-fg-color: #fd971f;
-  --bks-text-editor-bracket-fg-color: #f8f8f2;
-  --bks-text-editor-tag-fg-color: #f92672;
-  --bks-text-editor-header-fg-color: #ae81ff;
-  --bks-text-editor-link-fg-color: #ae81ff;
-  --bks-text-editor-error-bg-color: #f92672;
-  --bks-text-editor-error-fg-color: #f8f8f0;
-  --bks-text-editor-activeline-bg-color: #373831;
-  --bks-text-editor-matchingbracket-fg-color: white;
-}
-
-.BksTextEditor {
-  --bks-text-editor-keyword-fg-color: #{$brand-pink};
-  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
-  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
-  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};
-  --bks-text-editor-number-fg-color: #{$brand-primary};
-  --bks-text-editor-string-fg-color: #{$brand-primary};
-  --bks-text-editor-cursor-bg-color: #{$text-dark};
-  --bks-text-editor-bracket-fg-color: #{$text};
-  --bks-text-editor-guttermarker-fg-color: #{rgba($theme-base, 0.25)};
-}
-
 .text-editor {
   &.fold-without-line-numbers {
     margin-left: -2rem;
@@ -68,4 +16,3 @@
     color: rgba($theme-base, 0.25);
   }
 }
-

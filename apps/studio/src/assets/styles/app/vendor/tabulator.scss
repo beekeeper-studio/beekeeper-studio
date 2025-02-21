@@ -105,7 +105,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   }
 }
 
-.tabulator-row, .BksTable .tabulator-tableholder .tabulator-table .tabulator-row {
+.tabulator-row {
   background: transparent;
   width: min-content;
   min-width: 100%;
@@ -805,10 +805,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
   }
 }
 
-bks-table {
-  width: 100%;
-  overflow: hidden;
-
+.spreadsheet-table {
   .tabulator-header {
     outline: none;
     .tabulator-col {

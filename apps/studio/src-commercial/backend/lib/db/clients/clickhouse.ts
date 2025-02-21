@@ -224,7 +224,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       return {
         tableName: row.table,
         columnName: row.name,
-        field: row.name,
         dataType: row.type,
         ordinalPosition: row.position,
         defaultValue: hasDefault ? row.default_expression : null,
@@ -590,10 +589,11 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     databaseName: string,
     _charset: string,
     _collation: string
-  ): Promise<void> {
+  ): Promise<string> {
     await this.driverExecuteSingle(
       `CREATE DATABASE ${ClickHouseData.wrapIdentifier(databaseName)}`
     );
+    return databaseName;
   }
 
   async truncateElementSql(
@@ -881,7 +881,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     }>;
     return json.data.map((row) => ({
       columnName: row.name,
-      field: row.name,
       dataType: row.type,
       tableName: row.table_name,
     }));

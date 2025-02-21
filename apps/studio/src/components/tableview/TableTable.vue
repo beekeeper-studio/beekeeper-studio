@@ -29,18 +29,9 @@
         class="table-view-wrapper"
         ref="tableViewWrapper"
       >
-        <bks-table
-          v-if="mountBksTable"
-          :ref="table"
-          :table-id="tableId"
-          :tabulator-options="tabulatorOptions"
-          :columns="tableColumns"
-          :corner-header-context-menu-items="cornerHeaderContextMenuItems"
-          :row-header-context-menu-items="rowHeaderContextMenuItems"
-          :cell-context-menu-items="cellContextMenuItems"
-          :column-header-context-menu-items="columnHeaderContextMenuItems"
-          @bks-initialized="handleTableInitialized"
-          @bks-ranges-change="handleRangesChange"
+        <div
+          ref="table"
+          class="spreadsheet-table"
         />
         <detail-view-sidebar
           :title="detailViewTitle"
@@ -246,7 +237,7 @@
             </x-menuitem>
             <x-menuitem @click="importTab">
               <x-label>
-                Import from file
+                Import from file 
                 <i
                   v-if="$store.getters.isCommunity"
                   class="material-icons menu-icon"
@@ -299,7 +290,7 @@
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style>
 .item-notice > span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -337,20 +328,20 @@ import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/uti
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml } from '@shared/lib/tabulator';
-import { copyRanges, pasteRange, pasteActionsMenu, copyRangesAsSQLMenuItem, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { ExpandablePath } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
-import BksTable from "@bks/ui-kit/vue/table";
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar, BksTable },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -360,8 +351,6 @@ export default Vue.extend({
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
-      mountBksTable: false,
-      loadOnTableInitialized: false,
       loading: false,
 
       // table data
@@ -541,6 +530,71 @@ export default Vue.extend({
       const results = []
       if (!this.table) return []
 
+      const cellMenu = (keyDatas?: any[]) => {
+        return (_e, cell: CellComponent) => {
+          const ranges = cell.getRanges();
+          const range = _.last(ranges)
+          const menu = [
+            this.openEditorMenu(cell),
+            this.setAsNullMenuItem(range),
+            { separator: true },
+            this.quickFilterMenuItem(cell),
+            ...copyActionsMenu({
+              ranges,
+              table: this.table.name,
+              schema: this.table.schema,
+            }),
+            { separator: true },
+            ...pasteActionsMenu(range),
+            { separator: true },
+            ...this.rowActionsMenu(range),
+          ]
+
+          if (keyDatas?.length > 0) {
+            keyDatas.forEach(keyData => {
+              menu.push({
+                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
+                action: (_e, cell) => this.fkClick(keyData, cell)
+              })
+            })
+          }
+
+          return menu
+        }
+      }
+
+      const columnMenu = (_e, column: ColumnComponent) => {
+        const ranges = (column as any).getRanges();
+        const range = _.last(ranges) as RangeComponent;
+        let hideColumnLabel = `Hide ${column.getDefinition().title}`
+
+        if (hideColumnLabel.length > 33) {
+          hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
+        }
+
+        return [
+          this.setAsNullMenuItem(range),
+          { separator: true },
+          ...copyActionsMenu({
+            ranges,
+            table: this.table.name,
+            schema: this.table.schema,
+          }),
+          { separator: true },
+          ...commonColumnMenu,
+          { separator: true },
+          {
+            label: createMenuItem(hideColumnLabel),
+            action: () => this.hideColumnByField(column.getField()),
+          },
+          {
+            label: createMenuItem(`Reset layout`),
+            action: () => column.getTable().setColumnLayout(this.tableColumns),
+          },
+          this.openColumnFilterMenuItem,
+        ]
+      }
+
       // 1. add a column for a real column
       // if a FK, add another column with the link
       // to the FK table.
@@ -606,7 +660,9 @@ export default Vue.extend({
           headerSort: !this.dialectData.disabledFeatures.headerSort,
           editor: editorType,
           tooltip: this.cellTooltip,
-          // contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
+          contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
+          headerContextMenu: columnMenu,
+          headerMenu: columnMenu,
           headerTooltip: headerTooltip,
           cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
           formatter: this.cellFormatter,
@@ -646,48 +702,21 @@ export default Vue.extend({
       const result = {
         title: this.internalIndexColumn,
         field: this.internalIndexColumn,
-        tabulatorColumnDefinition: {
-          maxWidth: globals.maxColumnWidth,
-          maxInitialWidth: globals.maxInitialWidth,
-          editable: false,
-          cellEditCancelled: cell => cell.getRow().normalizeHeight(),
-          formatter: this.cellFormatter,
-          visible: false,
-          clipboard: false,
-          print: false,
-          download: false
-        },
+        maxWidth: globals.maxColumnWidth,
+        maxInitialWidth: globals.maxInitialWidth,
+        editable: false,
+        cellEditCancelled: cell => cell.getRow().normalizeHeight(),
+        formatter: this.cellFormatter,
+        visible: false,
+        clipboard: false,
+        print: false,
+        download: false
       }
       results.push(result)
 
       return results
     },
-    tabulatorOptions() {
-      return {
-        persistenceID: this.tableId,
-        ajaxURL: "http://fake",
-        sortMode: 'remote',
-        filterMode: 'remote',
-        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-        pagination: true,
-        paginationMode: 'remote',
-        paginationSize: this.limit,
-        paginationElement: this.$refs.paginationArea,
-        paginationButtonCount: 0,
-        initialSort: this.initialSort,
-        initialFilter: this.initialFilters ?? [{}],
 
-        // callbacks
-        ajaxRequestFunc: this.dataFetch,
-        index: this.internalIndexColumn,
-        keybindings: {
-          scrollToEnd: false,
-          scrollToStart: false,
-          scrollPageUp: false,
-          scrollPageDown: false
-        },
-      }
-    },
     tableId() {
       // the id for a tabulator table
       if (!this.usedConfig.id) return null;
@@ -716,8 +745,8 @@ export default Vue.extend({
     },
     openColumnFilterMenuItem() {
       return {
-        label: "Open Column Filter",
-        handler: this.showColumnFilterModal,
+        label: createMenuItem("Open Column Filter"),
+        action: this.showColumnFilterModal,
       }
     }
   },
@@ -821,7 +850,6 @@ export default Vue.extend({
     if (this.tabulator) {
       this.tabulator.destroy()
     }
-    this.$refs.table.vueComponent.$destroy();
   },
   async mounted() {
     if (this.shouldInitialize) {
@@ -896,96 +924,6 @@ export default Vue.extend({
       const column: ExtendedTableColumn = this.table.columns.find((col: ExtendedTableColumn) => col.columnName === columnName);
       return column && column.generated;
     },
-    extendCopyItems(items) {
-      const newItems = [...items];
-      const lastCopyIndex = newItems.findLastIndex((item) => item.id.includes('range-copy'));
-      newItems.splice(lastCopyIndex + 1, 0, copyRangesAsSQLMenuItem(this.tabulator.getRanges(), this.table.name, this.table.schema));
-      return newItems;
-    },
-    cornerHeaderContextMenuItems(_e, _header, defaultItems) {
-      const ranges = this.tabulator.getRanges();
-      const range: RangeComponent = _.last(ranges)
-      return [
-        this.setAsNullMenuItem(range),
-        { type: 'divider' },
-        ...this.extendCopyItems(defaultItems),
-        this.openColumnFilterMenuItem,
-      ]
-    },
-    rowHeaderContextMenuItems(_e, cell: CellComponent, defaultItems) {
-      const ranges = cell.getRanges();
-      const range = _.last(ranges);
-      return [
-        this.setAsNullMenuItem(range),
-        ...this.extendCopyItems(defaultItems),
-        { type: 'divider' },
-        ...this.rowActionsMenu(range),
-      ]
-    },
-    cellContextMenuItems(_e, cell: CellComponent, defaultItems) {
-      const ranges = cell.getRanges();
-      const range = _.last(ranges)
-      const menu = [
-        this.openEditorMenu(cell),
-        this.setAsNullMenuItem(range),
-        { type: 'divider' },
-        this.quickFilterMenuItem(cell),
-        ...this.extendCopyItems(defaultItems),
-        { type: 'divider' },
-        ...pasteActionsMenu(range),
-        { type: 'divider' },
-        ...this.rowActionsMenu(range),
-      ]
-
-      // if (keyDatas?.length > 0) {
-      //   keyDatas.forEach(keyData => {
-      //     menu.push({
-      //       label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
-      //       action: (_e, cell) => this.fkClick(keyData, cell)
-      //     })
-      //   })
-      // }
-
-      return menu
-    },
-    columnHeaderContextMenuItems(_e, column: ColumnComponent, defaultItems) {
-      const ranges = (column as ColumnComponent).getRanges();
-      const range = _.last(ranges) as RangeComponent;
-      let hideColumnLabel = `Hide ${column.getDefinition().title}`
-
-      if (hideColumnLabel.length > 33) {
-        hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
-      }
-
-      return [
-        this.setAsNullMenuItem(range),
-        { type: 'divider' },
-        ...this.extendCopyItems(defaultItems),
-        { type: 'divider' },
-        {
-          label: hideColumnLabel,
-          handler: () => this.hideColumnByField(column.getField()),
-        },
-        {
-          label: 'Reset layout',
-          handler: () => column.getTable().setColumnLayout(this.tableColumns),
-        },
-        this.openColumnFilterMenuItem,
-      ]
-    },
-    handleTableInitialized(detail) {
-      this.tabulator = detail.tabulator
-      this.tabulator.modules.selectRange.restoreFocus()
-      this.tabulator.on('cellEdited', this.cellEdited)
-      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
-      if (this.loadOnTableInitialized) {
-        this.tabulator.setData()
-        this.loadOnTableInitialized = false
-      }
-    },
-    handleRangesChange(detail) {
-      this.updateDetailView({ range: detail.ranges[0] })
-    },
     async initialize() {
       this.initialized = true
       this.resetPendingChanges()
@@ -996,16 +934,75 @@ export default Vue.extend({
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
-      if (this.$refs.table?.getTabulator()) {
-        this.$refs.table.getTabulator().setData()
-      }
+      this.tabulator = tabulatorForTableData(this.$refs.table, {
+        persistenceID: this.tableId,
+        rowHeader: {
+          contextMenu: (_e, cell: CellComponent) => {
+            const ranges = cell.getRanges();
+            const range = _.last(ranges);
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              ...this.rowActionsMenu(range),
+            ]
+          },
+          headerContextMenu: () => {
+            const ranges = this.tabulator.getRanges();
+            const range: RangeComponent = _.last(ranges)
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              resizeAllColumnsToFitContent,
+              resizeAllColumnsToFixedWidth,
+              this.openColumnFilterMenuItem,
+            ]
+          },
+        },
+        columns: this.tableColumns,
+        ajaxURL: "http://fake",
+        sortMode: 'remote',
+        filterMode: 'remote',
+        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
+        pagination: true,
+        paginationMode: 'remote',
+        paginationSize: this.limit,
+        paginationElement: this.$refs.paginationArea,
+        paginationButtonCount: 0,
+        initialSort: this.initialSort,
+        initialFilter: this.initialFilters ?? [{}],
 
-      if (!this.mountBksTable) {
-        this.mountBksTable = true
-        this.loadOnTableInitialized = true
-        // Wait until bks-table is mounted before updating split
-        await this.$nextTick()
-      }
+        // callbacks
+        ajaxRequestFunc: this.dataFetch,
+        index: this.internalIndexColumn,
+        keybindings: {
+          scrollToEnd: false,
+          scrollToStart: false,
+          scrollPageUp: false,
+          scrollPageDown: false
+        },
+      });
+      this.tabulator.on('cellEdited', this.cellEdited)
+      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
+      this.tabulator.on('tableBuilt', () => {
+        this.tabulator.modules.selectRange.restoreFocus()
+      })
+      this.tabulator.on("cellMouseUp", this.updateDetailView);
+      this.tabulator.on("headerMouseUp", this.updateDetailView);
+      this.tabulator.on("keyNavigate", this.updateDetailView);
+      // Tabulator range is reset after data is processed
+      this.tabulator.on("dataProcessed", this.updateDetailView);
 
       this.updateSplit()
     },
@@ -1015,28 +1012,26 @@ export default Vue.extend({
         {
           label:
             range.getTopEdge() === range.getBottomEdge()
-              ? "Clone row"
-              : `Clone rows ${rowRangeLabel}`,
-          shortcut: "Control+D",
-          handler: this.cellCloneRow.bind(this),
+              ? createMenuItem("Clone row", "Control+D")
+              : createMenuItem(`Clone rows ${rowRangeLabel}`, "Control+D"),
+          action: this.cellCloneRow.bind(this),
           disabled: !this.editable,
         },
         {
           label:
             range.getTopEdge() === range.getBottomEdge()
-              ? "Delete row"
-              : `Delete rows ${rowRangeLabel}`,
-          shortcut: "Delete",
-          handler: () => {
+              ? createMenuItem("Delete row", "Delete")
+              : createMenuItem(`Delete rows ${rowRangeLabel}`, "Delete"),
+          action: () => {
             this.tabulator.rowManager.element.focus()
             this.deleteTableSelection(undefined, range)
           },
           disabled: !this.editable,
         },
-        { type: 'divider' },
+        { separator: true },
         {
-          label: 'See details',
-          handler: () => {
+          label: createMenuItem('See details'),
+          action: () => {
             this.updateDetailView({ range })
             this.toggleOpenDetailView(true)
           },
@@ -1048,8 +1043,8 @@ export default Vue.extend({
         .getColumns()
         .every((col) => this.isPrimaryKey(col.getField()));
       return {
-        label: "Set as NULL",
-        handler: () => range.getCells().flat().forEach((cell) => {
+        label: createMenuItem("Set as NULL"),
+        action: () => range.getCells().flat().forEach((cell) => {
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
         disabled: areAllCellsPrimarykey || !this.editable,
@@ -1074,15 +1069,13 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>='
       ]
       return {
-        label: {
-          html: `Quick Filter${this.$store.getters.isCommunity ? '<i class="material-icons">stars</i>' : ''}`,
-        },
+        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
         disabled: _.isNil(cell.getValue()),
-        items: symbols.map((s) => {
+        menu: symbols.map((s) => {
           return {
-            label: `${cell.getField()} ${s} value`,
+            label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
-            handler: () => {
+            action: async (e, cell: CellComponent) => {
               const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
@@ -1094,9 +1087,8 @@ export default Vue.extend({
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
       return {
-        label: isReadOnly ? "View in modal" : "Edit in modal",
-        shortcut: "Shift + Enter",
-        handler: () => {
+        label: createMenuItem(isReadOnly? "View in modal" : "Edit in modal", "Shift + Enter"),
+        action: () => {
           if (this.isPrimaryKey(cell.getField())) return
           this.$refs.editorModal.openModal(cell.getValue(), undefined, { cell, isReadOnly })
         }

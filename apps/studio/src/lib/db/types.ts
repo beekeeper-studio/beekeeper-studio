@@ -194,7 +194,7 @@ export interface IBasicDatabaseClient {
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,
   getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
 
-  createDatabase(databaseName: string, charset: string, collation: string): Promise<void>,
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<string>,
   createDatabaseSQL(): Promise<string>,
   getTableCreateScript(table: string, schema?: string): Promise<string>,
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,
@@ -229,7 +229,7 @@ export interface IBasicDatabaseClient {
   duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>
   duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
 
-  getInsertQuery(tableInsert: TableInsert): Promise<string>
+  getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
   syncDatabase(): Promise<void>
 
   importStepZero(table: TableOrView): Promise<any>

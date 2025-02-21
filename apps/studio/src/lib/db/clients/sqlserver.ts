@@ -27,7 +27,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, BksFieldType, BksField } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
@@ -101,6 +101,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.defaultSchema = async (): Promise<string> => 'dbo'
     this.logger = () => log
+    this.createUpsertFunc = this.createUpsertSQL
   }
 
   async getVersion(): Promise<SQLServerVersion> {
@@ -177,7 +178,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       schemaName: row.table_schema,
       tableName: row.table_name,
       columnName: row.column_name,
-      field: row.column_name,
       dataType: row.data_type,
       ordinalPosition: Number(row.ordinal_position),
       hasDefault: !_.isNil(row.column_default),
@@ -484,6 +484,34 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset.map((row) => row.name)
   }
 
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
+    const [PK] = primaryKeys
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+    const columns = `([${PK}], ${columnsWithoutPK.map(cpk => `[${cpk}]`).join(', ')})`
+    const insertSQL = () => `
+      INSERT ${columns}
+      VALUES (source.[${PK}], ${columnsWithoutPK.map(cpk => `source.[${cpk}]`).join(', ')})
+    `
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `target.[${cpk}] = source.[${cpk}]`).join(', ')}`
+    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
+    const usingSQLStatement = data.map( (val) =>
+      `(${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')})`
+    ).join(', ')
+
+    return `
+      MERGE INTO [${schema}].[${tableName}] AS target
+      USING (VALUES
+        ${usingSQLStatement}
+      ) AS source ${columns}
+      ON target.${PK} = source.${PK}
+      WHEN MATCHED THEN
+        UPDATE SET
+          ${updateSet()}
+      WHEN NOT MATCHED THEN
+        ${insertSQL()};
+    `
+  }
+
   /*
     From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool:
     Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
@@ -492,6 +520,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async createDatabase(databaseName: string) {
     const sql = `create database ${this.wrapIdentifier(databaseName)}`;
     await this.driverExecuteSingle(sql)
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {
@@ -581,7 +610,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         const columnsList = await Promise.all(changes.inserts.map((insert) => {
           return this.listTableColumns(insert.table, insert.schema);
         }));
-        sql = sql.concat(changes.inserts.map((insert, index) => buildInsertQuery(this.knex, insert, columnsList[index])))
+        sql = sql.concat(changes.inserts.map((insert, index) => buildInsertQuery(this.knex, insert, { columns: columnsList[index] })))
       }
 
       if (changes.updates) {
@@ -899,7 +928,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     const { name, schema } = table
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
     const identOn = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} ON;` : '';
-
     const identOff = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} OFF;` : '';
     const query = `${identOn}${sqlString};${identOff}`;
     return await executeOptions.request.query(query, executeOptions)
@@ -963,6 +991,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     }
   }
 

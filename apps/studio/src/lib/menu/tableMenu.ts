@@ -1,5 +1,7 @@
 import {
   CellComponent,
+  ColumnComponent,
+  MenuObject,
   RangeComponent,
   Tabulator,
 } from "tabulator-tables";
@@ -7,11 +9,75 @@ import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData, rowHeaderField } from "@/common/utils";
+import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
 import Vue from "vue";
 
+type ColumnMenuItem = MenuObject<ColumnComponent>;
 type RangeData = Record<string, any>[];
+interface ExtractedData {
+  data: RangeData;
+  sources: RangeComponent[];
+}
+
+export const sortAscending: ColumnMenuItem = {
+  label: createMenuItem("Sort ascending"),
+  action: (_, column) => column.getTable().setSort(column.getField(), "asc"),
+};
+
+export const sortDescending: ColumnMenuItem = {
+  label: createMenuItem("Sort descending"),
+  action: (_, column) => column.getTable().setSort(column.getField(), "desc"),
+};
+
+export const hideColumn: ColumnMenuItem = {
+  label: createMenuItem("Hide column"),
+  action: (_, column) => column.hide(),
+};
+
+export const resizeAllColumnsToMatch: ColumnMenuItem = {
+  label: createMenuItem("Resize all columns to match"),
+  action: (_, column) => {
+    try {
+      column.getTable().blockRedraw();
+      const columns = column.getTable().getColumns();
+      columns.forEach((col) => {
+        if (col.getField() !== rowHeaderField) {
+          col.setWidth(column.getWidth());
+        }
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      column.getTable().restoreRedraw();
+    }
+  },
+};
+
+export const resizeAllColumnsToFitContent: ColumnMenuItem = {
+  label: createMenuItem("Resize all columns to fit content"),
+  action: (_, column) => resizeAllColumnsToFitContentAction(column.getTable()),
+};
+
+export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
+  label: createMenuItem("Resize all columns to fixed width"),
+  action: (_, column) => {
+    try {
+      column.getTable().blockRedraw();
+      const columns = column.getTable().getColumns();
+      columns.forEach((col) => {
+        if (col.getField() !== rowHeaderField) {
+          col.setWidth(200);
+        }
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      column.getTable().restoreRedraw();
+    }
+  },
+};
 
 export function resizeAllColumnsToFitContentAction(table: Tabulator) {
   try {
@@ -26,6 +92,22 @@ export function resizeAllColumnsToFitContentAction(table: Tabulator) {
   } finally {
     table.restoreRedraw();
   }
+}
+
+export const commonColumnMenu = [
+  sortAscending,
+  sortDescending,
+  { separator: true },
+  resizeAllColumnsToMatch,
+  resizeAllColumnsToFitContent,
+  resizeAllColumnsToFixedWidth,
+];
+
+export function createMenuItem(label: string, shortcut = "", ultimate = false) {
+  label = `<x-label>${escapeHtml(label)}</x-label>`;
+  if (shortcut) shortcut = `<x-shortcut value="${escapeHtml(shortcut)}" />`;
+  const ultimateIcon = ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
+  return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
 }
 
 export async function copyRanges(options: {
@@ -100,11 +182,14 @@ export async function copyRanges(options: {
   });
 }
 
-export function extractRanges(ranges: RangeComponent[]): RangeData {
+function extractRanges(ranges: RangeComponent[]): ExtractedData {
   if (ranges.length === 0) return;
 
   if (ranges.length === 1) {
-    return ranges[0].getData() as RangeData;
+    return {
+      data: ranges[0].getData() as RangeData,
+      sources: [ranges[0]],
+    };
   }
 
   let sameColumns = true;
@@ -125,7 +210,10 @@ export function extractRanges(ranges: RangeComponent[]): RangeData {
   }
 
   if (sameColumns) {
-    return ranges.reduce((data, range) => data.concat(range.getData()), []);
+    return {
+      data: ranges.reduce((data, range) => data.concat(range.getData()), []),
+      sources: ranges,
+    };
   }
 
   if (sameRows) {
@@ -139,11 +227,17 @@ export function extractRanges(ranges: RangeComponent[]): RangeData {
         });
       }
     }
-    return rows
+    return {
+      data: rows,
+      sources: ranges,
+    };
   }
 
   const source = _.first(ranges);
-  return source.getData() as RangeData;
+  return {
+    data: source.getData() as RangeData,
+    sources: [source],
+  };
 }
 
 function countCellsFromData(data: RangeData) {
@@ -196,36 +290,47 @@ export function setCellValue(cell: CellComponent, value: string) {
   if (editable) cell.setValue(value);
 }
 
-export function pasteActionsMenu(range: RangeComponent) {
+export function copyActionsMenu(options: {
+  ranges: RangeComponent[];
+  table?: string;
+  schema?: string;
+}) {
+  const { ranges, table, schema } = options;
   return [
     {
-      label: "Paste",
-      shortcut: "Control+V",
-      handler: () => pasteRange(range),
+      label: createMenuItem("Copy", "Control+C"),
+      action: () => copyRanges({ ranges, type: "plain" }),
+    },
+    {
+      label: createMenuItem("Copy as TSV for Excel"),
+      action: () => copyRanges({ ranges, type: "tsv" }),
+    },
+    {
+      label: createMenuItem("Copy as JSON"),
+      action: () => copyRanges({ ranges, type: "json" }),
+    },
+    {
+      label: createMenuItem("Copy as Markdown"),
+      action: () => copyRanges({ ranges, type: "markdown" }),
+    },
+    {
+      label: createMenuItem("Copy as SQL"),
+      action: () =>
+        copyRanges({
+          ranges,
+          type: "sql",
+          table,
+          schema,
+        }),
     },
   ];
 }
 
-export function copyRangesAsSQLMenuItem(ranges: RangeComponent[], table: string, schema?: string) {
-  return {
-    label: 'Copy as SQL',
-    type: 'copy',
-    handler: () => copyRangesAsSQL({ ranges, table, schema }),
-  };
-}
-
-async function copyRangesAsSQL(options: {
-  ranges: RangeComponent[],
-  table?: string;
-  schema?: string;
-}) {
-  let text = "";
-  text = await Vue.prototype.$util.send("conn/getInsertQuery", {
-    tableInsert: {
-      table: options.table,
-      schema: options.schema,
-      data: options.ranges[0].getData(),
+export function pasteActionsMenu(range: RangeComponent) {
+  return [
+    {
+      label: createMenuItem("Paste", "Control+V"),
+      action: () => pasteRange(range),
     },
-  });
-  ElectronPlugin.clipboard.writeText(text);
+  ];
 }

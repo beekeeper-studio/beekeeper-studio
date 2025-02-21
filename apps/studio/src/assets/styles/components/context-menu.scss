@@ -9,6 +9,7 @@
   list-style: none;
   position: absolute;
   z-index: 1000000;
+  background: lighten($theme-bg, 5%);
   color: $text;
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
@@ -31,8 +32,13 @@
   color: $text-dark;
   cursor: pointer;
   align-items: center;
+  &:hover {
+    background: rgba($theme-base, 0.05);
+  }
   &.disabled {
     pointer-events: none;
+    color: darken($text-dark, 25%);
+    background: darken(rgba($theme-base, 0.05), 25%);
   }
   i {
     height: 24px!important;
@@ -43,6 +49,7 @@
   }
   .shortcut {
     padding-left: 5px;
+    color: darken($text-dark, 30%);
   }
   i.material-icons.menu-icon   {
     margin-right:0!important;
@@ -57,7 +64,7 @@
   box-sizing: border-box;
   background: transparent;
   border: 0;
-  border-top: 1px solid;
+  border-top: 1px solid $border-color;
   pointer-events: none;
   + hr, &:last-child {
     display: none;
@@ -68,30 +75,4 @@
 }
 .vue-simple-context-menu li:last-of-type {
   margin-bottom: 0;
-}
-
-.BksContextMenu-list, .vue-simple-context-menu {
-  background-color: lighten($theme-bg, 5%);
-}
-
-.BksContextMenu-item, .vue-simple-context-menu__item {
-  color: $text-dark;
-  &:hover {
-    background-color: rgba($theme-base, 0.05);
-  }
-  &.BksContextMenu-item-disabled, &.disabled {
-    color: darken($text-dark, 25%);
-    background-color: darken(rgba($theme-base, 0.05), 25%);
-  }
-  .BksContextMenu-item-label {
-    display: flex;
-    justify-content: space-between;
-  }
-  .shortcut, .BksContextMenu-item-shortcut {
-    color: darken($text-dark, 30%);
-  }
-}
-
-.BksContextMenu-item-divider, .vue-simple-context-menu__divider, hr {
-  border-color: $border-color;
 }
