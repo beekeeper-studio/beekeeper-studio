@@ -408,6 +408,12 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
       expect(fields).toStrictEqual(expectedBksFields);
       
     })
+
+    describe("Param tests", () => {
+      it("Should be able to handle positional (?) params", async () => {
+        await util.paramTest(['?']);
+      })
+    })
   })
 
 }
