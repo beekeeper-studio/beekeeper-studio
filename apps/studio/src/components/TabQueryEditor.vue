@@ -78,7 +78,7 @@
             <x-button
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
-              @click.prevent="submitTabQuery"
+              @click.prevent="handleSubmitTabQuery"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
@@ -88,11 +88,11 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="submitTabQuery">
+                <x-menuitem @click.prevent="handleSubmitTabQuery">
                   <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
                   <x-shortcut value="Control+Enter" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQuery">
+                <x-menuitem @click.prevent="handleSubmitCurrentQuery">
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
@@ -114,6 +114,34 @@
                   >
                     stars
                   </i>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
+          <x-buttons class="">
+            <x-button
+              @click.prevent="toggleCommitMode"
+              class="btn btn-flat btn-small"
+              :class="{ 'btn-rounded': !isManualCommit }"
+            >
+              <x-label>{{ commitModeLabel }}</x-label>
+            </x-button>
+            <x-button v-if="isManualCommit" class="btn btn-flat btn-small" menu>
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem 
+                  :disabled="!this.isManualQueryRunning"
+                  @click.prevent="manualCommit"
+                >
+                  <x-label>Commit</x-label>
+                  <x-shortcut value="Shift+Control+C" />
+                </x-menuitem>
+                <x-menuitem 
+                  :disabled="!this.isManualQueryRunning"
+                  @click.prevent="manualRollback"
+                >
+                  <x-label>Rollback</x-label>
+                  <x-shortcut value="Shift+Control+R" />
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -392,6 +420,9 @@
          */
         focusElement: 'none',
         focusingElement: 'none',
+
+        isManualCommit: false,
+        isManualQueryRunning: false,
       }
     },
     computed: {
@@ -556,18 +587,25 @@
       },
       keybindings() {
         const keybindings: any = {
-          "Shift-Ctrl-Enter": this.submitCurrentQuery,
-          "Shift-Cmd-Enter": this.submitCurrentQuery,
-          "Ctrl-Enter": this.submitTabQuery,
-          "Cmd-Enter": this.submitTabQuery,
+          "Shift-Ctrl-Enter": this.handleSubmitCurrentQuery,
+          "Shift-Cmd-Enter": this.handleSubmitCurrentQuery,
+          "Ctrl-Enter": this.handleSubmitTabQuery,
+          "Cmd-Enter": this.handleSubmitTabQuery,
           "Ctrl-S": this.triggerSave,
           "Cmd-S": this.triggerSave,
-          "F5": this.submitTabQuery,
-          "Shift-F5": this.submitCurrentQuery,
+          "F5": this.handleSubmitTabQuery,
+          "Shift-F5": this.handleSubmitCurrentQuery,
           "Ctrl+I": this.submitQueryToFile,
           "Cmd+I": this.submitQueryToFile,
           "Shift+Ctrl+I": this.submitCurrentQueryToFile,
           "Shift+Cmd+I": this.submitCurrentQueryToFile,
+
+          "Shift-Cmd-M-Enter": this.submitManualTabQuery,
+          "Shift-Ctrl-M-Enter": this.submitManualTabQuery,
+          "Shift-Cmd-C": this.manualCommit,
+          "Shift-Ctrl-C": this.manualCommit,
+          "Shift-Cmd-R": this.manualRollback,
+          "Shift-Ctrl-R": this.manualRollback,
         }
 
         if(this.userKeymap === "vim") {
@@ -606,6 +644,9 @@
       showResultTable() {
         return this.rowCount > 0
       },
+      commitModeLabel() {
+        return this.isManualCommit ? 'Manual Commit Mode' : 'Auto Commit Mode'
+      }
     },
     watch: {
       error() {
@@ -863,7 +904,7 @@
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
-          this.submitQuery(this.currentlySelectedQuery.text)
+          await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -903,7 +944,7 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
+          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun, isManualCommit: this.isManualCommit });
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
@@ -957,6 +998,11 @@
           log.error(ex)
           if(this.running) {
             this.error = ex
+          }
+          if (this.isManualQueryRunning) {
+            this.error = ex
+            this.isManualQueryRunning = false
+            this.manualRollback()
           }
         } finally {
           this.running = false
@@ -1020,6 +1066,54 @@
           }, 1000)
           this.focusingElement = 'none'
         })
+      },
+      async toggleCommitMode() {
+        if (this.isManualCommit && this.isManualQueryRunning)
+          await this.manualRollback()
+        else if (!this.isManualCommit && this.running)
+          await this.cancelQuery()
+        this.isManualCommit = !this.isManualCommit
+      },
+      async submitManualTabQuery() {
+        this.isManualCommit = true
+        this.isManualQueryRunning = true
+        await this.submitTabQuery()
+      },
+      async submitManualCurrentQuery() {
+        this.isManualCommit = true
+        this.isManualQueryRunning = true
+        await this.submitCurrentQuery()
+      },
+      async manualCommit() {
+        console.log("manual commit")
+        if (!this.runningQuery) {
+          throw new Error('No running query to commit manually');
+        }
+        await this.runningQuery.commit()
+        this.isManualQueryRunning = false
+        this.runningQuery = null
+      },
+      async manualRollback() {
+        if (!this.runningQuery) {
+          throw new Error('No running query to rollback manually');
+        }
+        await this.runningQuery.rollback()
+        this.isManualQueryRunning = false
+        this.runningQuery = null
+      },
+      handleSubmitTabQuery() {
+        if (this.isManualCommit) {
+          this.submitManualTabQuery()
+        } else {
+          this.submitTabQuery()
+        }
+      },
+      handleSubmitCurrentQuery() {
+        if (this.isManualCommit) {
+          this.submitManualCurrentQuery()
+        } else {
+          this.submitCurrentQuery()
+        }
       },
     },
     async mounted() {
