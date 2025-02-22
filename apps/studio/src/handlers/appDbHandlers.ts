@@ -4,7 +4,6 @@ import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery } from "@/common/transport";
 import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
-import rawLog from 'electron-log';
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
@@ -14,12 +13,13 @@ import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
+import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
+import rawLog from "@bksLogger"
 
 const log = rawLog.scope('Appdb handlers');
 

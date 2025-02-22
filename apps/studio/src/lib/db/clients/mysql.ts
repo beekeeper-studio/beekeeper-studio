@@ -7,7 +7,8 @@ import {
   QueryLogOptions,
 } from "./BasicDatabaseClient";
 import mysql, { Connection } from "mysql2";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
+import ed25519AuthPlugin from "@coresql/mysql2-auth-ed25519";
 import knexlib from "knex";
 import { readFileSync } from "fs";
 import _ from "lodash";
@@ -133,6 +134,9 @@ async function configDatabase(
 ): Promise<mysql.PoolOptions> {
 
   const config: mysql.PoolOptions = {
+    authPlugins: {
+      'client_ed25519': ed25519AuthPlugin(),
+    },
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
@@ -423,7 +427,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         schema: "",
         name: row.Key_name as string,
         columns,
-        unique: row.Non_unique === "0",
+        unique: row.Non_unique === "0" || row.Non_unique === 0,
         primary: row.Key_name === "PRIMARY",
       };
     });
@@ -618,7 +622,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     );
     const { query, params } = queries;
     const result = await this.driverExecuteSingle(query, { params });
-    const fields = this.parseQueryResultColumns(result);
+    const fields = columns.map((v) => v.bksField).filter((v) => selects && selects.length > 0 ? selects.includes(v.name) : true);
     const rows = await this.serializeQueryResult(result, fields);
     return { result: rows, fields };
   }
@@ -781,7 +785,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     databaseName: string,
     charset: string,
     collation: string
-  ): Promise<void> {
+  ): Promise<string> {
     const sql = `
       create database ${this.wrapIdentifier(databaseName)}
         character set ${this.wrapIdentifier(charset)}
@@ -789,6 +793,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     `;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {
@@ -828,7 +833,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         undefined,
         connection
       );
-      const command = buildInsertQuery(this.knex, insert, columns);
+      const command = buildInsertQuery(this.knex, insert, { columns });
       await this.driverExecuteSingle(command, { connection });
     }
     return true;
@@ -1401,16 +1406,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
-  }
-
-  parseQueryResultColumns(qr: ResultType): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
-        bksType = 'BINARY'
-      }
-      return { name: column.name, bksType }
-    })
   }
 
   parseTableColumn(column: { column_name: string; data_type: string }): BksField {

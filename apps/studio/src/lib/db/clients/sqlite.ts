@@ -12,11 +12,12 @@ import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
 import _ from 'lodash';
-import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
+
+import rawLog from '@bksLogger'
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -86,10 +87,13 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async connect(): Promise<void> {
     await super.connect();
 
+    // verify that the connection is valid
+    await this.driverExecuteSingle('PRAGMA schema_version', { overrideReadonly: true });
+
     // set sqlite version
     const version = await this.driverExecuteSingle('SELECT sqlite_version() as version');
-
     this.version = version;
+
     return;
   }
 
@@ -189,10 +193,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
     const sql = `PRAGMA index_list('${SD.escapeString(table)}')`;
 
-    const { rows } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
 
     const allSQL = rows.map((row) => `PRAGMA index_xinfo('${SD.escapeString(row.name)}')`).join(";");
-    const infos = await this.driverExecuteMultiple(allSQL);
+    const infos = await this.driverExecuteMultiple(allSQL, { overrideReadonly: true });
 
     const indexColumns: IndexColumn[][] = infos.map((result) => {
       return result.rows.filter((r) => !!r.name).map((r) => ({ name: r.name, order: r.desc ? 'DESC' : 'ASC' }))
@@ -219,7 +223,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`
-    const { rows } = await this.driverExecuteSingle(sql);
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
     return rows.map(row => ({
       constraintName: row.id,
       constraintType: 'FOREIGN',
@@ -306,7 +310,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const result = await this.driverExecuteSingle('PRAGMA database_list;');
+    const result = await this.driverExecuteSingle('PRAGMA database_list;', { overrideReadonly: true });
 
     return result.rows.map((row) => row.file || ':memory:');
   }
@@ -524,15 +528,16 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return [];
   }
 
-  async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<void> {
+  async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<string> {
     // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
     // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs.
-    const fileLocation = this.databasePath.split('/');
-    fileLocation.pop();
+    const fileLocation = path.parse(this.databasePath).dir;
 
-    const dbPath = path.join(...fileLocation, `${databaseName}.db`);
+    const dbPath = path.join(fileLocation, `${databaseName}.db`);
 
     this._createDatabase(dbPath);
+
+    return dbPath;
   }
 
   async createDatabaseSQL(): Promise<string> {
@@ -708,7 +713,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       const params = [];
       const whereList = []
       update.primaryKeys.forEach(({ column, value }) => {
-        console.log('updateValues, column, value', column, value)
+        log.log('updateValues, column, value', column, value)
         whereList.push(`${this.wrapIdentifier(column)} = ?`);
         params.push(value);
       })

@@ -1,7 +1,7 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import _ from 'lodash'
 import {AppEvent} from '../../common/AppEvent'
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope("ClientMenuActionHandler")
 

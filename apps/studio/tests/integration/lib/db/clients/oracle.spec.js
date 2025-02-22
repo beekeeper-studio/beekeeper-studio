@@ -2,8 +2,12 @@ import path from 'path';
 import { DockerComposeEnvironment, GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
-
+import fs from 'fs'
+import os from 'os'
+import tmp from 'tmp'
+// import { UserSetting } from '@/common/appdb/models/user_setting';
 const timeoutDefault = 1000 * 60 * 5 // 5 minutes
+
 
 describe("Oracle Tests", () => {
   jest.setTimeout(timeoutDefault + 500) // give jest a buffer
@@ -27,8 +31,8 @@ describe("Oracle Tests", () => {
       })
       .withExposedPorts(1521)
       .withBindMounts([{
-        source: localDir, 
-        target: '/docker-entrypoint-initdb.d', 
+        source: localDir,
+        target: '/docker-entrypoint-initdb.d',
         mode: 'ro'
       }])
       .withHealthCheck({
@@ -80,6 +84,50 @@ describe("Oracle Tests", () => {
       `)
     })
   })
+
+
+      describe("Connect using TSA_NAMES file", () => {
+        it("Should connect using tsa_names.ora file and execute a simple select query", async () => {
+          // Create a temporary tsanames.ora file using connection info from testcontainers.
+
+          const tsaDir = tmp.dirSync().name
+          const tsaNamesPath = path.join(tsaDir, 'tnsnames.ora');
+          const tsaContent = `
+    ORCL =
+      (DESCRIPTION =
+        (ADDRESS = (PROTOCOL = TCP)(HOST = ${container.getHost()})(PORT = ${container.getMappedPort(1521)}))
+        (CONNECT_DATA =
+          (SERVICE_NAME = BEEKEEPER)
+        )
+      )
+          `;
+          fs.writeFileSync(tsaNamesPath, tsaContent, 'utf8');
+          const tsaConfig = {
+            client: 'oracle',
+            user: 'beekeeper',
+            password: 'password',
+            options: {
+              connectionString: 'ORCL',
+              connectionMethod: 'connectionString'
+            },
+            oracleConfigLocation: tsaDir,
+          };
+          const tsaUtil = new DBTestUtil(tsaConfig, "BEEKEEPER", {
+            defaultSchema: "BEEKEEPER",
+            dialect: "oracle",
+            skipCreateDatabase: true,
+          });
+          // await tsaUtil.setupdb();
+          // Use Oracle's dual table for a quick test.
+
+          await tsaUtil.connect()
+          const result = await tsaUtil.connection.executeQuery(`SELECT * FROM dual`);
+          expect(result).toBeDefined();
+          await tsaUtil.disconnect();
+          fs.unlinkSync(tsaNamesPath);
+        })
+      })
+
 
 
   describe("Common DB Tests", () => {

@@ -1,4 +1,4 @@
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import {
   BasicDatabaseClient,
@@ -589,10 +589,11 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     databaseName: string,
     _charset: string,
     _collation: string
-  ): Promise<void> {
+  ): Promise<string> {
     await this.driverExecuteSingle(
       `CREATE DATABASE ${ClickHouseData.wrapIdentifier(databaseName)}`
     );
+    return databaseName;
   }
 
   async truncateElementSql(
