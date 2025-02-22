@@ -169,16 +169,16 @@ export default class Import {
 
   checkDataType (data) {
     if (_.isNil(data)) return 'null'
-    if (_.isDate(data)) return 'date'
-    if (_.isBoolean(data)) return 'boolean'
+    if (_.isDate(data)) return 'dateType'
+    if (_.isBoolean(data)) return 'booleanType'
 
     if (_.isFinite(Number(data))) {
-      if (_.isInteger(data)) return 'integer'
+      if (_.isInteger(data)) return 'integerType'
 
-      return 'number'
+      return 'numberType'
     }
 
-    return 'string'
+    return 'stringType'
 
   }
 

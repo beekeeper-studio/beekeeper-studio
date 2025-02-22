@@ -318,7 +318,7 @@
 
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
-        await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId })
+        console.log(await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId }))
         const tableColumns = columns.map(column =>
           ({
             ...column,
