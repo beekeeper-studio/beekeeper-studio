@@ -238,6 +238,7 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
 }
 
 export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [], createUpsertFunc = null } = {}) {
+  console.log(runAsUpsert)
   if (!inserts) return []
   return inserts.map(insert => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }))
 }

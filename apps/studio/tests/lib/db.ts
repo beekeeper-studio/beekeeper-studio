@@ -227,7 +227,7 @@ export class DBTestUtil {
     return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
   }
 
-  async connect() {
+  async setupdb() {
     await TestOrmConnection.connect()
     await LicenseKey.createTrialLicense()
     await this.connection.connect()
@@ -235,10 +235,6 @@ export class DBTestUtil {
       this.knex = this.connection.knex
     }
 
-  }
-
-  async setupdb() {
-    await this.connect()
     await this.options.beforeCreatingTables?.()
     await this.createTables()
 
@@ -957,9 +953,9 @@ export class DBTestUtil {
         ) AS source ([id], [job_name], [hourly_rate])
         ON target.id = source.id
         WHEN MATCHED THEN
-          UPDATE SET
-            target.[job_name] = source.[job_name],
-            target.[hourly_rate] = source.[hourly_rate]
+          UPDATE SET 
+            target.[job_name] = source.[job_name], 
+            target.[hourly_rate] = source.[hourly_rate] 
         WHEN NOT MATCHED THEN
           INSERT ([id], [job_name], [hourly_rate])
           VALUES (source.[id], source.[job_name], source.[hourly_rate]);
@@ -1007,8 +1003,8 @@ export class DBTestUtil {
       ) AS source ([id], [job_name], [hourly_rate])
       ON target.id = source.id
       WHEN MATCHED THEN
-        UPDATE SET
-          target.[job_name] = source.[job_name],
+        UPDATE SET 
+          target.[job_name] = source.[job_name], 
           target.[hourly_rate] = source.[hourly_rate]
       WHEN NOT MATCHED THEN
         INSERT ([id], [job_name], [hourly_rate])
