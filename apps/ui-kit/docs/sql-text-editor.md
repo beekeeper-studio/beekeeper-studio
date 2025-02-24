@@ -62,6 +62,6 @@ See the API reference below for more details.
 - [SQL Text Editor API][sql-text-editor-api]
 - [Entity API][entity-api]
 
-[sql-text-editor-api]: ./api/sql-text-editor
+[sql-text-editor-api]: ./api/sql-text-editor.md
 [entity-api]: ./api/entity.md
 [context-menu]: ./context-menu.md

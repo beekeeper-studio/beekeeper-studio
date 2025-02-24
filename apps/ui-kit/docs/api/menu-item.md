@@ -11,35 +11,37 @@ handlers, shortcuts, and additional properties such as checkboxes and dividers.
 
 ### Standard Menu Item
 
-| Property   | Type                           | Required | Description                                                                                   |
-| ---------- | ------------------------------ | -------- | --------------------------------------------------------------------------------------------- |
-| `label`    | `string` \| `{ html: string }` | **Yes**  | Menu item label, can be plain text or HTML. Please only use raw html if you trust the source. |
-| `handler`  | `function`                     | **Yes**  | Function executed when item is clicked                                                        |
-| `id`       | `string`                       | No       | Unique identifier                                                                             |
-| `class`    | `string`                       | No       | CSS class for styling                                                                         |
-| `shortcut` | `string` \| `string[]`         | No       | Keyboard shortcut                                                                             |
-| `disabled` | `boolean`                      | No       | Whether the item is disabled                                                                  |
-| `items`    | `MenuItem[]`                   | No       | Submenu items                                                                                 |
-| `keepOpen` | `boolean`                      | No       | Keeps menu open after clicking                                                                |
+| Property                     | Type                           | Description                                                                                   | Default     |
+| ---------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- | ----------- |
+| `label`<sup>required</sup>   | `string` \| `{ html: string }` | Menu item label, can be plain text or HTML. Please only use raw html if you trust the source. |             |
+| `handler`<sup>required</sup> | `function`                     | Function executed when item is clicked                                                        |             |
+| `id`                         | `string`                       | Unique identifier                                                                             | `undefined` |
+| `class`                      | `string`                       | CSS class for styling                                                                         | `undefined` |
+| `shortcut`                   | `string` \| `string[]`         | Keyboard shortcut                                                                             | `undefined` |
+| `disabled`                   | `boolean`                      | Whether the item is disabled                                                                  | `false`     |
+| `items`                      | `MenuItem[]`                   | Submenu items                                                                                 | `undefined` |
+| `keepOpen`                   | `boolean`                      | Keeps menu open after clicking                                                                | `false`     |
 
 ### Checkbox Menu Item
 
-| Property   | Type                            | Required | Description                            |
-| ---------- | ------------------------------- | -------- | -------------------------------------- |
-| `label`    | `string` \| `{ html: string }`  | **Yes**  | Menu item label                        |
-| `handler`  | `function`                      | **Yes**  | Function executed when item is clicked |
-| `checked`  | `boolean`                       | **Yes**  | Checkbox state                         |
-| `id`       | `string`                        | No       | Unique identifier                      |
-| `class`    | `string`                        | No       | CSS class for styling                  |
-| `shortcut` | `string` \| `string[]`          | No       | Keyboard shortcut                      |
-| `disabled` | `boolean`                       | No       | Whether the item is disabled           |
-| `items`    | `MenuItem[]` \| `DividerItem[]` | No       | Submenu items                          |
-| `keepOpen` | `boolean`                       | No       | Keeps menu open after clicking         |
+When `checked` is defined, the item becomes a checkbox item.
+
+| Property                     | Type                            | Description                            | Default     |
+| ---------------------------- | ------------------------------- | -------------------------------------- | ----------- |
+| `label`<sup>required</sup>   | `string` \| `{ html: string }`  | Menu item label                        |             |
+| `handler`<sup>required</sup> | `function`                      | Function executed when item is clicked |             |
+| `checked`<sup>required</sup> | `boolean`                       | Checkbox state                         |             |
+| `id`                         | `string`                        | Unique identifier                      | `undefined` |
+| `class`                      | `string`                        | CSS class for styling                  | `undefined` |
+| `shortcut`                   | `string` \| `string[]`          | Keyboard shortcut                      | `undefined` |
+| `disabled`                   | `boolean`                       | Whether the item is disabled           | `false`     |
+| `items`                      | `MenuItem[]` \| `DividerItem[]` | Submenu items                          | `undefined` |
+| `keepOpen`                   | `boolean`                       | Keeps menu open after clicking         | `false`     |
 
 ### Divider
 
-| Property | Type        | Required | Description                |
-| -------- | ----------- | -------- | -------------------------- |
-| `type`   | `'divider'` | **Yes**  | Creates a visual separator |
+| Property                  | Type        | Description                | Default |
+| ------------------------- | ----------- | -------------------------- | ------- |
+| `type`<sup>required</sup> | `'divider'` | Creates a visual separator |         |
 
 [context-menu]: ../context-menu.md

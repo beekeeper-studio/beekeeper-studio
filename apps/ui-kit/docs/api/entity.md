@@ -15,48 +15,48 @@ tables, views, materialized views, routines, and schemas.
 
 ### Table/View/Materialized View
 
-| Property     | Type                                                   | Required | Description           |
-| ------------ | ------------------------------------------------------ | -------- | --------------------- |
-| `id`         | `string`                                               | No       | Unique identifier     |
-| `name`       | `string`                                               | **Yes**  | Entity name           |
-| `entityType` | `"table"` \| `"view"` \| `"materialized-view"` \| `""` | No       | The type of entity    |
-| `schema`     | `string`                                               | No       | Schema name           |
-| `columns`    | `TableColumn[]`                                        | No       | List of table columns |
+| Property                  | Type                                                   | Description           | Default                                           |
+| ------------------------- | ------------------------------------------------------ | --------------------- | ------------------------------------------------- |
+| `id`                      | `string`                                               | Unique identifier     | Combination of `entityType`, `schema`, and `name` |
+| `name`<sup>required</sup> | `string`                                               | Entity name           |                                                   |
+| `entityType`              | `"table"` \| `"view"` \| `"materialized-view"` \| `""` | The type of entity    | `undefined`                                       |
+| `schema`                  | `string`                                               | Schema name           | `undefined`                                       |
+| `columns`                 | `TableColumn[]`                                        | List of table columns | `undefined`                                       |
 
 #### TableColumn Interface
 
-| Property   | Type     | Required | Description                 |
-| ---------- | -------- | -------- | --------------------------- |
-| `field`    | `string` | **Yes**  | Column name                 |
-| `dataType` | `string` | No       | The data type of the column |
+| Property                   | Type     | Description                 | Default     |
+| -------------------------- | -------- | --------------------------- | ----------- |
+| `field`<sup>required</sup> | `string` | Column name                 |             |
+| `dataType`                 | `string` | The data type of the column | `undefined` |
 
 ### Routine
 
-| Property           | Type             | Required | Description                               |
-| ------------------ | ---------------- | -------- | ----------------------------------------- |
-| `id`               | `string`         | No       | Unique identifier                         |
-| `name`             | `string`         | **Yes**  | Routine name                              |
-| `entityType`       | `"routine"`      | **Yes**  | Must be `"routine"`                       |
-| `schema`           | `string`         | No       | Schema name                               |
-| `returnType`       | `string`         | **Yes**  | Return type of the routine                |
-| `returnTypeLength` | `number`         | No       | Length of the return type (if applicable) |
-| `routineParams`    | `RoutineParam[]` | No       | List of routine parameters                |
+| Property                        | Type             | Description                               | Default                                           |
+| ------------------------------- | ---------------- | ----------------------------------------- | ------------------------------------------------- |
+| `id`                            | `string`         | Unique identifier                         | Combination of `entityType`, `schema`, and `name` |
+| `name`<sup>required</sup>       | `string`         | Routine name                              |                                                   |
+| `entityType`<sup>required</sup> | `"routine"`      | Must be `"routine"`                       |                                                   |
+| `schema`                        | `string`         | Schema name                               | `undefined`                                       |
+| `returnType`<sup>required</sup> | `string`         | Return type of the routine                |                                                   |
+| `returnTypeLength`              | `number`         | Length of the return type (if applicable) | `undefined`                                       |
+| `routineParams`                 | `RoutineParam[]` | List of routine parameters                | `undefined`                                       |
 
 #### RoutineParam Interface
 
-| Property | Type     | Required | Description                |
-| -------- | -------- | -------- | -------------------------- |
-| `name`   | `string` | **Yes**  | Parameter name             |
-| `type`   | `string` | **Yes**  | Data type of the parameter |
-| `length` | `number` | No       | Length of the parameter    |
+| Property                  | Type     | Description                | Default     |
+| ------------------------- | -------- | -------------------------- | ----------- |
+| `name`<sup>required</sup> | `string` | Parameter name             |             |
+| `type`<sup>required</sup> | `string` | Data type of the parameter |             |
+| `length`                  | `number` | Length of the parameter    | `undefined` |
 
 ### Schema
 
-| Property     | Type       | Required | Description        |
-| ------------ | ---------- | -------- | ------------------ |
-| `id`         | `string`   | No       | Unique identifier  |
-| `name`       | `string`   | **Yes**  | Schema name        |
-| `entityType` | `"schema"` | **Yes**  | Must be `"schema"` |
+| Property                        | Type       | Description        | Default                                |
+| ------------------------------- | ---------- | ------------------ | -------------------------------------- |
+| `id`                            | `string`   | Unique identifier  | Combination of `entityType` and `name` |
+| `name`<sup>required</sup>       | `string`   | Schema name        |                                        |
+| `entityType`<sup>required</sup> | `"schema"` | Must be `"schema"` |                                        |
 
 [data-editor]: ../data-editor.md
 [entity-list]: ../entity-list.md
