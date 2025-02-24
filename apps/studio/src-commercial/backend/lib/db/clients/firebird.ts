@@ -1295,9 +1295,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async importLineReadCommand (_table: TableOrView, sqlString: string[], { executeOptions }: ImportFuncOptions): Promise<any> {
-    return await Promise.all(sqlString.map(async (sql) => {
+    for (const sql of sqlString) {
       await executeOptions.transaction.query(`${sql};`);
-    }))
+    }
   }
 
   async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
