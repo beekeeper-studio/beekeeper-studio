@@ -90,6 +90,6 @@ const commentUserPost = {
   ],
 };
 
-export function getTables() {
+export function getEntities() {
   return [cheeses, users, posts, comments, postUser, commentUserPost];
 }
