@@ -1,4 +1,4 @@
-# Overview
+# Getting Started
 
 `@bks/ui-kit` library provides a set of custom elements or components that can
 be used to create interactive user interfaces for database applications.
@@ -138,6 +138,21 @@ const data = [
 Object.freeze(data);
 table.data = data;
 ```
+
+## Events
+
+`@bks/ui-kit` components emit events in the same way as native HTML elements.
+To listen to events, use the `addEventListener()` method. The data of the event
+is available in the `event.detail` property. For example:
+
+```js
+sqlTextEditor.addEventListener("bks-value-change", (event) => {
+  const value = event.detail.value
+  console.log(value);
+})
+```
+
+For a list of all available events, please refer to the API documentation.
 
 ## Lifecycle
 

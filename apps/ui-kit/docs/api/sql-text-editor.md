@@ -15,7 +15,7 @@
 | `vimConfig`         | `object`              | Configure vim mode.                                                                                                                                                                                                                     | `undefined`  |
 | `columnsGetter`     | `function`            | If provided, this function will be called for autocompleting column names instead of using the `entities.columns` property. Expect one argument of type `string` representing a combination of schema name (if exists) and entity name. | `undefined`  |
 | `defaultSchema`     | `string`              | The default schema to use when autocompleting entity names. Schemas that match this will be prioritized in the autocompletion list.                                                                                                     | `public`     |
-| `mode`              | `string` \| `object`  | The CodeMirror's mode to use. Modes are JavaScript programs that help color (and optionally indent) text written in a given language. Refer to CodeMirror's [mode api](https://codemirror.net/5/doc/manual.html#modeapi) learn more     | `text/x-sql` |
+| `mode`              | `string` \| `object`  | The CodeMirror's mode to use. Modes are JavaScript programs that help color (and optionally indent) text written in a given language. Please refer to CodeMirror's [mode api](https://codemirror.net/5/doc/manual.html#modeapi) learn more     | `text/x-sql` |
 
 ## Events
 
