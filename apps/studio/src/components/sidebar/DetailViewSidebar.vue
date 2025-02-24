@@ -63,6 +63,7 @@
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
       :plugins="textEditorPlugins"
+      :line-wrapping="wrapText"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -109,6 +110,7 @@ export default Vue.extend({
       foldAll: 0,
       unfoldAll: 0,
       restoredTruncatedPaths: [],
+      wrapText: false,
     };
   },
   watch: {
@@ -260,6 +262,13 @@ export default Vue.extend({
             this.$store.dispatch("toggleExpandFKDetailsByDefault");
           },
           checked: this.expandFKDetailsByDefault,
+        },
+        {
+          name: "Toggle Wrap Text",
+          handler: () => {
+            this.wrapText = !this.wrapText
+          },
+          checked: this.wrapText,
         },
 
       ]

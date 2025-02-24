@@ -40,6 +40,7 @@
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
+        :line-wrapping="wrapText"
         @initialized="handleEditorInitialized"
       />
       <span class="expand" />
@@ -189,6 +190,7 @@
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
+        @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
       />
     </div>
@@ -382,6 +384,7 @@
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
+        wrapText: false,
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
