@@ -110,14 +110,6 @@ export default Vue.extend({
           Noty.button("Restart", 'btn btn-primary', () => this.$native.app.restart())
         ]
       })
-    },
-    shouldBeManual() {
-      return this.config.host
-    }
-  },
-  watch: {
-    shouldBeManual() {
-      this.setConnectionMethod()
     }
   },
   methods: {
@@ -127,15 +119,6 @@ export default Vue.extend({
       }
     },
   },
-  // beforeMount() {
-
-  //   if (this.config.host && this.config.id && !this.config.options.connectionMethod) {
-  //     this.connectionMethod = 'manual'
-  //   } else if (!this.connectionMethod) {
-  //     this.connectionMethod = 'connectionString'
-  //   }
-  //   if (this.settings.oracleInstantClient?.value) this.oracleExpanded = false
-  // }
 
 })
 </script>

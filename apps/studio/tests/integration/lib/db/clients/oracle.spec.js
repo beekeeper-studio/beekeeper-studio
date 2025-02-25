@@ -10,8 +10,10 @@ import OracleDB from 'oracledb';
 const timeoutDefault = 1000 * 60 * 5 // 5 minutes
 
 const TEST_VERSIONS = [
+  // FIXME: can't combine think and thin tests in the same process
+  // because oracle has a GLOBAL configuration
+  // so once you go thick, you can't go back. (sounds gross)
   { version: 18, mode: 'thick'},
-  { version: 18, mode: 'thin'},
 ]
 
 // if these test's don't work, see the main docs on setting up libaio

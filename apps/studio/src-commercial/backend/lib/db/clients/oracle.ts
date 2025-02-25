@@ -555,9 +555,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       payload['libDir'] = cliLocation
       if (configLocation) {
         payload['configDir'] = configLocation
-        process.env.TNS_ADMIN = configLocation
       }
-      console.log("initializing oracle client with", payload)
+      log.debug("initializing oracle client with", payload)
       oracle.initOracleClient(payload)
       oracleInitialized = true
     } else {
@@ -596,11 +595,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     // we only do this in thin mode
     if (configLocation && !cliLocation) {
       poolConfig['configDir'] = configLocation
-      // @ts-ignore
-      const serviceNames = await oracle.getNetworkServiceNames(configLocation);
-      console.log(serviceNames);
     }
-    console.log("Pool Config: ", poolConfig)
+    log.debug("Pool Config: ", poolConfig)
     this.pool = await oracle.createPool(poolConfig)
     const vSQL = `
       SELECT BANNER as BANNER FROM v$version
