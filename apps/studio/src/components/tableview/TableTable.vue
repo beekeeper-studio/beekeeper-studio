@@ -755,6 +755,9 @@ export default Vue.extend({
   },
 
   watch: {
+    filters() {
+      this.tabulator?.setData()
+    },
     allColumnsSelected() {
       this.resetPendingChanges()
     },
@@ -763,6 +766,9 @@ export default Vue.extend({
         this.initialize()
       }
     },
+    page: _.debounce(function () {
+      this.tabulator.setPage(this.page || 1)
+    }, 500),
     active() {
       this.updateSplit()
 
@@ -937,7 +943,7 @@ export default Vue.extend({
         this.tabulator = null
       }
 
-      this.tabulator = tabulatorForTableData(this.$refs.table, {
+      const tabulator = tabulatorForTableData(this.$refs.table, {
         persistenceID: this.tableId,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
@@ -996,28 +1002,18 @@ export default Vue.extend({
           scrollPageDown: false
         },
       });
-      this.tabulator.on('cellEdited', this.cellEdited)
-      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
-      this.tabulator.on('tableBuilt', () => {
-        const unwatchFilters = this.$watch('filters', () => {
-          this.tabulator.setData()
-        })
-        const unwatchPage = this.$watch('page', _.debounce(() => {
-          this.tabulator.setPage(this.page || 1)
-        }, 500))
-
-        this.tabulator.on("tableDestroyed", () => {
-          unwatchFilters()
-          unwatchPage()
-        })
-
-        this.tabulator.modules.selectRange.restoreFocus()
+      tabulator.on('cellEdited', this.cellEdited)
+      tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
+      tabulator.on('tableBuilt', () => {
+        this.tabulator = tabulator
+        this.tabulatorBuilt = true
+        tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on("cellMouseUp", this.updateDetailView);
-      this.tabulator.on("headerMouseUp", this.updateDetailView);
-      this.tabulator.on("keyNavigate", this.updateDetailView);
+      tabulator.on("cellMouseUp", this.updateDetailView);
+      tabulator.on("headerMouseUp", this.updateDetailView);
+      tabulator.on("keyNavigate", this.updateDetailView);
       // Tabulator range is reset after data is processed
-      this.tabulator.on("dataProcessed", this.updateDetailView);
+      tabulator.on("dataProcessed", this.updateDetailView);
 
       this.updateSplit()
     },
