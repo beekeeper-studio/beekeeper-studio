@@ -3386,10 +3386,10 @@
   dependencies:
     undici-types "~6.19.2"
 
-"@types/oracledb@^5.2.2":
-  version "5.3.1"
-  resolved "https://registry.yarnpkg.com/@types/oracledb/-/oracledb-5.3.1.tgz#667a7ea97eb3f558c14a796a924ae08aa9a74a41"
-  integrity sha512-FXxNytI8CQ16pwAlUwRXwQeuLS/PSDuUcQQddUSbWeuFnpzMEgjMz5+7m531Q/y1RIUzZ+HU7mIvidB4oZ0bEA==
+"@types/oracledb@^6.5.3":
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/@types/oracledb/-/oracledb-6.5.3.tgz#3958553ed5610d229f3169d4d79b08757ca1c7d1"
+  integrity sha512-qrcKBezSXi8MltjKtYOQTN+tk7YjeiLjLO4SgXuzGvUGmLMkDLWTRJ4OtM3YoW9dzi/tQeUdgatTmOOE3nSAVg==
   dependencies:
     "@types/node" "*"
 
@@ -8815,10 +8815,10 @@ ora@^5.1.0:
     strip-ansi "^6.0.0"
     wcwidth "^1.0.1"
 
-oracledb@~6.6.0:
-  version "6.6.0"
-  resolved "https://registry.yarnpkg.com/oracledb/-/oracledb-6.6.0.tgz#bb40adbe81a84a1e544c48af9f120c61f030e936"
-  integrity sha512-T3dx+o3j+tVN53wQyr4yGTmoPHLy+a2V8yb1T2PmWrsj3ZlSt2Yu1BgV2yTDqnmBZYpRi/I3yJXRCOHHD7PiyA==
+oracledb@~6.7.2:
+  version "6.7.2"
+  resolved "https://registry.yarnpkg.com/oracledb/-/oracledb-6.7.2.tgz#4e1871718b33b5981eef46721aac4a8176c81655"
+  integrity sha512-fdHnGyI9VJ84HWEQLdhqmkFmrFRCi2CJ/xrZplRAyXrD+oL70f0WzQ0OBEBcHsOAdxKgpnTwm4bdyuIPQDgUgQ==
 
 os-tmpdir@~1.0.2:
   version "1.0.2"

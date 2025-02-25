@@ -7,7 +7,8 @@ old_url: "https://docs.beekeeperstudio.io/docs/oracle-database"
 ## Requirements
 
 1. On all operating systems you must have the Oracle Instant Client installed.
-2. On Linux you must have `libaio` installed.
+2. On Linux you must have `libaio-dev` (apt) / `libaio-devel` (yum/dnf) installed.
+3. For Ubuntu 24.04+ You also need to make a symlink: `sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1`
 
 Below are specific instructions for each of the above requirements
 

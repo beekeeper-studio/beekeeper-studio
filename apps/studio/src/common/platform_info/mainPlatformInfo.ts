@@ -48,6 +48,8 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   // previous builds of Beekeeper Studio required native libs for Oracle,
   // but now it should work on all platforms
+  // FIXME: Windows ARM - this needs to be disabled
+  // as instant client not available there
   const oracleSupported = true
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
