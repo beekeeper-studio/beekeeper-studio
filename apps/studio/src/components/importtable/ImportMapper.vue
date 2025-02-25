@@ -42,8 +42,9 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        schema: '',
-        table: ''
+        schema: null,
+        table: null,
+        tabId: null
       })
     },
   },

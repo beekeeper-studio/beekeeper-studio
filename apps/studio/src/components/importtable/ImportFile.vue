@@ -2,7 +2,7 @@
   <div class="import mini-wrap">
     <form class="import-section-wrapper card-flat padding">
       <h3 class="card-title">
-        {{ this.getTitle }}
+        Choose file
       </h3>
       <div class="form-group">
         <label for="fileName">Select File To Import (.csv, .xlsx, .json, .jsonl only)</label>
@@ -173,10 +173,10 @@
           <button
             class="btn btn-primary btn-icon"
             type="button"
-            :disabled="!this.table"
+            :disabled="!this.fileName"
             @click.prevent="$emit('finish')"
           >
-            <span>Map To Table</span>
+            <span>Select or Create Table</span>
             <span class="material-icons">
               keyboard_arrow_right
             </span>
@@ -214,7 +214,8 @@
         required: true,
         default: () => ({
           schema: null,
-          table: ''
+          table: null,
+          tabId: null
         })
       }
     },
@@ -244,13 +245,6 @@
             { name: 'Import Files', extensions: ['csv', 'json', 'jsonl', 'xlsx']}
           ]
         }
-      },
-      getTitle() {
-        if (this.stepperProps.table) {
-          return `Import Data Into Table ${ this.stepperProps.table }`
-        }
-
-        return `Import Data and Create Table`
       },
       fileType() {
         if (this.fileName === null) return null
@@ -290,7 +284,9 @@
     },
     methods: {
       tableKey() {
+        if (!this.stepperProps.schema && !this.stepperProps.table) return null
         const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
+
         return `${schema}${this.stepperProps.table}`
       },
       async setXLSX() {
@@ -318,7 +314,7 @@
 
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
-        console.log(await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId }))
+        // console.log(await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId }))
         const tableColumns = columns.map(column =>
           ({
             ...column,
@@ -359,7 +355,7 @@
         }
       },
       canContinue() {
-        return Boolean(this.fileName && !this.table)
+        return Boolean(this.fileName)
       },
       getTable() {
         let foundSchema = ''
@@ -372,7 +368,7 @@
       },
       async onNext() {
         const importData = {
-          table: this.tableKey(),
+          table: this.tableKey() ?? `new-table-${this.stepperProps.tabId}`,
           importProcessId: this.importerId,
           importOptions: {
             fileName: this.fileName,

@@ -113,7 +113,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import Stepper from './stepper/Stepper.vue'
   import ImportFile from './importtable/ImportFile.vue'
-  import Import from './importtable/ImportTable.vue'
+  import ImportTable from './importtable/ImportTable.vue'
   import ImportMapper from './importtable/ImportMapper.vue'
   import ImportPreview from './importtable/ImportPreview.vue'
   import UpsellContent from '@/components/upsell/UpsellContent.vue'
@@ -161,7 +161,22 @@
             icon: 'attach_file',
             stepperProps: {
               schema: this.schema,
-              table: this.table
+              table: this.table,
+              tabId: this.tab.id
+            },
+            completed: false,
+            completePrevious: false,
+            nextButtonText: 'Select or Create Table',
+            nextButtonIcon: 'keyboard_arrow_right'
+          },
+          {
+            component: ImportTable,
+            title: 'Select/Create Table',
+            icon: 'grid_on',
+            stepperProps: {
+              schema: this.schema,
+              table: this.table,
+              tabId: this.tab.id
             },
             completed: false,
             completePrevious: false,
@@ -174,7 +189,8 @@
             icon: 'settings',
             stepperProps: {
               schema: this.schema,
-              table: this.table
+              table: this.table,
+              tabId: this.tab.id
             },
             completed: false,
             validateOnNext: true,
@@ -188,7 +204,8 @@
             icon: 'check',
             stepperProps: {
               schema: this.schema,
-              table: this.table
+              table: this.table,
+              tabId: this.tab.id
             },
             completed: false,
             completePrevious: true,
@@ -303,7 +320,8 @@
         icon: 'attach_file',
         stepperProps: {
           schema: this.schema,
-          table: this.table
+          table: this.table,
+          tabId: this.tab.id
         },
         completed: false,
         completePrevious: false,
@@ -317,7 +335,8 @@
           icon: 'settings',
           stepperProps: {
             schema: this.schema,
-            table: this.table
+            table: this.table,
+            tabId: this.tab.id
           },
           completed: false,
           validateOnNext: true,
@@ -331,7 +350,8 @@
           icon: 'check',
           stepperProps: {
             schema: this.schema,
-            table: this.table
+            table: this.table,
+            tabId: this.tab.id
           },
           completed: false,
           completePrevious: true,
@@ -346,7 +366,8 @@
           icon: 'add',
           stepperProps: {
             schema: this.schema,
-            table: this.table
+            table: this.table,
+            tabId: this.tab.id
           },
           completed: false,
           completePrevious: false,

@@ -13,7 +13,7 @@ interface ImportOptions {
   truncateTable: boolean
   useHeaders: boolean
   fileType: string
-  table: TableOrView
+  table: TableOrView | null
   importMap: ImportMap[] | null
   sheet: string | null
   runAsUpsert: boolean
