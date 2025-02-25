@@ -78,6 +78,10 @@ export default Vue.extend({
       type: Array as PropType<Array<OrderBy>>,
       default: () => [],
     },
+    binaryEncoding: {
+      type: String as PropType<'hex' | 'base64'>,
+      default: 'hex',
+    },
     cellContextMenuItems: [Array, Function],
     columnHeaderContextMenuItems: [Array, Function],
     rowHeaderContextMenuItems: [Array, Function],
@@ -188,13 +192,13 @@ export default Vue.extend({
           tooltip: this.cellTooltip,
           headerTooltip,
 
-          // FIXME context won't work in shadow dom
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
           headerMenu: columnMenu,
           resizable: "header",
           cssClass,
           sorter: column.sorter === 'none' ? () => 0 : column.sorter,
+          binaryEncoding: this.binaryEncoding,
         };
 
         const customDef =

@@ -334,7 +334,6 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { ExpandablePath } from '@/lib/data/detail_view'
-import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
 const log = rawLog.scope('TableTable')
 
@@ -650,6 +649,7 @@ export default Vue.extend({
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
           dataType: column.dataType,
+          binaryEncoding: globalThis.binaryEncoding,
           minWidth: globals.minColumnWidth,
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
@@ -1096,7 +1096,9 @@ export default Vue.extend({
     },
     onSaveEditorModal(content: string, _: LanguageData, cell: CellComponent){
       if (ArrayBuffer.isView(cell.getValue())) {
-        cell.setValue(friendlyUint8Array(hexToUint8Array(content)))
+        // @ts-expect-error polyfilled
+        const value = globalThis.binaryEncoding === 'base64' ? Uint8Array.fromBase64(content) : Uint8Array.fromHex(content)
+        cell.setValue(value)
       } else {
         cell.setValue(content)
       }

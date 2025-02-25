@@ -145,9 +145,9 @@ export default Vue.extend({
       }
       if (this.filter) {
         const filtered = deepFilterObjectProps(this.processedValue, this.filter);
-        return JSON.stringify(filtered, null, 2);
+        return JSON.stringify(filtered, this.replacer, 2);
       }
-      return JSON.stringify(this.processedValue, null, 2);
+      return JSON.stringify(this.processedValue, this.replacer, 2);
     },
     debouncedFilter: {
       get() {
@@ -270,6 +270,13 @@ export default Vue.extend({
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
+    replacer(_key: string, value: unknown) {
+      if (value instanceof Uint8Array) {
+        // @ts-expect-error polyfilled
+        return globalThis.binaryEncoding === 'base64' ? value.toBase64() : value.toHex()
+      }
+      return value
+    },
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
     },

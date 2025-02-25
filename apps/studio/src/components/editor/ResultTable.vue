@@ -140,6 +140,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
+            binaryEncoding: globalThis.binaryEncoding,
             ...magicStuff
           }
 
