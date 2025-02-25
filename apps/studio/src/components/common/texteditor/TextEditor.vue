@@ -69,7 +69,6 @@ export default {
     "autoFocus",
     "lineNumbers",
     "foldGutter",
-    "foldWithoutLineNumbers",
     "removeJsonRootBrackets",
     "forceInitialize",
     "bookmarks",
@@ -199,6 +198,14 @@ export default {
     async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
+      const indicatorOpen = document.createElement("span");
+      indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
+      indicatorOpen.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_down</i>`;
+
+      const indicatorFolded = document.createElement("span");
+      indicatorFolded.classList.add("foldgutter", "btn-fab", "open-close");
+      indicatorFolded.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_right</i>`;
+
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
@@ -220,12 +227,8 @@ export default {
         keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
-          gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          foldGutter: true,
-        }),
-        ...(this.foldWithoutLineNumbers && {
-          // gutters: ["CodeMirror-foldgutter"],
-          foldGutter: true,
+          gutters: ["CodeMirror-linenumbers", { className: "CodeMirror-foldgutter", style: "width: 18px" }],
+          foldGutter: { indicatorOpen, indicatorFolded },
         }),
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {
@@ -244,10 +247,6 @@ export default {
       });
 
       const classNames = ["text-editor"];
-
-      if (this.foldWithoutLineNumbers) {
-        classNames.push("fold-without-line-numbers");
-      }
 
       if (this.removeJsonRootBrackets) {
         classNames.push("remove-json-root-brackets");
