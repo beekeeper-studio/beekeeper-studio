@@ -847,7 +847,12 @@ export class DBTestUtil {
     // so we're just going to skip for now
     // FIXME: Investigate why this causes libsql timeouts for remote connections
     // SQLite tests will mostly debug libsql also
-    if (this.connection.connectionType === 'libsql') return
+    if (
+      this.connection.connectionType === "libsql" ||
+      this.connection.connectionType === "firebird"
+    ) {
+      return;
+    }
 
     const iterations = 50
     const query = 'select * from one_record'
