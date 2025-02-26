@@ -15,7 +15,7 @@ on:
 
 jobs:
   setup:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     outputs:
       test-chunks: ${{ steps['set-test-chunks'].outputs['test-chunks'] }}
     steps:
@@ -31,7 +31,7 @@ jobs:
         run: echo "::set-output name=test-chunks::$(./bin/get-db-files-as-json.sh)"
   unit:
     name: Non-terrible tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
@@ -68,7 +68,7 @@ jobs:
 
   integration:
     name: 🥞 ${{ matrix.chunk[0] }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     needs:
       - setup
     strategy:
