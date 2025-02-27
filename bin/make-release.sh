@@ -98,7 +98,7 @@ else
 fi
 
 # Step 5: Push tag
-if git tag | grep -q "$NEW_TAG"; then
+if git tag | grep -q "$NEW_TAG\$"; then
   echo "Tag $NEW_TAG already exists."
 else
   echo "Creating and pushing tag $NEW_TAG..."
