@@ -431,6 +431,12 @@ jobs:
           AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
           AWS_DEFAULT_REGION: "us-east-1"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
 
       - name: Publish RPM to R2
         if: needs.identify_channel.outputs.channel == 'latest'
@@ -442,3 +448,9 @@ jobs:
           R2_ENDPOINT: ${{secrets.cloudflare_endpoint}}
           AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
