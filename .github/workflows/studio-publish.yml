@@ -398,6 +398,9 @@ jobs:
         with:
           ruby-version: 3.0.2
 
+      - name: Install dependencies for rpm deployment
+        run: sudo apt install -y createrepo-c awscli rpm
+
       - name: Install deb-s3 from GitHub
         run: |
           curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
