@@ -52,6 +52,7 @@ import tabHistoryUpdates from './20241116_tab_history_updates'
 import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
 import addNewUrlField from './20250128_add_new_url_field'
 import tabHistoryIndex from './20250211_add_tab_history_index'
+import fixOracleData from './20250225_oracle_default_connection_method'
 
 import ultimate from './ultimate/index'
 
@@ -83,6 +84,7 @@ const realMigrations = [
   tabHistoryUpdates,
   addNewUrlField,
   tabHistoryIndex,
+  fixOracleData,
 ]
 
 // fixtures require the models
