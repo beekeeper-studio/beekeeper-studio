@@ -13,7 +13,7 @@ const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
-  connectionMethod?: string
+  connectionMethod?: 'manual' | 'connectionString'
   connectionString?: string
 }
 
@@ -183,8 +183,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
+  // Used for Oracle only
   @Column({ type: 'simple-json', nullable: false })
-  options: ConnectionOptions = {}
+  options: ConnectionOptions = { connectionMethod: 'manual' }
 
   @Column({ type: 'simple-json', nullable: false })
   redshiftOptions: RedshiftOptions = {}

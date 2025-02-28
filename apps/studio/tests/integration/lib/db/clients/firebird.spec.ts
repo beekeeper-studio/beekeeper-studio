@@ -133,14 +133,14 @@ describe("Firebird Tests", () => {
     });
 
     it("should query using Pool", async () => {
-      const pool = new Pool(config);
+      const pool = new Pool(5, config);
       const result = await pool.query("select 1 as a from rdb$database");
       expect(result.rows).toStrictEqual([{ A: 1 }]);
     });
 
     it("should correctly parse blob columns", async () => {
       const connection = await Connection.attach(config);
-      
+
       const blobValue = 'THIS SHOULD BE A BLOB COLUMN THAT IS PARSED CORRECTLY BY THE WRAPPER...';
       // create table with blob column and insert a row
       await connection.query(`
