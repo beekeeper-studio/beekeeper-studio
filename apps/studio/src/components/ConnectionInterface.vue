@@ -301,10 +301,16 @@ export default Vue.extend({
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
 
-    const conn = await this.$util.send('appdb/saved/new')
-    this.config = conn;
-    this.config.sshUsername = await window.main.fetchUsername()
-    this.isConfigReady = true;
+    try {
+      const conn = await this.$util.send('appdb/saved/new')
+      this.config = conn;
+      this.config.sshUsername = await window.main.fetchUsername()
+    } catch (e) {
+      log.error(e)
+      this.$noty.error(e.message)
+    } finally {
+      this.isConfigReady = true;
+    }
 
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
