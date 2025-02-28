@@ -56,7 +56,7 @@ export interface IConnectionHandlers {
 
 
   // Create Structure ***********************************************************
-  'conn/createDatabase': ({ databaseName, charset, collation, sId }: { databaseName: string, charset: string, collation: string, sId: string }) => Promise<void>,
+  'conn/createDatabase': ({ databaseName, charset, collation, sId }: { databaseName: string, charset: string, collation: string, sId: string }) => Promise<string>,
   'conn/createDatabaseSQL': ({ sId }: { sId: string }) => Promise<string>,
   'conn/getTableCreateScript': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string>,
   'conn/getViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
@@ -98,7 +98,7 @@ export interface IConnectionHandlers {
   'conn/duplicateTableSql': ({ tableName, duplicateTableName, schema, sId }: { tableName: string, duplicateTableName: string, schema?: string, sId: string }) => Promise<string>,
 
 
-  'conn/getInsertQuery': ({ tableInsert, sId }: { tableInsert: TableInsert, sId: string }) => Promise<string>,
+  'conn/getInsertQuery': ({ tableInsert, runAsUpsert, sId }: { tableInsert: TableInsert, runAsUpsert?: boolean, sId: string }) => Promise<string>,
 
   'conn/syncDatabase': ({ sId }: { sId: string }) => Promise<void>
 
@@ -448,9 +448,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return state(sId).connection.duplicateTableSql(tableName, duplicateTableName, schema);
   },
 
-  'conn/getInsertQuery': async function({ tableInsert, sId }: { tableInsert: TableInsert, sId: string }) {
+  'conn/getInsertQuery': async function({ tableInsert, runAsUpsert, sId }: { tableInsert: TableInsert, runAsUpsert?: boolean, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.getInsertQuery(tableInsert)
+    return await state(sId).connection.getInsertQuery(tableInsert, runAsUpsert)
   },
   'conn/syncDatabase': getDriverHandler('syncDatabase'),
 

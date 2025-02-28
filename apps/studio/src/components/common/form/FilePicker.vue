@@ -10,12 +10,13 @@
       :title="value"
       :value="inputValue"
       :disabled="disabled"
-      readonly
-      @click.prevent.stop="openFilePickerDialog"
+      :readonly="!editable"
+      @click.prevent.stop="!editable && openFilePickerDialog()"
+      @input="$emit('input', $event.target.value)"
     >
     <div
       class="input-group-append"
-      :class="{ 'not-last': hasOtherActions }"
+      :class="{ 'not-last': hasOtherActions || showCreateButton }"
       @click.prevent.stop="openFilePickerDialog"
     >
       <a
@@ -23,6 +24,18 @@
         class="btn btn-flat"
         :class="{disabled}"
       >{{ buttonText }}</a>
+    </div>
+    <div
+      v-if="showCreateButton"
+      class="input-group-append"
+    >
+      <a
+        type="button"
+        class="btn btn-flat"
+        @click="openFilePickerDialog({ save: true })"
+      >
+        Create
+      </a>
     </div>
     <slot name="actions" />
   </div>
@@ -72,7 +85,15 @@ export default {
     inputId: {
       type: String,
       default: "file-picker"
-    }
+    },
+    editable: {
+      type: Boolean,
+      default: false,
+    },
+    showCreateButton: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     hasOtherActions() {
@@ -92,7 +113,7 @@ export default {
     }
   },
   methods: {
-    async openFilePickerDialog() {
+    async openFilePickerDialog(options = {}) {
       if(this.disabled) {
         return
       }
@@ -114,7 +135,7 @@ export default {
       }
 
       let files
-      if (this.save) {
+      if (options.save ?? this.save) {
         files = [ this.$native.dialog.showSaveDialogSync({
           ...dialogConfig,
           ...this.options
