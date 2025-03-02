@@ -389,7 +389,7 @@ jobs:
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -399,7 +399,7 @@ jobs:
           ruby-version: 3.0.2
 
       - name: Install dependencies for rpm deployment
-        run: sudo apt install -y createrepo-c awscli rpm
+        run: sudo apt-get update && sudo apt-get install -y createrepo-c
 
       - name: Install deb-s3 from GitHub
         run: |
