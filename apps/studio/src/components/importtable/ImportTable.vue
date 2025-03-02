@@ -5,39 +5,44 @@
         Select or Create Table
       </h3>
       <div>
-        blerns
-      </div>
-      <div>
-        <form
-          v-for="(schemaTable, index) in this.schemaTables" :key="index"
-          class="import-table-form"
-        >
-          <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex">
-            <label>
-              <input type="radio" :value="tableKeyByTable(schemaTable.schema, tableData.name)" v-model="selectedTable">
-              {{ tableData.name }}
-            </label>
+        <form v-for="(schemaTable, index) in this.schemaTables" :key="index">
+          <p>{{ schemaTable.schema ?? '' }}</p>
+          <div class="import-table-form">
+            <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex">
+              <label>
+                <input type="radio" :value="tableKeyByMatrix({ schema: schemaTable.schema, name: tableData.name})" v-model="selectedTable">
+                {{ tableData.name }}
+              </label>
+            </div>
           </div>
         </form>
       </div>
+    </div>
+    <div class="card-flat padding table-switch">
+      <label for="createTableSwitch">
+        Create Table from Import File
+      </label>
+      <x-switch
+        id="createTableSwitch"
+        @click.prevent="updateTableSwitch"
+        :toggled="createTableFromFile"
+      />
     </div>
   </section>
 </template>
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-import { escapeHtml } from '@shared/lib/tabulator'
+import ToggleFormArea from '../common/ToggleFormArea.vue'
 export default {
   components: {
-
+    
   },
   props: {
     stepperProps: {
       type: Object,
       required: true,
       default: () => ({
-        schema: null,
-        table: null,
         tabId: null
       })
     },
@@ -46,7 +51,8 @@ export default {
     return {
       importerId: null,
       table: null,
-      selectedTable: null
+      selectedTable: null,
+      createTableFromFile: false
     }
   },
   computed: {
@@ -55,8 +61,25 @@ export default {
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
   },
   methods: {
-    getTable({schema, name: tableName}) {
+    updateTableSwitch() {
+      this.createTableFromFile = !this.createTableFromFile
+      if (this.createTableFromFile) this.selectedTable = null
+    },
+    getTable() {
+      if (!this.selectedTable) return null
+
+      const tableNameSplit = this.selectedTable.split('==|==')
+      let tableName = ''
+      let schema = ''
       let foundSchema = ''
+
+      if (tableNameSplit.length === 1) {
+        tableName = tableNameSplit[0]
+      } else if (tableNameSplit.length === 2) {
+        schema = tableNameSplit[0]
+        tableName = tableNameSplit[1]
+      }
+
       if (this.schemaTables.length > 1) {
         foundSchema = this.schemaTables.find(s => s.schema === schema)
       } else {
@@ -64,52 +87,45 @@ export default {
       }
       return foundSchema.tables.find(t => t.name === tableName)
     },
-    tableKey() {
-      if (!this.stepperProps.schema && !this.stepperProps.table) return `new-table-${this.stepperProps.tabId}`
-      const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
-      return `${schema}${this.stepperProps.table}`
+    importKey() {
+      return `new-import-${this.stepperProps.tabId}`
     },
-    tableKeyByTable(schema, tableName){
-      if (!schema && !tableName) return null
-      const schemaTxt = schema ? `${schema}_` : ''
-      console.log(schema, tableName, `${schemaTxt}${tableName}`)
-      return `${schemaTxt}${tableName}`
+    tableKeyByMatrix({ schema: schemaName, name: tableName }){
+      const schema = schemaName ? `${schemaName}==|==` : ''
+      return `${schema}${tableName}`
     },
     async onFocus () {
-      const importOptions = await this.tablesToImport.get(this.tableKey())
+      const importOptions = await this.tablesToImport.get(this.importKey())
       if (importOptions.importMap && this.importerId && this.tabulator) {
         this.tabulator.redraw()
       } else {
         this.initialize()
       }
     },
-    canContinue() {
-
-      return true
-    },
     async onNext() {
-      const importOptions =  await this.tablesToImport.get(this.tableKey())
-      // importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
-      importOptions.truncateTable = this.truncateTable
-      importOptions.runAsUpsert = this.runAsUpsert
+      const importOptions =  await this.tablesToImport.get(this.importKey())
 
+      if (this.selectedTable) {
+        importOptions.table = this.getTable()
+        await this.$store.dispatch('updateTableColumns', importOptions.table)
+        console.log(importOptions.table)
+      } else {
+        importOptions.table = null
+      }
+      
       const importData = {
-        table: this.tableKey(),
+        table: this.importKey(),
         importProcessId: this.importerId,
         importOptions
       }
+
       this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
-      const importOptions = await this.tablesToImport.get(this.tableKey())
-      this.selectedTable = this.tableKeyByTable(this.stepperProps.schema, this.stepperProps.table)
-      // this.table = this.getTable(importOptions.table)
-      // if (!this.table.columns) {
-      //   await this.$store.dispatch('updateTableColumns', this.table)
-      //   this.table = this.getTable(importOptions.table)
-      // }
+      const importOptions = await this.tablesToImport.get(this.importKey())
 
-      // this.initTabulator()
+      // table might not exist based on the stuff, ya dig?
+      this.selectedTable = this.tableKeyByMatrix(importOptions.table)
     },
   },
   mounted () {
@@ -117,6 +133,12 @@ export default {
   },
   unmounted() {
     if (this.tabulator) this.tabulator.destroy()
+  },
+  watch: {
+    selectedTable () {
+      this.createTableFromFile = !this.selectedTable
+      this.$emit('change', Boolean(this.table) || this.createTableFromFile)
+    }
   }
 }
 </script>
@@ -138,6 +160,14 @@ export default {
       display: flex;
       align-items: center;
       padding-bottom:.5rem;
+    }
+  }
+
+  .table-switch {
+    display: flex;
+    justify-content: start;
+    label {
+      padding-right: 1rem;
     }
   }
 </style>

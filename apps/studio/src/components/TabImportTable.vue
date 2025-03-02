@@ -235,6 +235,9 @@
       isSupported () {
         return !this.dialectData.disabledFeatures.importFromFile
       },
+      importKey() {
+        return `new-import-${this.tab.id}`
+      },
       tableKey() {
         const schema = this.schema ? `${this.schema}_` : ''
         return `${schema}${this.table}`
@@ -291,7 +294,10 @@
         this.importStarted = false
       },
       async handleImport() {
-        const importOptions = await this.tablesToImport.get(this.tableKey)
+        const importOptions = await this.tablesToImport.get(this.importKey)
+        console.log(importOptions)
+        this.schema = importOptions.table.schema
+        this.table = importOptions.table.name
         let importerClass
         if (!importOptions.importProcessId) {
           importerClass = await this.$util.send('import/init', { options: importOptions })

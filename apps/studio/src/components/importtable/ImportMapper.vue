@@ -126,13 +126,12 @@ export default {
       const attributesSpan = `<span class='attributes'>${escapeHtml(attributesToShow)}</span>`
       return `${cellValue} ${attributesSpan}`
     },
-    tableKey() {
-      const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
-      return `${schema}${this.stepperProps.table}`
+    importKey() {
+      return `new-import-${this.stepperProps.tabId}`
     },
     async tableData(importedColumns) {
       const { meta } = await this.$util.send('import/getFileAttributes', { id: this.importerId })
-      const importOptions = await this.getImportOptions(this.tableKey())
+      const importOptions = await this.getImportOptions(this.importKey())
       const tableColumns = new Map()
 
       importedColumns.forEach(ic => {
@@ -187,7 +186,7 @@ export default {
       })
     },
     async onFocus () {
-      const importOptions = await this.tablesToImport.get(this.tableKey())
+      const importOptions = await this.tablesToImport.get(this.importKey())
       if (importOptions.importMap && this.importerId && this.tabulator) {
         this.tabulator.redraw()
       } else {
@@ -230,22 +229,25 @@ export default {
       return true
     },
     async onNext() {
-      const importOptions =  await this.tablesToImport.get(this.tableKey())
+      const importOptions =  await this.tablesToImport.get(this.importKey())
       importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
       importOptions.truncateTable = this.truncateTable
       importOptions.runAsUpsert = this.runAsUpsert
 
       const importData = {
-        table: this.tableKey(),
+        table: this.importKey(),
         importProcessId: this.importerId,
         importOptions
       }
       this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
-      const importOptions = await this.tablesToImport.get(this.tableKey())
+      const importOptions = await this.tablesToImport.get(this.importKey())
       this.table = this.getTable(importOptions.table)
-      if (!this.table.columns) {
+
+      // need to check if there is a table. If there isn't one, show the create + map. If there is, load columns and do that voo doo you do
+      
+      if (!this.table) {
         await this.$store.dispatch('updateTableColumns', this.table)
         this.table = this.getTable(importOptions.table)
       }

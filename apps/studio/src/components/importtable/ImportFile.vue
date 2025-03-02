@@ -259,15 +259,14 @@
           fileType: this.fileType,
         }
 
-        // the filename changes, so see if there is a table. if not, then do something else I suppose
-
+        // get the table if it's been pre-selected and is now part of the props!
         this.table = this.getTable()
-        if (this.table) {
-          await this.$store.dispatch('updateTableColumns', this.table)
-          importOptions.table = this.table
-        }
+        // if (this.table) {
+        //   await this.$store.dispatch('updateTableColumns', this.table)
+        //   importOptions.table = this.table
+        // }
 
-        this.importerId = await this.$util.send('import/init', { options: importOptions, table: this.table })
+        this.importerId = await this.$util.send('import/init', { options: importOptions })
         this.tabulator = null
         this.isAutodetect = true
         this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerId })
@@ -283,12 +282,6 @@
       }
     },
     methods: {
-      tableKey() {
-        if (!this.stepperProps.schema && !this.stepperProps.table) return null
-        const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
-
-        return `${schema}${this.stepperProps.table}`
-      },
       async setXLSX() {
         this.sheets = await this.$util.send('import/excel/getSheets', { id: this.importerId })
         this.sheetSelected = this.sheets[0]
@@ -306,11 +299,11 @@
           useHeaders: true
         }
 
-        this.table = this.getTable()
-        if (this.table) {
-          await this.$store.dispatch('updateTableColumns', this.table)
-          importOptions.table = this.table
-        }
+        // this.table = this.getTable()
+        // if (this.table) {
+        //   await this.$store.dispatch('updateTableColumns', this.table)
+        //   importOptions.table = this.table
+        // }
 
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
@@ -358,6 +351,7 @@
         return Boolean(this.fileName)
       },
       getTable() {
+        if (!this.stepperProps.schema && !this.stepperProps.table) return null
         let foundSchema = ''
         if (this.schemaTables.length > 1) {
           foundSchema = this.schemaTables.find(s => s.schema === this.stepperProps.schema)
@@ -368,7 +362,7 @@
       },
       async onNext() {
         const importData = {
-          table: this.tableKey() ?? `new-table-${this.stepperProps.tabId}`,
+          table: `new-import-${this.stepperProps.tabId}`,
           importProcessId: this.importerId,
           importOptions: {
             fileName: this.fileName,
