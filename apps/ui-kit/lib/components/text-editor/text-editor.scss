@@ -181,13 +181,6 @@
     text-shadow: none;
   }
 
-  .fold-without-line-numbers {
-    margin-left: -2rem;
-    .CodeMirror-linenumber {
-      display: none;
-    }
-  }
-
   .remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;
@@ -200,6 +193,23 @@
 
   .CodeMirror-scrollbar-filler {
     background-color: transparent;
+  }
+
+  .CodeMirror-gutter-elt .btn-fab {
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
+    color: rgba($theme-base, 0.37);
+
+    &:hover,
+    &:focus {
+      background-color: transparent;
+      color: $text-dark;
+    }
+
+    .dropdown-icon {
+      color: inherit;
+    }
   }
 }
 
