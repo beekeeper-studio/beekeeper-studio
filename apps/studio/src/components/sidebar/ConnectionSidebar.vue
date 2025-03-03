@@ -242,7 +242,7 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 

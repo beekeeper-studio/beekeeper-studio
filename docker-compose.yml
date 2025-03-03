@@ -4,6 +4,7 @@ volumes:
   mssqllatin:
   mysql:
   mysql8:
+  mysql4.1:
   psql96:
   psql13:
   mariadb:
@@ -12,8 +13,20 @@ volumes:
   cassandra:
   bigquery:
   firebird:
+  mongodb:
 
 services:
+
+  mongodb:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: beekeeper
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: sakila
+    volumes:
+      - ./dev/docker_mongodb_init:/docker-entrypoint-initdb.d
+    ports:
+      - 27017:27017
 
   oracle18:
     image: gvenzl/oracle-xe:18
@@ -64,7 +77,7 @@ services:
       - 5432:5432
   mariadb:
     image: mariadb
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
@@ -76,7 +89,7 @@ services:
   mysql8:
     image: mysql:8.0.21
     command: --default-authentication-plugin=mysql_native_password
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
@@ -88,7 +101,7 @@ services:
   mysql:
     image: mysql:5.7.22
     command: --default-authentication-plugin=mysql_native_password
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
@@ -97,12 +110,17 @@ services:
     volumes:
       - mysql:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
+  mysql4.1:
+    image: vettadock/mysql-old:4.1
+    restart: unless-stopped
+    ports:
+      - 3309:3306
   sqlserver:
     image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
     volumes:
       - mssql:/var/opt/mssql/data
       - ./dev/docker_sqlserver:/docker_init
-    restart: always
+    restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
       MSSSQL_PID: "Express"
@@ -171,5 +189,11 @@ services:
     #   - SQLD_NODE=primary
     # volumes:
     #   - ./dev/docker_libsql:/var/lib/sqld
-
-
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    ports:
+      - 8123:8123
+    environment:
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1

@@ -96,7 +96,7 @@
             >
               <x-label>Download Full Resultset</x-label>
               <i
-                v-if="!hasActiveLicense"
+                v-if="$store.getters.isCommunity"
                 class="material-icons menu-icon"
               >stars</i>
             </x-menuitem>
@@ -154,6 +154,7 @@
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
 import { mapState, mapGetters } from 'vuex';
+import { AppEvent } from '@/common/AppEvent'
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -204,7 +205,6 @@ export default {
   },
   computed: {
     ...mapState('settings', ['settings']),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;
@@ -212,7 +212,7 @@ export default {
       },
       set(value) {
         if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-        this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+        this.trigger(AppEvent.switchUserKeymap, value)
       }
     },
     keymapTypes() {
@@ -244,7 +244,7 @@ export default {
         return null
       }
       const executeTime = this.executeTime || 0
-      
+
       return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
     },
     executionTimeTitle() {

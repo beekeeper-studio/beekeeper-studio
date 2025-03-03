@@ -7,7 +7,7 @@
     <div v-kbd-focus="true">
       <div class="dialog-content">
         <div class="dialog-c-title">
-          Import SQL Files
+          Import SQL Files into Saved Queries
         </div>
         <a
           class="close-btn btn btn-fab"

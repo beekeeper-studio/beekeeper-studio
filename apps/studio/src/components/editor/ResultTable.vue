@@ -60,13 +60,13 @@
       },
       focus() {
         if (!this.focus) return
-        this.tabulator.rowManager.getElement().focus()
+        this.triggerFocus()
         this.scrollToRangeIfOutOfView()
       },
     },
     computed: {
-      ...mapState(['usedConfig', 'defaultSchema', 'connectionType']),
-      ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense'}),
+      ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
+      ...mapGetters(['isUltimate']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
@@ -83,7 +83,7 @@
 
         const cellMenu = (_e, cell) => {
           return copyActionsMenu({
-            range: _.last(cell.getRanges()),
+            ranges: cell.getRanges(),
             table: this.result.tableName,
             schema: this.defaultSchema,
           })
@@ -92,7 +92,7 @@
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              range: _.last(column.getRanges()),
+              ranges: column.getRanges(),
               table: 'mytable',
               schema: this.defaultSchema,
             }),
@@ -102,9 +102,9 @@
         }
 
         const columns = this.result.fields.flatMap((column, index) => {
-          const title = column.name || `Result ${index}`
           const results = []
           const magic = MagicColumnBuilder.build(column.name) || {}
+          const title = magic?.title ?? column.name ?? `Result ${index}`
 
           let cssClass = 'hide-header-menu-icon'
 
@@ -116,8 +116,7 @@
             magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
           }
 
-          const magicStuff = _.pick(magic, ['formatter', 'formatterParams', 'title'])
-          console.log('found magic stuff: ', magicStuff)
+          const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
           const defaults = {
             formatter: this.cellFormatter,
           }
@@ -141,7 +140,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            ...(this.hasActiveLicense ? magicStuff : {}),
+            ...magicStuff
           }
 
           if (column.dataType === 'INTERVAL') {
@@ -185,6 +184,13 @@
     },
     async mounted() {
       this.initializeTabulator()
+      if (this.focus) {
+        const onTableBuilt = () => {
+          this.triggerFocus()
+          this.tabulator.off('tableBuilt', onTableBuilt)
+        }
+        this.tabulator.on('tableBuilt', onTableBuilt)
+      }
     },
     methods: {
       initializeTabulator() {
@@ -307,7 +313,10 @@
             column.getComponent().scrollTo(undefined, false);
           }
         }
-      }
+      },
+      triggerFocus() {
+        this.tabulator.rowManager.getElement().focus();
+      },
     }
 	}
 </script>

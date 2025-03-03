@@ -69,13 +69,19 @@ input[type="radio"].connection-label {
   margin: 0 0 0 ($gutter-h * 0.75);
   border-radius: 50%;
   &:checked {
-    box-shadow: inset 0 0 0 2px $text-dark;
+    outline: 2px solid $text-dark;
+    outline-offset: -2px;
+  }
+  &:focus {
+    outline-offset: -2px !important; // using !important because the browser style does. why browser...
   }
   &.connection-label-color-default {
-    box-shadow: inset 0 0 0 1px rgba($theme-base, 0.2);
+    outline: 1px solid rgba($theme-base, 0.2);
+    outline-offset: -1px;
     &:checked {
       background-color: transparent;
-      box-shadow: inset 0 0 0 2px $text-dark;
+      outline-width: 2px;
+      outline-offset: -2px;
     }
   }
 }

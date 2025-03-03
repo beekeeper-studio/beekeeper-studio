@@ -5,14 +5,13 @@
   "author": "Matthew Rathbone <matthew.rathbone@gmail.com>",
   "license": "MIT",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "apps/*"
-    ]
-  },
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "bks:build": "yarn workspace beekeeper-studio electron:build",
     "bks:dev": "yarn workspace beekeeper-studio electron:serve",
+    "lib:dev": "yarn workspace @bks/ui-kit lib:dev",
     "sqltools:build": "yarn workspace sqltools build",
     "sqltools:dev": "yarn workspace sqltools serve",
     "electron:build": "yarn bks:build",
@@ -25,5 +24,5 @@
     "test:ci": "yarn workspace beekeeper-studio test:ci",
     "all:lint": "yarn workspace beekeeper-studio lint && yarn workspace sqltools lint && npx eslint 'shared/**' --fix"
   },
-  "resolutions": {}
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

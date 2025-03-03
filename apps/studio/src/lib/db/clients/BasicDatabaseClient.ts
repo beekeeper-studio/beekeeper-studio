@@ -1,15 +1,18 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportScriptFunctions, ImportFuncOptions } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries } from './utils';
+import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
+import { LicenseKey } from '@/common/appdb/models/LicenseKey';
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { Transcoder } from '../serialization/transcoders';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -52,20 +55,25 @@ export const NoOpContextProvider: AppContextProvider = {
   }
 };
 
+export interface BaseQueryResult {
+  columns: { name: string }[]
+  rows: any[][] | Record<string, any>[];
+  arrayMode: boolean;
+}
+
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType> implements IBasicDatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
-  allowReadOnly = false;
   server: IDbConnectionServer;
   database: IDbConnectionDatabase;
   db: string;
-  connectionBaseType: ConnectionType;
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
+  transcoders: Transcoder<any, any>[] = [];
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -74,14 +82,18 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
-    this.allowReadOnly = platformInfo.isUltimate || platformInfo.testMode;
+  }
+
+  async checkAllowReadOnly() {
+    const status = await LicenseKey.getLicenseStatus()
+    return status.isUltimate || platformInfo.testMode;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
     this.connErrHandler = fn;
   }
 
-  abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
+  abstract getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase>;
 
   // DB Metadata ****************************************************************
   abstract supportedFeatures(): Promise<SupportedFeatures>;
@@ -134,7 +146,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     if (this.server.db[this.database.database]) {
       // delete this.server.db[this.database.database]
     }
-    await this.knex.destroy();
+    await this.knex?.destroy();
   }
   // ****************************************************************************
 
@@ -168,7 +180,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract listCharsets(): Promise<string[]>
   abstract getDefaultCharset(): Promise<string>
   abstract listCollations(charset: string): Promise<string[]>
-  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
+  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<string>
   abstract createDatabaseSQL(): Promise<string>
   abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
   abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
@@ -182,7 +194,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // all of these can be handled by the change builder, which we can get for any connection
   async alterTableSql(change: AlterTableSpec): Promise<string> {
     const { table, schema } = change
-    const builder = this.getBuilder(table, schema)
+    const builder = await this.getBuilder(table, schema)
     return builder.alterTable(change)
   }
 
@@ -193,7 +205,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async alterIndexSql(changes: IndexAlterations): Promise<string | null> {
     const { table, schema, additions, drops } = changes
-    const changeBuilder = this.getBuilder(table, schema)
+    const changeBuilder = await this.getBuilder(table, schema)
     const newIndexes = changeBuilder.createIndexes(additions)
     const droppers = changeBuilder.dropIndexes(drops)
     return [newIndexes, droppers].filter((f) => !!f).join(";")
@@ -206,7 +218,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
 
   async alterRelationSql(changes: RelationAlterations): Promise<string | null> {
     const { table, schema } = changes
-    const builder = this.getBuilder(table, schema)
+    const builder = await this.getBuilder(table, schema)
     const creates = builder.createRelations(changes.additions)
     const drops = builder.dropRelations(changes.drops)
     return [creates, drops].filter((f) => !!f).join(";")
@@ -225,9 +237,17 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     return;
   }
 
-  abstract applyChangesSql(changes: TableChanges): Promise<string>;
+  async applyChangesSql(changes: TableChanges): Promise<string> {
+    await this.deserializeTableChanges(changes);
+    return applyChangesSql(changes, this.knex);
+  }
 
-  abstract applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>;
+  async applyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
+    await this.deserializeTableChanges(changes);
+    return await this.executeApplyChanges(changes);
+  }
+
+  abstract executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]>;
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
@@ -236,9 +256,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     const sql = await this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     if (!sql) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
+      throw new Error(`Cannot rename element ${elementName} to ${newElementName} of type ${typeOfElement}`);
     }
-    await this.executeQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
@@ -246,11 +266,11 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    const sql = this.truncateElementSql(elementName, typeOfElement, schema);
+    const sql = await this.truncateElementSql(elementName, typeOfElement, schema);
     if (!sql) {
       throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
     }
-    await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement, schema));
+    await this.driverExecuteSingle(sql);
   }
 
   abstract truncateAllTables(schema?: string): Promise<void>;
@@ -271,7 +291,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   // ****************************************************************************
 
   // For Import *****************************************************************
-  async importStepZero(_table: TableOrView): Promise<any> {
+  async importStepZero(_table: TableOrView, _options?: { connection: any }): Promise<any> {
     return null
   }
   async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
@@ -297,24 +317,56 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   async importFinalCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     return null
   }
-  
-  // getImportScripts can be deleted
-  async getImportScripts(_table: TableOrView): Promise<ImportScriptFunctions> {
-    return {
-      step0: (): Promise<any|null> => null,
-      beginCommand: (_executeOptions: any): any => null,
-      truncateCommand: (): Promise<any> => null,
-      lineReadCommand: (_sqlString: string[]): Promise<any> => null,
-      commitCommand: (_executeOptions: any): Promise<any> => null,
-      rollbackCommand: (_executeOptions: any): Promise<any> => null,
-      finalCommand: (_executeOptions: any): Promise<any> => null
-    }
+
+  protected async runWithConnection<T>(_child: (c: any) => Promise<T>): Promise<T> {
+    throw new Error(`runWithConnection not implemented for ${this.dialect}`);
   }
 
-  async getImportSQL(importedData: any[]): Promise<string | string[]> {
-    const queries = []
+  async importFile(
+    table: TableOrView,
+    importScriptOptions: ImportFuncOptions,
+    readStream: (b: {[key: string]: any}, executeOptions?: any, c?: string) => Promise<any>,
+  ) {
+    const {
+      executeOptions,
+      importerOptions,
+      storeValues
+    } = importScriptOptions;
 
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
+    return await this.runWithConnection(async (connection) => {
+      try {
+        executeOptions.connection = connection
+        importScriptOptions.clientExtras = await this.importStepZero(table, { connection })
+        await this.importBeginCommand(table, importScriptOptions)
+        if (storeValues.truncateTable) {
+          await this.importTruncateCommand(table, importScriptOptions)
+        }
+
+        const readOptions = {
+          connection,
+          ...importScriptOptions.clientExtras
+        };
+        const result = await readStream(importerOptions, readOptions, storeValues.fileName)
+        if (result.aborted) {
+          throw new Error(`Import aborted: ${result.error}`);
+        }
+        await this.importCommitCommand(table, importScriptOptions)
+      } catch (err) {
+        log.error('Error importing data: ', err)
+        await this.importRollbackCommand(table, importScriptOptions)
+        throw err;
+      } finally {
+        await this.importFinalCommand(table, importScriptOptions)
+      }
+    })
+  }
+
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
+    const queries = []
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    const createUpsertFunc = this.createUpsertFunc ?? null
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys, createUpsertFunc }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
@@ -329,9 +381,18 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     throw new Error("Not implemented");
   }
 
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
+  protected createUpsertFunc: ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string) | null = null
+
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert = false): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
-    return buildInsertQuery(this.knex, tableInsert, columns);
+    tableInsert.data.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        row[key] = this.deserializeValue(row[key]);
+      })
+    })
+    const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc });
   }
 
   abstract wrapIdentifier(value: string): string;
@@ -362,15 +423,90 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
     }
   }
 
+  protected abstract parseTableColumn(column: any): BksField
+
+  protected parseQueryResultColumns(qr: RawResultType): BksField[] {
+    return qr.columns.map((c) => ({
+      name: c.name,
+      bksType: "UNKNOWN",
+    }));
+  }
+
+  /** Serializes and mutates an array of rows based on their fields */
+  protected async serializeQueryResult(qr: RawResultType, fields: BksField[]): Promise<Record<string, any>[]> {
+    // No transcoders, just return the raw result
+    if (this.transcoders.length === 0) {
+      return qr.rows;
+    }
+
+    const fieldTranscoders: Record<string, Transcoder<any, any>> = {}
+
+    // Find transcoders by fields
+    fields.forEach((field, idx) => {
+      this.transcoders.forEach((transcoder) => {
+        if (transcoder.serializeCheckByField(field)) {
+          fieldTranscoders[qr.arrayMode ? idx : field.name] = transcoder
+        }
+      })
+    })
+
+    // Mutate rows based on the found transcoders
+    for (const row of qr.rows) {
+      Object.entries(fieldTranscoders).forEach(([key, transcoder]) => {
+        row[key] = transcoder.serialize(row[key])
+      })
+    }
+
+    return qr.rows;
+  }
+
+  protected async deserializeTableChanges(changes: TableChanges) {
+    // No transcoders, just return the raw result
+    if (this.transcoders.length === 0) {
+      return changes
+    }
+
+    changes.inserts?.forEach((ins) => {
+      ins.data.forEach((row) => {
+        Object.keys(row).forEach((key) => {
+          row[key] = this.deserializeValue(row[key])
+        })
+      })
+    })
+
+    changes.updates?.forEach((upd) => {
+      upd.primaryKeys.forEach((pk) => {
+        pk.value = this.deserializeValue(pk.value)
+      })
+      upd.value = this.deserializeValue(upd.value)
+    })
+
+    changes.deletes?.forEach((del) => {
+      del.primaryKeys.forEach((pk) => {
+        pk.value = this.deserializeValue(pk.value)
+      })
+    })
+  }
+
+  private deserializeValue(value: any) {
+    const transcoder = this.transcoders.find((t) => t.deserializeCheckByValue(value))
+    return transcoder?.deserialize(value) || value
+  }
+
+  protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
+    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly
+  }
+
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
-    const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    const statements = identify(q, { strict: false, dialect: this.dialect });
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
+    options['statements'] = statements
     try {
         const result = await this.rawExecuteQuery(q, options) as RawResultType
         return _.isArray(result) ? result[0] : result
@@ -396,14 +532,15 @@ export abstract class BasicDatabaseClient<RawResultType> implements IBasicDataba
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
-    const identification = identify(q, { strict: false, dialect: this.dialect });
-    if (this.allowReadOnly && !isAllowedReadOnlyQuery(identification, this.readOnlyMode) && !options.overrideReadonly) {
+    const statements = identify(q, { strict: false, dialect: this.dialect });
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
+    options['statements'] = statements
     try {
       const result = await this.rawExecuteQuery(q, options) as RawResultType[]
       return result

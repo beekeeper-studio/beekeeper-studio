@@ -3,7 +3,6 @@
 </template>
 <script lang="ts">
 import { SmartLocalStorage } from '@/common/LocalStorage'
-import { mapGetters } from 'vuex'
 import Vue from 'vue'
 import Noty from 'noty'
 
@@ -24,11 +23,8 @@ export default Vue.extend({
       })
     }
   },
-  computed: {
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
-  },
   mounted() {
-    if (!this.hasActiveLicense) {
+    if (this.$store.getters.isCommunity) {
       const today = new Date()
       const upgradeSuggested = SmartLocalStorage.getDate('ultimate-upsell')
       const lastWeek = new Date(today.getTime() - (28 * 24 * 60 * 60 * 1000))

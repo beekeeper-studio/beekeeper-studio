@@ -2,7 +2,7 @@ import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
-import log from 'electron-log'
+import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions } from "@/lib/db/types"
@@ -13,7 +13,7 @@ const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
-  connectionMethod?: string
+  connectionMethod?: 'manual' | 'connectionString'
   connectionString?: string
 }
 
@@ -137,8 +137,8 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: "varchar", nullable: true })
   defaultDatabase: Nullable<string> = null
 
-  @Column({ type: "varchar", nullable: true })
-  uri: Nullable<string> = null
+  @Column({ type: "varchar", nullable: true, transformer: [encrypt] })
+  url: Nullable<string> = null
 
   @Column({ type: "varchar", length: 500, nullable: false })
   uniqueHash = "DEPRECATED"
@@ -183,8 +183,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
+  // Used for Oracle only
   @Column({ type: 'simple-json', nullable: false })
-  options: ConnectionOptions = {}
+  options: ConnectionOptions = { connectionMethod: 'manual' }
 
   @Column({ type: 'simple-json', nullable: false })
   redshiftOptions: RedshiftOptions = {}
@@ -217,7 +218,13 @@ export class DbConnectionBase extends ApplicationEntity {
 export class SavedConnection extends DbConnectionBase implements IConnection {
 
   withProps(props?: any): SavedConnection {
-    if (props) SavedConnection.merge(this, props);
+
+    if (props) {
+      if (props.connectionType) {
+        this.connectionType = props.connectionType;
+      }
+      SavedConnection.merge(this, props);
+    }
 
     if (!this.createdAt) {
       this.createdAt = new Date();
@@ -292,16 +299,21 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   parse(url: string): boolean {
     try {
-      const goodEndings = ['.db', '.sqlite', '.sqlite3']
+      const endings = [
+        { connectionType: 'sqlite', options: ['.db', '.sqlite', '.sqlite3']},
+        { connectionType: 'duckdb', options: ['.duckdb', '.ddb']}
+      ]
+      // const goodEndings = ['.db', '.sqlite', '.sqlite3']
+      // const duckDbEndings = ['.duckdb', '.ddb']
       if (!this.smellsLikeUrl(url)) {
         // it's a sqlite file
-        if (goodEndings.find((e) => url.endsWith(e))) {
-          // it's a valid sqlite file
-          this.connectionType = 'sqlite'
-          this.defaultDatabase = url
-          return true
-        } else {
-          // do nothing, continue url parsing
+        for (let i = 0; i < endings.length; i++) {
+          const { connectionType, options } = endings[i];
+          if(options.find((e) => url.endsWith(e))) {
+            this.connectionType = connectionType as any
+            this.defaultDatabase = url
+            return
+          }
         }
       }
 
@@ -328,7 +340,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       this.port = parsed.port || this.port
       this.username = parsed.user || this.username
       this.password = parsed.password || this.password
-      this.defaultDatabase = parsed.path?.[0] ?? this.defaultDatabase
+      this.defaultDatabase = parsed.path?.join('/') ?? this.defaultDatabase
       return true
     } catch (ex) {
       log.error('unable to parse connection string, assuming sqlite file', ex)

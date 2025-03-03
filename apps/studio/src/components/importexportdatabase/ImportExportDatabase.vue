@@ -1,9 +1,13 @@
 <template>
-  <div class="import-export__wrapper tabcontent">
+  <div
+    v-if="isCommunity"
+    class="tab-upsell-wrapper"
+  >
+    <upsell-content />
+  </div>
+  <div v-else class="import-export__wrapper tabcontent">
     <div class="import-export__container">
-      <upsell-content v-if="!hasActiveLicense"></upsell-content>
       <stepper
-        v-else
         :steps="exportSteps"
         @finished="startExport"
         :button-portal-target="portalName"
@@ -87,7 +91,7 @@
   import ExportObjects from './ExportObjects.vue'
   import ExportOptions from './ExportOptions.vue'
   import ExportConfirmation from './ExportConfirmation.vue'
-  import UpsellContent from '../connection/UpsellContent.vue'
+  import UpsellContent from '@/components/upsell/UpsellContent.vue'
 
   import { ExportStatus } from '../../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
@@ -148,7 +152,7 @@
       ...mapState('multiTableExports', ['tablesToExport', 'tableOptions', 'exportSchema']),
       ...mapGetters({
         'hasRunningExports': 'exports/hasRunningExports',
-        'hasActiveLicense': 'licenses/hasActiveLicense'
+        'isCommunity': 'isCommunity',
       }),
       selectedTables() {
         return this.tablesToExport.length;
@@ -178,21 +182,20 @@
       }
     },
     methods: {
-      ...mapMutations({ addExport: 'exports/addExport' }),
+      ...mapMutations({ addExportToStore: 'exports/addExport' }),
       showFiles() {
         this.$native.files.open(this.tableOptions.filePath)
       },
       async startExport() {
         this.tab.isRunning = true;
-        this.$util.addListener()
-        const exporters = this.listTables.map(async (exportTable) => {
+        const exporters = await Promise.all(this.listTables.map(async (exportTable) => {
           await this.$store.dispatch('updateTableColumns', exportTable.table)
           const exporterId = await this.addExport(exportTable)
           this.$util.addListener(`onExportProgress/${exporterId}`, (progress) => {
             this.$store.commit('exports/updateProgressFor', { id: exporterId, progress });
           })
           return exporterId;
-        })
+        }))
 
         this.exportSteps[2].stepperProps.exportsStarted = true
         this.$util.send('export/batch', { ids: exporters }).then(() => {
@@ -206,16 +209,19 @@
       async addExport(tableToExport) {
         const tableOptions = this.tableOptions;
         const exporter = await this.$util.send('export/add', {
-          filePath: `${tableOptions.filePath}/${tableToExport.name}`,
-          table: tableToExport.table,
-          query: '',
-          queryName: '',
-          filters: tableOptions.filters || [],
-          options: tableOptions.options,
-          outputOptions: tableOptions.outputOptions,
-          managerNotify: false
+          options: {
+            filePath: `${tableOptions.filePath}/${tableToExport.name}`,
+            table: tableToExport.table,
+            query: '',
+            queryName: '',
+            filters: tableOptions.filters || [],
+            options: tableOptions.options,
+            outputOptions: tableOptions.outputOptions,
+            managerNotify: false,
+            exporter: tableOptions.exporter
+          }
         })
-        this.addExport(exporter);
+        this.addExportToStore(exporter);
         return exporter.id;
       },
       close() {
@@ -234,8 +240,8 @@
       },
     },
     async mounted() {
-      this.$store.dispatch('multiTableExports/reset')
-      this.$store.commit('exports/removeInactive')
+      await this.$store.dispatch('multiTableExports/reset')
+      await this.$store.dispatch('exports/removeInactive')
     }
   }
 </script>

@@ -10,6 +10,7 @@ import { createServer } from "@commercial/backend/lib/db/server";
 import knex from "knex";
 import Client_Libsql from "@libsql/knex-libsql";
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
+import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 
 const timeoutDefault = 5000
 
@@ -59,7 +60,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         knexFilename = ":memory:";
       } else {
         container = await new GenericContainer(
-          "ghcr.io/tursodatabase/libsql-server:latest"
+          "ghcr.io/tursodatabase/libsql-server:v0.24.32"
         )
           .withName(`libsql${options.readOnly ? "-readOnly" : ""}`)
           .withExposedPorts(8080)
@@ -302,7 +303,7 @@ function testReplica(readOnly = false) {
     replicaDir = tmp.dirSync();
 
     container = await new GenericContainer(
-      "ghcr.io/tursodatabase/libsql-server:latest"
+      "ghcr.io/tursodatabase/libsql-server:v0.24.32"
     )
       .withName(`libsql-replica-target`)
       .withExposedPorts(8080)
@@ -330,11 +331,14 @@ function testReplica(readOnly = false) {
       },
     }).createConnection(path.join(replicaDir.name, "test.db")) as LibSQLClient;
 
+    await TestOrmConnection.connect()
+
     await remoteClient.connect();
     await replicaClient.connect();
   });
 
   afterAll(async () => {
+    await TestOrmConnection.disconnect()
     await remoteClient.disconnect();
     await replicaClient.disconnect();
     await container.stop();

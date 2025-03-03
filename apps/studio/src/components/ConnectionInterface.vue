@@ -1,77 +1,39 @@
 <template>
   <div class="interface connection-interface">
-    <div
-      class="interface-wrap row"
-    >
-      <sidebar
-        class="connection-sidebar"
-        ref="sidebar"
-        v-show="sidebarShown"
-      >
-        <connection-sidebar
-          :selected-config="config"
-          @remove="remove"
-          @duplicate="duplicate"
-          @edit="edit"
-          @connect="handleConnect"
-          @create="create"
+    <div class="interface-wrap row">
+      <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
+        <connection-sidebar :selected-config="config" @remove="remove" @duplicate="duplicate" @edit="edit"
+                            @connect="handleConnect" @create="create"
         />
       </sidebar>
-      <div
-        ref="content"
-        class="connection-main page-content flex-col"
-        id="page-content"
-      >
+      <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
-          <div
-            class="card-flat padding"
-            :class="determineLabelColor"
-          >
+          <div class="card-flat padding" :class="determineLabelColor">
             <div class="flex flex-between">
-              <h3
-                class="card-title"
-                v-if="!pageTitle"
-              >
+              <h3 class="card-title" v-if="!pageTitle">
                 New Connection
               </h3>
-              <h3
-                class="card-title"
-                v-if="pageTitle"
-              >
+              <h3 class="card-title" v-if="pageTitle">
                 {{ pageTitle }}
               </h3>
               <ImportButton :config="config">
                 Import from URL
               </ImportButton>
             </div>
-            <error-alert
-              :error="errors"
-              title="Please fix the following errors"
-            />
-            <form
-              @action="submit"
-              v-if="config"
-            >
+            <error-alert :error="errors" title="Please fix the following errors" />
+            <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connection-select">Connection Type</label>
-                <select
-                  name="connectionType"
-                  class="form-control custom-select"
-                  v-model="config.connectionType"
-                  id="connection-select"
+                <select name="connectionType" class="form-control custom-select" v-model="config.connectionType"
+                        id="connection-select"
                 >
-                  <option
-                    disabled
-                    hidden
-                    value="null"
-                  >
+                  <option disabled hidden value="null">
                     Select a connection type...
                   </option>
-                  <option
-                    :key="`${t.value}-${t.name}`"
-                    v-for="t in connectionTypes"
-                    :value="t.value"
-                  >
+                  <option :key="`${t.value}-${t.name}`" v-for="t in communityConnectionTypes" :value="t.value">
+                    {{ t.name }}
+                  </option>
+                  <option :key="`${t.value}-${t.name}`" :value="t.value" v-for="t in ultimateConnectionTypes">
                     {{ t.name }}
                   </option>
                 </select>
@@ -79,136 +41,91 @@
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <upsell-content v-if="shouldUpsell" />
-                <postgres-form
-                  v-else-if="config.connectionType === 'cockroachdb'"
-                  :config="config"
-                  :testing="testing"
+                <postgres-form v-else-if="config.connectionType === 'cockroachdb'" :config="config"
+                               :testing="testing"
                 />
-                <mysql-form
-                  v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
-                  :config="config"
-                  :testing="testing"
+                <mysql-form v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)" :config="config"
+                            :testing="testing"
                 />
-                <postgres-form
-                  v-else-if="config.connectionType === 'postgresql'"
-                  :config="config"
-                  :testing="testing"
+                <postgres-form v-else-if="config.connectionType === 'postgresql'" :config="config" :testing="testing" />
+                <redshift-form v-else-if="config.connectionType === 'redshift'" :config="config" :testing="testing" />
+                <sqlite-form v-else-if="config.connectionType === 'sqlite'" :config="config" :testing="testing" />
+                <sql-server-form v-else-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"
+                                 @error="connectionError = $event"
                 />
-                <redshift-form
-                  v-else-if="config.connectionType === 'redshift'"
-                  :config="config"
-                  :testing="testing"
+                <big-query-form v-else-if="config.connectionType === 'bigquery'" :config="config" :testing="testing" />
+                <firebird-form v-else-if="config.connectionType === 'firebird' && isUltimate" :config="config"
+                               :testing="testing"
                 />
-                <sqlite-form
-                  v-else-if="config.connectionType === 'sqlite'"
-                  :config="config"
-                  :testing="testing"
+                <oracle-form v-if="config.connectionType === 'oracle' && isUltimate" :config="config"
+                             :testing="testing"
                 />
-                <sql-server-form
-                  v-else-if="config.connectionType === 'sqlserver'"
-                  :config="config"
-                  :testing="testing"
-                  @error="connectionError = $event"
+                <cassandra-form v-if="config.connectionType === 'cassandra' && isUltimate" :config="config"
+                                :testing="testing"
                 />
-                <big-query-form
-                  v-else-if="config.connectionType === 'bigquery'"
-                  :config="config"
-                  :testing="testing"
+                <click-house-form v-else-if="config.connectionType === 'clickhouse' && isUltimate" :config="config"
+                                  :testing="testing"
                 />
-                <firebird-form
-                  v-else-if="config.connectionType === 'firebird' && hasActiveLicense"
-                  :config="config"
-                  :testing="testing"
+                <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
+                              :testing="testing"
                 />
-                <oracle-form
-                  v-if="config.connectionType === 'oracle' && hasActiveLicense"
-                  :config="config"
-                  :testing="testing"
-                />
-                <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && hasActiveLicense"
-                  :config="config"
-                  :testing="testing"
-                />
-                <lib-sql-form
-                  v-else-if="config.connectionType === 'libsql' && hasActiveLicense"
+                <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config" :testing="testing" />
+                <duck-db-form
+                  v-else-if="config.connectionType === 'duckdb'"
                   :config="config"
                   :testing="testing"
                 />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
-                <div class="form-group">
-                  <label
-                    class="checkbox-group"
-                    for="readOnlyMode"
-                  >
-                    <input
-                      class="form-control"
-                      id="readOnlyMode"
-                      type="checkbox"
-                      name="readOnlyMode"
-                      v-model="config.readOnlyMode"
+                <div class="form-group" v-if="!shouldUpsell">
+                  <label class="checkbox-group" for="readOnlyMode">
+                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
+                           v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
+                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
                 <!-- TEST AND CONNECT -->
-                <div
-                  v-if="!shouldUpsell"
-                  class="test-connect row flex-middle"
-                >
+                <div v-if="!shouldUpsell" class="test-connect row flex-middle">
                   <span class="expand" />
                   <div class="btn-group">
-                    <button
-                      :disabled="testing || connecting"
-                      class="btn btn-flat"
-                      type="button"
-                      @click.prevent="testConnection"
+                    <button :disabled="testing || connecting" class="btn btn-flat" type="button"
+                            @click.prevent="testConnection"
                     >
                       Test
                     </button>
-                    <button
-                      :disabled="testing || connecting"
-                      class="btn btn-primary"
-                      type="submit"
-                      @click.prevent="submit"
+                    <button :disabled="testing || connecting" class="btn btn-primary" type="submit"
+                            @click.prevent="submit"
                     >
                       Connect
                     </button>
                   </div>
                 </div>
-                <div
-                  class="row"
-                  v-if="connectionError"
-                >
+                <div class="row" v-if="connectionError">
                   <div class="col">
-                    <error-alert
-                      :error="connectionError"
-                      :help-text="errorHelp"
-                      @close="connectionError = null"
-                      :closable="true"
+                    <error-alert :error="connectionError" :help-text="errorHelp" @close="connectionError = null"
+                                 :closable="true"
                     />
                   </div>
                 </div>
-                <SaveConnectionForm
-                  v-if="!shouldUpsell"
-                  :config="config"
-                  @save="save"
-                />
+                <SaveConnectionForm v-if="!shouldUpsell" :config="config" @save="save" />
               </div>
             </form>
           </div>
-          <div
-            class="pitch"
-            v-if="!config.connectionType && shouldUpsell"
-          >
-            🌟 <strong>Upgrade to premium</strong> for data import, multi-table export, backup & restore, Oracle support, and more.
-            <a
-              href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
-              class=""
-            >Upgrade Now</a>.
-          </div>
+          <template v-if="!config.connectionType">
+            <div class="pitch" v-if="!isUltimate">
+              🌟 <strong>Upgrade</strong> for more features like ClickHouse & Oracle support, JSON view for table rows,
+              and more!
+              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+            </div>
+            <div class="pitch" v-else-if="isTrial">
+              🌟 <strong>Trial expires {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> Upgrade now to make sure you
+              don't lose access.
+              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+            </div>
+          </template>
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version
@@ -230,20 +147,23 @@ import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
 import BigQueryForm from './connection/BigQueryForm.vue'
 import FirebirdForm from './connection/FirebirdForm.vue'
+import ClickHouseForm from './connection/ClickHouseForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
 import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
+import MongoDbForm from './connection/MongoDBForm.vue'
+import DuckDbForm from './connection/DuckDBForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
-import UpsellContent from './connection/UpsellContent.vue'
+import UpsellContent from '@/components/upsell/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
@@ -253,7 +173,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm },
 
   data() {
     return {
@@ -274,12 +194,22 @@ export default Vue.extend({
   computed: {
     ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
+    ...mapGetters(['isUltimate']),
+    ...mapGetters('licenses', ['isTrial', 'trialLicense']),
+    communityConnectionTypes() {
+      return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
+    },
+    ultimateConnectionTypes() {
+      return this.$config.defaults.connectionTypes.filter((ct) => isUltimateType(ct.value)).map((ct) => ({ ...ct, name: `${ct.name}*`}))
+    },
     connectionTypes() {
       return this.$config.defaults.connectionTypes
     },
+    friendlyConnectionType() {
+      return this.$config.defaults.connectionTypes.find((ct) => ct.value === this.config?.connectionType)?.name ?? "Premium"
+    },
     shouldUpsell() {
-      if (this.hasActiveLicense) return false
+      if (this.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
     pageTitle() {
@@ -314,9 +244,15 @@ export default Vue.extend({
       }
     },
     'config.connectionType'(newConnectionType) {
-      if (!findClient(newConnectionType)?.supportsSocketPath) {
-        this.config.socketPathEnabled = false
-      }
+      this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
+        // only replace it if it's a blank, unused connection
+        if (!this.config.id && !this.config.password && !this.config.username) {
+          this.config = conn;
+        }
+        if (!findClient(newConnectionType)?.supportsSocketPath) {
+          this.config.socketPathEnabled = false
+        }
+      })
     },
     connectionError() {
       console.log("error watch", this.connectionError, this.dialect)
@@ -373,18 +309,18 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   methods: {
-    maybeLoadSqlite({ files }) {
+    async maybeLoadSqlite({ files }) {
       // cast to an array
       if (!files || !files.length) return
       if (!this.config) return;
       // we only load the first
       const file = files[0]
-      const allGood = this.config.parse(file.path)
-      if (!allGood) {
+      try {
+        const conf = await this.$util.send('appdb/saved/parseUrl', { url: file.path });
+        this.config = conf;
+        this.submit();
+      } catch {
         this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
-        return
-      } else {
-        this.submit()
       }
 
     },
@@ -426,7 +362,7 @@ export default Vue.extend({
 
     },
     async submit() {
-      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
+      if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -449,7 +385,7 @@ export default Vue.extend({
       await this.submit()
     },
     async testConnection() {
-      if (!this.hasActiveLicense && isUltimateType(this.config.connectionType)) {
+      if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
 
@@ -477,7 +413,7 @@ export default Vue.extend({
           throw new Error("Name is required")
         }
         // create token cache for azure auth
-        if (this.config.azureAuthOptions.azureAuthEnabled && !this.config.authId) {
+        if (this.config.azureAuthOptions?.azureAuthEnabled && !this.config.authId) {
           const cacheId = await this.$util.send('appdb/cache/new');
           this.config.authId = cacheId;
         }

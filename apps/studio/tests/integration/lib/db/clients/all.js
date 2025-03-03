@@ -1,4 +1,5 @@
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
+import { uint8 as u } from '@tests/utils'
 
 /**
  * @typedef {import('../../../../lib/db').DBTestUtil} DBTestUtil
@@ -45,7 +46,10 @@ export function runReadOnlyTests(getUtil) {
   })
 }
 
-/** @param {() => DBTestUtil} getUtil */
+/**
+ * @param {() => DBTestUtil} getUtil
+ * @param {{readOnly?: boolean, dbReadOnlyMode?: boolean}} opts?
+ * */
 export function runCommonTests(getUtil, opts = {}) {
   const {
     readOnly = false,
@@ -76,31 +80,32 @@ export function runCommonTests(getUtil, opts = {}) {
 
     describe("stream tests", () => {
       beforeAll(async () => {
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().prepareStreamTests()
       })
 
       test("should get all columns", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamColumnsTest()
       })
 
       test("should count exact number of rows", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamCountTest()
       })
 
       test("should stop/cancel streaming", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamStopTest()
       })
 
       test("should use custom chunk size", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamChunkTest()
       })
 
       test("should read all rows", async () => {
-        if (getUtil().dbType === 'cockroachdb') return
+        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
         await getUtil().streamReadTest()
       })
     })
@@ -123,6 +128,7 @@ export function runCommonTests(getUtil, opts = {}) {
 
 
     test("table triggers", async () => {
+      if (getUtil().data.disabledFeatures?.triggers) return
       await getUtil().triggerTests()
     })
 
@@ -136,6 +142,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should list generated columns", async () => {
+        if (getUtil().data.disabledFeatures?.generatedColumns || getUtil().options.skipGeneratedColumns) return
         await getUtil().generatedColumnsTests()
       })
     })
@@ -310,6 +317,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not insert bad data", async () => {
+        if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
         await itShouldNotInsertBadData(getUtil())
       })
 
@@ -322,6 +330,7 @@ export function runCommonTests(getUtil, opts = {}) {
       })
 
       test("should not commit on change error", async () => {
+        if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
         if (dbReadOnlyMode) {
           await expect(itShouldNotCommitOnChangeError(getUtil())).rejects.toThrow(errorMessages.readOnly)
         } else {
@@ -345,6 +354,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not insert bad data", async () => {
+      if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
       await itShouldNotInsertBadDataCompositePK(getUtil())
     })
 
@@ -357,6 +367,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should not commit on change error", async () => {
+      if (getUtil().data.disabledFeatures?.transactions || getUtil().options.skipTransactions) return
       if (dbReadOnlyMode) {
         await expect(itShouldNotCommitOnChangeErrorCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
       } else {
@@ -374,6 +385,11 @@ export function runCommonTests(getUtil, opts = {}) {
       await itShouldGenerateSQLForAllChanges(getUtil())
     })
 
+    test("Should generate scripts for all types of changes with binary format", async () => {
+      if (getUtil().data.disabledFeatures?.binaryColumn) return
+      await itShouldGenerateSQLWithBinary(getUtil())
+    })
+
     test("Should generate scripts for top selection", async () => {
       await getUtil().buildSelectTopQueryTests()
     })
@@ -386,6 +402,18 @@ export function runCommonTests(getUtil, opts = {}) {
   describe("SQLGenerator", () => {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
+    })
+  })
+
+  describe("Serialization", () => {
+    test("should support binary", async () => {
+      if (getUtil().data.disabledFeatures?.binaryColumn) return
+      await getUtil().serializationBinary()
+    })
+
+    test("should resolve table columns", async () => {
+      if (getUtil().data.disabledFeatures?.binaryColumn) return
+      await getUtil().resolveTableColumns()
     })
   })
 }
@@ -407,7 +435,7 @@ const prepareImportTable = async function(util) {
 
   await util.knex.schema.dropTableIfExists(tableName)
   await util.knex.schema.createTable(tableName, (t) => {
-    t.string('name'),
+    t.string('name').primary().notNullable(),
     t.string('hat')
   })
 }
@@ -437,7 +465,8 @@ export const itShouldInsertGoodData = async function(util) {
   ]
   await util.connection.applyChanges({ inserts: inserts })
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 }
 
@@ -520,7 +549,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
 
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts')
+  const _results = await util.knex.select().table('test_inserts')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(1)
   const firstResult = { ...results[0] }
   // hack for cockroachdb
@@ -690,6 +720,7 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
   expect(results.length).toBe(0)
 }
 
+/** @param {DBTestUtil} util */
 export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
 
   const changes = {
@@ -761,7 +792,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
 
   await util.connection.applyChanges(changes)
 
-  const results = await util.knex.select().table('test_inserts_composite_pk')
+  const _results = await util.knex.select().table('test_inserts_composite_pk').orderBy('id1', 'asc')
+  const results = util.dbType === 'clickhouse' ? _results[0] : _results
   expect(results.length).toBe(2)
 
   const firstResult = { ...results[0] }
@@ -926,14 +958,82 @@ export const itShouldGenerateSQLForAllChanges = async function(util) {
   expect(sql.includes('test_inserts'));
   expect(sql.includes('jane'));
   expect(sql.includes('testy'));
+
+}
+
+/** @param {DBTestUtil} util */
+export const itShouldGenerateSQLWithBinary = async function (util) {
+  const sql = await util.connection.applyChangesSql({
+    inserts: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        data: [{ id: u`deadbeef`, name: 'beef' }]
+      },
+    ],
+    updates: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [{ column: 'id', value: u`deadbeef` }],
+        column: 'name',
+        value: 'beefy'
+      }
+    ],
+    deletes: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [{ column: 'id', value: u`deadbeef` }],
+      }
+    ]
+  })
+
+  /** @type {Record<import('@/shared/lib/dialects/models').Dialect, string>} */
+  const expectedQueries = {
+    mysql:
+      "insert into `test_inserts` (`id`, `name`) values (X'deadbeef', 'beef');" +
+      "update `test_inserts` set `name` = 'beefy' where `id` = X'deadbeef';" +
+      "delete from `test_inserts` where `id` = X'deadbeef';",
+    sqlite:
+      "insert into `test_inserts` (`id`, `name`) values (X'deadbeef', 'beef');" +
+      "update `test_inserts` set `name` = 'beefy' where `id` = X'deadbeef';" +
+      "delete from `test_inserts` where `id` = X'deadbeef';",
+    sqlserver:
+      "insert into [dbo].[test_inserts] ([id], [name]) values (0xdeadbeef, 'beef');" +
+      "update [dbo].[test_inserts] set [name] = 'beefy' where [id] = 0xdeadbeef; select @@rowcount;" +
+      "delete from [dbo].[test_inserts] where [id] = 0xdeadbeef; select @@rowcount;",
+    postgresql:
+      `insert into "public"."test_inserts" ("id", "name") values ('\\xdeadbeef', 'beef');` +
+      `update "public"."test_inserts" set "name" = 'beefy' where "id" = '\\xdeadbeef';` +
+      `delete from "public"."test_inserts" where "id" = '\\xdeadbeef';`,
+    oracle:
+      `insert into "BEEKEEPER"."test_inserts" ("id", "name") values (hextoraw('deadbeef'), 'beef');` +
+      `update "BEEKEEPER"."test_inserts" set "name" = 'beefy' where "id" = hextoraw('deadbeef');` +
+      `delete from "BEEKEEPER"."test_inserts" where "id" = hextoraw('deadbeef');`,
+    firebird:
+      `insert into test_inserts (id, name) values (X'deadbeef', 'beef');` +
+      `update test_inserts set name = 'beefy' where id = X'deadbeef';` +
+      `delete from test_inserts where id = X'deadbeef';`,
+    duckdb:
+      `insert into "main"."test_inserts" ("id", "name") values ('\\xDE\\xAD\\xBE\\xEF', 'beef');` +
+      `update "main"."test_inserts" set "name" = 'beefy' where "id" = '\\xDE\\xAD\\xBE\\xEF';` +
+      `delete from "main"."test_inserts" where "id" = '\\xDE\\xAD\\xBE\\xEF';`,
+  }
+
+  expect(util.fmt(sql)).toEqual(util.fmt(expectedQueries[util.dialect]))
 }
 
 export async function prepareImportTests (util) {
   const dialect = util().dialect
+  const schema = util().defaultSchema ?? null
   let tableName = 'importstuff'
 
   const importScriptOptions = {
-    executeOptions: { multiple: false }
+    executeOptions: { multiple: false },
+    storeValues: {
+      truncateTable: false
+    }
   }
 
   let data = []
@@ -981,12 +1081,13 @@ export async function prepareImportTests (util) {
     ]
   }
   const table = {
-    schema: util().defaultSchema ?? null,
+    schema,
     name: tableName,
     entityType: 'table'
   }
   const formattedData = data.map(d => ({
     table: tableName,
+    schema,
     data: [d]
   }))
 

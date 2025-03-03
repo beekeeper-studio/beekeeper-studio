@@ -1,9 +1,8 @@
 <template>
   <div class="fixed">
     <div class="data-select-wrap">
-      <!-- FIXME: move this comparison to the DialectData -->
       <p
-        v-if="this.connectionType === 'sqlite'"
+        v-if="!supportsMultipleDatabases"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,9 +17,8 @@
         placeholder="Select a database..."
         class="dropdown-search"
       />
-      <!-- FIXME: move this comparison to the DialectData -->
       <a
-        v-if="this.connectionType !== 'sqlite'"
+        v-if="supportsMultipleDatabases"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -92,7 +90,7 @@
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
   import AddDatabaseForm from "@/components/connection/AddDatabaseForm.vue"
-  import { mapActions, mapState } from 'vuex'
+  import { mapActions, mapState, mapGetters } from 'vuex'
 
   export default {
     props: [ ],
@@ -110,11 +108,9 @@
     },
     methods: {
       ...mapActions({refreshDatabases: 'updateDatabaseList'}),
-      ...mapState({ connectionType: 'connectionType' }),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        // FIXME: move this comparison to the DialectData
-        if (this.connectionType.match(/sqlite|firebird/)) {
+        if (this.dialect.disabledFeatures?.multipleDatabase) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
@@ -132,10 +128,14 @@
       this.selectedDatabase = this.currentDatabase
     },
     computed: {
+      supportsMultipleDatabases() {
+        return !this.dialectData.disabledFeatures?.multipleDatabases
+      },
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList'}),
+      ...mapGetters(['dialect', 'dialectData']),
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType'}),
     },
     watch: {
       currentDatabase(newValue) {
@@ -144,7 +144,7 @@
         }
       },
       selectedDatabase() {
-        if (this.selectedDatabase != this.currentDatabase) {
+        if (this.selectedDatabase != this.currentDatabase && this.dbs.includes(this.selectedDatabase)) {
           this.$emit('databaseSelected', this.selectedDatabase)
         }
       }

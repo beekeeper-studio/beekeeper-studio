@@ -22,11 +22,38 @@ export default class extends DefaultMenu {
         // this.menuItems.minimalModeToggle,
       ]
     }
-    if (!this.platformInfo.isMac)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.menuStyleToggle)
-    if (this.platformInfo.isDevelopment)
-      (result.submenu as Electron.MenuItemConstructorOptions[]).push(this.menuItems.reload)
     return result
+  }
+
+  devMenu() {
+    return {
+      label: 'Dev',
+      submenu: [
+        this.menuItems.reload,
+        this.menuItems.licenseState,
+      ],
+    }
+  }
+
+  helpMenu() {
+    const helpMenu = {
+      label: "Help",
+      submenu: [
+        this.menuItems.enterLicense,
+        this.menuItems.checkForUpdate,
+        this.menuItems.opendocs,
+        this.menuItems.support,
+        this.menuItems.addBeekeeper,
+        this.menuItems.devtools,
+        this.menuItems.about,
+      ]
+    };
+
+    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
+      helpMenu.submenu.push(this.menuItems.toggleBeta)
+    }
+
+    return helpMenu;
   }
 
   buildTemplate(): Electron.MenuItemConstructorOptions[] {
@@ -59,15 +86,14 @@ export default class extends DefaultMenu {
     }
 
     const windowMenu: Electron.MenuItemConstructorOptions[] = []
-    console.log("Menu style", this.settings.menuStyle)
-    if ((this.platformInfo.isMac || this.settings.menuStyle.value === 'native') && !this.platformInfo.isWayland) {
+    if (this.platformInfo.isMac) {
       windowMenu.push({
         label: 'Window',
         role: 'windowMenu'
       })
     }
 
-    return [
+    const menu = [
       ...appMenu,
       fileMenu,
       {
@@ -83,12 +109,6 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
-        label: "Ultimate",
-        submenu: [
-          this.menuItems.enterLicense,
-        ]
-      },
-      {
         label: "Tools",
         submenu: [
           this.menuItems.backupDatabase,
@@ -97,16 +117,13 @@ export default class extends DefaultMenu {
         ]
       },
       ...windowMenu,
-      {
-        label: "Help",
-        submenu: [
-          this.menuItems.opendocs,
-          this.menuItems.checkForUpdate,
-          this.menuItems.addBeekeeper,
-          this.menuItems.devtools,
-          this.menuItems.about,
-        ]
-      }
+      this.helpMenu()
     ]
+
+    if (this.platformInfo.isDevelopment) {
+      menu.push(this.devMenu())
+    }
+
+    return menu
   }
 }

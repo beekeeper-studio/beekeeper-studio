@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
+import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -15,10 +15,9 @@ import {
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  applyChangesSql,
   buildInsertQuery
 } from './utils';
-import logRaw from 'electron-log'
+import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder'
@@ -28,10 +27,11 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportScriptFunctions, ImportFuncOptions } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
+import { GenericBinaryTranscoder } from '../serialization/transcoders';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -45,11 +45,16 @@ type SQLServerVersion = {
   versionString: any
 }
 
+type ColumnMetadata = sql.IColumnMetadata[number]
+
 type SQLServerResult = {
   connection: Request,
-  data: any,
+  data: sql.IResult<any>,
   // Number of changes made by the query
   rowsAffected: number
+  rows: Record<string, any>[];
+  columns: ColumnMetadata[];
+  arrayMode: boolean;
 }
 
 interface ExecuteOptions {
@@ -66,12 +71,19 @@ const SQLServerContext = {
   }
 }
 
+const knex = knexlib({ client: 'mssql' });
+const escapeBinding = knex.client._escapeBinding
+knex.client._escapeBinding = function (value: any, context: any) {
+  if (Buffer.isBuffer(value)) {
+    return `0x${value.toString('hex')}`
+  }
+  return escapeBinding.call(this, value, context)
+}
+
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
-  connectionBaseType = 'sqlserver' as const;
-
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -81,13 +93,15 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   logger: any
   pool: ConnectionPool;
   authService: AzureAuthService;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super( knexlib({ client: 'mssql'}), SQLServerContext, server, database)
+    super(knex, SQLServerContext, server, database)
     this.dialect = 'mssql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.defaultSchema = async (): Promise<string> => 'dbo'
     this.logger = () => log
+    this.createUpsertFunc = this.createUpsertSQL
   }
 
   async getVersion(): Promise<SQLServerVersion> {
@@ -170,6 +184,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default,
       generated: row.is_generated === 'YES',
+      bksField: this.parseTableColumn(row),
     }))
   }
 
@@ -221,10 +236,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     const result = await this.driverExecuteSingle(query)
     this.logger().debug(result)
-    return {
-      result: result.data.recordset,
-      fields: Object.keys(result.data.recordset[0] || {})
-    }
+    const fields = this.parseQueryResultColumns(result)
+    const rows = await this.serializeQueryResult(result, fields)
+    return { result: rows, fields }
   }
 
   async selectTopSql(
@@ -470,6 +484,34 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return data.recordset.map((row) => row.name)
   }
 
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
+    const [PK] = primaryKeys
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+    const columns = `([${PK}], ${columnsWithoutPK.map(cpk => `[${cpk}]`).join(', ')})`
+    const insertSQL = () => `
+      INSERT ${columns}
+      VALUES (source.[${PK}], ${columnsWithoutPK.map(cpk => `source.[${cpk}]`).join(', ')})
+    `
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `target.[${cpk}] = source.[${cpk}]`).join(', ')}`
+    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
+    const usingSQLStatement = data.map( (val) =>
+      `(${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')})`
+    ).join(', ')
+
+    return `
+      MERGE INTO [${schema}].[${tableName}] AS target
+      USING (VALUES
+        ${usingSQLStatement}
+      ) AS source ${columns}
+      ON target.${PK} = source.${PK}
+      WHEN MATCHED THEN
+        UPDATE SET
+          ${updateSet()}
+      WHEN NOT MATCHED THEN
+        ${insertSQL()};
+    `
+  }
+
   /*
     From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool:
     Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
@@ -478,10 +520,16 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async createDatabase(databaseName: string) {
     const sql = `create database ${this.wrapIdentifier(databaseName)}`;
     await this.driverExecuteSingle(sql)
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {
     throw new Error("Method not implemented.");
+  }
+
+  // ONLY USED FOR IMPORT
+  protected async runWithConnection(child: (connection: Request) => Promise<any>):  Promise<any> {
+    return await child(null);
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
@@ -491,7 +539,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       connection.arrayRowMode = options.arrayRowMode || false;
       const data = await connection.query(q)
       const rowsAffected = _.sum(data.rowsAffected)
-      return { connection, data, rowsAffected }
+      const columns = !data.recordset ? [] : Object.keys(data.recordset.columns).map((key) => data.recordset.columns[key])
+      const rows = data.recordset
+      const arrayMode = connection.arrayRowMode
+      return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
     return runQuery(options.connection ? options.connection : this.pool.request());
@@ -550,7 +601,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(sql)
   }
 
-  async applyChanges(changes: TableChanges) {
+  async executeApplyChanges(changes: TableChanges) {
     const results = []
     let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
 
@@ -559,7 +610,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         const columnsList = await Promise.all(changes.inserts.map((insert) => {
           return this.listTableColumns(insert.table, insert.schema);
         }));
-        sql = sql.concat(changes.inserts.map((insert, index) => buildInsertQuery(this.knex, insert, columnsList[index])))
+        sql = sql.concat(changes.inserts.map((insert, index) => buildInsertQuery(this.knex, insert, { columns: columnsList[index] })))
       }
 
       if (changes.updates) {
@@ -834,54 +885,60 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     await this.executeWithTransaction(query);
   }
 
-  async importStepZero(_table: TableOrView): Promise<any> {
+  async hasIdentityColumn(table: TableOrView): Promise<boolean> {
+    const sql = `
+      SELECT
+        c.name AS ColumnName,
+        t.name AS TableName,
+        s.name AS SchemaName,
+        c.is_identity
+      FROM sys.columns c
+      JOIN sys.tables t ON c.object_id = t.object_id
+      JOIN sys.schemas s ON t.schema_id = s.schema_id
+      WHERE t.name = ${this.wrapValue(table.name)}
+      AND s.name = ${this.wrapValue(table.schema)}
+      AND c.is_identity = 1;
+    `;
+
+    const { data } = await this.driverExecuteSingle(sql);
+    return data.recordset && data.recordset.length > 0;
+  }
+
+  async importStepZero(table: TableOrView): Promise<any> {
     const transaction = new sql.Transaction(this.pool)
 
     return {
       transaction,
-      request: new sql.Request(transaction)
+      request: new sql.Request(transaction),
+      hasIdentityColumn: await this.hasIdentityColumn(table)
     }
   }
 
   async importBeginCommand(_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.begin()
+    await clientExtras.transaction.begin()
   }
 
   async importTruncateCommand (table: TableOrView, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
     const { name, schema } = table
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-    return clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
+    await clientExtras.request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions)
   }
 
-  async importLineReadCommand (_table: TableOrView, sqlString: string, { clientExtras, executeOptions }: ImportFuncOptions): Promise<any> {
-    return clientExtras.request.query(sqlString, executeOptions)
+  async importLineReadCommand (table: TableOrView, sqlString: string, { executeOptions }: ImportFuncOptions): Promise<any> {
+    const { name, schema } = table
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+    const identOn = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} ON;` : '';
+    const identOff = executeOptions.hasIdentityColumn ? `SET IDENTITY_INSERT ${schemaString}${this.wrapIdentifier(name)} OFF;` : '';
+    const query = `${identOn}${sqlString};${identOff}`;
+    return await executeOptions.request.query(query, executeOptions)
   }
 
   async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.commit()
+    return await clientExtras.transaction.commit()
   }
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
-    return clientExtras.transaction.rollback()
-  }
-
-  async getImportScripts(table: TableOrView): Promise<ImportScriptFunctions> {
-    const { name, schema } = table
-    const transaction = new sql.Transaction(this.pool)
-    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
-    let request
-
-    return {
-      step0: async(): Promise<null> => {
-        request = new sql.Request(transaction)
-        return null
-      },
-      beginCommand: (_executeOptions: any): Promise<any> => transaction.begin(),
-      truncateCommand: (executeOptions: any): Promise<any> => request.query(`TRUNCATE TABLE ${schemaString}${this.wrapIdentifier(name)};`, executeOptions),
-      lineReadCommand: (sqlString: string, executeOptions: any): Promise<any> => request.query(sqlString, executeOptions),
-      commitCommand: (_executeOptions: any): Promise<any> => transaction.commit(),
-      rollbackCommand: (_executeOptions: any): Promise<any> => transaction.rollback()
-    }
+    return await clientExtras.transaction.rollback()
   }
 
   /* helper functions and settings below! */
@@ -934,6 +991,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     }
   }
 
@@ -951,7 +1009,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         })
       })
     }
-    return applyChangesSql(changes, this.knex)
+    return super.applyChangesSql(changes)
   }
 
   wrapIdentifier(value: string) {
@@ -1264,6 +1322,29 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       return null
     }
     return data.recordset[0].MS_Description
+  }
+
+  parseQueryResultColumns(qr: SQLServerResult): BksField[] {
+    return Object.keys(qr.columns).map((key) => {
+      const column = qr.columns[key]
+      let bksType: BksFieldType = 'UNKNOWN'
+      const type = column.type
+      if (
+        type === sql.VarBinary ||
+          type === sql.Binary ||
+          type === sql.Image
+      ) {
+        bksType = 'BINARY'
+      }
+      return { name: column.name, bksType }
+    })
+  }
+
+  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type.includes('varbinary') ? 'BINARY' : 'UNKNOWN',
+    };
   }
 }
 

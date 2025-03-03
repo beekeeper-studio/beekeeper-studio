@@ -30,7 +30,9 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared(.*)$': '<rootDir>/src/shared/$1',
-    '^@commercial(.*)$': '<rootDir>/src-commercial/$1'
+    '^@commercial(.*)$': '<rootDir>/src-commercial/$1',
+    '^@bksLogger$': '<rootDir>/src/lib/log/bksLogger.ts',
+    '^@tests(.*)$': '<rootDir>/tests/$1',
   },
   // serializer for snapshots
   snapshotSerializers: [
@@ -54,8 +56,8 @@ module.exports = {
     '^.+\\.jsx?$': require.resolve('babel-jest'),
     '^.+\\.tsx?$': [require.resolve('ts-jest'), { babelConfig: true, isolatedModules: true}]
   },
-  setupFilesAfterEnv: [resolve(__dirname, './tests/setupTests.js')],
-  setupFiles: ['./jest.polyfills.js'],
+  setupFilesAfterEnv: ['./tests/init/setup.js'],
+  setupFiles: ['./tests/init/env-setup.js'],
   testEnvironment: 'jsdom',
   testEnvironmentOptions: {
     url: "http://localhost",

@@ -3,6 +3,7 @@
 .cache/
 .vscode/
 ./data/
+.local
 node_modules/
 dist/
 site/
@@ -22,3 +23,5 @@ yarn-error.log
 cli.zip
 apps/studio/test-results
 *.db
+*.log
+*.orig

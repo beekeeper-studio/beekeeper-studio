@@ -1,7 +1,8 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery' | 'firebird' | 'oracle' | 'tidb' | 'libsql';
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb'] as const
+export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
@@ -17,25 +18,29 @@ export const ConnectionTypes = [
   { name: 'Cassandra', value: 'cassandra' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
+  { name: 'DuckDB', value: 'duckdb' },
+  { name: 'ClickHouse', value: 'clickhouse' },
+  { name: 'MongoDB', value: 'mongodb' }
 ]
 
+/** `value` should be recognized by codemirror */
 export const keymapTypes = [
   { name: "Default", value: "default" },
   { name: "Vim", value: "vim" }
-]
+] as const
 
+// if you update this, you may need to update `translateOperator` in the mongodb driver
 export const TableFilterSymbols = [
   { value: '=', label: 'equals' },
   { value: '!=', label: 'does not equal'},
   { value: 'like', label: 'like' },
   { value: '<', label: 'less than' },
-  { label: 'less than or equal', value: '<=' },
+  { value: '<=', label: 'less than or equal' },
   { value: '>', label: 'greater than'},
-  { label: "greater than or equal", value:">=" },
-  { label: 'in', value:"in", arrayInput: true },
-  { label: "is null", value: "is", nullOnly: true },
-  { label: "is not null", value: "is not", nullOnly: true }
-
+  { value: ">=", label: "greater than or equal" },
+  { value: "in", label: 'in', arrayInput: true },
+  { value: "is", label: "is null", nullOnly: true },
+  { value: "is not", label: "is not null", nullOnly: true }
 ]
 
 export enum AzureAuthType {
@@ -45,6 +50,11 @@ export enum AzureAuthType {
   MSIVM,
   ServicePrincipalSecret
 }
+
+export const IamAuthTypes = [
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [
@@ -57,6 +67,7 @@ export const AzureAuthTypes = [
 ];
 
 export interface RedshiftOptions {
+  awsProfile?: string
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
@@ -64,6 +75,8 @@ export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;
+  isServerless?: boolean;
+  authType?: string;
 }
 
 export interface CassandraOptions {
@@ -118,6 +131,7 @@ export interface IDbConnectionServerSSHConfig {
 
 export interface IDbConnectionServerConfig {
   client: Nullable<ConnectionType>,
+  url?: string,
   host?: string,
   port: Nullable<number>,
   domain: Nullable<string>,
@@ -180,7 +194,7 @@ export interface IBasicDatabaseClient {
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,
   getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
 
-  createDatabase(databaseName: string, charset: string, collation: string): Promise<void>,
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<string>,
   createDatabaseSQL(): Promise<string>,
   getTableCreateScript(table: string, schema?: string): Promise<string>,
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,
@@ -215,7 +229,7 @@ export interface IBasicDatabaseClient {
   duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>
   duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
 
-  getInsertQuery(tableInsert: TableInsert): Promise<string>
+  getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
   syncDatabase(): Promise<void>
 
   importStepZero(table: TableOrView): Promise<any>

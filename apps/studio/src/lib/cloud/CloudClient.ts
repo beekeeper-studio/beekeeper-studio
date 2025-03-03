@@ -2,7 +2,7 @@ import { ConnectionsController } from '@/lib/cloud/controllers/ConnectionsContro
 import { AxiosInstance, AxiosRequestTransformer, AxiosResponseTransformer } from 'axios'
 import axios from 'axios'
 import _ from 'lodash';
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import axiosRetry from 'axios-retry'
 
 import { res } from './ClientHelpers';
@@ -29,13 +29,10 @@ const snakeCaseData: AxiosRequestTransformer = (data) => {
 
 const camelCaseData: AxiosResponseTransformer = (data) => {
   if (_.isPlainObject(data)) {
-    console.log('camel yes')
     const result = _.deepMapKeys(data, (_value, key) => _.camelCase(key))
-    log.info('camel result', result)
     return result
 
   }
-  console.log('camel no')
   return data
 }
 

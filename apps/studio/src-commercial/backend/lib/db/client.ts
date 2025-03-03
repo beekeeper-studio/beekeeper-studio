@@ -14,6 +14,9 @@ import { FirebirdClient } from "./clients/firebird";
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
 import { LibSQLClient } from "./clients/libsql";
+import { DuckDBClient } from "./clients/duckdb";
+import { ClickHouseClient } from "./clients/clickhouse";
+import { MongoDBClient } from "./clients/mongodb";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -29,16 +32,27 @@ const clients = new Map<ConnectionType, any>([
   ['oracle', OracleClient],
   ['cassandra', CassandraClient],
   ['libsql', LibSQLClient],
-],);
+  ['duckdb', DuckDBClient],
+  ['clickhouse', ClickHouseClient],
+  ['mongodb', MongoDBClient]
+], );
 
 
 class FriendlyErrorClient {
   constructor() {
-    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src/lib/db/client.ts")
+    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src-commercial/backend/lib/db/client.ts")
   }
 }
 
-export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+export class ClientError extends Error {
+  helpLink = null
+  constructor(message: string, helpLink: string) {
+    super(message)
+    this.helpLink = helpLink
+  }
+}
+
+export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase ) {
   /**
    * Database public API
    */

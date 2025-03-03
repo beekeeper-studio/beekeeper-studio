@@ -14,12 +14,12 @@
                 <i class="material-icons">save_alt</i>
                 <x-menu style="--align: end;">
                   <x-menuitem @click.prevent="importFromComputer">
-                    <x-label>Import .sql files</x-label>
+                    <x-label>Import .sql files into Saved Queries</x-label>
                   </x-menuitem>
                   <x-menuitem @click.prevent="importFromLocal">
                     <x-label>Import from local workspace</x-label>
                     <i
-                      v-if="!hasActiveLicense"
+                      v-if="$store.getters.isCommunity"
                       class="material-icons menu-icon"
                     >stars</i>
                   </x-menuitem>
@@ -41,7 +41,7 @@
         <div class="fixed query-filter">
           <div class="filter">
             <div class="filter-wrap">
-              <input 
+              <input
                 class="filter-input"
                 type="text"
                 placeholder="Filter"
@@ -173,7 +173,6 @@ export default {
   computed: {
     ...mapGetters(['workspace', 'isCloud']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
-    ...mapGetters({ 'hasActiveLicense': 'licenses/hasActiveLicense' }),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),

@@ -17,7 +17,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["./src/shared/*"],
-      "@commercial/*": ["./src-commercial/*"]
+      "@commercial/*": ["./src-commercial/*"],
+      "@tests/*": ["./tests/*"],
+      "@bksLogger": ["./src/lib/log/bksLogger.ts"]
     },
     "lib": [
       "esnext",

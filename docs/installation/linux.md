@@ -27,8 +27,8 @@ Download the latest AppImage [from the Beekeeper Studio homepage](https://www.be
 
 If you want to integrate the AppImage into your system shell (so it appears in your Application menu), we recommend you [install AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher/releases/latest).
 
-## Apt / DEB
-A repo is provided for Debian and Ubuntu 16.04+.
+## DEB
+A repo is provided for Debian and Ubuntu 20.04+.
 
 ```bash
 # Install our GPG key
@@ -41,8 +41,29 @@ curl -fsSL https://deb.beekeeperstudio.io/beekeeper.key | sudo gpg --dearmor --o
 sudo apt update && sudo apt install beekeeper-studio -y
 ```
 
+## RPM
+You can download the RPM from the [downloads page](https://beekeeperstudio.io/get), when installing the RPM, it will also install the .repo file.
 
-## Snap Store / Ubuntu Store
+If you want to set it up manually:
+```bash
+# Download a copy of our .repo file (to handle software updates)
+sudo curl -o /etc/yum.repos.d/beekeeper-studio.repo https://rpm.beekeeperstudio.io/beekeeper-studio.repo
+
+
+# Add our GPG public key
+sudo rpm --import https://rpm.beekeeperstudio.io/beekeeper.key
+
+# check if the repo is configured correctly
+dnf repolist
+
+# Then
+yum install beekeeper-studio
+# or
+dnf install beekeeper-studio
+```
+
+
+## Snap
 
 You can also install Beekeeper Studio through Snapcraft (also part of the Ubuntu Store). Use either the Snap Store link below, or install through the terminal.
 

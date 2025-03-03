@@ -9,6 +9,14 @@
         >
         Truncate the table before importing new data
       </label>
+      <label class="checkbox-group">
+        <input
+          type="checkbox"
+          class="form-control"
+          v-model="runAsUpsert"
+        >
+        Import data as an Upsert (Be sure to map a primary key field!)
+      </label>
     </div>
     <div
       class="mapper-wrapper"
@@ -21,7 +29,6 @@
 import { mapGetters, mapState } from 'vuex'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import Mutators, { emptyResult, buildNullValue } from '../../mixins/data_mutators'
-import { getImporterClass } from '../../lib/import/utils'
 import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
@@ -43,21 +50,21 @@ export default {
   mixins: [Mutators],
   data() {
     return {
-      importerClass: null,
+      importerId: null,
       table: null,
       tabulator: null,
       tableColumnNames: {},
       previewData: null,
       nonNullableColumns: [],
       ignoreText: 'IGNORE',
-      truncateTable: false
+      truncateTable: false,
+      runAsUpsert: false
     }
   },
   computed: {
     ...mapGetters(['schemaTables']),
     ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
-    ...mapState(['connection']),
     importColumns () {
       const selectOptions = {
         values: {[this.ignoreText]: this.ignoreText, ...this.tableColumnNames}
@@ -123,7 +130,7 @@ export default {
       return `${schema}${this.stepperProps.table}`
     },
     async tableData(importedColumns) {
-      const { meta } = await this.importerClass.getPreview()
+      const { meta } = await this.$util.send('import/getFileAttributes', { id: this.importerId })
       const importOptions = await this.getImportOptions(this.tableKey())
       const tableColumns = new Map()
 
@@ -180,7 +187,7 @@ export default {
     },
     async onFocus () {
       const importOptions = await this.tablesToImport.get(this.tableKey())
-      if (importOptions.importMap && this.importerClass && this.tabulator) {
+      if (importOptions.importMap && this.importerId && this.tabulator) {
         this.tabulator.redraw()
       } else {
         this.initialize()
@@ -223,34 +230,43 @@ export default {
     },
     async onNext() {
       const importOptions =  await this.tablesToImport.get(this.tableKey())
-      importOptions.importMap = this.importerClass.mapper(this.tabulator.getData())
+      importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
       importOptions.truncateTable = this.truncateTable
+      importOptions.runAsUpsert = this.runAsUpsert
 
       const importData = {
         table: this.tableKey(),
+        importProcessId: this.importerId,
         importOptions
       }
       this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.tableKey())
-      const connection = await this.connection
       this.table = this.getTable(importOptions.table)
+      if (!this.table.columns) {
+        await this.$store.dispatch('updateTableColumns', this.table)
+        this.table = this.getTable(importOptions.table)
+      }
       const { tableColumnNames, nonNullableColumns } = this.table.columns.reduce((acc, column) => {
         const columnText = [column.columnName, ...this.getColumnAttributes(column)]
 
         acc.tableColumnNames[column.columnName] = `${columnText.join(' ')}`
 
-        if (!column.nullable && column.defaultValue === null) {
+        if (!column.nullable && !column.hasDefault) {
           acc.nonNullableColumns.push(column.columnName)
         }
 
         return acc
       }, { tableColumnNames: {}, nonNullableColumns: []})
-      // this.table = importOptions.table
       this.tableColumnNames = tableColumnNames
       this.nonNullableColumns = nonNullableColumns
-      this.importerClass = getImporterClass(importOptions, connection, this.table)
+      if (!importOptions.importProcessId) {
+        this.importerId = await this.$util.send('import/init', { options: importOptions })
+      } else {
+        this.importerId = importOptions.importProcessId
+      }
+
       this.initTabulator()
     },
   },
@@ -266,5 +282,8 @@ export default {
 <style lang="scss" scoped>
   .mapper-wrapper {
     margin-top: 2rem;
+  }
+  .checkbox-group:last-of-type {
+    padding-top: 1rem;
   }
 </style>

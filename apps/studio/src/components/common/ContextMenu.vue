@@ -27,7 +27,7 @@
             >{{ option.icon }}</i>
             <!-- NOTE (@day): this is supposed to only appear when you don't have an ult license, but this component can't use the store -->
             <i
-              v-if="option.ultimate"
+              v-if="option.ultimate && $store.getters.isCommunity"
               class="material-icons menu-icon"
             >stars</i>
           </span>

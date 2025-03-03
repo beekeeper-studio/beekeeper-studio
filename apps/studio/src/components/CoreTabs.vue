@@ -37,7 +37,8 @@
       <a
         @click.prevent="showUpgradeModal"
         class="btn btn-brand btn-icon btn-upgrade"
-        v-tooltip="'Upgrade for: backup/restore, import from CSV, larger query results, and more!'"
+        v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
+        v-if="$store.getters.isCommunity"
       >
         <i class="material-icons">stars</i> Upgrade
       </a>
@@ -336,7 +337,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
   computed: {
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection']),
-    ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
+    ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -386,6 +387,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         { event: AppEvent.backupDatabase, handler: this.backupDatabase },
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
+        { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
       ]
     },
     lastTab() {
@@ -862,6 +864,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
     },
+    switchUserKeymap(value) {
+      this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+    },
     openTableBuilder() {
       const tab = {} as TransportOpenTab;
       tab.tabType = 'table-builder';
@@ -879,7 +884,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
-    openTable({ table, filters }) {
+    async openTable({ table, filters, openDetailView }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
       tab.title = table.name
@@ -893,9 +898,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         if (filters) {
           existing = setFilters(existing, filters)
         }
-        this.$store.dispatch('tabs/setActive', existing)
+        await this.$store.dispatch('tabs/setActive', existing)
       } else {
-        this.addTab(tab)
+        await this.addTab(tab)
+      }
+
+      if (openDetailView) {
+        this.$store.dispatch('toggleOpenDetailView', true)
       }
     },
     openExportModal(options) {

@@ -1,12 +1,11 @@
 import Vue from "vue"
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('AppEvent')
 
 export enum AppEvent {
   menuClick = 'menu-click',
   settingsChanged = "sc-refresh",
-  menuStyleChanged = 'mc-style',
   newTab = 'nt',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
@@ -21,6 +20,8 @@ export enum AppEvent {
   loadTable = 'loadTable',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
+  promptCreateWorkspace = 'cloud_create_workspace',
+  promptRenameWorkspace = 'cloud_rename_workspace',
   promptQueryImport = 'cloud_q_import',
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
@@ -44,6 +45,15 @@ export enum AppEvent {
   dropzoneDrop = 'dropzoneDrop',
   createConfirmModal = 'createConfirmModal',
   showConfirmModal = 'showConfirmModal',
+  /** Triggered when the license valid date or support date has expired */
+  licenseExpired = 'licenseExpired',
+  /** Triggered when the license valid date has expired */
+  licenseValidDateExpired = 'licenseValidDateExpired',
+  /** Triggered when the license support date has expired */
+  licenseSupportDateExpired = 'licenseSupportDateExpired',
+  switchLicenseState = 'switchLicenseState',
+  toggleBeta = 'toggleBeta',
+  switchUserKeymap = 'switchUserKeymap',
 }
 
 export interface RootBinding {

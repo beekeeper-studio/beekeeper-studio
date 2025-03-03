@@ -79,12 +79,11 @@ nav:
   - Introduction: index.md
   - getting-started-guide.md
   - purchasing-a-license.md
-  - Installing:
+  - Installation:
     - installation/index.md
-    - Supported Platforms:
-      - installation/windows.md
-      - installation/macos-m1-intel.md
-      - installation/linux.md
+    - installation/windows.md
+    - installation/macos-m1-intel.md
+    - installation/linux.md
   - Databases:
     - user_guide/connecting/supported-databases.md
     - Connecting To A Database: user_guide/connecting/connecting.md
@@ -92,7 +91,10 @@ nav:
       - user_guide/connecting/sqlite.md
       - user_guide/connecting/google-bigquery.md
       - user_guide/connecting/oracle-database.md
+      - user_guide/connecting/amazon-rdb.md
       - user_guide/connecting/firebird.md
+      - user_guide/connecting/duckdb.md
+      - user_guide/connecting/mongodb.md
   - User Guide:
     - user_guide/using-the-sql-editor.md
     - user_guide/editing-data.md
