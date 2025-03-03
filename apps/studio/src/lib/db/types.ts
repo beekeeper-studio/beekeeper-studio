@@ -194,7 +194,7 @@ export interface IBasicDatabaseClient {
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,
   getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
 
-  createDatabase(databaseName: string, charset: string, collation: string): Promise<void>,
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<string>,
   createDatabaseSQL(): Promise<string>,
   getTableCreateScript(table: string, schema?: string): Promise<string>,
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,

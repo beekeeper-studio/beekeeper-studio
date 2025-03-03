@@ -105,6 +105,7 @@ export class DBTestUtil {
   public extraTables = 0
   public options: Options
   private dbType: ConnectionType | 'generic'
+  public databaseName: string
 
   public dialect: Dialect
   public data: DialectData
@@ -133,6 +134,7 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
+    this.databaseName = database
 
     if (options.knex) {
       this.knex = options.knex
@@ -226,7 +228,7 @@ export class DBTestUtil {
     return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
   }
 
-  async setupdb() {
+  async connect() {
     await TestOrmConnection.connect()
     await LicenseKey.createTrialLicense()
     await this.connection.connect()
@@ -234,6 +236,10 @@ export class DBTestUtil {
       this.knex = this.connection.knex
     }
 
+  }
+
+  async setupdb() {
+    await this.connect()
     await this.options.beforeCreatingTables?.()
     await this.createTables()
 
@@ -308,11 +314,13 @@ export class DBTestUtil {
     if (this.dbType === 'postgresql') {
       charset = 'UTF8'
     }
-    await this.connection.createDatabase('new-db_2', charset, collation)
+    const createdDbName = await this.connection.createDatabase('new-db_2', charset, collation)
 
     if (this.dialect.match(/sqlite|firebird|duckdb/)) {
-      // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
-      return expect.anything()
+      const connection = this.server.createConnection(createdDbName)
+      await expect(connection.connect()).resolves.not.toThrow()
+      await connection.disconnect()
+      return
     }
     const newDBsCount = await this.connection.listDatabases()
 
@@ -843,6 +851,26 @@ export class DBTestUtil {
     expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
+  async checkForPoolConnectionReleasing() {
+    // libsql freaks out on this test for some reason
+    // so we're just going to skip for now
+    // FIXME: Investigate why this causes libsql timeouts for remote connections
+    // SQLite tests will mostly debug libsql also
+    if (
+      this.connection.connectionType === "libsql"
+    ) {
+      return;
+    }
+
+    const iterations = 50
+    const query = 'select * from one_record'
+    for (let i = 0; i < iterations; i++) {
+      const handle = await this.connection.query(query);
+      const result = await handle.execute()
+      expect(result).not.toBeNull()
+    }
+  }
+
   async queryTests() {
     await this.connection.executeQuery(this.options.queryTestsTableCreationQuery || 'create table one_record(one integer primary key)')
     await this.connection.executeQuery('insert into one_record values(1)')
@@ -858,7 +886,7 @@ export class DBTestUtil {
       clickhouse: "select 'a' as total, 'b' as total2 from one_record",
     }
     const q = await this.connection.query(sql1[this.dialect] || sql1.common)
-    if(!q) throw new Error("no query result")
+    if(!q) throw new Error("connection couldn't run the query")
     try {
       const result = await q.execute()
 
@@ -882,6 +910,8 @@ export class DBTestUtil {
       console.error("QUERY FAILED", ex)
       throw ex
     }
+
+    await this.checkForPoolConnectionReleasing()
 
     if (this.data.disabledFeatures?.alter?.multiStatement) {
       return;
@@ -958,9 +988,9 @@ export class DBTestUtil {
         ) AS source ([id], [job_name], [hourly_rate])
         ON target.id = source.id
         WHEN MATCHED THEN
-          UPDATE SET 
-            target.[job_name] = source.[job_name], 
-            target.[hourly_rate] = source.[hourly_rate] 
+          UPDATE SET
+            target.[job_name] = source.[job_name],
+            target.[hourly_rate] = source.[hourly_rate]
         WHEN NOT MATCHED THEN
           INSERT ([id], [job_name], [hourly_rate])
           VALUES (source.[id], source.[job_name], source.[hourly_rate]);
@@ -1008,8 +1038,8 @@ export class DBTestUtil {
       ) AS source ([id], [job_name], [hourly_rate])
       ON target.id = source.id
       WHEN MATCHED THEN
-        UPDATE SET 
-          target.[job_name] = source.[job_name], 
+        UPDATE SET
+          target.[job_name] = source.[job_name],
           target.[hourly_rate] = source.[hourly_rate]
       WHEN NOT MATCHED THEN
         INSERT ([id], [job_name], [hourly_rate])

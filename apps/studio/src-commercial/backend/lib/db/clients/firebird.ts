@@ -45,7 +45,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildInsertQueries, buildInsertQuery } from "@/lib/db/clients/utils";
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, withClosable, withReleasable } from "@/lib/db/clients/utils";
 import {
   Pool,
   Connection,
@@ -57,6 +57,7 @@ import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import globals from "@/common/globals";
 
 type FirebirdResult = {
   rows: any[];
@@ -171,7 +172,7 @@ function buildFilterString(filters: TableFilter[], columns = []) {
 function buildInsertQuery(
   knex: Knex,
   insert: TableInsert,
-  { 
+  {
     columns = [],
     bitConversionFunc = _.toNumber,
     runAsUpsert = false,
@@ -274,7 +275,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     log.debug("create driver client for firebird with config %j", config);
 
-    this.pool = new Pool(config);
+    this.pool =  new Pool(globals.firebird.poolSize, config);
 
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
@@ -687,7 +688,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
             return { fields, rows };
           });
         } finally {
-          await connection.release();
+          // release happens in rawExecuteQuery, not needed here
+          // await connection.release();
         }
 
       },
@@ -860,7 +862,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     databaseName: string,
     _charset: string,
     _collation: string
-  ): Promise<void> {
+  ): Promise<string> {
+    databaseName = databaseName.trimEnd();
+    if (!databaseName.endsWith(".fdb")) {
+      databaseName += ".fdb";
+    }
     await createDatabase({
       host: this.server.config.host,
       port: this.server.config.port,
@@ -869,13 +875,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       password: this.server.config.password,
       // encoding: charset,
     });
+    return databaseName;
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
     const connection = await this.pool.getConnection();
     const transaction = await connection.transaction();
-
     try {
       if (changes.inserts) {
         for (const command of buildInsertQueries(this.knex, changes.inserts)) {
@@ -1065,14 +1071,17 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
       const query = queries[index];
-      const conn = options.connection ?? this.pool;
-      const data = await conn.query(query.text, params, options.rowAsArray);
-      results.push({
-        columns: data.meta,
-        rows: data.rows,
-        statement: query,
-        arrayMode: options.rowAsArray,
-      });
+      const conn = options.connection ?? await this.pool.getConnection()
+
+      await withReleasable(conn, async () => {
+        const data = await conn.query(query.text, params, options.rowAsArray);
+        results.push({
+          columns: data.meta,
+          rows: data.rows,
+          statement: query,
+          arrayMode: options.rowAsArray,
+        });
+      })
     }
 
     return options.multiple ? results : results[0];
@@ -1290,9 +1299,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async importLineReadCommand (_table: TableOrView, sqlString: string[], { executeOptions }: ImportFuncOptions): Promise<any> {
-    return await Promise.all(sqlString.map(async (sql) => {
+    for (const sql of sqlString) {
       await executeOptions.transaction.query(`${sql};`);
-    }))
+    }
   }
 
   async importCommitCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
