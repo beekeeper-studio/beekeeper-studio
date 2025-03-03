@@ -224,6 +224,26 @@ function testWith(options) {
         return { ...result[0] }
       }
     }
+
+    if (options.mode !== 'memory') {
+      describe("Param tests", () => {
+        it("Should be able to handle positional (?) params", async () => {
+          await util.paramTest(['?']);
+        })
+
+        it("Should be able to handle numbered (?1) params", async () => {
+          await util.paramTest(['?1', '?2', '?3']);
+        })
+
+        it("Should be able to handle named (:name) params", async () => {
+          await util.paramTest([':first', ':second', ':third']);
+        })
+
+        it("Should be able to handle named (@name) params", async () => {
+          await util.paramTest(['@first', '@second', '@third']);
+        })
+      })
+    }
   })
 }
 
