@@ -841,6 +841,12 @@ x-menuitem {
   img + x-label, x-swatch + x-label, x-icon + x-label, x-label + x-shortcut {
     margin-left: 12px;
   }
+  &[togglable] {
+    --checkmark-margin: 4px;
+    --checkmark-width: 16px;
+    --checkmark-height: 16px;
+    padding-left: 2px;
+  }
 }
 
 /*****************************************************************************************************************/

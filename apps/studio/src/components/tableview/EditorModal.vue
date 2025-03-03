@@ -49,16 +49,23 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu style="--align: end">
                 <x-menuitem
+                  togglable
                   @click.prevent="format"
                   v-show="!language.noBeautify"
                 >
                   <x-label>Format {{ language.label }}</x-label>
                 </x-menuitem>
-                <x-menuitem @click.prevent="minify">
+                <x-menuitem @click.prevent="minify" togglable>
                   <x-label>Minify text</x-label>
                 </x-menuitem>
-                <x-menuitem @click.prevent="toggleWrapText">
-                  <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
+                <x-menuitem
+                  togglable
+                  :toggled="wrapText"
+                  @click.prevent="toggleWrapText"
+                >
+                  <x-label class="flex-between">
+                    Toggle Wrap Text
+                  </x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
