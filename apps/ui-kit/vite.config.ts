@@ -22,7 +22,7 @@ export default defineConfig({
         style: resolve(__dirname, "lib/style.scss"),
         "index": resolve(__dirname, "lib/components/define.ts"),
         "table": resolve(__dirname, "lib/components/table/define.ts"),
-        "table-list": resolve(__dirname, "lib/components/table-list/define.ts"),
+        "entity-list": resolve(__dirname, "lib/components/entity-list/define.ts"),
         "sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/define.ts"
@@ -32,7 +32,7 @@ export default defineConfig({
           "lib/components/data-editor/define.ts"
         ),
         "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
-        "vue/table-list": resolve(__dirname, "lib/components/table-list/TableList.vue"),
+        "vue/entity-list": resolve(__dirname, "lib/components/entity-list/EntityList.vue"),
         "vue/sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/SqlTextEditor.vue"
@@ -41,6 +41,7 @@ export default defineConfig({
           __dirname,
           "lib/components/data-editor/DataEditor.vue"
         ),
+        "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
     },
     outDir: "dist",
