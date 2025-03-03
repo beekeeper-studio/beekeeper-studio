@@ -33,13 +33,13 @@ DuckDB allows you to import and query data from various file formats, such as CS
 For example, to query a CSV file without importing it into the database:
 
 ```sql
-SELECT * FROM csv('path/to/data.csv');
+SELECT * FROM 'path/to/data.csv';
 ```
 
 To create a table and import data from a CSV file:
 
 ```sql
-CREATE TABLE my_table AS SELECT * FROM read_csv_auto('path/to/data.csv');
+CREATE TABLE my_table AS FROM 'path/to/data.csv';
 ```
 
 For more details, please refer to the [DuckDB documentation](https://duckdb.org/docs/stable/data/overview).
