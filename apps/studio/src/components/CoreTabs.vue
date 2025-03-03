@@ -609,12 +609,12 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         tabName = queryTitle
       }
 
-        const result = {} as TransportOpenTab;
-        result.tabType = 'query'
-        result.title = tabName,
-        result.unsavedChanges = false
-        result.unsavedQueryText = optionalText
-        this.addTab(result)
+      const result = {} as TransportOpenTab;
+      result.tabType = 'query'
+      result.title = tabName,
+      result.unsavedChanges = false
+      result.unsavedQueryText = optionalText
+      this.addTab(result)
     },
     async loadTableCreate(table) {
       let method = null
@@ -1039,8 +1039,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.addTab(tab)
 
     },
-    createQueryFromItem(item) {
-      this.createQuery(item.text)
+    async createQueryFromItem(item) {
+      const withText = await this.$store.dispatch('data/usedQueries/findOne', item.id)
+      this.createQuery(withText.text)
     }
   },
   beforeDestroy() {
