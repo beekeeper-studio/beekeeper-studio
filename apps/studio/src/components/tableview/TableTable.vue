@@ -1047,19 +1047,6 @@ export default Vue.extend({
       if (this.isPrimaryKey(cell.getField())) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
-    openEditorMenuByShortcut() {
-      const range: RangeComponent = _.last(this.tabulator.getRanges())
-      const cell = range.getCells().flat()[0];
-      if (this.isEditorMenuDisabled(cell)) return
-      // FIXME maybe we can avoid calling child methods directly like this?
-      // it should be done by calling an event using this.$modal.show(modalName)
-      // or this.$trigger(AppEvent.something) if possible
-      const eventParams = {
-        cell,
-        isReadOnly: false
-      };
-      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
-    },
     quickFilterMenuItem(cell: CellComponent) {
       const symbols = [
         '=', '!=', '<', '<=', '>', '>='
@@ -1079,6 +1066,19 @@ export default Vue.extend({
           }
         })
       }
+    },
+    openEditorMenuByShortcut() {
+      const range: RangeComponent = _.last(this.tabulator.getRanges())
+      const cell = range.getCells().flat()[0];
+      // FIXME maybe we can avoid calling child methods directly like this?
+      // it should be done by calling an event using this.$modal.show(modalName)
+      // or this.$trigger(AppEvent.something) if possible
+      if (this.isPrimaryKey(cell.getField())) return;
+      const eventParams = {
+        cell,
+        isReadOnly: this.isEditorMenuDisabled(cell)
+      };
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
