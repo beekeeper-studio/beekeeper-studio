@@ -108,7 +108,6 @@ export default {
       if (this.selectedTable) {
         importOptions.table = this.getTable()
         await this.$store.dispatch('updateTableColumns', importOptions.table)
-        console.log(importOptions.table)
       } else {
         importOptions.table = null
       }

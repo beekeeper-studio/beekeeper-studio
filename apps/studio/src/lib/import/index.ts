@@ -186,10 +186,9 @@ export default class Import {
     const tablePreview = await this.getPreview()
     const { columns: columnsRaw, data } = this.mapRawData(tablePreview)
     
-    const { columns, dataAnalysis } = columnsRaw.reduce((acc, v, index) => {
+    const { columns, dataAnalysis } = columnsRaw.reduce((acc, v) => {
       const set = new Set()
 
-      if (index === 0) set.add('primary')
       acc.columns.push(v.title)
       acc.dataAnalysis.push(set)
 
@@ -208,7 +207,7 @@ export default class Import {
 
     return columns.map((col, arrInd) => ({
       columnName: col,
-      primary: dataAnalysis[arrInd].has('primary'),
+      primary: arrInd === 0,
       dataTypes: dataAnalysis[arrInd]
     }))
   }

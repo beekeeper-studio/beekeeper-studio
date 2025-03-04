@@ -29,10 +29,11 @@
 import { mapGetters, mapState } from 'vuex'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import Mutators, { emptyResult, buildNullValue } from '../../mixins/data_mutators'
-import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
+import { trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
+import { getDialectData } from '@shared/lib/dialects'
 export default {
   components: {
 
@@ -59,13 +60,95 @@ export default {
       nonNullableColumns: [],
       ignoreText: 'IGNORE',
       truncateTable: false,
-      runAsUpsert: false
+      runAsUpsert: false,
+      createTable: true,
+      importOptions: null
     }
   },
   computed: {
+    ...mapGetters(['dialect', 'dialectData']),
     ...mapGetters(['schemaTables']),
     ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
+    columnTypes() {
+      return this.dialectData.columnTypes.map((c) => c.pretty)
+    },
+    disabledFeatures() {
+      return this.dialectData.disabledFeatures
+    },
+    importDataTypes() {
+      return this.dialectData.importDataType
+    },
+    createTableColumns () {
+      const selectOptions = {
+        values: {[this.ignoreText]: this.ignoreText, ...this.columnTypes}
+      }
+
+      return [
+        {
+          title: 'Map to File Column',
+          field: 'fileColumn',
+          editable: false,
+          formatter: this.fileColumnFormatter,
+          cssClass: 'import-file-column'
+        },
+        {
+          title: 'New Table Column',
+          field: 'tableColumn',
+          editable: true,
+          formatter: this.fileColumnFormatter,
+          cssClass: 'import-file-column'
+        },
+        {
+          title: 'Type',
+          field: 'columnType',
+          editable: true,
+          editor: 'list',
+          editorParams: selectOptions,
+          cssClass: 'import-table-column',
+        },
+        (this.disabledFeatures?.nullable ? null : {
+          title: 'Nullable',
+          field: 'nullable',
+          headerTooltip: "Allow this column to contain a null value",
+          editor: vueEditor(CheckboxEditorVue),
+          formatter: vueFormatter(CheckboxFormatterVue),
+          formatterParams: {
+            editable: true
+          },
+          cellEdited: this.cellEdited,
+          editable: true,
+          width: 70,
+          cssClass: 'import-table-column',
+        }),
+        (this.disabledFeatures?.primary ? null : {
+          title: 'Primary',
+          field: 'primary',
+          tooltip: false,
+          editable: false,
+          formatter: vueFormatter(CheckboxFormatterVue),
+          formatterParams: {
+            editable: false
+          },
+          width: 70,
+          cssClass: 'read-only never-editable',
+        }),
+        {
+          field: 'trash-button',
+          title: null,
+          formatter: (_cell) => `<div class="dynamic-action" title="Remove mapping" />`,
+          width: 36,
+          minWidth: 36,
+          hozAlign: 'center',
+          cellClick: (e, cell) => {
+            cell.getRow().update({'tableColumn': this.ignoreText})
+          },
+          resizable: false,
+          cssClass: "remove-btn read-only",
+          editable: false
+        }
+      ]
+    },
     importColumns () {
       const selectOptions = {
         values: {[this.ignoreText]: this.ignoreText, ...this.tableColumnNames}
@@ -102,10 +185,14 @@ export default {
           editable: false
         }
       ]
-    }
+    },
   },
   methods: {
-    getTable({schema, name: tableName}) {
+    getTable(tableData) {
+      console.log(tableData)
+      if (!tableData) return null
+
+      const { schema, name: tableName } = tableData
       let foundSchema = ''
       if (this.schemaTables.length > 1) {
         foundSchema = this.schemaTables.find(s => s.schema === schema)
@@ -128,6 +215,19 @@ export default {
     },
     importKey() {
       return `new-import-${this.stepperProps.tabId}`
+    },
+    betterColumnName(cName) {
+      return cName.replace(/\s+/g, '_').toLowerCase()
+    },
+    getColumnType(dataTypes) {
+      const dt = new Set(dataTypes)
+      dt.delete('null')
+
+      if (dt.size > 1) {
+        return this.importDataTypes.defaultType
+      }
+
+      return this.importDataTypes[dt.values().next().value]
     },
     async tableData(importedColumns) {
       const { meta } = await this.$util.send('import/getFileAttributes', { id: this.importerId })
@@ -154,13 +254,22 @@ export default {
         }
       })
     },
+    async createTableData(importedColumns) {
+      const response = await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId })
+      console.log(response)
+
+      return response.map(resp => (
+        {
+          fileColumn: resp.columnName,
+          tableColumn: this.betterColumnName(resp.columnName),
+          columnType: this.getColumnType(resp.dataTypes),
+          nullable: resp.dataTypes.has('null'),
+          primary: resp.primary
+        }
+      ))
+    },
     findByColumnName (tableColumn) {
       return tableColumn ? this.table.columns.find(({columnName}) => columnName === tableColumn) : null
-    },
-    columnAttrFormatter (cellValue, data) {
-      if (cellValue) return cellValue
-
-      return this.getColumnAttributes(this.findByColumnName(data.tableColumn)) || ''
     },
     getColumnAttributes (column) {
       if (!column) return []
@@ -171,6 +280,23 @@ export default {
       ].filter(c => !!c)
     },
     async initTabulator() {
+      console.log('init tabulator', this.createTable)
+      if (this.createTable) {
+        this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+          data: await this.createTableData(),
+          columns: this.createTableColumns,
+          layout: 'fitColumns',
+          placeholder: 'No Data',
+          columnDefaults: {
+            resizable: false,
+            headerSort: false,
+            editable: false
+          },
+          height: 'auto'
+        })
+        return
+      }
+
       const importedColumns = this.table.columns.map(t => t.columnName)
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: await this.tableData(importedColumns),
@@ -242,33 +368,36 @@ export default {
       this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
+      console.log('I am here')
       const importOptions = await this.tablesToImport.get(this.importKey())
       this.table = this.getTable(importOptions.table)
 
-      // need to check if there is a table. If there isn't one, show the create + map. If there is, load columns and do that voo doo you do
-      
-      if (!this.table) {
+      if (this.table) {
         await this.$store.dispatch('updateTableColumns', this.table)
         this.table = this.getTable(importOptions.table)
+        const { tableColumnNames, nonNullableColumns } = this.table.columns.reduce((acc, column) => {
+          const columnText = [column.columnName, ...this.getColumnAttributes(column)]
+  
+          acc.tableColumnNames[column.columnName] = `${columnText.join(' ')}`
+  
+          if (!column.nullable && !column.hasDefault) {
+            acc.nonNullableColumns.push(column.columnName)
+          }
+  
+          return acc
+        }, { tableColumnNames: {}, nonNullableColumns: []})
+        this.tableColumnNames = tableColumnNames
+        this.nonNullableColumns = nonNullableColumns
+        this.createTable = false
       }
-      const { tableColumnNames, nonNullableColumns } = this.table.columns.reduce((acc, column) => {
-        const columnText = [column.columnName, ...this.getColumnAttributes(column)]
 
-        acc.tableColumnNames[column.columnName] = `${columnText.join(' ')}`
-
-        if (!column.nullable && !column.hasDefault) {
-          acc.nonNullableColumns.push(column.columnName)
-        }
-
-        return acc
-      }, { tableColumnNames: {}, nonNullableColumns: []})
-      this.tableColumnNames = tableColumnNames
-      this.nonNullableColumns = nonNullableColumns
       if (!importOptions.importProcessId) {
         this.importerId = await this.$util.send('import/init', { options: importOptions })
       } else {
         this.importerId = importOptions.importProcessId
       }
+
+      console.log('this.table', this.table)
 
       this.initTabulator()
     },
