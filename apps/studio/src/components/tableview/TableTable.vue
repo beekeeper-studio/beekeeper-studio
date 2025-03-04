@@ -874,17 +874,8 @@ export default Vue.extend({
     },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
-      if (!range) range = _.last(this.tabulator.getRanges())
-      this.addRowsToPendingDeletes(range.getRows());
-    },
-    getCleanSelectedRowData(cell) {
-      const selectedRows = this.tabulator.getSelectedRows()
-      const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]
-      const clean = rowData.map((row) => {
-        const m = this.modifyRowData(row.getData())
-        return this.$bks.cleanData(m, this.tableColumns)
-      })
-      return clean;
+      const rows = range ? range.getRows() : this.getSelectedRows()
+      this.addRowsToPendingDeletes(rows);
     },
     headerFormatter(_cell, formatterParams) {
       const { columnName, dataType } = formatterParams
@@ -1290,9 +1281,8 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      if (!range) range = _.last(this.tabulator.getRanges())
-
-      range.getRows().forEach((row) => {
+      const rows = range ? range.getRows() : this.getSelectedRows()
+      rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
           if (!this.primaryKeys?.includes(d)) {
@@ -1319,6 +1309,11 @@ export default Vue.extend({
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
+    },
+    getSelectedRows() {
+      const ranges: RangeComponent[] = this.tabulator.getRanges()
+      const unfilteredRows = ranges.flatMap((range) => range.getRows())
+      return _.uniqBy(unfilteredRows, (row) => row.getPosition())
     },
     addRowToPendingInserts(row) {
       row.getElement().classList.add('inserted')
