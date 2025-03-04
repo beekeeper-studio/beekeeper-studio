@@ -1054,10 +1054,13 @@ export default Vue.extend({
       // FIXME maybe we can avoid calling child methods directly like this?
       // it should be done by calling an event using this.$modal.show(modalName)
       // or this.$trigger(AppEvent.something) if possible
-      this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+      const eventParams = {
+        cell,
+        isReadOnly: false
+      };
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
     quickFilterMenuItem(cell: CellComponent) {
-      const me = this
       const symbols = [
         '=', '!=', '<', '<=', '>', '>='
       ]
@@ -1068,7 +1071,7 @@ export default Vue.extend({
           return {
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
-            action: async (e, cell: CellComponent) => {
+            action: async (_e, cell: CellComponent) => {
               const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
