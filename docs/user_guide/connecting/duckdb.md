@@ -22,4 +22,22 @@ You can also use your terminal to open a database in Beekeeper Studio so long as
 
 To create a new database, you can click the `Create` button or specify the location of the database file in the `Database File` input field.
 
-![Create a new database](../../assets/images/duckdb-1.gif)
+## Query files
+
+![Query a parquet file](../../assets/images/duckdb-2.gif)
+
+DuckDB allows you to import and query data from various file formats, such as CSV, Parquet, and JSON, using SQL commands.
+
+For example, to query a CSV file without importing it into the database:
+
+```sql
+SELECT * FROM 'path/to/data.csv';
+```
+
+To create a table and import data from a CSV file:
+
+```sql
+CREATE TABLE my_table AS FROM 'path/to/data.csv';
+```
+
+For more details, please refer to the [DuckDB documentation](https://duckdb.org/docs/stable/data/overview).
