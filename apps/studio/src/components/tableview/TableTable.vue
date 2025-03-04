@@ -935,6 +935,8 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
+        table: this.table.name,
+        schema: this.table.schema,
         persistenceID: this.tableId,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
