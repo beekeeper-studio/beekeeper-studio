@@ -30,6 +30,10 @@ If you want to integrate the AppImage into your system shell (so it appears in y
 ## DEB
 A repo is provided for Debian and Ubuntu 20.04+.
 
+DEB builds are provided for both x86_64 and ARM64 systems.
+
+Either set the repo up using the code below, or [download the deb file from the latest release](https://github.com/beekeeper-studio/beekeeper-studio/releases/latest), and it will automatically install the repository on installation.
+
 ```bash
 # Install our GPG key
 curl -fsSL https://deb.beekeeperstudio.io/beekeeper.key | sudo gpg --dearmor --output /usr/share/keyrings/beekeeper.gpg \
@@ -42,9 +46,11 @@ sudo apt update && sudo apt install beekeeper-studio -y
 ```
 
 ## RPM
-You can download the RPM from the [downloads page](https://beekeeperstudio.io/get), when installing the RPM, it will also install the .repo file.
 
-If you want to set it up manually:
+RPM builds are provided for both x86_64 and ARM64 systems
+
+Either set the repo up using the code below, or [download the rpm file from the latest release](https://github.com/beekeeper-studio/beekeeper-studio/releases/latest), and it will automatically install the repository on installation.
+
 ```bash
 # Download a copy of our .repo file (to handle software updates)
 sudo curl -o /etc/yum.repos.d/beekeeper-studio.repo https://rpm.beekeeperstudio.io/beekeeper-studio.repo
@@ -62,6 +68,17 @@ yum install beekeeper-studio
 dnf install beekeeper-studio
 ```
 
+## AUR
+
+AUR files are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
+
+Real AUR integration coming soon.
+
+## Flatpak
+
+AUR files are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
+
+Flathub integration coming soon.
 
 ## Snap
 
