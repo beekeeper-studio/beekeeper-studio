@@ -28,6 +28,7 @@ export interface IPlatformInfo {
   userDirectory: string,
   downloadsDirectory: string,
   homeDirectory: string,
+  pluginsDirectory: string,
   testMode: boolean,
   appDbPath: string,
   updatesDisabled: boolean,
