@@ -1,4 +1,5 @@
 import rawLog from "@bksLogger";
+import PluginRepositoryService from "./PluginRepositoryService";
 import { PluginRegistryEntry, PluginRepositoryInfo } from "./types";
 
 const log = rawLog.scope("PluginRegistry");
@@ -10,6 +11,8 @@ export default class PluginRegistry {
 
   private entries: PluginRegistryEntry[] = [];
   private repositoryInfos: Record<string, PluginRepositoryInfo> = {};
+  private repositoryService: PluginRepositoryService =
+    new PluginRepositoryService();
 
   async getEntries() {
     if (this.entries.length === 0) {
@@ -40,24 +43,13 @@ export default class PluginRegistry {
   }
 
   async fetchEntryInfo(entry: PluginRegistryEntry) {
-    let res: Response;
-
-    res = await fetch(
-      `https://raw.githubusercontent.com/${entry.repo}/HEAD/manifest.json`
+    log.debug(`Fetching info for plugin "${entry.id}"...`, entry);
+    const [owner, repo] = entry.repo.split("/");
+    const manifest = await this.repositoryService.fetchPluginManifest(
+      owner,
+      repo
     );
-    if (!res.ok) {
-      throw new Error(`Failed to fetch plugin manifest: ${res.statusText}`);
-    }
-    const manifest = await res.json();
-
-    res = await fetch(
-      `https://raw.githubusercontent.com/${entry.repo}/HEAD/README.md`
-    );
-    if (!res.ok) {
-      throw new Error(`Failed to fetch plugin manifest: ${res.statusText}`);
-    }
-    const readme = await res.text();
-
+    const readme = await this.repositoryService.fetchPluginReadme(owner, repo);
     return { manifest, readme };
   }
 }

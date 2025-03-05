@@ -11,6 +11,7 @@ export default class WebPluginLoader {
 
   constructor(readonly manifest: Manifest) { }
 
+  /** Starts the plugin */
   async load() {
     this.styleEl = this.loadStyle();
     document.head.appendChild(this.styleEl);

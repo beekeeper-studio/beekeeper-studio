@@ -76,13 +76,13 @@ export default class PluginFileManager {
       tmp?: boolean;
     } = {}
   ) {
-    const directory = this.getDirectoryOf(entry);
+    const directory = this.getDirectoryOf(manifest);
 
     try {
       fs.mkdirSync(directory, { recursive: true });
 
       const manifestUrl = `https://github.com/${entry.repo}/releases/download/${manifest.version}/manifest.json`;
-      log(`Downloading plugin manifest: "${manifestUrl}"...`);
+      log.debug(`Downloading plugin manifest: "${manifestUrl}"...`);
       await download({
         url: manifestUrl,
         directory,
@@ -93,7 +93,7 @@ export default class PluginFileManager {
       });
 
       const scriptUrl = `https://github.com/${entry.repo}/releases/download/${manifest.version}/index.js`;
-      log(`Downloading plugin script: "${scriptUrl}"...`);
+      log.debug(`Downloading plugin script: "${scriptUrl}"...`);
       await download({
         url: scriptUrl,
         directory,
@@ -104,7 +104,7 @@ export default class PluginFileManager {
       });
 
       const styleUrl = `https://github.com/${entry.repo}/releases/download/${manifest.version}/style.css`;
-      log(`Downloading plugin style: "${styleUrl}"...`);
+      log.debug(`Downloading plugin style: "${styleUrl}"...`);
       await download({
         url: styleUrl,
         directory,
@@ -114,14 +114,14 @@ export default class PluginFileManager {
           : PLUGIN_STYLE_FILENAME,
       }).catch((e) => {
         if (e instanceof PluginDownloadError && e.status === "NOT_FOUND") {
-          log("Plugin style not found. Skipping.");
+          log.debug("Plugin style not found. Skipping.");
           return;
         }
         throw e;
       });
     } catch (e) {
       fs.rmSync(directory, { recursive: true, force: true });
-      log("Download failed", e);
+      log.debug("Download failed", e);
       throw e;
     }
   }
@@ -133,7 +133,7 @@ export default class PluginFileManager {
   ) {
     await this.download(entry, manifest, { ...options, tmp: true });
 
-    const directory = this.getDirectoryOf(entry);
+    const directory = this.getDirectoryOf(manifest);
 
     // Rename old files
     fs.rmSync(path.join(directory, PLUGIN_MANIFEST_FILENAME), { force: true });
@@ -158,8 +158,8 @@ export default class PluginFileManager {
     fs.rmSync(path.join(directory, "tmp"), { recursive: true, force: true });
   }
 
-  remove(entry: PluginRegistryEntry) {
-    fs.rmSync(this.getDirectoryOf(entry), { recursive: true, force: true });
+  remove(manifest: Manifest) {
+    fs.rmSync(this.getDirectoryOf(manifest), { recursive: true, force: true });
   }
 
   scanPlugins(): Manifest[] {
@@ -197,8 +197,8 @@ export default class PluginFileManager {
     return manifests;
   }
 
-  getDirectoryOf(entry: PluginRegistryEntry) {
-    return path.join(platformInfo.pluginsDirectory, entry.id);
+  getDirectoryOf(manifest: Manifest) {
+    return path.join(platformInfo.pluginsDirectory, manifest.id);
   }
 
   readAsset(manifest: Manifest, filename: string): string {

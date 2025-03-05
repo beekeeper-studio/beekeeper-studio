@@ -36,7 +36,7 @@ export default class PluginManager {
     return entries;
   }
 
-  async getActivePlugins() {
+  async getEnabledPlugins() {
     return this.installedPlugins;
   }
 
@@ -48,7 +48,7 @@ export default class PluginManager {
 
   async installPlugin(
     entry: PluginRegistryEntry
-  ): Promise<PluginRepositoryInfo> {
+  ): Promise<Manifest> {
     if (this.installedPlugins.find((manifest) => manifest.id === entry.id)) {
       throw new Error(`Plugin "${entry.id}" is already installed.`);
     }
@@ -61,7 +61,7 @@ export default class PluginManager {
 
     log.debug(`Plugin "${entry.id}" installed!`);
 
-    return info;
+    return info.manifest;
   }
 
   async updatePlugin(
@@ -81,19 +81,19 @@ export default class PluginManager {
     return info;
   }
 
-  async uninstallPlugin(entry: PluginRegistryEntry): Promise<void> {
-    if (!this.installedPlugins.find((manifest) => manifest.id === entry.id)) {
-      throw new Error(`Plugin "${entry.id}" is not installed.`);
+  async uninstallPlugin(manifest: Manifest): Promise<void> {
+    if (!this.installedPlugins.find((plugin) => plugin.id === manifest.id)) {
+      throw new Error(`Plugin "${manifest.id}" is not installed.`);
     }
 
-    log.debug(`Uninstalling plugin "${entry.id}"...`);
+    log.debug(`Uninstalling plugin "${manifest.id}"...`);
 
-    this.fileManager.remove(entry);
+    this.fileManager.remove(manifest);
     this.installedPlugins = this.installedPlugins.filter(
-      (manifest) => manifest.id !== entry.id
+      (manifest) => manifest.id !== manifest.id
     );
 
-    log.debug(`Plugin "${entry.id}" uninstalled!`);
+    log.debug(`Plugin "${manifest.id}" uninstalled!`);
   }
 
   async checkForUpdate(plugin: PluginRegistryEntry): Promise<boolean> {
