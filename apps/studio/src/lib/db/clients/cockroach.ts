@@ -153,10 +153,11 @@ export class CockroachClient extends PostgresClient {
     };
   }
 
-  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
+  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<string> {
     const sql = `create database ${this.wrapIdentifier(databaseName)} encoding ${this.wrapIdentifier(charset)}`;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {

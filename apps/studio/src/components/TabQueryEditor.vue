@@ -936,6 +936,7 @@
             } else {
               result.tableName = "mytable"
             }
+            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
 
