@@ -271,7 +271,7 @@ export default Vue.extend({
       this.content = this.language.minify(this.content)
     },
     handleKeyUp(e: KeyboardEvent) {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && this.userKeymap !== 'vim') {
         this.$modal.hide(this.modalName)
       }
     }
