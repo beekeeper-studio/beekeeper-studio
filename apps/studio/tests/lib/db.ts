@@ -1600,9 +1600,9 @@ export class DBTestUtil {
       sqlite: "`bananas` = 'pears'",
       mysql: "`bananas` = 'pears'",
       postgresql: `"bananas" = 'pears'`,
-      sqlserver: "`bananas` = 'pears'",
-      oracle: "`bananas` = 'pears'",
-      firebird: `"bananas" = 'pears'`,
+      sqlserver: "[bananas] = 'pears'",
+      oracle: `"bananas" = 'pears'`,
+      firebird: `bananas = 'pears'`,
       duckdb: `"bananas" = 'pears'`,
       clickhouse: `"bananas" = 'pears'`,
     }
