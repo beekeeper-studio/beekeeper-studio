@@ -164,6 +164,9 @@ x-buttons {
     border-radius: 0;
   }
 }
+x-buttons > x-button.btn-rounded {
+  border-radius: 6px !important;
+}
 .btn-block {
   display: flex;
   justify-content: center;
