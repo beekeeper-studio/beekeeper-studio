@@ -63,6 +63,8 @@
       :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
       :plugins="textEditorPlugins"
+      :line-gutters="lineGutters"
+      :line-numbers="false"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -90,7 +92,7 @@ import {
   eachPaths,
 } from "@/lib/data/detail_view";
 import { mapGetters } from "vuex";
-import { EditorMarker } from "@/lib/editor/utils";
+import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
 import rawLog from "@bksLogger";
@@ -101,7 +103,7 @@ const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { TextEditor, DetailViewSidebarUpsell },
-  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize"],
+  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -233,6 +235,19 @@ export default Vue.extend({
     },
     lines() {
       return this.text?.split("\n") || [];
+    },
+    lineGutters() {
+      const lineGutters: LineGutter[] = []
+      _.forEach(this.signs, (_i, key) => {
+        const type = this.signs[key]
+        const line = findKeyPosition(this.text, [key]);
+        if (line === -1) {
+          log.warn(`Failed to sign key \`${key}\`. \`${key}\` is not found.`)
+          return
+        }
+        lineGutters.push({ line, type });
+      })
+      return lineGutters;
     },
     menuOptions() {
       return [

@@ -10,6 +10,7 @@
 </template>
 
 <script lang="ts">
+import "codemirror/addon/display/autorefresh";
 import "codemirror/addon/comment/comment";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/search/search";
@@ -41,6 +42,7 @@ import {
 } from "@/lib/editor/vim";
 import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
+import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -69,12 +71,12 @@ export default {
     "autoFocus",
     "lineNumbers",
     "foldGutter",
-    "foldWithoutLineNumbers",
     "removeJsonRootBrackets",
     "forceInitialize",
     "bookmarks",
     "foldAll",
     "unfoldAll",
+    "lineGutters",
   ],
   data() {
     return {
@@ -82,6 +84,7 @@ export default {
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
+      activeLineGutters: [],
       wasEditorFocused: false,
       firstInitialization: true,
     };
@@ -176,6 +179,9 @@ export default {
     bookmarks() {
       this.initializeBookmarks();
     },
+    lineGutters() {
+      this.initializeLineGutters();
+    },
     foldAll() {
       CodeMirror.commands.foldAll(this.editor)
     },
@@ -199,6 +205,16 @@ export default {
     async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
+      const gutters = []
+
+      const lineNumbers = this.lineNumbers ?? true
+      if (lineNumbers) {
+        gutters.push("CodeMirror-linenumbers")
+      }
+      if (this.foldGutter) {
+        gutters.push("CodeMirror-foldgutter")
+      }
+
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
@@ -219,14 +235,9 @@ export default {
         hintOptions: this.hintOptions,
         keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
-        ...(this.foldGutter && {
-          gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          foldGutter: true,
-        }),
-        ...(this.foldWithoutLineNumbers && {
-          // gutters: ["CodeMirror-foldgutter"],
-          foldGutter: true,
-        }),
+        gutters,
+        foldGutter: this.foldGutter,
+        autoRefresh: true,
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {
           foldGutter: {
@@ -244,10 +255,6 @@ export default {
       });
 
       const classNames = ["text-editor"];
-
-      if (this.foldWithoutLineNumbers) {
-        classNames.push("fold-without-line-numbers");
-      }
 
       if (this.removeJsonRootBrackets) {
         classNames.push("remove-json-root-brackets");
@@ -360,11 +367,12 @@ export default {
       this.$nextTick(() => {
         this.initializeMarkers();
         this.initializeBookmarks();
+        this.initializeLineGutters();
         this.$emit("update:initialized", true);
       })
     },
     initializeMarkers() {
-      const markers = this.markers || [];
+      const markers: EditorMarker[] = this.markers || [];
       if (!this.editor) return;
 
       // Cleanup existing bookmarks
@@ -421,6 +429,21 @@ export default {
 
         this.bookmarkInstances.push(mark);
       }
+    },
+    initializeLineGutters() {
+      const lineGutters = this.lineGutters || [];
+      if (!this.editor) return;
+
+      // Cleanup existing line gutters
+      this.activeLineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.removeLineClass(lineGutter.line, "gutter", "changed");
+      })
+      this.activeLineGutters = []
+
+      lineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.addLineClass(lineGutter.line, "gutter", "changed");
+        this.activeLineGutters.push(lineGutter)
+      })
     },
     destroyEditor() {
       if (this.editor) {
