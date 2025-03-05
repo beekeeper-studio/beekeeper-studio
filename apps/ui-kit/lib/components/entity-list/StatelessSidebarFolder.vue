@@ -21,8 +21,8 @@
         >folder</i>
         <span
           class="table-name truncate expand"
-          :title="schema"
-        >{{ schema }}</span>
+          :title="schema.name"
+        >{{ schema.name }}</span>
       </a>
     </div>
   </div>
