@@ -1,15 +1,20 @@
 .text-editor {
-  &.fold-without-line-numbers {
-    margin-left: -2rem;
-    .CodeMirror-linenumber {
-      display: none;
-    }
-  }
-
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;
     }
+  }
+
+  .CodeMirror-foldgutter {
+    padding-left: 1rem;
+  }
+
+  .CodeMirror-gutter-elt [class^=CodeMirror-foldgutter] {
+    padding-left: 1rem;
+  }
+
+  .CodeMirror-gutter-background.changed {
+    border-left: 2px solid $brand-warning;
   }
 
   .CodeMirror-guttermaker-subtle {
