@@ -37,4 +37,14 @@
       color: inherit;
     }
   }
+
+  .editable-marker:hover {
+    background-color: rgba($theme-base, 0.08);
+  }
+
+  .bks-error-marker {
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: rgba($brand-danger, 0.6);
+  }
 }

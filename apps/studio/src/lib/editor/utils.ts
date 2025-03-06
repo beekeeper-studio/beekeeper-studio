@@ -1,9 +1,12 @@
 import * as CodeMirrorPlugins from "@/lib/editor/CodeMirrorPlugins";
 import { TableOrView } from "../db/models";
 
-export interface EditorMarker {
+export interface EditorRange {
   from: { line: number; ch: number };
   to: { line: number; ch: number };
+}
+
+export interface EditorMarker extends EditorRange {
   message?: string;
   element?: HTMLElement;
   onClick?: (event: MouseEvent) => void;

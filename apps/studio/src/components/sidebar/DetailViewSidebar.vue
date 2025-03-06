@@ -65,6 +65,8 @@
       :plugins="textEditorPlugins"
       :line-gutters="lineGutters"
       :line-numbers="false"
+      :editable-ranges="editableRanges"
+      @bks-editable-range-change="handleEditableRangeChange"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -98,12 +100,14 @@ import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
+import JsonSourceMap from "json-source-map";
+import JsonPointer from "json-pointer";
 
 const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { TextEditor, DetailViewSidebarUpsell },
-  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs"],
+  props: ["value", "hidden", "expandablePaths", "editablePaths", "dataId", "title", "reinitialize", "signs"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -111,6 +115,7 @@ export default Vue.extend({
       foldAll: 0,
       unfoldAll: 0,
       restoredTruncatedPaths: [],
+      editableRangeErrors: [],
     };
   },
   watch: {
@@ -142,14 +147,7 @@ export default Vue.extend({
       return { name: "javascript", json: true };
     },
     text() {
-      if (this.empty) {
-        return "";
-      }
-      if (this.filter) {
-        const filtered = deepFilterObjectProps(this.processedValue, this.filter);
-        return JSON.stringify(filtered, null, 2);
-      }
-      return JSON.stringify(this.processedValue, null, 2);
+      return this.sourceMap.json
     },
     debouncedFilter: {
       get() {
@@ -158,6 +156,18 @@ export default Vue.extend({
       set: _.debounce(function (value) {
         this.filter = value;
       }, 500),
+    },
+    sourceMap() {
+      return JsonSourceMap.stringify(this.filteredValue, null, 2);
+    },
+    filteredValue() {
+      if (this.empty) {
+        return {}
+      }
+      if (!this.filter) {
+        return this.processedValue
+      }
+      return deepFilterObjectProps(this.processedValue, this.filter);
     },
     processedValue() {
       const clonedValue = _.cloneDeep(this.value)
@@ -231,6 +241,16 @@ export default Vue.extend({
           log.warn(e);
         }
       })
+      _.forEach(this.editableRangeErrors, ({ id, error }) => {
+        const line = findKeyPosition(this.text, [id]);
+        const { from, to } = findValueInfo(this.lines[line]);
+        markers.push({
+          type: "error",
+          from: { line, ch: from },
+          to: { line, ch: to },
+          message: error.message,
+        });
+      })
       return markers;
     },
     lines() {
@@ -248,6 +268,33 @@ export default Vue.extend({
         lineGutters.push({ line, type });
       })
       return lineGutters;
+    },
+    editableRanges() {
+      const editablePaths = this.editablePaths
+
+      if (_.isEmpty(editablePaths)) {
+        return []
+      }
+
+      const ranges = []
+
+      editablePaths.forEach((path: string) => {
+        const pointer = JsonPointer.compile(path.split("."))
+        const position = this.sourceMap.pointers[pointer]
+
+        if (!position) {
+          log.warn(`Unable to find editable path \`${path}\` in value object.`)
+          return
+        }
+
+        ranges.push({
+          id: path,
+          from: { line: position.value.line, ch: position.value.column },
+          to: { line: position.valueEnd.line, ch: position.valueEnd.column },
+        })
+      })
+
+      return ranges
     },
     menuOptions() {
       return [
@@ -291,6 +338,15 @@ export default Vue.extend({
     close() {
       this.$emit("close")
     },
+    handleEditableRangeChange: _.debounce(function ({ range, value }) {
+      try {
+        const parsed = JSON.parse(value)
+        this.editableRangeErrors = []
+        this.$emit("bks-json-value-change", {key: range.id, value: parsed});
+      } catch (error) {
+        this.editableRangeErrors.push({ id: range.id, error })
+      }
+    }, 250),
   },
 });
 </script>

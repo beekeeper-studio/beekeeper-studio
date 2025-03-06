@@ -42,7 +42,9 @@ import {
 } from "@/lib/editor/vim";
 import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
-import { EditorMarker, LineGutter } from "@/lib/editor/utils";
+import { EditorMarker, LineGutter, EditorRange } from "@/lib/editor/utils";
+
+const EDITABLE_MARKER_CLASSNAME = "editable-marker";
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -77,6 +79,7 @@ export default {
     "foldAll",
     "unfoldAll",
     "lineGutters",
+    "editableRanges",
   ],
   data() {
     return {
@@ -85,6 +88,7 @@ export default {
       bookmarkInstances: [],
       markInstances: [],
       activeLineGutters: [],
+      activeEditableRanges: new Map(),
       wasEditorFocused: false,
       firstInitialization: true,
     };
@@ -144,9 +148,6 @@ export default {
       this.editor.setSize(null, height);
       this.editor.refresh();
     },
-    readOnly() {
-      this.editor?.setOption("readOnly", this.readOnly);
-    },
     lineWrapping() {
       this.editor?.setOption("lineWrapping", this.lineWrapping);
     },
@@ -181,6 +182,9 @@ export default {
     },
     lineGutters() {
       this.initializeLineGutters();
+    },
+    editableRanges() {
+      this.initializeEditableRanges();
     },
     foldAll() {
       CodeMirror.commands.foldAll(this.editor)
@@ -288,17 +292,13 @@ export default {
         cm.addKeyMap(this.extraKeybindings);
       }
 
-      if (this.readOnly) {
-        cm.setOption("readOnly", this.readOnly);
-      }
-
       if (this.lineWrapping) {
         cm.setOption("lineWrapping", this.lineWrapping);
       }
 
-      cm.on("change", async (cm) => {
-        this.$emit("input", cm.getValue());
-      });
+      cm.on("beforeChange", this.handleBeforeChange)
+
+      cm.on("change", this.handleChange)
 
       cm.on("keydown", (_cm, e) => {
         if (this.$store.state.menuActive) {
@@ -379,6 +379,7 @@ export default {
         this.initializeMarkers();
         this.initializeBookmarks();
         this.initializeLineGutters();
+        this.initializeEditableRanges();
         this.$emit("update:initialized", true);
       })
     },
@@ -394,7 +395,7 @@ export default {
         let markInstance: TextMarker;
         if (marker.type === "error") {
           markInstance = this.editor.markText(marker.from, marker.to, {
-            className: "error",
+            className: "bks-error-marker",
           });
         } else if (marker.type === "highlight") {
           markInstance = this.editor.markText(marker.from, marker.to, {
@@ -455,6 +456,25 @@ export default {
         this.editor.addLineClass(lineGutter.line, "gutter", "changed");
         this.activeLineGutters.push(lineGutter)
       })
+    },
+    initializeEditableRanges() {
+      const ranges: EditorRange[] = this.editableRanges || [];
+      if (!this.editor) return;
+
+      // Cleanup existing bookmarks
+
+      (this.activeEditableRanges as Map<TextMarker, EditorRange>).forEach((_range, marker) => marker.clear());
+      this.activeEditableRanges = new Map();
+
+      for (const range of ranges) {
+        const marker = this.editor.markText(range.from, range.to, {
+          className: EDITABLE_MARKER_CLASSNAME,
+          inclusiveLeft: true, // text inserted on the left will be included
+          inclusiveRight: true, // text inserted on the right will be included
+          clearWhenEmpty: false,
+        });
+        this.activeEditableRanges.set(marker, range);
+      }
     },
     destroyEditor() {
       if (this.editor) {
@@ -582,6 +602,33 @@ export default {
     },
     handleSwitchUserKeymap(value) {
       this.initialize({ userKeymap: value });
+    },
+    handleBeforeChange(cm: CodeMirror.Editor, changeObj: CodeMirror.EditorChangeCancellable) {
+      if (this.readOnly && changeObj.origin !== 'setValue') {
+        const markers = cm.findMarksAt(changeObj.from)
+        for (const marker of markers) {
+          // If we are editing inside this marker, don't cancel.
+          if (marker.className === "editable-marker") {
+            return
+          }
+        }
+        changeObj.cancel()
+      }
+    },
+    handleChange(cm: CodeMirror.Editor, changeObj: CodeMirror.EditorChangeLinkedList) {
+      if (this.readOnly && changeObj.origin !== 'setValue') {
+        const markers = cm.findMarksAt(changeObj.from)
+        for (const marker of markers) {
+          // If we are editing inside this marker, don't cancel.
+          if (marker.className === EDITABLE_MARKER_CLASSNAME) {
+            const range = this.activeEditableRanges.get(marker);
+            const { from, to } = marker.find()
+            const value = cm.getRange(from, to)
+            this.$emit("bks-editable-range-change", { range, value })
+          }
+        }
+      }
+      this.$emit("input", cm.getValue());
     },
   },
   async mounted() {

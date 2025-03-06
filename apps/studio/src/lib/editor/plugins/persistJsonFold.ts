@@ -5,6 +5,7 @@
 
 import _ from "lodash";
 import { findKeyPosition } from "@/lib/data/detail_view";
+// FIXME (azmi): maybe use json-source-map instead?
 import { getLocation, JSONPath } from "jsonc-parser";
 import CodeMirror from "codemirror";
 
