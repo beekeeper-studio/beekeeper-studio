@@ -997,19 +997,22 @@ export default Vue.extend({
       tabulator.on('tableBuilt', () => {
         this.tabulator = tabulator
         this.tabulatorBuilt = true
+
+        tabulator.on("cellMouseUp", this.updateDetailView);
+        tabulator.on("headerMouseUp", this.updateDetailView);
+        tabulator.on(
+          "keyNavigate",
+          // This is slow if we do a long press. Debounce it so it feels good.
+          _.debounce(this.updateDetailView, 100, {
+            leading: true, trailing: true
+          })
+        );
+        // Tabulator range is reset after data is processed
+        tabulator.on("dataProcessed", this.updateDetailView);
+
         tabulator.modules.selectRange.restoreFocus()
+        this.updateDetailView();
       })
-      tabulator.on("cellMouseUp", this.updateDetailView);
-      tabulator.on("headerMouseUp", this.updateDetailView);
-      tabulator.on(
-        "keyNavigate",
-        // This is slow if we do a long press. Debounce it so it feels good.
-        _.debounce(this.updateDetailView, 100, {
-          leading: true, trailing: true
-        })
-      );
-      // Tabulator range is reset after data is processed
-      tabulator.on("dataProcessed", this.updateDetailView);
 
       this.updateSplit()
     },
