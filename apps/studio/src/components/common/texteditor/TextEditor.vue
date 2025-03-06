@@ -43,10 +43,7 @@ import {
 import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
 import { EditorMarker, LineGutter, EditorRange } from "@/lib/editor/utils";
-
-const EDITABLE_MARKER_CLASSNAME = "bks-editable-marker";
-const EDITABLE_MARKER_ACTIVE_CLASSNAME = "bks-editable-marker-active";
-const EDITABLE_MARKER_ATTR_ID = "data-bks-editable-id";
+import { TextEditorPlugin } from "@/lib/editor/plugins/TextEditorPlugin";
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -94,6 +91,7 @@ export default {
       activeEditableMarkerId: null,
       wasEditorFocused: false,
       firstInitialization: true,
+      installedPlugins: [],
     };
   },
   computed: {
@@ -367,8 +365,15 @@ export default {
       }
 
       if (this.plugins) {
-        this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
-          plugin(cm);
+        this.plugins.forEach((plugin: unknown) => {
+          if (typeof plugin === "function") {
+            plugin(cm);
+          } else {
+            const cls = plugin as new () => TextEditorPlugin;
+            const ins = new cls()
+            ins.initialize(cm);
+            this.installedPlugins.push(ins)
+          }
         });
       }
 
@@ -461,32 +466,15 @@ export default {
         this.activeLineGutters.push(lineGutter)
       })
     },
-    initializeEditableRanges() {
-      const ranges: EditorRange[] = this.editableRanges || [];
-      if (!this.editor) return;
-
-      // Cleanup existing bookmarks
-
-      this.activeEditableRanges.forEach((_id: string, { marker }) => marker.clear());
-      this.activeEditableRanges = new Map();
-
-      for (const range of ranges) {
-        const marker = this.editor.markText(range.from, range.to, {
-          className: EDITABLE_MARKER_CLASSNAME,
-          inclusiveLeft: true, // text inserted on the left will be included
-          inclusiveRight: true, // text inserted on the right will be included
-          clearWhenEmpty: false,
-          attributes: { [EDITABLE_MARKER_ATTR_ID]: range.id },
-        });
-        this.activeEditableRanges.set(range.id, { marker, range });
-      }
-    },
     destroyEditor() {
       if (this.editor) {
         this.editor
           .getWrapperElement()
           .parentNode.removeChild(this.editor.getWrapperElement());
       }
+      this.installedPlugins.forEach((plugin: TextEditorPlugin) => {
+        plugin.destroy()
+      })
     },
     showContextMenu(event) {
       const hasSelectedText = this.editor.getSelection();
