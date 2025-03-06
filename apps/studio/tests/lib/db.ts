@@ -842,6 +842,26 @@ export class DBTestUtil {
     expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
+  async checkForPoolConnectionReleasing() {
+    // libsql freaks out on this test for some reason
+    // so we're just going to skip for now
+    // FIXME: Investigate why this causes libsql timeouts for remote connections
+    // SQLite tests will mostly debug libsql also
+    if (
+      this.connection.connectionType === "libsql"
+    ) {
+      return;
+    }
+
+    const iterations = 50
+    const query = 'select * from one_record'
+    for (let i = 0; i < iterations; i++) {
+      const handle = await this.connection.query(query);
+      const result = await handle.execute()
+      expect(result).not.toBeNull()
+    }
+  }
+
   async queryTests() {
     await this.connection.executeQuery(this.options.queryTestsTableCreationQuery || 'create table one_record(one integer primary key)')
     await this.connection.executeQuery('insert into one_record values(1)')
@@ -857,7 +877,7 @@ export class DBTestUtil {
       clickhouse: "select 'a' as total, 'b' as total2 from one_record",
     }
     const q = await this.connection.query(sql1[this.dialect] || sql1.common)
-    if(!q) throw new Error("no query result")
+    if(!q) throw new Error("connection couldn't run the query")
     try {
       const result = await q.execute()
 
@@ -881,6 +901,8 @@ export class DBTestUtil {
       console.error("QUERY FAILED", ex)
       throw ex
     }
+
+    await this.checkForPoolConnectionReleasing()
 
     if (this.data.disabledFeatures?.alter?.multiStatement) {
       return;
@@ -1571,6 +1593,27 @@ export class DBTestUtil {
       { name: ID, bksType: 'UNKNOWN' },
       { name: BIN, bksType: 'BINARY' },
     ])
+  }
+
+  async getQueryForFilterTest() {
+    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb'> = {
+      sqlite: "`bananas` = 'pears'",
+      mysql: "`bananas` = 'pears'",
+      postgresql: `"bananas" = 'pears'`,
+      sqlserver: "[bananas] = 'pears'",
+      oracle: `"bananas" = 'pears'`,
+      firebird: `bananas = 'pears'`,
+      duckdb: `"bananas" = 'pears'`,
+      clickhouse: `"bananas" = 'pears'`,
+    }
+
+    const actualQuery = await this.connection.getQueryForFilter({
+      field: "bananas",
+      type: "=",
+      value: "pears",
+    })
+
+    expect(actualQuery).toBe(expectedQueries[this.dbType] || expectedQueries[this.dialect])
   }
 
   private async createTables() {

@@ -389,7 +389,7 @@ jobs:
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -397,6 +397,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.0.2
+
+      - name: Install dependencies for rpm deployment
+        run: sudo apt-get update && sudo apt-get install -y createrepo-c
 
       - name: Install deb-s3 from GitHub
         run: |
@@ -431,6 +434,12 @@ jobs:
           AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
           AWS_DEFAULT_REGION: "us-east-1"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
 
       - name: Publish RPM to R2
         if: needs.identify_channel.outputs.channel == 'latest'
@@ -442,3 +451,9 @@ jobs:
           R2_ENDPOINT: ${{secrets.cloudflare_endpoint}}
           AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED

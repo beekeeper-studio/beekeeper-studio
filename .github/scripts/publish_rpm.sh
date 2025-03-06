@@ -1,10 +1,5 @@
 #!/bin/bash
-set -e
-
-# Configuration
-R2_BUCKET="your-r2-bucket-name"
-R2_ENDPOINT="https://your-account-id.r2.cloudflarestorage.com"  # Replace with your R2 endpoint
-GPG_KEY_ID="your-gpg-key-id"
+set -euxo pipefail
 
 # Ensure required commands are installed
 for cmd in aws createrepo_c gpg rpmsign rpm; do
