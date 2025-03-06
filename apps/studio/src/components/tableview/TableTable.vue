@@ -469,9 +469,6 @@ export default Vue.extend({
       return result
     },
 
-    tableHolder() {
-      return this.$el.querySelector('.tabulator-tableholder')
-    },
     allColumnsSelected() {
       return this.columnsWithFilterAndOrder.every((column) => column.filter)
     },
@@ -904,7 +901,7 @@ export default Vue.extend({
         }
       }
       if (this.preLoadScrollPosition) {
-        this.tableHolder.scrollLeft = this.preLoadScrollPosition
+        this.getTableHolder().scrollLeft = this.preLoadScrollPosition
         this.preLoadScrollPosition = null
       }
     },
@@ -1661,10 +1658,12 @@ export default Vue.extend({
             const data = this.dataToTableData({ rows: r }, this.tableColumns, offset);
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
-            this.preLoadScrollPosition = this.tableHolder.scrollLeft
-            this.columnWidths = this.tabulator.getColumns().map((c) => {
-              return { field: c.getField(), width: c.getWidth()}
-            })
+            if (this.tableBuilt) {
+              this.preLoadScrollPosition = this.getTableHolder().scrollLeft
+              this.columnWidths = this.tabulator.getColumns().map((c) => {
+                return { field: c.getField(), width: c.getWidth()}
+              })
+            }
             resolve({
               last_page: 1,
               data
@@ -1870,6 +1869,9 @@ export default Vue.extend({
         this.split?.destroy()
         this.split = null
       }
+    },
+    getTableHolder() {
+      return this.$el.querySelector('.tabulator-tableholder')
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
