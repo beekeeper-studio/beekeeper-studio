@@ -9,6 +9,7 @@
     <div class="form-group col">
       <label for="default-database" required>Database File</label>
       <file-picker
+        :allowedFileExtensions="['duckdb']"
         v-model="config.defaultDatabase"
         input-id="default-database"
         editable

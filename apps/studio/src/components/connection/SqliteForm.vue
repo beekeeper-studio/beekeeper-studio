@@ -7,7 +7,7 @@
             for="Database"
             required
           >Database File</label>
-          <file-picker v-model="config.defaultDatabase" />
+          <file-picker v-model="config.defaultDatabase" :allowedFileExtensions="['db', 'sqlite', 'sqlite3']"/>
 
           <toggle-form-area
             title="Runtime Extensions"

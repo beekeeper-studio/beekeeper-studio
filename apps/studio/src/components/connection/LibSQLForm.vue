@@ -59,6 +59,7 @@
         <file-picker
           v-model="config.defaultDatabase"
           input-id="default-database"
+          :allowedFileExtensions="['db', 'sqlite', 'sqlite3']"
         />
         <snap-external-warning />
       </div>
