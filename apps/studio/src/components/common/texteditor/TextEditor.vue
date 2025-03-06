@@ -206,6 +206,7 @@ export default {
       this.destroyEditor();
 
       const gutters = []
+      let foldGutter: { indicatorOpen: HTMLElement, indicatorFolded: HTMLElement };
 
       const lineNumbers = this.lineNumbers ?? true
       if (lineNumbers) {
@@ -214,6 +215,16 @@ export default {
       if (this.foldGutter) {
         gutters.push("CodeMirror-foldgutter")
       }
+
+      const indicatorOpen = document.createElement("span");
+      indicatorOpen.classList.add("CodeMirror-foldgutter", "foldgutter", "btn-fab", "open-close");
+      indicatorOpen.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_down</i>`;
+
+      const indicatorFolded = document.createElement("span");
+      indicatorFolded.classList.add("CodeMirror-foldgutter", "foldgutter", "btn-fab", "open-close");
+      indicatorFolded.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_right</i>`;
+
+      foldGutter = { indicatorOpen, indicatorFolded };
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         lineNumbers: this.lineNumbers ?? true,
@@ -226,7 +237,6 @@ export default {
           [this.cmCtrlOrCmd("R")]: "replace",
           [this.cmCtrlOrCmd("Shift-R")]: "replaceAll",
         },
-        // @ts-expect-error not fully typed
         options: {
           closeOnBlur: false,
         },
@@ -236,7 +246,8 @@ export default {
         keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         gutters,
-        foldGutter: this.foldGutter,
+        // @ts-expect-error not fully typed
+        foldGutter,
         autoRefresh: true,
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {

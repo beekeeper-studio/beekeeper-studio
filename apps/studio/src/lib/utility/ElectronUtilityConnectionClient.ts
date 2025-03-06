@@ -281,4 +281,9 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   async importFinalCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
+
+  /** Returns a query for the given filter */
+  async getQueryForFilter(filter: TableFilter): Promise<string> {
+    return await Vue.prototype.$util.send('conn/getQueryForFilter', { filter });
+  }
 }

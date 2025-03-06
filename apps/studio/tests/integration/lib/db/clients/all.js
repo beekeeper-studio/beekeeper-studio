@@ -403,6 +403,10 @@ export function runCommonTests(getUtil, opts = {}) {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
     })
+
+    test("should generate filter query", async () => {
+      await getUtil().getQueryForFilterTest()
+    })
   })
 
   describe("Serialization", () => {

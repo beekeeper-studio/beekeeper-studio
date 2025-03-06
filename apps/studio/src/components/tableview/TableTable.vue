@@ -885,17 +885,8 @@ export default Vue.extend({
     },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
-      if (!range) range = _.last(this.tabulator.getRanges())
-      this.addRowsToPendingDeletes(range.getRows());
-    },
-    getCleanSelectedRowData(cell) {
-      const selectedRows = this.tabulator.getSelectedRows()
-      const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]
-      const clean = rowData.map((row) => {
-        const m = this.modifyRowData(row.getData())
-        return this.$bks.cleanData(m, this.tableColumns)
-      })
-      return clean;
+      const rows = range ? range.getRows() : this.getSelectedRows()
+      this.addRowsToPendingDeletes(rows);
     },
     headerFormatter(_cell, formatterParams) {
       const { columnName, dataType } = formatterParams
@@ -946,6 +937,8 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
+        table: this.table.name,
+        schema: this.table.schema,
         persistenceID: this.tableId,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
@@ -1011,7 +1004,13 @@ export default Vue.extend({
       })
       this.tabulator.on("cellMouseUp", this.updateDetailView);
       this.tabulator.on("headerMouseUp", this.updateDetailView);
-      this.tabulator.on("keyNavigate", this.updateDetailView);
+      this.tabulator.on(
+        "keyNavigate",
+        // This is slow if we do a long press. Debounce it so it feels good.
+        _.debounce(this.updateDetailView, 100, {
+          leading: true, trailing: true
+        })
+      );
       // Tabulator range is reset after data is processed
       this.tabulator.on("dataProcessed", this.updateDetailView);
 
@@ -1043,8 +1042,8 @@ export default Vue.extend({
         {
           label: createMenuItem('See details'),
           action: () => {
-            this.updateDetailView({ range })
             this.toggleOpenDetailView(true)
+            this.updateDetailView({ range })
           },
         },
       ]
@@ -1065,17 +1064,7 @@ export default Vue.extend({
       if (this.isPrimaryKey(cell.getField())) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
-    openEditorMenuByShortcut() {
-      const range: RangeComponent = _.last(this.tabulator.getRanges())
-      const cell = range.getCells().flat()[0];
-      if (this.isEditorMenuDisabled(cell)) return
-      // FIXME maybe we can avoid calling child methods directly like this?
-      // it should be done by calling an event using this.$modal.show(modalName)
-      // or this.$trigger(AppEvent.something) if possible
-      this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
-    },
     quickFilterMenuItem(cell: CellComponent) {
-      const me = this
       const symbols = [
         '=', '!=', '<', '<=', '>', '>='
       ]
@@ -1086,7 +1075,7 @@ export default Vue.extend({
           return {
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
-            action: async (e, cell: CellComponent) => {
+            action: async (_e, cell: CellComponent) => {
               const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
@@ -1094,6 +1083,19 @@ export default Vue.extend({
           }
         })
       }
+    },
+    openEditorMenuByShortcut() {
+      const range: RangeComponent = _.last(this.tabulator.getRanges())
+      const cell = range.getCells().flat()[0];
+      // FIXME maybe we can avoid calling child methods directly like this?
+      // it should be done by calling an event using this.$modal.show(modalName)
+      // or this.$trigger(AppEvent.something) if possible
+      if (this.isPrimaryKey(cell.getField())) return;
+      const eventParams = {
+        cell,
+        isReadOnly: this.isEditorMenuDisabled(cell)
+      };
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
@@ -1300,9 +1302,8 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      if (!range) range = _.last(this.tabulator.getRanges())
-
-      range.getRows().forEach((row) => {
+      const rows = range ? range.getRows() : this.getSelectedRows()
+      rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
           if (!this.primaryKeys?.includes(d)) {
@@ -1329,6 +1330,11 @@ export default Vue.extend({
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
+    },
+    getSelectedRows() {
+      const ranges: RangeComponent[] = this.tabulator.getRanges()
+      const unfilteredRows = ranges.flatMap((range) => range.getRows())
+      return _.uniqBy(unfilteredRows, (row) => row.getPosition())
     },
     addRowToPendingInserts(row) {
       row.getElement().classList.add('inserted')
@@ -1716,6 +1722,8 @@ export default Vue.extend({
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
     updateDetailView(options: { range?: RangeComponent } = {}) {
+      if (!this.openDetailView) return
+
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {

@@ -20,4 +20,21 @@
   .CodeMirror-guttermaker-subtle {
     color: rgba($theme-base, 0.25);
   }
+
+  .CodeMirror-gutter-elt .btn-fab {
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
+    color: rgba($theme-base, 0.37);
+
+    &:hover,
+    &:focus {
+      background-color: transparent;
+      color: $text-dark;
+    }
+
+    .dropdown-icon {
+      color: inherit;
+    }
+  }
 }
