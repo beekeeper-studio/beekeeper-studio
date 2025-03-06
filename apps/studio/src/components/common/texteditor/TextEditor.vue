@@ -44,7 +44,9 @@ import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
 import { EditorMarker, LineGutter, EditorRange } from "@/lib/editor/utils";
 
-const EDITABLE_MARKER_CLASSNAME = "editable-marker";
+const EDITABLE_MARKER_CLASSNAME = "bks-editable-marker";
+const EDITABLE_MARKER_ACTIVE_CLASSNAME = "bks-editable-marker-active";
+const EDITABLE_MARKER_ATTR_ID = "data-bks-editable-id";
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -89,6 +91,7 @@ export default {
       markInstances: [],
       activeLineGutters: [],
       activeEditableRanges: new Map(),
+      activeEditableMarkerId: null,
       wasEditorFocused: false,
       firstInitialization: true,
     };
@@ -333,6 +336,7 @@ export default {
           "update:cursorIndexAnchor",
           cm.getDoc().indexFromPos(cm.getCursor('anchor'))
         );
+        this.handleCursorActivity(cm);
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
@@ -463,7 +467,7 @@ export default {
 
       // Cleanup existing bookmarks
 
-      (this.activeEditableRanges as Map<TextMarker, EditorRange>).forEach((_range, marker) => marker.clear());
+      this.activeEditableRanges.forEach((_id: string, { marker }) => marker.clear());
       this.activeEditableRanges = new Map();
 
       for (const range of ranges) {
@@ -472,8 +476,9 @@ export default {
           inclusiveLeft: true, // text inserted on the left will be included
           inclusiveRight: true, // text inserted on the right will be included
           clearWhenEmpty: false,
+          attributes: { [EDITABLE_MARKER_ATTR_ID]: range.id },
         });
-        this.activeEditableRanges.set(marker, range);
+        this.activeEditableRanges.set(range.id, { marker, range });
       }
     },
     destroyEditor() {
@@ -608,7 +613,7 @@ export default {
         const markers = cm.findMarksAt(changeObj.from)
         for (const marker of markers) {
           // If we are editing inside this marker, don't cancel.
-          if (marker.className === "editable-marker") {
+          if (marker.className === EDITABLE_MARKER_CLASSNAME) {
             return
           }
         }
@@ -619,16 +624,44 @@ export default {
       if (this.readOnly && changeObj.origin !== 'setValue') {
         const markers = cm.findMarksAt(changeObj.from)
         for (const marker of markers) {
-          // If we are editing inside this marker, don't cancel.
-          if (marker.className === EDITABLE_MARKER_CLASSNAME) {
-            const range = this.activeEditableRanges.get(marker);
-            const { from, to } = marker.find()
-            const value = cm.getRange(from, to)
-            this.$emit("bks-editable-range-change", { range, value })
-          }
+          // @ts-expect-error not fully typed
+          const id = marker.attributes?.[EDITABLE_MARKER_ATTR_ID]
+          if (!id) continue
+
+          const { range } = this.activeEditableRanges.get(id);
+          const { from, to } = marker.find()
+          const value = cm.getRange(from, to)
+          this.$emit("bks-editable-range-change", { range, value })
         }
       }
       this.$emit("input", cm.getValue());
+    },
+    handleCursorActivity(cm: CodeMirror.Editor) {
+      const cursor = cm.getCursor();
+      const markers = cm.findMarksAt(cursor);
+      let activeMarkerId: string;
+
+      markers.forEach((marker) => {
+        // @ts-expect-error not fully typed
+        const id = marker.attributes?.[EDITABLE_MARKER_ATTR_ID]
+        if (!id) return
+
+        activeMarkerId = id
+
+        const markerEls = cm.getWrapperElement().querySelectorAll(`[${EDITABLE_MARKER_ATTR_ID}="${id}"]`)
+        markerEls.forEach((el) => {
+          el.classList.toggle(EDITABLE_MARKER_ACTIVE_CLASSNAME, true)
+        })
+      })
+
+      if (this.activeEditableMarkerId && this.activeEditableMarkerId !== activeMarkerId) {
+        const markerEls = cm.getWrapperElement().querySelectorAll(`[${EDITABLE_MARKER_ATTR_ID}="${this.activeEditableMarkerId}"]`)
+        markerEls.forEach((el) => {
+          el.classList.toggle(EDITABLE_MARKER_ACTIVE_CLASSNAME, false)
+        })
+      }
+
+      this.activeEditableMarkerId = activeMarkerId
     },
   },
   async mounted() {

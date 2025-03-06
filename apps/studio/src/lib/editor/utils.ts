@@ -2,6 +2,7 @@ import * as CodeMirrorPlugins from "@/lib/editor/CodeMirrorPlugins";
 import { TableOrView } from "../db/models";
 
 export interface EditorRange {
+  id?: string
   from: { line: number; ch: number };
   to: { line: number; ch: number };
 }
