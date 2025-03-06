@@ -1004,7 +1004,6 @@ export default Vue.extend({
       })
       tabulator.on("cellMouseUp", this.updateDetailView);
       tabulator.on("headerMouseUp", this.updateDetailView);
-      tabulator.on("keyNavigate", this.updateDetailView);
       tabulator.on(
         "keyNavigate",
         // This is slow if we do a long press. Debounce it so it feels good.
