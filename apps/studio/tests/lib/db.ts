@@ -1595,6 +1595,27 @@ export class DBTestUtil {
     ])
   }
 
+  async getQueryForFilterTest() {
+    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb'> = {
+      sqlite: "`bananas` = 'pears'",
+      mysql: "`bananas` = 'pears'",
+      postgresql: `"bananas" = 'pears'`,
+      sqlserver: "[bananas] = 'pears'",
+      oracle: `"bananas" = 'pears'`,
+      firebird: `bananas = 'pears'`,
+      duckdb: `"bananas" = 'pears'`,
+      clickhouse: `"bananas" = 'pears'`,
+    }
+
+    const actualQuery = await this.connection.getQueryForFilter({
+      field: "bananas",
+      type: "=",
+      value: "pears",
+    })
+
+    expect(actualQuery).toBe(expectedQueries[this.dbType] || expectedQueries[this.dialect])
+  }
+
   private async createTables() {
 
     const primary = (table: Knex.CreateTableBuilder) => {

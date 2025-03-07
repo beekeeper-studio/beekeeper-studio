@@ -564,4 +564,25 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     }
   }
 
+  async getQueryForFilter(filter: TableFilter): Promise<string> {
+    if (!this.knex) {
+      log.warn("No knex instance found. Cannot get query for filter.");
+      return ""
+    }
+
+    let queryBuilder: Knex.QueryBuilder;
+
+    if (filter.type == 'is') {
+      queryBuilder = this.knex.whereNull(filter.field);
+    } else if (filter.type == 'is not') {
+      queryBuilder = this.knex.whereNotNull(filter.field);
+    } else {
+      queryBuilder = this.knex.where(filter.field, filter.type, filter.value);
+    }
+
+    return queryBuilder.toString()
+      .split("where")[1]
+      .trim();
+  }
+
 }
