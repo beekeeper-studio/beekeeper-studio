@@ -15,7 +15,7 @@ export interface Version {
  * ```
  **/
 export function parseVersion(version: string) {
-  const versionTagRegex = /^(\d+)\.(\d+)\.(\d+)$/;
+  const versionTagRegex = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/;
   const match = versionTagRegex.exec(version) || [];
   const [major, minor, patch] = _.tail(match).map((x) => parseInt(x));
   return { major, minor, patch };
