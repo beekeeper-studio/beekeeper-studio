@@ -1,22 +1,22 @@
 import { useEffect, useRef } from "react";
 
-export default function BksDataEditor({ tables }) {
-  const dataEditorRef = useRef(null);
+export default function BksDataEditor({ entities }) {
+  const red = useRef(null);
 
   function handleQuerySubmit(event) {
-    alert(`Query: ${event.detail[0]}`);
+    alert(`Query: ${event.detail.query}`);
   }
 
   useEffect(() => {
-    if (dataEditorRef.current) {
-      dataEditorRef.current.addEventListener(
+    if (red.current) {
+      red.current.addEventListener(
         "bks-query-submit",
         handleQuerySubmit
       );
     }
     return () => {
-      if (dataEditorRef.current) {
-        dataEditorRef.current.removeEventListener(
+      if (red.current) {
+        red.current.removeEventListener(
           "bks-query-submit",
           handleQuerySubmit
         );
@@ -25,9 +25,9 @@ export default function BksDataEditor({ tables }) {
   }, []);
 
   useEffect(() => {
-    if (!dataEditorRef.current) return;
-    dataEditorRef.current.tables = tables;
-  }, [tables]);
+    if (!red.current) return;
+    red.current.entities = entities;
+  }, [entities]);
 
-  return <bks-data-editor ref={dataEditorRef} />;
+  return <bks-data-editor ref={red} />;
 }
