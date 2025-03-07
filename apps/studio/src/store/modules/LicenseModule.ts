@@ -120,8 +120,10 @@ export const LicenseModule: Module<State, RootState>  = {
       await context.dispatch('sync')
     },
     async update(_context, license: TransportLicenseKey) {
+      // This is to allow for dev switching
+      const isDevUpdate = window.platformInfo.isDevelopment && license.email == "fake_email";
       try {
-        const data = await CloudClient.getLicense(window.platformInfo.cloudUrl, license.email, license.key)
+        const data = isDevUpdate ? license : await CloudClient.getLicense(window.platformInfo.cloudUrl, license.email, license.key)
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
         license.maxAllowedAppRelease = data.maxAllowedAppRelease
