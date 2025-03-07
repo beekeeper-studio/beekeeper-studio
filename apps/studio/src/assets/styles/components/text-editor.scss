@@ -1,8 +1,22 @@
+@import "./text-editor-plugins/partial-read-only.scss";
+
 .text-editor {
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;
     }
+  }
+
+  .CodeMirror-foldgutter {
+    padding-left: 1rem;
+  }
+
+  .CodeMirror-gutter-elt [class^=CodeMirror-foldgutter] {
+    padding-left: 1rem;
+  }
+
+  .CodeMirror-gutter-background.changed {
+    border-left: 2px solid $brand-warning;
   }
 
   .CodeMirror-guttermaker-subtle {
@@ -24,5 +38,11 @@
     .dropdown-icon {
       color: inherit;
     }
+  }
+
+  .bks-error-marker {
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: rgba($brand-danger, 0.6);
   }
 }

@@ -85,9 +85,8 @@ div.sidebar.detail-view-sidebar {
     }
   }
 
-  .CodeMirror.text-editor {
+  .text-editor {
     width: 100%;
-    padding-left: 0.65rem;
 
     &, .CodeMirror-gutters {
       background-color: $theme-bg !important;
