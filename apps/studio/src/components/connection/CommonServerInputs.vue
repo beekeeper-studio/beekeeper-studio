@@ -20,10 +20,12 @@
           </option>
         </select>
       </div>
-      <div
-        class="form-group col"
-        v-show="config.socketPathEnabled"
-      >
+    </div>
+    <div
+      class="row gutter"
+      v-show="config.socketPathEnabled"
+    >
+      <div class="col form-group" :class="{ s9: supportsSocketPathWithCustomPort }">
         <label for="socketPath">Socket Path</label>
         <input
           id="socketPath"
@@ -31,6 +33,15 @@
           v-model="config.socketPath"
           type="text"
           name="socketPath"
+        >
+      </div>
+      <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
+        <label for="port">Port</label>
+        <input
+          type="number"
+          class="form-control"
+          name="port"
+          v-model.number="config.port"
         >
       </div>
     </div>
@@ -239,6 +250,9 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
       },
       supportsSocketPath() {
         return findClient(this.config.connectionType).supportsSocketPath
+      },
+      supportsSocketPathWithCustomPort() {
+        return findClient(this.config.connectionType).supportsSocketPathWithCustomPort
       },
     },
     methods: {

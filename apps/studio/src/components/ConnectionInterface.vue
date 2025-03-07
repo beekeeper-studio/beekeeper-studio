@@ -8,7 +8,10 @@
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
-          <div class="card-flat padding" :class="determineLabelColor">
+          <div class="card-flat padding" v-if="!isConfigReady">
+            <content-placeholder-heading />
+          </div>
+          <div class="card-flat padding" :class="determineLabelColor" v-else>
             <div class="flex flex-between">
               <h3 class="card-title" v-if="!pageTitle">
                 New Connection
@@ -168,12 +171,15 @@ import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm,
+    ContentPlaceholderHeading,
+  },
 
   data() {
     return {
@@ -188,7 +194,8 @@ export default Vue.extend({
       importError: null,
       sidebarShown: true,
       loadingSSOModalOpened: false,
-      version: this.$config.appVersion
+      version: this.$config.appVersion,
+      isConfigReady: false,
     }
   },
   computed: {
@@ -268,39 +275,46 @@ export default Vue.extend({
     }
   },
   async mounted() {
+    this.registerHandlers(this.rootBindings)
+    const components = [
+      this.$refs.sidebar.$refs.sidebar,
+      this.$refs.content
+    ]
+    const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
+    const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
+
+    this.split = Split(components, {
+      elementStyle: (_dimension, size) => ({
+        'flex-basis': `calc(${size}%)`,
+      }),
+      sizes: splitSizes,
+      gutterize: 8,
+      minSize: [25, 75],
+      expandToMin: true,
+      onDragEnd: () => {
+        const splitSizes = this.split.getSizes()
+        SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
+      }
+    } as Split.Options)
+
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
-    this.$util.send('appdb/saved/new').then((conn) => {
+
+    try {
+      const conn = await this.$util.send('appdb/saved/new')
       this.config = conn;
-    })
+      this.config.sshUsername = await window.main.fetchUsername()
+    } catch (e) {
+      log.error(e)
+      this.$noty.error(e.message)
+    } finally {
+      this.isConfigReady = true;
+    }
+
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
-    this.config.sshUsername = await window.main.fetchUsername()
-    this.$nextTick(() => {
-      const components = [
-        this.$refs.sidebar.$refs.sidebar,
-        this.$refs.content
-      ]
-      const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
-      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
-
-      this.split = Split(components, {
-        elementStyle: (_dimension, size) => ({
-          'flex-basis': `calc(${size}%)`,
-        }),
-        sizes: splitSizes,
-        gutterize: 8,
-        minSize: [25, 75],
-        expandToMin: true,
-        onDragEnd: () => {
-          const splitSizes = this.split.getSizes()
-          SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
-        }
-      } as Split.Options)
-    })
     await this.$store.dispatch('credentials/load')
-    this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
     if (this.split) {

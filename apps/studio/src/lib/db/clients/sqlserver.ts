@@ -520,6 +520,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async createDatabase(databaseName: string) {
     const sql = `create database ${this.wrapIdentifier(databaseName)}`;
     await this.driverExecuteSingle(sql)
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {

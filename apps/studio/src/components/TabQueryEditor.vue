@@ -89,11 +89,13 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
+              :disabled="this.tab.isRunning"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
+              :disabled="this.tab.isRunning"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -947,6 +949,7 @@
             } else {
               result.tableName = "mytable"
             }
+            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
 
