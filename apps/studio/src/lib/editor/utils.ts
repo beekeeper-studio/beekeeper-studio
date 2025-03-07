@@ -10,6 +10,11 @@ export interface EditorMarker {
   type: "error" | "highlight" | "custom"; // | "warning"
 }
 
+export interface LineGutter {
+  line: number;
+  type: "changed";
+}
+
 export const plugins = {
   autoquote: CodeMirrorPlugins.registerAutoquote,
   autoComplete: CodeMirrorPlugins.registerAutoComplete,
