@@ -768,7 +768,7 @@ export default Vue.extend({
 
       const paths = []
       for (const column of this.table.columns) {
-        if(this.isPrimaryKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
+        if(this.isPrimaryKey(column.columnName) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
         }
         paths.push(column.columnName)
@@ -936,6 +936,10 @@ export default Vue.extend({
     },
     isPrimaryKey(column) {
       return this.primaryKeys?.includes(column);
+    },
+    isForeignKey(column: string) {
+      const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column);
+      return keyDatas && keyDatas.length > 0
     },
     isGeneratedColumn(columnName: string) {
       const column: ExtendedTableColumn = this.table.columns.find((col: ExtendedTableColumn) => col.columnName === columnName);
