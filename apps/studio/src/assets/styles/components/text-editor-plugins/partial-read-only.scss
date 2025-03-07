@@ -1,0 +1,13 @@
+.CodeMirror.text-editor.bks-partial-read-only {
+  .CodeMirror-lines {
+    cursor: default;
+  }
+
+  .bks-editable-marker {
+    cursor: text;
+  }
+
+  .bks-editable-marker:hover, .bks-editable-marker-active {
+    background-color: rgba($theme-base, 0.08);
+  }
+}

@@ -8,6 +8,7 @@ import { TextEditorPlugin } from "./TextEditorPlugin";
 import CodeMirror from "codemirror";
 // FIXME (azmi): maybe use json-ource-map instead?
 
+const PARTIAL_READ_ONLY_CLASSNAME = "bks-partial-read-only";
 const EDITABLE_MARKER_CLASSNAME = "bks-editable-marker";
 const EDITABLE_MARKER_ACTIVE_CLASSNAME = "bks-editable-marker-active";
 const EDITABLE_MARKER_ATTR_ID = "data-bks-editable-id";
@@ -44,6 +45,8 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
 
     this.editor = editor;
 
+    this.editor.getWrapperElement().classList.add(PARTIAL_READ_ONLY_CLASSNAME);
+
     this.ranges.forEach((range) => {
       const marker = editor.markText(range.from, range.to, {
         className: EDITABLE_MARKER_CLASSNAME,
@@ -70,6 +73,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
       this.editor.off("beforeChange", this.handleBeforeChange);
       this.editor.off("change", this.handleChange);
       this.editor.off("cursorActivity", this.handleCursorActivity);
+      this.editor.getWrapperElement().classList.remove(PARTIAL_READ_ONLY_CLASSNAME);
     }
   }
 
