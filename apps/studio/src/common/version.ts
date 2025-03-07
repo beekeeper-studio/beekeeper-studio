@@ -23,9 +23,8 @@ export function parseVersion(version: string) {
 
 /** Check if version a is less than or equal to version b */
 export function isVersionLessThanOrEqual(a: Version, b: Version) {
-  if (a.major > b.major) return false;
-  if (a.minor > b.minor) return false;
-  if (a.patch > b.patch) return false;
-  return true;
+  return (a.major < b.major) ||
+         (a.major === b.major && a.minor < b.minor) ||
+         (a.major === b.major && a.minor === b.minor && a.patch <= b.patch);
 }
 
