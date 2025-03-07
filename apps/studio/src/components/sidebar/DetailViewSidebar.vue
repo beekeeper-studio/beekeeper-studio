@@ -65,8 +65,6 @@
       :plugins="textEditorPlugins"
       :line-gutters="lineGutters"
       :line-numbers="false"
-      :editable-ranges="editableRanges"
-      @bks-editable-range-change="handleEditableRangeChange"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -96,6 +94,7 @@ import {
 import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
+import PartialReadOnlyPlugin from "@/lib/editor/plugins/PartialReadOnlyPlugin";
 import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
@@ -327,7 +326,10 @@ export default Vue.extend({
       ]
     },
     textEditorPlugins() {
-      return [persistJsonFold]
+      return [
+        persistJsonFold,
+        new PartialReadOnlyPlugin(this.editableRanges, this.handleEditableRangeChange),
+      ]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
@@ -338,7 +340,7 @@ export default Vue.extend({
     close() {
       this.$emit("close")
     },
-    handleEditableRangeChange: _.debounce(function ({ range, value }) {
+    handleEditableRangeChange: _.debounce(function (range, value) {
       try {
         const parsed = JSON.parse(value)
         this.editableRangeErrors = []

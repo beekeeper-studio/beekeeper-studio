@@ -42,12 +42,15 @@ import {
 } from "@/lib/editor/vim";
 import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
-import { EditorMarker, LineGutter, EditorRange } from "@/lib/editor/utils";
+import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { TextEditorPlugin } from "@/lib/editor/plugins/TextEditorPlugin";
+import rawLog from '@bksLogger'
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
 }
+
+const log = rawLog.scope('TextEditor')
 
 export default {
   props: [
@@ -78,7 +81,6 @@ export default {
     "foldAll",
     "unfoldAll",
     "lineGutters",
-    "editableRanges",
   ],
   data() {
     return {
@@ -87,11 +89,9 @@ export default {
       bookmarkInstances: [],
       markInstances: [],
       activeLineGutters: [],
-      activeEditableRanges: new Map(),
-      activeEditableMarkerId: null,
       wasEditorFocused: false,
       firstInitialization: true,
-      installedPlugins: [],
+      initializedPlugins: [],
     };
   },
   computed: {
@@ -149,6 +149,9 @@ export default {
       this.editor.setSize(null, height);
       this.editor.refresh();
     },
+    readOnly() {
+      this.editor?.setOption("readOnly", this.readOnly);
+    },
     lineWrapping() {
       this.editor?.setOption("lineWrapping", this.lineWrapping);
     },
@@ -184,14 +187,17 @@ export default {
     lineGutters() {
       this.initializeLineGutters();
     },
-    editableRanges() {
-      this.initializeEditableRanges();
-    },
     foldAll() {
       CodeMirror.commands.foldAll(this.editor)
     },
     unfoldAll() {
       CodeMirror.commands.unfoldAll(this.editor)
+    },
+    plugins() {
+      this.destroyPlugins();
+      if (this.editor) {
+        this.initializePlugins(this.editor);
+      }
     },
   },
   methods: {
@@ -297,9 +303,9 @@ export default {
         cm.setOption("lineWrapping", this.lineWrapping);
       }
 
-      cm.on("beforeChange", this.handleBeforeChange)
-
-      cm.on("change", this.handleChange)
+      cm.on("change", async (cm) => {
+        this.$emit("input", cm.getValue());
+      });
 
       cm.on("keydown", (_cm, e) => {
         if (this.$store.state.menuActive) {
@@ -334,7 +340,6 @@ export default {
           "update:cursorIndexAnchor",
           cm.getDoc().indexFromPos(cm.getCursor('anchor'))
         );
-        this.handleCursorActivity(cm);
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
@@ -364,18 +369,7 @@ export default {
         }
       }
 
-      if (this.plugins) {
-        this.plugins.forEach((plugin: unknown) => {
-          if (typeof plugin === "function") {
-            plugin(cm);
-          } else {
-            const cls = plugin as new () => TextEditorPlugin;
-            const ins = new cls()
-            ins.initialize(cm);
-            this.installedPlugins.push(ins)
-          }
-        });
-      }
+      this.initializePlugins(cm)
 
       if (this.firstInitialization && this.focus) {
         cm.focus();
@@ -388,7 +382,6 @@ export default {
         this.initializeMarkers();
         this.initializeBookmarks();
         this.initializeLineGutters();
-        this.initializeEditableRanges();
         this.$emit("update:initialized", true);
       })
     },
@@ -466,15 +459,38 @@ export default {
         this.activeLineGutters.push(lineGutter)
       })
     },
+    initializePlugins(editor: CodeMirror.Editor) {
+      this.plugins?.forEach((plugin: ((editor: CodeMirror.Editor) => Function) | TextEditorPlugin) => {
+        try {
+          if (typeof plugin === "function") {
+            const destroy = plugin(editor);
+            this.initializedPlugins.push({ destroy });
+          } else {
+            plugin.initialize(editor);
+            this.initializedPlugins.push(plugin);
+          }
+        } catch (e) {
+          log.error("Error initializing plugin", e)
+        }
+      });
+    },
     destroyEditor() {
+      this.destroyPlugins();
       if (this.editor) {
         this.editor
           .getWrapperElement()
           .parentNode.removeChild(this.editor.getWrapperElement());
       }
-      this.installedPlugins.forEach((plugin: TextEditorPlugin) => {
-        plugin.destroy()
+    },
+    destroyPlugins() {
+      this.initializedPlugins.forEach((plugin: TextEditorPlugin) => {
+        try {
+          plugin.destroy()
+        } catch (e) {
+          log.error("Error destroying plugin", e)
+        }
       })
+      this.initializedPlugins = []
     },
     showContextMenu(event) {
       const hasSelectedText = this.editor.getSelection();
@@ -595,61 +611,6 @@ export default {
     },
     handleSwitchUserKeymap(value) {
       this.initialize({ userKeymap: value });
-    },
-    handleBeforeChange(cm: CodeMirror.Editor, changeObj: CodeMirror.EditorChangeCancellable) {
-      if (this.readOnly && changeObj.origin !== 'setValue') {
-        const markers = cm.findMarksAt(changeObj.from)
-        for (const marker of markers) {
-          // If we are editing inside this marker, don't cancel.
-          if (marker.className === EDITABLE_MARKER_CLASSNAME) {
-            return
-          }
-        }
-        changeObj.cancel()
-      }
-    },
-    handleChange(cm: CodeMirror.Editor, changeObj: CodeMirror.EditorChangeLinkedList) {
-      if (this.readOnly && changeObj.origin !== 'setValue') {
-        const markers = cm.findMarksAt(changeObj.from)
-        for (const marker of markers) {
-          // @ts-expect-error not fully typed
-          const id = marker.attributes?.[EDITABLE_MARKER_ATTR_ID]
-          if (!id) continue
-
-          const { range } = this.activeEditableRanges.get(id);
-          const { from, to } = marker.find()
-          const value = cm.getRange(from, to)
-          this.$emit("bks-editable-range-change", { range, value })
-        }
-      }
-      this.$emit("input", cm.getValue());
-    },
-    handleCursorActivity(cm: CodeMirror.Editor) {
-      const cursor = cm.getCursor();
-      const markers = cm.findMarksAt(cursor);
-      let activeMarkerId: string;
-
-      markers.forEach((marker) => {
-        // @ts-expect-error not fully typed
-        const id = marker.attributes?.[EDITABLE_MARKER_ATTR_ID]
-        if (!id) return
-
-        activeMarkerId = id
-
-        const markerEls = cm.getWrapperElement().querySelectorAll(`[${EDITABLE_MARKER_ATTR_ID}="${id}"]`)
-        markerEls.forEach((el) => {
-          el.classList.toggle(EDITABLE_MARKER_ACTIVE_CLASSNAME, true)
-        })
-      })
-
-      if (this.activeEditableMarkerId && this.activeEditableMarkerId !== activeMarkerId) {
-        const markerEls = cm.getWrapperElement().querySelectorAll(`[${EDITABLE_MARKER_ATTR_ID}="${this.activeEditableMarkerId}"]`)
-        markerEls.forEach((el) => {
-          el.classList.toggle(EDITABLE_MARKER_ACTIVE_CLASSNAME, false)
-        })
-      }
-
-      this.activeEditableMarkerId = activeMarkerId
     },
   },
   async mounted() {
