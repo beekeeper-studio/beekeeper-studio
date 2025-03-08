@@ -9,6 +9,7 @@ import username from 'username';
 import { execSync } from 'child_process';
 import 'electron-log/preload';
 import pluralize from 'pluralize';
+import { Manifest } from '@/lib/plugins';
 
 
 const electron = require('@electron/remote');
@@ -71,6 +72,15 @@ export const api = {
   },
   basename(p: string, ext?: string): string {
     return path.basename(p, ext);
+  },
+  /** Read a file from the plugins folder */
+  async readPluginAsset(id: Manifest["id"], filename: string): Promise<string> {
+    const platformInfo = await ipcRenderer.invoke('platformInfo')
+    const filePath = path.join(platformInfo.pluginsDirectory, id, path.normalize(filename));
+    if (!fileExistsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+    return fs.readFileSync(filePath, { encoding: 'utf-8' });
   },
   readVimrc(pathToVimrc?: string): string[] {
     const vimrcPath = path.join(pathToVimrc ?? userDirectory, ".beekeeper.vimrc");
