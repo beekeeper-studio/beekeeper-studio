@@ -10,6 +10,7 @@
 </template>
 
 <script lang="ts">
+import "codemirror/addon/display/autorefresh";
 import "codemirror/addon/comment/comment";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/search/search";
@@ -207,6 +208,7 @@ export default {
       indicatorFolded.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_right</i>`;
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
+        autoRefresh: true,
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
         theme: "monokai",
