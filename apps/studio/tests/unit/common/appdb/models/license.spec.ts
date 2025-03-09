@@ -67,6 +67,11 @@ describe("License", () => {
     expect(isVersionLessThanOrEqual(v`1.2.1`, v`1.2.3`)).toBe(true);
     expect(isVersionLessThanOrEqual(v`1.2.3`, v`1.0.0`)).toBe(false);
     expect(isVersionLessThanOrEqual(v`1.3.2`, v`1.2.3`)).toBe(false);
+
+    expect(isVersionLessThanOrEqual(v`1.99.99`, v`2.2.3`)).toBe(true);
+    expect(isVersionLessThanOrEqual(v`1.1.99`, v`1.2.3`)).toBe(true);
+    expect(isVersionLessThanOrEqual(v`1.1.99-beta.1`, v`1.1.99-beta.2`)).toBe(true);
+    expect(isVersionLessThanOrEqual(v`1.1.99`, v`1.2.0-beta.1`)).toBe(true);
   });
 
   describe("License status", () => {
