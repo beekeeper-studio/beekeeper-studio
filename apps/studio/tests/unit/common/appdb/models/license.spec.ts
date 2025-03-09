@@ -166,11 +166,11 @@ describe("License", () => {
 
     // Regression tests for version comparison
     it("Should properly compare versions", async () => {
-      expect(isVersionLessThanOrEqual(parseVersion("v2.4.6"), parseVersion("v5.7.2")));
-      expect(isVersionLessThanOrEqual(parseVersion("v2.5.1-beta.4"), parseVersion("v5.0.0")));
-      expect(!isVersionLessThanOrEqual(parseVersion("v6.3.7"), parseVersion("v4.2.1")));
-      expect(!isVersionLessThanOrEqual(parseVersion("v3.1.3-beta.4"), parseVersion("v1.8.1")));
-      expect(isVersionLessThanOrEqual(parseVersion("v5.0.0"), parseVersion("v5.0.0")));
+      expect(isVersionLessThanOrEqual(parseVersion("v2.4.6"), parseVersion("v5.7.2"))).toBeTruthy();
+      expect(isVersionLessThanOrEqual(parseVersion("v2.5.1-beta.4"), parseVersion("v5.0.0"))).toBeTruthy();
+      expect(isVersionLessThanOrEqual(parseVersion("v6.3.7"), parseVersion("v4.2.1"))).not.toBeTruthy;
+      expect(isVersionLessThanOrEqual(parseVersion("v3.1.3-beta.4"), parseVersion("v1.8.1"))).not.toBeTruthy();
+      expect(isVersionLessThanOrEqual(parseVersion("v5.0.0"), parseVersion("v5.0.0"))).toBeTruthy();
     })
   });
 });
