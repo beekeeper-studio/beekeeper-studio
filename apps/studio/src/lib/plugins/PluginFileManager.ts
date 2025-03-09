@@ -165,14 +165,11 @@ export default class PluginFileManager {
   scanPlugins(): Manifest[] {
     const manifests: Manifest[] = [];
 
-    console.log(0)
     for (const dir of fs.readdirSync(platformInfo.pluginsDirectory)) {
-    console.log(1, dir)
       if (!fs.statSync(path.join(platformInfo.pluginsDirectory, dir)).isDirectory()) {
         continue;
       }
 
-      console.log(2)
       if (
         !fs.existsSync(
           path.join(platformInfo.pluginsDirectory, dir, PLUGIN_MANIFEST_FILENAME)
@@ -184,27 +181,31 @@ export default class PluginFileManager {
         log.warn(`Found folder without manifest or script: ${dir}. Skipping.`);
         continue;
       }
-      console.log(3)
 
       const manifestContent = fs.readFileSync(
         path.join(platformInfo.pluginsDirectory, dir, PLUGIN_MANIFEST_FILENAME),
         { encoding: "utf-8" }
       );
-      console.log(4, manifestContent)
 
       try {
         manifests.push(JSON.parse(manifestContent));
-        console.log(5)
       } catch (e) {
         log.error(`Failed to parse manifest for plugin "${dir}":`, e);
       }
     }
-    console.log(6, manifests)
 
     return manifests;
   }
 
   getDirectoryOf(entry: PluginRegistryEntry) {
     return path.join(platformInfo.pluginsDirectory, entry.id);
+  }
+
+  readAsset(manifest: Manifest, filename: string): string {
+    const filePath = path.join(platformInfo.pluginsDirectory, manifest.id, path.normalize(filename));
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+    return fs.readFileSync(filePath, { encoding: 'utf-8' });
   }
 }

@@ -1,14 +1,12 @@
 import rawLog from "@bksLogger";
 import Vue from "vue";
-import Plugin from "../Plugin";
 import { Manifest } from "../types";
-import WebPluginInjector from "./WebPluginInjector";
+import WebPluginLoader from "./WebPluginLoader";
 
-const log = rawLog.scope("WebPluginInjectorManager");
+const log = rawLog.scope("WebPluginManager");
 
 export default class WebPluginManager {
-  injectors: WebPluginInjector[] = [];
-  pluginInstances: Record<Manifest["id"], Plugin> = {};
+  loaders: WebPluginLoader[] = [];
 
   private initialized = false;
 
@@ -19,50 +17,39 @@ export default class WebPluginManager {
     }
 
     const plugins: Manifest[] = await Vue.prototype.$util.send(
-      "plugin/getInstalledPlugins"
+      "plugin/getActivePlugins"
     );
 
     for (const plugin of plugins) {
-      this.injectors.push(new WebPluginInjector(plugin));
+      this.loaders.push(new WebPluginLoader(plugin));
     }
 
     // For debugging
-    globalThis.webPluginInjectorManager = this;
+    globalThis.webPluginManager = this;
 
-    await this.injectPlugins();
+    await this.loadPlugins();
 
     this.initialized = true;
   }
 
-  private async injectPlugins() {
-    for (const injector of this.injectors) {
+  private async loadPlugins() {
+    for (const loader of this.loaders) {
       try {
-        const pluginInstance = await injector.construct();
-        await injector.injectStyle();
-        pluginInstance.onLoad();
-        this.pluginInstances[injector.manifest.id] = pluginInstance;
+        await loader.load();
       } catch (err) {
         log.error(err);
       }
     }
   }
 
-  async reinjectPlugin(id: Manifest["id"], type: "script" | "style") {
-    const injector = this.injectors.find(
-      (injector) => injector.manifest.id === id
-    );
+  async reloadPlugin(id: Manifest["id"]) {
+    const loader = this.loaders.find((loader) => loader.manifest.id === id);
 
-    if (!injector) {
+    if (!loader) {
       throw new Error(`Plugin ${id} not found`);
     }
 
-    if (type === "script") {
-      this.pluginInstances[id].onDestroy();
-      this.pluginInstances[id] = await injector.construct();
-      this.pluginInstances[id].onLoad();
-    } else if (type === "style") {
-      await injector.removeStyle().catch((err) => log.error(err));
-      await injector.injectStyle();
-    }
+    await loader.unload();
+    await loader.load();
   }
 }

@@ -36,7 +36,7 @@ export default class PluginManager {
     return entries;
   }
 
-  async getInstalledPlugins() {
+  async getActivePlugins() {
     return this.installedPlugins;
   }
 
@@ -105,5 +105,9 @@ export default class PluginManager {
     }
     const head = await this.registry.fetchEntryInfo(plugin);
     return head.manifest.version > installedPlugin.version;
+  }
+
+  async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
+    return this.fileManager.readAsset(manifest, filename);
   }
 }
