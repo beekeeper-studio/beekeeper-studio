@@ -1,4 +1,4 @@
-import { Manifest, PluginManager, PluginRegistryEntry } from "@/lib/plugins";
+import { Manifest, PluginManager, PluginRegistryEntry } from "@/services/plugin";
 
 interface IPluginHandlers {
   "plugin/entries": ({ filter }: { filter?: "installed" | "all" }) => Promise<PluginRegistryEntry[]>

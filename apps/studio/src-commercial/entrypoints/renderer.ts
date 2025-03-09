@@ -31,7 +31,7 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
-import { WebPluginManager } from '@/lib/plugins/web'
+import { WebPluginManager } from '@/services/plugin/web'
 
 (async () => {
 

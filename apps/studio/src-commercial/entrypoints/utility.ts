@@ -24,7 +24,7 @@ import { PluginHandlers } from '@/handlers/pluginHandlers';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
-import { PluginManager } from '@/lib/plugins';
+import { PluginManager } from '@/services/plugin';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()

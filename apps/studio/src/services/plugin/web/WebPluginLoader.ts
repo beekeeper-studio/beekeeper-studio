@@ -20,11 +20,8 @@ export default class WebPluginLoader {
   }
 
   async unload() {
-    await this.plugin.onDestroy();
-    this.plugin = null;
-
-    this.styleEl.remove();
-    this.styleEl = null;
+    await this.unloadScript();
+    this.unloadStyle();
   }
 
   private async loadScript() {
@@ -65,5 +62,15 @@ export default class WebPluginLoader {
     };
 
     return el;
+  }
+
+  private async unloadScript() {
+    await this.plugin.onDestroy();
+    this.plugin = null;
+  }
+
+  private unloadStyle() {
+    this.styleEl.remove();
+    this.styleEl = null;
   }
 }
