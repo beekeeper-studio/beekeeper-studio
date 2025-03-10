@@ -23,6 +23,8 @@ export interface TransportOpenTab extends Transport {
   connectionId: number,
   workspaceId?: number,
   filters?: string,
+  lastActive?: Date|null,
+  deletedAt?: Date|null 
   isRunning: boolean, // not on the actual model, but used in frontend
 }
 
