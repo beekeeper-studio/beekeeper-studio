@@ -62,7 +62,6 @@ import LicenseExpiredModal from "@/components/license/LicenseExpiredModal.vue";
 import LifetimeLicenseExpiredModal from "@/components/license/LifetimeLicenseExpiredModal.vue";
 import TrialExpiredModal from "@/components/license/TrialExpiredModal.vue";
 import UtilDiedModal from "@/components/UtilDiedModal.vue";
-import type { LicenseStatus } from "@/lib/license";
 import TimeAgo from "javascript-time-ago";
 import Noty from "noty";
 import { AppEvent } from "./common/AppEvent";
@@ -132,8 +131,19 @@ export default Vue.extend({
     database() {
       log.info("database changed", this.database);
     },
-    themeValue() {
-      document.body.className = `theme-${this.themeValue}`;
+    themeValue: {
+      handler(newTheme) {
+        if (typeof newTheme === "string") {
+          this.applyThemeCSS(newTheme);
+        } else if (newTheme && newTheme.themeId) {
+          this.applyThemeCSS(
+            newTheme.themeId,
+            newTheme.css,
+            newTheme.baseTheme
+          );
+        }
+      },
+      immediate: true,
     },
     status(curr, prev) {
       this.$store.dispatch("updateWindowTitle");
@@ -162,38 +172,18 @@ export default Vue.extend({
         () => this.$store.dispatch("licenses/updateAll"),
         globals.licenseCheckInterval
       );
-
-      // Initialize settings
       await this.$store.dispatch("settings/initializeSettings");
-
-      // Initialize themes (ensure this happens after settings are loaded)
       if (this.themeValue) {
-        document.body.className = `theme-${this.themeValue}`;
-
-        // Apply the theme CSS via IPC
-        if (window.electron && window.electron.ipcRenderer) {
-          console.log(`Initializing theme CSS for ${this.themeValue}`);
-          try {
-            const result = await window.electron.ipcRenderer.invoke(
-              "themes/apply",
-              { name: this.themeValue }
-            );
-            if (result.success) {
-              console.log(
-                `Theme ${this.themeValue} initialized successfully via IPC`
-              );
-            } else {
-              console.error(
-                `Failed to initialize theme ${this.themeValue}:`,
-                result.error
-              );
-            }
-          } catch (err) {
-            console.error(`Error initializing theme ${this.themeValue}:`, err);
-          }
+        if (typeof this.themeValue === "string") {
+          this.applyThemeCSS(this.themeValue);
+        } else if (this.themeValue.themeId) {
+          this.applyThemeCSS(
+            this.themeValue.themeId,
+            this.themeValue.css,
+            this.themeValue.baseTheme
+          );
         }
       }
-
       const query = querystring.parse(window.location.search, {
         parseBooleans: true,
       });
@@ -201,15 +191,23 @@ export default Vue.extend({
         this.url = query.url || null;
         this.runningWayland = !!query.runningWayland;
       }
-
       this.$nextTick(() => {
         window.main.isReady();
-        // Set appLoaded to true after a short delay to ensure the app is fully initialized
         setTimeout(() => {
           this.appLoaded = true;
+          if (this.themeValue) {
+            if (typeof this.themeValue === "string") {
+              this.applyThemeCSS(this.themeValue);
+            } else if (this.themeValue.themeId) {
+              this.applyThemeCSS(
+                this.themeValue.themeId,
+                this.themeValue.css,
+                this.themeValue.baseTheme
+              );
+            }
+          }
         }, 1000);
       });
-
       if (this.url) {
         try {
           await this.$store.dispatch("openUrl", this.url);
@@ -224,6 +222,27 @@ export default Vue.extend({
     }
   },
   methods: {
+    applyThemeCSS(themeId, cssContent, baseTheme) {
+      document.body.className = `theme-${themeId}`;
+      if (window.electron && window.electron.ipcRenderer) {
+        window.electron.ipcRenderer.invoke("themes/apply", {
+          name: themeId,
+          css: cssContent,
+          baseTheme,
+        });
+      }
+      if (cssContent) {
+        const style = document.createElement("style");
+        style.id = `theme-css-${themeId}`;
+        style.textContent = cssContent;
+        document
+          .querySelectorAll('style[id^="theme-css-"]')
+          .forEach((existingStyle) => {
+            existingStyle.remove();
+          });
+        document.head.appendChild(style);
+      }
+    },
     notifyFreeTrial() {
       Noty.closeAll("trial");
       if (this.isTrial && this.isUltimate) {
@@ -247,7 +266,6 @@ export default Vue.extend({
             }),
           ],
         };
-        // @ts-ignore
         const n = new Noty(options);
         n.show();
       }
@@ -255,10 +273,9 @@ export default Vue.extend({
     databaseSelected(_db) {
       // TODO: do something here if needed
     },
-    validateLicenseExpiry(curr?: LicenseStatus, prev?: LicenseStatus) {
+    validateLicenseExpiry(curr, prev) {
       if (SmartLocalStorage.getBool("expiredLicenseEventsEmitted", false))
         return;
-
       const compare = prev && curr;
       const isValidDateExpired = compare
         ? !prev.isValidDateExpired && curr.isValidDateExpired
@@ -274,15 +291,12 @@ export default Vue.extend({
           )}`
         );
       }
-
       if (isValidDateExpired) {
         this.$root.$emit(AppEvent.licenseValidDateExpired, status);
       }
-
       if (isSupportDateExpired) {
         this.$root.$emit(AppEvent.licenseSupportDateExpired, status);
       }
-
       if (isValidDateExpired || isSupportDateExpired) {
         this.$root.$emit(AppEvent.licenseExpired, status);
         SmartLocalStorage.setBool("expiredLicenseEventsEmitted", true);

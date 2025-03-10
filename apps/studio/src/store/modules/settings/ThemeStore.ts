@@ -384,6 +384,42 @@ const ThemeStoreModule: Module<ThemeState, any> = {
     },
     removeTheme({ commit }, themeId: string) {
       commit('REMOVE_THEME', themeId);
+    },
+    async fetchThemes({ commit, state }) {
+      console.log('Fetching themes');
+
+      // First, ensure we have all the default themes
+      defaultThemes.forEach(theme => {
+        const existingIndex = state.availableThemes.findIndex(t => t.id === theme.id);
+        if (existingIndex < 0) {
+          commit('ADD_THEME', theme);
+        }
+      });
+
+      // If we're in an electron environment, fetch custom themes
+      if (window.electron && window.electron.ipcRenderer) {
+        try {
+          const result = await (window.electron.ipcRenderer as any).invoke('themes/list');
+
+          if (result.success && result.themes) {
+            console.log(`Fetched ${result.themes.length} custom themes`);
+
+            result.themes.forEach(theme => {
+              // Add isBuiltIn: false to custom themes
+              const customTheme = {
+                ...theme,
+                isBuiltIn: false
+              };
+
+              commit('ADD_CUSTOM_THEME', customTheme);
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching custom themes:', error);
+        }
+      }
+
+      return state.availableThemes;
     }
   },
   getters: {
