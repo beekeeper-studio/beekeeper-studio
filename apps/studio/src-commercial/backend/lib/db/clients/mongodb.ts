@@ -1,11 +1,11 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BaseV1DatabaseClient } from "@/lib/db/clients/BaseV1DatabaseClient";
 import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
-import { IDbConnectionDatabase } from "@/lib/db/types";
+import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
-import { TableKey } from "@/shared/lib/dialects/models";
+import { CreateTableSpec, TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
 import vm from "vm";
@@ -171,6 +171,33 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     const admin = this.conn.db().admin();
     const dbInfo = await admin.listDatabases();
     return dbInfo.databases.map((d) => d.name);
+  }
+
+  async createTable(table: CreateTableSpec): Promise<void> {
+    const db = this.conn.db(this.db);
+
+    await db.createCollection(table.table);
+  }
+
+  async duplicateTable(tableName: string, duplicateTableName: string): Promise<void> {
+    const db = this.conn.db(this.db);
+
+    // Using .toArray just so we can await the pipeline
+    await db.collection(tableName).aggregate([{ $out: duplicateTableName }]).toArray();
+  }
+
+  async dropElement(elementName: string, typeOfElement: DatabaseElement): Promise<void> {
+    const db = this.conn.db(this.db);
+    switch (typeOfElement) {
+      case DatabaseElement.TABLE:
+        await db.dropCollection(elementName);
+        break;
+      case DatabaseElement.DATABASE:
+        await db.dropDatabase();
+        break;
+      default:
+        log.warn(`MongoDB does not support dropping ${typeOfElement}`);
+    }
   }
 
   async selectTopSql(_table: string, _offset: number, _limit: number, _orderBy: OrderBy[], _filters: string | TableFilter[], _schema?: string, _selects?: string[]): Promise<string> {

@@ -245,6 +245,7 @@
     </confirmation-modal>
 
     <sql-files-import-modal @submit="importSqlFiles" />
+    <create-collection-modal />
   </div>
 </template>
 
@@ -276,6 +277,7 @@ import { DropzoneDropEvent } from '@/common/dropzone'
 import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
+import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 
@@ -299,9 +301,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       TabIcon,
       DatabaseBackup,
       PendingChangesButton,
-    ConfirmationModal,
-    SqlFilesImportModal,
-    DetailViewSidebar,
+      ConfirmationModal,
+      SqlFilesImportModal,
+      DetailViewSidebar,
+      CreateCollectionModal
     },
     data() {
       return {
@@ -868,6 +871,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
     },
     openTableBuilder() {
+      if (this.dialect === 'mongodb') {
+        this.$root.$emit(AppEvent.openCreateCollectionModal);
+        return;
+      }
       const tab = {} as TransportOpenTab;
       tab.tabType = 'table-builder';
       tab.title = "New Table"

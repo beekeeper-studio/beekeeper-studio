@@ -231,6 +231,10 @@ export interface SchemaItemChange {
   newValue: string | boolean | null
 }
 
+export interface CreateTableSpec {
+  table: string
+}
+
 export interface AlterTableSpec {
   table: string
   schema?: string

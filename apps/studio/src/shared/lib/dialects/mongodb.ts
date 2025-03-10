@@ -5,6 +5,7 @@ export const MongoDBData: DialectData = {
   usesOffsetPagination: true,
   textEditorMode: 'javascript',
   disabledFeatures: {
+    queryEditor: true,
     nullable: true,
     defaultValue: true,
     primary: true,
