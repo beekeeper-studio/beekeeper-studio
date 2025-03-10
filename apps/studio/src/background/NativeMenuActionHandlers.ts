@@ -7,6 +7,7 @@ import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { AppEvent } from '../common/AppEvent'
 import platformInfo from '../common/platform_info'
+import { applyThemeToWindow } from './theme-handlers'
 import { setAllowBeta } from './update_manager'
 import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
 
@@ -129,12 +130,39 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
-    await this.settings.theme.save()
-    getActiveWindows().forEach(window => {
-      window.send(AppEvent.settingsChanged)
-    })
+    try {
+      const label = _.isString(menuItem) ? menuItem : menuItem.label
+      const themeId = label.toLowerCase().replaceAll(" ", "-")
+
+      console.log(`Switching to theme: ${themeId}`);
+
+      // Save the theme setting
+      this.settings.theme.userValue = themeId
+      await this.settings.theme.save()
+
+      console.log(`Theme setting saved: ${themeId}`);
+
+      // Apply the theme to all windows
+      const windows = getActiveWindows()
+      console.log(`Applying theme to ${windows.length} windows`);
+
+      // Apply to each window one by one
+      for (const window of windows) {
+        try {
+          // Apply the theme CSS directly
+          await applyThemeToWindow(window as any, themeId)
+
+          // Also notify the renderer process about the settings change
+          window.send(AppEvent.settingsChanged)
+        } catch (error) {
+          console.error(`Error applying theme ${themeId} to window:`, error)
+        }
+      }
+
+      console.log(`Theme switch completed: ${themeId}`);
+    } catch (error) {
+      console.error(`Error switching theme:`, error);
+    }
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
