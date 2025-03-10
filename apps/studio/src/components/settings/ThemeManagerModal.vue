@@ -40,8 +40,14 @@
               {{ error }}
             </div>
             <div v-else class="theme-grid">
-              <div v-for="theme in popularThemes" :key="theme.id" 
-                   :class="['theme-card', { 'active': theme.isActive }]"
+              <div 
+                v-for="theme in filteredThemes" 
+                :key="theme.id" 
+                class="theme-card" 
+                :class="{ 
+                  'active': theme.id === selectedTheme.id,
+                  'previewed': theme.id === previewedThemeId && theme.id !== selectedTheme.id
+                }"
               >
                 <div class="theme-preview" :style="{ backgroundColor: theme.colors.background }">
                   <div class="preview-item" :style="{ color: theme.colors.foreground }">
@@ -67,6 +73,119 @@
                     >
                       {{ theme.isActive ? 'Current Theme' : 'Apply Theme' }}
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="activeTab === 'all'" class="tab-content">
+            <div v-if="loading" class="loading">
+              Loading themes...
+            </div>
+            <div v-else-if="error" class="error">
+              {{ error }}
+            </div>
+            <div v-else class="theme-grid">
+              <div 
+                v-for="theme in filteredThemes" 
+                :key="theme.id" 
+                class="theme-card" 
+                :class="{ 
+                  'active': theme.id === selectedTheme.id,
+                  'previewed': theme.id === previewedThemeId && theme.id !== selectedTheme.id
+                }"
+              >
+                <div class="theme-preview" :style="{ backgroundColor: theme.colors.background }">
+                  <div class="preview-item" :style="{ color: theme.colors.foreground }">
+                    Text
+                  </div>
+                  <div class="preview-item" :style="{ color: theme.colors.string }">
+                    String
+                  </div>
+                  <div class="preview-item" :style="{ color: theme.colors.keyword }">
+                    Keyword
+                  </div>
+                </div>
+                <div class="theme-info">
+                  <h4>{{ theme.name }}</h4>
+                  <p>{{ theme.description }}</p>
+                  <div class="button-group">
+                    <button class="btn-preview" @click="previewTheme(theme)">
+                      Preview
+                    </button>
+                    <button class="btn-apply" 
+                            @click="applyTheme(theme)"
+                            :disabled="theme.isActive"
+                    >
+                      {{ theme.isActive ? 'Current Theme' : 'Apply Theme' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="activeTab === 'custom'" class="tab-content">
+            <div v-if="loading" class="loading">
+              Loading themes...
+            </div>
+            <div v-else-if="error" class="error">
+              {{ error }}
+            </div>
+            <div v-else class="theme-grid">
+              <div 
+                v-for="theme in filteredThemes" 
+                :key="theme.id" 
+                class="theme-card" 
+                :class="{ 
+                  'active': theme.id === selectedTheme.id,
+                  'previewed': theme.id === previewedThemeId && theme.id !== selectedTheme.id
+                }"
+              >
+                <div class="theme-preview" :style="{ backgroundColor: theme.colors.background }">
+                  <div class="preview-item" :style="{ color: theme.colors.foreground }">
+                    Text
+                  </div>
+                  <div class="preview-item" :style="{ color: theme.colors.string }">
+                    String
+                  </div>
+                  <div class="preview-item" :style="{ color: theme.colors.keyword }">
+                    Keyword
+                  </div>
+                </div>
+                <div class="theme-info">
+                  <h4>{{ theme.name }}</h4>
+                  <p>{{ theme.description }}</p>
+                  <div class="button-group">
+                    <button class="btn-preview" @click="previewTheme(theme)">
+                      Preview
+                    </button>
+                    <button class="btn-apply" 
+                            @click="applyTheme(theme)"
+                            :disabled="theme.isActive"
+                    >
+                      {{ theme.isActive ? 'Current Theme' : 'Apply Theme' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Add theme upload button -->
+              <div class="theme-card add-theme">
+                <div class="upload-area" @click="triggerFileInput">
+                  <input 
+                    type="file" 
+                    ref="fileInput" 
+                    style="display: none" 
+                    accept=".css,.json" 
+                    @change="handleFileUpload"
+                  >
+                  <div class="upload-icon">
+                    +
+                  </div>
+                  <div class="upload-text">
+                    Upload Theme
                   </div>
                 </div>
               </div>
@@ -128,12 +247,15 @@ export default {
     return {
       isVisible: false,
       activeTab: 'popular',
-      loading: false,
+      loading: true,
       error: null,
+      selectedTheme: null,
       popularThemes: [],
+      customThemes: [],
       selectedFile: null,
       uploadError: null,
-      importing: false
+      importing: false,
+      previewedThemeId: null
     }
   },
   computed: {
@@ -143,9 +265,30 @@ export default {
     ...mapGetters({
       themeValue: 'settings/themeValue',
       allThemes: 'themes/allThemes'
-    })
+    }),
+    filteredThemes() {
+      if (this.activeTab === 'popular') {
+        return this.popularThemes;
+      } else if (this.activeTab === 'all') {
+        return this.allThemes;
+      } else if (this.activeTab === 'custom') {
+        return this.customThemes;
+      }
+      return this.allThemes;
+    },
   },
   mounted() {
+    // Load themes when the component is mounted
+    this.loadThemes().then(() => {
+      // Set the selected theme to the current theme
+      this.selectedTheme = this.allThemes.find(theme => theme.id === this.themeValue) || this.allThemes[0];
+      
+      // Apply the current theme
+      if (this.selectedTheme) {
+        this.loadThemeCssFile(this.selectedTheme.id);
+      }
+    });
+    
     console.log('ThemeManagerModal mounted');
     
     this.$root.$on('show-theme-manager', this.show);
@@ -211,6 +354,7 @@ export default {
     this.$root.$on('theme-preview-changed', (payload) => {
       let themeId;
       let css;
+      let baseTheme;
       
       // Handle both string and object payloads
       if (typeof payload === 'string') {
@@ -218,10 +362,31 @@ export default {
       } else {
         themeId = payload.themeId;
         css = payload.css;
+        baseTheme = payload.baseTheme;
       }
       
-      console.log(`App received theme preview change: ${themeId}`);
-      document.body.className = `theme-${themeId}`;
+      console.log(`ThemeManagerModal received theme preview change: ${themeId}`);
+      
+      // Handle built-in themes differently from custom themes
+      const builtInThemes = ['dark', 'light', 'solarized-dark', 'solarized', 'system'];
+      if (builtInThemes.includes(themeId)) {
+        // For built-in themes, just set the body class
+        document.body.className = `theme-${themeId}`;
+      } else {
+        // For custom themes, use the dual-class approach
+        const baseThemeToUse = baseTheme || 'dark';
+        document.body.className = `theme-${baseThemeToUse}`;
+        
+        // Remove any existing custom theme classes
+        document.body.classList.forEach(cls => {
+          if (cls.startsWith('theme-custom-') && cls !== `theme-custom-${themeId}`) {
+            document.body.classList.remove(cls);
+          }
+        });
+        
+        // Add our specific custom theme class
+        document.body.classList.add(`theme-custom-${themeId}`);
+      }
       
       if (css) {
         // Apply the CSS directly
@@ -236,23 +401,6 @@ export default {
         
         // Add the new style
         document.head.appendChild(style);
-      } else {
-        // Apply the theme CSS
-        const linkId = `theme-css-${themeId}`;
-        
-        // Remove any existing theme links
-        document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
-          link.remove();
-        });
-        
-        // Create a new link element
-        const link = document.createElement('link');
-        link.id = linkId;
-        link.rel = 'stylesheet';
-        link.href = `./assets/styles/themes/${themeId}/theme.css`;
-        
-        // Add the link to the document head
-        document.head.appendChild(link);
       }
     });
 
@@ -260,9 +408,30 @@ export default {
     window.addEventListener('theme-preview', (event) => {
       const themeId = event.detail.themeId;
       const css = event.detail.css;
+      const baseTheme = event.detail.baseTheme;
       
-      console.log(`App received window theme preview event: ${themeId}`);
-      document.body.className = `theme-${themeId}`;
+      console.log(`ThemeManagerModal received window theme preview event: ${themeId}`);
+      
+      // Handle built-in themes differently from custom themes
+      const builtInThemes = ['dark', 'light', 'solarized-dark', 'solarized', 'system'];
+      if (builtInThemes.includes(themeId)) {
+        // For built-in themes, just set the body class
+        document.body.className = `theme-${themeId}`;
+      } else {
+        // For custom themes, use the dual-class approach
+        const baseThemeToUse = baseTheme || 'dark';
+        document.body.className = `theme-${baseThemeToUse}`;
+        
+        // Remove any existing custom theme classes
+        document.body.classList.forEach(cls => {
+          if (cls.startsWith('theme-custom-') && cls !== `theme-custom-${themeId}`) {
+            document.body.classList.remove(cls);
+          }
+        });
+        
+        // Add our specific custom theme class
+        document.body.classList.add(`theme-custom-${themeId}`);
+      }
       
       if (css) {
         // Apply the CSS directly
@@ -302,6 +471,7 @@ export default {
       console.log('Closing theme manager modal');
       this.isVisible = false;
       this.resetUploadState();
+      this.$emit('close');
     },
     async fetchPopularThemes() {
       this.loading = true;
@@ -327,125 +497,305 @@ export default {
       }
     },
     applyTheme(theme) {
-      console.log('Applying theme:', theme.name, theme.id);
-      
-      if (theme.isActive) {
-        console.log('Theme is already active');
-        return;
-      }
+      console.log(`Applying theme: ${theme.id}`);
       
       try {
+        // Save the theme to user settings
         this.$store.dispatch('settings/save', { key: 'theme', value: theme.id });
         
-        document.body.className = `theme-${theme.id}`;
+        // Apply the theme directly
+        this.loadThemeCssFile(theme.id);
         
-        if (window.electron && window.electron.ipcRenderer) {
-          console.log(`Requesting theme CSS application for ${theme.id}`);
-          
-          window.electron.ipcRenderer.invoke('themes/removeActive')
-            .then(() => {
-              return window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id });
-            })
-            .then(result => {
-              if (result.success) {
-                console.log(`Theme ${theme.id} applied successfully via IPC`);
-              } else {
-                console.error(`Failed to apply theme ${theme.id}:`, result.error);
-                this.loadThemeCssFile(theme.id);
-              }
-            })
-            .catch(err => {
-              console.error(`Error applying theme ${theme.id}:`, err);
-              this.loadThemeCssFile(theme.id);
-            });
-        } else {
-          this.loadThemeCssFile(theme.id);
-        }
+        // Update the selected theme
+        this.selectedTheme = theme;
         
-        this.popularThemes = this.popularThemes.map(t => ({
-          ...t,
-          isActive: t.id === theme.id
-        }));
+        // Clear the previewed theme
+        this.previewedThemeId = null;
         
-        this.$noty.success(`Theme "${theme.name}" applied successfully!`);
+        // Mark this theme as active
+        this.allThemes.forEach(t => {
+          t.isActive = t.id === theme.id;
+        });
         
-        if (window.electron && window.electron.ipcRenderer) {
-          window.electron.ipcRenderer.send(AppEvent.settingsChanged);
-        }
+        // Notify the user
+        this.$noty.success(`Theme "${theme.name}" applied successfully`);
         
-        this.close();
+        // Close the modal
+        this.$emit('close');
       } catch (error) {
         console.error('Error applying theme:', error);
         this.$noty.error(`Failed to apply theme: ${error.message}`);
       }
     },
     loadThemeCssFile(themeId) {
-      console.log(`Attempting to load CSS file for theme: ${themeId}`);
+      console.log(`Applying theme: ${themeId}`);
       
-      const linkId = `theme-css-${themeId}`;
+      // Get the theme from the store
+      const theme = this.allThemes.find(t => t.id === themeId);
+      
+      if (!theme) {
+        console.error(`Theme not found in store: ${themeId}`);
+        return;
+      }
+      
+      // Special handling for themes 1-5 which have their own complete SCSS files
+      const baseThemes = ['dark', 'light', 'solarized-dark', 'solarized', 'system'];
+      if (baseThemes.includes(themeId)) {
+        console.log(`Using built-in theme structure for ${themeId}`);
+        
+        // Remove any existing theme styles and links
+        document.querySelectorAll('style[id^="theme-css-"], style[id^="fallback-theme-"], style[id^="theme-style-"]').forEach(style => {
+          style.remove();
+        });
+        
+        document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
+          link.remove();
+        });
+        
+        // Set the body class for the built-in theme - this triggers SCSS imports
+        document.body.className = `theme-${themeId}`;
+        
+        // Notify about the theme change
+        this.$root.$emit('theme-preview-changed', { themeId });
+        
+        // Create a custom event
+        const themeChangeEvent = new CustomEvent('theme-preview', { 
+          detail: { themeId }
+        });
+        window.dispatchEvent(themeChangeEvent);
+        
+        // If we're in an electron environment, apply via IPC
+        if (window.electron && window.electron.ipcRenderer) {
+          console.log(`Applying built-in theme via IPC: ${themeId}`);
+          window.electron.ipcRenderer.send(AppEvent.settingsChanged, { 
+            key: 'theme', 
+            value: themeId
+          });
+        }
+        
+        return null;
+      }
+      
+      // For non-built-in themes, we need to:
+      // 1. Use a built-in theme as a base (dark)
+      // 2. Apply color overrides specific to our theme
+      console.log(`Generating CSS for non-built-in theme: ${themeId}`);
+      
+      // Remove any existing theme styles
+      document.querySelectorAll('style[id^="theme-css-"], style[id^="fallback-theme-"], style[id^="theme-style-"]').forEach(style => {
+        style.remove();
+      });
       
       document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
         link.remove();
       });
       
-      const link = document.createElement('link');
-      link.id = linkId;
-      link.rel = 'stylesheet';
+      // Set body class to the base dark theme - this will load the dark structure from app.scss
+      document.body.className = 'theme-dark';
       
-      const possiblePaths = [
-        `./assets/styles/themes/${themeId}/theme.css`,
-        `./assets/styles/themes/${themeId}.css`,
-        `./themes/${themeId}.css`
-      ];
+      // Add additional class for our theme - this allows specific styling without losing the dark theme structure
+      document.body.classList.add(`theme-custom-${themeId}`);
       
-      link.onerror = () => {
-        console.error(`Failed to load CSS file for theme: ${themeId}`);
-        
-        if (possiblePaths.length > 0) {
-          const nextPath = possiblePaths.shift();
-          console.log(`Trying alternative path: ${nextPath}`);
-          link.href = nextPath;
-        } else {
-          console.error(`All paths failed for theme: ${themeId}`);
-          this.applyFallbackThemeStyles(themeId);
-          
-          // Notify the main application about the fallback theme
-          this.$root.$emit('theme-preview-changed', themeId);
-          
-          // Create a custom event
-          const themeChangeEvent = new CustomEvent('theme-preview', { 
-            detail: { themeId: themeId } 
-          });
-          window.dispatchEvent(themeChangeEvent);
-        }
-      };
+      // Now generate our color override CSS that targets the custom theme class
+      const cssContent = this.generateThemeColorOverrides(theme);
       
-      link.onload = () => {
-        console.log(`Successfully loaded CSS file for theme: ${themeId}`);
-        
-        // Notify the main application about the theme change
-        this.$root.$emit('theme-preview-changed', themeId);
-        
-        // Create a custom event
-        const themeChangeEvent = new CustomEvent('theme-preview', { 
-          detail: { themeId: themeId } 
+      // Apply the CSS directly via a style element
+      const style = document.createElement('style');
+      style.id = `theme-style-${themeId}`;
+      style.textContent = cssContent;
+      document.head.appendChild(style);
+      
+      // Notify the main application about the theme change
+      this.$root.$emit('theme-preview-changed', { 
+        themeId: themeId,
+        css: cssContent,
+        baseTheme: 'dark'
+      });
+      
+      // Create a custom event
+      const themeChangeEvent = new CustomEvent('theme-preview', { 
+        detail: { 
+          themeId: themeId, 
+          css: cssContent,
+          baseTheme: 'dark'
+        } 
+      });
+      window.dispatchEvent(themeChangeEvent);
+      
+      // If we're in an electron environment, apply via IPC
+      if (window.electron && window.electron.ipcRenderer) {
+        console.log(`Applying theme via IPC: ${themeId}`);
+        window.electron.ipcRenderer.send(AppEvent.settingsChanged, { 
+          key: 'theme', 
+          value: themeId,
+          css: cssContent,
+          baseTheme: 'dark'
         });
-        window.dispatchEvent(themeChangeEvent);
+      }
+      
+      return cssContent;
+    },
+    generateThemeColorOverrides(theme) {
+      const themeId = theme.id;
+      console.log(`Generating color overrides for theme: ${themeId}`);
+      
+      // Extract colors
+      const bg = theme.colors.background;
+      const fg = theme.colors.foreground;
+      const string = theme.colors.string;
+      const keyword = theme.colors.keyword;
+      
+      // Calculate derived colors
+      const bgLighter = this.adjustColor(bg, 15);
+      const bgDarker = this.adjustColor(bg, -15);
+      const keywordDarker = this.adjustColor(keyword, -20);
+      const borderColor = this.adjustColor(bg, 30);
+      
+      // Generate CSS that only overrides the colors, not the structure
+      // Target both the 'theme-dark.theme-custom-{themeId}' (for when both classes are present)
+      // and '.theme-custom-{themeId}' class (for direct targeting)
+      return `
+        /* Color overrides for theme: ${theme.name} (${themeId}) */
         
-        // If we're in an electron environment, send an IPC message
-        if (window.electron && window.electron.ipcRenderer) {
-          window.electron.ipcRenderer.send(AppEvent.settingsChanged, { 
-            key: 'theme', 
-            value: themeId,
-            isPreview: true 
-          });
+        /* Base variables - these apply to all elements */
+        .theme-dark.theme-custom-${themeId} {
+          /* Make sure these CSS variables override the dark theme */
+          --theme-bg: ${bg} !important;
+          --theme-base: ${fg} !important;
+          --theme-string: ${string} !important;
+          --theme-keyword: ${keyword} !important;
+          --theme-primary: ${keyword} !important;
+          --theme-secondary: ${keywordDarker} !important;
+          
+          /* Core text colors */
+          --text-dark: ${fg} !important;
+          --text: ${this.adjustColor(fg, -20)} !important;
+          --text-light: ${this.adjustColor(fg, -30)} !important;
+          --text-lighter: ${this.adjustColor(fg, -40)} !important;
+          --text-hint: ${this.adjustColor(fg, -40)} !important;
+          --text-disabled: ${this.adjustColor(fg, -40)} !important;
+          
+          /* App colors */
+          --border-color: ${borderColor} !important;
+          --link-color: ${fg} !important;
+          --selection: ${this.adjustColor(keyword, -40)} !important;
+          --query-editor-bg: ${this.adjustColor(bg, -5)} !important;
+          --input-highlight: ${this.adjustColor(fg, -40)} !important;
+          --sidebar-bg: ${bgDarker} !important;
+          --sidebar-fg: ${fg} !important;
+          
+          /* Core elements need direct styling too */
+          background-color: ${bg} !important;
+          color: ${fg} !important;
         }
-      };
+        
+        /* Direct element styling for our custom theme */
+        .theme-dark.theme-custom-${themeId} .beekeeper-studio-wrapper {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+        
+        /* Sidebar styling */
+        .theme-dark.theme-custom-${themeId} .sidebar {
+          background-color: ${bgDarker} !important;
+          color: ${fg} !important;
+        }
+        
+        /* Editor styling */
+        .theme-dark.theme-custom-${themeId} .editor, 
+        .theme-dark.theme-custom-${themeId} .CodeMirror {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+        
+        /* Query editor styling */
+        .theme-dark.theme-custom-${themeId} .query-editor {
+          background-color: ${this.adjustColor(bg, -5)} !important;
+        }
+        
+        /* Table styling */
+        .theme-dark.theme-custom-${themeId} .tabulator-table {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} .tabulator-row {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} .tabulator-row.tabulator-row-even {
+          background-color: ${bgLighter} !important;
+        }
+        
+        /* Button styling */
+        .theme-dark.theme-custom-${themeId} .btn-primary {
+          background-color: ${keyword} !important;
+          color: #ffffff !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} .btn-secondary {
+          background-color: ${keywordDarker} !important;
+          color: #ffffff !important;
+        }
+        
+        /* Card and modal styling */
+        .theme-dark.theme-custom-${themeId} .theme-card,
+        .theme-dark.theme-custom-${themeId} .modal-content {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+          border-color: ${borderColor} !important;
+        }
+        
+        /* Form control styling */
+        .theme-dark.theme-custom-${themeId} input,
+        .theme-dark.theme-custom-${themeId} select,
+        .theme-dark.theme-custom-${themeId} textarea {
+          background-color: ${bgLighter} !important;
+          color: ${fg} !important;
+          border-color: ${borderColor} !important;
+        }
+        
+        /* Code highlighting styles */
+        .theme-dark.theme-custom-${themeId} .cm-string {
+          color: ${string} !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} .cm-keyword {
+          color: ${keyword} !important;
+        }
+        
+        /* Status bar styling */
+        .theme-dark.theme-custom-${themeId} .statusbar {
+          background-color: ${bgDarker} !important;
+          color: ${fg} !important;
+          border-top: 1px solid ${borderColor} !important;
+        }
+        
+        /* Additional UI components */
+        .theme-dark.theme-custom-${themeId} .tabulator-header {
+          background-color: ${bgDarker} !important;
+          color: ${fg} !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} .dropdown-menu {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+      `;
+    },
+    hexToRgb(hex) {
+      // Remove the hash if it exists
+      hex = hex.replace(/^#/, '');
       
-      const initialPath = possiblePaths.shift();
-      link.href = initialPath;
+      // Parse the hex values
+      const bigint = parseInt(hex, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
       
-      document.head.appendChild(link);
+      // Return the RGB values as a string
+      return `${r}, ${g}, ${b}`;
     },
     applyFallbackThemeStyles(themeId) {
       console.log(`Applying fallback styles for theme: ${themeId}`);
@@ -473,82 +823,7 @@ export default {
       style.id = `fallback-theme-${themeId}`;
       
       // Generate CSS from theme colors
-      const cssContent = `
-        .theme-${themeId} {
-          --theme-bg: ${theme.colors.background};
-          --theme-base: ${theme.colors.foreground};
-          --theme-string: ${theme.colors.string};
-          --theme-keyword: ${theme.colors.keyword};
-          
-          --theme-primary: ${theme.colors.keyword};
-          --theme-secondary: ${this.adjustColor(theme.colors.keyword, -20)};
-          --theme-error: #f44336;
-          --theme-warning: #ff9800;
-          --theme-success: #4caf50;
-          
-          /* Editor colors */
-          --editor-bg: ${theme.colors.background};
-          --editor-fg: ${theme.colors.foreground};
-          
-          /* Sidebar colors */
-          --sidebar-bg: ${this.adjustColor(theme.colors.background, -10)};
-          --sidebar-fg: ${theme.colors.foreground};
-          
-          /* Table colors */
-          --table-header-bg: ${this.adjustColor(theme.colors.background, -5)};
-          --table-header-fg: ${theme.colors.foreground};
-          --table-row-bg: ${theme.colors.background};
-          --table-row-fg: ${theme.colors.foreground};
-          --table-row-alt-bg: ${this.adjustColor(theme.colors.background, 5)};
-          --table-border: ${this.adjustColor(theme.colors.background, 15)};
-        }
-        
-        .theme-${themeId} body {
-          background-color: ${theme.colors.background} !important;
-          color: ${theme.colors.foreground} !important;
-        }
-        
-        .theme-${themeId} .theme-manager-modal-content {
-          background-color: var(--theme-bg, ${theme.colors.background});
-        }
-        
-        .theme-${themeId} .close-button {
-          color: var(--theme-base, ${theme.colors.foreground});
-        }
-        
-        .theme-${themeId} .tab-button {
-          color: var(--theme-base, ${theme.colors.foreground});
-        }
-        
-        .theme-${themeId} .tab-button.active::after {
-          background-color: var(--theme-primary, ${theme.colors.keyword});
-        }
-        
-        .theme-${themeId} .loading, .theme-${themeId} .error {
-          color: var(--theme-base, ${theme.colors.foreground});
-        }
-        
-        .theme-${themeId} .error {
-          color: var(--theme-error, #f44336);
-        }
-        
-        .theme-${themeId} .btn-preview {
-          background-color: var(--theme-secondary, ${this.adjustColor(theme.colors.keyword, -20)});
-        }
-        
-        .theme-${themeId} .btn-apply {
-          background-color: var(--theme-primary, ${theme.colors.keyword});
-        }
-        
-        .theme-${themeId} .btn-flat {
-          color: var(--theme-base, ${theme.colors.foreground});
-        }
-        
-        .theme-${themeId} .theme-card.active {
-          border: 2px solid var(--theme-primary, ${theme.colors.keyword});
-          box-shadow: 0 0 10px ${this.adjustColor(theme.colors.keyword, -20)};
-        }
-      `;
+      const cssContent = this.generateFallbackCSS(themeId);
       
       console.log(`Generated fallback CSS:`, cssContent);
       style.textContent = cssContent;
@@ -615,17 +890,206 @@ export default {
       const file = event.target.files[0];
       if (!file) return;
       
+      this.selectedFile = file;
+      this.importing = true;
       this.uploadError = null;
       
-      const validExtensions = ['.json', '.tmtheme', '.xml'];
-      const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      const reader = new FileReader();
       
-      if (!validExtensions.includes(fileExtension)) {
-        this.uploadError = 'Invalid file type. Please upload a VSCode JSON or SublimeText XML theme file.';
-        return;
+      reader.onload = async (e) => {
+        try {
+          const fileContent = e.target.result;
+          const fileExtension = file.name.split('.').pop().toLowerCase();
+          
+          if (fileExtension === 'json') {
+            // Handle JSON theme file
+            const themeData = JSON.parse(fileContent);
+            
+            // Validate theme data
+            if (!themeData.name || !themeData.colors) {
+              throw new Error('Invalid theme format: missing name or colors');
+            }
+            
+            // Generate a unique ID for the theme
+            const themeId = `custom-${Date.now()}`;
+            
+            // Create a new theme object
+            const newTheme = {
+              id: themeId,
+              name: themeData.name,
+              description: themeData.description || 'Custom theme',
+              colors: themeData.colors,
+              isBuiltIn: false,
+              isActive: false
+            };
+            
+            // Add the theme to the store
+            this.$store.dispatch('themes/addCustomTheme', newTheme);
+            
+            // If we're in an electron environment, register the theme
+            if (window.electron && window.electron.ipcRenderer) {
+              await window.electron.ipcRenderer.invoke('themes/add', newTheme);
+            }
+            
+            // Refresh themes
+            await this.loadThemes();
+            
+            // Select and preview the new theme
+            this.previewTheme(newTheme);
+            
+            this.$noty.success(`Theme "${newTheme.name}" imported successfully`);
+          } else if (fileExtension === 'css') {
+            // Handle CSS theme file
+            // For CSS files, we need to create a basic theme with default colors
+            const themeId = `custom-${Date.now()}`;
+            const themeName = file.name.replace('.css', '');
+            
+            // Create a new theme object with default colors
+            const newTheme = {
+              id: themeId,
+              name: themeName,
+              description: 'Custom CSS theme',
+              colors: {
+                background: '#1e1e1e',
+                foreground: '#d4d4d4',
+                string: '#ce9178',
+                keyword: '#569cd6'
+              },
+              isBuiltIn: false,
+              isActive: false,
+              cssContent: fileContent
+            };
+            
+            // Add the theme to the store
+            this.$store.dispatch('themes/addCustomTheme', newTheme);
+            
+            // If we're in an electron environment, register the theme
+            if (window.electron && window.electron.ipcRenderer) {
+              await window.electron.ipcRenderer.invoke('themes/add', newTheme);
+              
+              // Save the CSS content
+              await window.electron.ipcRenderer.invoke('themes/saveCss', {
+                themeId: themeId,
+                css: fileContent
+              });
+            }
+            
+            // Refresh themes
+            await this.loadThemes();
+            
+            // Select and preview the new theme
+            this.previewTheme(newTheme);
+            
+            this.$noty.success(`Theme "${newTheme.name}" imported successfully`);
+          } else if (fileExtension === 'tmtheme' || fileExtension === 'xml') {
+            // Handle TextMate/Sublime theme file
+            console.log('Processing TextMate/Sublime theme file');
+            
+            // If we're in an electron environment, use the backend parser
+            if (window.electron && window.electron.ipcRenderer) {
+              const result = await window.electron.ipcRenderer.invoke('themes/uploadTmTheme', {
+                content: fileContent,
+                fileName: file.name
+              });
+              
+              if (result.success) {
+                console.log('TextMate theme uploaded successfully:', result.theme);
+                
+                // Create a new theme object
+                const newTheme = {
+                  id: result.theme.id,
+                  name: result.theme.name,
+                  description: 'Imported TextMate theme',
+                  colors: result.theme.colors,
+                  isBuiltIn: false,
+                  isActive: false
+                };
+                
+                // Add the theme to the store
+                this.$store.dispatch('themes/addCustomTheme', newTheme);
+                
+                // Refresh themes
+                await this.loadThemes();
+                
+                // Select and preview the new theme
+                this.previewTheme(newTheme);
+                
+                this.$noty.success(`Theme "${newTheme.name}" imported successfully`);
+              } else {
+                throw new Error(`Failed to parse TextMate theme: ${result.error}`);
+              }
+            } else {
+              // For non-electron environments, create a basic theme
+              const themeId = `custom-${Date.now()}`;
+              const themeName = file.name.replace(/\.(tmtheme|xml)$/, '');
+              
+              // Create a new theme object with default colors
+              const newTheme = {
+                id: themeId,
+                name: themeName,
+                description: 'Imported TextMate theme',
+                colors: {
+                  background: '#1e1e1e',
+                  foreground: '#d4d4d4',
+                  string: '#ce9178',
+                  keyword: '#569cd6'
+                },
+                isBuiltIn: false,
+                isActive: false
+              };
+              
+              // Add the theme to the store
+              this.$store.dispatch('themes/addCustomTheme', newTheme);
+              
+              // Refresh themes
+              await this.loadThemes();
+              
+              // Select and preview the new theme
+              this.previewTheme(newTheme);
+              
+              this.$noty.success(`Theme "${newTheme.name}" imported successfully (basic colors)`);
+            }
+          } else {
+            throw new Error('Unsupported file format. Please upload a .json, .css, or .tmTheme file.');
+          }
+        } catch (error) {
+          console.error('Error importing theme:', error);
+          this.uploadError = error.message;
+          this.$noty.error(`Failed to import theme: ${error.message}`);
+        } finally {
+          this.importing = false;
+          this.selectedFile = null;
+          
+          // Reset the file input
+          this.$refs.fileInput.value = '';
+        }
+      };
+      
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        this.uploadError = 'Error reading file';
+        this.importing = false;
+        this.selectedFile = null;
+        this.$noty.error('Error reading file');
+        
+        // Reset the file input
+        this.$refs.fileInput.value = '';
+      };
+      
+      // Accept more file types
+      if (file.type === 'application/json' || file.name.endsWith('.json') || 
+          file.type === 'text/css' || file.name.endsWith('.css') ||
+          file.name.endsWith('.tmTheme') || file.name.endsWith('.xml')) {
+        reader.readAsText(file);
+      } else {
+        this.uploadError = 'Unsupported file format. Please upload a .json, .css, or .tmTheme file.';
+        this.importing = false;
+        this.selectedFile = null;
+        this.$noty.error('Unsupported file format. Please upload a .json, .css, or .tmTheme file.');
+        
+        // Reset the file input
+        this.$refs.fileInput.value = '';
       }
-      
-      this.selectedFile = file;
     },
     async importTheme() {
       if (!this.selectedFile) return;
@@ -674,46 +1138,52 @@ export default {
       }
     },
     previewTheme(theme) {
-      console.log('Previewing theme:', theme.name, theme.id);
+      console.log(`Previewing theme: ${theme.id}`);
       
       try {
-        // Update UI to reflect the change
-        document.body.className = `theme-${theme.id}`;
+        // Update UI to show which theme is being previewed
+        this.previewedThemeId = theme.id;
         
-        // Apply the theme CSS via IPC if available
-        if (window.electron && window.electron.ipcRenderer) {
-          console.log(`Requesting theme CSS application for preview: ${theme.id}`);
-          
-          // First try to remove any existing theme
-          window.electron.ipcRenderer.invoke('themes/removeActive')
-            .then(() => {
-              // Then apply the new theme
-              return window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id });
-            })
-            .then(result => {
-              if (result.success) {
-                console.log(`Theme ${theme.id} preview applied successfully via IPC`);
-              } else {
-                console.error(`Failed to apply theme preview ${theme.id}:`, result.error);
-                // Fallback: Apply fallback styles
-                this.applyFallbackThemeStyles(theme.id);
-              }
-            })
-            .catch(err => {
-              console.error(`Error applying theme preview ${theme.id}:`, err);
-              // Fallback: Apply fallback styles
-              this.applyFallbackThemeStyles(theme.id);
-            });
-        } else {
-          // Apply fallback styles
-          this.applyFallbackThemeStyles(theme.id);
-        }
+        // Apply the theme directly
+        const cssContent = this.loadThemeCssFile(theme.id);
         
-        // Notify user
-        this.$noty.info(`Previewing theme "${theme.name}". Click "Apply Theme" to keep it.`);
+        // Notify the user
+        this.$noty.success(`Previewing theme: ${theme.name}`);
       } catch (error) {
         console.error('Error previewing theme:', error);
         this.$noty.error(`Failed to preview theme: ${error.message}`);
+      }
+    },
+    triggerFileInput() {
+      this.$refs.fileInput.click();
+    },
+    async loadThemes() {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // Fetch themes from the store
+        await this.$store.dispatch('themes/fetchThemes');
+        
+        // Get the current theme
+        const currentThemeId = this.themeValue;
+        
+        // Update the selected theme
+        this.selectedTheme = this.allThemes.find(theme => theme.id === currentThemeId) || this.allThemes[0];
+        
+        // Separate themes into built-in and custom
+        this.popularThemes = this.allThemes.filter(theme => theme.isBuiltIn && theme.isPopular);
+        this.customThemes = this.allThemes.filter(theme => !theme.isBuiltIn);
+        
+        // Mark the active theme
+        this.allThemes.forEach(theme => {
+          theme.isActive = theme.id === currentThemeId;
+        });
+      } catch (error) {
+        console.error('Error loading themes:', error);
+        this.error = 'Failed to load themes. Please try again.';
+      } finally {
+        this.loading = false;
       }
     },
   }
@@ -962,13 +1432,43 @@ export default {
 }
 
 .theme-card.active {
-  border: 2px solid var(--theme-primary, #4caf50);
-  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  border: 2px solid var(--theme-primary);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.theme-card.previewed {
+  border: 2px dashed var(--theme-secondary, #666);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .btn-apply:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background-color: var(--theme-secondary, #999);
+}
+
+.theme-card.add-theme {
+  border: 2px dashed var(--theme-secondary, #666);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-area {
+  cursor: pointer;
+  padding: 10px;
+}
+
+.upload-icon {
+  font-size: 24px;
+  color: var(--theme-base, #fff);
+}
+
+.upload-text {
+  margin-top: 10px;
+  text-align: center;
+  color: var(--theme-base, #fff);
 }
 </style>

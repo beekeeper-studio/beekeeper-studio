@@ -121,8 +121,19 @@ export default Vue.extend({
     database() {
       log.info('database changed', this.database)
     },
-    themeValue() {
-      document.body.className = `theme-${this.themeValue}`
+    themeValue: {
+      handler(newTheme) {
+        console.log('Theme value changed in App.vue:', newTheme);
+        
+        if (typeof newTheme === 'string') {
+          // Handle string theme ID
+          this.applyThemeCSS(newTheme);
+        } else if (newTheme && newTheme.themeId) {
+          // Handle object with themeId and possibly CSS
+          this.applyThemeCSS(newTheme.themeId, newTheme.css, newTheme.baseTheme);
+        }
+      },
+      immediate: true
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
@@ -152,25 +163,42 @@ export default Vue.extend({
       // Initialize settings
       await this.$store.dispatch('settings/initializeSettings');
       
+      // Ensure themes are loaded
+      await this.$store.dispatch('themes/fetchThemes');
+      
       // Initialize themes (ensure this happens after settings are loaded)
       if (this.themeValue) {
-        document.body.className = `theme-${this.themeValue}`
+        console.log(`Initializing theme: ${this.themeValue}`);
         
-        // Apply the theme CSS via IPC
-        if (window.electron && window.electron.ipcRenderer) {
-          console.log(`Initializing theme CSS for ${this.themeValue}`);
-          try {
-            const result = await window.electron.ipcRenderer.invoke('themes/apply', { name: this.themeValue });
-            if (result.success) {
-              console.log(`Theme ${this.themeValue} initialized successfully via IPC`);
-            } else {
-              console.error(`Failed to initialize theme ${this.themeValue}:`, result.error);
-            }
-          } catch (err) {
-            console.error(`Error initializing theme ${this.themeValue}:`, err);
-          }
+        // Apply the theme directly
+        if (typeof this.themeValue === 'string') {
+          this.applyThemeCSS(this.themeValue);
+        } else if (this.themeValue.themeId) {
+          this.applyThemeCSS(this.themeValue.themeId, this.themeValue.css, this.themeValue.baseTheme);
         }
       }
+      
+      // Listen for theme preview changes from ThemeManagerModal
+      this.$root.$on('theme-preview-changed', (payload) => {
+        console.log('Theme preview changed event received in App.vue:', payload);
+        
+        if (typeof payload === 'string') {
+          // Handle legacy format (just themeId)
+          this.applyThemeCSS(payload);
+        } else if (payload && payload.themeId) {
+          // Handle new format with CSS content
+          this.applyThemeCSS(payload.themeId, payload.css, payload.baseTheme);
+        }
+      });
+      
+      // Also listen for window events
+      window.addEventListener('theme-preview', (event) => {
+        console.log('Theme preview window event received in App.vue:', event.detail);
+        
+        if (event.detail && event.detail.themeId) {
+          this.applyThemeCSS(event.detail.themeId, event.detail.css, event.detail.baseTheme);
+        }
+      });
       
       const query = querystring.parse(window.location.search, { parseBooleans: true })
       if (query) {
@@ -183,6 +211,16 @@ export default Vue.extend({
         // Set appLoaded to true after a short delay to ensure the app is fully initialized
         setTimeout(() => {
           this.appLoaded = true;
+          
+          // Re-apply the theme after ThemeManagerModal is loaded
+          if (this.themeValue) {
+            console.log('Re-applying theme after ThemeManagerModal is loaded:', this.themeValue);
+            if (typeof this.themeValue === 'string') {
+              this.applyThemeCSS(this.themeValue);
+            } else if (this.themeValue.themeId) {
+              this.applyThemeCSS(this.themeValue.themeId, this.themeValue.css, this.themeValue.baseTheme);
+            }
+          }
         }, 1000);
       })
       
@@ -200,6 +238,184 @@ export default Vue.extend({
     }
   },
   methods: {
+    applyThemeCSS(themeId, cssContent, baseTheme) {
+      console.log(`App.vue: Applying theme CSS for ${themeId}`);
+      
+      // Get the theme from the store
+      const theme = this.$store.getters['themes/allThemes'].find(t => t.id === themeId);
+      
+      if (!theme) {
+        console.error(`App.vue: Theme not found in store: ${themeId}`);
+        return;
+      }
+      
+      // Special handling for built-in themes that have their own SCSS files
+      const baseThemes = ['dark', 'light', 'solarized-dark', 'solarized', 'system'];
+      if (baseThemes.includes(themeId)) {
+        console.log(`App.vue: Using built-in theme structure for ${themeId}`);
+        
+        // Remove any existing theme styles and links
+        document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
+          link.remove();
+        });
+        document.querySelectorAll('style[id^="theme-style-"], style[id^="fallback-theme-"], style[id^="theme-css-"]').forEach(style => {
+          style.remove();
+        });
+        
+        // Remove any custom theme classes
+        document.body.className = '';
+        document.body.classList.forEach(cls => {
+          if (cls.startsWith('theme-custom-')) {
+            document.body.classList.remove(cls);
+          }
+        });
+        
+        // Set the body class directly, this will trigger the CSS imports in app.scss
+        document.body.className = `theme-${themeId}`;
+        
+        // If we're in an electron environment, notify about the theme change
+        if (window.electron && window.electron.ipcRenderer) {
+          console.log(`App.vue: Notifying electron about built-in theme: ${themeId}`);
+          window.electron.ipcRenderer.send(AppEvent.settingsChanged, { 
+            key: 'theme', 
+            value: themeId
+          });
+        }
+        
+        return;
+      }
+      
+      // For non-built-in themes, we use the dark theme as a base structure
+      // and apply color overrides using custom classes
+      console.log(`App.vue: Applying non-built-in theme ${themeId} with baseTheme ${baseTheme || 'dark'}`);
+      
+      // Remove any existing theme links and style elements
+      document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
+        link.remove();
+      });
+      document.querySelectorAll('style[id^="theme-style-"], style[id^="fallback-theme-"], style[id^="theme-css-"]').forEach(style => {
+        style.remove();
+      });
+      
+      // Remove any custom theme classes
+      document.body.classList.forEach(cls => {
+        if (cls.startsWith('theme-custom-')) {
+          document.body.classList.remove(cls);
+        }
+      });
+      
+      // Set primary class to dark theme for structure
+      document.body.className = 'theme-dark';
+      
+      // Add the custom theme class for our specific theme
+      document.body.classList.add(`theme-custom-${themeId}`);
+      
+      // Apply the CSS overrides for this theme
+      if (cssContent) {
+        console.log('App.vue: Applying provided CSS overrides');
+        const styleElement = document.createElement('style');
+        styleElement.id = `theme-style-${themeId}`;
+        styleElement.textContent = cssContent;
+        document.head.appendChild(styleElement);
+      } else if (this.$root.$children) {
+        // Try to find ThemeManagerModal to generate CSS
+        const themeManager = this.$root.$children.find(c => c.$options && c.$options.name === 'ThemeManagerModal');
+        if (themeManager && typeof themeManager.generateThemeColorOverrides === 'function') {
+          console.log('App.vue: Using ThemeManagerModal to generate color overrides');
+          const generatedCSS = themeManager.generateThemeColorOverrides(theme);
+          const styleElement = document.createElement('style');
+          styleElement.id = `theme-style-${themeId}`;
+          styleElement.textContent = generatedCSS;
+          document.head.appendChild(styleElement);
+        } else {
+          console.log('App.vue: Could not find ThemeManagerModal, using basic color overrides');
+          this.applyBasicColorOverrides(theme);
+        }
+      } else {
+        console.log('App.vue: No ThemeManagerModal available, using basic color overrides');
+        this.applyBasicColorOverrides(theme);
+      }
+      
+      // If we're in an electron environment, notify about the theme change
+      if (window.electron && window.electron.ipcRenderer) {
+        console.log(`App.vue: Notifying electron about theme change: ${themeId}`);
+        window.electron.ipcRenderer.send(AppEvent.settingsChanged, { 
+          key: 'theme', 
+          value: themeId,
+          css: cssContent || document.querySelector(`style[id^="theme-style-${themeId}"]`)?.textContent,
+          baseTheme: 'dark'
+        });
+      }
+    },
+    applyBasicColorOverrides(theme) {
+      const themeId = theme.id;
+      const bg = theme.colors.background;
+      const fg = theme.colors.foreground;
+      const string = theme.colors.string;
+      const keyword = theme.colors.keyword;
+      
+      // Helper function to adjust colors
+      const adjustColor = (color, amount) => {
+        let usePound = false;
+        
+        if (color[0] === "#") {
+          color = color.slice(1);
+          usePound = true;
+        }
+        
+        const num = parseInt(color, 16);
+        
+        let r = (num >> 16) + amount;
+        r = Math.max(Math.min(r, 255), 0);
+        
+        let g = ((num >> 8) & 0x00FF) + amount;
+        g = Math.max(Math.min(g, 255), 0);
+        
+        let b = (num & 0x0000FF) + amount;
+        b = Math.max(Math.min(b, 255), 0);
+        
+        return (usePound ? "#" : "") + (g | (r << 8) | (b << 16)).toString(16).padStart(6, '0');
+      };
+      
+      // Create minimal color overrides targeted at our combined classes
+      const cssContent = `
+        /* Basic color overrides for theme: ${theme.name} */
+        .theme-dark.theme-custom-${themeId} {
+          --theme-bg: ${bg} !important;
+          --theme-base: ${fg} !important;
+          --theme-string: ${string} !important;
+          --theme-keyword: ${keyword} !important;
+          --theme-primary: ${keyword} !important;
+          --theme-secondary: ${adjustColor(keyword, -20)} !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} body {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} .beekeeper-studio-wrapper {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+        
+        /* Extra styling for key elements */
+        .theme-dark.theme-custom-${themeId} .sidebar {
+          background-color: ${adjustColor(bg, -15)} !important;
+        }
+        
+        .theme-dark.theme-custom-${themeId} .editor {
+          background-color: ${bg} !important;
+          color: ${fg} !important;
+        }
+      `;
+      
+      // Create and apply the style
+      const style = document.createElement('style');
+      style.id = `theme-style-${themeId}`;
+      style.textContent = cssContent;
+      document.head.appendChild(style);
+    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {
