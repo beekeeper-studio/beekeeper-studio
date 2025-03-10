@@ -1,10 +1,5 @@
 <template>
   <div class="theme-manager-container">
-    <!-- Debug button for testing - can be removed in production -->
-    <button v-if="$store.state.isDevelopment" @click="showModal" class="debug-button">
-      Debug: Show Theme Manager
-    </button>
-    
     <div class="theme-manager-modal" v-if="isVisible">
       <div class="modal-backdrop" @click="closeModal" />
       <div class="modal-content">
