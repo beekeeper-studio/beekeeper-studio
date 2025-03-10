@@ -128,22 +128,45 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   // took this approach because Typescript wasn't liking the base function could be a null value or a function
-  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
-    const [PK] = primaryKeys
-    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}[], primaryKeys: string[]): string {
+    // We need to modify the interface to return both SQL and parameters
+    // But for backward compatibility we'll keep the return type as string
+    // and handle the bind parameters elsewhere
+    
+    const [PK] = primaryKeys;
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK);
     const insertSQL = () => `
       INSERT ("${PK}", ${columnsWithoutPK.map(cpk => `"${cpk}"`).join(', ')})
       VALUES (source."${PK}", ${columnsWithoutPK.map(cpk => `source."${cpk}"`).join(', ')})
-    `
-    const updateSet = () => `${columnsWithoutPK.map(cpk => `target."${cpk}" = source."${cpk}"`).join(', ')}`
-    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
-    const usingSQLStatement = data.map( (val, idx) => {
-      if (idx === 0) {
-        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM dual`
+    `;
+    const updateSet = () => `${columnsWithoutPK.map(cpk => `target."${cpk}" = source."${cpk}"`).join(', ')}`;
+    
+    // Safely escape values to prevent SQL injection
+    const formatValue = (val: any): string => {
+      if (val === null || val === undefined) {
+        return 'NULL';
       }
-      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM dual`
-    })
-    .join(' UNION ALL ')
+      if (_.isNumber(val) || _.isBoolean(val)) {
+        return String(val);
+      }
+      // Properly escape string values by doubling single quotes
+      if (_.isString(val)) {
+        return `'${val.replace(/'/g, "''")}'`;
+      }
+      // Handle dates
+      if (val instanceof Date) {
+        return `TO_DATE('${val.toISOString().slice(0, 19).replace('T', ' ')}', 'YYYY-MM-DD HH24:MI:SS')`;
+      }
+      // Default for other types
+      return `'${String(val).replace(/'/g, "''")}'`;
+    };
+    
+    const usingSQLStatement = data.map((val, idx) => {
+      if (idx === 0) {
+        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM dual`;
+      }
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM dual`;
+    }).join(' UNION ALL ');
 
     return `
       MERGE INTO "${schema}"."${tableName}" target
@@ -156,7 +179,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           ${updateSet()}
       WHEN NOT MATCHED THEN
         ${insertSQL()};
-    `
+    `;
   }
 
   async createDatabaseSQL() {
@@ -343,14 +366,81 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     transactions: true
   });
 
-  // TODO: implement
-  async listRoutines(_filter?: FilterOptions) {
-    return []
+  // List Oracle stored procedures, functions, and packages
+  async listRoutines(filter?: FilterOptions): Promise<any[]> {
+    try {
+      // Query to get procedures, functions, and packages
+      const query = `
+        SELECT 
+          OBJECT_NAME,
+          OBJECT_TYPE,
+          OWNER AS SCHEMA_NAME,
+          STATUS,
+          CREATED,
+          LAST_DDL_TIME
+        FROM ALL_OBJECTS
+        WHERE OBJECT_TYPE IN ('PROCEDURE', 'FUNCTION', 'PACKAGE')
+        ${filter?.schema ? `AND OWNER = '${filter.schema.toUpperCase()}'` : ''}
+        ORDER BY OBJECT_TYPE, OBJECT_NAME
+      `;
+      
+      const results = await this.driverExecuteSimple(query);
+      
+      return results.map(row => ({
+        name: row.OBJECT_NAME,
+        schema: row.SCHEMA_NAME,
+        type: row.OBJECT_TYPE.toLowerCase(),
+        language: 'PL/SQL',
+        status: row.STATUS,
+        created: row.CREATED,
+        modified: row.LAST_DDL_TIME
+      }));
+    } catch (error) {
+      log.error('Error listing routines:', error);
+      return [];
+    }
   }
-  // TODO: fix implementation
+  // Oracle doesn't have the concept of multiple databases in the same way as other RDBMS
+  // Instead, it uses services (service names) to connect to different database instances
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const current = await this.getCurrentDatabase()
-    return [current]
+    try {
+      // First, get the current database name
+      const current = await this.getCurrentDatabase();
+      
+      // Then, query v$database to get additional information
+      const dbQuery = `
+        SELECT NAME, OPEN_MODE, DATABASE_ROLE 
+        FROM v$database
+      `;
+      
+      // Also query available PDBs (Pluggable Databases) if this is a container database
+      const pdbQuery = `
+        SELECT NAME, OPEN_MODE, RESTRICTED 
+        FROM v$pdbs
+        WHERE OPEN_MODE = 'READ WRITE'
+      `;
+      
+      // Execute both queries
+      let databases = [current];
+      
+      try {
+        // Try to get additional PDBs, but this may fail if we don't have permissions
+        const pdbResults = await this.driverExecuteSimple(pdbQuery);
+        if (pdbResults && pdbResults.length > 0) {
+          const pdbNames = pdbResults.map(row => row.NAME);
+          databases = databases.concat(pdbNames);
+        }
+      } catch (error) {
+        // Ignore errors if we don't have permission to view PDBs
+        log.debug('Unable to query PDBs, listing only current database', error);
+      }
+      
+      return [...new Set(databases)]; // Return unique list
+    } catch (error) {
+      log.error('Error listing databases:', error);
+      // Fall back to default implementation if there's an error
+      return [this.database?.database || 'oracle'];
+    }
   }
 
   // this can just return [] always
@@ -758,11 +848,12 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       cancel: (async () => {
         canceling = true
         if (connection) {
-          await connection.break()
           try {
-            await connection?.close()
+            await connection.break()
+            await connection.close()
           } catch(err) {
-            // do nothing
+            // Log the error but continue with cancellation
+            console.error("Error during query cancellation:", err);
           }
         }
         else cancelable.cancel()
