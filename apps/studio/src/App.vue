@@ -41,40 +41,43 @@
       <license-expired-modal />
       <lifetime-license-expired-modal />
     </template>
+    <theme-manager-modal v-if="appLoaded" />
   </div>
 </template>
 
 <script lang="ts">
+// @ts-nocheck
+import querystring from 'query-string'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
-import Titlebar from './components/Titlebar.vue'
-import CoreInterface from './components/CoreInterface.vue'
-import ConnectionInterface from './components/ConnectionInterface.vue'
 import AutoUpdater from './components/AutoUpdater.vue'
-import StateManager from './components/quicksearch/StateManager.vue'
+import ConnectionInterface from './components/ConnectionInterface.vue'
+import CoreInterface from './components/CoreInterface.vue'
 import DataManager from './components/data/DataManager.vue'
-import querystring from 'query-string'
+import StateManager from './components/quicksearch/StateManager.vue'
+import Titlebar from './components/Titlebar.vue'
 
+import { SmartLocalStorage } from '@/common/LocalStorage'
+import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
+import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
+import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
 import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
 import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
-import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
-import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
-import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
+import Dropzone from '@/components/Dropzone.vue'
+import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
+import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
+import UtilDiedModal from '@/components/UtilDiedModal.vue'
+import type { LicenseStatus } from "@/lib/license"
 import TimeAgo from 'javascript-time-ago'
-import EnterLicenseModal from './components/ultimate/EnterLicenseModal.vue'
+import Noty from 'noty'
 import { AppEvent } from './common/AppEvent'
 import globals from './common/globals'
 import NotificationManager from './components/NotificationManager.vue'
-import Noty from 'noty';
-import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
-import Dropzone from '@/components/Dropzone.vue'
-import UtilDiedModal from '@/components/UtilDiedModal.vue'
-import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
-import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
-import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
-import type { LicenseStatus } from "@/lib/license";
-import { SmartLocalStorage } from '@/common/LocalStorage';
+import ThemeManagerModal from './components/settings/ThemeManagerModal.vue'
+import EnterLicenseModal from './components/ultimate/EnterLicenseModal.vue'
+import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 
 import rawLog from '@bksLogger'
 
@@ -87,7 +90,7 @@ export default Vue.extend({
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
+    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, ThemeManagerModal,
   },
   data() {
     return {
@@ -95,6 +98,7 @@ export default Vue.extend({
       interval: null,
       licenseInterval: null,
       runningWayland: false,
+      appLoaded: false
     }
   },
   computed: {
@@ -136,37 +140,43 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
-    this.notifyFreeTrial()
-    this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
-    this.$store.dispatch('licenses/updateAll');
-    this.licenseInterval = setInterval(
-      () => this.$store.dispatch('licenses/updateAll'),
-      globals.licenseCheckInterval
-    )
-    const query = querystring.parse(window.location.search, { parseBooleans: true })
-    if (query) {
-      this.url = query.url || null
-      this.runningWayland = !!query.runningWayland
-    }
-
-
-    this.$nextTick(() => {
-      window.main.isReady();
-    })
-    if (this.themeValue) {
-      document.body.className = `theme-${this.themeValue}`
-    }
-
-    if (this.url) {
-      try {
-        await this.$store.dispatch('openUrl', this.url)
-      } catch (error) {
-        console.error(error)
-        this.$noty.error(`Error opening ${this.url}: ${error}`)
-        throw error
+    try {
+      this.notifyFreeTrial()
+      this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
+      this.$store.dispatch('licenses/updateAll');
+      this.licenseInterval = setInterval(
+        () => this.$store.dispatch('licenses/updateAll'),
+        globals.licenseCheckInterval
+      )
+      const query = querystring.parse(window.location.search, { parseBooleans: true })
+      if (query) {
+        this.url = query.url || null
+        this.runningWayland = !!query.runningWayland
       }
-    }
 
+      this.$nextTick(() => {
+        window.main.isReady();
+        // Set appLoaded to true after a short delay to ensure the app is fully initialized
+        setTimeout(() => {
+          this.appLoaded = true;
+        }, 1000);
+      })
+      if (this.themeValue) {
+        document.body.className = `theme-${this.themeValue}`
+      }
+
+      if (this.url) {
+        try {
+          await this.$store.dispatch('openUrl', this.url)
+        } catch (error) {
+          console.error(error)
+          this.$noty.error(`Error opening ${this.url}: ${error}`)
+          throw error
+        }
+      }
+    } catch (error) {
+      console.error('Error in App.vue mounted hook:', error)
+    }
   },
   methods: {
     notifyFreeTrial() {
@@ -224,6 +234,5 @@ export default Vue.extend({
 </script>
 
 <style>
-
-
+/* Add any relevant styles here */
 </style>

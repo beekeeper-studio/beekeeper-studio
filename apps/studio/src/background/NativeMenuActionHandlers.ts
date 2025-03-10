@@ -1,14 +1,14 @@
+import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
+import { DevLicenseState } from '@/lib/license'
+import { app, shell } from 'electron'
+import { autoUpdater } from "electron-updater"
 import _ from 'lodash'
-import {AppEvent} from '../common/AppEvent'
-import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
-import { app , shell } from 'electron'
-import platformInfo from '../common/platform_info'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { autoUpdater } from "electron-updater"
-import { DevLicenseState } from '@/lib/license';
+import { AppEvent } from '../common/AppEvent'
+import platformInfo from '../common/platform_info'
 import { setAllowBeta } from './update_manager'
+import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -18,7 +18,7 @@ function getIcon() {
 }
 
 export default class NativeMenuActionHandlers implements IMenuActionHandler {
-  constructor(private settings: IGroupedUserSettings) {}
+  constructor(private settings: IGroupedUserSettings) { }
 
   quit(): void {
     app.quit()
@@ -102,7 +102,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively
   // Having said that, it can accept openoptions too and do it's thing
-  newWindow = (options: Electron.MenuItem|OpenOptions = {}): void => {
+  newWindow = (options: Electron.MenuItem | OpenOptions = {}): void => {
     // typescript isn't happy that url doesn't exist on MenuItem, which shouldn't matter because we're checking to see if it exists, but TS gonna TS.
     if ((options as any)?.url) {
       return buildWindow(this.settings, <OpenOptions>options)
@@ -132,7 +132,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
     await this.settings.theme.save()
-    getActiveWindows().forEach( window => {
+    getActiveWindows().forEach(window => {
       window.send(AppEvent.settingsChanged)
     })
   }
@@ -141,7 +141,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
-  toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
+  toggleSidebar = async (_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.toggleSidebar)
   }
 
@@ -172,7 +172,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   toggleMinimalMode = async (): Promise<void> => {
     this.settings.minimalMode.value = !this.settings.minimalMode.value
     await this.settings.minimalMode.save()
-    getActiveWindows().forEach( window => {
+    getActiveWindows().forEach(window => {
       window.send(AppEvent.settingsChanged)
     })
   }
@@ -186,10 +186,28 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     const beta = label.toLowerCase() == 'beta';
     this.settings.useBeta.userValue = beta;
     await this.settings.useBeta.save()
-    getActiveWindows().forEach( window => {
+    getActiveWindows().forEach(window => {
       window.send(AppEvent.settingsChanged)
     })
     setAllowBeta(this.settings.useBeta.value as boolean);
     autoUpdater.checkForUpdates();
+  }
+
+  manageCustomThemes(_menuItem: Electron.MenuItem, win: ElectronWindow) {
+    console.log('manageCustomThemes called');
+
+    if (win) {
+      // Use a simple event name that matches what the component is listening for
+      win.webContents.send('show-theme-manager');
+    } else {
+      console.log('No window provided');
+      // Try to get all active windows
+      const windows = getActiveWindows();
+      if (windows && windows.length > 0) {
+        windows.forEach((window) => {
+          window.webContents.send('show-theme-manager');
+        });
+      }
+    }
   }
 }

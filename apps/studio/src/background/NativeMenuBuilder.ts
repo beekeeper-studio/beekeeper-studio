@@ -1,10 +1,10 @@
+import platformInfo from '@/common/platform_info'
+import rawLog from '@bksLogger'
+import { BrowserWindow, ipcMain } from 'electron'
+import { AppEvent } from '../common/AppEvent'
+import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import MenuBuilder from '../common/menus/MenuBuilder'
 import NativeMenuActionHandlers from './NativeMenuActionHandlers'
-import { ipcMain, BrowserWindow } from 'electron'
-import {AppEvent} from '../common/AppEvent'
-import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import rawLog from '@bksLogger'
-import platformInfo from '@/common/platform_info'
 
 const log = rawLog.scope('NativeMenuBuilder')
 
@@ -13,7 +13,7 @@ export default class NativeMenuBuilder {
   private handler: NativeMenuActionHandlers
   private menu?: Electron.Menu
 
-  constructor(private electron: any, settings: IGroupedUserSettings){
+  constructor(private electron: any, settings: IGroupedUserSettings) {
     this.handler = new NativeMenuActionHandlers(settings)
     // We only support native titlebars for Mac now
     if (platformInfo.isMac) {
@@ -45,5 +45,36 @@ export default class NativeMenuBuilder {
         console.error(`Couldn't trigger action ${actionName}(${arg || ""}), ${e.message}`)
       }
     })
+  }
+
+  manageCustomThemes() {
+    // Send an event to the renderer to show the theme manager
+    this.sendToFocusedWindow(AppEvent.showThemeManager);
+  }
+
+  private sendToFocusedWindow(channel: string, ...args: any[]) {
+    const focusedWindow = this.electron.BrowserWindow.getFocusedWindow();
+    if (focusedWindow) {
+      focusedWindow.webContents.send(channel, ...args);
+    }
+  }
+
+  switchTheme(menuItem) {
+    const themeName = menuItem.label.toLowerCase();
+
+    if (themeName === 'custom') {
+      // Show the theme manager and let the user select a custom theme
+      this.sendToFocusedWindow(AppEvent.showThemeManager);
+
+      // If there's an active custom theme, keep it active
+      // Otherwise, activate the first available custom theme
+      this.sendToFocusedWindow('activate-custom-theme');
+    } else {
+      // For built-in themes, deactivate any custom theme
+      this.sendToFocusedWindow('deactivate-custom-theme');
+
+      // Set the built-in theme
+      this.sendToFocusedWindow('set-theme', themeName);
+    }
   }
 }
