@@ -37,10 +37,13 @@ async function ensureThemesDir() {
 
 // Generate CSS for a theme
 function generateThemeCSS(theme: Theme): string {
+  console.log(`DEBUG: Generating CSS for theme: ${theme.id}`);
+  console.log(`DEBUG: Theme colors:`, JSON.stringify(theme.colors));
+
   const { id, colors } = theme;
 
-  // Basic CSS variables
-  return `
+  try {
+    const css = `
 /* Theme: ${theme.name} */
 .theme-${id} {
   /* Basic colors */
@@ -101,36 +104,52 @@ function generateThemeCSS(theme: Theme): string {
   color: var(--editor-fg);
 }
 `;
+    console.log(`DEBUG: Successfully generated CSS for theme: ${theme.id}`);
+    return css;
+  } catch (error) {
+    console.error(`DEBUG: Error generating CSS for theme ${theme.id}:`, error);
+    throw error;
+  }
 }
 
 // Adjust a color's brightness
 function adjustColor(color: string, amount: number): string {
+  console.log(`DEBUG: Adjusting color: ${color} by amount: ${amount}`);
+
   try {
-    // Remove the hash if it exists
+    if (!color || typeof color !== 'string') {
+      console.error(`DEBUG: Invalid color value: ${color}`);
+      return '#000000';
+    }
+
     color = color.replace('#', '');
 
-    // Parse the color
+    if (!/^[0-9A-Fa-f]{6}$/.test(color)) {
+      console.error(`DEBUG: Invalid hex color format: #${color}`);
+      return '#000000';
+    }
+
     let r = parseInt(color.substr(0, 2), 16);
     let g = parseInt(color.substr(2, 2), 16);
     let b = parseInt(color.substr(4, 2), 16);
 
-    // Adjust the brightness
     r = Math.max(0, Math.min(255, r + amount));
     g = Math.max(0, Math.min(255, g + amount));
     b = Math.max(0, Math.min(255, b + amount));
 
-    // Convert back to hex
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    const result = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    console.log(`DEBUG: Adjusted color result: ${result}`);
+    return result;
   } catch (error) {
-    console.error('Error adjusting color:', error);
-    return color;
+    console.error('DEBUG: Error adjusting color:', error);
+    return color || '#000000';
   }
 }
 
 // Load all themes from the store
 async function loadAllThemes() {
   try {
-    console.log('Loading all themes...');
+    console.log('DEBUG: Loading all themes...');
 
     // Import the ThemeStore to get the themes
     const { default: ThemeStoreModule } = await import('../store/modules/settings/ThemeStore');
@@ -141,11 +160,15 @@ async function loadAllThemes() {
       ? stateGetter().availableThemes
       : [];
 
-    console.log(`Found ${themes.length} themes in ThemeStore`);
+    console.log(`DEBUG: Found ${themes.length} themes in ThemeStore`);
+    console.log(`DEBUG: Theme IDs: ${themes.map(t => t.id).join(', ')}`);
 
     // Process each theme
     for (const theme of themes) {
       try {
+        console.log(`DEBUG: Processing theme: ${theme.id}`);
+        console.log(`DEBUG: Theme object:`, JSON.stringify(theme));
+
         // Generate CSS for the theme
         const css = generateThemeCSS(theme);
 
@@ -156,64 +179,68 @@ async function loadAllThemes() {
           css
         };
 
-        console.log(`Processed theme: ${theme.id}`);
+        console.log(`DEBUG: Successfully processed theme: ${theme.id}`);
       } catch (error) {
-        console.error(`Error processing theme ${theme.id}:`, error);
+        console.error(`DEBUG: Error processing theme ${theme.id}:`, error);
       }
     }
 
-    console.log(`Loaded ${Object.keys(themeCache).length} themes`);
+    console.log(`DEBUG: Loaded ${Object.keys(themeCache).length} themes into cache`);
+    console.log(`DEBUG: Cached theme IDs: ${Object.keys(themeCache).join(', ')}`);
   } catch (error) {
-    console.error('Error loading themes:', error);
+    console.error('DEBUG: Error loading themes:', error);
   }
 }
 
 // Initialize the theme service
 export async function initializeThemeService() {
   try {
+    console.log('DEBUG: Initializing theme service');
     await ensureThemesDir();
     await loadAllThemes();
 
-    console.log('Theme service initialized');
-    console.log(`Available themes: ${Object.keys(themeCache).join(', ')}`);
+    console.log('DEBUG: Theme service initialized');
+    console.log(`DEBUG: Available themes: ${Object.keys(themeCache).join(', ')}`);
   } catch (error) {
-    console.error('Error initializing theme service:', error);
+    console.error('DEBUG: Error initializing theme service:', error);
   }
 }
 
 // Get a theme by name
 export async function getThemeByName(name: string): Promise<ThemeData | null> {
   try {
-    console.log(`Getting theme: ${name}`);
+    console.log(`DEBUG: Getting theme: ${name}`);
 
     // Check the cache first
     if (themeCache[name]) {
-      console.log(`Theme found in cache: ${name}`);
+      console.log(`DEBUG: Theme found in cache: ${name}`);
       return themeCache[name];
     }
 
     // If not in cache, try to reload all themes
-    console.log(`Theme ${name} not found in cache, reloading all themes`);
+    console.log(`DEBUG: Theme ${name} not found in cache, reloading all themes`);
     await loadAllThemes();
 
     if (themeCache[name]) {
-      console.log(`Theme found after reload: ${name}`);
+      console.log(`DEBUG: Theme found after reload: ${name}`);
       return themeCache[name];
     }
 
     // If still not found, try to find a theme with a similar name
     const themeIds = Object.keys(themeCache);
+    console.log(`DEBUG: Available themes in cache: ${themeIds.join(', ')}`);
+
     const similarTheme = themeIds.find(id =>
       id.includes(name) || name.includes(id)
     );
 
     if (similarTheme) {
-      console.log(`Found similar theme: ${similarTheme} for ${name}`);
+      console.log(`DEBUG: Found similar theme: ${similarTheme} for ${name}`);
       return themeCache[similarTheme];
     }
 
     // If all else fails, return a default dark theme
-    console.log(`Theme ${name} not found, returning default dark theme`);
+    console.log(`DEBUG: Theme ${name} not found, returning default dark theme`);
     return {
       name: 'default-dark',
       type: 'builtin',
@@ -274,7 +301,7 @@ export async function getThemeByName(name: string): Promise<ThemeData | null> {
 `
     };
   } catch (error) {
-    console.error(`Error getting theme ${name}:`, error);
+    console.error(`DEBUG: Error getting theme ${name}:`, error);
     return null;
   }
 }
@@ -282,6 +309,7 @@ export async function getThemeByName(name: string): Promise<ThemeData | null> {
 // Register a custom theme
 export async function registerCustomTheme(themeId: string, css: string): Promise<void> {
   try {
+    console.log(`DEBUG: Registering custom theme: ${themeId}`);
     const themesDir = await ensureThemesDir();
     const themePath = path.join(themesDir, `${themeId}.css`);
 
@@ -296,9 +324,9 @@ export async function registerCustomTheme(themeId: string, css: string): Promise
       css
     };
 
-    console.log(`Registered custom theme: ${themeId}`);
+    console.log(`DEBUG: Successfully registered custom theme: ${themeId}`);
   } catch (error) {
-    console.error(`Error registering custom theme ${themeId}:`, error);
+    console.error(`DEBUG: Error registering custom theme ${themeId}:`, error);
     throw error;
   }
 }
@@ -306,6 +334,7 @@ export async function registerCustomTheme(themeId: string, css: string): Promise
 // Remove a custom theme
 export async function removeCustomTheme(themeId: string): Promise<void> {
   try {
+    console.log(`DEBUG: Removing custom theme: ${themeId}`);
     if (themeCache[themeId] && themeCache[themeId].path) {
       // Remove the file
       await util.promisify(fs.unlink)(themeCache[themeId].path!);
@@ -313,15 +342,18 @@ export async function removeCustomTheme(themeId: string): Promise<void> {
       // Remove from cache
       delete themeCache[themeId];
 
-      console.log(`Removed custom theme: ${themeId}`);
+      console.log(`DEBUG: Successfully removed custom theme: ${themeId}`);
+    } else {
+      console.log(`DEBUG: Theme ${themeId} not found in cache or has no path`);
     }
   } catch (error) {
-    console.error(`Error removing custom theme ${themeId}:`, error);
+    console.error(`DEBUG: Error removing custom theme ${themeId}:`, error);
     throw error;
   }
 }
 
 // Get all themes
 export function getAllThemes(): ThemeData[] {
+  console.log(`DEBUG: Getting all themes, count: ${Object.keys(themeCache).length}`);
   return Object.values(themeCache);
 }

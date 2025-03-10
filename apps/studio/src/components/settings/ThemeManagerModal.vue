@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Debug button for development only -->
     <button v-if="$config && $config.isDevelopment" 
             @click="show"
             class="debug-theme-manager-button"
@@ -8,7 +7,6 @@
       Debug: Show Theme Manager
     </button>
     
-    <!-- Modal implementation -->
     <div v-if="isVisible" class="theme-manager-modal-overlay">
       <div class="theme-manager-modal-content">
         <div class="theme-manager-header">
@@ -34,7 +32,6 @@
             </button>
           </div>
           
-          <!-- Popular Themes Tab -->
           <div v-if="activeTab === 'popular'" class="tab-content">
             <div v-if="loading" class="loading">
               Loading themes...
@@ -76,7 +73,6 @@
             </div>
           </div>
           
-          <!-- Upload Custom Theme Tab -->
           <div v-if="activeTab === 'upload'" class="tab-content">
             <div class="upload-section">
               <h4>Upload a VSCode or SublimeText Theme</h4>
@@ -152,35 +148,148 @@ export default {
   mounted() {
     console.log('ThemeManagerModal mounted');
     
-    // Listen for Vue event (for the debug button)
     this.$root.$on('show-theme-manager', this.show);
     
-    // Try to access electron via window
     if (window.electron && window.electron.ipcRenderer) {
       console.log('Setting up IPC listener via window.electron');
       window.electron.ipcRenderer.on(AppEvent.showThemeManager, this.show);
     } else {
-      // Fallback to window event listener
       console.log('Setting up window event listener');
       window.addEventListener(AppEvent.showThemeManager, this.show);
     }
     
-    // Set up a global method that can be called from the main process
     window.showThemeManagerModal = this.show;
+    
+    // Add debugging function to window
+    window.debugTheme = (themeId) => {
+      console.log(`Debug theme called for: ${themeId}`);
+      const theme = this.allThemes.find(t => t.id === themeId);
+      if (theme) {
+        console.log(`Theme object:`, JSON.stringify(theme));
+        console.log(`Current body class: ${document.body.className}`);
+        
+        // Try to find the theme CSS
+        let themeLink = null;
+        document.querySelectorAll('link').forEach(link => {
+          if (link.href && link.href.includes(themeId)) {
+            themeLink = link;
+            console.log(`Found theme link: ${link.href}`);
+          }
+        });
+        
+        if (!themeLink) {
+          console.log(`No theme link found for ${themeId}`);
+        }
+        
+        // Check for style elements
+        let themeStyle = null;
+        document.querySelectorAll('style').forEach(style => {
+          if (style.textContent && style.textContent.includes(`theme-${themeId}`)) {
+            themeStyle = style;
+            console.log(`Found theme style element: ${style.id}`);
+          }
+        });
+        
+        if (!themeStyle) {
+          console.log(`No theme style element found for ${themeId}`);
+        }
+        
+        // Check computed styles
+        const computedStyle = window.getComputedStyle(document.body);
+        console.log(`Computed background color: ${computedStyle.backgroundColor}`);
+        console.log(`Computed text color: ${computedStyle.color}`);
+        
+        // Try to force apply the theme
+        this.applyFallbackThemeStyles(themeId);
+      } else {
+        console.error(`Theme ${themeId} not found in allThemes`);
+        console.log(`Available themes:`, this.allThemes.map(t => t.id));
+      }
+    };
+
+    // Listen for theme preview events
+    this.$root.$on('theme-preview-changed', (payload) => {
+      let themeId;
+      let css;
+      
+      // Handle both string and object payloads
+      if (typeof payload === 'string') {
+        themeId = payload;
+      } else {
+        themeId = payload.themeId;
+        css = payload.css;
+      }
+      
+      console.log(`App received theme preview change: ${themeId}`);
+      document.body.className = `theme-${themeId}`;
+      
+      if (css) {
+        // Apply the CSS directly
+        const style = document.createElement('style');
+        style.id = `theme-css-${themeId}`;
+        style.textContent = css;
+        
+        // Remove any existing theme styles
+        document.querySelectorAll('style[id^="theme-css-"]').forEach(existingStyle => {
+          existingStyle.remove();
+        });
+        
+        // Add the new style
+        document.head.appendChild(style);
+      } else {
+        // Apply the theme CSS
+        const linkId = `theme-css-${themeId}`;
+        
+        // Remove any existing theme links
+        document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
+          link.remove();
+        });
+        
+        // Create a new link element
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `./assets/styles/themes/${themeId}/theme.css`;
+        
+        // Add the link to the document head
+        document.head.appendChild(link);
+      }
+    });
+
+    // Also listen for window events
+    window.addEventListener('theme-preview', (event) => {
+      const themeId = event.detail.themeId;
+      const css = event.detail.css;
+      
+      console.log(`App received window theme preview event: ${themeId}`);
+      document.body.className = `theme-${themeId}`;
+      
+      if (css) {
+        // Apply the CSS directly
+        const style = document.createElement('style');
+        style.id = `theme-css-${themeId}`;
+        style.textContent = css;
+        
+        // Remove any existing theme styles
+        document.querySelectorAll('style[id^="theme-css-"]').forEach(existingStyle => {
+          existingStyle.remove();
+        });
+        
+        // Add the new style
+        document.head.appendChild(style);
+      }
+    });
   },
   beforeDestroy() {
     console.log('ThemeManagerModal being destroyed');
     this.$root.$off('show-theme-manager', this.show);
     
-    // Clean up IPC listener
     if (window.electron && window.electron.ipcRenderer) {
       window.electron.ipcRenderer.removeListener(AppEvent.showThemeManager, this.show);
     }
     
-    // Remove window event listener
     window.removeEventListener(AppEvent.showThemeManager, this.show);
     
-    // Clean up global method
     window.showThemeManagerModal = undefined;
   },
   methods: {
@@ -201,10 +310,8 @@ export default {
       try {
         console.log('Fetching themes, current theme value:', this.themeValue);
         
-        // Get themes from the store
         const themes = this.allThemes || [];
         
-        // Mark the current theme as active
         this.popularThemes = themes.map(theme => ({
           ...theme,
           isActive: theme.id === this.themeValue
@@ -228,50 +335,44 @@ export default {
       }
       
       try {
-        // Save theme to user settings
         this.$store.dispatch('settings/save', { key: 'theme', value: theme.id });
         
-        // Update UI to reflect the change
         document.body.className = `theme-${theme.id}`;
         
-        // Apply the theme CSS via IPC if available
         if (window.electron && window.electron.ipcRenderer) {
           console.log(`Requesting theme CSS application for ${theme.id}`);
-          window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id })
+          
+          window.electron.ipcRenderer.invoke('themes/removeActive')
+            .then(() => {
+              return window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id });
+            })
             .then(result => {
               if (result.success) {
                 console.log(`Theme ${theme.id} applied successfully via IPC`);
               } else {
                 console.error(`Failed to apply theme ${theme.id}:`, result.error);
-                // Fallback: Try to load the theme CSS from a file
                 this.loadThemeCssFile(theme.id);
               }
             })
             .catch(err => {
               console.error(`Error applying theme ${theme.id}:`, err);
-              // Fallback: Try to load the theme CSS from a file
               this.loadThemeCssFile(theme.id);
             });
         } else {
-          // Fallback: Try to load the theme CSS from a file
           this.loadThemeCssFile(theme.id);
         }
         
-        // Update the active theme in our local state
         this.popularThemes = this.popularThemes.map(t => ({
           ...t,
           isActive: t.id === theme.id
         }));
         
-        // Notify user
         this.$noty.success(`Theme "${theme.name}" applied successfully!`);
         
-        // Notify other windows about the theme change
         if (window.electron && window.electron.ipcRenderer) {
           window.electron.ipcRenderer.send(AppEvent.settingsChanged);
         }
         
-        // Close the modal after applying
         this.close();
       } catch (error) {
         console.error('Error applying theme:', error);
@@ -281,32 +382,231 @@ export default {
     loadThemeCssFile(themeId) {
       console.log(`Attempting to load CSS file for theme: ${themeId}`);
       
-      // Try to load the theme CSS from a file
       const linkId = `theme-css-${themeId}`;
       
-      // Remove any existing theme link
-      const existingLink = document.getElementById(linkId);
-      if (existingLink) {
-        existingLink.remove();
-      }
+      document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
+        link.remove();
+      });
       
-      // Create a new link element
       const link = document.createElement('link');
       link.id = linkId;
       link.rel = 'stylesheet';
-      link.href = `./assets/styles/themes/${themeId}/theme.css`;
       
-      // Add error handling
+      const possiblePaths = [
+        `./assets/styles/themes/${themeId}/theme.css`,
+        `./assets/styles/themes/${themeId}.css`,
+        `./themes/${themeId}.css`
+      ];
+      
       link.onerror = () => {
         console.error(`Failed to load CSS file for theme: ${themeId}`);
+        
+        if (possiblePaths.length > 0) {
+          const nextPath = possiblePaths.shift();
+          console.log(`Trying alternative path: ${nextPath}`);
+          link.href = nextPath;
+        } else {
+          console.error(`All paths failed for theme: ${themeId}`);
+          this.applyFallbackThemeStyles(themeId);
+          
+          // Notify the main application about the fallback theme
+          this.$root.$emit('theme-preview-changed', themeId);
+          
+          // Create a custom event
+          const themeChangeEvent = new CustomEvent('theme-preview', { 
+            detail: { themeId: themeId } 
+          });
+          window.dispatchEvent(themeChangeEvent);
+        }
       };
       
       link.onload = () => {
         console.log(`Successfully loaded CSS file for theme: ${themeId}`);
+        
+        // Notify the main application about the theme change
+        this.$root.$emit('theme-preview-changed', themeId);
+        
+        // Create a custom event
+        const themeChangeEvent = new CustomEvent('theme-preview', { 
+          detail: { themeId: themeId } 
+        });
+        window.dispatchEvent(themeChangeEvent);
+        
+        // If we're in an electron environment, send an IPC message
+        if (window.electron && window.electron.ipcRenderer) {
+          window.electron.ipcRenderer.send(AppEvent.settingsChanged, { 
+            key: 'theme', 
+            value: themeId,
+            isPreview: true 
+          });
+        }
       };
       
-      // Add the link to the document head
+      const initialPath = possiblePaths.shift();
+      link.href = initialPath;
+      
       document.head.appendChild(link);
+    },
+    applyFallbackThemeStyles(themeId) {
+      console.log(`Applying fallback styles for theme: ${themeId}`);
+      
+      const theme = this.allThemes.find(t => t.id === themeId);
+      
+      if (!theme) {
+        console.error(`Theme not found in store: ${themeId}`);
+        return;
+      }
+      
+      console.log(`Theme object for fallback:`, JSON.stringify(theme));
+      
+      // Remove any existing theme styles
+      document.querySelectorAll('style[id^="theme-css-"], style[id^="fallback-theme-"]').forEach(style => {
+        style.remove();
+      });
+      
+      // Remove any existing theme links
+      document.querySelectorAll('link[id^="theme-css-"]').forEach(link => {
+        link.remove();
+      });
+      
+      const style = document.createElement('style');
+      style.id = `fallback-theme-${themeId}`;
+      
+      // Generate CSS from theme colors
+      const cssContent = `
+        .theme-${themeId} {
+          --theme-bg: ${theme.colors.background};
+          --theme-base: ${theme.colors.foreground};
+          --theme-string: ${theme.colors.string};
+          --theme-keyword: ${theme.colors.keyword};
+          
+          --theme-primary: ${theme.colors.keyword};
+          --theme-secondary: ${this.adjustColor(theme.colors.keyword, -20)};
+          --theme-error: #f44336;
+          --theme-warning: #ff9800;
+          --theme-success: #4caf50;
+          
+          /* Editor colors */
+          --editor-bg: ${theme.colors.background};
+          --editor-fg: ${theme.colors.foreground};
+          
+          /* Sidebar colors */
+          --sidebar-bg: ${this.adjustColor(theme.colors.background, -10)};
+          --sidebar-fg: ${theme.colors.foreground};
+          
+          /* Table colors */
+          --table-header-bg: ${this.adjustColor(theme.colors.background, -5)};
+          --table-header-fg: ${theme.colors.foreground};
+          --table-row-bg: ${theme.colors.background};
+          --table-row-fg: ${theme.colors.foreground};
+          --table-row-alt-bg: ${this.adjustColor(theme.colors.background, 5)};
+          --table-border: ${this.adjustColor(theme.colors.background, 15)};
+        }
+        
+        .theme-${themeId} body {
+          background-color: ${theme.colors.background} !important;
+          color: ${theme.colors.foreground} !important;
+        }
+        
+        .theme-${themeId} .theme-manager-modal-content {
+          background-color: var(--theme-bg, ${theme.colors.background});
+        }
+        
+        .theme-${themeId} .close-button {
+          color: var(--theme-base, ${theme.colors.foreground});
+        }
+        
+        .theme-${themeId} .tab-button {
+          color: var(--theme-base, ${theme.colors.foreground});
+        }
+        
+        .theme-${themeId} .tab-button.active::after {
+          background-color: var(--theme-primary, ${theme.colors.keyword});
+        }
+        
+        .theme-${themeId} .loading, .theme-${themeId} .error {
+          color: var(--theme-base, ${theme.colors.foreground});
+        }
+        
+        .theme-${themeId} .error {
+          color: var(--theme-error, #f44336);
+        }
+        
+        .theme-${themeId} .btn-preview {
+          background-color: var(--theme-secondary, ${this.adjustColor(theme.colors.keyword, -20)});
+        }
+        
+        .theme-${themeId} .btn-apply {
+          background-color: var(--theme-primary, ${theme.colors.keyword});
+        }
+        
+        .theme-${themeId} .btn-flat {
+          color: var(--theme-base, ${theme.colors.foreground});
+        }
+        
+        .theme-${themeId} .theme-card.active {
+          border: 2px solid var(--theme-primary, ${theme.colors.keyword});
+          box-shadow: 0 0 10px ${this.adjustColor(theme.colors.keyword, -20)};
+        }
+      `;
+      
+      console.log(`Generated fallback CSS:`, cssContent);
+      style.textContent = cssContent;
+      
+      // Add the style to the document head
+      console.log(`Adding fallback style to document head`);
+      document.head.appendChild(style);
+      
+      // Force the body class to be set
+      console.log(`Setting body class to theme-${themeId}`);
+      document.body.className = `theme-${themeId}`;
+      
+      // Notify the main application about the theme change
+      if (window.electron && window.electron.ipcRenderer) {
+        window.electron.ipcRenderer.send(AppEvent.settingsChanged, { 
+          key: 'theme', 
+          value: themeId,
+          isPreview: true,
+          css: cssContent // Send the CSS to the main process
+        });
+      }
+      
+      // Create a custom event that can be listened to by the main application
+      const themeChangeEvent = new CustomEvent('theme-preview', { 
+        detail: { themeId: themeId, css: cssContent } 
+      });
+      window.dispatchEvent(themeChangeEvent);
+      
+      // For non-electron environments, emit an event
+      this.$root.$emit('theme-preview-changed', { themeId: themeId, css: cssContent });
+      
+      // Log the result
+      setTimeout(() => {
+        const computedStyle = window.getComputedStyle(document.body);
+        console.log(`After fallback, body background color: ${computedStyle.backgroundColor}`);
+        console.log(`After fallback, body text color: ${computedStyle.color}`);
+      }, 100);
+    },
+    adjustColor(color, amount) {
+      let usePound = false;
+      
+      if (color[0] === "#") {
+        color = color.slice(1);
+        usePound = true;
+      }
+      
+      const num = parseInt(color, 16);
+      
+      let r = (num >> 16) + amount;
+      r = Math.max(Math.min(r, 255), 0);
+      
+      let g = ((num >> 8) & 0x00FF) + amount;
+      g = Math.max(Math.min(g, 255), 0);
+      
+      let b = (num & 0x0000FF) + amount;
+      b = Math.max(Math.min(b, 255), 0);
+      
+      return (usePound ? "#" : "") + (g | (r << 8) | (b << 16)).toString(16).padStart(6, '0');
     },
     triggerFileUpload() {
       this.$refs.fileInput.click();
@@ -317,7 +617,6 @@ export default {
       
       this.uploadError = null;
       
-      // Validate file type
       const validExtensions = ['.json', '.tmtheme', '.xml'];
       const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
       
@@ -335,13 +634,11 @@ export default {
       this.uploadError = null;
       
       try {
-        // In a real implementation, this would parse and import the theme
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         const fileExtension = this.selectedFile.name.substring(this.selectedFile.name.lastIndexOf('.')).toLowerCase();
         const themeName = this.selectedFile.name.substring(0, this.selectedFile.name.lastIndexOf('.'));
         
-        // Create a new theme object
         const newTheme = {
           id: themeName.toLowerCase().replace(/\s+/g, '-'),
           name: themeName,
@@ -354,7 +651,6 @@ export default {
           }
         };
         
-        // Add the theme to the store
         this.$store.dispatch('themes/addCustomTheme', newTheme);
         
         console.log(`Imported ${fileExtension === '.json' ? 'VSCode' : 'SublimeText'} theme: ${themeName}`);
@@ -362,7 +658,6 @@ export default {
         this.$noty.success(`Theme "${themeName}" imported successfully!`);
         this.resetUploadState();
         
-        // Refresh the theme list
         this.fetchPopularThemes();
       } catch (err) {
         console.error('Error importing theme:', err);
@@ -388,24 +683,30 @@ export default {
         // Apply the theme CSS via IPC if available
         if (window.electron && window.electron.ipcRenderer) {
           console.log(`Requesting theme CSS application for preview: ${theme.id}`);
-          window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id })
+          
+          // First try to remove any existing theme
+          window.electron.ipcRenderer.invoke('themes/removeActive')
+            .then(() => {
+              // Then apply the new theme
+              return window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id });
+            })
             .then(result => {
               if (result.success) {
                 console.log(`Theme ${theme.id} preview applied successfully via IPC`);
               } else {
                 console.error(`Failed to apply theme preview ${theme.id}:`, result.error);
-                // Fallback: Try to load the theme CSS from a file
-                this.loadThemeCssFile(theme.id);
+                // Fallback: Apply fallback styles
+                this.applyFallbackThemeStyles(theme.id);
               }
             })
             .catch(err => {
               console.error(`Error applying theme preview ${theme.id}:`, err);
-              // Fallback: Try to load the theme CSS from a file
-              this.loadThemeCssFile(theme.id);
+              // Fallback: Apply fallback styles
+              this.applyFallbackThemeStyles(theme.id);
             });
         } else {
-          // Fallback: Try to load the theme CSS from a file
-          this.loadThemeCssFile(theme.id);
+          // Apply fallback styles
+          this.applyFallbackThemeStyles(theme.id);
         }
         
         // Notify user
@@ -414,7 +715,7 @@ export default {
         console.error('Error previewing theme:', error);
         this.$noty.error(`Failed to preview theme: ${error.message}`);
       }
-    }
+    },
   }
 }
 </script>

@@ -17,6 +17,7 @@ const M = {
   ADD: 'addSetting',
   REPLACEALL: 'replaceSettings',
   SET_THEME: 'SET_THEME',
+  SET_THEME_PREVIEW: 'SET_THEME_PREVIEW',
 }
 
 const SettingStoreModule: Module<State, any> = {
@@ -53,6 +54,44 @@ const SettingStoreModule: Module<State, any> = {
         console.log(`Applying theme CSS for ${themeId} via IPC`);
         // Use type assertion to bypass TypeScript checking
         (window.electron.ipcRenderer as any).send('themes/apply', { name: themeId });
+      }
+    },
+    SET_THEME_PREVIEW(_state, payload) {
+      let themeId;
+      let css;
+
+      // Handle both string and object payloads
+      if (typeof payload === 'string') {
+        themeId = payload;
+      } else {
+        themeId = payload.themeId;
+        css = payload.css;
+      }
+
+      console.log(`Setting theme preview: ${themeId}`);
+
+      // This updates the UI without saving to settings
+      document.body.className = `theme-${themeId}`;
+
+      if (css) {
+        // Apply the CSS directly
+        const style = document.createElement('style');
+        style.id = `theme-css-${themeId}`;
+        style.textContent = css;
+
+        // Remove any existing theme styles
+        document.querySelectorAll('style[id^="theme-css-"]').forEach(existingStyle => {
+          existingStyle.remove();
+        });
+
+        // Add the new style
+        document.head.appendChild(style);
+      }
+
+      // If we're in an electron environment, notify the main process
+      if (window.electron && window.electron.ipcRenderer) {
+        // Use type assertion to bypass TypeScript checking
+        (window.electron.ipcRenderer as any).send('themes/preview', { name: themeId });
       }
     }
   },

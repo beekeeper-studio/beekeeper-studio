@@ -4,7 +4,7 @@ import { IPlatformInfo } from '../IPlatformInfo';
 import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
 // Helper function to generate theme menu items
-// Commented out but kept for potential future use
+// keep for potential future use if submenu is needed
 /*
 function generateThemeMenuItems(actionHandler: IMenuActionHandler, currentTheme: any) {
   // Get themes from the store

@@ -354,20 +354,15 @@ const ThemeStoreModule: Module<ThemeState, any> = {
   }),
   mutations: {
     ADD_THEME(state, theme: Theme) {
-      // Check if theme already exists
       const existingIndex = state.availableThemes.findIndex(t => t.id === theme.id);
       if (existingIndex >= 0) {
-        // Replace existing theme
         Vue.set(state.availableThemes, existingIndex, theme);
       } else {
-        // Add new theme
         state.availableThemes.push(theme);
       }
     },
     ADD_CUSTOM_THEME(state, theme: Theme) {
-      // Add to custom themes list
       state.customThemes.push(theme);
-      // Also add to available themes
       const existingIndex = state.availableThemes.findIndex(t => t.id === theme.id);
       if (existingIndex >= 0) {
         Vue.set(state.availableThemes, existingIndex, theme);
