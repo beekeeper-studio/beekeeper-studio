@@ -67,6 +67,7 @@
     "electron-log": "^5.1.5",
     "electron-updater": "^6.3.0",
     "electron-util": "^0.14.1",
+    "fast-xml-parser": "^5.0.8",
     "flexsearch": "beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d",
     "humanize-duration": "^3.23.1",
     "indent-string": "^4.0.0",

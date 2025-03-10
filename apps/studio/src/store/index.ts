@@ -2,39 +2,40 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import ExportStoreModule from './modules/exports/ExportStoreModule'
-import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/serverTypes'
-import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
+import { CoreTab, EntityFilter } from './models'
+import ExportStoreModule from './modules/exports/ExportStoreModule'
+import SettingStoreModule from './modules/settings/SettingStoreModule'
+import ThemeStoreModule from './modules/settings/ThemeStore'
 
-import RawLog from '@bksLogger'
-import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
-import { PinModule } from './modules/PinModule'
-import { getDialectData } from '@shared/lib/dialects'
-import { SearchModule } from './modules/SearchModule'
-import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { IConnection } from '@/common/interfaces/IConnection'
+import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
+import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 import { DataModules } from '@/store/DataModules'
-import { TabModule } from './modules/TabModule'
+import RawLog from '@bksLogger'
+import { getDialectData } from '@shared/lib/dialects'
+import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
-import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
+import { PinModule } from './modules/PinModule'
+import { SearchModule } from './modules/SearchModule'
+import { TabModule } from './modules/TabModule'
 
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
-import { LicenseModule } from './modules/LicenseModule'
-import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
-import { UserEnumsModule } from './modules/UserEnumsModule'
-import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
-import ImportStoreModule from './modules/imports/ImportStoreModule'
-import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
+import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
+import { LicenseModule } from './modules/LicenseModule'
 import { SidebarModule } from './modules/SidebarModule'
+import { UserEnumsModule } from './modules/UserEnumsModule'
+import { BackupModule } from './modules/backup/BackupModule'
+import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
+import ImportStoreModule from './modules/imports/ImportStoreModule'
 
 
 const log = RawLog.scope('store/index')
@@ -81,6 +82,7 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
+    themes: ThemeStoreModule,
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
@@ -139,7 +141,7 @@ const store = new Vuex.Store<State>({
       if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
 
       const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
+      const result = workspaces.find(({ workspace }) => workspace.id === state.workspaceId)
 
       if (!result) return LocalWorkspace
       return result.workspace
@@ -160,7 +162,7 @@ const store = new Vuex.Store<State>({
       if (state.workspaceId === LocalWorkspace.id) return null
 
       const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
+      const result = workspaces.find(({ workspace }) => workspace.id === state.workspaceId)
       if (!result) return null
       return result.client.cloneWithWorkspace(result.workspace.id)
 
@@ -184,7 +186,7 @@ const store = new Vuex.Store<State>({
     filteredRoutines(state) {
       return entityFilter(state.routines, state.entityFilter)
     },
-    schemaTables(state, g){
+    schemaTables(state, g) {
       // if no schemas, just return a single schema
       if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
         return [{
@@ -199,7 +201,7 @@ const store = new Vuex.Store<State>({
 
       for (const key in routines) {
         if (!obj[key]) {
-            obj[key] = [];
+          obj[key] = [];
         }
       }
 
@@ -306,7 +308,7 @@ const store = new Vuex.Store<State>({
         showPartitions: false
       }
     },
-    updateConnection(state, {database}) {
+    updateConnection(state, { database }) {
       // state.connection = connection
       state.database = database
     },
@@ -318,7 +320,7 @@ const store = new Vuex.Store<State>({
       state.tablesInitialLoaded = false
     },
     tables(state, tables: TableOrView[]) {
-      if(state.tables.length === 0) {
+      if (state.tables.length === 0) {
         state.tables = tables
       } else {
         // TODO: make this not O(n^2)
@@ -415,7 +417,7 @@ const store = new Vuex.Store<State>({
     async saveConnection(context, config: IConnection) {
       await context.dispatch('data/connections/save', config)
       const isConnected = !!context.state.server
-      if(isConnected) context.dispatch('updateWindowTitle', config)
+      if (isConnected) context.dispatch('updateWindowTitle', config)
     },
 
     async connect(context, config: IConnection) {
@@ -445,7 +447,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
 
-        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id }) 
+        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
       } else {
         throw "No username provided"
       }
@@ -472,7 +474,7 @@ const store = new Vuex.Store<State>({
     async changeDatabase(context, newDatabase: string) {
       log.info("Pool changing database to", newDatabase)
       await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase });
-      context.commit('updateConnection', {database: newDatabase})
+      context.commit('updateConnection', { database: newDatabase })
       await context.dispatch('updateTables')
       await context.dispatch('updateDatabaseList')
       await context.dispatch('updateRoutines')
@@ -486,8 +488,8 @@ const store = new Vuex.Store<State>({
         //        show it for all tables.
         context.commit("columnsLoading", "Loading columns...")
         const columns = (table.entityType === 'materialized-view' ?
-            await context.state.connection.listMaterializedViewColumns(table.name, table.schema) :
-            await context.state.connection.listTableColumns(table.name, table.schema));
+          await context.state.connection.listMaterializedViewColumns(table.name, table.schema) :
+          await context.state.connection.listTableColumns(table.name, table.schema));
 
         const updated = _.xorWith(table.columns, columns, _.isEqual)
         log.debug('Should I update table columns?', updated)

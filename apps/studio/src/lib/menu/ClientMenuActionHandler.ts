@@ -1,7 +1,7 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import _ from 'lodash'
-import {AppEvent} from '../../common/AppEvent'
 import rawLog from '@bksLogger'
+import _ from 'lodash'
+import { AppEvent } from '../../common/AppEvent'
 
 const log = rawLog.scope("ClientMenuActionHandler")
 
@@ -14,6 +14,10 @@ function send(name: string, arg?: any) {
 export default class ClientMenuActionHandler implements IMenuActionHandler {
 
   constructor() {
+    // TODO: implement
+  }
+
+  manageCustomThemes() {
     // TODO: implement
   }
   upgradeModal = () => send('upgradeModal')
@@ -37,7 +41,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   newQuery = () => send('newQuery')
   newTab = () => send('newTab')
   closeTab = () => send('closeTab')
-  quickSearch  = () => send('quickSearch')
+  quickSearch = () => send('quickSearch')
   switchTheme = (menuItem: Electron.MenuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     send('switchTheme', label.toLowerCase().replaceAll(" ", "-"))

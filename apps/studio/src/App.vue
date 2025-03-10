@@ -162,6 +162,15 @@ export default Vue.extend({
         () => this.$store.dispatch("licenses/updateAll"),
         globals.licenseCheckInterval
       );
+
+      // Initialize settings
+      await this.$store.dispatch("settings/initializeSettings");
+
+      // Initialize themes (ensure this happens after settings are loaded)
+      if (this.themeValue) {
+        document.body.className = `theme-${this.themeValue}`;
+      }
+
       const query = querystring.parse(window.location.search, {
         parseBooleans: true,
       });
@@ -177,9 +186,6 @@ export default Vue.extend({
           this.appLoaded = true;
         }, 1000);
       });
-      if (this.themeValue) {
-        document.body.className = `theme-${this.themeValue}`;
-      }
 
       if (this.url) {
         try {

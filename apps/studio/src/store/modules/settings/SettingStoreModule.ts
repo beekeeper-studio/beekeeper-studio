@@ -1,10 +1,11 @@
-
-import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, setValue } from '../../../common/transport/TransportUserSetting'
-import _ from 'lodash'
-import Vue from 'vue'
-import { Module } from 'vuex'
 import config from "@/config";
+import _ from 'lodash';
+import Vue from 'vue';
+import { Module } from 'vuex';
+import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, setValue } from '../../../common/transport/TransportUserSetting';
 
+// Define the keymap types
+type KeymapType = "default" | "vim";
 
 interface State {
   settings: IGroupedUserSettings,
@@ -15,6 +16,7 @@ interface State {
 const M = {
   ADD: 'addSetting',
   REPLACEALL: 'replaceSettings',
+  SET_THEME: 'SET_THEME',
 }
 
 const SettingStoreModule: Module<State, any> = {
@@ -39,6 +41,12 @@ const SettingStoreModule: Module<State, any> = {
     },
     SET_PRIVACY_MODE(state, value: boolean) {
       state.privacyMode = value;
+    },
+    SET_THEME(state, themeId: string) {
+      if (state.settings.theme) {
+        // Update the theme value directly in the state
+        setValue(state.settings.theme, themeId);
+      }
     }
   },
   actions: {
@@ -46,32 +54,32 @@ const SettingStoreModule: Module<State, any> = {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
       context.commit(M.REPLACEALL, settings);
       context.commit('setInitialized');
+
+      // Apply the theme from settings when the app starts
+      const themeValue = context.getters.themeValue;
+      if (themeValue) {
+        console.log(`Initializing with theme: ${themeValue}`);
+        // Apply the theme to the UI
+        document.body.className = `theme-${themeValue}`;
+      }
     },
     async saveSetting(context, setting: TransportUserSetting) {
       await Vue.prototype.$util.send('appdb/setting/save', { obj: setting })
       context.commit(M.ADD, setting)
     },
     async save(context, { key, value }) {
-      if (!key || !value) return;
-    
-      if (key === 'privacyMode') {
-        const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
-        setting.key = key;
-    
-        if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
-        setValue(setting, value);
-        const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
-        _.merge(setting, newSetting);
-        context.commit(M.ADD, setting);
-      }
-      else {
-        const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
-        if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
-        setValue(setting, value);
-        setting.key = key;
-        const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
-        _.merge(setting, newSetting);
-        context.commit(M.ADD, setting);
+      if (!key) return;
+      const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
+      if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
+      setValue(setting, value);
+      setting.key = key;
+      const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+      _.merge(setting, newSetting);
+      context.commit(M.ADD, setting);
+
+      // If this is a theme setting, also update the theme state
+      if (key === 'theme' && typeof value === 'string') {
+        context.commit(M.SET_THEME, value);
       }
     },
     togglePrivacyMode({ commit, state }) {
@@ -89,11 +97,11 @@ const SettingStoreModule: Module<State, any> = {
       return theme;
     },
     /** The keymap type to be used in text editor */
-    userKeymap(state) {
+    userKeymap(state): KeymapType {
       const value = state.settings.keymap?.value as string;
-      return value && config.defaults.keymapTypes.map((k) => k.value).includes(value)
-        ? value
-        : "default";
+      return value && config.defaults.keymapTypes.map((k) => k.value).includes(value as any)
+        ? (value as KeymapType)
+        : "default" as KeymapType;
     },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'

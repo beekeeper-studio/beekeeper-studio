@@ -3,6 +3,36 @@ import { DevLicenseState } from '@/lib/license';
 import { IPlatformInfo } from '../IPlatformInfo';
 import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
+// Helper function to generate theme menu items
+// Commented out but kept for potential future use
+/*
+function generateThemeMenuItems(actionHandler: IMenuActionHandler, currentTheme: any) {
+  // Get themes from the store
+  const allThemes = store.getters['themes/allThemes'] || [];
+
+  // Convert currentTheme to string if needed
+  const currentThemeStr = currentTheme?.toString() || '';
+
+  // Generate menu items for each theme
+  const themeMenuItems = allThemes.map((theme: Theme) => ({
+    type: 'radio',
+    label: theme.name,
+    click: actionHandler.switchTheme,
+    checked: currentThemeStr === theme.id
+  }));
+
+  // Add separator and "Manage Custom Themes" option
+  return [
+    ...themeMenuItems,
+    { type: 'separator' },
+    {
+      id: 'manage-custom-themes',
+      label: 'Manage Custom Themes...',
+      click: actionHandler.manageCustomThemes
+    }
+  ];
+}
+*/
 
 export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings, platformInfo: IPlatformInfo) {
   return {
@@ -183,45 +213,8 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     themeToggle: {
       id: "theme-toggle-menu",
-      label: "Theme",
-      submenu: [
-        {
-          type: 'radio',
-          label: "System",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'system'
-        },
-        {
-          type: "radio",
-          label: "Light",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'light'
-        },
-        {
-          type: 'radio',
-          label: "Dark",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'dark'
-        },
-        {
-          type: 'radio',
-          label: 'Solarized',
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'solarized'
-        },
-        {
-          type: 'radio',
-          label: 'Solarized Dark',
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'solarized-dark'
-        },
-        { type: 'separator' },
-        {
-          id: 'manage-custom-themes',
-          label: 'Manage Custom Themes...',
-          click: actionHandler.manageCustomThemes
-        }
-      ]
+      label: "Select Theme",
+      click: actionHandler.manageCustomThemes
     },
     enterLicense: {
       id: 'enter-license',

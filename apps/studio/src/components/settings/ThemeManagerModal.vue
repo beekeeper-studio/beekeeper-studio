@@ -43,7 +43,9 @@
               {{ error }}
             </div>
             <div v-else class="theme-grid">
-              <div v-for="theme in popularThemes" :key="theme.id" class="theme-card">
+              <div v-for="theme in popularThemes" :key="theme.id" 
+                   :class="['theme-card', { 'active': theme.isActive }]"
+              >
                 <div class="theme-preview" :style="{ backgroundColor: theme.colors.background }">
                   <div class="preview-item" :style="{ color: theme.colors.foreground }">
                     Text
@@ -58,8 +60,11 @@
                 <div class="theme-info">
                   <h4>{{ theme.name }}</h4>
                   <p>{{ theme.description }}</p>
-                  <button class="btn-apply" @click="applyTheme(theme)">
-                    Apply Theme
+                  <button class="btn-apply" 
+                          @click="applyTheme(theme)"
+                          :disabled="theme.isActive"
+                  >
+                    {{ theme.isActive ? 'Current Theme' : 'Apply Theme' }}
                   </button>
                 </div>
               </div>
@@ -114,6 +119,7 @@
 
 <script>
 import { AppEvent } from '@/common/AppEvent';
+import { mapGetters, mapState } from 'vuex';
 
 export default {
   name: 'ThemeManagerModal',
@@ -128,6 +134,15 @@ export default {
       uploadError: null,
       importing: false
     }
+  },
+  computed: {
+    ...mapState({
+      currentTheme: state => state.settings.theme
+    }),
+    ...mapGetters({
+      themeValue: 'settings/themeValue',
+      allThemes: 'themes/allThemes'
+    })
   },
   mounted() {
     console.log('ThemeManagerModal mounted');
@@ -179,78 +194,19 @@ export default {
       this.error = null;
       
       try {
-        // Example data - in a real implementation, this would be fetched from an API
-        // For now, we'll use mock data to demonstrate the UI
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+        console.log('Fetching themes, current theme value:', this.themeValue);
         
-        this.popularThemes = [
-          {
-            id: 'github-dark',
-            name: 'GitHub Dark',
-            description: 'GitHub dark theme for Beekeeper Studio',
-            colors: {
-              background: '#0d1117',
-              foreground: '#c9d1d9',
-              string: '#a5d6ff',
-              keyword: '#ff7b72'
-            }
-          },
-          {
-            id: 'monokai',
-            name: 'Monokai',
-            description: 'Monokai theme for Beekeeper Studio',
-            colors: {
-              background: '#272822',
-              foreground: '#f8f8f2',
-              string: '#e6db74',
-              keyword: '#f92672'
-            }
-          },
-          {
-            id: 'dracula',
-            name: 'Dracula',
-            description: 'Dracula theme for Beekeeper Studio',
-            colors: {
-              background: '#282a36',
-              foreground: '#f8f8f2',
-              string: '#f1fa8c',
-              keyword: '#ff79c6'
-            }
-          },
-          {
-            id: 'nord',
-            name: 'Nord',
-            description: 'Nord theme for Beekeeper Studio',
-            colors: {
-              background: '#2e3440',
-              foreground: '#d8dee9',
-              string: '#a3be8c',
-              keyword: '#81a1c1'
-            }
-          },
-          {
-            id: 'solarized-dark',
-            name: 'Solarized Dark',
-            description: 'Solarized Dark theme for Beekeeper Studio',
-            colors: {
-              background: '#002b36',
-              foreground: '#839496',
-              string: '#2aa198',
-              keyword: '#cb4b16'
-            }
-          },
-          {
-            id: 'solarized-light',
-            name: 'Solarized Light',
-            description: 'Solarized Light theme for Beekeeper Studio',
-            colors: {
-              background: '#fdf6e3',
-              foreground: '#657b83',
-              string: '#2aa198',
-              keyword: '#cb4b16'
-            }
-          }
-        ];
+        // Get themes from the store
+        const themes = this.allThemes || [];
+        
+        // Mark the current theme as active
+        this.popularThemes = themes.map(theme => ({
+          ...theme,
+          isActive: theme.id === this.themeValue
+        }));
+        
+        console.log('Themes loaded:', this.popularThemes.length);
+        console.log('Active theme:', this.popularThemes.find(t => t.isActive)?.name || 'None');
       } catch (err) {
         console.error('Error fetching themes:', err);
         this.error = 'Failed to load themes. Please try again.';
@@ -259,11 +215,35 @@ export default {
       }
     },
     applyTheme(theme) {
-      // In a real implementation, this would apply the theme to the application
       console.log('Applying theme:', theme.name);
-      // Example implementation:
-      // this.$store.dispatch('settings/setTheme', theme.id);
+      
+      if (theme.isActive) {
+        console.log('Theme is already active');
+        return;
+      }
+      
+      // Save theme to user settings
+      this.$store.dispatch('settings/save', { key: 'theme', value: theme.id });
+      
+      // Update UI to reflect the change
+      document.body.className = `theme-${theme.id}`;
+      
+      // Update the active theme in our local state
+      this.popularThemes = this.popularThemes.map(t => ({
+        ...t,
+        isActive: t.id === theme.id
+      }));
+      
+      // Notify user
       this.$noty.success(`Theme "${theme.name}" applied successfully!`);
+      
+      // Notify other windows about the theme change
+      if (window.electron && window.electron.ipcRenderer) {
+        window.electron.ipcRenderer.send(AppEvent.settingsChanged);
+      }
+      
+      // Close the modal after applying
+      this.close();
     },
     triggerFileUpload() {
       this.$refs.fileInput.click();
@@ -298,10 +278,29 @@ export default {
         const fileExtension = this.selectedFile.name.substring(this.selectedFile.name.lastIndexOf('.')).toLowerCase();
         const themeName = this.selectedFile.name.substring(0, this.selectedFile.name.lastIndexOf('.'));
         
+        // Create a new theme object
+        const newTheme = {
+          id: themeName.toLowerCase().replace(/\s+/g, '-'),
+          name: themeName,
+          description: `Custom theme imported from ${this.selectedFile.name}`,
+          colors: {
+            background: '#252525',
+            foreground: '#ffffff',
+            string: '#a5d6ff',
+            keyword: '#ff7b72'
+          }
+        };
+        
+        // Add the theme to the store
+        this.$store.dispatch('themes/addCustomTheme', newTheme);
+        
         console.log(`Imported ${fileExtension === '.json' ? 'VSCode' : 'SublimeText'} theme: ${themeName}`);
         
         this.$noty.success(`Theme "${themeName}" imported successfully!`);
         this.resetUploadState();
+        
+        // Refresh the theme list
+        this.fetchPopularThemes();
       } catch (err) {
         console.error('Error importing theme:', err);
         this.uploadError = 'Failed to import theme. Please check the file format and try again.';
@@ -543,5 +542,16 @@ export default {
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.theme-card.active {
+  border: 2px solid var(--theme-primary, #4caf50);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.btn-apply:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--theme-secondary, #999);
 }
 </style>
