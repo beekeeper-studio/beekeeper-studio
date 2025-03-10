@@ -1,5 +1,5 @@
-import Vue from "vue"
 import rawLog from '@bksLogger'
+import Vue from "vue"
 
 const log = rawLog.scope('AppEvent')
 
@@ -67,6 +67,8 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  /** Triggered to show the theme manager modal */
+  showThemeManager = 'show-theme-manager',
 }
 
 export interface RootBinding {
@@ -76,7 +78,7 @@ export interface RootBinding {
 
 
 export const AppEventMixin = Vue.extend({
-  methods:  {
+  methods: {
     registerHandlers(bindings: RootBinding[]) {
       bindings.forEach(({ event, handler }) => {
         this.$root.$on(event, handler)

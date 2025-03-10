@@ -96,6 +96,9 @@ export default Vue.extend({
           handler: this.openModal
         }
       ]
+    },
+    $modal: function() {
+      return (this as any).$modal;
     }
   },
   methods: {

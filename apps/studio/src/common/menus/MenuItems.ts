@@ -102,7 +102,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Check for Software Updates',
       click: actionHandler.checkForUpdates
     },
-    opendocs : {
+    opendocs: {
       id: 'opendocs',
       label: 'Documentation',
       click: actionHandler.opendocs
@@ -214,6 +214,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           label: 'Solarized Dark',
           click: actionHandler.switchTheme,
           checked: settings?.theme?.value === 'solarized-dark'
+        },
+        { type: 'separator' },
+        {
+          id: 'manage-custom-themes',
+          label: 'Manage Custom Themes...',
+          click: actionHandler.manageCustomThemes
         }
       ]
     },
