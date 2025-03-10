@@ -15,6 +15,8 @@ import {
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
+  Routine,
+  RoutineType,
   SchemaFilterOptions,
   StreamResults,
   TableChanges,
@@ -129,19 +131,26 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
   // took this approach because Typescript wasn't liking the base function could be a null value or a function
   createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}[], primaryKeys: string[]): string {
-    // We need to modify the interface to return both SQL and parameters
-    // But for backward compatibility we'll keep the return type as string
-    // and handle the bind parameters elsewhere
-    
     const [PK] = primaryKeys;
     const columnsWithoutPK = _.without(Object.keys(data[0]), PK);
-    const insertSQL = () => `
-      INSERT ("${PK}", ${columnsWithoutPK.map(cpk => `"${cpk}"`).join(', ')})
-      VALUES (source."${PK}", ${columnsWithoutPK.map(cpk => `source."${cpk}"`).join(', ')})
-    `;
-    const updateSet = () => `${columnsWithoutPK.map(cpk => `target."${cpk}" = source."${cpk}"`).join(', ')}`;
     
-    // Safely escape values to prevent SQL injection
+    // Use D.wrapIdentifier for proper identifier wrapping
+    const wrappedPK = D.wrapIdentifier(PK);
+    const wrappedSchema = D.wrapIdentifier(schema);
+    const wrappedTable = D.wrapIdentifier(tableName);
+    
+    const wrappedColumns = columnsWithoutPK.map(col => D.wrapIdentifier(col));
+    
+    const insertSQL = () => `
+      INSERT (${wrappedPK}, ${wrappedColumns.join(', ')})
+      VALUES (source.${wrappedPK}, ${columnsWithoutPK.map(cpk => `source.${D.wrapIdentifier(cpk)}`).join(', ')})
+    `;
+    
+    const updateSet = () => `${columnsWithoutPK.map(cpk => 
+      `target.${D.wrapIdentifier(cpk)} = source.${D.wrapIdentifier(cpk)}`
+    ).join(', ')}`;
+    
+    // Use D.escapeString for proper string value escaping
     const formatValue = (val: any): string => {
       if (val === null || val === undefined) {
         return 'NULL';
@@ -149,31 +158,32 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       if (_.isNumber(val) || _.isBoolean(val)) {
         return String(val);
       }
-      // Properly escape string values by doubling single quotes
       if (_.isString(val)) {
-        return `'${val.replace(/'/g, "''")}'`;
+        return D.escapeString(val, true);
       }
-      // Handle dates
       if (val instanceof Date) {
         return `TO_DATE('${val.toISOString().slice(0, 19).replace('T', ' ')}', 'YYYY-MM-DD HH24:MI:SS')`;
       }
-      // Default for other types
-      return `'${String(val).replace(/'/g, "''")}'`;
+      return D.escapeString(String(val), true);
     };
     
     const usingSQLStatement = data.map((val, idx) => {
       if (idx === 0) {
-        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM dual`;
+        return `SELECT ${formatValue(val[PK])} AS ${wrappedPK}, ${columnsWithoutPK.map(col => 
+          `${formatValue(val[col])} AS ${D.wrapIdentifier(col)}`
+        ).join(', ')} FROM dual`;
       }
-      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM dual`;
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => 
+        formatValue(val[col])
+      ).join(', ')} FROM dual`;
     }).join(' UNION ALL ');
 
     return `
-      MERGE INTO "${schema}"."${tableName}" target
+      MERGE INTO ${wrappedSchema}.${wrappedTable} target
       USING (
         ${usingSQLStatement}
       ) source
-      ON (target."${PK}" = source."${PK}")
+      ON (target.${wrappedPK} = source.${wrappedPK})
       WHEN MATCHED THEN
         UPDATE SET
           ${updateSet()}
@@ -367,7 +377,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   });
 
   // List Oracle stored procedures, functions, and packages
-  async listRoutines(filter?: FilterOptions): Promise<any[]> {
+  async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
     try {
       // Query to get procedures, functions, and packages
       const query = `
@@ -377,24 +387,33 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           OWNER AS SCHEMA_NAME,
           STATUS,
           CREATED,
-          LAST_DDL_TIME
+          LAST_DDL_TIME,
+          OBJECT_ID
         FROM ALL_OBJECTS
         WHERE OBJECT_TYPE IN ('PROCEDURE', 'FUNCTION', 'PACKAGE')
-        ${filter?.schema ? `AND OWNER = '${filter.schema.toUpperCase()}'` : ''}
+        ${filter?.schema ? `AND OWNER = ${D.escapeString(filter.schema.toUpperCase(), true)}` : ''}
         ORDER BY OBJECT_TYPE, OBJECT_NAME
       `;
       
       const results = await this.driverExecuteSimple(query);
       
-      return results.map(row => ({
-        name: row.OBJECT_NAME,
-        schema: row.SCHEMA_NAME,
-        type: row.OBJECT_TYPE.toLowerCase(),
-        language: 'PL/SQL',
-        status: row.STATUS,
-        created: row.CREATED,
-        modified: row.LAST_DDL_TIME
-      }));
+      // Map to the Routine interface expected by the application
+      return results.map(row => {
+        // Convert Oracle object type to our RoutineType
+        const routineType: RoutineType = 
+          row.OBJECT_TYPE === 'FUNCTION' ? 'function' : 
+          row.OBJECT_TYPE === 'PROCEDURE' ? 'procedure' : 
+          'procedure'; // Default for packages etc.
+        
+        return {
+          id: String(row.OBJECT_ID),
+          name: row.OBJECT_NAME,
+          schema: row.SCHEMA_NAME,
+          type: routineType,
+          returnType: routineType === 'function' ? 'UNKNOWN' : '',
+          entityType: 'routine'
+        };
+      });
     } catch (error) {
       log.error('Error listing routines:', error);
       return [];
@@ -417,7 +436,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       const pdbQuery = `
         SELECT NAME, OPEN_MODE, RESTRICTED 
         FROM v$pdbs
-        WHERE OPEN_MODE = 'READ WRITE'
+        WHERE OPEN_MODE = ${D.escapeString('READ WRITE', true)}
       `;
       
       // Execute both queries
