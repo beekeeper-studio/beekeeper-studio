@@ -43,9 +43,16 @@ const SettingStoreModule: Module<State, any> = {
       state.privacyMode = value;
     },
     SET_THEME(state, themeId: string) {
-      if (state.settings.theme) {
-        // Update the theme value directly in the state
-        setValue(state.settings.theme, themeId);
+      setValue(state.settings.theme, themeId as any);
+
+      // Apply the theme class to the document body
+      document.body.className = `theme-${themeId}`;
+
+      // Apply the theme CSS via IPC if available
+      if (window.electron && window.electron.ipcRenderer) {
+        console.log(`Applying theme CSS for ${themeId} via IPC`);
+        // Use type assertion to bypass TypeScript checking
+        (window.electron.ipcRenderer as any).send('themes/apply', { name: themeId });
       }
     }
   },
