@@ -1,3 +1,12 @@
+// Uint8Array pollyfills https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/fromBase64
+import 'core-js/actual/typed-array/from-base64'
+import 'core-js/actual/typed-array/from-hex'
+import 'core-js/actual/typed-array/to-base64'
+import 'core-js/actual/typed-array/to-hex'
+
+// FIXME remove this
+globalThis.binaryEncoding = 'hex' // base64 or hex
+
 import Vue from 'vue'
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
