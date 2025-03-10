@@ -60,12 +60,17 @@
                 <div class="theme-info">
                   <h4>{{ theme.name }}</h4>
                   <p>{{ theme.description }}</p>
-                  <button class="btn-apply" 
-                          @click="applyTheme(theme)"
-                          :disabled="theme.isActive"
-                  >
-                    {{ theme.isActive ? 'Current Theme' : 'Apply Theme' }}
-                  </button>
+                  <div class="button-group">
+                    <button class="btn-preview" @click="previewTheme(theme)">
+                      Preview
+                    </button>
+                    <button class="btn-apply" 
+                            @click="applyTheme(theme)"
+                            :disabled="theme.isActive"
+                    >
+                      {{ theme.isActive ? 'Current Theme' : 'Apply Theme' }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -215,35 +220,93 @@ export default {
       }
     },
     applyTheme(theme) {
-      console.log('Applying theme:', theme.name);
+      console.log('Applying theme:', theme.name, theme.id);
       
       if (theme.isActive) {
         console.log('Theme is already active');
         return;
       }
       
-      // Save theme to user settings
-      this.$store.dispatch('settings/save', { key: 'theme', value: theme.id });
+      try {
+        // Save theme to user settings
+        this.$store.dispatch('settings/save', { key: 'theme', value: theme.id });
+        
+        // Update UI to reflect the change
+        document.body.className = `theme-${theme.id}`;
+        
+        // Apply the theme CSS via IPC if available
+        if (window.electron && window.electron.ipcRenderer) {
+          console.log(`Requesting theme CSS application for ${theme.id}`);
+          window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id })
+            .then(result => {
+              if (result.success) {
+                console.log(`Theme ${theme.id} applied successfully via IPC`);
+              } else {
+                console.error(`Failed to apply theme ${theme.id}:`, result.error);
+                // Fallback: Try to load the theme CSS from a file
+                this.loadThemeCssFile(theme.id);
+              }
+            })
+            .catch(err => {
+              console.error(`Error applying theme ${theme.id}:`, err);
+              // Fallback: Try to load the theme CSS from a file
+              this.loadThemeCssFile(theme.id);
+            });
+        } else {
+          // Fallback: Try to load the theme CSS from a file
+          this.loadThemeCssFile(theme.id);
+        }
+        
+        // Update the active theme in our local state
+        this.popularThemes = this.popularThemes.map(t => ({
+          ...t,
+          isActive: t.id === theme.id
+        }));
+        
+        // Notify user
+        this.$noty.success(`Theme "${theme.name}" applied successfully!`);
+        
+        // Notify other windows about the theme change
+        if (window.electron && window.electron.ipcRenderer) {
+          window.electron.ipcRenderer.send(AppEvent.settingsChanged);
+        }
+        
+        // Close the modal after applying
+        this.close();
+      } catch (error) {
+        console.error('Error applying theme:', error);
+        this.$noty.error(`Failed to apply theme: ${error.message}`);
+      }
+    },
+    loadThemeCssFile(themeId) {
+      console.log(`Attempting to load CSS file for theme: ${themeId}`);
       
-      // Update UI to reflect the change
-      document.body.className = `theme-${theme.id}`;
+      // Try to load the theme CSS from a file
+      const linkId = `theme-css-${themeId}`;
       
-      // Update the active theme in our local state
-      this.popularThemes = this.popularThemes.map(t => ({
-        ...t,
-        isActive: t.id === theme.id
-      }));
-      
-      // Notify user
-      this.$noty.success(`Theme "${theme.name}" applied successfully!`);
-      
-      // Notify other windows about the theme change
-      if (window.electron && window.electron.ipcRenderer) {
-        window.electron.ipcRenderer.send(AppEvent.settingsChanged);
+      // Remove any existing theme link
+      const existingLink = document.getElementById(linkId);
+      if (existingLink) {
+        existingLink.remove();
       }
       
-      // Close the modal after applying
-      this.close();
+      // Create a new link element
+      const link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      link.href = `./assets/styles/themes/${themeId}/theme.css`;
+      
+      // Add error handling
+      link.onerror = () => {
+        console.error(`Failed to load CSS file for theme: ${themeId}`);
+      };
+      
+      link.onload = () => {
+        console.log(`Successfully loaded CSS file for theme: ${themeId}`);
+      };
+      
+      // Add the link to the document head
+      document.head.appendChild(link);
     },
     triggerFileUpload() {
       this.$refs.fileInput.click();
@@ -313,6 +376,43 @@ export default {
       this.uploadError = null;
       if (this.$refs.fileInput) {
         this.$refs.fileInput.value = '';
+      }
+    },
+    previewTheme(theme) {
+      console.log('Previewing theme:', theme.name, theme.id);
+      
+      try {
+        // Update UI to reflect the change
+        document.body.className = `theme-${theme.id}`;
+        
+        // Apply the theme CSS via IPC if available
+        if (window.electron && window.electron.ipcRenderer) {
+          console.log(`Requesting theme CSS application for preview: ${theme.id}`);
+          window.electron.ipcRenderer.invoke('themes/apply', { name: theme.id })
+            .then(result => {
+              if (result.success) {
+                console.log(`Theme ${theme.id} preview applied successfully via IPC`);
+              } else {
+                console.error(`Failed to apply theme preview ${theme.id}:`, result.error);
+                // Fallback: Try to load the theme CSS from a file
+                this.loadThemeCssFile(theme.id);
+              }
+            })
+            .catch(err => {
+              console.error(`Error applying theme preview ${theme.id}:`, err);
+              // Fallback: Try to load the theme CSS from a file
+              this.loadThemeCssFile(theme.id);
+            });
+        } else {
+          // Fallback: Try to load the theme CSS from a file
+          this.loadThemeCssFile(theme.id);
+        }
+        
+        // Notify user
+        this.$noty.info(`Previewing theme "${theme.name}". Click "Apply Theme" to keep it.`);
+      } catch (error) {
+        console.error('Error previewing theme:', error);
+        this.$noty.error(`Failed to preview theme: ${error.message}`);
       }
     }
   }
@@ -484,6 +584,22 @@ export default {
   opacity: 0.8;
 }
 
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-preview {
+  background-color: var(--theme-secondary, #2196f3);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  flex: 1;
+}
+
 .btn-apply {
   background-color: var(--theme-primary, #4caf50);
   color: white;
@@ -492,7 +608,7 @@ export default {
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
-  width: 100%;
+  flex: 1;
 }
 
 .upload-section {

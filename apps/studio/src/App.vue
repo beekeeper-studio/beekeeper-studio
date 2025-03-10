@@ -155,6 +155,21 @@ export default Vue.extend({
       // Initialize themes (ensure this happens after settings are loaded)
       if (this.themeValue) {
         document.body.className = `theme-${this.themeValue}`
+        
+        // Apply the theme CSS via IPC
+        if (window.electron && window.electron.ipcRenderer) {
+          console.log(`Initializing theme CSS for ${this.themeValue}`);
+          try {
+            const result = await window.electron.ipcRenderer.invoke('themes/apply', { name: this.themeValue });
+            if (result.success) {
+              console.log(`Theme ${this.themeValue} initialized successfully via IPC`);
+            } else {
+              console.error(`Failed to initialize theme ${this.themeValue}:`, result.error);
+            }
+          } catch (err) {
+            console.error(`Error initializing theme ${this.themeValue}:`, err);
+          }
+        }
       }
       
       const query = querystring.parse(window.location.search, { parseBooleans: true })
@@ -206,7 +221,6 @@ export default Vue.extend({
             })
           ]
         }
-        // @ts-ignore
         const n = new Noty(options)
         n.show()
       }
