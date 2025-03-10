@@ -113,6 +113,8 @@
 </template>
 
 <script>
+import { AppEvent } from '@/common/AppEvent';
+
 export default {
   name: 'ThemeManagerModal',
   data() {
@@ -130,11 +132,36 @@ export default {
   mounted() {
     console.log('ThemeManagerModal mounted');
     
-    // Listen for Vue event
+    // Listen for Vue event (for the debug button)
     this.$root.$on('show-theme-manager', this.show);
+    
+    // Try to access electron via window
+    if (window.electron && window.electron.ipcRenderer) {
+      console.log('Setting up IPC listener via window.electron');
+      window.electron.ipcRenderer.on(AppEvent.showThemeManager, this.show);
+    } else {
+      // Fallback to window event listener
+      console.log('Setting up window event listener');
+      window.addEventListener(AppEvent.showThemeManager, this.show);
+    }
+    
+    // Set up a global method that can be called from the main process
+    window.showThemeManagerModal = this.show;
   },
   beforeDestroy() {
+    console.log('ThemeManagerModal being destroyed');
     this.$root.$off('show-theme-manager', this.show);
+    
+    // Clean up IPC listener
+    if (window.electron && window.electron.ipcRenderer) {
+      window.electron.ipcRenderer.removeListener(AppEvent.showThemeManager, this.show);
+    }
+    
+    // Remove window event listener
+    window.removeEventListener(AppEvent.showThemeManager, this.show);
+    
+    // Clean up global method
+    window.showThemeManagerModal = undefined;
   },
   methods: {
     show() {
