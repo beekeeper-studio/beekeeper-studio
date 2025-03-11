@@ -173,7 +173,7 @@ export default class Import {
     if (_.isBoolean(data)) return 'booleanType'
 
     if (_.isFinite(Number(data))) {
-      if (_.isInteger(data)) return 'integerType'
+      if (Number.isInteger(Number(data))) return 'integerType'
 
       return 'numberType'
     }
