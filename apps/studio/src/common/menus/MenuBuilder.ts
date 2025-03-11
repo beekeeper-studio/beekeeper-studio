@@ -17,7 +17,8 @@ export default class extends DefaultMenu {
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
-        this.menuItems.sidebarToggle,
+        this.menuItems.primarySidebarToggle,
+        this.menuItems.secondarySidebarToggle,
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]

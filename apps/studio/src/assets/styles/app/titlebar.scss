@@ -51,10 +51,12 @@ $titlebar-actions-height:   30px;
     -webkit-app-region: no-drag;
   }
   .titlebar-actions {
-    display: flex;
     margin: -$gutter-h;
     margin-left: 0;
     -webkit-app-region: no-drag;
+    &, .window-controls-container {
+      display: flex;
+    }
     button {
       display: flex;
       align-items: center;
@@ -62,8 +64,6 @@ $titlebar-actions-height:   30px;
       border-radius: 0;
       color: $text-light;
       margin: 0;
-      padding: 0 0.75rem;
-      height: $titlebar-actions-height;
       z-index: 10;
       box-shadow: none;
       &:hover {
@@ -71,6 +71,25 @@ $titlebar-actions-height:   30px;
       }
       &:focus {
         background: transparent;
+      }
+    }
+    .titlebar-actions-extra {
+      display: flex;
+      gap: 0.5rem;
+      & > button {
+        height: auto;
+        align-self: center;
+        padding: 0;
+        i {
+          font-size: 1.5rem;
+        }
+      }
+    }
+    .window-controls-container  {
+      margin-left: 0.75rem;
+      button {
+        padding: 0 0.75rem;
+        height: $titlebar-actions-height;
       }
     }
     #maximize {
@@ -113,6 +132,9 @@ $titlebar-actions-height:   30px;
 }
 
 .titlebar-wrapper {
+  padding-bottom: $gutter-h;
+  background-color: var(--bks-titleBar-activeBackground);
+  color: var(--bks-titleBar-activeForeground);
   & .titlebar.windows.fullscreen {
     display: none;
     -webkit-app-region: no-drag;

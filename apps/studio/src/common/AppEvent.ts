@@ -12,7 +12,8 @@ export enum AppEvent {
   disconnect = 'dc',
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',
-  toggleSidebar = 'ts',
+  togglePrimarySidebar = 'ts',
+  toggleSecondarySidebar = 'toggleSecondarySidebar',
   beginExport = 'be',
   beginImport = 'beginImport',
   createTable = 'new_table',
@@ -54,6 +55,10 @@ export enum AppEvent {
   switchLicenseState = 'switchLicenseState',
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
+  jsonViewerSidebarUpdate = 'jsonViewerSidebarUpdate',
+  jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
+  switchingTab = 'switchingTab',
+  switchedTab = 'switchedTab',
 }
 
 export interface RootBinding {
