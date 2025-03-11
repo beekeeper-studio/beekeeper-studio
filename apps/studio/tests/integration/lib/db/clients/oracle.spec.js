@@ -190,15 +190,47 @@ BEEKEEPER =
     })
     
     describe("Query cancellation", () => {
-      // This test verifies our query cancellation error handling improvements
-      // Skip it for now as we're just testing the changes, not the full functionality
-      it.skip("should properly handle query cancellation with error logging", async () => {
-        expect(true).toBe(true);
+      it("should properly handle query cancellation without errors", async () => {
+        // This test verifies that query cancellation works properly in the Oracle client
+        // by running a long query and cancelling it mid-execution
         
-        // Our manual code inspection verifies that in the OracleClient.ts file:
-        // 1. The empty catch block was removed 
-        // 2. Error logging was added in the catch block with console.error
-        // 3. We now properly await connection.close()
+        // Use a long-running query that we can cancel
+        const sleepQuery = `
+          BEGIN
+            DBMS_LOCK.SLEEP(10);
+          END;
+        `;
+        
+        // The DBTestUtil wraps the actual Oracle client, so we need to create a raw client instance
+        // to get direct access to the cancel method
+        const rawOracleClient = util.connection;
+        
+        // Get a reference to the internal query method to ensure we can call 'cancel'
+        const queryObj = rawOracleClient.query(sleepQuery);
+        
+        // Start a timer to cancel the query after 1 second
+        const timer = setTimeout(() => {
+          queryObj.cancel();
+        }, 1000);
+        
+        try {
+          // Execute the query - this should be interrupted by the cancel call
+          await queryObj;
+          
+          // If we reach this point without cancellation, the test should fail
+          // as we expect the query to be cancelled
+          expect(false).toBe(true, 'Query should have been cancelled but completed successfully');
+        } catch (err) {
+          // We expect an error when the query is cancelled, which is normal
+          // Just make sure we don't have an unhandled error
+          expect(err).toBeDefined();
+          clearTimeout(timer);
+        }
+        
+        // To verify the connection is still usable after cancellation,
+        // run a simple query - if this succeeds, our cancellation handling is working correctly
+        const result = await rawOracleClient.executeQuery("SELECT 1 FROM dual");
+        expect(result).toBeDefined();
       });
     })
 
