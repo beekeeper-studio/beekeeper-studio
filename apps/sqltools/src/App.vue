@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="theme-dark">
-    <app-header/>
-    <router-view :key="$route.fullPath"/>
+    <app-header />
+    <router-view :key="$route.fullPath" />
     <span class="expand"></span>
     <footer>
       <div class="small-wrap flex-col flex-middle">
@@ -13,7 +13,8 @@
       </div>
     </footer>
     <div class="scripts" v-if="production">
-      <component :is="'script'" src="https://eel.beekeeperstudio.io/script.js" data-spa="auto" data-site="AKZVMGGS" defer></component>
+      <component :is="'script'" src="https://cdn.usefathom.com/script.js" data-spa="auto" data-site="AKZVMGGS" defer>
+      </component>
     </div>
     <div v-else class="no-analytics">
       <!-- No analytics scripts -->
