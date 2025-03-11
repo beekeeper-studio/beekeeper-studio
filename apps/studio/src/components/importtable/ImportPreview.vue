@@ -35,8 +35,6 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        schema: null,
-        table: null,
         tabId: null,
         importStarted: false,
         timer: null,
@@ -73,8 +71,8 @@ export default {
       return totalColumns - mappedColumns
     },
     tableName () {
-      const schema = this.stepperProps.schema ? `${this.stepperProps.schema}.` : ''
-      return `${schema}${this.stepperProps.table}`
+      const schema = this.table?.schema ? `${this.table?.schema}.` : ''
+      return `${schema}${this.table?.name}`
     }
   },
   methods: {

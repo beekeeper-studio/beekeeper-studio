@@ -226,8 +226,8 @@
         return `tab-import-table-statusbar-${this.tab.id}`
       },
       tableName () {
-        const schema = this.schema ? `${this.schema}.` : ''
-        return `${schema}${this.table}`
+        const schema = this.importTable?.schema ? `${this.importTable?.schema}.` : ''
+        return `${schema}${this.importTable?.table}`
       },
       dialectTitle () {
         return DialectTitles[this.dialect]
@@ -295,7 +295,6 @@
       },
       async handleImport() {
         const importOptions = await this.tablesToImport.get(this.importKey)
-        console.log(importOptions)
         this.schema = importOptions.table.schema
         this.table = importOptions.table.name
         let importerClass

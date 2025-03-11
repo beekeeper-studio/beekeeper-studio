@@ -22,7 +22,7 @@
       </label>
     </div>
     <form
-      class="card-flat form-group"
+      class="card-flat form-group padding"
       v-if="createTable"
     >
       <div
