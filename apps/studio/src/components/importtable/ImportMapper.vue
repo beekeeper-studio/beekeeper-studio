@@ -371,12 +371,14 @@ export default {
       return await this.$util.send('generator/build', { schema: this.schemaBuilder() });
     },
     schemaBuilder () {
-      const columns = this.tabulator.getData().map(col => ({
-        dataType: col.dataType,
-        nullable: col.nullable,
-        primaryKey: col.primary,
-        columnName: col.tableColumn
-      }))
+      const columns = this.tabulator.getData()
+        .filter(col => col.tableColumn !== this.ignoreText)
+        .map(col => ({
+          dataType: col.dataType,
+          nullable: col.nullable,
+          primaryKey: col.primary,
+          columnName: col.tableColumn
+        }))
       return {
         name: this.newTableName,
         schema: this.newTableSchema,
@@ -510,11 +512,4 @@ export default {
   .btn-table-create {
     margin: 1rem 0 0 auto;
   }
-
-  // .import-section-wrapper {
-  //   :has(.mapper-wrapper--create) {
-  //     max-width: 800px !important;
-  //     width: 800px !important;
-  //   }
-  // }
 </style>
