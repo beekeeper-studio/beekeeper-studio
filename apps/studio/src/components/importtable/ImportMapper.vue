@@ -1,6 +1,9 @@
 <template>
   <section class="import-section-wrapper schema-builder">
-    <div class="card-flat padding form-group">
+    <div
+      class="card-flat padding form-group"
+      v-if="!createTable"
+    >
       <label class="checkbox-group">
         <input
           type="checkbox"
@@ -18,10 +21,45 @@
         Import data as an Upsert (Be sure to map a primary key field!)
       </label>
     </div>
+    <form
+      class="card-flat form-group"
+      v-if="createTable"
+    >
+      <div
+        class="form-group"
+        v-if="defaultSchema"
+      >
+        <label for="schema">Schema</label>
+        <input
+          type="text"
+          v-model="newTableSchema"
+          :placeholder="defaultSchema"
+        >
+      </div>
+      <div class="form-group">
+        <label for="table">Table Name</label>
+        <input
+          type="text"
+          v-model="newTableName"
+          placeholder="untitled_table"
+        >
+      </div>
+    </form>
     <div
       class="mapper-wrapper"
+      :class="{ 'mapper-wrapper--create': createTable }"
       ref="tabulator"
     />
+    <button
+      class="btn btn-primary btn-icon btn-table-create"
+      type="button"
+      @click.prevent="$emit('finish')"
+    >
+      <span>Create Table and Review Import</span>
+      <span class="material-icons">
+        keyboard_arrow_right
+      </span>
+    </button>
   </section>
 </template>
 
@@ -34,6 +72,8 @@ import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { getDialectData } from '@shared/lib/dialects'
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+
 export default {
   components: {
 
@@ -43,8 +83,6 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        schema: null,
-        table: null,
         tabId: null
       })
     },
@@ -56,13 +94,14 @@ export default {
       table: null,
       tabulator: null,
       tableColumnNames: {},
-      previewData: null,
       nonNullableColumns: [],
       ignoreText: 'IGNORE',
       truncateTable: false,
       runAsUpsert: false,
       createTable: true,
-      importOptions: null
+      importOptions: null,
+      newTableName: null,
+      newTableSchema: null
     }
   },
   computed: {
@@ -70,6 +109,7 @@ export default {
     ...mapGetters(['schemaTables']),
     ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
+    ...mapState(['defaultSchema', 'connection']),
     columnTypes() {
       return this.dialectData.columnTypes.map((c) => c.pretty)
     },
@@ -80,8 +120,13 @@ export default {
       return this.dialectData.importDataType
     },
     createTableColumns () {
-      const selectOptions = {
-        values: {[this.ignoreText]: this.ignoreText, ...this.columnTypes}
+      const autocompleteOptions = {
+        freetext: true,
+        allowEmpty: false,
+        values: this.columnTypes,
+        defaultValue: 'varchar(255)',
+        listOnEmpty: true,
+        autocomplete: true,
       }
 
       return [
@@ -94,6 +139,7 @@ export default {
         },
         {
           title: 'New Table Column',
+          editor: vueEditor(NullableInputEditorVue),
           field: 'tableColumn',
           editable: true,
           formatter: this.fileColumnFormatter,
@@ -101,11 +147,12 @@ export default {
         },
         {
           title: 'Type',
-          field: 'columnType',
-          editable: true,
+          field: 'dataType',
           editor: 'list',
-          editorParams: selectOptions,
+          editorParams: autocompleteOptions,
+          editable: true,
           cssClass: 'import-table-column',
+          minWidth: 90,
         },
         (this.disabledFeatures?.nullable ? null : {
           title: 'Nullable',
@@ -186,10 +233,12 @@ export default {
         }
       ]
     },
+    simpleTableName() {
+      return this.newTableSchema ? `${this.newTableSchema}.${this.newTableName}` : this.newTableName
+    }
   },
   methods: {
     getTable(tableData) {
-      console.log(tableData)
       if (!tableData) return null
 
       const { schema, name: tableName } = tableData
@@ -262,7 +311,7 @@ export default {
         {
           fileColumn: resp.columnName,
           tableColumn: this.betterColumnName(resp.columnName),
-          columnType: this.getColumnType(resp.dataTypes),
+          dataType: this.getColumnType(resp.dataTypes).toUpperCase(),
           nullable: resp.dataTypes.has('null'),
           primary: resp.primary
         }
@@ -280,7 +329,6 @@ export default {
       ].filter(c => !!c)
     },
     async initTabulator() {
-      console.log('init tabulator', this.createTable)
       if (this.createTable) {
         this.tabulator = new TabulatorFull(this.$refs.tabulator, {
           data: await this.createTableData(),
@@ -319,8 +367,29 @@ export default {
         this.initialize()
       }
     },
+    async createNewTable () {
+      return await this.$util.send('generator/build', { schema: this.schemaBuilder() });
+    },
+    schemaBuilder () {
+      const columns = this.tabulator.getData().map(col => ({
+        dataType: col.dataType,
+        nullable: col.nullable,
+        primaryKey: col.primary,
+        columnName: col.tableColumn
+      }))
+      return {
+        name: this.newTableName,
+        schema: this.newTableSchema,
+        columns
+      }
+    },
     canContinue() {
       if (this.tabulator === null) return false
+
+      if (this.createTable) {
+        return true
+      }
+      
       const nonNullableColumns = new Set(this.nonNullableColumns)
       const tableData = this.tabulator.getData()
         .filter(t => t.tableColumn.toLowerCase().trim() !== this.ignoreText.toLowerCase() && t.tableColumn !== '')
@@ -356,6 +425,24 @@ export default {
     },
     async onNext() {
       const importOptions =  await this.tablesToImport.get(this.importKey())
+
+      if (this.createTable) {
+        try {
+          const sql = await this.createNewTable()
+          const runningQuery = await this.connection.query(sql)
+          // spinner start
+          await runningQuery.execute();
+          this.$noty.success(`${this.simpleTableName} created`)
+          await this.$store.dispatch('updateTables')
+          // end spinner
+          await this.$store.dispatch('updateTableColumns', this.getTable({ schema: this.newTableSchema, name: this.newTableName }))
+          importOptions.table = this.getTable({ schema: this.newTableSchema, name: this.newTableName })
+        } catch (err) {
+          console.log(err)
+          return
+        }
+      }
+      
       importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
       importOptions.truncateTable = this.truncateTable
       importOptions.runAsUpsert = this.runAsUpsert
@@ -368,7 +455,6 @@ export default {
       this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
-      console.log('I am here')
       const importOptions = await this.tablesToImport.get(this.importKey())
       this.table = this.getTable(importOptions.table)
 
@@ -389,6 +475,10 @@ export default {
         this.tableColumnNames = tableColumnNames
         this.nonNullableColumns = nonNullableColumns
         this.createTable = false
+      } else {
+        const splitFileName = importOptions.fileName.split('/')
+        const [fileName] = splitFileName[splitFileName.length-1].split('.')
+        this.newTableName = fileName
       }
 
       if (!importOptions.importProcessId) {
@@ -396,8 +486,6 @@ export default {
       } else {
         this.importerId = importOptions.importProcessId
       }
-
-      console.log('this.table', this.table)
 
       this.initTabulator()
     },
@@ -418,4 +506,15 @@ export default {
   .checkbox-group:last-of-type {
     padding-top: 1rem;
   }
+
+  .btn-table-create {
+    margin: 1rem 0 0 auto;
+  }
+
+  // .import-section-wrapper {
+  //   :has(.mapper-wrapper--create) {
+  //     max-width: 800px !important;
+  //     width: 800px !important;
+  //   }
+  // }
 </style>

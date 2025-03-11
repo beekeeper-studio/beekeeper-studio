@@ -10,7 +10,11 @@
           <div class="import-table-form">
             <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex">
               <label>
-                <input type="radio" :value="tableKeyByMatrix({ schema: schemaTable.schema, name: tableData.name})" v-model="selectedTable">
+                <input
+                  type="radio"
+                  :value="tableKeyByMatrix({ schema: schemaTable.schema, name: tableData.name })"
+                  v-model="selectedTable"
+                >
                 {{ tableData.name }}
               </label>
             </div>
@@ -90,7 +94,7 @@ export default {
     importKey() {
       return `new-import-${this.stepperProps.tabId}`
     },
-    tableKeyByMatrix({ schema: schemaName, name: tableName }){
+    tableKeyByMatrix({ schema: schemaName = null, name: tableName }){
       const schema = schemaName ? `${schemaName}==|==` : ''
       return `${schema}${tableName}`
     },
@@ -107,7 +111,7 @@ export default {
 
       if (this.selectedTable) {
         importOptions.table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', importOptions.table)
+        // await this.$store.dispatch('updateTableColumns', importOptions.table)
       } else {
         importOptions.table = null
       }
@@ -122,9 +126,12 @@ export default {
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.importKey())
-
-      // table might not exist based on the stuff, ya dig?
-      this.selectedTable = this.tableKeyByMatrix(importOptions.table)
+      console.log(importOptions.table)
+      if (importOptions.table) {
+        this.selectedTable = this.tableKeyByMatrix(importOptions.table)
+      } else {
+        this.createTableFromFile = true
+      }
     },
   },
   mounted () {
