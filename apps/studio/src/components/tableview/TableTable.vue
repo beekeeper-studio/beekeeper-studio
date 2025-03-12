@@ -190,6 +190,14 @@
 
         <!-- Actions -->
         <x-button
+          class="btn btn-flat"
+          v-tooltip="`Add Column (${ctrlOrCmd('shift+n')})`"
+          @click.prevent="cellAddCol"
+        >
+          <i class="material-icons">add</i>
+          CHANGE ME
+        </x-button>
+        <x-button
           v-tooltip="`Toggle Right Sidebar`"
           class="btn btn-flat"
           @click="toggleOpenDetailView()"
@@ -287,6 +295,7 @@
         </div>
       </modal>
     </portal>
+    <add-field-modal @done="cellAddCol(undefined, $event)"/>
   </div>
 </template>
 
@@ -311,6 +320,7 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
+import AddFieldModal from '../common/modals/AddFieldModal.vue'
 import EditorModal from './EditorModal.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
@@ -341,11 +351,12 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar, AddFieldModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
     return {
+      addedCol: false,
       filters: [],
       tableFilters: [createTableFilter(this.table.columns?.[0]?.columnName)],
       headerFilter: true,
@@ -455,6 +466,7 @@ export default Vue.extend({
       // }
       result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
+      result[this.ctrlOrCmd('shift+n')] = this.cellAddCol.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
@@ -527,176 +539,9 @@ export default Vue.extend({
       return this.table?.columns?.map((c) => c.columnName).join("-") || []
     },
     tableColumns() {
-      const results = []
       if (!this.table) return []
 
-      const cellMenu = (keyDatas?: any[]) => {
-        return (_e, cell: CellComponent) => {
-          const ranges = cell.getRanges();
-          const range = _.last(ranges)
-          const menu = [
-            this.openEditorMenu(cell),
-            this.setAsNullMenuItem(range),
-            { separator: true },
-            this.quickFilterMenuItem(cell),
-            ...copyActionsMenu({
-              ranges,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
-            { separator: true },
-            ...pasteActionsMenu(range),
-            { separator: true },
-            ...this.rowActionsMenu(range),
-          ]
-
-          if (keyDatas?.length > 0) {
-            keyDatas.forEach(keyData => {
-              menu.push({
-                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
-                action: (_e, cell) => this.fkClick(keyData, cell)
-              })
-            })
-          }
-
-          return menu
-        }
-      }
-
-      const columnMenu = (_e, column: ColumnComponent) => {
-        const ranges = (column as any).getRanges();
-        const range = _.last(ranges) as RangeComponent;
-        let hideColumnLabel = `Hide ${column.getDefinition().title}`
-
-        if (hideColumnLabel.length > 33) {
-          hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
-        }
-
-        return [
-          this.setAsNullMenuItem(range),
-          { separator: true },
-          ...copyActionsMenu({
-            ranges,
-            table: this.table.name,
-            schema: this.table.schema,
-          }),
-          { separator: true },
-          ...commonColumnMenu,
-          { separator: true },
-          {
-            label: createMenuItem(hideColumnLabel),
-            action: () => this.hideColumnByField(column.getField()),
-          },
-          {
-            label: createMenuItem(`Reset layout`),
-            action: () => column.getTable().setColumnLayout(this.tableColumns),
-          },
-          this.openColumnFilterMenuItem,
-        ]
-      }
-
-      // 1. add a column for a real column
-      // if a FK, add another column with the link
-      // to the FK table.
-      this.table.columns.forEach(column => {
-
-        const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
-        // this needs fixing
-        // currently it doesn't fetch the right result if you update the PK
-        // because it uses the PK to fetch the result.
-        const slimDataType = this.slimDataType(column.dataType)
-        const editorType = this.editorType(column.dataType)
-        const useVerticalNavigation = editorType === 'textarea'
-        const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
-        const hasKeyDatas = keyDatas && keyDatas.length > 0
-        const columnWidth = this.table.columns.length > 30 ?
-          this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
-          undefined;
-
-        let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
-        if (hasKeyDatas) {
-          const keyData = keyDatas[0][1];
-          if (keyData.length === 1)
-            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
-          else
-            headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
-        } else if (isPK) {
-          headerTooltip += ' [Primary Key]'
-        }
-
-        let cssClass = 'hide-header-menu-icon';
-        if (isPK) {
-          cssClass += ' primary-key';
-        } else if (hasKeyDatas) {
-          cssClass += ' foreign-key';
-        }
-        if (column.generated) {
-          cssClass += ' generated-column';
-        }
-
-        // if column has a comment, add it to the tooltip
-        if (column.comment) {
-          headerTooltip += `<br/> ${escapeHtml(column.comment)}`
-        }
-
-        const result = {
-          title: column.columnName,
-          field: column.columnName,
-          titleFormatter: this.headerFormatter,
-          titleFormatterParams: {
-            columnName: column.columnName,
-            dataType: column.dataType,
-            generated: column.generated,
-          },
-          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-          dataType: column.dataType,
-          minWidth: globals.minColumnWidth,
-          width: columnWidth,
-          maxWidth: globals.maxColumnWidth,
-          maxInitialWidth: globals.maxInitialWidth,
-          resizable: 'header',
-          cssClass,
-          editable: this.cellEditCheck,
-          headerSort: !this.dialectData.disabledFeatures.headerSort,
-          editor: editorType,
-          tooltip: this.cellTooltip,
-          contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
-          headerContextMenu: columnMenu,
-          headerMenu: columnMenu,
-          headerTooltip: headerTooltip,
-          cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
-          formatter: this.cellFormatter,
-          formatterParams: {
-            fk: hasKeyDatas && keyDatas[0][1],
-            fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
-            isPK: isPK
-          },
-          editorParams: {
-            verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
-            dataType: column.dataType,
-            search: true,
-            allowEmpty: true,
-            preserveObject: column.array,
-            onPreserveObjectFail: (value: unknown) => {
-              log.error('Failed to preserve object for', value)
-              return true
-            },
-            typeHint: column.dataType.toLowerCase(),
-            bksField: column.bksField,
-          },
-        }
-
-        if (column.dataType && /^(bool|boolean)$/i.test(column.dataType)) {
-          const values = [
-            { label: 'false', value: this.dialectData.boolean?.false ?? false },
-            { label: 'true', value: this.dialectData.boolean?.true ?? true },
-          ]
-          if (column.nullable) values.push({ label: '(NULL)', value: null })
-          result.editorParams['values'] = values
-        }
-
-        results.push(result)
-      });
+      const results = this.table.columns.map(column => this.createColumnFromProps(column));
 
       // add internal index column
       const result = {
@@ -859,6 +704,178 @@ export default Vue.extend({
     }
   },
   methods: {
+    createColumnFromProps(column) {
+      // 1. add a column for a real column
+      // if a FK, add another column with the link
+      // to the FK table.
+      const cellMenu = (keyDatas?: any[]) => {
+        return (_e, cell: CellComponent) => {
+          const ranges = cell.getRanges();
+          const range = _.last(ranges)
+          const menu = [
+            this.openEditorMenu(cell),
+            this.setAsNullMenuItem(range),
+            { separator: true },
+            this.quickFilterMenuItem(cell),
+            ...copyActionsMenu({
+              ranges,
+              table: this.table.name,
+              schema: this.table.schema,
+            }),
+            { separator: true },
+            ...pasteActionsMenu(range),
+            { separator: true },
+            ...this.rowActionsMenu(range),
+          ]
+
+          if (keyDatas?.length > 0) {
+            keyDatas.forEach(keyData => {
+              menu.push({
+                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
+                action: (_e, cell) => this.fkClick(keyData, cell)
+              })
+            })
+          }
+
+          if (this.dialect === 'mongodb') {
+            menu.push({
+              label: createMenuItem('Add Field', 'Control+Shift+N'),
+              action: (_e, _cell) => this.cellAddCol()
+            })
+          }
+
+          return menu
+        }
+      }
+
+      const columnMenu = (_e, column: ColumnComponent) => {
+        const ranges = (column as any).getRanges();
+        const range = _.last(ranges) as RangeComponent;
+        let hideColumnLabel = `Hide ${column.getDefinition().title}`
+
+        if (hideColumnLabel.length > 33) {
+          hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
+        }
+
+        return [
+          this.setAsNullMenuItem(range),
+          { separator: true },
+          ...copyActionsMenu({
+            ranges,
+            table: this.table.name,
+            schema: this.table.schema,
+          }),
+          { separator: true },
+          ...commonColumnMenu,
+          { separator: true },
+          {
+            label: createMenuItem(hideColumnLabel),
+            action: () => this.hideColumnByField(column.getField()),
+          },
+          {
+            label: createMenuItem(`Reset layout`),
+            action: () => column.getTable().setColumnLayout(this.tableColumns),
+          },
+          this.openColumnFilterMenuItem,
+        ]
+      }
+
+      const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
+      // this needs fixing
+      // currently it doesn't fetch the right result if you update the PK
+      // because it uses the PK to fetch the result.
+      const slimDataType = this.slimDataType(column.dataType)
+      const editorType = this.editorType(column.dataType)
+      const useVerticalNavigation = editorType === 'textarea'
+      const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
+      const hasKeyDatas = keyDatas && keyDatas.length > 0
+      const columnWidth = this.table.columns.length > 30 ?
+        this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
+        undefined;
+
+      let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
+      if (hasKeyDatas) {
+        const keyData = keyDatas[0][1];
+        if (keyData.length === 1)
+          headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
+        else
+          headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
+      } else if (isPK) {
+        headerTooltip += ' [Primary Key]'
+      }
+
+      let cssClass = 'hide-header-menu-icon';
+      if (isPK) {
+        cssClass += ' primary-key';
+      } else if (hasKeyDatas) {
+        cssClass += ' foreign-key';
+      }
+      if (column.generated) {
+        cssClass += ' generated-column';
+      }
+
+      // if column has a comment, add it to the tooltip
+      if (column.comment) {
+        headerTooltip += `<br/> ${escapeHtml(column.comment)}`
+      }
+
+      const result = {
+        title: column.columnName,
+        field: column.columnName,
+        titleFormatter: this.headerFormatter,
+        titleFormatterParams: {
+          columnName: column.columnName,
+          dataType: column.dataType,
+          generated: column.generated,
+        },
+        mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
+        dataType: column.dataType,
+        minWidth: globals.minColumnWidth,
+        width: columnWidth,
+        maxWidth: globals.maxColumnWidth,
+        maxInitialWidth: globals.maxInitialWidth,
+        resizable: 'header',
+        cssClass,
+        editable: this.cellEditCheck,
+        headerSort: !this.dialectData.disabledFeatures.headerSort,
+        editor: editorType,
+        tooltip: this.cellTooltip,
+        contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
+        headerContextMenu: columnMenu,
+        headerMenu: columnMenu,
+        headerTooltip: headerTooltip,
+        cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
+        formatter: this.cellFormatter,
+        formatterParams: {
+          fk: hasKeyDatas && keyDatas[0][1],
+          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+          isPK: isPK
+        },
+        editorParams: {
+          verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+          dataType: column.dataType,
+          search: true,
+          allowEmpty: true,
+          preserveObject: column.array,
+          onPreserveObjectFail: (value: unknown) => {
+            log.error('Failed to preserve object for', value)
+            return true
+          },
+          typeHint: column.dataType?.toLowerCase(),
+          bksField: column.bksField,
+        },
+      }
+
+      if (column.dataType && /^(bool|boolean)$/i.test(column.dataType)) {
+        const values = [
+          { label: 'false', value: this.dialectData.boolean?.false ?? false },
+          { label: 'true', value: this.dialectData.boolean?.true ?? true },
+        ]
+        if (column.nullable) values.push({ label: '(NULL)', value: null })
+        result.editorParams['values'] = values
+      }
+      return result;
+    },
     handleTab(e: KeyboardEvent) {
       // do nothing?
       log.debug('tab pressed')
@@ -1310,6 +1327,21 @@ export default Vue.extend({
     cellCloneRow(_e, cell: CellComponent) {
       this.cloneSelection(_.last(cell.getRanges()))
     },
+    cellAddCol(_e, field) {
+      if (this.dialectData.disabledFeatures?.tableTable) {
+        return;
+      }
+
+      if (!field) {
+        this.$root.$emit(AppEvent.openAddFieldModal);
+        return;
+      }
+
+      this.tabulator.addColumn(this.createColumnFromProps({ columnName: field.fieldName, dataType: field.typeHint }), false).then((col) => {
+        this.tabulator.scrollToColumn(col, "middle", true)
+        this.addedCol = true;
+      })
+    },
     cellAddRow() {
       if (this.dialectData.disabledFeatures?.tableTable) {
         return;
@@ -1452,8 +1484,9 @@ export default Vue.extend({
           const result = await this.connection.applyChanges(payload);
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
-          if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
+          if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes || this.addedCol) {
             replaceData = true
+            this.addedCol = false;
           } else if (this.hasPendingUpdates) {
             this.tabulator.clearCellEdited()
             this.tabulator.updateData(this.convertUpdateResult(result))
@@ -1503,6 +1536,7 @@ export default Vue.extend({
     },
     discardChanges() {
       this.saveError = null
+      this.addedCol = false
 
       this.pendingChanges.inserts.forEach(insert => this.tabulator.deleteRow(insert.row))
 

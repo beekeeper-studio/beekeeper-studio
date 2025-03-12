@@ -325,7 +325,12 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
         }
       };
 
-      results.push(await connection.collection(update.table).updateOne(filter, updateDoc));
+      const result = await connection.collection(update.table).findOneAndUpdate(
+        filter,
+        updateDoc,
+        { returnDocument: 'after' }
+      );
+      results.push(result);
     }
     return results;
   }

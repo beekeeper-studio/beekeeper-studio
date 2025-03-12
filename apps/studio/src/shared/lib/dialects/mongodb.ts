@@ -1,7 +1,13 @@
-import { DialectData } from "./models";
+import { ColumnType, DialectData } from "./models";
+
+const types = [
+  'double', 'string', 'object', 'array', 'binData', 'objectid',
+  'bool', 'date', 'regex', 'javascript', 'int', 'timestamp',
+  'long', 'decimal', 'minKey', 'maxKey', 'number'
+]
 
 export const MongoDBData: DialectData = {
-  columnTypes: [],
+  columnTypes: types.map((t) => new ColumnType(t)),
   usesOffsetPagination: true,
   textEditorMode: 'javascript',
   disabledFeatures: {
