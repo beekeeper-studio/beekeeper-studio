@@ -186,7 +186,7 @@ export default Vue.extend({
           widthGrow: 2,
           editable,
           editor: vueEditor(NullableInputEditorVue),
-
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'fromColumn',
@@ -196,7 +196,8 @@ export default Vue.extend({
           editorParams: {
             // @ts-expect-error Incorrectly typed
             valuesLookup: () => this.table.columns.map((c) => escapeHtml(c.columnName))
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         ...( showSchema ? [{
           field: 'toSchema',
@@ -218,7 +219,8 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getTables
           },
-          cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
+          cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null),
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'toColumn',
@@ -229,6 +231,7 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getColumns
           },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'onUpdate',
@@ -238,7 +241,8 @@ export default Vue.extend({
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION'
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'onDelete',
@@ -249,7 +253,8 @@ export default Vue.extend({
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION',
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
       ]
       return this.canDrop ? [...results, trashButton(this.removeRow)] : results
@@ -392,6 +397,30 @@ export default Vue.extend({
       })
       this.newRows = []
       this.removedRows = []
+    },
+    handleCellDoubleClick(cell) {
+
+      const element = cell.getElement();
+
+      // If already editable, remove contenteditable and stop execution
+      if (element.hasAttribute("contenteditable")) {
+        element.removeAttribute("contenteditable");
+        return;
+      }
+
+      // Enable text selection
+      element.setAttribute("contenteditable", "true");
+      element.focus();
+      document.execCommand("selectAll"); // Automatically select text
+
+      // Function to remove contenteditable when clicking anywhere
+      const removeEditable = (event) => {
+        element.removeAttribute("contenteditable");
+        document.removeEventListener("click", removeEditable);
+      };
+
+      // Attach a global event listener
+      document.addEventListener("click", removeEditable);
     }
   },
   mounted() {
