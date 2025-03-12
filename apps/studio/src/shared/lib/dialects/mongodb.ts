@@ -12,6 +12,10 @@ export const MongoDBData: DialectData = {
   textEditorMode: 'javascript',
   disabledFeatures: {
     queryEditor: true,
+    truncateElement: true,
+    sqlCreate: true,
+    importFromFile: true,
+    exportTable: true,
     nullable: true,
     defaultValue: true,
     primary: true,
@@ -33,7 +37,6 @@ export const MongoDBData: DialectData = {
       dropConstraint: true,
       indexes: true,
       renameSchema: true,
-      renameTable: true,
       renameView: true,
       reorderColumn: true
     },

@@ -143,6 +143,7 @@ export interface DialectData {
     truncateElement?: boolean
     exportTable?: boolean
     createTable?: boolean
+    dropTable?: boolean
     collations?: boolean
     importFromFile?: boolean,
     headerSort?: boolean,
@@ -158,6 +159,7 @@ export interface DialectData {
     binaryColumn?: boolean
     initialSort?: boolean
     multipleDatabase?: boolean
+    sqlCreate?: boolean
   },
   notices?: {
     infoSchema?: string

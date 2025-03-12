@@ -1,10 +1,10 @@
 <template>
   <portal to="modals">
     <modal :name="modalName" class="vue-dialog beekeeper-modal">
-      <div v-kbd-trap="true">
+      <form v-kbd-trap="true" @submit.prevent="submit">
         <div class="dialog-content">
           <div class="dialog-c-title">
-            AddField
+            Add Field
             <a
               class="close-btn btn btn-fab"
               href="#"
@@ -42,13 +42,13 @@
           </button>
           <button
             class="btn btn-primary"
-            type="button"
-            @click="submit"
+            type="submit"
+            :disabled="!canSubmit"
           >
             Add
           </button>
         </div>
-      </div>
+      </form>
     </modal>
   </portal>
 </template>
@@ -80,6 +80,9 @@ export default Vue.extend({
     },
     rootBindings() {
       return [{ event: AppEvent.openAddFieldModal, handler: this.open }]
+    },
+    canSubmit() {
+      return this.fieldName.length > 0 && this.typeHint.length > 0;
     }
   },
   methods: {
@@ -92,6 +95,8 @@ export default Vue.extend({
       this.$modal.hide(this.modalName);
     },
     async submit() {
+      if (!this.canSubmit) return;
+
       this.$emit('done', { fieldName: this.fieldName, typeHint: this.typeHint});
       this.$noty.success(`${this.fieldName} added`);
       this.close();
@@ -129,5 +134,9 @@ export default Vue.extend({
     padding-right: 1.5rem;
     cursor: pointer;
   }
+}
+
+.v--modal-box.v--modal {
+  overflow: visible !important;
 }
 </style>

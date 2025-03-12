@@ -200,6 +200,16 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     }
   }
 
+  override async setElementName(elementName: string, newElementName: string, typeOfElement:DatabaseElement): Promise<void> {
+    const db = this.conn.db(this.db);
+
+    if (typeOfElement == DatabaseElement.TABLE) {
+      await db.collection(elementName).rename(newElementName);
+    } else {
+      log.warn(`MongoDB does not support renaming ${typeOfElement}`);
+    }
+  }
+
   async selectTopSql(_table: string, _offset: number, _limit: number, _orderBy: OrderBy[], _filters: string | TableFilter[], _schema?: string, _selects?: string[]): Promise<string> {
     log.error("MongoDB does not support generating SQL scripts");
     return '';
