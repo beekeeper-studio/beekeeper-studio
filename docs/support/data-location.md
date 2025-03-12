@@ -14,8 +14,8 @@ The database is named `app.db` and is stored in the `userData` folder which the 
 
 - Windows: `<User Directory>\AppData\Roaming\beekeeper-studio`
 - MacOS: `~/Library/Application Support/Beekeeper Studio`
+    - Note: The ~/Library directory is typically hidden in Finder. However, you can use Go -> Go to Folder to open this directory.
 - Linux: `~/.config/beekeeper-studio`
-
 
 ## Access the Beekeeper Studio Database....From Beekeeper Studio
 

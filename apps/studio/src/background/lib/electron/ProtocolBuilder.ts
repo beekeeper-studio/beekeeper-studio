@@ -6,9 +6,26 @@ import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 
-const log = rawLog.scope('app:// ProtocolBuilder')
+const log = rawLog.scope('ProtocolBuilder')
 
-
+function mimeTypeOf(pathName: string) {
+  const extension = path.extname(pathName).toLowerCase()
+  if (extension === '.js') {
+    return 'text/javascript'
+  } else if (extension === '.html') {
+    return 'text/html'
+  } else if (extension === '.css') {
+    return 'text/css'
+  } else if (extension === '.svg' || extension === '.svgz') {
+    return 'image/svg+xml'
+  } else if (extension === '.json') {
+    return 'application/json'
+  } else if (extension === '.wasm') {
+    return 'application/wasm'
+  } else if (extension === '.map') {
+    return 'application/json'
+  }
+}
 
 export const ProtocolBuilder = {
 
@@ -45,28 +62,36 @@ export const ProtocolBuilder = {
         }
 
         readFile(normalizedPath, (error, data) => {
-
-          let mimeType = ''
-
-          if (extension === '.js') {
-            mimeType = 'text/javascript'
-          } else if (extension === '.html') {
-            mimeType = 'text/html'
-          } else if (extension === '.css') {
-            mimeType = 'text/css'
-          } else if (extension === '.svg' || extension === '.svgz') {
-            mimeType = 'image/svg+xml'
-          } else if (extension === '.json') {
-            mimeType = 'application/json'
-          } else if (extension === '.wasm') {
-            mimeType = 'application/wasm'
-          } else if (extension === '.map') {
-            mimeType = 'application/json'
-          }
-
-          respond({ mimeType, data })
+          respond({
+            mimeType: mimeTypeOf(pathName),
+            data,
+          })
         })
       }
     )
+  },
+  createPluginProtocol: () => {
+    protocol.registerBufferProtocol("plugin", (request, respond) => {
+      const pathName = request.url.replace("plugin://", "")
+      const normalized = path.normalize(pathName)
+      const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
+      log.debug("resolving", pathName, 'to', fullPath)
+      readFile(fullPath, (error, data) => {
+        if (error) {
+          log.error("error loading plugin file", pathName, error)
+          if (error.code?.toLowerCase() === 'enoent') {
+            respond({ error: -6 })
+          } else {
+            respond({ error: -2 })
+          }
+          return
+        }
+
+        respond({
+          mimeType: mimeTypeOf(pathName),
+          data,
+        })
+      })
+    });
   }
 }
