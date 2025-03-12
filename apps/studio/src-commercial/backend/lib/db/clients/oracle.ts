@@ -15,6 +15,8 @@ import {
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
+  Routine,
+  RoutineType,
   SchemaFilterOptions,
   StreamResults,
   TableChanges,
@@ -128,35 +130,66 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   // took this approach because Typescript wasn't liking the base function could be a null value or a function
-  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
-    const [PK] = primaryKeys
-    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}[], primaryKeys: string[]): string {
+    const [PK] = primaryKeys;
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK);
+    
+    // Use D.wrapIdentifier for proper identifier wrapping
+    const wrappedPK = D.wrapIdentifier(PK);
+    const wrappedSchema = D.wrapIdentifier(schema);
+    const wrappedTable = D.wrapIdentifier(tableName);
+    
+    const wrappedColumns = columnsWithoutPK.map(col => D.wrapIdentifier(col));
+    
     const insertSQL = () => `
-      INSERT ("${PK}", ${columnsWithoutPK.map(cpk => `"${cpk}"`).join(', ')})
-      VALUES (source."${PK}", ${columnsWithoutPK.map(cpk => `source."${cpk}"`).join(', ')})
-    `
-    const updateSet = () => `${columnsWithoutPK.map(cpk => `target."${cpk}" = source."${cpk}"`).join(', ')}`
-    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
-    const usingSQLStatement = data.map( (val, idx) => {
-      if (idx === 0) {
-        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM dual`
+      INSERT (${wrappedPK}, ${wrappedColumns.join(', ')})
+      VALUES (source.${wrappedPK}, ${columnsWithoutPK.map(cpk => `source.${D.wrapIdentifier(cpk)}`).join(', ')})
+    `;
+    
+    const updateSet = () => `${columnsWithoutPK.map(cpk => 
+      `target.${D.wrapIdentifier(cpk)} = source.${D.wrapIdentifier(cpk)}`
+    ).join(', ')}`;
+    
+    // Use D.escapeString for proper string value escaping
+    const formatValue = (val: any): string => {
+      if (val === null || val === undefined) {
+        return 'NULL';
       }
-      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM dual`
-    })
-    .join(' UNION ALL ')
+      if (_.isNumber(val) || _.isBoolean(val)) {
+        return String(val);
+      }
+      if (_.isString(val)) {
+        return D.escapeString(val, true);
+      }
+      if (val instanceof Date) {
+        return `TO_DATE('${val.toISOString().slice(0, 19).replace('T', ' ')}', 'YYYY-MM-DD HH24:MI:SS')`;
+      }
+      return D.escapeString(String(val), true);
+    };
+    
+    const usingSQLStatement = data.map((val, idx) => {
+      if (idx === 0) {
+        return `SELECT ${formatValue(val[PK])} AS ${wrappedPK}, ${columnsWithoutPK.map(col => 
+          `${formatValue(val[col])} AS ${D.wrapIdentifier(col)}`
+        ).join(', ')} FROM dual`;
+      }
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => 
+        formatValue(val[col])
+      ).join(', ')} FROM dual`;
+    }).join(' UNION ALL ');
 
     return `
-      MERGE INTO "${schema}"."${tableName}" target
+      MERGE INTO ${wrappedSchema}.${wrappedTable} target
       USING (
         ${usingSQLStatement}
       ) source
-      ON (target."${PK}" = source."${PK}")
+      ON (target.${wrappedPK} = source.${wrappedPK})
       WHEN MATCHED THEN
         UPDATE SET
           ${updateSet()}
       WHEN NOT MATCHED THEN
         ${insertSQL()};
-    `
+    `;
   }
 
   async createDatabaseSQL() {
@@ -343,14 +376,90 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     transactions: true
   });
 
-  // TODO: implement
-  async listRoutines(_filter?: FilterOptions) {
-    return []
+  // List Oracle stored procedures, functions, and packages
+  async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
+    try {
+      // Query to get procedures, functions, and packages
+      const query = `
+        SELECT 
+          OBJECT_NAME,
+          OBJECT_TYPE,
+          OWNER AS SCHEMA_NAME,
+          STATUS,
+          CREATED,
+          LAST_DDL_TIME,
+          OBJECT_ID
+        FROM ALL_OBJECTS
+        WHERE OBJECT_TYPE IN ('PROCEDURE', 'FUNCTION', 'PACKAGE')
+        ${filter?.schema ? `AND OWNER = ${D.escapeString(filter.schema.toUpperCase(), true)}` : ''}
+        ORDER BY OBJECT_TYPE, OBJECT_NAME
+      `;
+      
+      const results = await this.driverExecuteSimple(query);
+      
+      // Map to the Routine interface expected by the application
+      return results.map(row => {
+        // Convert Oracle object type to our RoutineType
+        const routineType: RoutineType = 
+          row.OBJECT_TYPE === 'FUNCTION' ? 'function' : 
+          row.OBJECT_TYPE === 'PROCEDURE' ? 'procedure' : 
+          'procedure'; // Default for packages etc.
+        
+        return {
+          id: String(row.OBJECT_ID),
+          name: row.OBJECT_NAME,
+          schema: row.SCHEMA_NAME,
+          type: routineType,
+          returnType: routineType === 'function' ? 'UNKNOWN' : '',
+          entityType: 'routine'
+        };
+      });
+    } catch (error) {
+      log.error('Error listing routines:', error);
+      return [];
+    }
   }
-  // TODO: fix implementation
+  // Oracle doesn't have the concept of multiple databases in the same way as other RDBMS
+  // Instead, it uses services (service names) to connect to different database instances
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const current = await this.getCurrentDatabase()
-    return [current]
+    try {
+      // First, get the current database name
+      const current = await this.getCurrentDatabase();
+      
+      // Then, query v$database to get additional information
+      const dbQuery = `
+        SELECT NAME, OPEN_MODE, DATABASE_ROLE 
+        FROM v$database
+      `;
+      
+      // Also query available PDBs (Pluggable Databases) if this is a container database
+      const pdbQuery = `
+        SELECT NAME, OPEN_MODE, RESTRICTED 
+        FROM v$pdbs
+        WHERE OPEN_MODE = ${D.escapeString('READ WRITE', true)}
+      `;
+      
+      // Execute both queries
+      let databases = [current];
+      
+      try {
+        // Try to get additional PDBs, but this may fail if we don't have permissions
+        const pdbResults = await this.driverExecuteSimple(pdbQuery);
+        if (pdbResults && pdbResults.length > 0) {
+          const pdbNames = pdbResults.map(row => row.NAME);
+          databases = databases.concat(pdbNames);
+        }
+      } catch (error) {
+        // Ignore errors if we don't have permission to view PDBs
+        log.debug('Unable to query PDBs, listing only current database', error);
+      }
+      
+      return [...new Set(databases)]; // Return unique list
+    } catch (error) {
+      log.error('Error listing databases:', error);
+      // Fall back to default implementation if there's an error
+      return [this.database?.database || 'oracle'];
+    }
   }
 
   // this can just return [] always
@@ -758,11 +867,12 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       cancel: (async () => {
         canceling = true
         if (connection) {
-          await connection.break()
           try {
-            await connection?.close()
+            await connection.break()
+            await connection.close()
           } catch(err) {
-            // do nothing
+            // Log the error but continue with cancellation
+            console.error("Error during query cancellation:", err);
           }
         }
         else cancelable.cancel()
