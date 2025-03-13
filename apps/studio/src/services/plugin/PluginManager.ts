@@ -3,14 +3,22 @@ import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import { Manifest, PluginRegistryEntry, PluginRepositoryInfo } from "./types";
 import rawLog from "@bksLogger";
+import PluginRepositoryService from "./PluginRepositoryService";
 
 const log = rawLog.scope("PluginManager");
 
 export default class PluginManager {
   private initialized = false;
-  private registry: PluginRegistry = new PluginRegistry();
-  private fileManager: PluginFileManager = new PluginFileManager();
+  private pluginRepositoryService: PluginRepositoryService;
+  private registry: PluginRegistry;
+  private fileManager: PluginFileManager;
   private installedPlugins: Manifest[] = [];
+
+  constructor() {
+    this.pluginRepositoryService = new PluginRepositoryService();
+    this.fileManager = new PluginFileManager(this.pluginRepositoryService);
+    this.registry = new PluginRegistry(this.pluginRepositoryService);
+  }
 
   async initialize() {
     if (this.initialized) {
@@ -22,33 +30,16 @@ export default class PluginManager {
     this.initialized = true;
   }
 
-  async getEntries(
-    filter: "installed" | "all" = "all"
-  ): Promise<PluginRegistryEntry[]> {
-    const entries = await this.registry.getEntries();
-
-    if (filter === "installed") {
-      return entries.filter((entry) =>
-        this.installedPlugins.find((manifest) => manifest.id === entry.id)
-      );
-    }
-
-    return entries;
+  async getEntries(): Promise<PluginRegistryEntry[]> {
+    return await this.registry.getEntries();
   }
 
+  // TODO implement enable/disable plugins
   async getEnabledPlugins() {
     return this.installedPlugins;
   }
 
-  async getRepositoryInfo(
-    entry: PluginRegistryEntry
-  ): Promise<PluginRepositoryInfo> {
-    return await this.registry.getRepositoryInfo(entry);
-  }
-
-  async installPlugin(
-    entry: PluginRegistryEntry
-  ): Promise<Manifest> {
+  async installPlugin(entry: PluginRegistryEntry): Promise<Manifest> {
     if (this.installedPlugins.find((manifest) => manifest.id === entry.id)) {
       throw new Error(`Plugin "${entry.id}" is already installed.`);
     }
@@ -56,12 +47,13 @@ export default class PluginManager {
     log.debug(`Installing plugin "${entry.id}"...`);
 
     const info = await this.registry.getRepositoryInfo(entry);
-    await this.fileManager.download(entry, info.manifest);
-    this.installedPlugins.push(info.manifest);
+    await this.fileManager.download(entry, info.latestRelease);
+    const manifest = this.fileManager.getManifest(entry.id);
+    this.installedPlugins.push(manifest);
 
     log.debug(`Plugin "${entry.id}" installed!`);
 
-    return info.manifest;
+    return manifest;
   }
 
   async updatePlugin(
@@ -74,7 +66,7 @@ export default class PluginManager {
     log.debug(`Updating plugin "${entry.id}"...`);
 
     const info = await this.registry.getRepositoryInfo(entry, { reload: true });
-    await this.fileManager.update(entry, info.manifest);
+    await this.fileManager.update(entry, info.latestRelease);
 
     log.debug(`Plugin "${entry.id}" updated!`);
 
@@ -103,8 +95,9 @@ export default class PluginManager {
     if (!installedPlugin) {
       throw new Error(`Plugin ${plugin.id} not found in registry.`);
     }
-    const head = await this.registry.fetchEntryInfo(plugin);
-    return head.manifest.version > installedPlugin.version;
+
+    const head = await this.registry.getRepositoryInfo(plugin, { reload: true });
+    return head.latestRelease.version > installedPlugin.version;
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {

@@ -2,7 +2,7 @@ import { Manifest, PluginManager, PluginRegistryEntry } from "@/services/plugin"
 
 interface IPluginHandlers {
   "plugin/enabledPlugins": () => Promise<Manifest[]>
-  "plugin/entries": ({ filter }: { filter?: "installed" | "all" }) => Promise<PluginRegistryEntry[]>
+  "plugin/entries": () => Promise<PluginRegistryEntry[]>
   "plugin/install": ({ entry }: { entry: PluginRegistryEntry }) => Promise<Manifest>
   "plugin/uninstall": ({ manifest }: { manifest: Manifest }) => Promise<void>
 
@@ -13,8 +13,8 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
   "plugin/enabledPlugins": async () => {
     return await pluginManager.getEnabledPlugins();
   },
-  "plugin/entries": async ({ filter }) => {
-    return await pluginManager.getEntries(filter);
+  "plugin/entries": async () => {
+    return await pluginManager.getEntries();
   },
   "plugin/install": async ({ entry }) => {
     return await pluginManager.installPlugin(entry);

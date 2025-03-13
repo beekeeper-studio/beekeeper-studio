@@ -6,8 +6,9 @@ import {
   DownloaderConfig,
   DownloaderReport,
 } from "nodejs-file-downloader";
-import { Manifest, PluginRegistryEntry } from "./types";
-import platformInfo from '@/common/platform_info';
+import { Manifest, PluginRegistryEntry, Release } from "./types";
+import platformInfo from "@/common/platform_info";
+import PluginRepositoryService from "./PluginRepositoryService";
 
 const log = rawLog.scope("PluginFileManager");
 
@@ -66,25 +67,32 @@ async function download(options: DownloaderConfig & { signal?: AbortSignal }) {
 }
 
 export default class PluginFileManager {
+  constructor(private readonly repositoryService: PluginRepositoryService) {}
+
   /** Download all plugin files to `directory` */
   async download(
     entry: PluginRegistryEntry,
-    manifest: Manifest,
+    release: Release,
     options: {
       signal?: AbortSignal;
       /** for update */
       tmp?: boolean;
     } = {}
   ) {
-    const directory = this.getDirectoryOf(manifest);
+    const directory = this.getDirectoryOf(entry.id);
 
     try {
       fs.mkdirSync(directory, { recursive: true });
 
-      const manifestUrl = `https://github.com/${entry.repo}/releases/download/${manifest.version}/manifest.json`;
-      log.debug(`Downloading plugin manifest: "${manifestUrl}"...`);
+      log.debug(
+        `Downloading plugin "${entry.id}" version "${release.version}"...`
+      );
+
+      log.debug(
+        `Downloading plugin manifest: "${release.manifestDownloadUrl}"...`
+      );
       await download({
-        url: manifestUrl,
+        url: release.manifestDownloadUrl,
         directory,
         signal: options.signal,
         fileName: options.tmp
@@ -92,10 +100,9 @@ export default class PluginFileManager {
           : PLUGIN_MANIFEST_FILENAME,
       });
 
-      const scriptUrl = `https://github.com/${entry.repo}/releases/download/${manifest.version}/index.js`;
-      log.debug(`Downloading plugin script: "${scriptUrl}"...`);
+      log.debug(`Downloading plugin script: "${release.scriptDownloadUrl}"...`);
       await download({
-        url: scriptUrl,
+        url: release.scriptDownloadUrl,
         directory,
         signal: options.signal,
         fileName: options.tmp
@@ -103,10 +110,9 @@ export default class PluginFileManager {
           : PLUGIN_SCRIPT_FILENAME,
       });
 
-      const styleUrl = `https://github.com/${entry.repo}/releases/download/${manifest.version}/style.css`;
-      log.debug(`Downloading plugin style: "${styleUrl}"...`);
+      log.debug(`Downloading plugin style: "${release.styleDownloadUrl}"...`);
       await download({
-        url: styleUrl,
+        url: release.styleDownloadUrl,
         directory,
         signal: options.signal,
         fileName: options.tmp
@@ -128,12 +134,12 @@ export default class PluginFileManager {
 
   async update(
     entry: PluginRegistryEntry,
-    manifest: Manifest,
+    release: Release,
     options: { signal?: AbortSignal } = {}
   ) {
-    await this.download(entry, manifest, { ...options, tmp: true });
+    await this.download(entry, release, { ...options, tmp: true });
 
-    const directory = this.getDirectoryOf(manifest);
+    const directory = this.getDirectoryOf(entry.id);
 
     // Rename old files
     fs.rmSync(path.join(directory, PLUGIN_MANIFEST_FILENAME), { force: true });
@@ -166,13 +172,21 @@ export default class PluginFileManager {
     const manifests: Manifest[] = [];
 
     for (const dir of fs.readdirSync(platformInfo.pluginsDirectory)) {
-      if (!fs.statSync(path.join(platformInfo.pluginsDirectory, dir)).isDirectory()) {
+      if (
+        !fs
+          .statSync(path.join(platformInfo.pluginsDirectory, dir))
+          .isDirectory()
+      ) {
         continue;
       }
 
       if (
         !fs.existsSync(
-          path.join(platformInfo.pluginsDirectory, dir, PLUGIN_MANIFEST_FILENAME)
+          path.join(
+            platformInfo.pluginsDirectory,
+            dir,
+            PLUGIN_MANIFEST_FILENAME
+          )
         ) ||
         !fs.existsSync(
           path.join(platformInfo.pluginsDirectory, dir, PLUGIN_SCRIPT_FILENAME)
@@ -197,15 +211,31 @@ export default class PluginFileManager {
     return manifests;
   }
 
-  getDirectoryOf(manifest: Manifest) {
-    return path.join(platformInfo.pluginsDirectory, manifest.id);
+  getManifest(id: string) {
+    const directory = this.getDirectoryOf(id);
+    const manifestContent = fs.readFileSync(
+      path.join(directory, PLUGIN_MANIFEST_FILENAME),
+      { encoding: "utf-8" }
+    );
+    return JSON.parse(manifestContent);
+  }
+
+  getDirectoryOf(manifestOrId: Manifest | Manifest["id"]) {
+    return path.join(
+      platformInfo.pluginsDirectory,
+      typeof manifestOrId === "string" ? manifestOrId : manifestOrId.id
+    );
   }
 
   readAsset(manifest: Manifest, filename: string): string {
-    const filePath = path.join(platformInfo.pluginsDirectory, manifest.id, path.normalize(filename));
+    const filePath = path.join(
+      platformInfo.pluginsDirectory,
+      manifest.id,
+      path.normalize(filename)
+    );
     if (!fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
-    return fs.readFileSync(filePath, { encoding: 'utf-8' });
+    return fs.readFileSync(filePath, { encoding: "utf-8" });
   }
 }

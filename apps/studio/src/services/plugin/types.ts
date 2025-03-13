@@ -21,6 +21,13 @@ export interface PluginRepositoryInfo {
   /** Markdown representation of the plugin's README */
   readme: string;
   /** Plugin manifest */
-  manifest: Manifest;
+  latestRelease: Release;
+}
+
+export interface Release {
+  version: string;
+  manifestDownloadUrl: string;
+  scriptDownloadUrl: string;
+  styleDownloadUrl: string;
 }
 
