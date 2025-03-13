@@ -120,10 +120,42 @@ import CodeMirror from "codemirror";
       }
 
       var pos = this.cm.getCursor(), line = this.cm.getLine(pos.line);
-      if (pos.line != this.startPos.line || line.length - pos.ch != this.startLen - this.startPos.ch ||
+      // Store the last completion state
+      if (!this.cm.lastCompletionState && this.data) {
+        this.cm.lastCompletionState = {
+          token: "",
+          from: identStart,
+          to: pos,
+          list: this.data.list || [],
+          picked: false
+        };
+      } else if (this.data) {
+        // Update existing lastCompletionState
+        this.cm.lastCompletionState.list = this.data.list;
+        this.cm.lastCompletionState.from = identStart;
+        this.cm.lastCompletionState.to = pos;
+      }
+      
+      // Check if this is a deletion operation (current line length less than starting length)
+      var isDeletion = line.length < this.startLen;
+      
+      // Check if we're in a table name selection context (after FROM or JOIN)
+      var lineUntilCursor = line.substring(0, pos.ch);
+      var fromRegex = /\b(from|join)\s+[\w\d_."]*$/i;
+      var isTableContext = fromRegex.test(lineUntilCursor);
+      
+      if (pos.line != this.startPos.line || 
+          (!isDeletion && line.length - pos.ch != this.startLen - this.startPos.ch) ||
           pos.ch < identStart.ch || this.cm.somethingSelected() ||
-          (!pos.ch || this.options.closeCharacters.test(line.charAt(pos.ch - 1)))) {
-        this.close();
+          (!pos.ch || (!isDeletion && this.options.closeCharacters.test(line.charAt(pos.ch - 1))))) {
+        // For table name context deletions, keep completion window open
+        if (isDeletion && isTableContext) {
+          var self = this;
+          this.debounce = requestAnimationFrame(function() {self.update();});
+          if (this.widget) this.widget.disable();
+        } else {
+          this.close();
+        }
       } else {
         var self = this;
         this.debounce = requestAnimationFrame(function() {self.update();});
