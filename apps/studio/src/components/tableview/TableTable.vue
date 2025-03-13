@@ -190,14 +190,6 @@
 
         <!-- Actions -->
         <x-button
-          class="btn btn-flat"
-          v-tooltip="`Add Column (${ctrlOrCmd('shift+n')})`"
-          @click.prevent="cellAddCol"
-        >
-          <i class="material-icons">add</i>
-          CHANGE ME
-        </x-button>
-        <x-button
           v-tooltip="`Toggle Right Sidebar`"
           class="btn btn-flat"
           @click="toggleOpenDetailView()"
@@ -466,7 +458,6 @@ export default Vue.extend({
       // }
       result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
-      result[this.ctrlOrCmd('shift+n')] = this.cellAddCol.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
@@ -734,13 +725,6 @@ export default Vue.extend({
                 label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
                 action: (_e, cell) => this.fkClick(keyData, cell)
               })
-            })
-          }
-
-          if (this.dialect === 'mongodb') {
-            menu.push({
-              label: createMenuItem('Add Field', 'Control+Shift+N'),
-              action: (_e, _cell) => this.cellAddCol()
             })
           }
 

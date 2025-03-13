@@ -1,16 +1,16 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { BaseV1DatabaseClient } from "@/lib/db/clients/BaseV1DatabaseClient";
-import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
-import { CreateTableSpec, TableKey } from "@/shared/lib/dialects/models";
+import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
 import vm from "vm";
 import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
+import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 
 const log = rawLog.scope('mongodb');
 
@@ -29,7 +29,40 @@ const mongoContext = {
   }
 }
 
-export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
+export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
+  getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
+      throw new Error("Method not implemented.");
+  }
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
+  createDatabaseSQL(): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
+  getTableCreateScript(table: string, schema?: string): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
+  getViewCreateScript(view: string, schema?: string): Promise<string[]> {
+      throw new Error("Method not implemented.");
+  }
+  getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]> {
+      throw new Error("Method not implemented.");
+  }
+  setTableDescription(table: string, description: string, schema?: string): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
+  truncateAllTables(schema?: string): Promise<void> {
+      throw new Error("Method not implemented.");
+  }
+  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
 
   conn: MongoClient;
   transcoders = [MongoDBObjectIdTranscoder];
@@ -149,7 +182,7 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     // TODO (@day): convert 1, -1 to ASC and DESC
     return indexes.map((index) => ({
       table, 
-      columns: Object.entries(index.key).map((key) => ({ name: key[0], order: key[1]})),
+      columns: Object.entries(index.key).map((key) => ({ name: key[0], order: this.convertOrder(key[1])})),
       name: index.name,
       unique: index.unique,
     } as TableIndex));
@@ -353,6 +386,23 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
     }
   }
 
+  override async alterIndex(changes: IndexAlterations): Promise<void> {
+    const collection = this.conn.db(this.db).collection(changes.table);
+
+    for (let addition of changes.additions) {
+      const indexSpec = addition.columns.reduce((obj, col) => ({
+        ...obj,
+        [col.name]: this.convertOrder(col.order)
+      }), {});
+      log.info('INDEX SPEC: ', indexSpec)
+      await collection.createIndex(indexSpec);
+    }
+
+    for (let drop of changes.drops) {
+      await collection.dropIndex(drop.name);
+    }
+  }
+
   // ********************** UNSUPPORTED ***************************
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
@@ -476,6 +526,20 @@ export class MongoDBClient extends BaseV1DatabaseClient<QueryResult> {
   }
 
   // ******************* UTILS *******************************
+
+  private convertOrder(order: any) {
+    if (order === 1) {
+      return 'ASC';
+    } else if (order === -1) {
+      return 'DESC';
+    } else if (order === 'ASC') {
+      return 1;
+    } else if (order === 'DESC') {
+      return -1;
+    } else {
+      return order;
+    }
+  }
   
   private async getCollectionCols(collection: Collection<Document>) {
     // Take the last 10 docs from a collection and hope that's an accurate representation of the whole collection lol

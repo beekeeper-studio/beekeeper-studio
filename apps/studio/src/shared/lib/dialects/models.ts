@@ -264,6 +264,8 @@ export interface AlterPartitionsSpec {
   detaches?: string[]
 }
 
+export const AdditionalMongoOrders = [ '2d', '2dsphere', 'text', 'geoHaystack', 'hashed' ];
+
 export interface IndexColumn {
   name: string
   order: 'ASC' | 'DESC' | '2d' | '2dsphere' | 'text' | 'geoHaystack' | 'hashed' | number // after DESC is for mongo only
