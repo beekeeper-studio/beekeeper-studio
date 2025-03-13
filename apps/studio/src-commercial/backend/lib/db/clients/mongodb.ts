@@ -30,40 +30,6 @@ const mongoContext = {
 }
 
 export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
-  getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
-      throw new Error("Method not implemented.");
-  }
-  createDatabase(databaseName: string, charset: string, collation: string): Promise<string> {
-      throw new Error("Method not implemented.");
-  }
-  createDatabaseSQL(): Promise<string> {
-      throw new Error("Method not implemented.");
-  }
-  getTableCreateScript(table: string, schema?: string): Promise<string> {
-      throw new Error("Method not implemented.");
-  }
-  getViewCreateScript(view: string, schema?: string): Promise<string[]> {
-      throw new Error("Method not implemented.");
-  }
-  getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]> {
-      throw new Error("Method not implemented.");
-  }
-  setTableDescription(table: string, description: string, schema?: string): Promise<string> {
-      throw new Error("Method not implemented.");
-  }
-  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
-      throw new Error("Method not implemented.");
-  }
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
-      throw new Error("Method not implemented.");
-  }
-  truncateAllTables(schema?: string): Promise<void> {
-      throw new Error("Method not implemented.");
-  }
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string> {
-      throw new Error("Method not implemented.");
-  }
-
   conn: MongoClient;
   transcoders = [MongoDBObjectIdTranscoder];
 
@@ -118,7 +84,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  
+  override async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<string> {
+    this.conn.db(databaseName);
+    return databaseName;
+  }
+
 
   async listTables(): Promise<TableOrView[]> {
     const db = this.conn.db(this.database.database);
@@ -402,8 +372,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       await collection.dropIndex(drop.name);
     }
   }
-
-  // ********************** UNSUPPORTED ***************************
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
     let canceling = false;
@@ -474,6 +442,47 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     await vm.runInContext(userScript, sandbox)
 
     return result;
+  }
+
+  // ********************** UNSUPPORTED ***************************
+  setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
+    throw new Error("Mongo does not support collection descriptions");
+  }
+
+  getBuilder(_table: string, _schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
+    throw new Error("Mongo does not support generating SQL");
+  }
+
+  createDatabaseSQL(): Promise<string> {
+    throw new Error("Mongo does not support generating SQL");
+  }
+
+  getTableCreateScript(_table: string, _schema?: string): Promise<string> {
+    throw new Error("Mongo does not support generating SQL");
+  }
+
+  getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+    throw new Error("Mongo does not support generating SQL");
+  }
+
+  getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
+    throw new Error("Mongo does not support generating SQL");
+  }
+
+  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
+    throw new Error("Mongo does not support generating SQL");
+  }
+
+  truncateElementSql(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
+    throw new Error("Mongo does not support generating SQL");
+  }
+
+  truncateAllTables(_schema?: string): Promise<void> {
+    throw new Error("Mongo does not support truncation");
+  }
+
+  duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<string> {
+    throw new Error("Mongo does not support generating SQL");
   }
 
   async getQuerySelectTop(_table: string, _limit: number, _schema?: string): Promise<string> {
