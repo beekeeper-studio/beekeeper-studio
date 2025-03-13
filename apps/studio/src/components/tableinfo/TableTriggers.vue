@@ -66,17 +66,17 @@ export default {
     },
     sqliteTableColumns() {
       return [
-        { field: 'name', title: 'Name', tooltip: true},
-        { field: 'sql', title: 'SQL', tooltip: true}
+        { field: 'name', title: 'Name', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'sql', title: 'SQL', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     normalTableColumns() {
       return [
-        { field: 'name', title: "Name", tooltip: true},
-        { field: 'timing', title: "Timing"},
-        { field: 'manipulation', title: "Manipulation"},
-        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5},
-        { field: 'condition', title: "Condition", formatter: this.cellFormatter}
+        { field: 'name', title: "Name", tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'timing', title: "Timing", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'manipulation', title: "Manipulation", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'condition', title: "Condition", formatter: this.cellFormatter, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     tableData() {
@@ -86,6 +86,32 @@ export default {
   watch : {
     tableData() {
       if (this.tabulator) this.tabulator.replaceData(this.tableData)
+    }
+  },
+  methods: {
+    handleCellDoubleClick(cell) {
+
+      const element = cell.getElement();
+
+      // If already editable, remove contenteditable and stop execution
+      if (element.hasAttribute("contenteditable")) {
+        element.removeAttribute("contenteditable");
+        return;
+      }
+
+      // Enable text selection
+      element.setAttribute("contenteditable", "true");
+      element.focus();
+      document.execCommand("selectAll"); // Automatically select text
+
+      // Function to remove contenteditable when clicking anywhere
+      const removeEditable = (event) => {
+        element.removeAttribute("contenteditable");
+        document.removeEventListener("click", removeEditable);
+      };
+
+      // Attach a global event listener
+      document.addEventListener("click", removeEditable);
     }
   },
   mounted() {

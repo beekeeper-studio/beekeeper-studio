@@ -214,13 +214,14 @@ export default Vue.extend({
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
       const result = [
-        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5}),
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
           editable,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell),
         },
         {
           title: 'Unique',
@@ -252,7 +253,8 @@ export default Vue.extend({
             autocomplete: true,
             listOnEmpty: true,
             freetext: true,
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         trashButton(this.removeRow)
       ]
@@ -363,6 +365,30 @@ export default Vue.extend({
       //   resizableColumns: false,
       //   headerSort: false,
       // })
+    },
+    handleCellDoubleClick(cell) {
+
+      const element = cell.getElement();
+
+      // If already editable, remove contenteditable and stop execution
+      if (element.hasAttribute("contenteditable")) {
+        element.removeAttribute("contenteditable");
+        return;
+      }
+
+      // Enable text selection
+      element.setAttribute("contenteditable", "true");
+      element.focus();
+      document.execCommand("selectAll"); // Automatically select text
+
+      // Function to remove contenteditable when clicking anywhere
+      const removeEditable = (event) => {
+        element.removeAttribute("contenteditable");
+        document.removeEventListener("click", removeEditable);
+      };
+
+      // Attach a global event listener
+      document.addEventListener("click", removeEditable);
     }
 
   },
