@@ -35,6 +35,15 @@ interface ClientConfig {
  */
 export const CLIENTS: ClientConfig[] = [
   {
+    key: 'snowflake',
+    name: 'Snowflake',
+    defaultPort: 443,
+    disabledFeatures: [
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+    ],
+  },
+  {
     key: 'cockroachdb',
     name: 'CockroachDB',
     defaultPort: 26257,

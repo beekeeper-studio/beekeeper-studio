@@ -50,6 +50,7 @@ export default {
       azureAuthOptions: config.azureAuthOptions,
       authId: config.authId,
       libsqlOptions: config.libsqlOptions,
+      snowflakeOptions: config.snowflakeOptions,
       runtimeExtensions: sqliteExtension ? [sqliteExtension] : []
     }
   },
