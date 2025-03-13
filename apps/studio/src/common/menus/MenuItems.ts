@@ -159,6 +159,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",
+      accelerator: "Shift+CommandOrControl+Q",
       click: actionHandler.disconnect
     },
     sidebarToggle: {
