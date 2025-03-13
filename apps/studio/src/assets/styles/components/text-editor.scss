@@ -4,6 +4,36 @@
       display: none;
     }
   }
+  
+  /* Precise styling for when fold gutter is used without line numbers */
+  &.fold-gutter-only {
+    .CodeMirror-gutters {
+      min-width: 30px !important; /* Force minimum width for gutters */
+      width: 30px !important; /* Fixed width for gutters */
+      border-right: 1px solid rgba(0,0,0,0.1); /* Clear border */
+    }
+    
+    .CodeMirror-foldgutter {
+      width: 30px !important; /* Fixed width for fold gutter */
+      padding-left: 5px; /* Add padding for better positioning of fold icons */
+    }
+    
+    .CodeMirror-sizer {
+      margin-left: 30px !important; /* Match the gutter width exactly */
+    }
+    
+    .CodeMirror-gutter-wrapper {
+      left: -30px !important; /* Position the gutter wrapper correctly */
+    }
+    
+    /* Ensure fold markers are properly centered */
+    .CodeMirror-foldgutter-open, 
+    .CodeMirror-foldgutter-folded {
+      display: inline-flex;
+      justify-content: center;
+      width: 20px;
+    }
+  }
 
   .CodeMirror-guttermaker-subtle {
     color: rgba($theme-base, 0.25);

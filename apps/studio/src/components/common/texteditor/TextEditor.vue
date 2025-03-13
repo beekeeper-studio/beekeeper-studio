@@ -252,6 +252,11 @@ export default {
         classNames.push("remove-json-root-brackets");
       }
 
+      // Add a special class when fold gutters are enabled but line numbers are disabled
+      if (this.foldGutter && !lineNumbers) {
+        classNames.push("fold-gutter-only");
+      }
+
       cm.getWrapperElement().classList.add(...classNames);
 
       cm.setValue(this.value);
