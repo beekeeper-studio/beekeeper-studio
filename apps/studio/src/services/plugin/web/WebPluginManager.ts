@@ -1,13 +1,12 @@
 import rawLog from "@bksLogger";
 import Vue from "vue";
-import { Manifest, PluginRegistryEntry } from "../types";
+import { Manifest, PluginRegistryEntry, PluginRepositoryInfo } from "../types";
 import WebPluginLoader from "./WebPluginLoader";
 
 const log = rawLog.scope("WebPluginManager");
 
 export default class WebPluginManager {
   loaders: WebPluginLoader[] = [];
-  entries: PluginRegistryEntry[] = [];
 
   private initialized = false;
   private loaded = false;
@@ -25,6 +24,7 @@ export default class WebPluginManager {
     Vue.prototype.$plugin = {
       getAllEntries: this.getAllEntries.bind(this),
       getEnabledPlugins: this.getEnabledPlugins.bind(this),
+      getRepositoryInfo: this.getRepositoryInfo.bind(this),
       install: this.install.bind(this),
       uninstall: this.uninstall.bind(this),
     };
@@ -35,14 +35,15 @@ export default class WebPluginManager {
   }
 
   async getAllEntries(): Promise<PluginRegistryEntry[]> {
-    if (this.entries.length === 0) {
-      this.entries = await Vue.prototype.$util.send("plugin/entries");
-    }
-    return this.entries;
+    return await Vue.prototype.$util.send("plugin/entries");
   }
 
   async getEnabledPlugins(): Promise<Manifest[]> {
     return this.loaders.map((loader) => loader.manifest);
+  }
+
+  async getRepositoryInfo(entry: PluginRegistryEntry): Promise<PluginRepositoryInfo> {
+    return await Vue.prototype.$util.send("plugin/repositoryInfo", { entry });
   }
 
   private async loadPlugins() {

@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { LatestRelease } from "./types";
+import { Release } from "./types";
 
 export default class PluginRepositoryService {
   private octokit: Octokit;
@@ -10,10 +10,7 @@ export default class PluginRepositoryService {
     });
   }
 
-  async fetchLatestRelease(
-    owner: string,
-    repo: string
-  ): Promise<LatestRelease> {
+  async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
     const response = await this.octokit.request(
       "GET /repos/{owner}/{repo}/releases/latest",
       {
@@ -61,7 +58,7 @@ export default class PluginRepositoryService {
         repo,
       }
     );
-    return response.data.content;
+    return Buffer.from(response.data.content, "base64").toString("utf-8");
   }
 
   private async fetchJson(owner: string, repo: string, path: string) {

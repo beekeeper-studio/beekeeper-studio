@@ -10,54 +10,24 @@
           <i class="material-icons">clear</i>
         </a>
         <div class="plugin-manager-content">
-          <div class="plugin-manager-description">
-            Manage and install plugins in Beekeeper Studio.
+          <div class="plugin-list-container">
+            <div class="description">
+              Manage and install plugins in Beekeeper Studio.
+            </div>
+            <plugin-list
+              :plugins="plugins"
+              @install="install"
+              @uninstall="uninstall"
+              @item-click="openPluginPage"
+            />
           </div>
-          <ul class="plugin-list">
-            <li
-              v-for="manifest in enabledPlugins"
-              :key="manifest.id"
-              class="plugin-item"
-            >
-              <div class="plugin-item-info">
-                <div class="plugin-item-title">
-                  {{ manifest.name }}
-                </div>
-                <div class="plugin-item-description">
-                  {{ manifest.description }}
-                </div>
-                <div class="plugin-item-author">{{ manifest.author }}</div>
-              </div>
-              <x-button class="menu-btn btn btn-fab">
-                <i class="material-icons">more_vert</i>
-                <x-menu>
-                  <x-menuitem>
-                    <x-label @click.prevent="uninstall(manifest)">
-                      Uninstall
-                    </x-label>
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
-            </li>
-            <li
-              v-for="entry in filteredEntries"
-              :key="entry.id"
-              class="plugin-item"
-            >
-              <div class="plugin-item-info">
-                <div class="plugin-item-title">
-                  {{ entry.name }}
-                </div>
-                <div class="plugin-item-description">
-                  {{ entry.description }}
-                </div>
-                <div class="plugin-item-author">{{ entry.author }}</div>
-              </div>
-              <x-button class="btn btn-flat" @click.prevent="install(entry)">
-                Install
-              </x-button>
-            </li>
-          </ul>
+          <plugin-page
+            v-if="selectedPlugin"
+            :plugin="selectedPlugin"
+            :markdown="selectedPluginReadme"
+            @install="install(selectedPlugin)"
+            @uninstall="uninstall(selectedPlugin)"
+          />
         </div>
       </div>
     </modal>
@@ -68,16 +38,21 @@
 import Vue from "vue";
 import { AppEvent } from "@/common/AppEvent";
 import rawLog from "@bksLogger";
-import { Manifest, PluginRegistryEntry } from "@/services/plugin/types";
+import { CommonPluginInfo } from "@/services/plugin/types";
+import PluginList from "./PluginList.vue";
+import PluginPage from "./PluginPage.vue";
+import _ from "lodash";
 
 const log = rawLog.scope("PluginManagerModal");
 
 export default Vue.extend({
+  components: { PluginList, PluginPage },
   data() {
     return {
       modalName: "plugin-manager-modal",
-      entries: [],
-      enabledPlugins: [],
+      plugins: [],
+      selectedPlugin: null,
+      selectedPluginReadme: null,
     };
   },
   mounted() {
@@ -87,48 +62,85 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings);
   },
   computed: {
-    filteredEntries() {
-      return this.entries.filter(
-        (entry: PluginRegistryEntry) =>
-          !this.enabledPlugins.find(
-            (manifest: Manifest) => manifest.id === entry.id
-          )
-      );
-    },
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
     },
   },
   methods: {
-    async open() {
-      this.$modal.show(this.modalName);
-      this.enabledPlugins = await this.$plugin.getEnabledPlugins();
-      this.entries = await this.$plugin.getAllEntries();
-    },
-    close() {
-      this.$modal.hide(this.modalName);
-    },
-    async install(entry: PluginRegistryEntry) {
+    async install(plugin: CommonPluginInfo) {
+      const state = this.plugins.find(
+        (p: CommonPluginInfo) => p.id === plugin.id
+      );
+
       try {
-        const manifest = await this.$plugin.install(entry);
-        this.enabledPlugins.push(manifest);
+        state.installing = true;
+        await this.$plugin.install(plugin);
+        state.installed = true;
       } catch (e) {
         log.error(e);
         this.$noty.error(`Failed to install plugin: ${e.message}`);
+      } finally {
+        state.installing = false;
       }
     },
-    async uninstall(manifest: Manifest) {
+    async uninstall(plugin: CommonPluginInfo) {
+      console.log('hello???', plugin)
       if (!(await this.$confirm("Are you sure you want to uninstall?"))) {
         return;
       }
 
+      const state = this.plugins.find(
+        (p: CommonPluginInfo) => p.id === plugin.id
+      );
+
       try {
-        await this.$plugin.uninstall(manifest);
-        this.enabledPlugins.splice(this.enabledPlugins.indexOf(manifest), 1);
+        await this.$plugin.uninstall(plugin);
+        state.installed = false;
       } catch (e) {
         log.error(e);
         this.$noty.error(`Failed to uninstall plugin: ${e.message}`);
       }
+    },
+    async openPluginPage(plugin: CommonPluginInfo) {
+      this.selectedPlugin = plugin
+
+      const entries = await this.$plugin.getAllEntries();
+      const entry = entries.find((entry) => entry.id === plugin.id);
+
+      if (!entry) {
+        this.selectedPluginReadme =
+          "We could not find the readme for this plugin. :(";
+      } else {
+        const info = await this.$plugin.getRepositoryInfo(plugin);
+        this.selectedPluginReadme = info.readme;
+      }
+    },
+    async buildPluginListData() {
+      const entries = await this.$plugin.getAllEntries();
+      const installedPlugins = await this.$plugin.getEnabledPlugins();
+      installedPlugins.forEach((manifest) => {
+        const entry = entries.find((entry) => entry.id === manifest.id);
+        if (entry) {
+          entry.installed = true;
+          entry.installing = false;
+          entry.enabled = true;
+        } else {
+          // This is a plugin that is installed but not found in registry.
+          const newEntry = structuredClone(manifest);
+          newEntry.installed = true;
+          newEntry.installing = false;
+          newEntry.enabled = true;
+          entries.push(newEntry);
+        }
+      });
+      return entries;
+    },
+    async open() {
+      this.$modal.show(this.modalName);
+      this.plugins = await this.buildPluginListData();
+    },
+    close() {
+      this.$modal.hide(this.modalName);
     },
   },
 });

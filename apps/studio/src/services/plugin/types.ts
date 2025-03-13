@@ -1,17 +1,18 @@
-export interface Manifest {
-  id: string;
-  name: string;
-  version: string;
-  minAppVersion: string;
-  author: string;
-}
-
-/** Info that is obtained from the registry repo. */
-export interface PluginRegistryEntry {
+export interface CommonPluginInfo {
   id: string;
   name: string;
   author: string;
   description: string;
+  readme?: string;
+}
+
+export interface Manifest extends CommonPluginInfo {
+  version: string;
+  minAppVersion: string;
+}
+
+/** Info that is obtained from the registry repo a.k.a. beekeeper-studio/beekeeper-studio-plugins. */
+export interface PluginRegistryEntry extends CommonPluginInfo {
   repo: string;
 }
 

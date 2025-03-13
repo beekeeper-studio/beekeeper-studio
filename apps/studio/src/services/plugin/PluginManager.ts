@@ -1,7 +1,7 @@
 import _ from "lodash";
 import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
-import { Manifest, PluginRegistryEntry, PluginRepositoryInfo } from "./types";
+import { CommonPluginInfo, Manifest, PluginRegistryEntry, PluginRepositoryInfo } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 
@@ -12,12 +12,13 @@ export default class PluginManager {
   private pluginRepositoryService: PluginRepositoryService;
   private registry: PluginRegistry;
   private fileManager: PluginFileManager;
-  private installedPlugins: Manifest[] = [];
+  private installedPlugins: Manifest[];
 
   constructor() {
     this.pluginRepositoryService = new PluginRepositoryService();
     this.fileManager = new PluginFileManager(this.pluginRepositoryService);
     this.registry = new PluginRegistry(this.pluginRepositoryService);
+    this.installedPlugins = [];
   }
 
   async initialize() {
@@ -32,6 +33,10 @@ export default class PluginManager {
 
   async getEntries(): Promise<PluginRegistryEntry[]> {
     return await this.registry.getEntries();
+  }
+
+  async getRepositoryInfo(entry: PluginRegistryEntry): Promise<PluginRepositoryInfo> {
+    return await this.registry.getRepositoryInfo(entry);
   }
 
   // TODO implement enable/disable plugins
