@@ -238,6 +238,7 @@ export default {
       foldGutter = { indicatorOpen, indicatorFolded };
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
+        autoRefresh: true,
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
         theme: "monokai",
