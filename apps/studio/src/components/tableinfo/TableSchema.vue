@@ -124,7 +124,7 @@ import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
-import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers } from '@shared/lib/tabulator/helpers'
+import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers, moveRowHandle } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -134,7 +134,7 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
 
@@ -165,6 +165,8 @@ export default Vue.extend({
       newRows: [],
       removedRows: [],
       error: null,
+      reorderedRows: Array.from(new Set()),
+      initialColumns: []
     }
   },
   watch: {
@@ -202,7 +204,7 @@ export default Vue.extend({
       return getDialectData(this.dialect).disabledFeatures
     },
     editCount() {
-      return this.editedCells.length + this.newRows.length + this.removedRows.length
+      return this.editedCells.length + this.newRows.length + this.removedRows.length + this.reorderedRows.length
     },
     columnTypes() {
       return getDialectData(this.dialect).columnTypes.map((c) => c.pretty)
@@ -211,6 +213,7 @@ export default Vue.extend({
       return this.editCount > 0
     },
     tableColumns() {
+      const canMoveRows = !this.dialectData.disabledFeatures?.alter?.reorderColumn
       const autocompleteOptions = {
         freetext: true,
         allowEmpty: false,
@@ -221,6 +224,7 @@ export default Vue.extend({
       }
 
       const result = [
+        (canMoveRows) ? moveRowHandle() : null,
         {
           title: 'Name',
           field: 'columnName',
@@ -293,7 +297,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           minWidth: 90,
         }),
-        {
+        (this.disabledFeatures?.primary ? null : {
           title: 'Primary',
           field: 'primary',
           tooltip: false,
@@ -304,7 +308,7 @@ export default Vue.extend({
           },
           width: 70,
           cssClass: 'read-only never-editable',
-        },
+        }),
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
       return result.map((col) => {
@@ -381,6 +385,10 @@ export default Vue.extend({
       })
 
       const drops = this.removedRows.map((row) => row.getData()['columnName'])
+      
+      const reorder = (this.reorderedRows.length > 0) 
+        ? { oldOrder: this.initialColumns.slice(0), newOrder: this.tabulator.getData() }
+        : null
 
       return {
         table: this.table.name,
@@ -388,7 +396,8 @@ export default Vue.extend({
         database: this.database,
         alterations,
         adds,
-        drops
+        drops,
+        reorder
       }
     },
     // submission methods
@@ -427,11 +436,15 @@ export default Vue.extend({
 
       this.newRows.forEach((r) => r.delete())
       this.clearChanges()
+
+      this.error = null;
+      this.$emit('refresh')
     },
     clearChanges() {
       this.editedCells = []
       this.newRows = []
       this.removedRows = []
+      this.reorderedRows = []
     },
     // table edit callbacks
     async addRow(): Promise<void> {
@@ -450,6 +463,11 @@ export default Vue.extend({
     },
     removeRow(_e, cell: CellComponent): void {
       const row = cell.getRow()
+      const s = new Set(this.reorderedRows)
+
+      s.delete(row)
+      this.reorderedRows = Array.from(s)
+
       if (this.newRows.includes(row)) {
         this.newRows = _.without(this.newRows, row)
         row.delete()
@@ -459,7 +477,7 @@ export default Vue.extend({
         this.removedRows = _.without(this.removedRows, row)
       } else {
         if (this.disabledFeatures?.alter?.dropColumn) {
-          this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+          this.$noty.info(`Removing columns is not supported by ${this.dialect}`)
           return
         }
         this.removedRows.push(row)
@@ -469,6 +487,12 @@ export default Vue.extend({
         })
         this.editedCells = _.without(this.editedCells, ...undoEdits)
       }
+    },
+    movedRows (row) {
+      const s = new Set(this.reorderedRows)
+      s.add(row)
+
+      this.reorderedRows = Array.from(s)
     },
     cellEdited(cell: CellComponent) {
       const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow())
@@ -485,11 +509,15 @@ export default Vue.extend({
     },
     initializeTabulator() {
       log.info('initializing tabulator, (editable, columns)', this.editable, this.tableColumns)
+      const canMoveRows = !this.dialectData.disabledFeatures?.alter?.reorderColumn
+
+      this.initialColumns = this.tableData.slice(0)
       if (this.tabulator) this.tabulator.destroy()
       // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
         columns: this.tableColumns,
         layout: 'fitColumns',
+        movableRows: canMoveRows,
         columnDefaults: {
           title: '',
           tooltip: true,
@@ -499,6 +527,8 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
+
+      this.tabulator.on('rowMoved', (row) => this.movedRows(row))
     },
     columnNameCellClick(_e: any, cell: CellComponent) {
       if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {

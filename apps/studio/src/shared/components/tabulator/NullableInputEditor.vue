@@ -23,7 +23,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 import { BksField } from "@/lib/db/models";
 
@@ -127,8 +127,8 @@ export default Vue.extend({
       const floatTypes = [
         'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
       ]
-      if (typeHint.includes('int') && !typeHint.includes('point')) {
-        return parseInt(this.value);
+      if (typeHint.includes('int') && !typeHint.includes('point') && !isNaN(this.value)) {
+        return this.value > Number.MAX_SAFE_INTEGER ? this.value : parseInt(this.value);
       } else if (floatTypes.includes(typeHint)) {
         return parseFloat(this.value);
       } else {

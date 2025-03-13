@@ -1,15 +1,16 @@
 import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
-import { DBTestUtil, dbtimeout, Options } from '../../../../lib/db'
+import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { TableInsert } from '../../../../../src/lib/db/models'
-import os from 'os'
-import fs from 'fs'
-import path from 'path'
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { PostgresClient, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
 import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
+import { createServer } from '@commercial/backend/lib/db/server'
+import { PostgresTestDriver } from './postgres/container'
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -22,6 +23,7 @@ const TEST_VERSIONS = [
 ] as const
 
 type TestVersion = typeof TEST_VERSIONS[number]['version']
+let configUsed = null
 
 function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
   describe(`Postgres [${dockerTag} - socket? ${socket} - database read-only mode? ${readonly}]`, () => {
@@ -34,67 +36,12 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
       // container = environment.getContainer("psql_1")
 
-      const startupTimeout = dbtimeout * 2;
-      const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
-      container = await new GenericContainer(`postgres:${dockerTag}`)
-        .withEnvironment({
-          "POSTGRES_PASSWORD": "example",
-          "POSTGRES_DB": "banana"
-        })
-        .withHealthCheck({
-          test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d banana > /dev/null"],
-          interval: 2000,
-          timeout: 3000,
-          retries: 10,
-          startPeriod: 5000,
-        })
-        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
-        // .withWaitStrategy(Wait.forHealthCheck())
-        .withExposedPorts(5432)
-        .withBindMounts([{
-          source: path.join(temp, "postgresql"),
-          target: "/var/run/postgresql",
-          mode: "rw"
-        }])
-        .withStartupTimeout(startupTimeout)
-        .start()
-      const config: IDbConnectionServerConfig = {
-        client: 'postgresql',
-        host: container.getHost(),
-        port: container.getMappedPort(5432),
-        user: 'postgres',
-        password: 'example',
-        osUser: 'foo',
-        ssh: null,
-        sslCaFile: null,
-        sslCertFile: null,
-        sslKeyFile: null,
-        sslRejectUnauthorized: false,
-        ssl: false,
-        domain: null,
-        socketPath: null,
-        socketPathEnabled: false,
-        readOnlyMode: readonly
-      }
+      await PostgresTestDriver.start(dockerTag, socket, readonly)
 
-      if (socket) {
-        config.host = 'notarealhost'
-        config.socketPathEnabled = true
-        config.socketPath = path.join(temp, "postgresql")
-      }
-
-      const utilOptions: Options = {
-        dialect: 'postgresql',
-        defaultSchema: 'public',
-      }
-
-      if (dockerTag !== 'latest') {
-        // Generated columns was introduced in postgres 12
-        utilOptions.skipGeneratedColumns = true
-      }
-
-      util = new DBTestUtil(config, "banana", utilOptions)
+      container = PostgresTestDriver.container
+      util = new DBTestUtil(PostgresTestDriver.config, "banana", PostgresTestDriver.utilOptions)
       await util.setupdb()
+      configUsed = PostgresTestDriver.config
 
       await util.knex.schema.createTable('witharrays', (table) => {
         table.integer("id").primary()
@@ -122,7 +69,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           );
       `)
 
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         await util.knex.raw(`
           CREATE TABLE partitionedtable (
             recordId SERIAL,
@@ -176,7 +123,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           first_key character varying(255) NOT NULL,
           second_key character varying(255) NOT NULL,
           PRIMARY KEY (first_key, second_key)
-        ); 
+        );
       `)
     })
 
@@ -188,6 +135,13 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     })
 
+    it("Should connect to localhost without SSL even if redshiftOptions isn't empty", async () => {
+      configUsed.redshiftOptions = { iamAuthenticationEnabled: false }
+      const server = createServer(configUsed)
+      const connection = server.createConnection('banana')
+      await connection.connect()
+      await connection.listTables()
+    })
 
     it("Should allow me to update rows with an empty array", async () => {
       const columns = await util.connection.listTableColumns("witharrays")
@@ -349,7 +303,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Should be able to list partitions for a table", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const partitions = await util.connection.listTablePartitions('partitionedtable');
 
         expect(partitions.length).toBe(3);
@@ -379,7 +333,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
     it("Inherited tables should NOT behave like partitioned tables", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child'] });
         const partitions = await util.connection.listTablePartitions('parent');
         const parent = tables.find((value) => value.name == 'parent');
@@ -392,7 +346,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Partitions should have parenttype 'p'", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party'] });
         const partition1 = tables.find((value) => value.name == 'partition_1');
         const another = tables.find((value) => value.name == 'another_partition');
@@ -526,7 +480,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(nameColumn.comment).toBe('Name of the person');
     });
 
-    if (dockerTag === 'latest') {
+    if (dockerTag === '16.4') {
       it("should list indexes with info", async () => {
         await util.knex.schema.createTable('has_indexes_2', (table) => {
           table.specificType("text", "varchar(255) UNIQUE NULLS NOT DISTINCT")
@@ -547,3 +501,64 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+
+describe(`Postgres (custom socket port connection)`, () => {
+  jest.setTimeout(dbtimeout)
+
+  let temp: string;
+  let container: StartedTestContainer;
+  beforeAll(async () => {
+      const startupTimeout = dbtimeout * 2;
+      temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
+      container = await new GenericContainer(`postgres`)
+        .withEnvironment({ "POSTGRES_PASSWORD": "example" })
+        .withHealthCheck({
+          test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d banana > /dev/null"],
+          interval: 2000,
+          timeout: 3000,
+          retries: 10,
+          startPeriod: 5000,
+        })
+        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
+        // .withWaitStrategy(Wait.forHealthCheck())
+        .withBindMounts([{
+          source: path.join(temp, "postgresql"),
+          target: "/var/run/postgresql",
+          mode: "rw"
+        }])
+        .withStartupTimeout(startupTimeout)
+        .withExposedPorts(5433)
+        .withCommand(['postgres', '-p', '5433'])
+        .start()
+  })
+
+  afterAll(async () => {
+    await container?.stop()
+  })
+
+  it("should be able to connect", async () => {
+    const server = createServer({
+      client: 'postgresql',
+      host: 'notarealhost',
+      port: 5433,
+      user: 'postgres',
+      password: 'example',
+      osUser: 'foo',
+      ssh: null,
+      sslCaFile: null,
+      sslCertFile: null,
+      sslKeyFile: null,
+      sslRejectUnauthorized: false,
+      ssl: false,
+      domain: null,
+      socketPath: path.join(temp, "postgresql"),
+      socketPathEnabled: true,
+      readOnlyMode: false,
+    })
+    const connection = server.createConnection()
+    await connection.connect()
+    const results = await connection.executeQuery("SELECT 1 as a")
+    expect(results[0].rows[0]).toEqual({ a: 1 })
+    await connection.disconnect()
+  })
+})

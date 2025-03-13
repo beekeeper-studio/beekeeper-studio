@@ -10,6 +10,7 @@
 </template>
 
 <script lang="ts">
+import "codemirror/addon/display/autorefresh";
 import "codemirror/addon/comment/comment";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/search/search";
@@ -39,6 +40,12 @@ import {
   applyConfig,
   Register,
 } from "@/lib/editor/vim";
+import { AppEvent } from "@/common/AppEvent";
+import { keymapTypes } from "@/lib/db/types"
+
+interface InitializeOptions {
+  userKeymap?: typeof keymapTypes[number]['value']
+}
 
 export default {
   props: [
@@ -59,16 +66,12 @@ export default {
     "selection",
     "cursor",
     "initialized",
-    // Use forcedValue if you want to set the value programmatically and
-    // honestly, I forgot why do we need this.
-    "forcedValue",
     "plugins",
     "autoFocus",
     "lineNumbers",
     "foldGutter",
-    "foldWithoutLineNumbers",
     "removeJsonRootBrackets",
-    "forceInitizalize",
+    "forceInitialize",
     "bookmarks",
     "foldAll",
     "unfoldAll",
@@ -80,18 +83,12 @@ export default {
       bookmarkInstances: [],
       markInstances: [],
       wasEditorFocused: false,
+      firstInitialization: true,
     };
   },
   computed: {
     keymapTypes() {
       return this.$config.defaults.keymapTypes;
-    },
-    userKeymap() {
-      const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap?.value;
-      return value && this.keymapTypes.map((k) => k.value).includes(value)
-        ? value
-        : "default";
     },
     hasSelectedText() {
       return this.editorInitialized ? !!this.editor.getSelection() : false;
@@ -104,28 +101,30 @@ export default {
     },
     valueAndStatus() {
       return {
-        value: this.forcedValue,
+        value: this.value,
         status: this.editor != null
       }
-    }
+    },
+    rootBindings() {
+      return [
+        { event: AppEvent.switchUserKeymap, handler: this.handleSwitchUserKeymap },
+      ]
+    },
   },
   watch: {
     valueAndStatus() {
       const { value, status } = this.valueAndStatus;
       if (!status || !this.editor) return;
+      if (this.editor.getValue() === value) return; // Only setValue when necessary, as it can reset the cursor position, cause infinite loops, and whatnot.
       this.foundRootFold = false;
       const scrollInfo = this.editor.getScrollInfo();
       this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
-    forceInitizalize() {
-      this.initialize();
-    },
-    userKeymap() {
-      this.initialize();
-    },
-    vimConfig() {
-      this.initialize();
+    forceInitialize() {
+      this.initialize({
+        userKeymap: this.$store.getters['settings/userKeymap'],
+      });
     },
     mode() {
       this.editor?.setOption("mode", this.mode);
@@ -197,10 +196,19 @@ export default {
         this.wasEditorFocused = true;
       }
     },
-    async initialize() {
+    async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
+      const indicatorOpen = document.createElement("span");
+      indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
+      indicatorOpen.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_down</i>`;
+
+      const indicatorFolded = document.createElement("span");
+      indicatorFolded.classList.add("foldgutter", "btn-fab", "open-close");
+      indicatorFolded.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_right</i>`;
+
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
+        autoRefresh: true,
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
         theme: "monokai",
@@ -218,15 +226,11 @@ export default {
         mode: this.mode,
         hint: this.hint,
         hintOptions: this.hintOptions,
-        keyMap: this.userKeymap,
+        keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
-          gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          foldGutter: true,
-        }),
-        ...(this.foldWithoutLineNumbers && {
-          // gutters: ["CodeMirror-foldgutter"],
-          foldGutter: true,
+          gutters: ["CodeMirror-linenumbers", { className: "CodeMirror-foldgutter", style: "width: 18px" }],
+          foldGutter: { indicatorOpen, indicatorFolded },
         }),
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {
@@ -245,10 +249,6 @@ export default {
       });
 
       const classNames = ["text-editor"];
-
-      if (this.foldWithoutLineNumbers) {
-        classNames.push("fold-without-line-numbers");
-      }
 
       if (this.removeJsonRootBrackets) {
         classNames.push("remove-json-root-brackets");
@@ -279,7 +279,7 @@ export default {
         cm.setOption("lineWrapping", this.lineWrapping);
       }
 
-      cm.on("change", (cm) => {
+      cm.on("change", async (cm) => {
         this.$emit("input", cm.getValue());
       });
 
@@ -312,13 +312,17 @@ export default {
           "update:cursorIndex",
           cm.getDoc().indexFromPos(cm.getCursor())
         );
+        this.$emit(
+          "update:cursorIndexAnchor",
+          cm.getDoc().indexFromPos(cm.getCursor('anchor'))
+        );
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
 
       cmEl.addEventListener("contextmenu", this.showContextMenu);
 
-      if (this.userKeymap === "vim") {
+      if (options.userKeymap === "vim") {
         const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
 
         if (!codeMirrorVimInstance) {
@@ -347,7 +351,12 @@ export default {
         });
       }
 
+      if (this.firstInitialization && this.focus) {
+        cm.focus();
+      }
+
       this.editor = cm;
+      this.firstInitialization = false;
 
       this.$nextTick(() => {
         this.initializeMarkers();
@@ -538,19 +547,23 @@ export default {
         });
       }
     },
+    handleSwitchUserKeymap(value) {
+      this.initialize({ userKeymap: value });
+    },
   },
-  mounted() {
-    this.initialize();
-    if (this.focus) {
-      this.editor.focus();
-    }
+  async mounted() {
+    await this.initialize({
+      userKeymap: this.$store.getters['settings/userKeymap'],
+    });
     window.addEventListener('focus', this.focusEditor);
     window.addEventListener('blur', this.handleBlur);
+    this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
     window.removeEventListener('focus', this.focusEditor);
     window.removeEventListener('blur', this.handleBlur);
     this.destroyEditor();
+    this.unregisterHandlers(this.rootBindings);
   },
 };
 </script>

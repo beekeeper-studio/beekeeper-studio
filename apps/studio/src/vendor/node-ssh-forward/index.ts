@@ -20,7 +20,7 @@ import { Client } from 'ssh2'
 import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
 

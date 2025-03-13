@@ -36,7 +36,6 @@
         v-bind.sync="editor"
         :focus="focusingElement === 'text-editor'"
         @update:focus="updateTextEditorFocus"
-        :forced-value="forcedTextEditorValue"
         :markers="editorMarkers"
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
@@ -53,7 +52,7 @@
         >
           <x-button
             v-if="showDryRun"
-            class="btn btn-flat btn-small"
+            class="btn btn-flat btn-small dry-run-btn"
             :disabled="isCommunity"
             @click="dryRun = !dryRun"
           >
@@ -80,11 +79,13 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
+              :disabled="this.tab.isRunning"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
+              :disabled="this.tab.isRunning"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -120,6 +121,14 @@
             </x-button>
           </x-buttons>
         </div>
+      </div>
+    </div>
+    <div class="not-supported" v-if="!enabled">
+      <span class="title">
+        Query Editor
+      </span>
+      <div class="body">
+        <p> We don't currently support queries for {{ dialect }} </p>
       </div>
     </div>
     <div
@@ -313,7 +322,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import { splitQueries } from '../lib/db/sql_tools'
+  import { splitQueries, isTextSelected } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -321,7 +330,7 @@
   import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
-  import rawlog from 'electron-log'
+  import rawlog from '@bksLogger'
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
@@ -348,12 +357,12 @@
         runningType: 'all queries',
         selectedResult: 0,
         unsavedText: editorDefault,
-        forcedTextEditorValue: editorDefault,
         editor: {
           height: 100,
           selection: null,
           readOnly: false,
           cursorIndex: 0,
+          cursorIndexAnchor: 0,
           initialized: false,
         },
         runningQuery: null,
@@ -391,25 +400,14 @@
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
+        'userKeymap': 'settings/userKeymap',
       }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
-      userKeymap: {
-        get() {
-          const value = this.settings?.keymap?.value;
-          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
-        },
-        set(value) {
-          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
-            this.initialize();
-          });
-        }
-      },
-      keymapTypes() {
-        return this.$config.defaults.keymapTypes
+      enabled() {
+        return !this.dialectData?.disabledFeatures?.queryEditor;
       },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
@@ -477,7 +475,13 @@
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
         for (let i = 0; i < queries.length; i++) {
-          if (this.editor.cursorIndex <= queries[i].end + 1) return i
+          // Find a query in between anchor and head cursors
+          if (this.editor.cursorIndex !== this.editor.cursorIndexAnchor) {
+            const isSelected = isTextSelected(queries[i].start, queries[i].end, this.editor.cursorIndexAnchor, this.editor.cursorIndex)
+            if (isSelected) return i
+          }
+          // Otherwise, find a query that sits before the cursor
+          else if (this.editor.cursorIndex <= queries[i].end + 1) return i
         }
         return null
       },
@@ -934,6 +938,7 @@
             } else {
               result.tableName = "mytable"
             }
+            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
 
@@ -969,7 +974,6 @@
         if (originalText) {
           this.originalText = originalText
           this.unsavedText = originalText
-          this.forcedTextEditorValue = originalText
         }
       },
       fakeRemoteChange() {

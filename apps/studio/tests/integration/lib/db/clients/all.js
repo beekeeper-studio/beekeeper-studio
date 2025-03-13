@@ -403,6 +403,10 @@ export function runCommonTests(getUtil, opts = {}) {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
     })
+
+    test("should generate filter query", async () => {
+      await getUtil().getQueryForFilterTest()
+    })
   })
 
   describe("Serialization", () => {
@@ -1015,6 +1019,10 @@ export const itShouldGenerateSQLWithBinary = async function (util) {
       `insert into test_inserts (id, name) values (X'deadbeef', 'beef');` +
       `update test_inserts set name = 'beefy' where id = X'deadbeef';` +
       `delete from test_inserts where id = X'deadbeef';`,
+    duckdb:
+      `insert into "main"."test_inserts" ("id", "name") values ('\\xDE\\xAD\\xBE\\xEF', 'beef');` +
+      `update "main"."test_inserts" set "name" = 'beefy' where "id" = '\\xDE\\xAD\\xBE\\xEF';` +
+      `delete from "main"."test_inserts" where "id" = '\\xDE\\xAD\\xBE\\xEF';`,
   }
 
   expect(util.fmt(sql)).toEqual(util.fmt(expectedQueries[util.dialect]))
@@ -1022,6 +1030,7 @@ export const itShouldGenerateSQLWithBinary = async function (util) {
 
 export async function prepareImportTests (util) {
   const dialect = util().dialect
+  const schema = util().defaultSchema ?? null
   let tableName = 'importstuff'
 
   const importScriptOptions = {
@@ -1076,12 +1085,13 @@ export async function prepareImportTests (util) {
     ]
   }
   const table = {
-    schema: util().defaultSchema ?? null,
+    schema,
     name: tableName,
     entityType: 'table'
   }
   const formattedData = data.map(d => ({
     table: tableName,
+    schema,
     data: [d]
   }))
 

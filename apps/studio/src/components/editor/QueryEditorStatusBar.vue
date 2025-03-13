@@ -154,6 +154,7 @@
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar.vue'
 import { mapState, mapGetters } from 'vuex';
+import { AppEvent } from '@/common/AppEvent'
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -211,7 +212,7 @@ export default {
       },
       set(value) {
         if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-        this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+        this.trigger(AppEvent.switchUserKeymap, value)
       }
     },
     keymapTypes() {

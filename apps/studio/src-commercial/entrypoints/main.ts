@@ -2,17 +2,13 @@
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
-import log from 'electron-log/main'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
+import log from '@bksLogger'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
-log.initialize();
-log.transports.console.level = 'info'
-log.transports.file.level = "info"
-log.catchErrors({ showDialog: false})
 log.info("initializing background")
 
 
@@ -59,26 +55,17 @@ async function createUtilityProcess() {
     [],
     {
       env: { ...process.env, ...args },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', 'inherit', 'inherit'],
       serviceName: 'BeekeeperUtility'
     }
   );
 
-  const utilLog = log.scope('UTILITY')
-
-  utilityProcess.stdout.on('data', (chunk) => {
-    utilLog.log(chunk.toString())
-  })
-
-  utilityProcess.stderr.on('data', (chunk) => {
-    utilLog.error(chunk.toString())
-  })
 
   utilityProcess.on('exit', async (code) => {
     // if non zero exit code
-    console.log("UTILITY DEAD", code)
+    log.log("UTILITY DEAD", code)
     if (code) {
-      utilLog.info('Utility process died, restarting')
+      log.info('Utility process died, restarting')
       utilityProcess = null;
       await createUtilityProcess();
       createAndSendPorts(false, true);
@@ -126,11 +113,14 @@ let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
 let initialized = false
 
 async function initBasics() {
   // this creates the app:// protocol we use for loading assets
   ProtocolBuilder.createAppProtocol()
+  // this creates the plugin:// protocol we use for loading plugins
+  ProtocolBuilder.createPluginProtocol()
   if (initialized) return settings
   initialized = true
   await ormConnection.connect()
@@ -206,7 +196,7 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
 
-      installExtension(VUEJS_DEVTOOLS)
+      installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
         .then((name) => console.log(`Added Extension:  ${name}`))
         .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because

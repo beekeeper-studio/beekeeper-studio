@@ -7,7 +7,8 @@ import {
   QueryLogOptions,
 } from "./BasicDatabaseClient";
 import mysql, { Connection } from "mysql2";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
+import ed25519AuthPlugin from "@coresql/mysql2-auth-ed25519";
 import knexlib from "knex";
 import { readFileSync } from "fs";
 import _ from "lodash";
@@ -16,14 +17,15 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError
+  getIAMPassword,
+  ClientError, refreshTokenIfNeeded
 } from "./utils";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
-import { createCancelablePromise } from "@/common/utils";
+import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
@@ -62,6 +64,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
+import globals from '../../../common/globals';
 
 type ResultType = {
   tableName?: string
@@ -125,15 +128,19 @@ const FieldFlags = {
   BINARY: 128,
 };
 
-function configDatabase(
+async function configDatabase(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase
-): mysql.PoolOptions {
+): Promise<mysql.PoolOptions> {
+
   const config: mysql.PoolOptions = {
+    authPlugins: {
+      'client_ed25519': ed25519AuthPlugin(),
+    },
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: server.config.password,
+    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -152,6 +159,12 @@ function configDatabase(
   if (server.sshTunnel) {
     config.host = server.config.localHost;
     config.port = server.config.localPort;
+  }
+
+  if (
+    server.config.redshiftOptions?.iamAuthenticationEnabled
+  ){
+    server.config.ssl = true
   }
 
   if (server.config.ssl) {
@@ -279,6 +292,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   };
   transcoders = [GenericBinaryTranscoder];
 
+  interval: NodeJS.Timeout
+
   clientId: string
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -291,13 +306,27 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async connect() {
     await super.connect();
-
-    const dbConfig = configDatabase(this.server, this.database);
+    const dbConfig = await configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
     this.conn = {
       pool: mysql.createPool(dbConfig),
     };
+
+    if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
+      this.interval = setInterval(async () => {
+        try {
+          this.conn.pool.getConnection(async (err, connection) => {
+            if(err) throw err;
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 3306)
+            connection.release();
+            log.info('Token refreshed successfully.')
+          });
+        } catch (err) {
+          log.error('Could not refresh token!')
+        }
+      }, globals.iamRefreshTime);
+    }
 
     this.conn.pool.on('acquire', (connection) => {
       log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
@@ -312,6 +341,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   }
 
   async disconnect() {
+    if(this.interval){
+      clearInterval(this.interval);
+    }
     this.conn?.pool.end();
 
     await super.disconnect();
@@ -395,7 +427,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         schema: "",
         name: row.Key_name as string,
         columns,
-        unique: row.Non_unique === "0",
+        unique: row.Non_unique === "0" || row.Non_unique === 0,
         primary: row.Key_name === "PRIMARY",
       };
     });
@@ -590,7 +622,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     );
     const { query, params } = queries;
     const result = await this.driverExecuteSingle(query, { params });
-    const fields = this.parseQueryResultColumns(result);
+    const fields = columns.map((v) => v.bksField).filter((v) => selects && selects.length > 0 ? selects.includes(v.name) : true);
     const rows = await this.serializeQueryResult(result, fields);
     return { result: rows, fields };
   }
@@ -625,11 +657,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     chunkSize: number,
     _schema?: string
   ): Promise<StreamResults> {
-    const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
+    const { countQuery, query, params } = buildSelectTopQuery(table, null, null, orderBy, filters);
     const columns = await this.listTableColumns(table);
-    const rowCount = await this.driverExecuteSingle(qs.countQuery);
-    // TODO: DEBUG HERE
-    const { query, params } = qs;
+    const rowCount = await this.driverExecuteSingle(countQuery, { params });
 
     return {
       totalRows: Number(rowCount.rows[0].total),
@@ -753,7 +783,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     databaseName: string,
     charset: string,
     collation: string
-  ): Promise<void> {
+  ): Promise<string> {
     const sql = `
       create database ${this.wrapIdentifier(databaseName)}
         character set ${this.wrapIdentifier(charset)}
@@ -761,6 +791,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     `;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {
@@ -800,7 +831,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         undefined,
         connection
       );
-      const command = buildInsertQuery(this.knex, insert, columns);
+      const command = buildInsertQuery(this.knex, insert, { columns });
       await this.driverExecuteSingle(command, { connection });
     }
     return true;
@@ -1161,6 +1192,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 
@@ -1372,16 +1404,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
-  }
-
-  parseQueryResultColumns(qr: ResultType): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
-        bksType = 'BINARY'
-      }
-      return { name: column.name, bksType }
-    })
   }
 
   parseTableColumn(column: { column_name: string; data_type: string }): BksField {

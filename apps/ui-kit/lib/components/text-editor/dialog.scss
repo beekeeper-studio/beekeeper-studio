@@ -1,0 +1,63 @@
+/* taken from https://codemirror.net/5/addon/dialog/dialog.css */
+
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+$dialog-font-size: 12px;
+
+.BksTextEditor {
+  .CodeMirror-dialog {
+    position: absolute;
+    left: 0; right: 0;
+    background: inherit;
+    z-index: 15;
+    padding: .1em .8em;
+    overflow: hidden;
+    color: inherit;
+    font-size: $dialog-font-size;
+
+  }
+
+  .CodeMirror-dialog-top {
+    border-bottom: 1px solid rgba($theme-base, .33);
+    padding-bottom: 5px;
+    padding-top: 5px;
+    top: 0;
+    display: flex;
+    flex-direction: row;
+    font-family: $font-family;
+    align-items: center;
+  }
+
+  .CodeMirror-dialog-bottom {
+    border-top: 1px solid rgba($theme-base, .33);
+    bottom: 0;
+    padding-top: 5px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .CodeMirror-search-label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-family: $font-family;
+    color: $text-light
+  }
+
+  .CodeMirror-dialog input {
+    @include bk-form-input;
+    width: 15em !important; /* search.js puts an inline 10em on the search input for whatever reason */
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    font-size: $dialog-font-size !important;
+  }
+
+  .CodeMirror-dialog button {
+    @include btn;
+    @include btn-flat;
+    @include btn-small;
+  }
+}
