@@ -6,6 +6,7 @@
 - Run Tests: `yarn test:unit` (unit), `yarn test:integration` (integration), `yarn test:e2e` (e2e)
 - Run Single Test: `yarn test:unit -t "test name or pattern"`
 - Lint Code: `yarn all:lint` or `yarn workspace beekeeper-studio lint`
+- Type Check: `yarn typecheck` (runs TypeScript's type checking without emitting files)
 
 ## Code Style
 - **TypeScript**: Use strict types where possible, configured with `noUnusedLocals` and `noUnusedParameters`
