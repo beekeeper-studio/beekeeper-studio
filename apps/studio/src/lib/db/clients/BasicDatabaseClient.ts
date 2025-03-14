@@ -102,6 +102,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   async defaultSchema(): Promise<string | null> {
     return null
   }
+
+  async getShellPrompt(): Promise<string> {
+    return '';
+  }
   // ****************************************************************************
 
   // Connection *****************************************************************

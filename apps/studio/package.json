@@ -40,6 +40,8 @@
     "@electron/remote": "^2.0.10",
     "@google-cloud/bigquery": "^6.2.0",
     "@libsql/knex-libsql": "^0.1.0",
+    "@mongosh/browser-runtime-electron": "^3.8.0",
+    "@mongosh/service-provider-node-driver": "^3.6.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "axios": "^1.7.4",
     "axios-retry": "^3.2.4",

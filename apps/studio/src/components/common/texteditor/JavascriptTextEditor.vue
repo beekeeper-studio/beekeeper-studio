@@ -1,27 +1,29 @@
 <template>
-  <text-editor
-    :value="value"
-    @input="$emit('input', $event)"
-    :hint="hint"
-    :mode="dialectData.textEditorMode"
-    :hint-options="hintOptions"
-    :columns-getter="columnsGetter"
-    :auto-focus="true"
-    @update:focus="$emit('update:focus', $event)"
-    @update:selection="$emit('update:selection', $event)"
-    @update:cursorIndex="$emit('update:cursorIndex', $event)"
-    @update:cursorIndexAnchor="$emit('update:cursorIndexAnchor', $event)"
-    @update:initialized="$emit('update:initialized', $event)"
-  />
+  <!-- <text-editor -->
+    <!-- :value="value" -->
+    <!-- @input="$emit('input', $event)" -->
+    <!-- :hint="hint" -->
+    <!-- :mode="dialectData.textEditorMode" -->
+    <!-- :hint-options="hintOptions" -->
+    <!-- :columns-getter="columnsGetter" -->
+    <!-- :auto-focus="true" -->
+    <!-- @update:focus="$emit('update:focus', $event)" -->
+    <!-- @update:selection="$emit('update:selection', $event)" -->
+    <!-- @update:cursorIndex="$emit('update:cursorIndex', $event)" -->
+    <!-- @update:cursorIndexAnchor="$emit('update:cursorIndexAnchor', $event)" -->
+    <!-- @update:initialized="$emit('update:initialized', $event)" -->
+  <!-- /> -->
+  <shell></shell>
 </template>
 
 <script lang="ts">
 import TextEditor from "./TextEditor.vue";
 import CodeMirror from "codemirror";
+import { Shell } from "@mongosh/browser-repl";
 import { mapGetters, mapState } from 'vuex';
 
 export default {
-  components: { TextEditor },
+  components: { TextEditor, Shell },
   props: ["value"],
   data() {
     return {

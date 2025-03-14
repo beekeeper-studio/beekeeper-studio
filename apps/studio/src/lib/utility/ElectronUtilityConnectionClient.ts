@@ -94,6 +94,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     }
   }
 
+  async getShellPrompt(): Promise<string> {
+    return await Vue.prototype.$util.send('conn/getShellPrompt');
+  }
+
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     return await Vue.prototype.$util.send('conn/executeQuery', { queryText, options });
   }

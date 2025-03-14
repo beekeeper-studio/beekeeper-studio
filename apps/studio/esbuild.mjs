@@ -26,7 +26,9 @@ const externals = ['better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
         'cassandra-driver', 'mysql2', 'ssh2', 'mysql',
         'oracledb', '@electron/remote', "@google-cloud/bigquery",
-        'pg-query-stream', 'electron', '@duckdb/node-api'
+        'pg-query-stream', 'electron', '@duckdb/node-api',
+        '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
+        'mongodb-client-encryption'
 
       ]
 
