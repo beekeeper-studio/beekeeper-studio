@@ -26,6 +26,7 @@ export default class {
     this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
+    this.forward(AppEvent.openPluginManager)
   }
 
   forward(event) {

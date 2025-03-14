@@ -57,4 +57,5 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   toggleBeta = (menuItem) => {
     send('toggleBeta', menuItem);
   }
+  managePlugins = () => send("managePlugins")
 }

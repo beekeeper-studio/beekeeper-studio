@@ -278,6 +278,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           checked: settings?.useBeta?.value == true
         }
       ]
-    }
+    },
+    managePlugins: {
+      id: 'manage-plugins',
+      label: 'Manage Plugins',
+      click: actionHandler.managePlugins,
+    },
   }
 }

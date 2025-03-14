@@ -54,6 +54,7 @@ export enum AppEvent {
   switchLicenseState = 'switchLicenseState',
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
+  openPluginManager = 'openPluginManager',
 }
 
 export interface RootBinding {

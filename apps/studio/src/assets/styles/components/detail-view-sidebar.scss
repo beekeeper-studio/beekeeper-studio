@@ -13,16 +13,6 @@ div.sidebar.detail-view-sidebar {
   background-color: $theme-bg;
   position: relative;
 
-  .close-btn, .menu-btn {
-    i.material-icons {
-      color: $text;
-    }
-
-    &:not(:hover) {
-      background-color: transparent;
-    }
-  }
-
   .header {
     width: 100%;
     padding-top: 0.5rem;
@@ -42,16 +32,6 @@ div.sidebar.detail-view-sidebar {
 
     .title {
       color: $text-dark;
-    }
-
-    .close-btn, .menu-btn {
-      i.material-icons {
-        color: $text;
-      }
-
-      &:not(:hover) {
-        background-color: transparent;
-      }
     }
 
     .menu-btn x-menuitem {
