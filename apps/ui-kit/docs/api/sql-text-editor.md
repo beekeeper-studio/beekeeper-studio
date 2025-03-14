@@ -1,0 +1,28 @@
+# SQL Text Editor API
+
+## Properties
+
+| Name                | Type                  | Description                                                                                                                                                                                                                             | Default      |
+| ------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `value`             | `string`              | The SQL query to display.                                                                                                                                                                                                               | `''`         |
+| `entities`          | `object[]`            | An array of entity names to autocomplete. The format is the same as the `entities` property of the `bks-entity-list` component.                                                                                                         | `[]`         |
+| `readOnly`          | `boolean` \| `string` | Disable editing. If "nocursor" is provided, focusing the editor is also disabled.                                                                                                                                                       | `false`      |
+| `markers`           | `object[]`            | An array of objects representing the markers.                                                                                                                                                                                           | `[]`         |
+| `formatterDialect`  | `string`              | The SQL dialect to use for formatting. See sql-formatter's [language](https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md) for possible options.                                                            | `'sql'`      |
+| `identifierDialect` | `string`              | The SQL dialect to use for identifier quotes. See sql-query-identifier [API](https://github.com/coresql/sql-query-identifier?tab=readme-ov-file#api) for possible options.                                                              | `'generic'`  |
+| `keybindings`       | `object`              | Object contiaining keybindings where the key is a combination of keys and the value is a function. For example, `{ 'Ctrl-Enter': function submit(){}, 'Cmd-Enter': function submit(){} }`.                                              | `undefined`  |
+| `keymap`            | `string`              | Configure the keymap to use. Possible values are 'default', 'vim', 'emacs' and 'sublime'.                                                                                                                                               | `default`    |
+| `vimConfig`         | `object`              | Configure vim mode.                                                                                                                                                                                                                     | `undefined`  |
+| `columnsGetter`     | `function`            | If provided, this function will be called for autocompleting column names instead of using the `entities.columns` property. Expect one argument of type `string` representing a combination of schema name (if exists) and entity name. | `undefined`  |
+| `defaultSchema`     | `string`              | The default schema to use when autocompleting entity names. Schemas that match this will be prioritized in the autocompletion list.                                                                                                     | `public`     |
+| `mode`              | `string` \| `object`  | The CodeMirror's mode to use. Modes are JavaScript programs that help color (and optionally indent) text written in a given language. Please refer to CodeMirror's [mode api](https://codemirror.net/5/doc/manual.html#modeapi) learn more     | `text/x-sql` |
+
+## Events
+
+| Name                         | Description                                      | Event Detail                                                   |
+| ---------------------------- | ------------------------------------------------ | -------------------------------------------------------------- |
+| `bks-value-change`           | Emitted when the SQL query is changed.           | `{ value: string }`                                            |
+| `bks-initialized`            | Emitted when the SQL text editor is initialized. | `{ codemirror: CodeMirror }`                                   |
+| `bks-focus`                  | Emitted when the SQL text editor is focused.     | `{ event: FocusEvent }`                                        |
+| `bks-blur`                   | Emitted when the SQL text editor is blurred.     | `{ event: FocusEvent }`                                        |
+| `bks-query-selection-change` | Emitted when the query selection is changed.     | `{ selectedQuery: IdentifyResult, queries: IdentifyResult[] }` |

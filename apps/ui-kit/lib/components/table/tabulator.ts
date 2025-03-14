@@ -4,8 +4,9 @@ import {
   ColumnDefinition,
 } from "tabulator-tables";
 import _ from "lodash";
-import { HeaderSortTabulatorModule } from './plugins/HeaderSortTabulatorModule'
-import { EventBridgeTabulatorModule } from './plugins/EventBridgeTabulatorModule'
+import { HeaderSortTabulatorModule } from './modules/HeaderSortTabulatorModule'
+import { EventBridgeTabulatorModule } from './modules/EventBridgeTabulatorModule'
+import { ForeignCacheTabulatorModule } from './modules/ForeignCacheTabulatorModule'
 
 export interface Options {
   rowHeaderOffset?: number | (() => number);
@@ -98,4 +99,4 @@ TabulatorFull.defaultOptions.layout = "fitDataFill";
 // FIXME we should be able to customize this
 // TabulatorFull.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
 TabulatorFull.defaultOptions.headerSortClickElement = 'icon';
-TabulatorFull.registerModule([HeaderSortTabulatorModule, EventBridgeTabulatorModule]);
+TabulatorFull.registerModule([HeaderSortTabulatorModule, EventBridgeTabulatorModule, ForeignCacheTabulatorModule]);

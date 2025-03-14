@@ -1,7 +1,7 @@
 import type { ColumnDefinition } from "tabulator-tables";
-import { BaseColumn } from "../types";
+import { TableColumn } from "../types";
 
-export interface Column extends BaseColumn {
+export interface Column extends TableColumn {
   /** The title of the column displayed in the table header. */
   title: string;
   /** Make the column editable. */
