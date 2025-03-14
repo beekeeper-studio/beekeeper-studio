@@ -44,7 +44,7 @@
       </a>
     </div>
     <div class="tab-content">
-      <div class="empty flex-col  expand">
+      <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
           <shortcut-hints />
         </div>
@@ -277,7 +277,6 @@ import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
-import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
@@ -301,7 +300,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       PendingChangesButton,
     ConfirmationModal,
     SqlFilesImportModal,
-    DetailViewSidebar,
     },
     data() {
       return {
@@ -565,8 +563,17 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openContextMenu(event, item) {
       this.contextEvent = { event, item }
     },
-    async setActiveTab(tab) {
+    async setActiveTab(tab: TransportOpenTab) {
+        console.log('switchingTab', tab.id)
+      const switchingTab = tab.id !== this.activeTab?.id
+      if (switchingTab) {
+        this.trigger(AppEvent.switchingTab, tab)
+      }
       await this.$store.dispatch('tabs/setActive', tab)
+      if (switchingTab) {
+        console.log('switchedTab', tab.id)
+        this.trigger(AppEvent.switchedTab, tab)
+      }
     },
     async addTab(item: TransportOpenTab) {
       const savedItem = await this.$store.dispatch('tabs/add', { item, endOfPosition: true })

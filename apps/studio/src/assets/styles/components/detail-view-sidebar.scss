@@ -1,33 +1,19 @@
-div.sidebar.detail-view-sidebar {
-  --header-title-height: 2.8rem;
+.json-viewer {
+  --header-title-height: 2rem;
 
   position: relative;
   overflow: hidden;
   max-width: 100%;
-  min-width: 22rem;
+  min-width: 21rem;
   width: auto;
   flex-grow: 1;
-  border: 1px solid $border-color;
-  border-bottom: none;
-  border-right: none;
-  background-color: $theme-bg;
   position: relative;
-
-  .close-btn, .menu-btn {
-    i.material-icons {
-      color: $text;
-    }
-
-    &:not(:hover) {
-      background-color: transparent;
-    }
-  }
+  margin-top: 0.35rem;
 
   .header {
     width: 100%;
-    padding-top: 0.5rem;
     padding-left: 1rem;
-    padding-right: 0.5rem;
+    padding-right: 1rem;
 
     .header-group {
       display: flex;
@@ -40,13 +26,10 @@ div.sidebar.detail-view-sidebar {
       }
     }
 
-    .title {
-      color: $text-dark;
-    }
-
-    .close-btn, .menu-btn {
+    .menu-btn {
       i.material-icons {
-        color: $text;
+        font-size: 18px;
+        color: $text-light;
       }
 
       &:not(:hover) {
@@ -87,6 +70,7 @@ div.sidebar.detail-view-sidebar {
 
   .CodeMirror.text-editor {
     width: 100%;
+    height: auto;
     padding-left: 0.65rem;
 
     &, .CodeMirror-gutters {
@@ -153,12 +137,6 @@ div.sidebar.detail-view-sidebar {
       margin-top: 1rem;
       padding-right: 0;
     }
-
-    .close-btn {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-    }
   }
 
   .empty-state {
@@ -170,5 +148,16 @@ div.sidebar.detail-view-sidebar {
     top: var(--header-title-height);
     z-index: 10;
     font-weight: 700;
+  }
+}
+
+.secondary-sidebar .json-viewer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0.5rem;
+
+  .text-editor {
+    flex: 1;
   }
 }

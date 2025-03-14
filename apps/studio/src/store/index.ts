@@ -71,6 +71,7 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
+  openPrimarySidebar: boolean
   openDetailView: boolean
   tableTableSplitSizes: number[]
 }
@@ -126,6 +127,7 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
+    openPrimarySidebar: SmartLocalStorage.getBool('openPrimarySidebar', false),
     openDetailView: SmartLocalStorage.getBool('openDetailView', true),
     tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
   },
@@ -247,6 +249,9 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
+    },
+    openPrimarySidebar(state) {
+      return state.openPrimarySidebar
     },
     openDetailView(state) {
       return state.openDetailView
@@ -384,6 +389,9 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
+    },
+    openPrimarySidebar(state, value: boolean) {
+      state.openPrimarySidebar = value
     },
     openDetailView(state, value: boolean) {
       state.openDetailView = value
@@ -600,6 +608,17 @@ const store = new Vuex.Store<State>({
       SmartLocalStorage.setBool(flag, value)
       context.commit(flag, value)
       return value
+    },
+    togglePrimarySidebar(context, value?: boolean) {
+      if (typeof value === 'undefined') {
+        value = !context.state.openPrimarySidebar
+      }
+      SmartLocalStorage.setBool('openPrimarySidebar', value)
+      context.commit('openPrimarySidebar', value)
+      return value
+    },
+    toggleSecondarySidebar(context, value?: boolean) {
+      context.dispatch("toggleOpenDetailView", value)
     },
     toggleOpenDetailView(context, value?: boolean) {
       if (typeof value === 'undefined') {

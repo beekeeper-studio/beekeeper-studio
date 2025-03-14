@@ -13,12 +13,12 @@
     >
       <sidebar
         ref="sidebar"
-        :class="{hide: !sidebarShown}"
+        :class="{hide: !openPrimarySidebar}"
       >
         <core-sidebar
           @databaseSelected="databaseSelected"
-          @toggleSidebar="toggleSidebar"
-          :sidebar-shown="sidebarShown"
+          @toggleSidebar="togglePrimarySidebar"
+          :sidebar-shown="openPrimarySidebar"
         />
         <statusbar>
           <ConnectionButton />
@@ -31,6 +31,10 @@
       >
         <core-tabs />
       </div>
+      <secondary-sidebar
+        v-show="openDetailView"
+        ref="secondarySidebar"
+      />
     </div>
     <quick-search
       v-if="quickSearchShown"
@@ -45,6 +49,7 @@
 <script lang="ts">
   import Sidebar from './common/Sidebar.vue'
   import CoreSidebar from './sidebar/CoreSidebar.vue'
+  import SecondarySidebar from './sidebar/SecondarySidebar.vue'
   import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
   import Statusbar from './common/StatusBar.vue'
@@ -57,28 +62,28 @@
   import Vue from 'vue'
   import { SmartLocalStorage } from '@/common/LocalStorage'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapActions } from 'vuex'
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar },
     data() {
       /* eslint-disable */
       return {
         split: null,
-        sidebarShown: true,
         quickSearchShown: false,
         rootBindings: [
           // @ts-ignore
           { event: AppEvent.quickSearch, handler: this.showQuickSearch},
           // @ts-ignore
-          { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
+          { event: AppEvent.togglePrimarySidebar, handler: this.togglePrimarySidebar },
+          { event: AppEvent.toggleSecondarySidebar, handler: this.toggleSecondarySidebar }
         ],
         initializing: true
       }
       /* eslint-enable */
     },
     computed: {
-      ...mapGetters(['minimalMode']),
+      ...mapGetters(['minimalMode', 'openDetailView', 'openPrimarySidebar']),
       keymap() {
         const results = {}
         results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
@@ -87,7 +92,8 @@
       splitElements() {
         return [
           this.$refs.sidebar.$refs.sidebar,
-          this.$refs.content
+          this.$refs.content,
+          this.$refs.secondarySidebar.$el
         ]
       }
     },
@@ -95,15 +101,15 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
-          const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
+          const lastSavedSplitSizes = false && SmartLocalStorage.getItem("interfaceSplitSizes")
+          const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 50, 25]
 
           this.split = Split(this.splitElements, {
             elementStyle: (_dimension, size) => ({
                 'flex-basis': `calc(${size}%)`,
             }),
             sizes: splitSizes,
-            minSize: [25, 75],
+            minSize: [25, 50, 25],
             expandToMin: true,
             gutterSize: 5,
             onDragEnd: () => {
@@ -115,7 +121,7 @@
       },
       minimalMode() {
         if (this.minimalMode) {
-          this.sidebarShown = true
+          this.openPrimarySidebar = true
         }
       },
     },
@@ -138,19 +144,12 @@
       }
     },
     methods: {
+      ...mapActions(['togglePrimarySidebar', 'toggleSecondarySidebar']),
       showQuickSearch() {
         this.quickSearchShown = true
       },
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
-      },
-      toggleSidebar() {
-        if (this.minimalMode) {
-          // Always show sidebar (table list) in minimal mode
-          this.sidebarShown = true
-        } else {
-          this.sidebarShown = !this.sidebarShown
-        }
       },
     }
   })
