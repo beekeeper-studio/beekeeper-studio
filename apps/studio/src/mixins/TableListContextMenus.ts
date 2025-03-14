@@ -40,12 +40,7 @@ export default {
   },
   computed: {
     tableMenuOptions() {
-      // HACK (@day): this stuff will be removed once we get write mode working for BQ
-      const isBQ = this.$store.getters.dialect === 'bigquery';
-      const isBQClass = isBQ ? 'disabled' : '';
-
       const dialect: DialectData = this.$store.getters.dialectData;
-
       return [
         {
           name: "View Data",
@@ -71,7 +66,7 @@ export default {
         },
         {
           name: "Import from File",
-          class: isBQClass,
+          class: disabled(dialect.disabledFeatures?.importFromFile),
           slug: 'import',
           ultimate: true,
           handler: ({ item }) => {
@@ -102,7 +97,7 @@ export default {
         {
           name: "SQL: Create",
           slug: 'sql-create',
-          class: isBQClass,
+          class: disabled(dialect.disabledFeatures?.sqlCreate),
           handler: ({ item }) => {
             this.$root.$emit('loadTableCreate', item)
           }
@@ -129,7 +124,7 @@ export default {
         {
           name: "Drop",
           slug: 'sql-drop',
-          class: isBQClass,
+          class: disabled(dialect.disabledFeatures?.dropTable),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'drop' })
           }
@@ -137,7 +132,7 @@ export default {
         {
           name: "Truncate",
           slug: 'sql-truncate',
-          class: disabled(dialect.disabledFeatures?.truncateElement, isBQ),
+          class: disabled(dialect.disabledFeatures?.truncateElement),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
@@ -145,7 +140,7 @@ export default {
         {
           name: "Duplicate",
           slug: 'sql-duplicate',
-          class: disabled(dialect.disabledFeatures?.duplicateTable, isBQ),
+          class: disabled(dialect.disabledFeatures?.duplicateTable),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }

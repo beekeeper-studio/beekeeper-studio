@@ -143,6 +143,7 @@ export interface DialectData {
     truncateElement?: boolean
     exportTable?: boolean
     createTable?: boolean
+    dropTable?: boolean
     collations?: boolean
     importFromFile?: boolean,
     headerSort?: boolean,
@@ -158,6 +159,7 @@ export interface DialectData {
     binaryColumn?: boolean
     initialSort?: boolean
     multipleDatabase?: boolean
+    sqlCreate?: boolean
   },
   notices?: {
     infoSchema?: string
@@ -231,6 +233,10 @@ export interface SchemaItemChange {
   newValue: string | boolean | null
 }
 
+export interface CreateTableSpec {
+  table: string
+}
+
 export interface AlterTableSpec {
   table: string
   schema?: string
@@ -257,6 +263,8 @@ export interface AlterPartitionsSpec {
   adds?: PartitionItem[]
   detaches?: string[]
 }
+
+export const AdditionalMongoOrders = [ '2d', '2dsphere', 'text', 'geoHaystack', 'hashed' ];
 
 export interface IndexColumn {
   name: string

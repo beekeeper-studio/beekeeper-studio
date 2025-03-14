@@ -27,6 +27,10 @@ export const BigQueryData: DialectData = {
   unwrapIdentifier: (s) => s,
   textEditorMode: "text/x-sql",
   disabledFeatures: {
+    truncateElement: true,
+    duplicateTable: true,
+    sqlCreate: true,
+    dropTable: true,
     indexes: true,
     constraints: {
       onUpdate: true,

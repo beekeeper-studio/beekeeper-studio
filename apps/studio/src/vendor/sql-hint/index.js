@@ -246,6 +246,22 @@ import CodeMirror from "codemirror";
     }
     return table;
   }
+  // TODO (@day): register helper for javascript
+  // might have to make this specifically for mongo
+  CodeMirror.registerHelper("hint", "javascript", async function(editor, options) {
+    tables = parseTables(options?.tables);
+    keywords = getKeywords(editor);
+
+    var cur = editor.getCursor();
+    var result = [];
+    var token = editor.getTokenAt(cur), start, end, search;
+    const allTokens = editor.getLineTokens(cur.line);
+
+    if (token.end > cur.ch) {
+      token.end = cur.ch;
+      token.string = token.string.slice(0, cur.ch - token.start);
+    }
+  })
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
     tables = parseTables(options?.tables)

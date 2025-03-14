@@ -21,6 +21,7 @@
               <i class="clear material-icons">cancel</i>
             </x-button>
             <x-button
+              v-if="this.dialect != 'mongodb'"
               :title="entitiesHidden ? 'Filter active' : 'No filters'"
               class="btn btn-fab btn-link action-item"
               :class="{active: entitiesHidden}"
@@ -124,7 +125,7 @@
           </button>
           <button
             @click.prevent="newTable"
-            title="New Table"
+            :title="`New ${this.dialect === 'mongodb' ? 'Collection' : 'Table'}`"
             class="create-table"
             :disabled="tablesLoading"
             v-if="canCreateTable"
@@ -190,7 +191,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     computed: {
-      ...mapGetters(['dialectData']),
+      ...mapGetters(['dialectData', 'dialect']),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
       },

@@ -2,7 +2,7 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult, ImportFuncOptions } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
-import { AlterPartitionsSpec, AlterTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
 import ConnectionProvider from '../lib/connection-provider'; 
 import { uuidv4 } from "@/lib/uuid";
@@ -62,6 +62,7 @@ export interface IConnectionHandlers {
   'conn/getViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getMaterializedViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getRoutineCreateScript': ({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/createTable': ({ table }: { table: CreateTableSpec }) => Promise<void>,
 
 
   // Make Changes ***************************************************************
@@ -338,6 +339,11 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/getRoutineCreateScript': async function({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.getRoutineCreateScript(routine, type, schema);
+  },
+
+  'conn/createTable': async function({ table, sId }: { table: CreateTableSpec, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.createTable(table);
   },
 
   'conn/alterTableSql': async function({ change, sId }: { change: AlterTableSpec, sId: string }) {
