@@ -428,6 +428,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
+  async getCompletions(cmd: string): Promise<string[]> {
+    log.info('GETTING COMPLETIONS FOR: ', cmd)
+    return (await this.runtime.getCompletions(cmd)).map((c) => c.completion)
+  }
+
   async getShellPrompt(): Promise<string> {
     return await this.runtime.getShellPrompt()
   }

@@ -94,6 +94,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     }
   }
 
+  async getCompletions(cmd: string): Promise<string[]> {
+    return await Vue.prototype.$util.send('conn/getCompletions', { cmd });
+  }
+
   async getShellPrompt(): Promise<string> {
     return await Vue.prototype.$util.send('conn/getShellPrompt');
   }

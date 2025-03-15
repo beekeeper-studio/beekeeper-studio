@@ -19,9 +19,14 @@ import "codemirror/addon/scroll/annotatescrollbar";
 import "codemirror/addon/search/matchesonscrollbar";
 import "codemirror/addon/search/matchesonscrollbar.css";
 import "codemirror/addon/search/searchcursor";
+import "@/plugins/CMMongoHint";
+import "@/vendor/show-hint";
+import "@/lib/editor/CodeMirrorDefinitions";
+import "codemirror/addon/merge/merge";
 import CodeMirror from 'codemirror';
-import { keymapTypes } from "@/lib/db/types"
+import { keymapTypes } from "@/lib/db/types";
 import { mapState } from 'vuex';
+import { plugins } from "@/lib/editor/utils";
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -34,7 +39,7 @@ export default {
   data() {
     return {
       shell: null,
-      promptSymbol: "mongo> ",// we should get this from the mongo runtime
+      promptSymbol: "mongo> ",
       commandBuffer: "",
       commandHistory: [],
       historyIndex: -1,
@@ -42,9 +47,26 @@ export default {
     }
   },
   computed: {
-    ...mapState(['connection'])
+    ...mapState(['connection']),
+    hintOptions() {
+      return {
+        promptLine: this.promptLine,
+        promptSymbol: this.promptSymbol,
+        connection: this.connection
+      }
+    },
+    hint() {
+      // @ts-expect-error not fully typed
+      return CodeMirror.hint.mongo;
+    },
+    plugins() {
+      return [plugins.autoComplete];
+    }
   },
   watch: {
+    hintOptions() {
+      this.shell.setOption('hintOptions', this.hintOptions);
+    },
     output(value) {
       const doc = this.shell.getDoc();
       const lastLineNum = this.shell.lastLine();
@@ -78,19 +100,15 @@ export default {
         extraKeys: {
           "Ctrl-Space": "autocomplete",
           "Shift-Tab": "indentLess",
-          [this.cmCtrlOrCmd("F")]: "findPersistent",
-          [this.cmCtrlOrCmd("R")]: "replace",
-          [this.cmCtrlOrCmd("Shift-R")]: "replaceAll",
         },
         // @ts-expect-error not fully typed
         options: {
           closeOnBlur: false,
         },
         mode: 'javascript',
-        //hint: this.hint,
-        //hintOptions: this.hintOptions,
+        hint: this.hint,
+        hintOptions: this.hintOptions,
         keyMap: 'default', // figure out vim mode
-        getColumns: this.columnsGetter,
       });
 
       cm.getWrapperElement().classList.add("text-editor");
@@ -99,7 +117,7 @@ export default {
 
       cm.on("beforeChange", (_cm, change) => {
         // Prevent editing before current prompt
-        if (change.from.line < this.promptLine) {
+        if (change.from.line < this.promptLine || (change.from.line === this.promptLine && change.from.ch < this.promptSymbol.length)) {
           change.cancel();
         }
       })
@@ -114,12 +132,18 @@ export default {
           this.executeCommand();
         } else if (event.key === "ArrowUp") {
           event.preventDefault();
-          // TODO (@day): navigate history back
+          this.navigateHistory(-1);
         } else if (event.key === "ArrowDown") {
           event.preventDefault();
-          // TODO (@day): navigate history forwards
+          this.navigateHistory(1);
         }
       })
+
+      if (this.plugins) {
+        this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
+          plugin(cm);
+        });
+      }
 
       this.shell = cm;
     },
@@ -146,6 +170,19 @@ export default {
         setTimeout(() => this.shell.scrollTo(null, this.shell.getScrollInfo().height), 10);
       });
     },
+    navigateHistory(direction) {
+      if (this.commandHistory.length === 0) return;
+      const doc = this.shell.getDoc();
+
+      this.historyIndex += direction;
+      if (this.historyIndex < 0) this.historyIndex = 0;
+      if (this.historyIndex >= this.commandHistory.length) {
+        doc.replaceRange('', { line: this.promptLine, ch: this.promptSymbol.length }, { line: this.shell.lastLine(), ch: Infinity });
+        return;
+      }
+
+      doc.replaceRange(this.commandHistory[this.historyIndex], { line: this.promptLine, ch: this.promptSymbol.length }, { line: this.shell.lastLine(), ch: Infinity });
+    }
   },
   async mounted() {
     this.promptSymbol = await this.connection.getShellPrompt();

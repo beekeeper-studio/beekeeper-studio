@@ -46,6 +46,7 @@ export interface IConnectionHandlers {
   'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
   'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
+  'conn/getCompletions': ({ cmd, sId }: { cmd: string, sId: string }) => Promise<string[]>,
   'conn/getShellPrompt': ({ sId }: { sId: string }) => Promise<string>,
   'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
   'conn/listDatabases': ({ filter, sId }: { filter?: DatabaseFilterOptions, sId: string }) => Promise<string[]>,
@@ -276,6 +277,12 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).queries.set(id, query);
     return id;
   },
+
+  'conn/getCompletions': async function({ cmd, sId }: { cmd: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getCompletions(cmd);
+  },
+
   'conn/getShellPrompt': async function({ sId }: { sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.getShellPrompt();
