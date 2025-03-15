@@ -1726,7 +1726,41 @@ export default Vue.extend({
       this.detailViewTitle = `Row ${position}`
       this.selectedRow = row
       this.selectedRowIndex = position
-      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      
+      // Clean the data first
+      let cleanedData = this.$bks.cleanData(data, this.tableColumns)
+      
+      // Parse JSON columns
+      this.tableColumns.forEach(column => {
+        const columnValue = cleanedData[column.field]
+
+        // Check if the column is a JSON column
+        let isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+        // If the column is not a JSON column, check if it is a JSON string
+        if (!isJsonColumn) {
+          const isColumnHasStringAndNotEmpty = typeof columnValue === 'string' && columnValue.trim() !== ''
+
+          if (isColumnHasStringAndNotEmpty) {
+            const isJsonObjectString = columnValue.startsWith('{') && columnValue.endsWith('}')
+            const isJsonArrayString = columnValue.startsWith('[') && columnValue.endsWith(']')
+
+            if (isJsonObjectString || isJsonArrayString) {
+              isJsonColumn = true
+            }
+          }
+        }
+
+        if (isJsonColumn) {
+          try {
+            cleanedData[column.field] = JSON.parse(cleanedData[column.field])
+          } catch (e) {
+            console.warn(`Failed to parse JSON for column ${column.field}:`, e)
+          }
+        }
+      })
+      
+      this.selectedRowData = cleanedData
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
