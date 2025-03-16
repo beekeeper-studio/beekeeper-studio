@@ -47,7 +47,6 @@
         </toggle-form-area>
       </form>
     </div>
-    </form>
   </section>
 </template>
 
