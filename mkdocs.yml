@@ -79,12 +79,11 @@ nav:
   - Introduction: index.md
   - getting-started-guide.md
   - purchasing-a-license.md
-  - Installing:
+  - Installation:
     - installation/index.md
-    - Supported Platforms:
-      - installation/windows.md
-      - installation/macos-m1-intel.md
-      - installation/linux.md
+    - installation/windows.md
+    - installation/macos-m1-intel.md
+    - installation/linux.md
   - Databases:
     - user_guide/connecting/supported-databases.md
     - Connecting To A Database: user_guide/connecting/connecting.md

@@ -1,4 +1,4 @@
-import { StartedTestContainer } from 'testcontainers'
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { TableInsert } from '../../../../../src/lib/db/models'
@@ -8,6 +8,9 @@ import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
 import { createServer } from '@commercial/backend/lib/db/server'
 import { PostgresTestDriver } from './postgres/container'
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -300,7 +303,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Should be able to list partitions for a table", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const partitions = await util.connection.listTablePartitions('partitionedtable');
 
         expect(partitions.length).toBe(3);
@@ -330,7 +333,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
     it("Inherited tables should NOT behave like partitioned tables", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child'] });
         const partitions = await util.connection.listTablePartitions('parent');
         const parent = tables.find((value) => value.name == 'parent');
@@ -343,7 +346,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Partitions should have parenttype 'p'", async () => {
-      if (dockerTag == 'latest') {
+      if (dockerTag == '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party'] });
         const partition1 = tables.find((value) => value.name == 'partition_1');
         const another = tables.find((value) => value.name == 'another_partition');
@@ -477,7 +480,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(nameColumn.comment).toBe('Name of the person');
     });
 
-    if (dockerTag === 'latest') {
+    if (dockerTag === '16.4') {
       it("should list indexes with info", async () => {
         await util.knex.schema.createTable('has_indexes_2', (table) => {
           table.specificType("text", "varchar(255) UNIQUE NULLS NOT DISTINCT")
@@ -498,3 +501,64 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+
+describe(`Postgres (custom socket port connection)`, () => {
+  jest.setTimeout(dbtimeout)
+
+  let temp: string;
+  let container: StartedTestContainer;
+  beforeAll(async () => {
+      const startupTimeout = dbtimeout * 2;
+      temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
+      container = await new GenericContainer(`postgres`)
+        .withEnvironment({ "POSTGRES_PASSWORD": "example" })
+        .withHealthCheck({
+          test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d banana > /dev/null"],
+          interval: 2000,
+          timeout: 3000,
+          retries: 10,
+          startPeriod: 5000,
+        })
+        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
+        // .withWaitStrategy(Wait.forHealthCheck())
+        .withBindMounts([{
+          source: path.join(temp, "postgresql"),
+          target: "/var/run/postgresql",
+          mode: "rw"
+        }])
+        .withStartupTimeout(startupTimeout)
+        .withExposedPorts(5433)
+        .withCommand(['postgres', '-p', '5433'])
+        .start()
+  })
+
+  afterAll(async () => {
+    await container?.stop()
+  })
+
+  it("should be able to connect", async () => {
+    const server = createServer({
+      client: 'postgresql',
+      host: 'notarealhost',
+      port: 5433,
+      user: 'postgres',
+      password: 'example',
+      osUser: 'foo',
+      ssh: null,
+      sslCaFile: null,
+      sslCertFile: null,
+      sslKeyFile: null,
+      sslRejectUnauthorized: false,
+      ssl: false,
+      domain: null,
+      socketPath: path.join(temp, "postgresql"),
+      socketPathEnabled: true,
+      readOnlyMode: false,
+    })
+    const connection = server.createConnection()
+    await connection.connect()
+    const results = await connection.executeQuery("SELECT 1 as a")
+    expect(results[0].rows[0]).toEqual({ a: 1 })
+    await connection.disconnect()
+  })
+})

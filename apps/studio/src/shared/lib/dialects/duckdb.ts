@@ -38,7 +38,7 @@ export const DuckDBData: DialectData = {
   textEditorMode: "text/x-sql",
   disabledFeatures: {
     triggers: true,
-    multipleDatabase: true,
+    multipleDatabases: true,
     alter: {
       multiStatement: true,
       renameSchema: true, // FIXME: Altering schemas is not yet supported by duckdb

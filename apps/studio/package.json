@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "5.1.0-beta.11",
+  "version": "5.1.5",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -80,7 +80,7 @@
     "mysql2": "~3.11.2",
     "node-firebird": "^1.1.9",
     "noty": "beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6",
-    "oracledb": "~6.6.0",
+    "oracledb": "~6.7.2",
     "papaparse": "^5.3.0",
     "pg": "^8.11.3",
     "pg-cursor": "^2.5.2",
@@ -140,7 +140,7 @@
     "@types/mkdirp": "^1.0.1",
     "@types/mssql": "^9.1.5",
     "@types/node": "^12.12.54",
-    "@types/oracledb": "^5.2.2",
+    "@types/oracledb": "^6.5.3",
     "@types/papaparse": "^5.2.5",
     "@types/pg": "^8.11.3",
     "@types/pluralize": "^0.0.30",

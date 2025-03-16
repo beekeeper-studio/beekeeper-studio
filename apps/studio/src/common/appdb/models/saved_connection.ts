@@ -13,7 +13,7 @@ const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
-  connectionMethod?: string
+  connectionMethod?: 'manual' | 'connectionString'
   connectionString?: string
 }
 
@@ -183,8 +183,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
+  // Used for Oracle only
   @Column({ type: 'simple-json', nullable: false })
-  options: ConnectionOptions = {}
+  options: ConnectionOptions = { connectionMethod: 'manual' }
 
   @Column({ type: 'simple-json', nullable: false })
   redshiftOptions: RedshiftOptions = {}
@@ -311,7 +312,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
           if(options.find((e) => url.endsWith(e))) {
             this.connectionType = connectionType as any
             this.defaultDatabase = url
-            return
+            return true;
           }
         }
       }
@@ -339,7 +340,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       this.port = parsed.port || this.port
       this.username = parsed.user || this.username
       this.password = parsed.password || this.password
-      this.defaultDatabase = parsed.path?.[0] ?? this.defaultDatabase
+      this.defaultDatabase = parsed.path?.join('/') ?? this.defaultDatabase
       return true
     } catch (ex) {
       log.error('unable to parse connection string, assuming sqlite file', ex)

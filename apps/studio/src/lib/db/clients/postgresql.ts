@@ -1059,7 +1059,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return []
   }
 
-  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
+  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<string> {
     const { number: versionAsInteger } = this.version;
 
     let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
@@ -1071,6 +1071,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     }
 
     await this.driverExecuteSingle(sql)
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {
@@ -1352,7 +1353,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     if (server.config.socketPathEnabled) {
       config.host = server.config.socketPath;
-      config.port = null;
+      config.port = server.config.port;
       return config;
     }
 

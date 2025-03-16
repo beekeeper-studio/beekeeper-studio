@@ -249,7 +249,6 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
 }
 
 export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [], createUpsertFunc = null } = {}) {
-  console.log(runAsUpsert)
   if (!inserts) return []
   return inserts.map(insert => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }))
 }
@@ -298,6 +297,21 @@ export function buildSelectQueriesFromUpdates(knex, updates: TableUpdate[]) {
     return query
   })
 }
+
+interface Releasable {
+  release: () => Promise<any>
+}
+
+export async function withReleasable<T>(item: Releasable, func: (x: Releasable) => Promise<T>) {
+  try {
+    return await func(item)
+  } finally {
+    if (item) {
+      await item.release()
+    }
+  }
+}
+
 
 export async function withClosable<T>(item, func): Promise<T> {
   try {

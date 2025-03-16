@@ -180,7 +180,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listCharsets(): Promise<string[]>
   abstract getDefaultCharset(): Promise<string>
   abstract listCollations(charset: string): Promise<string[]>
-  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
+  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<string>
   abstract createDatabaseSQL(): Promise<string>
   abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
   abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
@@ -562,6 +562,27 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     } finally {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
+  }
+
+  async getQueryForFilter(filter: TableFilter): Promise<string> {
+    if (!this.knex) {
+      log.warn("No knex instance found. Cannot get query for filter.");
+      return ""
+    }
+
+    let queryBuilder: Knex.QueryBuilder;
+
+    if (filter.type == 'is') {
+      queryBuilder = this.knex.whereNull(filter.field);
+    } else if (filter.type == 'is not') {
+      queryBuilder = this.knex.whereNotNull(filter.field);
+    } else {
+      queryBuilder = this.knex.where(filter.field, filter.type, filter.value);
+    }
+
+    return queryBuilder.toString()
+      .split("where")[1]
+      .trim();
   }
 
 }

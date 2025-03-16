@@ -198,7 +198,7 @@ export interface IBasicDatabaseClient {
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,
   getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
 
-  createDatabase(databaseName: string, charset: string, collation: string): Promise<void>,
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<string>,
   createDatabaseSQL(): Promise<string>,
   getTableCreateScript(table: string, schema?: string): Promise<string>,
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,
@@ -243,4 +243,7 @@ export interface IBasicDatabaseClient {
   importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
   importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
   importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+
+  /** Returns a query for the given filter */
+  getQueryForFilter(filter: TableFilter): Promise<string>
 }
