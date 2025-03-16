@@ -77,7 +77,6 @@ export default {
     ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
     isOnlySchema() {
-      console.log(this.schemaTables)
       if (this.schemaTables == null) return false
 
       return this.schemaTables.length === 1
