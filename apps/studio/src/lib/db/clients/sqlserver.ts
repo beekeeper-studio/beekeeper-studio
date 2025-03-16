@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
+import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -29,7 +29,7 @@ import {
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import { AuthOptions, AzureAuthService } from '../authentication/azure';
+import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 const log = logRaw.scope('sql-server')

@@ -17,8 +17,7 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  getIAMPassword,
-  ClientError, refreshTokenIfNeeded, getEntraOptions
+  ClientError, refreshTokenIfNeeded
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -49,7 +48,6 @@ import {
   TableColumn,
   TableDelete,
   BksField,
-  BksFieldType,
   TableFilter,
   TableIndex,
   TableInsert,
@@ -149,19 +147,10 @@ async function configDatabase(
     bigNumberStrings: true,
     connectTimeout: 60 * 60 * 1000
   };
-console.log(server.config)
+
   if (server.config.azureAuthOptions?.azureAuthEnabled) {
-    console.log('WE ARE HERE')
     const authService = new AzureAuthService();
-    await authService.init(server.config.authId)
-
-    const options = getEntraOptions(config, { signal: 0 })
-
-    const authentication = await authService.auth(server.config.azureAuthOptions.azureAuthType, options);
-    config.password = authentication.options.token
-    config.ssl = {}
-
-    return config;
+    return authService.configDB(server, config)
   }
 
   if (server.config.socketPathEnabled) {
@@ -321,11 +310,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async connect() {
     await super.connect();
-    console.log(this.server, this.database)
-    console.log('--------------------------')
     const dbConfig = await configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
-
     this.conn = {
       pool: mysql.createPool(dbConfig),
     };

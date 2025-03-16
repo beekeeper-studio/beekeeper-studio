@@ -96,6 +96,7 @@ nav:
       - user_guide/connecting/firebird.md
       - user_guide/connecting/duckdb.md
       - user_guide/connecting/mongodb.md
+      - user_guide/connected/azure-entraid.md
   - User Guide:
     - user_guide/using-the-sql-editor.md
     - user_guide/editing-data.md

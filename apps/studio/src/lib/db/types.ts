@@ -50,7 +50,8 @@ export enum AzureAuthType {
   Password,
   AccessToken,
   MSIVM,
-  ServicePrincipalSecret
+  ServicePrincipalSecret,
+  CLI
 }
 
 export const IamAuthTypes = [
@@ -65,7 +66,8 @@ export const AzureAuthTypes = [
   { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
   // This may be reactivated when we move to client server architecture
   // { name: 'MSI VM', value: AzureAuthType.MSIVM },
-  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
+  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret },
+  { name: 'Azure CLI Authentication', value: AzureAuthType.CLI }
 ];
 
 export interface RedshiftOptions {

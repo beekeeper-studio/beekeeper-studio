@@ -49,7 +49,7 @@
           name="user"
           type="text"
           class="form-control"
-          v-model="config.username"
+          v-model="username"
         >
       </div>
       <div class="form-group" v-show="showPassword">
@@ -105,7 +105,7 @@
 import {AzureAuthType} from "@/lib/db/types";
 
 export default {
-  props: ['config'],
+  props: ['config', 'authType'],
   data() {
     return {
       azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled
@@ -123,8 +123,17 @@ export default {
     //   const { redshiftOptions } = this.config
     //   return redshiftOptions?.authType && redshiftOptions.authType.includes('file')
     // }
+    username: {
+      get() {
+        return this.config.username || this.config.user;
+      },
+      set(value) {
+        this.config.username = value;
+        this.config.user = value;
+      }
+    },
     showUser() {
-      return [AzureAuthType.Password].includes(this.authType)
+      return [AzureAuthType.Password].includes(this.authType) || [AzureAuthType.CLI].includes(this.authType)
     },
     showPassword() {
       return [AzureAuthType.Password].includes(this.authType)

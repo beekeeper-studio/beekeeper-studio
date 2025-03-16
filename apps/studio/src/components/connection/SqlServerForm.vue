@@ -209,7 +209,7 @@
     computed: {
       ...mapState(['connection']),
       showUser() {
-        return [AzureAuthType.Password].includes(this.authType)
+        return [AzureAuthType.Password].includes(this.authType) || [AzureAuthType.CLI].includes(this.authType)
       },
       showPassword() {
         return [AzureAuthType.Password].includes(this.authType)

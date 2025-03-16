@@ -37,7 +37,7 @@
     </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
-    <common-entra-id v-show="azureAuthEnabled" :config="config" />
+    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
   </div>
 </template>
 
@@ -63,7 +63,7 @@ export default {
       azureAuthEnabled: !!this.config?.azureAuthOptions?.azureAuthEnabled,
       iamAuthenticationEnabled: !!this.config.redshiftOptions?.iamAuthenticationEnabled,
       authType: this.config.redshiftOptions?.authType || this.config.azureAuthOptions?.azureAuthType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes],
+      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes.filter(auth => auth.value === AzureAuthType.CLI)],
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
@@ -72,8 +72,6 @@ export default {
   computed: {
     ...mapGetters(['isCommunity']),
     showServerInputs() {
-      console.log(this.azureAuthEnabled)
-      console.log(this.iamAuthenticationEnabled)
       return !this.azureAuthEnabled && !this.iamAuthenticationEnabled
     }
   },
@@ -82,6 +80,7 @@ export default {
       console.log("Auth type changed", this.authType, 'community?', this.$config.isCommunity)
       if (this.authType === 'default') {
         this.iamAuthenticationEnabled = false
+        this.azureAuthEnabled = false
       } else {
         if (this.isCommunity) {
           // we want to display a modal
@@ -90,13 +89,13 @@ export default {
         } else {
           this.config.redshiftOptions.authType = this.authType
           this.config.azureAuthOptions.azureAuthType = this.authType
-          this.azureAuthEnabled = this.authType === AzureAuthType.AccessToken
+          this.azureAuthEnabled = this.authType === AzureAuthType.CLI
           this.iamAuthenticationEnabled = typeof this.authType === 'string' && this.authType.includes('iam')
         }
       }
 
       const authId = this.config.azureAuthOptions?.authId || this.config?.authId
-      if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
+      if (this.authType === AzureAuthType.CLI && !_.isNil(authId)) {
         this.accountName = await this.connection.azureGetAccountName(authId);
       } else {
         this.accountName = null
