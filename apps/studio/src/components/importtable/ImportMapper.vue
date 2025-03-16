@@ -441,8 +441,8 @@ export default {
           await this.$store.dispatch('updateTableColumns', this.getTable({ schema, name: this.newTableName }))
           importOptions.table = this.getTable({ schema, name: this.newTableName })
         } catch (err) {
-          console.error(err)
-          return
+          this.$noty.error(err.message)
+          throw new Error(err)
         }
       }
       
