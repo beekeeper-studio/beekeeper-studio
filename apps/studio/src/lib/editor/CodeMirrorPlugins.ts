@@ -129,44 +129,13 @@ export function autocompleteHandler(
   //    - from, join
   const triggerWords = ["from", "join"];
   const triggers = {
-    "190": "period",
+    "Period": "period",
   };
-  const space = 32;
-  const backspace = 8;
-  const delete_key = 46;
-  const z_key = 90;
-  // const underscore = 189
 
   if (instance.state.completionActive) return;
   
-  // Handle Ctrl+Z/Cmd+Z undo operation
-  if (e.keyCode === z_key && (e.ctrlKey || e.metaKey)) {
-    // Don't return immediately, let the event propagate
-    // Delay execution to wait for undo operation to complete
-    setTimeout(() => {
-      // Get context at current cursor position
-      const cursor = instance.getCursor();
-      const line = instance.getLine(cursor.line);
-      
-      // Check if we're in a table name selection context (after FROM or JOIN)
-      const lineUntilCursor = line.substring(0, cursor.ch);
-      // More precise regex to match table name part after FROM or JOIN
-      const fromRegex = /\b(from|join)\s+[\w\d_."]*$/i;
-      
-      if (fromRegex.test(lineUntilCursor)) {
-        if (!instance.state.completionActive) {
-          // eslint-disable-next-line
-          // @ts-ignore
-          CodeMirror.commands.autocomplete(instance, null, {
-            completeSingle: false,
-          });
-        }
-      }
-    }, 100); // Add delay to ensure undo operation completes
-  }
-  
   // Handle delete and backspace keys
-  if (e.keyCode === backspace || e.keyCode === delete_key) {
+  if (e.key === "Backspace" || e.key === "Delete") {
     // Get context at current cursor position
     const cursor = instance.getCursor();
     const line = instance.getLine(cursor.line);
@@ -186,14 +155,14 @@ export function autocompleteHandler(
     }
     return;
   }
-  if (triggers[e.keyCode]) {
+  if (triggers[e.code]) {
     // eslint-disable-next-line
     // @ts-ignore
     CodeMirror.commands.autocomplete(instance, null, {
       completeSingle: false,
     });
   }
-  if (e.keyCode === space) {
+  if (e.code === "Space") {
     try {
       const pos = _.clone(instance.getCursor());
       if (pos.ch > 0) {
