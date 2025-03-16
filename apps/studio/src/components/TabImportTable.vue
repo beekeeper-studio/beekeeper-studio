@@ -221,7 +221,7 @@
       },
       tableName () {
         const schema = this.importTable?.schema ? `${this.importTable?.schema}.` : ''
-        return `${schema}${this.importTable?.table}`
+        return `${schema}${this.importTable?.name}`
       },
       dialectTitle () {
         return DialectTitles[this.dialect]

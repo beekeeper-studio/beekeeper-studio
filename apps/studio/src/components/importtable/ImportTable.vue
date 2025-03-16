@@ -2,9 +2,9 @@
   <section class="import-section-wrapper schema-builder">
     <div class="card-flat padding">
       <h3 class="card-title">
-        Select or Create Table
+        Create Table
       </h3>
-      <div class="card-flat table-switch">
+      <div class="table-switch">
         <label for="createTableSwitch">
           Create Table from Import File
         </label>
@@ -14,6 +14,14 @@
           :toggled="createTableFromFile"
         />
       </div>
+    </div>
+    <h3 class="card-title decision-break">
+      OR
+    </h3>
+    <div class="card-flat padding">
+      <h3 class="card-title">
+        Select Table
+      </h3>
       <form>
         <toggle-form-area
           v-for="(schemaTable, index) in this.schemaTables" :key="index"
@@ -186,5 +194,10 @@ export default {
     label {
       padding-right: 1rem;
     }
+  }
+
+  .card-title.decision-break {
+    margin: 1rem 0;
+    text-align: center;
   }
 </style>
