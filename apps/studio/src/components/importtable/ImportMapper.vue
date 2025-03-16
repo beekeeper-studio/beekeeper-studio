@@ -55,7 +55,8 @@
       type="button"
       @click.prevent="$emit('finish')"
     >
-      <span>Create Table and Review Import</span>
+      <span v-if="createTable">Create Table and Review Import</span>
+      <span v-else>Map Columns and Review Import</span>
       <span class="material-icons">
         keyboard_arrow_right
       </span>

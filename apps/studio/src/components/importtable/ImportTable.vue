@@ -19,8 +19,11 @@
       OR
     </h3>
     <div class="card-flat padding">
-      <h3 class="card-title">
-        Select Table
+      <h3 class="card-title" v-if="selectedTable">
+        Selected Table: {{ selectedTableName }}
+      </h3>
+      <h3 class="card-title" v-else>
+        Select Table 
       </h3>
       <form>
         <toggle-form-area
@@ -80,6 +83,9 @@ export default {
       if (this.schemaTables == null) return false
 
       return this.schemaTables.length === 1
+    },
+    selectedTableName() {
+      return this.selectedTable == null ? '' : this.selectedTable.replace('==|==', '.')
     }
   },
   methods: {
