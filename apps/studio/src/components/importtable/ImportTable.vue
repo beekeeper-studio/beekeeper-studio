@@ -26,6 +26,7 @@
         <toggle-form-area
           v-for="(schemaTable, index) in this.schemaTables" :key="index"
           :title="schemaTable.schema ?? 'Select Table'"
+          :expanded="isOnlySchema"
         >
           <template v-slot:default>
             <div class="import-table-form">
@@ -75,6 +76,12 @@ export default {
     ...mapGetters(['schemaTables']),
     ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
+    isOnlySchema() {
+      console.log(this.schemaTables)
+      if (this.schemaTables == null) return false
+
+      return this.schemaTables.length === 1
+    }
   },
   methods: {
     buildTableHTMLId(title, index){
