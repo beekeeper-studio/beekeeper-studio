@@ -416,6 +416,9 @@ const store = new Vuex.Store<State>({
         const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
       }
+      if (context.getters.isCommunity) {
+        title += ' - Free Version'
+      }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
     },
