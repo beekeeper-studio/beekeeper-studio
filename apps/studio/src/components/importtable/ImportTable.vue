@@ -4,34 +4,38 @@
       <h3 class="card-title">
         Select or Create Table
       </h3>
-      <div>
-        <form v-for="(schemaTable, index) in this.schemaTables" :key="index">
-          <p>{{ schemaTable.schema ?? '' }}</p>
-          <div class="import-table-form">
-            <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex">
-              <label>
+      <div class="card-flat table-switch">
+        <label for="createTableSwitch">
+          Create Table from Import File
+        </label>
+        <x-switch
+          id="createTableSwitch"
+          @click.prevent="updateTableSwitch"
+          :toggled="createTableFromFile"
+        />
+      </div>
+      <form>
+        <toggle-form-area
+          v-for="(schemaTable, index) in this.schemaTables" :key="index"
+          :title="schemaTable.schema ?? 'Select Table'"
+        >
+          <template v-slot:default>
+            <div class="import-table-form">
+              <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex">
                 <input
+                  :id="buildTableHTMLId('table', tIndex)"
                   type="radio"
                   :value="tableKeyByMatrix({ schema: schemaTable.schema, name: tableData.name })"
                   v-model="selectedTable"
                 >
-                {{ tableData.name }}
-              </label>
+                <label :for="buildTableHTMLId('table', tIndex)">{{ tableData.name }}</label>
+              </div>
             </div>
-          </div>
-        </form>
-      </div>
+          </template>
+        </toggle-form-area>
+      </form>
     </div>
-    <div class="card-flat padding table-switch">
-      <label for="createTableSwitch">
-        Create Table from Import File
-      </label>
-      <x-switch
-        id="createTableSwitch"
-        @click.prevent="updateTableSwitch"
-        :toggled="createTableFromFile"
-      />
-    </div>
+    </form>
   </section>
 </template>
 
@@ -40,7 +44,7 @@ import { mapGetters, mapState } from 'vuex'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 export default {
   components: {
-    
+    ToggleFormArea
   },
   props: {
     stepperProps: {
@@ -65,6 +69,9 @@ export default {
     ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
   },
   methods: {
+    buildTableHTMLId(title, index){
+      return `${title}-${index}`
+    },
     updateTableSwitch() {
       this.createTableFromFile = !this.createTableFromFile
       if (this.createTableFromFile) this.selectedTable = null
@@ -162,10 +169,14 @@ export default {
     justify-content: space-between;
     flex-wrap: wrap;
     div {
-      width: 33%;
+      width: 50%;
       display: flex;
-      align-items: center;
+      align-items: start;
       padding-bottom:.5rem;
+      label {
+        display: block;
+        word-break: break-all;
+      }
     }
   }
 

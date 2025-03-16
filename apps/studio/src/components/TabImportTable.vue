@@ -174,8 +174,6 @@
             title: 'Select/Create Table',
             icon: 'grid_on',
             stepperProps: {
-              schema: this.schema,
-              table: this.table,
               tabId: this.tab.id
             },
             completed: false,
@@ -188,8 +186,6 @@
             title: 'Map to Table',
             icon: 'settings',
             stepperProps: {
-              schema: this.schema,
-              table: this.table,
               tabId: this.tab.id
             },
             completed: false,
@@ -203,8 +199,6 @@
             title: 'Review & Execute',
             icon: 'check',
             stepperProps: {
-              schema: this.schema,
-              table: this.table,
               tabId: this.tab.id
             },
             completed: false,

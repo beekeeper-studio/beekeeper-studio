@@ -234,7 +234,8 @@ export default {
       ]
     },
     simpleTableName() {
-      return this.newTableSchema ? `${this.newTableSchema}.${this.newTableName}` : this.newTableName
+      const schema = this.newTableSchema ?? this.defaultSchema
+      return schema ? `${schema}.${this.newTableName}` : this.newTableName
     }
   },
   methods: {
@@ -305,7 +306,6 @@ export default {
     },
     async createTableData(importedColumns) {
       const response = await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId })
-      console.log(response)
 
       return response.map(resp => (
         {
@@ -381,7 +381,7 @@ export default {
         }))
       return {
         name: this.newTableName,
-        schema: this.newTableSchema,
+        schema: this.newTableSchema ?? this.defaultSchema,
         columns
       }
     },
@@ -430,6 +430,7 @@ export default {
 
       if (this.createTable) {
         try {
+          const schema = this.newTableSchema ?? this.defaultSchema
           const sql = await this.createNewTable()
           const runningQuery = await this.connection.query(sql)
           // spinner start
@@ -437,10 +438,10 @@ export default {
           this.$noty.success(`${this.simpleTableName} created`)
           await this.$store.dispatch('updateTables')
           // end spinner
-          await this.$store.dispatch('updateTableColumns', this.getTable({ schema: this.newTableSchema, name: this.newTableName }))
-          importOptions.table = this.getTable({ schema: this.newTableSchema, name: this.newTableName })
+          await this.$store.dispatch('updateTableColumns', this.getTable({ schema, name: this.newTableName }))
+          importOptions.table = this.getTable({ schema, name: this.newTableName })
         } catch (err) {
-          console.log(err)
+          console.error(err)
           return
         }
       }
