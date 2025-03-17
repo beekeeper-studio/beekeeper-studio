@@ -1,14 +1,11 @@
 import CodeMirror from "codemirror";
-
 (function(mod) {
   mod(CodeMirror);
 })(function(CodeMirror) {
   "use strict";
   var Pos = CodeMirror.Pos;
-  console.log('REGISTERING HELPER')
 
-  CodeMirror.registerHelper("hint", "mongo", async function(editor, options) {
-    console.log('RUNNING AUTOCOMPLETE')
+  CodeMirror.registerHelper("hint", "javascript", async function(editor, options) {
     const promptLine = options?.promptLine;
     const promptSymbol = options?.promptSymbol;
     const connection = options?.connection;
@@ -24,7 +21,7 @@ import CodeMirror from "codemirror";
     const completions = await connection.getCompletions(cmd);
 
     const list = completions.map((c) => {
-      return { text: w, className: "CodeMirror-hint-table"}
+      return { text: c, className: "CodeMirror-hint-table"}
     })
 
     return { list, from: Pos(promptLine, promptSymbol.length), to: Pos(lastLineNum, Infinity) }

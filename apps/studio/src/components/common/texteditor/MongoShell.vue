@@ -57,7 +57,7 @@ export default {
     },
     hint() {
       // @ts-expect-error not fully typed
-      return CodeMirror.hint.mongo;
+      return CodeMirror.hint.javascript;
     },
     plugins() {
       return [plugins.autoComplete];
