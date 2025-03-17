@@ -92,7 +92,7 @@
           return [
             ...copyActionsMenu({
               ranges: column.getRanges(),
-              table: 'mytable',
+              table: this.result.tableName,
               schema: this.defaultSchema,
             }),
             { separator: true },
@@ -197,6 +197,8 @@
           this.tabulator.destroy()
         }
         this.tabulator = tabulatorForTableData(this.$refs.tabulator, {
+          table: this.result.tableName,
+          schema: this.result.schema,
           persistenceID: this.tableId,
           data: this.tableData, //link data to table
           columns: this.tableColumns, //define table columns

@@ -16,7 +16,7 @@
     >
     <div
       class="input-group-append"
-      :class="{ 'not-last': hasOtherActions }"
+      :class="{ 'not-last': hasOtherActions || showCreateButton }"
       @click.prevent.stop="openFilePickerDialog"
     >
       <a
@@ -24,6 +24,18 @@
         class="btn btn-flat"
         :class="{disabled}"
       >{{ buttonText }}</a>
+    </div>
+    <div
+      v-if="showCreateButton"
+      class="input-group-append"
+    >
+      <a
+        type="button"
+        class="btn btn-flat"
+        @click="openFilePickerDialog({ save: true })"
+      >
+        Create
+      </a>
     </div>
     <slot name="actions" />
   </div>
@@ -78,7 +90,7 @@ export default {
       type: Boolean,
       default: false,
     },
-    openFileOrFolder: {
+    showCreateButton: {
       type: Boolean,
       default: false,
     },
@@ -101,7 +113,7 @@ export default {
     }
   },
   methods: {
-    async openFilePickerDialog() {
+    async openFilePickerDialog(options = {}) {
       if(this.disabled) {
         return
       }
@@ -122,14 +134,8 @@ export default {
         dialogConfig.properties.push('multiSelections')
       }
 
-      if (this.openFileOrFolder) {
-        // On Windows and Linux an open dialog can not be both a file selector
-        // and a directory selector.
-        dialogConfig.properties.push('openDirectory')
-      }
-
       let files
-      if (this.save) {
+      if (options.save ?? this.save) {
         files = [ this.$native.dialog.showSaveDialogSync({
           ...dialogConfig,
           ...this.options

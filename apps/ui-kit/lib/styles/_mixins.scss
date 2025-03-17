@@ -1,0 +1,137 @@
+@use "variables" as *;
+
+@mixin layout-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin card-shadow-hover {
+  box-shadow: 0 0 0 1px rgba(black, 0.06),
+    0 1px 2px rgba(black, 0.08),
+    0 6px 15px rgba(black, 0.12);
+}
+
+
+@mixin card-shadow {
+  box-shadow: 0 0 0 1px rgba(black, 0.06),
+    0 1px 3px 0 rgba(black, 0.12),
+    0 2px 1px -1px rgba(black, 0.08);
+  transition: box-shadow 0.28s ease-in-out;
+}
+
+@mixin dropdown-shadow {
+  box-shadow: 0 1px 4px rgba(black, 0.37) !important;
+}
+
+
+@mixin btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: $input-height;
+  height: $input-height;
+  font-weight: 700;
+  outline: 0;
+  border: 0;
+  padding: 0 1rem;
+  min-width: 88px;
+  box-shadow: inset 0 0 0 1px rgba(white, 0.025);
+  border-radius: $btn-border-radius;
+  transition: background 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    font-weight: 700;
+    outline: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline-style: solid;
+    outline-offset: 0.14rem;
+    outline-width: 2px;
+    outline-color: $theme-base;
+  }
+
+  &.btn-icon {
+    display: flex;
+    align-items: center;
+
+    i {
+      font-size: 1rem;
+      margin-left: -3px;
+    }
+  }
+}
+
+@mixin form-control {
+  position: relative;
+  display: flex;
+  height: $input-height;
+  padding: 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: normal;
+  line-height: $input-height;
+  color: $text;
+  background: transparent;
+  border-radius: $input-radius;
+  border: 1px solid $border-color;
+  outline: none;
+  box-shadow: none;
+  width: 100%;
+  transition: border-color 0.15s ease-in-out;
+}
+
+@mixin bk-form-input {
+  @include form-control;
+  &:focus {
+    border-color: $input-highlight;
+  }
+}
+
+@mixin btn-flat {
+  color: $theme-base;
+  background: rgba($theme-base, 0.06);
+  &:hover, &:focus {
+    background: rgba($theme-base, 0.12);
+  }
+}
+
+@mixin btn-small {
+  font-size: 0.85rem;
+  padding: 0 .65rem;
+  min-width: 0;
+  height: 24px;
+  line-height: 24px;
+  border-radius: $btn-border-radius-small;
+  x-label {
+    line-height: 24px;
+  }
+}
+
+@mixin noselect {
+        -ms-user-select: none;
+    -webkit-user-select: none;
+            user-select: none;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@mixin small-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 550px;
+  // max-height: -webkit-fill-available;
+}

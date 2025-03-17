@@ -135,7 +135,7 @@ export default Vue.extend({
     ...mapState(['tables', 'connection']),
     ...mapGetters(['schemas', 'dialect', 'schemaTables', 'dialectData']),
     enabled() {
-      return !this.dialectData.disabledFeatures?.alter?.everything
+      return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData?.disabledFeatures?.relations;
     },
     hotkeys() {
       if (!this.active) return {}

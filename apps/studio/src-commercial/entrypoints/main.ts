@@ -114,11 +114,14 @@ let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
 let initialized = false
 
 async function initBasics() {
   // this creates the app:// protocol we use for loading assets
   ProtocolBuilder.createAppProtocol()
+  // this creates the plugin:// protocol we use for loading plugins
+  ProtocolBuilder.createPluginProtocol()
   if (initialized) return settings
   initialized = true
   await ormConnection.connect()
@@ -198,7 +201,7 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
 
-      installExtension(VUEJS_DEVTOOLS)
+      installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
         .then((name) => console.log(`Added Extension:  ${name}`))
         .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because

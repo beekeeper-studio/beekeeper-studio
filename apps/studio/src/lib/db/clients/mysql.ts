@@ -658,11 +658,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     chunkSize: number,
     _schema?: string
   ): Promise<StreamResults> {
-    const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
+    const { countQuery, query, params } = buildSelectTopQuery(table, null, null, orderBy, filters);
     const columns = await this.listTableColumns(table);
-    const rowCount = await this.driverExecuteSingle(qs.countQuery);
-    // TODO: DEBUG HERE
-    const { query, params } = qs;
+    const rowCount = await this.driverExecuteSingle(countQuery, { params });
 
     return {
       totalRows: Number(rowCount.rows[0].total),
@@ -786,7 +784,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     databaseName: string,
     charset: string,
     collation: string
-  ): Promise<void> {
+  ): Promise<string> {
     const sql = `
       create database ${this.wrapIdentifier(databaseName)}
         character set ${this.wrapIdentifier(charset)}
@@ -794,6 +792,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     `;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {
@@ -833,7 +832,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         undefined,
         connection
       );
-      const command = buildInsertQuery(this.knex, insert, columns);
+      const command = buildInsertQuery(this.knex, insert, { columns });
       await this.driverExecuteSingle(command, { connection });
     }
     return true;

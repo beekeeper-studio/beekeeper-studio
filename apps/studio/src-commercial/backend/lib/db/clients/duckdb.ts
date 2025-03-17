@@ -40,6 +40,7 @@ import {
   TableColumn,
   BksField,
   BksFieldType,
+  DatabaseEntity,
 } from "@/lib/db/models";
 import { joinFilters } from "@/common/utils";
 import { DuckDBCursor } from "./duckdb/DuckDBCursor";
@@ -205,6 +206,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     this.dialect = "generic";
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.databasePath = database?.database;
+    this.createUpsertFunc = this.createUpsertSQL;
   }
 
   getBuilder(table: string, schema: string): ChangeBuilderBase {
@@ -520,7 +522,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return rows.map((row) => row.schema_name as string);
   }
 
-  async getTableReferences(_table: string, _schema: string): Promise<string[]> {
+  async getTableReferences(table: string, schema: string): Promise<string[]> {
     const { rows } = await this.driverExecuteSingle(`
       WITH cte AS (
         SELECT rc.unique_constraint_name AS unique_constraint_name
@@ -530,14 +532,14 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         JOIN information_schema.table_constraints tc
           ON rc.constraint_name = tc.constraint_name
         WHERE tc.constraint_type = 'FOREIGN KEY'
-          AND tc.table_schema = 'main'
-          AND tc.table_name = 'dept_emp'
+          AND tc.table_schema = ?
+          AND tc.table_name = ?
       )
       SELECT kc.table_name
       FROM cte
       JOIN information_schema.key_column_usage kc
         ON cte.unique_constraint_name = kc.constraint_name
-    `);
+    `, { params: [schema || await this.defaultSchema(), table] });
     return rows.map((row) => row.table_name as string);
   }
 
@@ -733,8 +735,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     databaseName: string,
     _charset: string,
     _collation: string
-  ): Promise<void> {
+  ): Promise<string> {
+    databaseName = databaseName.trimEnd();
+    if (!databaseName.endsWith(".duckdb")) {
+      databaseName += ".duckdb";
+    }
     await Database.create(databaseName);
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {
@@ -1050,6 +1057,14 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   ): Promise<void> {
     const query = await this.duplicateTableSql(tableName, duplicateTableName, schema);
     await this.driverExecuteSingle(query);
+  }
+
+  // took this approach because Typescript wasn't liking the base function could be a null value or a function
+  createUpsertSQL({ name: tableName }: DatabaseEntity, data: {[key: string]: any}[]): string {
+    const [firstObj] = data
+    const columns = Object.keys(firstObj)
+    const values = data.map(d => `(${columns.map(c => `'${d[c]}'`).join()})`).join()
+    return `INSERT OR REPLACE \`${tableName}\`, (${columns.map(cpk => `\`${cpk}\``).join(', ')}) VALUES ${values}`.trim()
   }
 
   async duplicateTableSql(
