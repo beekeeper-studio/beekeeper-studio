@@ -347,6 +347,7 @@ export default Vue.extend({
         this.$noty.success("Indexes Updated")
         this.$emit('actionCompleted')
         this.clearChanges()
+        this.error = null
         // this.$nextTick(() => this.initializeTabulator())
       } catch (ex) {
         log.error('submitting index error', ex)
@@ -361,6 +362,7 @@ export default Vue.extend({
         const payload = this.getPayload()
         const sql = await this.connection.alterIndexSql(payload)
         const formatted = format(sql, { language: FormatterDialect(this.dialect)})
+        this.error = null
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch (e) {
         this.error = e
