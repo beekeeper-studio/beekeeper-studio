@@ -63,7 +63,7 @@ export default {
     },
     foldGutter: Boolean,
     removeJsonRootBrackets: Boolean,
-    forceInitizalize: null,
+    forceInitialize: null,
     bookmarks: Array,
     foldAll: null,
     unfoldAll: null,
@@ -146,7 +146,7 @@ export default {
       this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
-    forceInitizalize() {
+    forceInitialize() {
       this.initialize();
     },
     keymap() {
