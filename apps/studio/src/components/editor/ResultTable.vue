@@ -19,7 +19,6 @@
   import { dialectFor } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
-  import globals from '@/common/globals'
   import Papa from 'papaparse'
   import { mapState, mapGetters } from 'vuex'
   import { markdownTable } from 'markdown-table'
@@ -68,9 +67,9 @@
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
       ...mapGetters(['isUltimate']),
       keymap() {
-        const result = {}
-        result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-        return result
+        return this.$vHotkeyKeymap({
+          'queryEditor.copyResultSelection': this.copySelection.bind(this),
+        });
       },
       tableData() {
           return this.dataToTableData(this.result, this.tableColumns)
@@ -79,7 +78,7 @@
           return this.result.truncated
       },
       tableColumns() {
-        const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
+        const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
         const cellMenu = (_e, cell) => {
           return copyActionsMenu({
@@ -93,7 +92,7 @@
           return [
             ...copyActionsMenu({
               ranges: column.getRanges(),
-              table: 'mytable',
+              table: this.result.tableName,
               schema: this.defaultSchema,
             }),
             { separator: true },
@@ -133,7 +132,7 @@
             width: columnWidth,
             mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
             formatter: this.cellFormatter,
-            maxInitialWidth: globals.maxColumnWidth,
+            maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
             tooltip: this.cellTooltip,
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,
@@ -198,6 +197,8 @@
           this.tabulator.destroy()
         }
         this.tabulator = tabulatorForTableData(this.$refs.tabulator, {
+          table: this.result.tableName,
+          schema: this.result.schema,
           persistenceID: this.tableId,
           data: this.tableData, //link data to table
           columns: this.tableColumns, //define table columns

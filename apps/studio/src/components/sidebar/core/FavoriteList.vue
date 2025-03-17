@@ -16,7 +16,10 @@
                   <x-menuitem @click.prevent="importFromComputer">
                     <x-label>Import .sql files into Saved Queries</x-label>
                   </x-menuitem>
-                  <x-menuitem @click.prevent="importFromLocal">
+                  <x-menuitem
+                    v-if="isCloud"
+                    @click.prevent="importFromLocal"
+                  >
                     <x-label>Import from local workspace</x-label>
                     <i
                       v-if="$store.getters.isCommunity"

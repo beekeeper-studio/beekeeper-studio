@@ -287,6 +287,21 @@ export function buildSelectQueriesFromUpdates(knex, updates: TableUpdate[]) {
   })
 }
 
+interface Releasable {
+  release: () => Promise<any>
+}
+
+export async function withReleasable<T>(item: Releasable, func: (x: Releasable) => Promise<T>) {
+  try {
+    return await func(item)
+  } finally {
+    if (item) {
+      await item.release()
+    }
+  }
+}
+
+
 export async function withClosable<T>(item, func): Promise<T> {
   try {
     return await func(item)
