@@ -837,7 +837,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
 
       const filePath = this.$native.dialog.showSaveDialogSync({
         title: "Export Query",
-        defaultPath: await window.main.getLastExportPath(`${safeFilename}.sql`),
+        defaultPath: `${safeFilename}.sql`,
         filters: [
           { name: 'SQL (*.sql)', extensions: ['sql'] },
           { name: 'All Files (*.*)', extensions: ['*'] },
