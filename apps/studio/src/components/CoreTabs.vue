@@ -404,6 +404,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         'ctrl+shift+T': this.reopenLastClosedTab,
         'ctrl+tab': this.nextTab,
         'ctrl+shift+tab': this.previousTab,
+        "ctrl+pageup": this.previousTab,
+        "ctrl+pagedown": this.nextTab,
         'alt+1': this.handleAltNumberKeyPress,
         'alt+2': this.handleAltNumberKeyPress,
         'alt+3': this.handleAltNumberKeyPress,

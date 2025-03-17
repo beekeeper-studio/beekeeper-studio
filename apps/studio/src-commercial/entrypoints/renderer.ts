@@ -116,7 +116,10 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
 
 
     Vue.config.productionTip = false
-    Vue.use(VueHotkey)
+    Vue.use(VueHotkey, {
+      "pageup": 33,
+      "pagedown": 34
+    })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)
