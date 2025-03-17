@@ -398,27 +398,26 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       return _.indexOf(this.tabItems, this.activeTab)
     },
     keymap() {
-      const result = {
-        'ctrl+shift+t': this.reopenLastClosedTab,
-        'ctrl+tab': this.nextTab,
-        'ctrl+shift+tab': this.previousTab,
-        'alt+1': this.handleAltNumberKeyPress,
-        'alt+2': this.handleAltNumberKeyPress,
-        'alt+3': this.handleAltNumberKeyPress,
-        'alt+4': this.handleAltNumberKeyPress,
-        'alt+5': this.handleAltNumberKeyPress,
-        'alt+6': this.handleAltNumberKeyPress,
-        'alt+7': this.handleAltNumberKeyPress,
-        'alt+8': this.handleAltNumberKeyPress,
-        'alt+9': this.handleAltNumberKeyPress,
-      }
-
+      const result = this.$vHotkeyKeymap({
+        'tab.nextTab': this.nextTab,
+        'tab.previousTab': this.previousTab,
+        'tab.reopenLastClosedTab': this.reopenLastClosedTab,
+        'tab.switchTab1': this.handleSwitchTab.bind(this, 0),
+        'tab.switchTab2': this.handleSwitchTab.bind(this, 1),
+        'tab.switchTab3': this.handleSwitchTab.bind(this, 2),
+        'tab.switchTab4': this.handleSwitchTab.bind(this, 3),
+        'tab.switchTab5': this.handleSwitchTab.bind(this, 4),
+        'tab.switchTab6': this.handleSwitchTab.bind(this, 5),
+        'tab.switchTab7': this.handleSwitchTab.bind(this, 6),
+        'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
+        'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
+      })
+      // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
         result['meta+shift+t'] = this.reopenLastClosedTab
         result['shift+meta+['] = this.previousTab
         result['shift+meta+]'] = this.nextTab
       }
-
       return result
     },
   },
@@ -929,13 +928,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       await this.setActiveTab(tab)
 
     },
-      handleAltNumberKeyPress(event) {
-      if (event.altKey) {
-        const pressedNumber = Number(event.key); // Convert keyCode to the corresponding number
-        if(pressedNumber <= this.tabItems.length) {
-          this.setActiveTab(this.tabItems[pressedNumber - 1])
-        }
-      }
+    handleSwitchTab(n: number) {
+      const tab = this.tabItems[n]
+      if(tab) this.setActiveTab(tab)
     },
     async close(tab: TransportOpenTab, options?: CloseTabOptions) {
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {

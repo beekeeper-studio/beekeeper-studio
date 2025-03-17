@@ -39,7 +39,6 @@
 <script>
 import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
-import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
 import { mapGetters, mapState } from 'vuex'
 
@@ -96,7 +95,7 @@ export default {
       columnDefaults: {
         tooltip: true,
         headerSort: true,
-        maxInitialWidth: globals.maxColumnWidthTableInfo,
+        maxInitialWidth: this.$bksConfig.ui.tableTriggers.maxColumnWidth,
       },
       placeholder: "No triggers",
       layout: 'fitColumns'
