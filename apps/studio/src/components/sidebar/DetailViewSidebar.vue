@@ -60,7 +60,7 @@
       :unfold-all="unfoldAll"
       :value="text"
       :mode="mode"
-      :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
+      :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
       :plugins="textEditorPlugins"
       :line-numbers="false"
