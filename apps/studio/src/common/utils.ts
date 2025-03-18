@@ -319,8 +319,8 @@ export function friendlyJsonObject<T extends object>(obj: T): T {
         },
         enumerable: false, // This tells js to not clone this property. Useful when we want to send this object to utility.
         }
-      }
-  )}
+      })
+   }
   
   return obj;
 }
