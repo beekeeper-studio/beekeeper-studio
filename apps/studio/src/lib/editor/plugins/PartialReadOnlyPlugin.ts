@@ -34,6 +34,8 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
     this.handleBeforeChange = this.handleBeforeChange.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleCursorActivity = this.handleCursorActivity.bind(this);
+    this.handleMouseOver = this.handleMouseOver.bind(this);
+    this.handleMouseOut = this.handleMouseOut.bind(this);
   }
 
   initialize(editor: CodeMirror.Editor) {
@@ -62,9 +64,42 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
       });
     });
 
+    // Add event listeners for hover effects on all markers
+    setTimeout(() => {
+      this.setupMarkerHoverHandlers();
+    }, 0);
+
     this.editor.on("beforeChange", this.handleBeforeChange);
     this.editor.on("change", this.handleChange);
     this.editor.on("cursorActivity", this.handleCursorActivity);
+  }
+
+  setupMarkerHoverHandlers(): void {
+    const wrapper = this.editor.getWrapperElement();
+
+    // Use event delegation for better performance
+    wrapper.addEventListener("mouseover", this.handleMouseOver);
+    wrapper.addEventListener("mouseout", this.handleMouseOut);
+  }
+
+  private handleMouseOver(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains(EDITABLE_MARKER_CLASSNAME)) {
+      const markerId = target.getAttribute(EDITABLE_MARKER_ATTR_ID);
+      if (markerId) {
+        this.highlightMarker(markerId);
+      }
+    }
+  }
+
+  private handleMouseOut(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains(EDITABLE_MARKER_CLASSNAME)) {
+      const markerId = target.getAttribute(EDITABLE_MARKER_ATTR_ID);
+      if (markerId && markerId !== this.activeMarkerId) {
+        this.unHighlightMarker(markerId);
+      }
+    }
   }
 
   destroy(): void {
@@ -73,7 +108,15 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
       this.editor.off("beforeChange", this.handleBeforeChange);
       this.editor.off("change", this.handleChange);
       this.editor.off("cursorActivity", this.handleCursorActivity);
-      this.editor.getWrapperElement().classList.remove(PARTIAL_READ_ONLY_CLASSNAME);
+
+      // Remove event listeners
+      const wrapper = this.editor.getWrapperElement();
+      wrapper.removeEventListener("mouseover", this.handleMouseOver);
+      wrapper.removeEventListener("mouseout", this.handleMouseOut);
+
+      this.editor
+        .getWrapperElement()
+        .classList.remove(PARTIAL_READ_ONLY_CLASSNAME);
     }
   }
 
@@ -102,7 +145,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
   handleChange(
     cm: CodeMirror.Editor,
     changeObj: CodeMirror.EditorChangeLinkedList
-  ){
+  ) {
     // Skip the whole process if there is no callback
     if (!this.onEditableRangeChange) {
       return;
@@ -119,7 +162,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
         this.onEditableRangeChange(range, value);
       }
     }
-  };
+  }
 
   handleCursorActivity(cm: CodeMirror.Editor) {
     const cursor = cm.getCursor();
@@ -132,7 +175,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
       activeMarkerId = this.getMarkerId(activeMarker);
       setTimeout(() => {
         this.highlightMarker(activeMarkerId);
-      })
+      });
     }
 
     if (this.activeMarkerId && this.activeMarkerId !== activeMarkerId) {
@@ -140,10 +183,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
     }
 
     this.activeMarkerId = activeMarkerId;
-        // setTimeout(() => {
-        //   this.highlightMarker(this.getMarkerId(marker));
-        // }, 0)
-  };
+  }
 
   highlightMarker(markerId: string) {
     const markerEls = this.editor
