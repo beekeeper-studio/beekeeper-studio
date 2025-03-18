@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts">
-import "codemirror/mode/javascript/javascript";
+import "@/plugins/CMMongoMode";
 import "codemirror/addon/comment/comment";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/search/search";
@@ -105,7 +105,7 @@ export default {
         options: {
           closeOnBlur: false,
         },
-        mode: 'javascript',
+        mode: 'mongo',
         hint: this.hint,
         hintOptions: this.hintOptions,
         keyMap: 'default', // figure out vim mode
@@ -203,6 +203,12 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
+@import '../../../assets/styles/app/_variables';
+ 
+.cm-s-monokai .cm-prompt {
+  color: $theme-primary;
+  font-weight: bold;
+}
 
 </style>

@@ -5,7 +5,7 @@ import CodeMirror from "codemirror";
   "use strict";
   var Pos = CodeMirror.Pos;
 
-  CodeMirror.registerHelper("hint", "javascript", async function(editor, options) {
+  CodeMirror.registerHelper("hint", "mongo", async function(editor, options) {
     const promptLine = options?.promptLine;
     const promptSymbol = options?.promptSymbol;
     const connection = options?.connection;
