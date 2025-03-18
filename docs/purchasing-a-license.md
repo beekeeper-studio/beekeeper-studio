@@ -43,4 +43,7 @@ We do not offer one-time payments for Beekeeper Studio
 
 ## NET Terms and Master Services Agreements
 
-For purchases of 20 licenses or more we support NET-30 payment terms and custom MSAs. [contact us](mailto:sales@beekeeperstudio.io) for a quote if you are interested.
+NET billing is available if you commit to 2 years of the team unlimited plan, or if you purchase an enterprise plan.
+
+
+[Contact Us](mailto:sales@beekeeperstudio.io) for more information.
