@@ -333,17 +333,19 @@
         this.tabulator.rowManager.getElement().focus();
       },
       handleRangeChange(ranges) {
-        this.selectedRowData = this.dataToJson(ranges[0].getRows()[0].getData(), true),
-        this.trigger(AppEvent.jsonViewerSidebarUpdate, {
+        this.selectedRowData = this.dataToJson(ranges[0].getRows()[0].getData(), true)
+        const data = {
           value: this.selectedRowData,
           expandablePaths: [],
-        })
+        }
+        this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
       handleTabActive() {
-        this.trigger(AppEvent.jsonViewerSidebarUpdate, {
+        const data = {
           value: this.selectedRowData,
           expandablePaths: [],
-        })
+        }
+        this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
       handleSwitchedTab(tab) {
         if (tab.id === this.tab.id) {

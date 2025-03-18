@@ -891,7 +891,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
-    async openTable({ table, filters, openDetailView }) {
+    async openTable({ table, filters }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
       tab.title = table.name
@@ -908,10 +908,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         await this.$store.dispatch('tabs/setActive', existing)
       } else {
         await this.addTab(tab)
-      }
-
-      if (openDetailView) {
-        this.$store.dispatch('toggleOpenDetailView', true)
       }
     },
     openExportModal(options) {

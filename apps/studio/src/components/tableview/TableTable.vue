@@ -33,16 +33,6 @@
           ref="table"
           class="spreadsheet-table"
         />
-        <!-- <detail-view-sidebar -->
-        <!--   :title="detailViewTitle" -->
-        <!--   :value="selectedRowData" -->
-        <!--   :data-id="selectedRowIndex" -->
-        <!--   :hidden="!openDetailView" -->
-        <!--   :expandable-paths="expandablePaths" -->
-        <!--   :reinitialize="reinitializeDetailView" -->
-        <!--   @expandPath="expandForeignKey" -->
-        <!--   @close="toggleOpenDetailView(false)" -->
-        <!-- /> -->
       </div>
       <ColumnFilterModal
         :modal-name="columnFilterModalName"
@@ -389,7 +379,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
-    ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'openDetailView']),
+    ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
     isEmpty() {
       return _.isEmpty(this.data);
     },
@@ -1021,8 +1011,9 @@ export default Vue.extend({
         {
           label: createMenuItem('See details'),
           action: () => {
-            this.toggleOpenDetailView(true)
-            this.updateDetailView({ range })
+            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+            this.trigger(AppEvent.toggleSecondarySidebar, true)
+            this.updateJsonViewer({ range })
           },
         },
       ]
@@ -1226,7 +1217,7 @@ export default Vue.extend({
       // reflect changes in the detail view
       if (this.indexRowOf(cell.getRow()) === this.selectedRowIndex) {
         cell.getRow().invalidateForeignCache(cell.getField())
-        this.updateDetailView()
+        this.updateJsonViewer()
       }
 
       // Dont handle cell edit if made on a pending insert
@@ -1689,18 +1680,10 @@ export default Vue.extend({
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
-    async toggleOpenDetailView(open?: boolean) {
-      if (typeof open === 'undefined') {
-        open = !this.openDetailView
-      }
-      this.rootToggleOpenDetailView(open)
-    },
     indexRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
-    updateDetailView(options: { range?: RangeComponent } = {}) {
-      if (!this.openDetailView) return
-
+    updateJsonViewer(options: { range?: RangeComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
@@ -1724,10 +1707,12 @@ export default Vue.extend({
         }))
       this.expandablePaths.push(...cachedExpandablePaths)
 
-      this.trigger(AppEvent.jsonViewerSidebarUpdate, {
+      const updatedData = {
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
-      })
+      }
+
+      this.trigger(AppEvent.updateJsonViewerSidebar, updatedData)
     },
     exportTable() {
       this.trigger(AppEvent.beginExport, { table: this.table })
@@ -1825,13 +1810,16 @@ export default Vue.extend({
       this.expandablePaths = filteredExpandablePaths
       this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
 
-      this.trigger(AppEvent.jsonViewerSidebarUpdate, {
+      const data = {
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
-      })
+      }
+
+      this.trigger(AppEvent.updateJsonViewerSidebar, data)
     },
     handleRangeChange(ranges: RangeComponent[]) {
-      this.updateDetailView({ range: ranges[0] })
+      console.log('momo range', ranges)
+      this.updateJsonViewer({ range: ranges[0] })
     },
     handleSwitchedTab(tab) {
       if (tab === this.tab) {
@@ -1841,10 +1829,11 @@ export default Vue.extend({
       }
     },
     handleTabActive() {
-      this.trigger(AppEvent.jsonViewerSidebarUpdate, {
+      const data = {
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
-      })
+      }
+      this.trigger(AppEvent.updateJsonViewerSidebar, data)
       this.registerHandlers([
         {
           event: AppEvent.jsonViewerSidebarExpandPath,
@@ -1863,9 +1852,6 @@ export default Vue.extend({
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
     }, 300),
-    ...mapActions({
-      rootToggleOpenDetailView: "toggleOpenDetailView",
-    }),
   }
 });
 </script>

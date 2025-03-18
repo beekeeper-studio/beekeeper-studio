@@ -2,7 +2,7 @@
   <json-viewer
     :value="value"
     :data-id="dataId"
-    :hidden="!openDetailView"
+    :hidden="hidden"
     :expandable-paths="expandablePaths"
     :reinitialize="reinitializeJsonViewer"
     @expandPath="handleExpandPath"
@@ -11,13 +11,18 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapGetters, mapActions } from "vuex";
 import JsonViewer from "./JsonViewer.vue";
 import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
   name: "JsonViewerSidebar",
   components: { JsonViewer },
+  props: {
+    hidden: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       value: {},
@@ -25,7 +30,6 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapGetters(["openDetailView"]),
     jsonViewerTitle() {
       return "JSON Viewer";
     },
@@ -37,13 +41,12 @@ export default Vue.extend({
     },
     rootBindings() {
       return [
-        { event: AppEvent.jsonViewerSidebarUpdate, handler: this.update },
+        { event: AppEvent.updateJsonViewerSidebar, handler: this.update },
         { event: AppEvent.switchingTab, handler: this.handleSwitchingTab },
       ]
     },
   },
   methods: {
-    ...mapActions(["toggleOpenDetailView"]),
     handleExpandPath(expandablePaths: string[]) {
       this.trigger(AppEvent.jsonViewerSidebarExpandPath, expandablePaths)
     },

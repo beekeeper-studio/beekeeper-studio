@@ -34,6 +34,7 @@ import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
+import { SecondarySidebarModule } from './modules/SecondarySidebarModule'
 
 
 const log = RawLog.scope('store/index')
@@ -72,7 +73,6 @@ export interface State {
   connError: string
   expandFKDetailsByDefault: boolean
   openPrimarySidebar: boolean
-  openDetailView: boolean
   tableTableSplitSizes: number[]
 }
 
@@ -93,7 +93,8 @@ const store = new Vuex.Store<State>({
     pinnedConnections: PinConnectionModule,
     multiTableExports: MultiTableExportStoreModule,
     imports: ImportStoreModule,
-    backups: BackupModule
+    backups: BackupModule,
+    secondarySidebar: SecondarySidebarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -128,7 +129,6 @@ const store = new Vuex.Store<State>({
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
     openPrimarySidebar: SmartLocalStorage.getBool('openPrimarySidebar', false),
-    openDetailView: SmartLocalStorage.getBool('openDetailView', true),
     tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
   },
 
@@ -252,9 +252,6 @@ const store = new Vuex.Store<State>({
     },
     openPrimarySidebar(state) {
       return state.openPrimarySidebar
-    },
-    openDetailView(state) {
-      return state.openDetailView
     },
   },
   mutations: {
@@ -392,9 +389,6 @@ const store = new Vuex.Store<State>({
     },
     openPrimarySidebar(state, value: boolean) {
       state.openPrimarySidebar = value
-    },
-    openDetailView(state, value: boolean) {
-      state.openDetailView = value
     },
     tableTableSplitSizes(state, value: number[]) {
       state.tableTableSplitSizes = value
@@ -609,24 +603,9 @@ const store = new Vuex.Store<State>({
       context.commit(flag, value)
       return value
     },
-    togglePrimarySidebar(context, value?: boolean) {
-      if (typeof value === 'undefined') {
-        value = !context.state.openPrimarySidebar
-      }
+    togglePrimarySidebar(context, value: boolean) {
       SmartLocalStorage.setBool('openPrimarySidebar', value)
       context.commit('openPrimarySidebar', value)
-      return value
-    },
-    toggleSecondarySidebar(context, value?: boolean) {
-      context.dispatch("toggleOpenDetailView", value)
-    },
-    toggleOpenDetailView(context, value?: boolean) {
-      if (typeof value === 'undefined') {
-        value = !context.state.openDetailView
-      }
-      SmartLocalStorage.setBool('openDetailView', value)
-      context.commit('openDetailView', value)
-      return value
     },
     setTableTableSplitSizes(context, value: number[]) {
       SmartLocalStorage.addItem('tableTableSplitSizes', value)

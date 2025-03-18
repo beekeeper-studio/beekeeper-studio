@@ -13,7 +13,8 @@
     >
       <sidebar
         ref="sidebar"
-        :class="{hide: !openPrimarySidebar}"
+        class="primary-sidebar"
+        :style="{ '--sidebar-min-width': primarySidebarMinWidth + 'px' }"
       >
         <core-sidebar
           @databaseSelected="databaseSelected"
@@ -26,15 +27,12 @@
       </sidebar>
       <div
         ref="content"
-        class="page-content flex-col"
+        class="page-content flex-col main-content"
         id="page-content"
       >
         <core-tabs />
       </div>
-      <secondary-sidebar
-        v-show="openDetailView"
-        ref="secondarySidebar"
-      />
+      <secondary-sidebar ref="secondarySidebar" @close="toggleSecondarySidebar(false)" />
     </div>
     <quick-search
       v-if="quickSearchShown"
@@ -62,7 +60,8 @@
   import Vue from 'vue'
   import { SmartLocalStorage } from '@/common/LocalStorage'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
-  import { mapGetters, mapActions } from 'vuex'
+  import { mapGetters, mapActions, mapState } from 'vuex'
+  import _ from "lodash"
 
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar },
@@ -71,19 +70,16 @@
       return {
         split: null,
         quickSearchShown: false,
-        rootBindings: [
-          // @ts-ignore
-          { event: AppEvent.quickSearch, handler: this.showQuickSearch},
-          // @ts-ignore
-          { event: AppEvent.togglePrimarySidebar, handler: this.togglePrimarySidebar },
-          { event: AppEvent.toggleSecondarySidebar, handler: this.toggleSecondarySidebar }
-        ],
-        initializing: true
+        initializing: true,
+        primarySidebarMinWidth: 44,
       }
       /* eslint-enable */
     },
     computed: {
-      ...mapGetters(['minimalMode', 'openDetailView', 'openPrimarySidebar']),
+      ...mapGetters(['minimalMode', 'openPrimarySidebar']),
+      ...mapState("secondarySidebar", {
+        openSecondarySidebar: "open",
+      }),
       keymap() {
         const results = {}
         results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
@@ -95,34 +91,58 @@
           this.$refs.content,
           this.$refs.secondarySidebar.$el
         ]
-      }
+      },
+      rootBindings() {
+        return [
+          { event: AppEvent.quickSearch, handler: this.showQuickSearch},
+          { event: AppEvent.togglePrimarySidebar, handler: this.togglePrimarySidebar },
+          { event: AppEvent.toggleSecondarySidebar, handler: this.toggleSecondarySidebar },
+        ]
+      },
     },
     watch: {
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const lastSavedSplitSizes = false && SmartLocalStorage.getItem("interfaceSplitSizes")
-          const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 50, 25]
+          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes", "[35, 65, 0]")
+          const splitSizes = JSON.parse(lastSavedSplitSizes)
 
           this.split = Split(this.splitElements, {
-            elementStyle: (_dimension, size) => ({
-                'flex-basis': `calc(${size}%)`,
-            }),
+            snapOffset: [150, 0, 150],
             sizes: splitSizes,
-            minSize: [25, 50, 25],
-            expandToMin: true,
+            minSize: [this.primarySidebarMinWidth, 200, 0],
             gutterSize: 5,
+            gutter: (_index, direction) => {
+                const gutter = document.createElement('div')
+                gutter.className = `gutter gutter-${direction} no-size-override`
+                return gutter
+            },
             onDragEnd: () => {
               const splitSizes = this.split.getSizes()
               SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
-            }
+
+              // Handle primary sidebar collapse/expand
+              const primarySidebar = this.splitElements[0]
+              const threshold = this.primarySidebarMinWidth + 5
+
+              if (primarySidebar.offsetWidth <= threshold) {
+                this.togglePrimarySidebar(false, { preventResize: true })
+              } else {
+                this.togglePrimarySidebar(true, { preventResize: true })
+              }
+
+              // Handle secondary sidebar collapse/expand
+              const secondarySidebar = this.splitElements[2]
+              const secondaryThreshold = 0 + 5
+
+              if (secondarySidebar.offsetWidth <= secondaryThreshold) {
+                this.toggleSecondarySidebar(false, { preventResize: true })
+              } else {
+                this.toggleSecondarySidebar(true, { preventResize: true })
+              }
+            },
           })
         })
-      },
-      minimalMode() {
-        if (this.minimalMode) {
-          this.openPrimarySidebar = true
-        }
       },
     },
     mounted() {
@@ -144,12 +164,51 @@
       }
     },
     methods: {
-      ...mapActions(['togglePrimarySidebar', 'toggleSecondarySidebar']),
+      ...mapActions({
+        rootTogglePrimarySidebar: 'togglePrimarySidebar',
+        rootToggleSecondarySidebar: 'secondarySidebar/toggleOpen'
+      }),
       showQuickSearch() {
         this.quickSearchShown = true
       },
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
+      },
+      togglePrimarySidebar(forceOpen?: boolean, options: { preventResize?: boolean } = {}) {
+        if (typeof forceOpen === 'undefined') {
+          forceOpen = !this.openPrimarySidebar
+        }
+
+        this.rootTogglePrimarySidebar(forceOpen)
+
+        if (!options.preventResize) {
+          if (forceOpen) {
+            const splitSizes = [...this.split.getSizes()]
+            splitSizes[0] = 35
+            splitSizes[1] = 65 - splitSizes[2]
+            this.split.setSizes(splitSizes)
+          } else {
+            this.split.collapse(0)
+          }
+        }
+      },
+      toggleSecondarySidebar(forceOpen?: boolean, options: { preventResize?: boolean } = {}) {
+        if (typeof forceOpen === 'undefined') {
+          forceOpen = !this.openSecondarySidebar
+        }
+
+        this.rootToggleSecondarySidebar(forceOpen)
+
+        if (!options.preventResize) {
+          if (forceOpen) {
+            const splitSizes = [...this.split.getSizes()]
+            splitSizes[2] = 35
+            splitSizes[1] = 65 - splitSizes[0]
+            this.split.setSizes(splitSizes)
+          } else {
+            this.split.collapse(2)
+          }
+        }
       },
     }
   })

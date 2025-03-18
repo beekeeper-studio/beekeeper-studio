@@ -45,7 +45,7 @@
             <i
               class="material-symbols-outlined"
               :style="{
-                'font-variation-settings': openDetailView ? `'FILL' 1` : `'FILL' 0`
+                'font-variation-settings': openSecondarySidebar ? `'FILL' 1` : `'FILL' 0`
               }"
             >dock_to_left</i>
           </button>
@@ -106,7 +106,10 @@ export default {
   },
   computed: {
     ...mapState(['windowTitle', 'connected']),
-    ...mapGetters(['openDetailView', 'openPrimarySidebar']),
+    ...mapState('secondarySidebar', {
+      openSecondarySidebar: 'open',
+    }),
+    ...mapGetters(['openPrimarySidebar']),
   },
   mounted() {
     window.main.onMaximize(() => {
@@ -126,7 +129,6 @@ export default {
     }, this.$util.sId);
   },
   methods: {
-    ...mapActions(["toggleOpenDetailView"]),
     togglePrimarySidebar() {
       this.trigger(AppEvent.togglePrimarySidebar)
     },

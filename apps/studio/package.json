@@ -95,7 +95,7 @@
     "scrollyfills": "^1.0.0",
     "simple-encryptor": "^3.0.0",
     "source-map-support": "^0.5.21",
-    "split.js": "^1.5.11",
+    "split.js": "^1.6.5",
     "sql-formatter": "~10.7.2",
     "sql-query-identifier": "^2.8.0",
     "ssh2": "^1.14.0",

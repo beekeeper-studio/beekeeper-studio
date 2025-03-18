@@ -35,9 +35,16 @@
     // min-width: $sidebar-min-w;
     max-width: $sidebar-max-w;
   }
+  .primary-sidebar, .secondary-sidebar {
+    min-width: auto;
+    flex: none;
+    max-width: none;
+  }
   .page-content {
-    flex: 1 1 auto;
-    min-width: 350px;
+    &:not(.main-content) {
+      flex: 1 1 auto;
+      min-width: 350px;
+    }
     z-index: 1;
   }
 }
