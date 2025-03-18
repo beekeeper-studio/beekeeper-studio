@@ -3,6 +3,8 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { RootBinding, AppEvent } from './common/AppEvent'
 import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
+import BksConfig from './common/bksConfig'
+import { createVHotkeyKeymap } from './plugins/ConfigPlugin'
 import { UtilityConnection } from './lib/utility/UtilityConnection'
 
 // 2. Specify a file with the types you want to augment
@@ -13,6 +15,7 @@ declare module 'vue/types/vue' {
     // ...AppEventMixin.methods,
     $app: BeekeeperPlugin
     $bks: BeekeeperPlugin
+    $bksConfig: typeof BksConfig
     $native: NativePlugin
     $util: UtilityConnection
     $noty: {
@@ -25,6 +28,7 @@ declare module 'vue/types/vue' {
     }
     $confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>
     $confirmById(id: string): Promise<boolean>
+    $vHotkeyKeymap: typeof createVHotkeyKeymap
 
     // TODO: figure out how to add these automatically from AppEvent.ts
     registerHandlers(bindings: RootBinding[]): void

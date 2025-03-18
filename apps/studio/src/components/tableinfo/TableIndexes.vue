@@ -171,13 +171,12 @@ export default Vue.extend({
     },
     hotkeys() {
       if (!this.active) return {}
-      const result = {}
-      result['f5'] = () => this.$emit('refresh')
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-      result[this.ctrlOrCmd('r')] = () => this.$emit('refresh')
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'general.refresh': () => this.$emit('refresh'),
+        'general.addRow': this.addRow.bind(this),
+        'general.save': this.submitApply.bind(this),
+        'general.openInSqlEditor': this.submitSql.bind(this),
+      })
     },
     notice() {
       return this.dialectData.notices?.infoIndexes;
@@ -310,7 +309,19 @@ export default Vue.extend({
       this.newRows.forEach((r) => r.delete())
       this.clearChanges()
     },
+    validateNewRows() {
+      this.newRows.forEach((row: RowComponent) => {
+        const data = row.getData()
+        if (_.isEmpty(data.name)) {
+          throw new Error('Name cannot be empty')
+        }
+        if (_.isEmpty(data.columns)) {
+          throw new Error('Columns cannot be empty')
+        }
+      })
+    },
     getPayload(): IndexAlterations {
+        this.validateNewRows()
         const additions = this.newRows.map((row: RowComponent) => {
           const data = row.getData()
           let dataColumns: string[]
@@ -350,12 +361,12 @@ export default Vue.extend({
         this.loading = true
         this.error = null
         const payload = this.getPayload()
-        log.info('PAYLOAD: ', payload)
 
         await this.connection.alterIndex(payload)
         this.$noty.success("Indexes Updated")
         this.$emit('actionCompleted')
         this.clearChanges()
+        this.error = null
         // this.$nextTick(() => this.initializeTabulator())
       } catch (ex) {
         log.error('submitting index error', ex)
@@ -367,10 +378,15 @@ export default Vue.extend({
     },
     async submitSql() {
       if (!this.hasSql) return;
-      const payload = this.getPayload()
-      const sql = await this.connection.alterIndexSql(payload)
-      const formatted = format(sql, { language: FormatterDialect(this.dialect)})
-      this.$root.$emit(AppEvent.newTab, formatted)
+      try {
+        const payload = this.getPayload()
+        const sql = await this.connection.alterIndexSql(payload)
+        const formatted = format(sql, { language: FormatterDialect(this.dialect)})
+        this.error = null
+        this.$root.$emit(AppEvent.newTab, formatted)
+      } catch (e) {
+        this.error = e
+      }
     },
 
     initializeTabulator() {
