@@ -935,6 +935,9 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? this.results.length - 1 : nonEmptyResult;
         } catch (ex) {
+          this.mongoOutputResult = {
+            output: ex.message
+          }
           log.error(ex)
           if(this.running) {
             this.error = ex

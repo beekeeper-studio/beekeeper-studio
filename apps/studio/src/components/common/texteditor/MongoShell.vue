@@ -131,11 +131,15 @@ export default {
           event.preventDefault();
           this.executeCommand();
         } else if (event.key === "ArrowUp") {
-          event.preventDefault();
-          this.navigateHistory(-1);
+          if (event.ctrlKey) {
+            event.preventDefault();
+            this.navigateHistory(-1);
+          }
         } else if (event.key === "ArrowDown") {
-          event.preventDefault();
-          this.navigateHistory(1);
+          if (event.ctrlKey) {
+            event.preventDefault();
+            this.navigateHistory(1);
+          }
         }
       })
 
@@ -156,6 +160,11 @@ export default {
 
       this.commandHistory.push(userCommand);
       this.historyIndex = this.commandHistory.length;
+
+      if (userCommand === "clear") {
+        this.initialize();
+        return;
+      }
 
       this.$emit('submitCommand', userCommand)
     },
