@@ -114,7 +114,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     reload: {
       id: 'reload-window',
-      label: "DEV Force Reload",
+      label: "Reload Window",
       accelerator: "CommandOrControl+Shift+R",
       click: actionHandler.reload
     },
@@ -159,6 +159,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",
+      accelerator: "Shift+CommandOrControl+Q",
       click: actionHandler.disconnect
     },
     primarySidebarToggle: {

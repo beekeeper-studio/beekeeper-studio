@@ -312,7 +312,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
           if(options.find((e) => url.endsWith(e))) {
             this.connectionType = connectionType as any
             this.defaultDatabase = url
-            return
+            return true;
           }
         }
       }

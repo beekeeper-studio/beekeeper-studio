@@ -203,6 +203,9 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapGetters(['isUltimate']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
+    ...mapGetters({
+      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
+    }),
     communityConnectionTypes() {
       return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
     },
@@ -384,6 +387,15 @@ export default Vue.extend({
       this.connectionError = null
       try {
         this.connecting = true
+        // If this is an existing used connection that doesn't have an associated saved connection
+        // we need to see if changes have been made to the config
+        if (this.config.connectionId === null && this.config.id) {
+          const oldConfig = this.usedConfigs.find((c) => c.id === this.config.id);
+          if (!_.isEqual(this.config, oldConfig)) {
+            this.config.id = null;
+          }
+        }
+
         await this.$store.dispatch('connect', this.config)
       } catch (ex) {
         this.connectionError = ex
@@ -433,6 +445,13 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
+
+        // This feels wrong but it works. It's undefined on savedConnections
+        if (this.config.connectionId === null) {
+          this.config.connectionId = id;
+          await this.$store.dispatch('data/usedconnections/save', this.config);
+        }
+
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed
         const connection = this.connections.find((c) => c.id === id)

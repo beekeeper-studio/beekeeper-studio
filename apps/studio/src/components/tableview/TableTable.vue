@@ -86,6 +86,7 @@
           <a
             v-if="(this.page > 1)"
             @click="page = page - 1"
+            v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
           ><i
             class="material-icons"
           >navigate_before</i></a>
@@ -95,6 +96,7 @@
           >
           <a
             @click="page = page + 1"
+            v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
@@ -180,7 +182,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Refresh Table (${ctrlOrCmd('r')} or F5)`"
+          v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -188,7 +190,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${ctrlOrCmd('n')})`"
+          v-tooltip="`Add row (${$bksConfig.keybindings.tableTable.addRow})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -298,7 +300,6 @@ import EditorModal from './EditorModal.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
-import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -342,7 +343,6 @@ export default Vue.extend({
       columnWidths: null,
       //
       response: null,
-      limit: 100,
       rawTableKeys: [],
       primaryKeys: null,
       pendingChanges: {
@@ -380,6 +380,9 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    limit() {
+      return this.$bksConfig.ui.tableTable.pageSize
+    },
     isEmpty() {
       return _.isEmpty(this.data);
     },
@@ -424,29 +427,19 @@ export default Vue.extend({
     },
     keymap() {
       if (!this.active) return {}
-      const result = {}
-      result['f5'] = this.refreshTable.bind(this)
-      // TODO these need to be in config.ini
-      // TODO if we enable this, make sure we add the tooltips in pagination as well
-      // result[this.ctrlOrCmd('right')] = () => {
-      //   const focusingTable = this.tabulator.element.contains(document.activeElement)
-      //   if (!focusingTable) this.page++
-      // }
-      // result[this.ctrlOrCmd('left')] = () => {
-      //   const focusingTable = this.tabulator.element.contains(document.activeElement)
-      //   if (!focusingTable) this.page--
-      // }
-      result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
-      result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
-      result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
-      result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
-      result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-      result[this.ctrlOrCmd('v')] = this.pasteSelection.bind(this)
-      result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this, undefined)
-      result['delete'] = this.deleteTableSelection.bind(this)
-      result['tab'] = this.handleTab.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'general.refresh': this.refreshTable.bind(this),
+        'general.addRow': this.cellAddRow.bind(this),
+        'general.save': this.saveChanges.bind(this),
+        'general.openInSqlEditor': this.copyToSql.bind(this),
+        'general.copySelection': this.copySelection.bind(this),
+        'general.pasteSelection': this.pasteSelection.bind(this),
+        'general.cloneSelection': this.cloneSelection.bind(this),
+        'general.deleteSelection': this.deleteTableSelection.bind(this),
+        'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
+        'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
+        'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
+      })
     },
 
     tableHolder() {
@@ -593,7 +586,7 @@ export default Vue.extend({
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
-          this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
+          this.defaultColumnWidth(slimDataType, this.$bksConfig.ui.tableTable.defaultColumnWidth) :
           undefined;
 
         let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
@@ -633,10 +626,10 @@ export default Vue.extend({
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
           dataType: column.dataType,
-          minWidth: globals.minColumnWidth,
+          minWidth: this.$bksConfig.ui.tableTable.minColumnWidth,
           width: columnWidth,
-          maxWidth: globals.maxColumnWidth,
-          maxInitialWidth: globals.maxInitialWidth,
+          maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
           resizable: 'header',
           cssClass,
           editable: this.cellEditCheck,
@@ -685,8 +678,8 @@ export default Vue.extend({
       const result = {
         title: this.internalIndexColumn,
         field: this.internalIndexColumn,
-        maxWidth: globals.maxColumnWidth,
-        maxInitialWidth: globals.maxInitialWidth,
+        maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+        maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
         editable: false,
         cellEditCancelled: cell => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
@@ -855,6 +848,13 @@ export default Vue.extend({
       // do nothing?
       log.debug('tab pressed')
 
+    },
+    navigatePage (dir: 'next' | 'prev') {
+      const focusingTable = this.tabulator.element.contains(document.activeElement)
+      if (!focusingTable) {
+        if (dir === 'next') this.page++
+        else this.page--
+      }
     },
     copySelection() {
       if (!this.focusingTable()) return
@@ -1131,7 +1131,7 @@ export default Vue.extend({
     },
     defaultColumnWidth(slimType, defaultValue) {
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
-      if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
+      if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
     },
     // TODO: this is not attached to anything. but it might be needed?
