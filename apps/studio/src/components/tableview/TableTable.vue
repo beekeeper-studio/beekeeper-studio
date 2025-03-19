@@ -346,14 +346,12 @@ export default Vue.extend({
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
-    // @ts-expect-error Tabulator will does not like being mutated for reactivity
-    this.tabulator = null;
-
     return {
       filters: [],
       tableFilters: [createTableFilter(this.table.columns?.[0]?.columnName)],
       headerFilter: true,
       columnsSet: false,
+      tabulator: null,
       loading: false,
 
       // table data
@@ -394,7 +392,6 @@ export default Vue.extend({
       split: null,
       detailViewTitle: undefined,
       reinitializeDetailView: 0,
-      tabulatorBuilt: false,
     };
   },
   computed: {
@@ -410,7 +407,7 @@ export default Vue.extend({
       return this.connectionType === 'cassandra'
     },
     columnsWithFilterAndOrder() {
-      if (!this.tabulatorBuilt || !this.table) return []
+      if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
       const columnNames = this.table.columns.map((c) => c.columnName)
       const typeOf = (f) => this.table.columns.find((c) => c.columnName === f)?.dataType
@@ -462,6 +459,9 @@ export default Vue.extend({
       })
     },
 
+    tableHolder() {
+      return this.$el.querySelector('.tabulator-tableholder')
+    },
     allColumnsSelected() {
       return this.columnsWithFilterAndOrder.every((column) => column.filter)
     },
@@ -768,7 +768,7 @@ export default Vue.extend({
         this.split?.setSizes(splitSizes)
       }
 
-      if (!this.tabulatorBuilt) return;
+      if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
         if (this.forceRedraw) {
@@ -802,7 +802,7 @@ export default Vue.extend({
       }
     },
     async tableColumnNames() {
-      if (!this.tabulatorBuilt) return;
+      if (!this.tabulator) return;
 
       if (!this.active) this.forceRedraw = true;
       await this.tabulator.setColumns(this.tableColumns)
@@ -828,7 +828,7 @@ export default Vue.extend({
     minimalMode() {
       // Auto resize the columns when the tab is active (not hidden in the DOM)
       // so tabulator can do it correctly.
-      if (this.tabulatorBuilt && this.active) {
+      if (this.tabulator && this.active) {
         resizeAllColumnsToFitContentAction(this.tabulator)
       }
 
@@ -901,7 +901,7 @@ export default Vue.extend({
         }
       }
       if (this.preLoadScrollPosition) {
-        this.getTableHolder().scrollLeft = this.preLoadScrollPosition
+        this.tableHolder.scrollLeft = this.preLoadScrollPosition
         this.preLoadScrollPosition = null
       }
     },
@@ -916,7 +916,6 @@ export default Vue.extend({
       return column && column.generated;
     },
     async initialize() {
-      this.tabulatorBuilt = false
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
@@ -926,12 +925,7 @@ export default Vue.extend({
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
-      if (this.tabulator) {
-        this.tabulator.destroy()
-        this.tabulator = null
-      }
-
-      const tabulator = tabulatorForTableData(this.$refs.table, {
+      this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
         schema: this.table.schema,
         persistenceID: this.tableId,
@@ -992,27 +986,22 @@ export default Vue.extend({
           scrollPageDown: false
         },
       });
-      tabulator.on('cellEdited', this.cellEdited)
-      tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
-      tabulator.on('tableBuilt', () => {
-        this.tabulator = tabulator
-        this.tabulatorBuilt = true
-
-        tabulator.on("cellMouseUp", this.updateDetailView);
-        tabulator.on("headerMouseUp", this.updateDetailView);
-        tabulator.on(
-          "keyNavigate",
-          // This is slow if we do a long press. Debounce it so it feels good.
-          _.debounce(this.updateDetailView, 100, {
-            leading: true, trailing: true
-          })
-        );
-        // Tabulator range is reset after data is processed
-        tabulator.on("dataProcessed", this.updateDetailView);
-
-        tabulator.modules.selectRange.restoreFocus()
-        this.updateDetailView();
+      this.tabulator.on('cellEdited', this.cellEdited)
+      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
+      this.tabulator.on('tableBuilt', () => {
+        this.tabulator.modules.selectRange.restoreFocus()
       })
+      this.tabulator.on("cellMouseUp", this.updateDetailView);
+      this.tabulator.on("headerMouseUp", this.updateDetailView);
+      this.tabulator.on(
+        "keyNavigate",
+        // This is slow if we do a long press. Debounce it so it feels good.
+        _.debounce(this.updateDetailView, 100, {
+          leading: true, trailing: true
+        })
+      );
+      // Tabulator range is reset after data is processed
+      this.tabulator.on("dataProcessed", this.updateDetailView);
 
       this.updateSplit()
     },
@@ -1661,12 +1650,10 @@ export default Vue.extend({
             const data = this.dataToTableData({ rows: r }, this.tableColumns, offset);
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
-            if (this.tableBuilt) {
-              this.preLoadScrollPosition = this.getTableHolder().scrollLeft
-              this.columnWidths = this.tabulator.getColumns().map((c) => {
-                return { field: c.getField(), width: c.getWidth()}
-              })
-            }
+            this.preLoadScrollPosition = this.tableHolder.scrollLeft
+            this.columnWidths = this.tabulator.getColumns().map((c) => {
+              return { field: c.getField(), width: c.getWidth()}
+            })
             resolve({
               last_page: 1,
               data
@@ -1704,7 +1691,7 @@ export default Vue.extend({
       this.queryError = null
     },
     async refreshTable() {
-      if (!this.tabulatorBuilt) return;
+      if (!this.tabulator) return;
 
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
@@ -1786,7 +1773,7 @@ export default Vue.extend({
       return output;
     },
     applyColumnChanges(columns) {
-      if (!this.tabulatorBuilt) return;
+      if (!this.tabulator) return;
 
       this.tabulator.blockRedraw();
 
@@ -1872,9 +1859,6 @@ export default Vue.extend({
         this.split?.destroy()
         this.split = null
       }
-    },
-    getTableHolder() {
-      return this.$el.querySelector('.tabulator-tableholder')
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)

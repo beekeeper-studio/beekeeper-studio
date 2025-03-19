@@ -31,11 +31,9 @@
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
-      this.tabulator = null
-
       return {
+        tabulator: null,
         actualTableHeight: '100%',
-        tableBuilt: false,
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus'],
@@ -57,7 +55,7 @@
         this.initializeTabulator()
       },
       tableHeight() {
-        this.tabulator?.setHeight(this.actualTableHeight)
+        this.tabulator.setHeight(this.actualTableHeight)
       },
       focus() {
         if (!this.focus) return
@@ -184,23 +182,21 @@
       }
     },
     async mounted() {
-      if (this.focus) {
-        const unwatch = this.$watch("tableBuilt", (tableBuilt) => {
-          if (tableBuilt) this.triggerFocus()
-          unwatch()
-        })
-      }
       this.initializeTabulator()
+      if (this.focus) {
+        const onTableBuilt = () => {
+          this.triggerFocus()
+          this.tabulator.off('tableBuilt', onTableBuilt)
+        }
+        this.tabulator.on('tableBuilt', onTableBuilt)
+      }
     },
     methods: {
       initializeTabulator() {
         if (this.tabulator) {
           this.tabulator.destroy()
-          this.tabulator = null
         }
-
-        this.tableBuilt = false
-        const tabulator = tabulatorForTableData(this.$refs.tabulator, {
+        this.tabulator = tabulatorForTableData(this.$refs.tabulator, {
           table: this.result.tableName,
           schema: this.result.schema,
           persistenceID: this.tableId,
@@ -211,11 +207,6 @@
             columnHeaders: true
           },
         });
-
-        tabulator.on('tableBuilt', () => {
-          this.tabulator = tabulator
-          this.tableBuilt = true
-        })
       },
       copySelection() {
         if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
