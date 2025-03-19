@@ -25,7 +25,10 @@ export default {
   clientId: '6eabc37c-bcc5-41fa-9a90-f6c5ab2aabcb',
   iamRefreshTime: 13 * 60 * 1000, // 13 minutes
   iamExpiryTime: 15 * 60 * 1000, // 15 minutes
-  iamRefreshBeforeTime: 2 * 60 * 1000 // 2 minutes
+  iamRefreshBeforeTime: 2 * 60 * 1000, // 2 minutes
+  firebird: {
+    poolSize: 5,
+  },
 }
 
 

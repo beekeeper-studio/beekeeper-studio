@@ -96,6 +96,7 @@
           <a
             v-if="(this.page > 1)"
             @click="page = page - 1"
+            v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
           ><i
             class="material-icons"
           >navigate_before</i></a>
@@ -105,6 +106,7 @@
           >
           <a
             @click="page = page + 1"
+            v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
@@ -197,7 +199,7 @@
           <i class="material-icons material-icons-round">view_sidebar</i>
         </x-button>
         <x-button
-          v-tooltip="`Refresh Table (${ctrlOrCmd('r')} or F5)`"
+          v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -205,7 +207,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${ctrlOrCmd('n')})`"
+          v-tooltip="`Add row (${$bksConfig.keybindings.tableTable.addRow})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -237,7 +239,7 @@
             </x-menuitem>
             <x-menuitem @click="importTab">
               <x-label>
-                Import from file 
+                Import from file
                 <i
                   v-if="$store.getters.isCommunity"
                   class="material-icons menu-icon"
@@ -315,7 +317,6 @@ import EditorModal from './EditorModal.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
-import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -359,7 +360,6 @@ export default Vue.extend({
       columnWidths: null,
       //
       response: null,
-      limit: 100,
       rawTableKeys: [],
       primaryKeys: null,
       pendingChanges: {
@@ -397,6 +397,9 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'openDetailView']),
+    limit() {
+      return this.$bksConfig.ui.tableTable.pageSize
+    },
     isEmpty() {
       return _.isEmpty(this.data);
     },
@@ -441,29 +444,19 @@ export default Vue.extend({
     },
     keymap() {
       if (!this.active) return {}
-      const result = {}
-      result['f5'] = this.refreshTable.bind(this)
-      // TODO these need to be in config.ini
-      // TODO if we enable this, make sure we add the tooltips in pagination as well
-      // result[this.ctrlOrCmd('right')] = () => {
-      //   const focusingTable = this.tabulator.element.contains(document.activeElement)
-      //   if (!focusingTable) this.page++
-      // }
-      // result[this.ctrlOrCmd('left')] = () => {
-      //   const focusingTable = this.tabulator.element.contains(document.activeElement)
-      //   if (!focusingTable) this.page--
-      // }
-      result['shift+enter'] = this.openEditorMenuByShortcut.bind(this)
-      result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
-      result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
-      result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
-      result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-      result[this.ctrlOrCmd('v')] = this.pasteSelection.bind(this)
-      result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this, undefined)
-      result['delete'] = this.deleteTableSelection.bind(this)
-      result['tab'] = this.handleTab.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'general.refresh': this.refreshTable.bind(this),
+        'general.addRow': this.cellAddRow.bind(this),
+        'general.save': this.saveChanges.bind(this),
+        'general.openInSqlEditor': this.copyToSql.bind(this),
+        'general.copySelection': this.copySelection.bind(this),
+        'general.pasteSelection': this.pasteSelection.bind(this),
+        'general.cloneSelection': this.cloneSelection.bind(this),
+        'general.deleteSelection': this.deleteTableSelection.bind(this),
+        'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
+        'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
+        'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
+      })
     },
 
     tableHolder() {
@@ -610,7 +603,7 @@ export default Vue.extend({
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const hasKeyDatas = keyDatas && keyDatas.length > 0
         const columnWidth = this.table.columns.length > 30 ?
-          this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
+          this.defaultColumnWidth(slimDataType, this.$bksConfig.ui.tableTable.defaultColumnWidth) :
           undefined;
 
         let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
@@ -650,10 +643,10 @@ export default Vue.extend({
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
           dataType: column.dataType,
-          minWidth: globals.minColumnWidth,
+          minWidth: this.$bksConfig.ui.tableTable.minColumnWidth,
           width: columnWidth,
-          maxWidth: globals.maxColumnWidth,
-          maxInitialWidth: globals.maxInitialWidth,
+          maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
           resizable: 'header',
           cssClass,
           editable: this.cellEditCheck,
@@ -702,8 +695,8 @@ export default Vue.extend({
       const result = {
         title: this.internalIndexColumn,
         field: this.internalIndexColumn,
-        maxWidth: globals.maxColumnWidth,
-        maxInitialWidth: globals.maxInitialWidth,
+        maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+        maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
         editable: false,
         cellEditCancelled: cell => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
@@ -864,6 +857,13 @@ export default Vue.extend({
       log.debug('tab pressed')
 
     },
+    navigatePage (dir: 'next' | 'prev') {
+      const focusingTable = this.tabulator.element.contains(document.activeElement)
+      if (!focusingTable) {
+        if (dir === 'next') this.page++
+        else this.page--
+      }
+    },
     copySelection() {
       if (!this.focusingTable()) return
       copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
@@ -874,17 +874,8 @@ export default Vue.extend({
     },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
-      if (!range) range = _.last(this.tabulator.getRanges())
-      this.addRowsToPendingDeletes(range.getRows());
-    },
-    getCleanSelectedRowData(cell) {
-      const selectedRows = this.tabulator.getSelectedRows()
-      const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]
-      const clean = rowData.map((row) => {
-        const m = this.modifyRowData(row.getData())
-        return this.$bks.cleanData(m, this.tableColumns)
-      })
-      return clean;
+      const rows = range ? range.getRows() : this.getSelectedRows()
+      this.addRowsToPendingDeletes(rows);
     },
     headerFormatter(_cell, formatterParams) {
       const { columnName, dataType } = formatterParams
@@ -935,6 +926,8 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
+        table: this.table.name,
+        schema: this.table.schema,
         persistenceID: this.tableId,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
@@ -1000,7 +993,13 @@ export default Vue.extend({
       })
       this.tabulator.on("cellMouseUp", this.updateDetailView);
       this.tabulator.on("headerMouseUp", this.updateDetailView);
-      this.tabulator.on("keyNavigate", this.updateDetailView);
+      this.tabulator.on(
+        "keyNavigate",
+        // This is slow if we do a long press. Debounce it so it feels good.
+        _.debounce(this.updateDetailView, 100, {
+          leading: true, trailing: true
+        })
+      );
       // Tabulator range is reset after data is processed
       this.tabulator.on("dataProcessed", this.updateDetailView);
 
@@ -1032,8 +1031,8 @@ export default Vue.extend({
         {
           label: createMenuItem('See details'),
           action: () => {
-            this.updateDetailView({ range })
             this.toggleOpenDetailView(true)
+            this.updateDetailView({ range })
           },
         },
       ]
@@ -1054,17 +1053,7 @@ export default Vue.extend({
       if (this.isPrimaryKey(cell.getField())) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
-    openEditorMenuByShortcut() {
-      const range: RangeComponent = _.last(this.tabulator.getRanges())
-      const cell = range.getCells().flat()[0];
-      if (this.isEditorMenuDisabled(cell)) return
-      // FIXME maybe we can avoid calling child methods directly like this?
-      // it should be done by calling an event using this.$modal.show(modalName)
-      // or this.$trigger(AppEvent.something) if possible
-      this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
-    },
     quickFilterMenuItem(cell: CellComponent) {
-      const me = this
       const symbols = [
         '=', '!=', '<', '<=', '>', '>='
       ]
@@ -1075,7 +1064,7 @@ export default Vue.extend({
           return {
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
-            action: async (e, cell: CellComponent) => {
+            action: async (_e, cell: CellComponent) => {
               const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
@@ -1083,6 +1072,19 @@ export default Vue.extend({
           }
         })
       }
+    },
+    openEditorMenuByShortcut() {
+      const range: RangeComponent = _.last(this.tabulator.getRanges())
+      const cell = range.getCells().flat()[0];
+      // FIXME maybe we can avoid calling child methods directly like this?
+      // it should be done by calling an event using this.$modal.show(modalName)
+      // or this.$trigger(AppEvent.something) if possible
+      if (this.isPrimaryKey(cell.getField())) return;
+      const eventParams = {
+        cell,
+        isReadOnly: this.isEditorMenuDisabled(cell)
+      };
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
@@ -1148,7 +1150,7 @@ export default Vue.extend({
     },
     defaultColumnWidth(slimType, defaultValue) {
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
-      if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
+      if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
     },
     // TODO: this is not attached to anything. but it might be needed?
@@ -1288,9 +1290,8 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      if (!range) range = _.last(this.tabulator.getRanges())
-
-      range.getRows().forEach((row) => {
+      const rows = range ? range.getRows() : this.getSelectedRows()
+      rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
           if (!this.primaryKeys?.includes(d)) {
@@ -1317,6 +1318,11 @@ export default Vue.extend({
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
+    },
+    getSelectedRows() {
+      const ranges: RangeComponent[] = this.tabulator.getRanges()
+      const unfilteredRows = ranges.flatMap((range) => range.getRows())
+      return _.uniqBy(unfilteredRows, (row) => row.getPosition())
     },
     addRowToPendingInserts(row) {
       row.getElement().classList.add('inserted')
@@ -1704,6 +1710,8 @@ export default Vue.extend({
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
     updateDetailView(options: { range?: RangeComponent } = {}) {
+      if (!this.openDetailView) return
+
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
