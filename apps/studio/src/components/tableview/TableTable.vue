@@ -1894,8 +1894,7 @@ export default Vue.extend({
       }
     },
     handleJsonValueChange({key, value}) {
-      console.log('handleJsonValueChange', key, value)
-      this.tabulator.getRow(this.selectedRowIndex).getCell(key).setValue(value)
+      this.selectedRow?.getCell(key).setValue(value)
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
