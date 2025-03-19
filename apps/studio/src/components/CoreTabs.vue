@@ -564,14 +564,12 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.contextEvent = { event, item }
     },
     async setActiveTab(tab: TransportOpenTab) {
-        console.log('switchingTab', tab.id)
       const switchingTab = tab.id !== this.activeTab?.id
       if (switchingTab) {
         this.trigger(AppEvent.switchingTab, tab)
       }
       await this.$store.dispatch('tabs/setActive', tab)
       if (switchingTab) {
-        console.log('switchedTab', tab.id)
         this.trigger(AppEvent.switchedTab, tab)
       }
     },

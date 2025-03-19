@@ -1818,7 +1818,6 @@ export default Vue.extend({
       this.trigger(AppEvent.updateJsonViewerSidebar, data)
     },
     handleRangeChange(ranges: RangeComponent[]) {
-      console.log('momo range', ranges)
       this.updateJsonViewer({ range: ranges[0] })
     },
     handleSwitchedTab(tab) {

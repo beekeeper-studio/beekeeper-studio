@@ -63,6 +63,13 @@
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
 
+  const SPLIT_SIZES_KEY = "interfaceSplitSizes-v2"
+  const PRIMARY_SIDEBAR_OPEN_SIZE_KEY = "primarySidebarOpenSize"
+  const SECONDARY_SIDEBAR_OPEN_SIZE_KEY = "secondarySidebarOpenSize"
+  const PRIMARY_SIDEBAR_INITIAL_SIZE = 35
+  const SECONDARY_SIDEBAR_INITIAL_SIZE = 30
+  const MAIN_CONTENT_MIN_SIZE = 200
+
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar },
     data() {
@@ -104,13 +111,13 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes", "[35, 65, 0]")
+          const lastSavedSplitSizes = SmartLocalStorage.getItem(SPLIT_SIZES_KEY, "[35, 65, 0]")
           const splitSizes = JSON.parse(lastSavedSplitSizes)
 
           this.split = Split(this.splitElements, {
             snapOffset: [150, 0, 150],
             sizes: splitSizes,
-            minSize: [this.primarySidebarMinWidth, 200, 0],
+            minSize: [this.primarySidebarMinWidth, MAIN_CONTENT_MIN_SIZE, 0],
             gutterSize: 5,
             elementStyle: (_dimension, elementSize) => ({
               width: `calc(${elementSize}%)`,
@@ -122,15 +129,17 @@
             },
             onDragEnd: () => {
               const splitSizes = this.split.getSizes()
-              SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
+              SmartLocalStorage.addItem(SPLIT_SIZES_KEY, splitSizes)
 
               // Handle primary sidebar collapse/expand
               const primarySidebar = this.splitElements[0]
               const threshold = this.primarySidebarMinWidth + 5
 
               if (primarySidebar.offsetWidth <= threshold) {
+                SmartLocalStorage.addItem(PRIMARY_SIDEBAR_OPEN_SIZE_KEY, PRIMARY_SIDEBAR_INITIAL_SIZE)
                 this.togglePrimarySidebar(false, { preventResize: true })
               } else {
+                SmartLocalStorage.addItem(PRIMARY_SIDEBAR_OPEN_SIZE_KEY, splitSizes[0])
                 this.togglePrimarySidebar(true, { preventResize: true })
               }
 
@@ -139,8 +148,10 @@
               const secondaryThreshold = 0 + 5
 
               if (secondarySidebar.offsetWidth <= secondaryThreshold) {
+                SmartLocalStorage.addItem(SECONDARY_SIDEBAR_OPEN_SIZE_KEY, SECONDARY_SIDEBAR_INITIAL_SIZE)
                 this.toggleSecondarySidebar(false, { preventResize: true })
               } else {
+                SmartLocalStorage.addItem(SECONDARY_SIDEBAR_OPEN_SIZE_KEY, splitSizes[2])
                 this.toggleSecondarySidebar(true, { preventResize: true })
               }
             },
@@ -186,11 +197,17 @@
 
         if (!options.preventResize) {
           if (forceOpen) {
-            const splitSizes = [...this.split.getSizes()]
-            splitSizes[0] = 35
-            splitSizes[1] = 65 - splitSizes[2]
-            this.split.setSizes(splitSizes)
+            const previousSize = Number(SmartLocalStorage.getItem(PRIMARY_SIDEBAR_OPEN_SIZE_KEY))
+            const [primarySidebar, mainContent, secondarySidebar] = this.split.getSizes()
+            const updatedSizes = [
+              primarySidebar + previousSize,
+              mainContent - previousSize,
+              secondarySidebar,
+            ]
+            this.split.setSizes(updatedSizes)
           } else {
+            const size = this.split.getSizes()[2]
+            SmartLocalStorage.addItem(PRIMARY_SIDEBAR_OPEN_SIZE_KEY, size)
             this.split.collapse(0)
           }
         }
@@ -204,11 +221,17 @@
 
         if (!options.preventResize) {
           if (forceOpen) {
-            const splitSizes = [...this.split.getSizes()]
-            splitSizes[2] = 35
-            splitSizes[1] = 65 - splitSizes[0]
-            this.split.setSizes(splitSizes)
+            const previousSize = Number(SmartLocalStorage.getItem(SECONDARY_SIDEBAR_OPEN_SIZE_KEY))
+            const [primarySidebar, mainContent, secondarySidebar] = this.split.getSizes()
+            const updatedSizes = [
+              primarySidebar,
+              mainContent - previousSize,
+              secondarySidebar + previousSize,
+            ]
+            this.split.setSizes(updatedSizes)
           } else {
+            const size = this.split.getSizes()[2]
+            SmartLocalStorage.addItem(SECONDARY_SIDEBAR_OPEN_SIZE_KEY, size)
             this.split.collapse(2)
           }
         }
