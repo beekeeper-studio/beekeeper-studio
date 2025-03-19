@@ -399,6 +399,7 @@ export default {
         if (marker.type === "error") {
           markInstance = this.editor.markText(marker.from, marker.to, {
             className: "bks-error-marker",
+            attributes: { title: marker.message },
           });
         } else if (marker.type === "highlight") {
           markInstance = this.editor.markText(marker.from, marker.to, {

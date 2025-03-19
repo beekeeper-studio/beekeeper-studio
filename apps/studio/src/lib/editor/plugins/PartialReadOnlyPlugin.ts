@@ -154,10 +154,17 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
     if (changeObj.origin !== "setValue") {
       const markers = cm.findMarksAt(changeObj.from);
       for (const marker of markers) {
-        if (!this.getMarkerId(marker)) {
+        const id = this.getMarkerId(marker)
+        if (!id) {
           continue;
         }
-        const { range } = this.rangeMap.get(this.getMarkerId(marker));
+
+        const markerPos = marker.find();
+        const range: EditorRange = {
+          id,
+          from: markerPos.from,
+          to: markerPos.to,
+        }
         const value = this.getMarkerValue(marker);
         this.onEditableRangeChange(range, value);
       }

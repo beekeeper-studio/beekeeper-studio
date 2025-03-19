@@ -240,13 +240,11 @@ export default Vue.extend({
           log.warn(e);
         }
       })
-      _.forEach(this.editableRangeErrors, ({ id, error }) => {
-        const line = findKeyPosition(this.text, [id]);
-        const { from, to } = findValueInfo(this.lines[line]);
+      _.forEach(this.editableRangeErrors, ({ error, from, to }) => {
         markers.push({
           type: "error",
-          from: { line, ch: from },
-          to: { line, ch: to },
+          from,
+          to,
           message: error.message,
         });
       })
@@ -341,12 +339,12 @@ export default Vue.extend({
       this.$emit("close")
     },
     handleEditableRangeChange: _.debounce(function (range, value) {
+      this.editableRangeErrors = []
       try {
         const parsed = JSON.parse(value)
-        this.editableRangeErrors = []
         this.$emit("bks-json-value-change", {key: range.id, value: parsed});
       } catch (error) {
-        this.editableRangeErrors.push({ id: range.id, error })
+        this.editableRangeErrors.push({ id: range.id, error, from: range.from, to: range.to })
       }
     }, 250),
   },
