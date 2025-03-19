@@ -24,9 +24,15 @@ import "@/vendor/show-hint";
 import "@/lib/editor/CodeMirrorDefinitions";
 import "codemirror/addon/merge/merge";
 import CodeMirror from 'codemirror';
+import {
+  setKeybindingsFromVimrc,
+  applyConfig,
+  Register,
+} from "@/lib/editor/vim";
 import { keymapTypes } from "@/lib/db/types";
 import { mapState } from 'vuex';
 import { plugins } from "@/lib/editor/utils";
+import { AppEvent } from '@/common/AppEvent';
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -34,7 +40,8 @@ interface InitializeOptions {
 
 export default {
   props: [
-    "output"
+    "output",
+    "vimConfig" // not sure if we need this
   ],
   data() {
     return {
@@ -43,7 +50,8 @@ export default {
       commandBuffer: "",
       commandHistory: [],
       historyIndex: -1,
-      promptLine: 0 // where current prompt starts
+      promptLine: 0, // where current prompt starts
+      wasShellFocused: false
     }
   },
   computed: {
@@ -61,11 +69,16 @@ export default {
     },
     plugins() {
       return [plugins.autoComplete];
-    }
+    },
+    rootBindings() {
+      return [
+        { event: AppEvent.switchUserKeymap, handler: this.handleSwitchUserKeymap },
+      ]
+    },
   },
   watch: {
     hintOptions() {
-      this.shell.setOption('hintOptions', this.hintOptions);
+      this.shell?.setOption('hintOptions', this.hintOptions);
     },
     output(value) {
       const doc = this.shell.getDoc();
@@ -82,6 +95,18 @@ export default {
     }
   },
   methods: {
+    focusShell() {
+      if (this.shell && this.autoFocus && this.wasShellFocused) {
+        this.shell.focus();
+        this.wasShellFocused = false;
+      }
+    },
+    handleBlur() {
+      const activeElement = document.activeElement;
+      if (activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder") {
+        this.wasShellFocused = true;
+      }
+    },
     destroyShell() {
       if (this.shell) {
         this.shell
@@ -89,7 +114,7 @@ export default {
           .parentNode.removeChild(this.shell.getWrapperElement());
       }
     },
-    async initialize(_options: InitializeOptions = {}) {
+    async initialize(options: InitializeOptions = {}) {
       this.destroyShell();
 
       const cm = CodeMirror.fromTextArea(this.$refs.shell, {
@@ -108,7 +133,7 @@ export default {
         mode: 'mongo',
         hint: this.hint,
         hintOptions: this.hintOptions,
-        keyMap: 'default', // figure out vim mode
+        keyMap: options.userKeymap, // figure out vim mode
       });
 
       cm.getWrapperElement().classList.add("text-editor");
@@ -143,6 +168,30 @@ export default {
         }
       })
 
+      const cmEl = this.$refs.shell.parentNode.querySelector(".CodeMirror");
+      if (options.userKeymap === "vim") {
+        const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
+
+        if (!codeMirrorVimInstance) {
+          console.error("Could not find code mirror vim instance");
+        } else {
+          if (this.vimConfig) {
+            applyConfig(codeMirrorVimInstance, this.vimConfig);
+          }
+          await setKeybindingsFromVimrc(codeMirrorVimInstance);
+
+          // cm throws if this is already defined, we don't need to handle that case
+          try {
+            codeMirrorVimInstance.defineRegister(
+              "*",
+              new Register(this.$native.clipboard)
+            );
+          } catch (e) {
+            // nothing
+          }
+        }
+      }
+
       if (this.plugins) {
         this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
           plugin(cm);
@@ -163,6 +212,7 @@ export default {
 
       if (userCommand === "clear") {
         this.initialize();
+        this.$emit('clear');
         return;
       }
 
@@ -191,14 +241,25 @@ export default {
       }
 
       doc.replaceRange(this.commandHistory[this.historyIndex], { line: this.promptLine, ch: this.promptSymbol.length }, { line: this.shell.lastLine(), ch: Infinity });
-    }
+    },
+    handleSwitchUserKeymap(value) {
+      this.initialize({ userKeymap: value });
+    },
   },
   async mounted() {
     this.promptSymbol = await this.connection.getShellPrompt();
-    this.initialize();
+    await this.initialize({
+      userKeymap: this.$store.getters['settings/userKeymap'],
+    });
+    window.addEventListener('focus', this.focusShell);
+    window.addEventListener('blur', this.handleBlur);
+    this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
+    window.removeEventListener('focus', this.focusShell);
+    window.removeEventListener('blur', this.handleBlur);
     this.destroyShell();
+    this.unregisterHandlers(this.rootBindings);
   }
 }
 </script>

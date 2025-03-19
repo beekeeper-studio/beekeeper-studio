@@ -50,7 +50,8 @@ export const OracleData: DialectData = {
   },
   textEditorMode: "text/x-sql",
   disabledFeatures: {
-     export: {
+    shell: true,
+    export: {
       sql: true
     },
     informationSchema: {

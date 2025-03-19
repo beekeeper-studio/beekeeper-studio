@@ -32,7 +32,6 @@
         </div>
       </div>
       <sql-text-editor
-        v-if="connectionType !== 'mongodb'"
         v-model="unsavedText"
         v-bind.sync="editor"
         :focus="focusingElement === 'text-editor'"
@@ -41,17 +40,6 @@
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
-        @initialized="handleEditorInitialized"
-      />
-      <mongo-shell
-        v-else
-        v-model="unsavedText"
-        v-bind.sync="editor"
-        :output="mongoOutputResult"
-        @submitCommand="submitMongoCommand"
-        :focus="focusingElement === 'text-editor'"
-        @update:focus="updateTextEditorFocus"
-        :markers="editorMarkers"
         @initialized="handleEditorInitialized"
       />
       <span class="expand" />
@@ -340,7 +328,6 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
-  import MongoShell from '@/components/common/texteditor/MongoShell.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -357,7 +344,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor, MongoShell },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -378,7 +365,6 @@
           cursorIndexAnchor: 0,
           initialized: false,
         },
-        mongoOutputResult: null,
         runningQuery: null,
         error: null,
         errorMarker: null,
@@ -892,59 +878,6 @@
           this.submitQuery(text)
         } else {
           this.error = 'No query to run'
-        }
-      },
-      async submitMongoCommand(command) {
-        this.tab.isRunning = true
-        this.running = true
-        this.error = null
-        this.results = []
-        this.queryForExecution = command;
-        this.selectedResult = 0
-
-        try {
-          this.runningQuery = await this.connection.query(command);
-          const cmdStartTime = new Date();
-          const results = await this.runningQuery.execute();
-          const cmdEndTime = new Date();
-
-          // eslint-disable-next-line
-          // @ts-ignore
-          this.executeTime = cmdEndTime - cmdStartTime;
-          results.forEach((result) => {
-            result.rowCount = result.rowCount || 0
-
-            // TODO (matthew): remove truncation logic somewhere sensible
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
-              result.truncated = true
-              result.totalRowCount = result.rowCount
-            }
-          })
-          const printable = results.find((r) => !!r.output);
-          if (printable) {
-            this.mongoOutputResult = printable
-          } else {
-            this.mongoOutputResult = {
-              output: ''
-            }
-          }
-          this.results = Object.freeze(results);
-          log.info('RESULTS: ', this.results)
-          const nonEmptyResult = _.chain(results).findLastIndex((r) => !!r.rows?.length).value()
-          console.log("non empty result", nonEmptyResult)
-          this.selectedResult = nonEmptyResult === -1 ? this.results.length - 1 : nonEmptyResult;
-        } catch (ex) {
-          this.mongoOutputResult = {
-            output: ex.message
-          }
-          log.error(ex)
-          if(this.running) {
-            this.error = ex
-          }
-        } finally {
-          this.running = false
-          this.tab.isRunning = false
         }
       },
       async submitQuery(rawQuery, fromModal = false) {
