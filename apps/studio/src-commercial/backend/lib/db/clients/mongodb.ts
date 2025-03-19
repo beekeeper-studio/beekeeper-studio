@@ -471,6 +471,20 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         tableName: ev.source?.namespace?.collection ?? 'mycollection',
         command: queryText
       })
+    } else if (ev.type === 'Document') {
+      if (ev.printable) {
+        fields = Object.keys(ev.printable).map((k) => ({
+          name: k,
+          id: k
+        }));
+      }
+      results.push({
+        rows: ev.printable ? [ev.printable] : [],
+        rowCount: ev.printable ? 1 : 0,
+        fields,
+        tableName: ev.source?.namespace?.collection ?? 'mycollection',
+        command: queryText
+      })
     } else if (ev.type === null && ev.printable) {
       if (ev.printable?.length > 0) {
         fields = Object.keys(ev.printable[0]).map((k) => ({

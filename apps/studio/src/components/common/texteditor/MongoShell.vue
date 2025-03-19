@@ -30,7 +30,7 @@ import {
   Register,
 } from "@/lib/editor/vim";
 import { keymapTypes } from "@/lib/db/types";
-import { mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { plugins } from "@/lib/editor/utils";
 import { AppEvent } from '@/common/AppEvent';
 
@@ -55,6 +55,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters({ 'userKeymap': 'settings/userKeymap' }),
     ...mapState(['connection']),
     hintOptions() {
       return {
@@ -133,7 +134,7 @@ export default {
         mode: 'mongo',
         hint: this.hint,
         hintOptions: this.hintOptions,
-        keyMap: options.userKeymap, // figure out vim mode
+        keyMap: options.userKeymap,
       });
 
       cm.getWrapperElement().classList.add("text-editor");
@@ -211,7 +212,7 @@ export default {
       this.historyIndex = this.commandHistory.length;
 
       if (userCommand === "clear") {
-        this.initialize();
+        this.initialize({ userKeymap: this.userKeymap });
         this.$emit('clear');
         return;
       }
@@ -249,7 +250,7 @@ export default {
   async mounted() {
     this.promptSymbol = await this.connection.getShellPrompt();
     await this.initialize({
-      userKeymap: this.$store.getters['settings/userKeymap'],
+      userKeymap: this.userKeymap,
     });
     window.addEventListener('focus', this.focusShell);
     window.addEventListener('blur', this.handleBlur);
