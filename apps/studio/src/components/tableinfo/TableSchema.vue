@@ -183,14 +183,12 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState(['database', 'connection']),
     hotkeys() {
-      if (!this.active) return {}
-      const result = {}
-      result['f5'] = this.refreshColumns.bind(this)
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-      result[this.ctrlOrCmd('r')] = this.refreshColumns.bind(this)
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'general.refresh': this.refreshColumns,
+        'general.addRow': this.addRow,
+        'general.save': this.submitApply,
+        'general.openInSqlEditor': this.submitSql,
+      })
     },
     editable() {
       // (sept 23) we don't need a primary key to make schemas editable
@@ -385,8 +383,8 @@ export default Vue.extend({
       })
 
       const drops = this.removedRows.map((row) => row.getData()['columnName'])
-      
-      const reorder = (this.reorderedRows.length > 0) 
+
+      const reorder = (this.reorderedRows.length > 0)
         ? { oldOrder: this.initialColumns.slice(0), newOrder: this.tabulator.getData() }
         : null
 
