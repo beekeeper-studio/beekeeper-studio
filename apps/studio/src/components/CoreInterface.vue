@@ -112,9 +112,12 @@
             sizes: splitSizes,
             minSize: [this.primarySidebarMinWidth, 200, 0],
             gutterSize: 5,
+            elementStyle: (_dimension, elementSize) => ({
+              width: `calc(${elementSize}%)`,
+            }),
             gutter: (_index, direction) => {
                 const gutter = document.createElement('div')
-                gutter.className = `gutter gutter-${direction} no-size-override`
+                gutter.className = `gutter gutter-${direction}`
                 return gutter
             },
             onDragEnd: () => {

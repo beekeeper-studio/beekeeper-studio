@@ -614,9 +614,7 @@ input[type=file] {
     z-index: 20;
   }
   &.gutter-horizontal {
-    &:not(.no-size-override) {
-      width: 0!important;
-    }
+    width: 0!important;
     cursor: ew-resize;
     &:after {
       height: 100%;
@@ -627,9 +625,7 @@ input[type=file] {
   }
   &.gutter-vertical {
     cursor: ns-resize;
-    &:not(.no-size-override) {
-      height: 0!important;
-    }
+    height: 0!important;
     &:after {
       height: 8px;
       width: 100%;
