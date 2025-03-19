@@ -409,9 +409,16 @@ const store = new Vuex.Store<State>({
 
     updateWindowTitle(context) {
       const config = context.state.usedConfig
-      let title = config
-        ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
+      const maxLength = 30
+      const suffix = ' - Beekeeper Studio'
+      let title = config 
+        ? BeekeeperPlugin.buildConnectionName(config) 
         : 'Beekeeper Studio'
+      if (config) {
+        title = title.length > maxLength
+          ? `${title.substring(0, maxLength)}...${suffix}`
+          : `${title}${suffix}`
+      }
       if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
