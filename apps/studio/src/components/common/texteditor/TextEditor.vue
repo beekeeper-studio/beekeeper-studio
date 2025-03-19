@@ -260,7 +260,6 @@ export default {
         gutters,
         // @ts-expect-error not fully typed
         foldGutter,
-        autoRefresh: true,
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {
           foldGutter: {
@@ -298,6 +297,10 @@ export default {
 
       if (this.extraKeybindings) {
         cm.addKeyMap(this.extraKeybindings);
+      }
+
+      if (this.readOnly) {
+        cm.setOption("readOnly", this.readOnly);
       }
 
       if (this.lineWrapping) {
@@ -594,9 +597,18 @@ export default {
         menu.options = menu.options.filter((option) => !option.write);
       }
 
-      const customOptions = this.contextMenuOptions
-        ? this.contextMenuOptions(event, menu.options)
-        : undefined;
+      let customOptions: typeof menu.options | false | undefined;
+
+      for (const plugin of this.initializedPlugins) {
+        if (plugin.beforeOpeningContextMenu) {
+          customOptions = plugin.beforeOpeningContextMenu(event, menu.options)
+        }
+      }
+
+      // FIXME remove this in favor of plugin
+      if (this.contextMenuOptions) {
+        customOptions = this.contextMenuOptions(event, customOptions || menu.options);
+      }
 
       if (customOptions === false) {
         return;

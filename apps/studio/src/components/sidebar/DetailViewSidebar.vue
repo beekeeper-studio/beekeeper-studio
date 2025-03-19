@@ -54,7 +54,6 @@
       </div>
     </div>
     <text-editor
-      :read-only="true"
       :fold-gutter="true"
       :fold-all="foldAll"
       :unfold-all="unfoldAll"
@@ -65,6 +64,7 @@
       :plugins="textEditorPlugins"
       :line-gutters="lineGutters"
       :line-numbers="false"
+      :extra-keybindings="disableReplaceKeybindings"
     />
     <div class="empty-state" v-show="empty">
       No Data
@@ -115,6 +115,10 @@ export default Vue.extend({
       unfoldAll: 0,
       restoredTruncatedPaths: [],
       editableRangeErrors: [],
+      disableReplaceKeybindings: {
+        [this.cmCtrlOrCmd("R")]: () => false,
+        [this.cmCtrlOrCmd("Shift-R")]: () => false,
+      },
     };
   },
   watch: {

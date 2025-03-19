@@ -4,7 +4,7 @@
 
 import _ from "lodash";
 import { EditorRange, isPositionWithin } from "@/lib/editor/utils";
-import { TextEditorPlugin } from "./TextEditorPlugin";
+import { MenuOption, TextEditorPlugin } from "./TextEditorPlugin";
 import CodeMirror from "codemirror";
 // FIXME (azmi): maybe use json-ource-map instead?
 
@@ -64,42 +64,11 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
       });
     });
 
-    // Add event listeners for hover effects on all markers
-    setTimeout(() => {
-      this.setupMarkerHoverHandlers();
-    }, 0);
-
     this.editor.on("beforeChange", this.handleBeforeChange);
     this.editor.on("change", this.handleChange);
     this.editor.on("cursorActivity", this.handleCursorActivity);
-  }
 
-  setupMarkerHoverHandlers(): void {
-    const wrapper = this.editor.getWrapperElement();
-
-    // Use event delegation for better performance
-    wrapper.addEventListener("mouseover", this.handleMouseOver);
-    wrapper.addEventListener("mouseout", this.handleMouseOut);
-  }
-
-  private handleMouseOver(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (target.classList.contains(EDITABLE_MARKER_CLASSNAME)) {
-      const markerId = target.getAttribute(EDITABLE_MARKER_ATTR_ID);
-      if (markerId) {
-        this.highlightMarker(markerId);
-      }
-    }
-  }
-
-  private handleMouseOut(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (target.classList.contains(EDITABLE_MARKER_CLASSNAME)) {
-      const markerId = target.getAttribute(EDITABLE_MARKER_ATTR_ID);
-      if (markerId && markerId !== this.activeMarkerId) {
-        this.unHighlightMarker(markerId);
-      }
-    }
+    this.setupMarkerHoverHandlers();
   }
 
   destroy(): void {
@@ -109,10 +78,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
       this.editor.off("change", this.handleChange);
       this.editor.off("cursorActivity", this.handleCursorActivity);
 
-      // Remove event listeners
-      const wrapper = this.editor.getWrapperElement();
-      wrapper.removeEventListener("mouseover", this.handleMouseOver);
-      wrapper.removeEventListener("mouseout", this.handleMouseOut);
+      this.removeMarkerHoverHandlers();
 
       this.editor
         .getWrapperElement()
@@ -120,7 +86,23 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
     }
   }
 
-  handleBeforeChange(
+  beforeOpeningContextMenu(_event: MouseEvent, menuOptions: MenuOption[]) {
+    return menuOptions.filter((option) => !option.write);
+  }
+
+  private setupMarkerHoverHandlers(): void {
+    const wrapper = this.editor.getWrapperElement();
+    wrapper.addEventListener("mouseover", this.handleMouseOver);
+    wrapper.addEventListener("mouseout", this.handleMouseOut);
+  }
+
+  private removeMarkerHoverHandlers(): void {
+    const wrapper = this.editor.getWrapperElement();
+    wrapper.removeEventListener("mouseover", this.handleMouseOver);
+    wrapper.removeEventListener("mouseout", this.handleMouseOut);
+  }
+
+  private handleBeforeChange(
     cm: CodeMirror.Editor,
     changeObj: CodeMirror.EditorChangeCancellable
   ) {
@@ -142,7 +124,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
     }
   }
 
-  handleChange(
+  private handleChange(
     cm: CodeMirror.Editor,
     changeObj: CodeMirror.EditorChangeLinkedList
   ) {
@@ -171,7 +153,7 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
     }
   }
 
-  handleCursorActivity(cm: CodeMirror.Editor) {
+  private handleCursorActivity(cm: CodeMirror.Editor) {
     const cursor = cm.getCursor();
     const markers = cm.findMarksAt(cursor);
     const activeMarker = this.findActiveMarker(markers);
@@ -190,6 +172,26 @@ export default class PartialReadOnlyPlugin extends TextEditorPlugin {
     }
 
     this.activeMarkerId = activeMarkerId;
+  }
+
+  private handleMouseOver(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains(EDITABLE_MARKER_CLASSNAME)) {
+      const markerId = target.getAttribute(EDITABLE_MARKER_ATTR_ID);
+      if (markerId) {
+        this.highlightMarker(markerId);
+      }
+    }
+  }
+
+  private handleMouseOut(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains(EDITABLE_MARKER_CLASSNAME)) {
+      const markerId = target.getAttribute(EDITABLE_MARKER_ATTR_ID);
+      if (markerId && markerId !== this.activeMarkerId) {
+        this.unHighlightMarker(markerId);
+      }
+    }
   }
 
   highlightMarker(markerId: string) {
