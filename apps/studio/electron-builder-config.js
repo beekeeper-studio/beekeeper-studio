@@ -49,7 +49,12 @@ module.exports = {
     {
       from: './public',
       to: 'public'
-    }
+    },
+    {
+      from: ".",
+      to: ".",
+      filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
+    },
   ],
   fileAssociations: [
     {
