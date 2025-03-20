@@ -65,6 +65,8 @@ export interface IConnectionHandlers {
   'conn/getMaterializedViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getRoutineCreateScript': ({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/createTable': ({ table }: { table: CreateTableSpec }) => Promise<void>,
+  'conn/getCollectionValidation': ({ collection, sId }: { collection: string, sId: string }) => Promise<any>,
+  'conn/setCollectionValidation': ({ params, sId }: { params: any, sId: string }) => Promise<void>,
 
 
   // Make Changes ***************************************************************
@@ -356,6 +358,16 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/createTable': async function({ table, sId }: { table: CreateTableSpec, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.createTable(table);
+  },
+
+  'conn/getCollectionValidation': async function({ collection, sId }: { collection: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getCollectionValidation(collection);
+  },
+
+  'conn/setCollectionValidation': async function({ params, sId }: { params: any, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.setCollectionValidation(params);
   },
 
   'conn/alterTableSql': async function({ change, sId }: { change: AlterTableSpec, sId: string }) {

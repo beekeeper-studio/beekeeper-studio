@@ -201,6 +201,17 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   async createTable(_table: CreateTableSpec): Promise<void> {
     return Promise.resolve();
   }
+
+  // MongoDB-specific schema validation methods
+  async getCollectionValidation(_collection: string): Promise<any> {
+    log.debug('getCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve(null);
+  }
+
+  async setCollectionValidation(_params: any): Promise<void> {
+    log.debug('setCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve();
+  }
   // ****************************************************************************
 
   // Make Changes ***************************************************************

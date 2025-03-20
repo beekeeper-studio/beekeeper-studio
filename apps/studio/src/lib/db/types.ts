@@ -203,6 +203,8 @@ export interface IBasicDatabaseClient {
   getMaterializedViewCreateScript(view: string, schema?: string): Promise<string[]>,
   getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>,
   createTable(table: CreateTableSpec): Promise<void>,
+  getCollectionValidation(collection: string): Promise<any>,
+  setCollectionValidation(params: any): Promise<void>,
 
   alterTableSql(change: AlterTableSpec): Promise<string>,
   alterTable(change: AlterTableSpec): Promise<void>,

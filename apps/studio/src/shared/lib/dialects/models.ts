@@ -161,6 +161,7 @@ export interface DialectData {
     initialSort?: boolean
     multipleDatabase?: boolean
     sqlCreate?: boolean
+    schemaValidation?: boolean  // Whether schema validation features are disabled
   },
   notices?: {
     infoSchema?: string

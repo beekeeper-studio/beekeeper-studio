@@ -158,6 +158,14 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/createTable', { table });
   }
 
+  async getCollectionValidation(collection: string): Promise<any> {
+    return await Vue.prototype.$util.send('conn/getCollectionValidation', { collection });
+  }
+
+  async setCollectionValidation(params: any): Promise<void> {
+    return await Vue.prototype.$util.send('conn/setCollectionValidation', { params });
+  }
+
   async alterTableSql(change: AlterTableSpec): Promise<string> {
     return await Vue.prototype.$util.send('conn/alterTableSql', { change });
   }
