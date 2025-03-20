@@ -35,6 +35,10 @@
       <div class="card">
         <bks-data-editor></bks-data-editor>
       </div>
+      <h2>CSS Customization</h2>
+      <div class="card custom-theme">
+        <bks-data-editor></bks-data-editor>
+      </div>
     </div>
     <script type="module">
       import { getEntities } from "./data.js";
@@ -61,7 +65,14 @@
 
       dataEditor.entities = entities;
       dataEditor.addEventListener("bks-query-submit", (event) => {
-        alert(`Query: ${event.detail.query}`);
+        dataEditor.setTable({
+          name: "result",
+          columns: [
+            { field: "id", dataType: "integer" },
+            { field: "name", dataType: "string" },
+          ],
+          data: [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }],
+        });
       });
     </script>
     <script type="module" src="node_modules/@bks/ui-kit/dist/index.js"></script>

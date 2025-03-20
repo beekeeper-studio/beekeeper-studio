@@ -102,3 +102,81 @@ h2 {
 .read-the-docs {
   color: #888;
 }
+
+/* Intentionally Ugly Theme (For Demonstration) */
+.custom-theme {
+  background-color: #ff00ff;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 5px 15px rgba(255, 0, 255, 0.5);
+}
+
+/* Text Editor Customization */
+.custom-theme bks-sql-text-editor {
+  /* Ugly syntax highlighting colors */
+  --bks-text-editor-bg-color: #00ff00;
+  --bks-text-editor-fg-color: #ff0000;
+  --bks-text-editor-keyword-fg-color: #ff00ff;
+  --bks-text-editor-string-fg-color: #00ffff;
+  --bks-text-editor-number-fg-color: #ffff00;
+  --bks-text-editor-comment-fg-color: #ff8800;
+  --bks-text-editor-variable-fg-color: #8800ff;
+  --bks-text-editor-property-fg-color: #ff0088;
+  --bks-text-editor-bracket-fg-color: #88ff00;
+  --bks-text-editor-selected-bg-color: rgba(255, 0, 0, 0.5);
+
+  /* Custom styling */
+  border-radius: 12px;
+  border: 3px dashed #ff00ff;
+  padding: 10px;
+  font-family: "Comic Sans MS", cursive;
+}
+
+/* Data Editor Customization */
+.custom-theme bks-data-editor {
+  background-color: #00ffff;
+  border: 3px dotted #ff0000;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+}
+
+/* Table Customization */
+.custom-theme bks-table {
+  --bks-table-bg-color: #ffff00;
+  --bks-table-fg-color: #0000ff;
+  --bks-table-header-bg-color: #ff8800;
+  --bks-table-header-bg-color-selected: #ff00ff;
+  --bks-table-header-bg-color-highlight: #00ffff;
+  --bks-table-header-fg-color: #0000ff;
+  --bks-table-header-fg-color-selected: #ffff00;
+  --bks-table-header-fg-color-highlight: #ff0000;
+
+  --bks-table-header-border-color: #ff00ff;
+  --bks-table-header-col-bg-color: #ff8800;
+  --bks-table-header-col-border-color: #ff0000;
+  --bks-table-row-odd-bg-color: #ff88ff;
+  --bks-table-cell-fg-color: #0000ff;
+  --bks-table-cell-bg-color-hover: #00ff00;
+  --bks-table-cell-bg-color-selected: #ff00ff;
+  --bks-table-sorter-fg-color-active: #00ffff;
+  --bks-table-sorter-fg-color-inactive: #888800;
+  --bks-table-range-border-color: #ff0088;
+
+  --bks-table-tooltip-bg-color: #ff00ff;
+  --bks-table-tooltip-fg-color: #00ff00;
+  
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Entity List Customization */
+.custom-theme bks-entity-list {
+  background-color: #0000ff;
+  color: #ffff00;
+  border-radius: 12px;
+  border: 3px solid #00ff00;
+}
+
+.custom-theme bks-entity-list .item-icon {
+  color: #ff00ff;
+}

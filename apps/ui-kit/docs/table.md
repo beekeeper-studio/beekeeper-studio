@@ -70,6 +70,40 @@ table.columns = [
 More info on how to modify the context menu can be found in
 [Context Menu][context-menu] and the [Table API][table-api] docs.
 
+## Customization
+
+You can customize the appearance of the Table component by overriding these CSS variables. This allows you to change colors for table headers, cells, selection highlighting, and other visual elements to match your application's theme.
+
+```css
+.BksTable {
+  --bks-table-bg-color: #ffffff;
+  --bks-table-fg-color: rgba(0, 0, 0, 0.87);
+  --bks-table-header-bg-color: #ffffff;
+  --bks-table-header-bg-color-selected: #f6df72;
+  --bks-table-header-bg-color-highlight: #d9d9d9;
+  --bks-table-header-fg-color: unset;
+  --bks-table-header-fg-color-selected: #000000;
+  --bks-table-header-fg-color-highlight: unset;
+  --bks-table-header-border-color: #d9d9d9;
+
+  --bks-table-header-col-bg-color: #ffffff;
+  --bks-table-header-col-border-color: transparent;
+
+  --bks-table-row-odd-bg-color: rgba(0, 0, 0, 0.02);
+
+  --bks-table-cell-fg-color: unset;
+  --bks-table-cell-bg-color-hover: rgba(0, 0, 0, 0.05);
+  --bks-table-cell-bg-color-selected: rgba(0, 0, 0, 0.05);
+
+  --bks-table-sorter-fg-color-active: #000000;
+  --bks-table-sorter-fg-color-inactive: rgba(0, 0, 0, 0.35);
+
+  --bks-table-range-border-color: #caa900;
+
+  --bks-table-tooltip-bg-color: #292a2d;
+  --bks-table-tooltip-fg-color: lightgray;
+}
+```
 ## API
 
 See the API reference below for more details.
