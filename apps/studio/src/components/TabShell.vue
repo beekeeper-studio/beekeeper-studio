@@ -55,7 +55,7 @@
       >
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
-          <span>Command {{ selectedResult + 1 }}/{{ results.length }}: No Results. {{ result.affectedRows || 0 }} rows affected. See the select box in the bottom left ↙ for more query results.</span>
+          <span>Command {{ selectedResult + 1 }}/{{ results.length }}: No Results. {{ result.affectedRows || 0 }} rows affected. See the select box in the bottom left ↙ for more command results.</span>
         </div>
       </div>
       <div
@@ -77,7 +77,7 @@
         class="layout-center expand"
         v-else
       >
-        <shortcut-hints />
+        <shortcut-hints :isMongo="true" />
       </div>
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
@@ -389,7 +389,8 @@
               output: ''
             }
           }
-          this.results = Object.freeze([...this.results, ...results])
+          // get rid of old empty results
+          this.results = Object.freeze([...this.results.filter((r) => !!r.rows?.length), ...results])
           log.info('RESULTS: ', this.results)
           const nonEmptyResult = _.chain(this.results).findLastIndex((r) => !!r.rows?.length).value()
           console.log("non empty result", nonEmptyResult)

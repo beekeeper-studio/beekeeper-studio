@@ -19,6 +19,10 @@ import "codemirror/addon/scroll/annotatescrollbar";
 import "codemirror/addon/search/matchesonscrollbar";
 import "codemirror/addon/search/matchesonscrollbar.css";
 import "codemirror/addon/search/searchcursor";
+import "codemirror/addon/fold/foldgutter";
+import "codemirror/addon/fold/foldcode";
+import "codemirror/addon/fold/brace-fold";
+import "codemirror/addon/fold/foldgutter.css";
 import "@/plugins/CMMongoHint";
 import "@/vendor/show-hint";
 import "@/lib/editor/CodeMirrorDefinitions";
@@ -85,10 +89,22 @@ export default {
       const doc = this.shell.getDoc();
       const lastLineNum = this.shell.lastLine();
       let output = value.output;
+
       if (typeof output === 'object') {
-        output = JSON.stringify(output);
+        try {
+          const formattedOutput = JSON.stringify(output, null, 2);
+          
+          doc.replaceRange(`\n${formattedOutput}`, { line: lastLineNum + 1, ch: 0 });
+        } catch (err) {
+          // Fallback to basic string version if anything goes wrong
+          const output = JSON.stringify(value.output);
+          doc.replaceRange(`\n${output}`, { line: lastLineNum + 1, ch: 0 });
+        }
+      } else {
+        // For non-object output, just insert as text
+        doc.replaceRange(`\n${output}`, { line: lastLineNum + 1, ch: 0 });
       }
-      doc.replaceRange(`\n${output}`, { line: lastLineNum + 1, ch: 0 });
+
       this.connection.getShellPrompt().then((v) => {
         this.promptSymbol = v;
         this.resetPrompt();
@@ -118,6 +134,14 @@ export default {
     async initialize(options: InitializeOptions = {}) {
       this.destroyShell();
 
+      const indicatorOpen = document.createElement("span");
+      indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
+      indicatorOpen.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_down</i>`;
+
+      const indicatorFolded = document.createElement("span");
+      indicatorFolded.classList.add("foldgutter", "btn-fab", "open-close");
+      indicatorFolded.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_right</i>`;
+
       const cm = CodeMirror.fromTextArea(this.$refs.shell, {
         tabSize: 2,
         lineNumbers: false,
@@ -126,6 +150,7 @@ export default {
         extraKeys: {
           "Ctrl-Space": "autocomplete",
           "Shift-Tab": "indentLess",
+          [this.cmCtrlOrCmd("F")]: "findPersistent"
         },
         // @ts-expect-error not fully typed
         options: {
@@ -135,6 +160,17 @@ export default {
         hint: this.hint,
         hintOptions: this.hintOptions,
         keyMap: options.userKeymap,
+        // Add folding capability with custom indicators
+        // @ts-expect-error not fully typed
+        foldGutter: {
+        // @ts-expect-error not fully typed
+          rangeFinder: CodeMirror.fold.brace, // Use brace folding
+          gutter: "CodeMirror-foldgutter",
+          indicatorOpen: indicatorOpen,
+          indicatorFolded: indicatorFolded,
+        },
+        // @ts-expect-error not fully typed
+        gutters: [ { className: "CodeMirror-foldgutter", style: "width: 18px"}],
       });
 
       cm.getWrapperElement().classList.add("text-editor");
@@ -271,6 +307,12 @@ export default {
 .cm-s-monokai .cm-prompt {
   color: $theme-primary;
   font-weight: bold;
+}
+
+.text-editor {
+  .dropdown-icon:hover {
+    color: lighten($theme-primary, 15%);
+  }
 }
 
 </style>
