@@ -315,8 +315,6 @@ import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import DetailViewSidebar from '@/components/sidebar/JsonViewer.vue'
-import Split from 'split.js'
 import { ExpandablePath } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
@@ -325,7 +323,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -372,9 +370,6 @@ export default Vue.extend({
       selectedRowIndex: null,
       selectedRowData: {},
       expandablePaths: {},
-      split: null,
-      detailViewTitle: undefined,
-      reinitializeDetailView: 0,
     };
   },
   computed: {
@@ -748,12 +743,6 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
-      if (this.active) {
-        this.reinitializeDetailView++
-        const splitSizes = this.$store.state.tableTableSplitSizes
-        this.split?.setSizes(splitSizes)
-      }
-
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -1695,7 +1684,6 @@ export default Vue.extend({
       const position = this.indexRowOf(row)
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
-      this.detailViewTitle = `Row ${position}`
       this.selectedRow = row
       this.selectedRowIndex = position
       this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)

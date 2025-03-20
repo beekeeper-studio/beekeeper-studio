@@ -5,7 +5,7 @@
         <x-tab
           v-for="tab in tabs"
           :key="tab.id"
-          :selected="activeTabId === tab.id"
+          :selected="secondaryActiveTabId === tab.id"
           @click="handleTabClick(tab)"
         >
           <x-label>{{ tab.label }}</x-label>
@@ -18,7 +18,7 @@
       </div>
     </div>
     <div class="sidebar-body" ref="body">
-      <json-viewer-sidebar v-if="activeTabId === 'json-viewer'" />
+      <json-viewer-sidebar v-if="secondaryActiveTabId === 'json-viewer'" />
     </div>
   </div>
 </template>
@@ -39,17 +39,17 @@ export default Vue.extend({
   name: "SecondarySidebar",
   components: { JsonViewerSidebar },
   computed: {
-    ...mapState("secondarySidebar", ["activeTabId", "tabs", "open"]),
+    ...mapState("sidebar", ["secondaryActiveTabId", "tabs", "secondarySidebarOpen"]),
     rootBindings() {
       return [
-        { event: AppEvent.selectSecondarySidebarTab, handler: this.setActiveTab },
+        { event: AppEvent.selectSecondarySidebarTab, handler: this.setSecondaryActiveTabId },
       ];
     },
   },
   methods: {
-    ...mapActions("secondarySidebar", ["setActiveTab"]),
+    ...mapActions("sidebar", ["setSecondaryActiveTabId"]),
     handleTabClick(tab: SidebarTab) {
-      this.setActiveTab(tab.id);
+      this.setSecondaryActiveTabId(tab.id);
     },
   },
   mounted() {

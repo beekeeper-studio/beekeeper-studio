@@ -32,7 +32,7 @@
             <i
               class="material-symbols-outlined"
               :style="{
-                'font-variation-settings': openPrimarySidebar ? `'FILL' 1` : `'FILL' 0`
+                'font-variation-settings': primarySidebarOpen ? `'FILL' 1` : `'FILL' 0`
               }"
             >dock_to_right</i>
           </button>
@@ -45,7 +45,7 @@
             <i
               class="material-symbols-outlined"
               :style="{
-                'font-variation-settings': openSecondarySidebar ? `'FILL' 1` : `'FILL' 0`
+                'font-variation-settings': secondarySidebarOpen ? `'FILL' 1` : `'FILL' 0`
               }"
             >dock_to_left</i>
           </button>
@@ -106,10 +106,7 @@ export default {
   },
   computed: {
     ...mapState(['windowTitle', 'connected']),
-    ...mapState('secondarySidebar', {
-      openSecondarySidebar: 'open',
-    }),
-    ...mapGetters(['openPrimarySidebar']),
+    ...mapState('sidebar', ['secondarySidebarOpen', 'primarySidebarOpen']),
   },
   mounted() {
     window.main.onMaximize(() => {

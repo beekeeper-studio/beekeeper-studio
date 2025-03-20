@@ -34,7 +34,7 @@ import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
-import { SecondarySidebarModule } from './modules/SecondarySidebarModule'
+import { SidebarModule } from './modules/SidebarModule'
 
 
 const log = RawLog.scope('store/index')
@@ -72,8 +72,6 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
-  openPrimarySidebar: boolean
-  tableTableSplitSizes: number[]
 }
 
 Vue.use(Vuex)
@@ -94,7 +92,7 @@ const store = new Vuex.Store<State>({
     multiTableExports: MultiTableExportStoreModule,
     imports: ImportStoreModule,
     backups: BackupModule,
-    secondarySidebar: SecondarySidebarModule,
+    sidebar: SidebarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -128,8 +126,6 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
-    openPrimarySidebar: SmartLocalStorage.getBool('openPrimarySidebar', false),
-    tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
   },
 
   getters: {
@@ -249,9 +245,6 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
-    },
-    openPrimarySidebar(state) {
-      return state.openPrimarySidebar
     },
   },
   mutations: {
@@ -386,12 +379,6 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
-    },
-    openPrimarySidebar(state, value: boolean) {
-      state.openPrimarySidebar = value
-    },
-    tableTableSplitSizes(state, value: number[]) {
-      state.tableTableSplitSizes = value
     },
   },
   actions: {
@@ -606,14 +593,6 @@ const store = new Vuex.Store<State>({
       SmartLocalStorage.setBool(flag, value)
       context.commit(flag, value)
       return value
-    },
-    togglePrimarySidebar(context, value: boolean) {
-      SmartLocalStorage.setBool('openPrimarySidebar', value)
-      context.commit('openPrimarySidebar', value)
-    },
-    setTableTableSplitSizes(context, value: number[]) {
-      SmartLocalStorage.addItem('tableTableSplitSizes', value)
-      context.commit('tableTableSplitSizes', value)
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
