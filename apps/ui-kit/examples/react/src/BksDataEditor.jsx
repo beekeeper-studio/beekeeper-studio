@@ -1,22 +1,29 @@
 import { useEffect, useRef } from "react";
 
 export default function BksDataEditor({ entities }) {
-  const red = useRef(null);
+  const ref = useRef(null);
 
   function handleQuerySubmit(event) {
-    alert(`Query: ${event.detail.query}`);
+    ref.current.setTable({
+      name: "result",
+      columns: [
+        { field: "id", dataType: "integer" },
+        { field: "name", dataType: "string" },
+      ],
+      data: [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }],
+    });
   }
 
   useEffect(() => {
-    if (red.current) {
-      red.current.addEventListener(
+    if (ref.current) {
+      ref.current.addEventListener(
         "bks-query-submit",
         handleQuerySubmit
       );
     }
     return () => {
-      if (red.current) {
-        red.current.removeEventListener(
+      if (ref.current) {
+        ref.current.removeEventListener(
           "bks-query-submit",
           handleQuerySubmit
         );
@@ -25,9 +32,9 @@ export default function BksDataEditor({ entities }) {
   }, []);
 
   useEffect(() => {
-    if (!red.current) return;
-    red.current.entities = entities;
+    if (!ref.current) return;
+    ref.current.entities = entities;
   }, [entities]);
 
-  return <bks-data-editor ref={red} />;
+  return <bks-data-editor ref={ref} />;
 }

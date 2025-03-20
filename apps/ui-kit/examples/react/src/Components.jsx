@@ -46,6 +46,10 @@ export default function Components() {
       <div className="card">
         <BksDataEditor entities={entities} />
       </div>
+      <h2>CSS Customization</h2>
+      <div className="card custom-theme">
+        <BksDataEditor entities={entities} />
+      </div>
     </>
   );
 }

@@ -1,7 +1,22 @@
 {
-  "name": "@bks/ui-kit",
-  "private": true,
-  "version": "0.0.10",
+  "name": "@beekeeperstudio/ui-kit",
+  "description": "UI components library for Beekeeper Studio",
+  "author": {
+    "name": "Beekeeper Studio Team",
+    "email": "support@beekeeperstudio.io",
+    "url": "https://beekeeperstudio.io"
+  },
+  "private": false,
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
+    "directory": "apps/ui-kit"
+  },
+  "bugs": {
+    "url": "https://github.com/beekeeper-studio/beekeeper-studio/issues"
+  },
+  "homepage": "https://beekeeperstudio.io",
   "type": "module",
   "files": [
     "dist"
