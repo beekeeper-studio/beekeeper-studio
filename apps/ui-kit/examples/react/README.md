@@ -1,4 +1,4 @@
-# React + Vite + @bks/ui-kit
+# React + Vite + @beekeeperstudio/ui-kit
 
 ## Quickstart
 

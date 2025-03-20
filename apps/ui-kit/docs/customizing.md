@@ -24,7 +24,7 @@ The UI Kit components can be styled using regular CSS. Since CSS variables are n
 
 1. Import the default styles:
    ```js
-   import "@bks/ui-kit/style.css";
+   import "@beekeeperstudio/ui-kit/style.css";
    ```
 
 2. Add your custom CSS either in a separate stylesheet or use your framework's styling system.

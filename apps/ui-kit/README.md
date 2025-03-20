@@ -1,6 +1,6 @@
-# @bks/ui-kit
+# @beekeeperstudio/ui-kit
 
-`@bks/ui-kit` library provides a set of reusable UI custom elements used in
+`@beekeeperstudio/ui-kit` library provides a set of reusable UI custom elements used in
 [Beekeeper Studio](https://github.com/beekeeper-studio/beekeeper-studio/).
 
 Get started with the [docs](./docs/getting-started.md).

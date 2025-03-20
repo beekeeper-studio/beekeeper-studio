@@ -1,6 +1,6 @@
 # Getting Started
 
-`@bks/ui-kit` library provides a set of custom elements or components that can
+`@beekeeperstudio/ui-kit` library provides a set of custom elements or components that can
 be used to create interactive user interfaces for database applications.
 Currently, it includes the following components:
 
@@ -13,24 +13,24 @@ For information on customizing the appearance of these components, see the [Cust
 
 ## Installation
 
-To load the `@bks/ui-kit` library in your project, follow these steps:
+To load the `@beekeeperstudio/ui-kit` library in your project, follow these steps:
 
 1. Install the library using npm or yarn:
 
    ```bash
-   npm install @bks/ui-kit
+   npm install @beekeeperstudio/ui-kit
    ```
 
 2. Import the style and the components:
 
    ```js
-   import "@bks/ui-kit/style.css";
+   import "@beekeeperstudio/ui-kit/style.css";
 
    // Import components individually
-   import "@bks/ui-kit/bks-table.js";
+   import "@beekeeperstudio/ui-kit/bks-table.js";
 
    // Or import all components
-   import "@bks/ui-kit";
+   import "@beekeeperstudio/ui-kit";
    ```
 
 3. Use the component in your HTML:
@@ -59,7 +59,7 @@ Attributes are set in HTML and available in JavaScript using dedicated APIs:
 sqlTextEditor.setAttribute("read-only", "true");
 ```
 
-While attributes are always `string`, `@bks/ui-kit` converts them to the
+While attributes are always `string`, `@beekeeperstudio/ui-kit` converts them to the
 correct types based on the corresponding properties types. These types are
 `boolean` and `number`.
 
@@ -94,7 +94,7 @@ To learn more about the properties and their types, please refer to the API docu
 
 ## Reactivity
 
-`@bks/ui-kit` uses [Vue](https://v2.vuejs.org/) as its main framework. Therefore,
+`@beekeeperstudio/ui-kit` uses [Vue](https://v2.vuejs.org/) as its main framework. Therefore,
 the custom element will be reactive to changes in html properties and attributes.
 
 ```html
@@ -143,7 +143,7 @@ table.data = data;
 
 ## Events
 
-`@bks/ui-kit` components emit events in the same way as native HTML elements.
+`@beekeeperstudio/ui-kit` components emit events in the same way as native HTML elements.
 To listen to events, use the `addEventListener()` method. The data of the event
 is available in the `event.detail` property. For example:
 
