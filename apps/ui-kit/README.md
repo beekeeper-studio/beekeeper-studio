@@ -1,9 +1,17 @@
 # @beekeeperstudio/ui-kit
 
 `@beekeeperstudio/ui-kit` library provides a set of reusable UI custom elements used in
-[Beekeeper Studio](https://github.com/beekeeper-studio/beekeeper-studio/).
+[Beekeeper Studio](https://beekeeperstudio.io).
 
-Get started with the [docs](./docs/getting-started.md).
+Get started with the [docs](https://github.com/beekeeper-studio/beekeeper-studio/tree/master/apps/ui-kit/docs/getting-started.md).
+
+## Installation
+
+Install the `@beekeeperstudio/ui-kit` library to your project with:
+
+```bash
+npm install @beekeeperstudio/ui-kit
+```
 
 ## Development
 
