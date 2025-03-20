@@ -62,7 +62,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async versionString() {
-    const db = this.conn.db(this.database.database);
+    const db = this.conn.db(this.db);
     const buildInfo = await db.command({ buildInfo: 1 });
 
     return buildInfo.version;
@@ -91,7 +91,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
 
   async listTables(): Promise<TableOrView[]> {
-    const db = this.conn.db(this.database.database);
+    const db = this.conn.db(this.db);
     const collections = await db.listCollections().toArray();
     return collections.map((col) => {
       return {
@@ -118,7 +118,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
   // TODO(@day): we need to figure out how to display cols that may have multiple types
   async listTableColumns(table?: string): Promise<ExtendedTableColumn[]> {
-    const db = this.conn.db(this.database.database);
+    const db = this.conn.db(this.db);
     if (table) {
       const cols = await this.getCollectionCols(db.collection(table));
       return cols.map((col) => ({
@@ -145,7 +145,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async listTableIndexes(table: string, _schema?: string): Promise<TableIndex[]> {
-    const collection = this.conn.db(this.database.database).collection(table);
+    const collection = this.conn.db(this.db).collection(table);
 
     const indexes = await collection.indexes({ full: true });
 
@@ -193,7 +193,13 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const db = this.conn.db(this.db);
     switch (typeOfElement) {
       case DatabaseElement.TABLE:
-        await db.dropCollection(elementName);
+        try {
+          await db.dropCollection(elementName);
+          log.debug(`Dropped collection ${elementName}`);
+        } catch (err) {
+          log.error(`Error dropping collection ${elementName}:`, err);
+          throw err;
+        }
         break;
       case DatabaseElement.DATABASE:
         await db.dropDatabase();
@@ -207,7 +213,19 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const db = this.conn.db(this.db);
 
     if (typeOfElement == DatabaseElement.TABLE) {
-      await db.collection(elementName).rename(newElementName);
+      try {
+        // Check if target name already exists
+        const targetCollections = await db.listCollections({ name: newElementName }).toArray();
+        if (targetCollections.length > 0) {
+          throw new Error(`Target collection ${newElementName} already exists`);
+        }
+        
+        // Perform the rename operation
+        await db.collection(elementName).rename(newElementName);
+      } catch (err) {
+        log.error(`Error renaming collection from ${elementName} to ${newElementName}:`, err);
+        throw err;
+      }
     } else {
       log.warn(`MongoDB does not support renaming ${typeOfElement}`);
     }
@@ -219,7 +237,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
-    const collection = this.conn.db(this.database.database).collection(table);
+    const collection = this.conn.db(this.db).collection(table);
 
     const convertedOrders = orderBy.length > 0 ? orderBy.reduce((all, ord) => ({
       ...all,
@@ -286,7 +304,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
-    return await this.conn.db(this.database.database).collection(table).estimatedDocumentCount();
+    return await this.conn.db(this.db).collection(table).estimatedDocumentCount();
   }
 
   async getTableProperties(table: string, _schema?: string): Promise<TableProperties> {
@@ -302,74 +320,232 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
   async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
     let results = [];
-    const db = this.conn.db(this.database.database);
+    const db = this.conn.db(this.db);
 
     try {
-      if (changes.inserts) {
+      if (changes.inserts && changes.inserts.length > 0) {
         await this.insertRows(changes.inserts, db);
       }
 
-      if (changes.updates) {
+      if (changes.updates && changes.updates.length > 0) {
         results = await this.updateValues(changes.updates, db);
       }
 
-      if (changes.deletes) {
+      if (changes.deletes && changes.deletes.length > 0) {
         await this.deleteRows(changes.deletes, db);
       }
     } catch (err) {
-      log.error('Error applying changes: ', err)
+      log.error('Error applying changes: ', err);
+      throw new Error(`Failed to apply changes: ${err.message}`);
     }
     return results;
   }
 
   async insertRows(inserts: TableInsert[], connection: Db) {
+    const errors = [];
+    
     for (const insert of inserts) {
-      connection.collection(insert.table).insertMany(insert.data);
+      try {
+        if (!insert.table) {
+          throw new Error("Missing table name for insert operation");
+        }
+        
+        const collection = connection.collection(insert.table);
+        await collection.insertMany(insert.data);
+        
+        log.debug(`Inserted ${insert.data.length} documents into ${insert.table}`);
+      } catch (err) {
+        log.error(`Error inserting into ${insert.table}:`, err);
+        errors.push(`Failed to insert into ${insert.table}: ${err.message}`);
+      }
+    }
+    
+    if (errors.length > 0) {
+      throw new Error(errors.join("; "));
     }
   }
 
   async updateValues(updates: TableUpdate[], connection: Db) {
     let results = [];
+    const errors = [];
+    
     for (const update of updates) {
-      const filter = { _id: update.primaryKeys[0].value };
-      const updateDoc = {
-        $set: {
-          [update.column]: update.value
+      try {
+        if (!update.table) {
+          throw new Error("Missing table name for update operation");
         }
-      };
+        
+        if (!update.primaryKeys || update.primaryKeys.length === 0) {
+          throw new Error(`No primary key provided for update in table ${update.table}`);
+        }
+        
+        // Safely convert ObjectId string to actual ObjectId
+        let idValue = update.primaryKeys[0].value;
+        try {
+          if (ObjectId.isValid(idValue)) {
+            idValue = new ObjectId(idValue);
+          }
+        } catch (err) {
+          log.error(`Error converting ObjectId ${idValue}:`, err);
+          // Continue with the original value if conversion fails
+        }
+        
+        const filter = { _id: idValue };
+        
+        // Handle value conversion for special types if needed
+        let fieldValue = update.value;
+        
+        // Create the update document
+        const updateDoc = {
+          $set: {
+            [update.column]: fieldValue
+          }
+        };
 
-      const result = await connection.collection(update.table).findOneAndUpdate(
-        filter,
-        updateDoc,
-        { returnDocument: 'after' }
-      );
-      results.push(result);
+        // Get collection
+        const collection = connection.collection(update.table);
+
+        // Perform the update
+        const result = await collection.findOneAndUpdate(
+          filter,
+          updateDoc,
+          { 
+            returnDocument: 'after',
+          }
+        );
+        
+        if (!result) {
+          throw new Error(`Failed to update document with _id ${idValue} in ${update.table}`);
+        }
+        
+        results.push(result);
+        log.debug(`Updated document in ${update.table} with _id ${idValue}, column: ${update.column}`);
+      } catch (err) {
+        const errMsg = `Error updating ${update.table}: ${err.message}`;
+        log.error(errMsg);
+        errors.push(`Failed to update ${update.table}: ${err.message}`);
+      }
     }
+    
+    if (errors.length > 0) {
+      throw new Error(errors.join("; "));
+    }
+    
     return results;
   }
 
   async deleteRows(deletes: TableDelete[], connection: Db) {
+    const errors = [];
+    
     for (const del of deletes) {
-      connection.collection(del.table).deleteOne({
-        _id: del.primaryKeys[0].value
-      });
+      try {
+        if (!del.table) {
+          throw new Error("Missing table name for delete operation");
+        }
+        
+        if (!del.primaryKeys || del.primaryKeys.length === 0) {
+          throw new Error(`No primary key provided for delete in table ${del.table}`);
+        }
+        
+        // Safely convert ObjectId string to actual ObjectId if needed
+        let idValue = del.primaryKeys[0].value;
+        try {
+          if (ObjectId.isValid(idValue)) {
+            idValue = new ObjectId(idValue);
+          }
+        } catch (err) {
+          log.error(`Error converting ObjectId ${idValue}:`, err);
+          // Continue with the original value if conversion fails
+        }
+
+        const collection = connection.collection(del.table);
+
+        // Perform the delete operation
+        const result = await collection.deleteOne({
+          _id: idValue
+        });
+        
+        if (result.deletedCount === 0) {
+          log.warn(`Failed to delete document with _id ${idValue} in ${del.table}`);
+        } else {
+          log.debug(`Successfully deleted document from ${del.table} with _id ${idValue}`);
+        }
+      } catch (err) {
+        const errMsg = `Error deleting from ${del.table}: ${err.message}`;
+        log.error(errMsg);
+        errors.push(`Failed to delete from ${del.table}: ${err.message}`);
+      }
+    }
+    
+    if (errors.length > 0) {
+      throw new Error(errors.join("; "));
     }
   }
 
   override async alterIndex(changes: IndexAlterations): Promise<void> {
-    const collection = this.conn.db(this.db).collection(changes.table);
+    const errors = [];
+    const db = this.conn.db(this.db);
+    
+    try {
+      // Verify collection exists
+      const collections = await db.listCollections({ name: changes.table }).toArray();
+      if (collections.length === 0) {
+        throw new Error(`Collection ${changes.table} does not exist`);
+      }
+      
+      const collection = db.collection(changes.table);
 
-    for (let addition of changes.additions) {
-      const indexSpec = addition.columns.reduce((obj, col) => ({
-        ...obj,
-        [col.name]: this.convertOrder(col.order)
-      }), {});
-      log.info('INDEX SPEC: ', indexSpec)
-      await collection.createIndex(indexSpec);
-    }
+      // Process index additions
+      for (let addition of changes.additions) {
+        try {
+          // Convert column order specifications to MongoDB format
+          const indexSpec = addition.columns.reduce((obj, col) => ({
+            ...obj,
+            [col.name]: this.convertOrder(col.order)
+          }), {});
+          
+          // Prepare index options
+          const indexOptions: any = {
+            name: addition.name,
+          };
+          
+          // Add unique option if specified
+          if (addition.unique) {
+            indexOptions.unique = true;
+          }
+          
+          log.debug(`Creating index ${addition.name} on ${changes.table} with spec:`, indexSpec);
+          
+          // Create the index
+          await collection.createIndex(indexSpec, indexOptions);
+          log.debug(`Successfully created index ${addition.name} on ${changes.table}`);
+        } catch (err) {
+          const errorMsg = `Error creating index ${addition.name} on ${changes.table}: ${err.message}`;
+          log.error(errorMsg);
+          errors.push(errorMsg);
+        }
+      }
 
-    for (let drop of changes.drops) {
-      await collection.dropIndex(drop.name);
+      // Process index drops
+      for (let drop of changes.drops) {
+        try {
+          log.debug(`Dropping index ${drop.name} from ${changes.table}`);
+          await collection.dropIndex(drop.name);
+          log.debug(`Successfully dropped index ${drop.name} from ${changes.table}`);
+        } catch (err) {
+          const errorMsg = `Error dropping index ${drop.name} from ${changes.table}: ${err.message}`;
+          log.error(errorMsg);
+          errors.push(errorMsg);
+        }
+      }
+      
+      // If any errors occurred, throw a combined error
+      if (errors.length > 0) {
+        throw new Error(errors.join('; '));
+      }
+    } catch (err) {
+      log.error(`Error altering indexes for ${changes.table}:`, err);
+      throw err;
     }
   }
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {
@@ -420,7 +596,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
-    const db = this.conn.db(this.database.database);
+    const db = this.conn.db(this.db);
 
     let result = [];
 
@@ -531,6 +707,59 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return {
       name: column.field,
       bksType: column.type === 'objectid' ? 'OBJECTID' : 'UNKNOWN'
+    }
+  }
+
+  // MongoDB Schema Validation Support
+  async getCollectionValidation(collectionName: string): Promise<any> {
+    try {
+      const db = this.conn.db(this.db);
+      
+      // Run listCollections with the filter to get the specified collection info
+      const collections = await db.listCollections({ name: collectionName }, { nameOnly: false }).toArray();
+      
+      if (collections.length === 0) {
+        throw new Error(`Collection ${collectionName} not found`);
+      }
+      
+      const collectionInfo = collections[0];
+      
+      // Return the validation information if it exists
+      return {
+        validator: collectionInfo.options?.validator || null,
+        validationLevel: collectionInfo.options?.validationLevel || 'moderate',
+        validationAction: collectionInfo.options?.validationAction || 'error'
+      };
+    } catch (err) {
+      log.error(`Error getting collection validation for ${collectionName}:`, err);
+      throw err;
+    }
+  }
+  
+  async setCollectionValidation(params: {
+    collection: string,
+    validationLevel: 'off' | 'strict' | 'moderate',
+    validationAction: 'error' | 'warn',
+    schema: any
+  }): Promise<void> {
+    try {
+      const db = this.conn.db(this.db);
+      
+      // Create the validator command
+      const command = {
+        collMod: params.collection,
+        validator: { $jsonSchema: params.schema },
+        validationLevel: params.validationLevel,
+        validationAction: params.validationAction
+      };
+      
+      // Run the command to modify the collection
+      await db.command(command);
+      
+      log.debug(`Updated validation for collection ${params.collection}`);
+    } catch (err) {
+      log.error(`Error setting collection validation for ${params.collection}:`, err);
+      throw err;
     }
   }
 
