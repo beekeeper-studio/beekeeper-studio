@@ -9,6 +9,8 @@ Currently, it includes the following components:
 - [**SQL Text Editor**](./sql-text-editor.md): Editing SQL queries with syntax highlighting and auto-completion.
 - [**Data Editor**](./data-editor.md): Providing all of the above in one place.
 
+For information on customizing the appearance of these components, see the [Customizing UI Kit Components](./customizing.md) documentation. Specific CSS properties for styling the SQL Text Editor and Table components can be found in their respective documentation pages.
+
 ## Installation
 
 To load the `@bks/ui-kit` library in your project, follow these steps:
