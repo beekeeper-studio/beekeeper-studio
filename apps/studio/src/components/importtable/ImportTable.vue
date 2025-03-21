@@ -152,7 +152,6 @@ export default {
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.importKey())
-      console.log(importOptions.table)
       if (importOptions.table) {
         this.selectedTable = this.tableKeyByMatrix(importOptions.table)
       } else {

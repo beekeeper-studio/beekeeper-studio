@@ -261,10 +261,6 @@
 
         // get the table if it's been pre-selected and is now part of the props!
         this.table = this.getTable()
-        // if (this.table) {
-        //   await this.$store.dispatch('updateTableColumns', this.table)
-        //   importOptions.table = this.table
-        // }
 
         this.importerId = await this.$util.send('import/init', { options: importOptions })
         this.tabulator = null
@@ -298,12 +294,6 @@
           trimWhitespaces: this.trimWhitespaces,
           useHeaders: true
         }
-
-        // this.table = this.getTable()
-        // if (this.table) {
-        //   await this.$store.dispatch('updateTableColumns', this.table)
-        //   importOptions.table = this.table
-        // }
 
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })

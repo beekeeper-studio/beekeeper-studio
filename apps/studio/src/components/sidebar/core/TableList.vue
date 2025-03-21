@@ -152,18 +152,6 @@
               </x-menuitem>
             </x-menu>
           </x-button>
-
-
-
-          <!-- <button
-            @click.prevent="newTable"
-            title="New Table"
-            class="create-table"
-            :disabled="tablesLoading"
-            v-if="canCreateTable"
-          >
-            <i class="material-icons">add</i>
-          </button> -->
         </div>
       </div>
 

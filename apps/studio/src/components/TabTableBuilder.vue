@@ -73,7 +73,13 @@
                 <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="createAndImport">
-                <x-label>Create Table and Import Data from File</x-label>
+                <x-label>
+                  Create Table and Import Data from File
+                  <i
+                    v-if="$store.getters.isCommunity"
+                    class="material-icons menu-icon"
+                  >stars</i>
+                </x-label>
               </x-menuitem>
             </x-menu>
           </x-button>

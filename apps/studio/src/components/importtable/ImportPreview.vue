@@ -114,7 +114,6 @@ export default {
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.importKey())
-      console.log(importOptions)
       this.table = importOptions.table
       this.importOptions = importOptions
       if (!importOptions.importProcessId) {
