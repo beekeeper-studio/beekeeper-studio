@@ -260,22 +260,32 @@
       "buyTooltip": "任何购买都可获得应用终身访问权"
     },
     "trial": {
-      "start": "开始免费试用",
-      "tooltip": "14天免费试用，无需电子邮件或信用卡",
-      "ended": "您的免费试用已于{date}结束"
+        "start": "开始14天免费试用",
+        "tooltip": "无需提供电子邮件或信用卡信息，立即体验全部功能",
+        "ended": "您的免费试用已于{date}结束"
     },
+      "features": {
+      "queryToFile": "直接将查询结果保存至文件",
+      "exportTables": "批量导出多个表",
+      "backupRestore": "轻松备份与恢复数据库",
+      "magicFormatting": "智能SQL格式化",
+      "tableFilters": "使用超过2个高级表格过滤器",
+      "dbEngines": "支持更多数据库引擎",
+      "dbEnginesTitle": "包括Oracle、Cassandra、BigQuery等",
+      "cloudSync": "跨设备云同步",
+      "readOnlyMode": "启用只读模式保护数据",
+      "sqliteExtensions": "利用SQLite扩展增强功能",
+      "importFromFile": "从文件快速导入数据"
+  }
+  },
+  "upsell": {
+    "upgradeRequired": "需要升级您的账户",
+    "getAccessToFeature": "获取此功能及更多专属权益：",
     "features": {
-      "queryToFile": "直接将查询结果写入文件",
-      "exportTables": "导出多个表",
-      "backupRestore": "备份与恢复",
-      "magicFormatting": "智能格式化",
-      "tableFilters": "超过2个表格过滤器",
-      "dbEngines": "更多数据库引擎",
-      "dbEnginesTitle": "Oracle、Cassandra、BigQuery等",
-      "cloudSync": "云同步",
-      "readOnlyMode": "只读模式",
-      "sqliteExtensions": "SQLite扩展",
-      "importFromFile": "从文件导入"
+        "connectTo": "连接到多种数据库，包括Cassandra、Oracle、LibSQL、ClickHouse和DuckDB。",
+        "unlockFeatures": "解锁高级功能，如JSON视图、无限表格过滤器、数据导入/导出、备份与恢复等。",
+        "supportStaff": "享受专业的客户服务，我们的支持团队随时准备帮助您解决任何问题。",
+        "syncData": "通过云工作区和团队协作工具，在多台设备间无缝同步数据。"
     }
   },
   "misc": {

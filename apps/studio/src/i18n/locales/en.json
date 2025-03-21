@@ -278,6 +278,16 @@
       "importFromFile": "Import from file"
     }
   },
+  "upsell": {
+    "upgradeRequired": "Upgrade required",
+    "getAccessToFeature": "Get access to this feature, plus:",
+    "features": {
+      "connectTo": "Connect to Cassandra, Oracle, LibSQL, ClickHouse, and DuckDB.",
+      "unlockFeatures": "Unlock JSON view, unlimited table filters, import/export, backup/restore, and more.",
+      "supportStaff": "Email real support staff, we're here whenever you have a problem.",
+      "syncData": "Sync data across machines with cloud workspaces and team collaboration tools."
+    }
+  },
   "misc": {
     "app": {
       "name": "Beekeeper Studio",

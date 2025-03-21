@@ -37,9 +37,7 @@
             </div>
             <div class="col s6">
               <ul class="check-list">
-                <li v-tooltip="$t('upgrade.features.dbEnginesTitle')">
-                  {{ $t('upgrade.features.dbEngines') }}
-                </li>
+                <li>{{ $t('upgrade.features.dbEngines') }}</li>
                 <li>{{ $t('upgrade.features.cloudSync') }}</li>
                 <li>{{ $t('upgrade.features.readOnlyMode') }}</li>
                 <li>{{ $t('upgrade.features.sqliteExtensions') }}</li>
