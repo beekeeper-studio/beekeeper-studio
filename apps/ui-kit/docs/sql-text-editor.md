@@ -2,6 +2,8 @@
 
 The Text Editor that is specialized for SQL queries.
 
+![SQL Text Editor](./assets/images/sql-text-editor.png)
+
 ## Basic Usage
 
 ```html

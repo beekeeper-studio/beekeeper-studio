@@ -3,6 +3,8 @@
 The Table component displays data of a database table in a tabular form with
 spreadsheet like selection.
 
+![Table](./assets/images/table.png)
+
 ## Basic Usage
 
 ```html
