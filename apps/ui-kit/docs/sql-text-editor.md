@@ -50,6 +50,18 @@ sqlTextEditor.entities = [
 ];
 ```
 
+To use a custom function to autocomplete column names instead of using the `entities.columns` property, you can set the `columnsGetter` property.
+
+```js
+sqlTextEditor.columnsGetter = async (entityName) => {
+  const columns = await fetchColumns(entityName);
+  return [
+    { field: "id", dataType: "integer" },
+    { field: "name", dataType: "string" },
+  ];
+};
+```
+
 ## Context Menu
 
 For info on how to modify the context menu can be found in
