@@ -358,23 +358,6 @@
           nextButtonIcon: 'keyboard_arrow_right'
         }
       ]
-      if (!this.table) {
-        steps.push({
-          component: ImportFile,
-          title: 'Create Table',
-          icon: 'add',
-          stepperProps: {
-            schema: this.schema,
-            table: this.table,
-            tabId: this.tab.id
-          },
-          completed: false,
-          completePrevious: false,
-          nextButtonText: 'Map to Table',
-          nextButtonIcon: 'keyboard_arrow_right'
-        })
-      }
-
       this.importSteps = [...steps, ...latterSteps]
     }
   }
