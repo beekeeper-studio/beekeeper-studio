@@ -144,6 +144,10 @@
               >
                 <x-label>
                   New Table from File
+                  <i
+                    v-if="$store.getters.isCommunity"
+                    class="material-icons menu-icon"
+                  >stars</i>
                 </x-label>
               </x-menuitem>
             </x-menu>
