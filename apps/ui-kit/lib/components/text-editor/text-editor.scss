@@ -169,7 +169,7 @@
 
   .CodeMirror-matchingbracket {
     text-decoration: underline;
-    color: var(--bks-text-editor-matchingbracket-fg-color) !important;
+    color: var(--bks-text-editor-matchingbracket-fg-color);
   }
 
   .CodeMirror-focused .CodeMirror-selected {
@@ -188,7 +188,7 @@
   }
 
   .CodeMirror-code {
-    line-height: 1.3!important;
+    line-height: 1.3;
   }
 
   .CodeMirror-scrollbar-filler {

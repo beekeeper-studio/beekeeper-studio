@@ -18,6 +18,7 @@ import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
+import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -30,7 +31,6 @@ import * as sms from 'source-map-support'
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
-
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -47,7 +47,8 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    bksPlatformInfo: JSON.stringify(platformInfo)
+    bksPlatformInfo: JSON.stringify(platformInfo),
+    bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -170,6 +171,10 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('platformInfo', () => {
   return platformInfo;
+})
+
+ipcMain.handle('bksConfigSource', () => {
+  return bksConfig.source;
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {

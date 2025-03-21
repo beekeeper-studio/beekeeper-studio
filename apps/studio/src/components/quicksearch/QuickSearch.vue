@@ -197,24 +197,16 @@ export default Vue.extend({
       }
     },
     keymap() {
-      const result = {}
-
-      result[this.ctrlOrCmd('k')] = this.openSearch
-      result[this.ctrlOrCmd('o')] = this.openSearch
-
-      result['up'] = this.selectUp
-      result['down'] = this.selectDown
-      result['esc'] = this.closeSearch
-      result['enter'] = this.enter
-      result[this.ctrlOrCmd('enter')] = this.metaEnter
-      // /announce I like emacs bindings and there's nothing you can do to stop me.
-      // /me *evil laugh*
-      result['ctrl+p'] = this.selectUp
-      result['ctrl+n'] = this.selectDown
-      result['right'] = this.persistentSearchEnter
-      result[this.ctrlOrCmd('right')] = this.persistentSearchMetaEnter
-
-      return result
+      return this.$vHotkeyKeymap({
+        'quickSearch.focusSearch': this.openSearch,
+        'quickSearch.close': this.closeSearch,
+        'quickSearch.selectUp': this.selectUp,
+        'quickSearch.selectDown': this.selectDown,
+        'quickSearch.open': this.enter,
+        'quickSearch.altOpen': this.metaEnter,
+        'quickSearch.openInBackground': this.persistentSearchEnter,
+        'quickSearch.altOpenInBackground': this.persistentSearchMetaEnter,
+      })
     }
   },
   methods: {
