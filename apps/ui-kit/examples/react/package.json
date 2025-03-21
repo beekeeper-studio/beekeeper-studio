@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bks/ui-kit": "link:../..",
+    "@beekeeperstudio/ui-kit": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

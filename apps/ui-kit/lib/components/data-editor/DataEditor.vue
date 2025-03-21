@@ -1,19 +1,19 @@
 <template>
   <div class="BksUiKit BksDataEditor" ref="main">
-    <table-list
-      v-bind="tableListProps"
-      :tables="tables"
-      proxyEmit="true"
-      @bks-item-dblclick="handleItemDblClick"
+    <entity-list
+      v-bind="entityListProps"
+      :entities="entities"
+      proxyEmit
+      @bks-entity-dblclick="handleEntityDblclick"
     />
     <div class="BksDataEditor-right-container" ref="right">
       <div class="BksDataEditor-sql-editor">
         <sql-text-editor
           v-bind="sqlTextEditorProps"
           focus
-          :tables="tables"
+          :entities="entities"
           :keybindings="keybindings"
-          proxyEmit="true"
+          proxyEmit
           @bks-value-change="handleValueChange"
         />
         <div class="BksDataEditor-run">
@@ -32,7 +32,7 @@
           v-bind="tableProps"
           :columns="columns"
           :data="data"
-          proxyEmit="true"
+          proxyEmit
           @bks-foreign-key-go-to="handleForeignKeyGoTo"
         />
       </div>
@@ -43,20 +43,21 @@
 <script lang="ts">
 import _ from "lodash";
 import Vue, { PropType } from "vue";
-import TableList from "../table-list/TableList.vue";
+import EntityList from "../entity-list/EntityList.vue";
 import SqlTextEditor from "../sql-text-editor/SqlTextEditor.vue";
 import TableComponent from "../table/Table.vue";
 import Split from "split.js";
 import { Table } from "./types";
+import { Entity } from "../types";
 
 export default Vue.extend({
-  components: { TableList, SqlTextEditor, TableComponent },
+  components: { EntityList, SqlTextEditor, TableComponent },
   props: {
-    tables: {
+    entities: {
       type: Array as PropType<Table[]>,
       default: () => [{ columns: [], data: [] }],
     },
-    tableListProps: {
+    entityListProps: {
       type: Object,
       default: () => ({}),
     },
@@ -94,16 +95,16 @@ export default Vue.extend({
       this.columns = table.columns;
     },
     submitQuery() {
-      this.$emit("bks-query-submit", this.sql);
+      this.$emit("bks-query-submit", { query: this.sql });
     },
-    handleValueChange(value: string) {
-      this.sql = value;
+    handleValueChange(detail: { value: string }) {
+      this.sql = detail.value;
     },
-    handleItemDblClick(table: Table) {
-      this.setTable(table);
+    handleEntityDblclick(detail: { entity: Entity }) {
+      this.setTable(detail.entity);
     },
     handleForeignKeyGoTo({ field }) {
-      const foreignTable = this.tables.find(
+      const foreignTable = this.entities.find(
         (t) => t === this.columns.find((c) => c.field === field)?.toTable
       );
       if (foreignTable) {
@@ -117,6 +118,7 @@ export default Vue.extend({
 
     this.mainSplit = Split(mainEl.children, {
       direction: "horizontal",
+      gutterStyle: () => '',
       elementStyle: (_dimension, size) => ({
         "flex-basis": `calc(${size}%)`,
       }),
@@ -130,6 +132,7 @@ export default Vue.extend({
 
     this.rightSplit = Split(rightEl.children, {
       direction: "vertical",
+      gutterStyle: () => '',
       elementStyle: (_dimension, size) => ({
         "flex-basis": `calc(${size}%)`,
       }),
