@@ -1,7 +1,7 @@
 <template>
   <div class="save-connection expand">
     <h3 class="dialog-c-title">
-      Save Connection
+      {{ $t('connection.saveConnection') }}
     </h3>
     <div class="form-group">
       <input
@@ -10,7 +10,7 @@
         @keydown.enter.prevent.stop="save"
         type="text"
         v-model="config.name"
-        placeholder="Connection Name"
+        :placeholder="$t('connection.connectionName')"
       >
     </div>
 
@@ -26,10 +26,10 @@
           name="rememberPassword"
           v-model="config.rememberPassword"
         >
-        <span>Save Passwords</span>
+        <span>{{ $t('connection.savePasswords') }}</span>
         <i
           class="material-icons"
-          v-tooltip="'Passwords are encrypted when saved'"
+          v-tooltip="$t('connection.encryptedPasswordsTooltip')"
         >help_outlined</i>
       </label>
       <span class="expand" />
@@ -45,13 +45,13 @@
         class="btn btn-flat"
         @click.prevent="$emit('cancel')"
       >
-        Cancel
+        {{ $t('common.cancel') }}
       </button>
       <button
         class="btn btn-primary save"
         @click.prevent="save"
       >
-        Save
+        {{ $t('common.save') }}
       </button>
     </div>
   </div>

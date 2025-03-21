@@ -3,25 +3,25 @@
     <div class="alert alert-warning">
       <i class="material-icons">warning</i>
       <span>
-        BigQuery support is still in beta. Please report any problems on <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">our issue tracker</a>.
+        {{ $t('connection.bigquery.betaWarning') }} <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">{{ $t('connection.bigquery.reportIssues') }}</a>.
       </span>
     </div>
     <div class="form-group">
-      <label for="Project Id">ProjectId</label>
+      <label for="Project Id">{{ $t('connection.bigquery.projectId') }}</label>
       <input
         type="text"
         class="form-control"
-        placeholder="eg: example-project"
+        :placeholder="String($t('connection.bigquery.projectIdPlaceholder'))"
         v-model="config.bigQueryOptions.projectId"
       >
     </div>
     <div class="form-group">
-      <label for="defaultDataset">Default Dataset</label>
+      <label for="defaultDataset">{{ $t('connection.bigquery.defaultDataset') }}</label>
       <input
         type="text"
         class="form-control"
         v-model="config.defaultDatabase"
-        placeholder="(Optional)"
+        :placeholder="String($t('connection.optional'))"
       >
     </div>
     <toggle-form-area
@@ -37,14 +37,14 @@
         />
       </template>
       <div class="form-group">
-        <label for="host">Host</label><input
+        <label for="host">{{ $t('connection.host') }}</label><input
           type="text"
           class="form-control"
           v-model="config.host"
         >
       </div>
       <div class="form-group">
-        <label for="port">Port</label><input
+        <label for="port">{{ $t('connection.port') }}</label><input
           type="text"
           class="form-control"
           v-model="config.port"
@@ -54,22 +54,22 @@
     <toggle-form-area
       :expanded="true"
       :hide-toggle="true"
-      title="Authentication"
+      :title="$t('connection.authentication')"
     >
       <div class="row gutter">
         <div class="alert alert-info expand">
           <i class="material-icons-outlined">info</i>
           <span>
-            You need a service account with the roles 'BigQuery Data Viewer' and 'BigQuery Job User' - <a
+            {{ $t('connection.bigquery.serviceAccountInfo') }} <a
               href="https://docs.beekeeperstudio.io/docs/google-bigquery"
-            > Read More</a>
+            > {{ $t('common.readMore') }}</a>
           </span>
         </div>
       </div>
 
       <div class="form-group">
         <label for="KeyFilename">
-          Service Account's JSON Private Key
+          {{ $t('connection.bigquery.serviceAccountKey') }}
         </label>
         <file-picker v-model="config.bigQueryOptions.keyFilename" />
       </div>

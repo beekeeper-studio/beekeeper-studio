@@ -10,35 +10,35 @@
           v-if="lockEmail"
           class="dialoc-c-title"
         >
-          Reauthenticate {{ email ? email : '' }}
+          {{ $t('workspace.signin.reauthenticate') }} {{ email ? email : '' }}
         </div>
         <div
           v-else
           class="dialog-c-title"
         >
-          Team workspace account sign-in <a
-            v-tooltip="'Store connections and queries in the cloud, share with colleagues. Click to learn more.'"
+          {{ $t('workspace.signin.title') }} <a
+            v-tooltip="$t('workspace.signin.tooltip')"
             href="https://beekeeperstudio.io/workspaces"
           ><i class="material-icons">help_outlined</i></a>
         </div>
         <error-alert :error="error" />
         <div class="form-group">
-          <label for="email">Email Address</label>
+          <label for="email">{{ $t('workspace.signin.emailAddress') }}</label>
           <input
             ref="email"
             type="text"
             :disabled="lockEmail"
             v-model="email"
-            placeholder="e.g. matthew@example.com"
+            :placeholder="String($t('workspace.signin.emailPlaceholder'))"
           >
         </div>
         <div class="form-group">
-          <label for="password">Password</label>
+          <label for="password">{{ $t('workspace.signin.password') }}</label>
           <input
             type="password"
             ref="password"
             v-model="password"
-            placeholder="Shh..."
+            :placeholder="String($t('workspace.signin.passwordPlaceholder'))"
           >
         </div>
       </div>
@@ -47,23 +47,23 @@
           <a
             href="https://app.beekeeperstudio.io/users/sign_up"
             class="small text-muted"
-          >Create Account</a>
+          >{{ $t('workspace.signin.createAccount') }}</a>
           <a
             href="https://app.beekeeperstudio.io/users/sign_in"
             class="small text-muted"
-          >Forgot Password</a>
+          >{{ $t('workspace.signin.forgotPassword') }}</a>
         </span>
         <span class="right">
           <button
             class="btn btn-flat"
             type="button"
             @click.prevent="$modal.hide('workspace')"
-          >Cancel</button>
+          >{{ $t('common.cancel') }}</button>
           <button
             class="btn btn-primary"
             :disabled="loading"
             type="submit"
-          >{{ loading ? '...' : 'Submit' }}</button>
+          >{{ loading ? '...' : $t('workspace.signin.submit') }}</button>
         </span>
       </div>
     </form>

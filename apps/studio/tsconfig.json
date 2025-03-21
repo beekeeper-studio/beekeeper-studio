@@ -14,6 +14,8 @@
     "types": [
       "jest"
     ],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["./src/shared/*"],

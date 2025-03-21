@@ -5,7 +5,7 @@
   >
     <div class="not-supported">
       <p>
-        Beekeeper does not currently support Import from File for {{ this.dialectTitle }} ☹️
+        {{ $t('importTable.notSupported', { dialect: this.dialectTitle }) }}
       </p>
     </div>
   </div>
@@ -45,18 +45,18 @@
             @click.prevent="closeTab"
             class="btn btn-flat close-tab-btn"
           >
-            Close Tab
+            {{ $t('importTable.closeTab') }}
           </button>
           <button
             type="button"
             @click.prevent="viewData"
             class="btn btn-primary"
           >
-            View Data in {{ tableName }}
+            {{ $t('importTable.viewData', { table: tableName }) }}
           </button>
         </div>
         <div v-else-if="this.importError">
-          <p>The whole import was aborted with a transaction rollback</p>
+          <p>{{ $t('importTable.abortedWithRollback') }}</p>
           <div>
             <p class="import-error-message">
               {{ importError }}
@@ -67,7 +67,7 @@
                 class="btn btn-primary btn-icon"
               >
                 <i class="material-icons">chevron_left</i>
-                <span>Try Again</span>
+                <span>{{ $t('importTable.tryAgain') }}</span>
               </a>
               <a
                 v-clipboard:copy="importError"
@@ -94,7 +94,7 @@
       <div class="statusbar-info col flex expand">
         <span
           class="statusbar-item"
-          :title="`Included Tables ${tableKey}`"
+          :title="$t('importTable.includedTables', { tables: tableKey })"
         >
           <i class="material-icons">backup_table</i>
           <span>{{ tableKey }}</span>
@@ -223,9 +223,9 @@
       },
       getProgressTitle () {
         if (this.importStarted && this.importError === null && this.timer === null) {
-          return 'Importing...'
+          return this.$t('importTable.importing')
         }
-        return this.importError !== null ? 'Import Failed' : `Import Successful: ${this.timer}`
+        return this.importError !== null ? this.$t('importTable.importFailed') : this.$t('importTable.importSuccessful', { time: this.timer })
       },
       getProgressIcon () {
         if (this.importStarted && this.importError === null && this.timer === null) {
@@ -234,24 +234,40 @@
         return this.importError !== null ? 'error' : 'check_circle'
       },
     },
+    created() {
+      this.copyMessage = this.$t('importTable.copy');
+      
+      this.importSteps.forEach((step, index) => {
+        if (index === 0) {
+          step.title = this.$t('importTable.steps.chooseFile');
+          step.nextButtonText = this.$t('importTable.steps.mapToTable');
+        } else if (index === 1) {
+          step.title = this.$t('importTable.steps.mapToTable');
+          step.nextButtonText = this.$t('importTable.steps.reviewAndExecute');
+        } else if (index === 2) {
+          step.title = this.$t('importTable.steps.reviewAndExecute');
+          step.nextButtonText = this.$t('importTable.steps.runImport');
+        }
+      });
+    },
     methods: {
       onCopySuccess() {
-        this.copyMessage = "Copied"
+        this.copyMessage = this.$t('importTable.copied')
         this.copyIcon = "done"
         this.copyClass = "btn-success copy-btn"
         setTimeout(() => {
-          this.copyMessage = "Copy to Clipboard"
+          this.copyMessage = this.$t('importTable.copyToClipboard')
           this.copyIcon = "content_copy"
           this.copyClass = "btn-flat copy-btn"
         }, 2000)
       },
       onCopyError(e) {
-        this.copyMessage = "Error"
+        this.copyMessage = this.$t('importTable.error')
         this.copyTitle = e.message
         this.copyIcon = "error"
         this.copyClass = "btn-error"
         setTimeout(() => {
-          this.copyMessage = "Copy Error To Clipboard"
+          this.copyMessage = this.$t('importTable.copyErrorToClipboard')
           this.copyIcon = "content_copy"
           this.copyClass = "btn-flat copy-btn"
         }, 5000);
@@ -287,7 +303,7 @@
         try {
           this.importStarted = true
           const data = await this.$util.send('import/importFile', { id: importerClass })
-          this.timer = `${(new Date() - start) / 1000} seconds`
+          this.timer = `${(new Date() - start) / 1000} ${this.$t('importTable.seconds')}`
         } catch (err) {
           this.importError = err.message
         } finally {

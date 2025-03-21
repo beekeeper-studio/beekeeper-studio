@@ -31,6 +31,7 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
+import i18n, { setI18nLanguage } from '@/i18n'
 
 (async () => {
 
@@ -138,6 +139,7 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
     const app = new Vue({
       render: h => h(App),
       store,
+      i18n,
     })
 
     Vue.prototype.$util = new UtilityConnection();
@@ -149,7 +151,17 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
         log.log('Received port in renderer with sId: ', sId);
 
         Vue.prototype.$util.setPort(port, sId);
-        app.$store.dispatch('settings/initializeSettings');
+        app.$store.dispatch('settings/initializeSettings').then(() => {
+          // After initialization, check language settings and apply
+          // Only apply saved settings if the user has manually set the language
+          const savedLanguageSetting = app.$store.state.settings.settings.language
+          if (savedLanguageSetting && savedLanguageSetting.value) {
+            // Check if the user has manually set the language (contains user value)
+            if (savedLanguageSetting._userValue) {
+              setI18nLanguage(savedLanguageSetting.value)
+            }
+          }
+        });
       }
     }
 
