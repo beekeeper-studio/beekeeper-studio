@@ -147,6 +147,7 @@
               <span>Apply</span>
             </x-button>
             <x-button
+              v-if="dialect !== 'mongodb'"
               class="btn btn-primary"
               menu
             >
@@ -227,17 +228,17 @@
                 Allow Filtering
               </x-label>
             </x-menuitem>
-            <x-menuitem @click="exportTable">
+            <x-menuitem @click="exportTable" :disabled="dialectData?.disabledFeatures?.exportTable">
               <x-label>Export whole table</x-label>
             </x-menuitem>
 
-            <x-menuitem @click="exportFiltered">
+            <x-menuitem @click="exportFiltered" :disabled="dialectData?.disabledFeatures?.exportTable">
               <x-label>Export filtered view</x-label>
             </x-menuitem>
             <x-menuitem @click="showColumnFilterModal">
               <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
-            <x-menuitem @click="importTab">
+            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile">
               <x-label>
                 Import from file
                 <i
@@ -246,7 +247,7 @@
                 >stars</i>
               </x-label>
             </x-menuitem>
-            <x-menuitem @click="openQueryTab">
+            <x-menuitem @click="openQueryTab" :disabled="dialect === 'mongodb'">
               <x-label>Copy view to SQL</x-label>
             </x-menuitem>
           </x-menu>
