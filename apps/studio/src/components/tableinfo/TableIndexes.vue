@@ -86,6 +86,7 @@
           <x-button
             class="btn btn-primary"
             menu
+            v-if="hasSql"
           >
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
@@ -116,7 +117,7 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
+import { AdditionalMongoOrders, CreateIndexSpec, FormatterDialect, IndexAlterations, IndexColumn } from '@shared/lib/dialects/models'
 import rawLog from '@bksLogger'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
@@ -163,6 +164,10 @@ export default Vue.extend({
   computed: {
     ...mapState(['connectionType', 'connection']),
     ...mapGetters(['dialect', 'dialectData']),
+    hasSql() {
+      // FIXME (@day): no per db testing
+      return this.dialect !== 'mongodb';
+    },
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
     },
@@ -184,7 +189,17 @@ export default Vue.extend({
         return normal
       }
       const desc = this.table.columns.map((c) => `${escapeHtml(c.columnName)} DESC`)
-      return [...normal, ...desc]
+
+      let additional = [];
+      // FIXME (@day): no per-db testing
+      if (this.dialect === 'mongodb') {
+        AdditionalMongoOrders.forEach((o) => {
+          const add = this.table.columns.map((c) => `${escapeHtml(c.columnName)} ${o.toUpperCase()}`);
+          additional.push(...add)
+        })
+      }
+
+      return [...normal, ...desc, ...additional]
     },
     editCount() {
       const result = this.newRows.length + this.removedRows.length;
@@ -213,12 +228,14 @@ export default Vue.extend({
     },
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
+      // FIXME (@day): no per-db testing
+      const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect != 'mongodb'
       const result = [
         (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
-          editable,
+          editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell),
@@ -266,7 +283,9 @@ export default Vue.extend({
     async addRow() {
       if (this.loading) return
       const tabulator = this.tabulator as Tabulator
-      const name = `${this.table.name}_index_${this.tabulator.getData().length + 1}`
+      // mongo doesn't have custom names for sql, they're auto generated
+      // FIXME (@day): no per-db testing
+      const name = this.dialect == 'mongodb' ? '' : `${this.table.name}_index_${this.tabulator.getData().length + 1}`
       const row = await tabulator.addRow({
         name,
         unique: true
@@ -325,8 +344,12 @@ export default Vue.extend({
             if (this.dialectData.disabledFeatures?.index?.desc) {
               return { name: c } as IndexColumn
             }
-            const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
-            const name = c.replaceAll(' DESC', '')
+            let order = c.endsWith('DESC') ? 'DESC' : 'ASC'
+            const addOrder = AdditionalMongoOrders.find((o) => c.toLowerCase().endsWith(o.toLowerCase()));
+            if (addOrder) order = addOrder;
+
+            let name = c.replaceAll(' DESC', '')
+            name = AdditionalMongoOrders.reduce((n, o) => n.replaceAll(` ${o.toUpperCase()}`, ''), name);
             return { name, order } as IndexColumn
           })
           const payload: CreateIndexSpec = {
@@ -361,6 +384,7 @@ export default Vue.extend({
 
     },
     async submitSql() {
+      if (!this.hasSql) return;
       try {
         const payload = this.getPayload()
         const sql = await this.connection.alterIndexSql(payload)
