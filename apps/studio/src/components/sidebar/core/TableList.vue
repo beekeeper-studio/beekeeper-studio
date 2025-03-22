@@ -123,6 +123,7 @@
           >
             <i class="material-icons">refresh</i>
           </button>
+          <!-- FIXME (@day): we don't want to have per-db testing in the UI -->
           <button
             @click.prevent="newTable"
             :title="`New ${this.dialect === 'mongodb' ? 'Collection' : 'Table'}`"

@@ -127,6 +127,7 @@ import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
+import { SelectableCellMixin } from '@/mixins/selectableCell';
 
 interface State {
   mysqlTypes: string[]
@@ -142,7 +143,7 @@ export default Vue.extend({
     StatusBar,
     ErrorAlert,
   },
-  mixins: [data_mutators],
+  mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
@@ -164,6 +165,7 @@ export default Vue.extend({
     ...mapState(['connectionType', 'connection']),
     ...mapGetters(['dialect', 'dialectData']),
     hasSql() {
+      // FIXME (@day): no per db testing
       return this.dialect !== 'mongodb';
     },
     enabled() {
@@ -189,6 +191,7 @@ export default Vue.extend({
       const desc = this.table.columns.map((c) => `${escapeHtml(c.columnName)} DESC`)
 
       let additional = [];
+      // FIXME (@day): no per-db testing
       if (this.dialect === 'mongodb') {
         AdditionalMongoOrders.forEach((o) => {
           const add = this.table.columns.map((c) => `${escapeHtml(c.columnName)} ${o.toUpperCase()}`);
@@ -225,15 +228,17 @@ export default Vue.extend({
     },
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
+      // FIXME (@day): no per-db testing
       const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect != 'mongodb'
       const result = [
-        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5}),
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
           editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell),
         },
         {
           title: 'Unique',
@@ -265,7 +270,8 @@ export default Vue.extend({
             autocomplete: true,
             listOnEmpty: true,
             freetext: true,
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         trashButton(this.removeRow)
       ]
@@ -278,6 +284,7 @@ export default Vue.extend({
       if (this.loading) return
       const tabulator = this.tabulator as Tabulator
       // mongo doesn't have custom names for sql, they're auto generated
+      // FIXME (@day): no per-db testing
       const name = this.dialect == 'mongodb' ? '' : `${this.table.name}_index_${this.tabulator.getData().length + 1}`
       const row = await tabulator.addRow({
         name,
@@ -401,7 +408,6 @@ export default Vue.extend({
       //   headerSort: false,
       // })
     }
-
   },
   mounted() {
     // this.initializeTabulator()
