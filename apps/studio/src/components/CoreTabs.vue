@@ -1132,5 +1132,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     }
     this.registerHandlers(this.rootBindings);
   },
+  }
 });
 </script>
