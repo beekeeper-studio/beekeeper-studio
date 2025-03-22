@@ -115,8 +115,10 @@ import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
+import { SelectableCellMixin } from '@/mixins/selectableCell';
 
 export default Vue.extend({
+  mixins: [SelectableCellMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
@@ -397,30 +399,6 @@ export default Vue.extend({
       })
       this.newRows = []
       this.removedRows = []
-    },
-    handleCellDoubleClick(cell) {
-
-      const element = cell.getElement();
-
-      // If already editable, remove contenteditable and stop execution
-      if (element.hasAttribute("contenteditable")) {
-        element.removeAttribute("contenteditable");
-        return;
-      }
-
-      // Enable text selection
-      element.setAttribute("contenteditable", "true");
-      element.focus();
-      document.execCommand("selectAll"); // Automatically select text
-
-      // Function to remove contenteditable when clicking anywhere
-      const removeEditable = (event) => {
-        element.removeAttribute("contenteditable");
-        document.removeEventListener("click", removeEditable);
-      };
-
-      // Attach a global event listener
-      document.addEventListener("click", removeEditable);
     }
   },
   mounted() {

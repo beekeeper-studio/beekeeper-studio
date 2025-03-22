@@ -42,12 +42,14 @@ import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
 import { mapGetters, mapState } from 'vuex'
+import { SelectableCellMixin } from '@/mixins/selectableCell';
+
 
 export default {
   components: {
     StatusBar,
   },
-  mixins: [data_mutators],
+  mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties"],
   data() {
     return {
@@ -86,32 +88,6 @@ export default {
   watch : {
     tableData() {
       if (this.tabulator) this.tabulator.replaceData(this.tableData)
-    }
-  },
-  methods: {
-    handleCellDoubleClick(cell) {
-
-      const element = cell.getElement();
-
-      // If already editable, remove contenteditable and stop execution
-      if (element.hasAttribute("contenteditable")) {
-        element.removeAttribute("contenteditable");
-        return;
-      }
-
-      // Enable text selection
-      element.setAttribute("contenteditable", "true");
-      element.focus();
-      document.execCommand("selectAll"); // Automatically select text
-
-      // Function to remove contenteditable when clicking anywhere
-      const removeEditable = (event) => {
-        element.removeAttribute("contenteditable");
-        document.removeEventListener("click", removeEditable);
-      };
-
-      // Attach a global event listener
-      document.addEventListener("click", removeEditable);
     }
   },
   mounted() {

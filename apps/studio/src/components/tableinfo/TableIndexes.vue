@@ -126,6 +126,7 @@ import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
+import { SelectableCellMixin } from '@/mixins/selectableCell';
 
 interface State {
   mysqlTypes: string[]
@@ -141,7 +142,7 @@ export default Vue.extend({
     StatusBar,
     ErrorAlert,
   },
-  mixins: [data_mutators],
+  mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
@@ -365,32 +366,7 @@ export default Vue.extend({
       //   resizableColumns: false,
       //   headerSort: false,
       // })
-    },
-    handleCellDoubleClick(cell) {
-
-      const element = cell.getElement();
-
-      // If already editable, remove contenteditable and stop execution
-      if (element.hasAttribute("contenteditable")) {
-        element.removeAttribute("contenteditable");
-        return;
-      }
-
-      // Enable text selection
-      element.setAttribute("contenteditable", "true");
-      element.focus();
-      document.execCommand("selectAll"); // Automatically select text
-
-      // Function to remove contenteditable when clicking anywhere
-      const removeEditable = (event) => {
-        element.removeAttribute("contenteditable");
-        document.removeEventListener("click", removeEditable);
-      };
-
-      // Attach a global event listener
-      document.addEventListener("click", removeEditable);
     }
-
   },
   mounted() {
     // this.initializeTabulator()
