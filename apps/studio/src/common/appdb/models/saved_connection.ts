@@ -317,7 +317,26 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         }
       }
 
-      const parsed = new ConnectionString(url.replaceAll(/\s/g, "%20"))
+      let cleanedUrl = url
+      let extractedUser = undefined
+      let extractedPassword = undefined
+  
+      if (url.includes('@')) {
+        const lastAtIndex = url.lastIndexOf('@')
+        const firstDoubleSlash = url.indexOf('//') + 1
+  
+        const credentials = url.substring(firstDoubleSlash, lastAtIndex)
+  
+        const [user, ...passwordParts] = credentials.split(':')
+        extractedUser = user
+        extractedPassword = passwordParts.join(':')
+  
+        cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
+      }
+
+      const encodedUrl = encodeURI(cleanedUrl)
+      const parsed = new ConnectionString(encodedUrl)
+  
       this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
@@ -338,8 +357,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       }
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port
-      this.username = parsed.user || this.username
-      this.password = parsed.password || this.password
+      this.username = extractedUser ?? parsed.user
+      this.password = extractedPassword ?? parsed.password
       this.defaultDatabase = parsed.path?.join('/') ?? this.defaultDatabase
       return true
     } catch (ex) {
