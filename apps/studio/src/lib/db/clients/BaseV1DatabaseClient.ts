@@ -110,11 +110,6 @@ export abstract class BaseV1DatabaseClient<RawResultType extends BaseQueryResult
     return '';
   }
 
-  // async applyChanges(_changes: TableChanges): Promise<TableUpdateResult[]> {
-  //   log.error("V1 Drivers do not support applying changes");
-  //   return [];
-  // }
-
   async setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
     log.error("V1 Drivers do not support setting table descriptions");
     return '';
