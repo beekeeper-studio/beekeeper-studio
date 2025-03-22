@@ -1,9 +1,13 @@
 <template>
   <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
-  <teleport :to="targetElement ?? 'body'">
-    <div class="BksUiKit" ref="container">
-      <context-menu :options="options" :event="event" :item="item" @close="$emit('close')" />
-    </div>
+  <teleport :to="getContainer()">
+    <context-menu
+      ref="container"
+      :options="options"
+      :event="event"
+      :item="item"
+      @close="$emit('close')"
+    />
   </teleport>
 </template>
 
@@ -11,6 +15,7 @@
 import ContextMenu from "./ContextMenu.vue";
 import Teleport from "vue2-teleport"
 import Vue from 'vue'
+import { getContextMenuContainer } from "../../config/context-menu";
 
 export default Vue.extend({
   name: 'ContextMenuRoot',
@@ -36,11 +41,14 @@ export default Vue.extend({
       }
     },
     maybeHideMenu(event) {
-      const clickOutside = !this.$refs.container.contains(event.target)
+      const clickOutside = !this.$refs.container.$el.contains(event.target)
       if (clickOutside) {
         this.hideContextMenu()
       }
-    }
+    },
+    getContainer() {
+      return this.targetElement || getContextMenuContainer()
+    },
   },
   mounted() {
     document.addEventListener('keyup', this.onEscKeyRelease);

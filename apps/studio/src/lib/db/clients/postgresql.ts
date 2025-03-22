@@ -13,6 +13,7 @@ import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Ro
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
+// FIXME (azmi): use BksConfig
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
@@ -22,6 +23,7 @@ import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
@@ -161,6 +163,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         } catch (err) {
           log.error('Could not refresh token or update connection pool!', err);
         }
+        // FIXME (azmi): use BksConfig
       }, globals.iamRefreshTime);
     }
 
@@ -1308,9 +1311,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: globals.psqlTimeout,
-      idleTimeoutMillis: globals.psqlIdleTimeout,
-
+      connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
+      idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };
 
     if (

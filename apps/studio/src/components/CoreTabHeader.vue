@@ -131,87 +131,58 @@ export default {
         this.$emit("click", this.tab);
       }
     },
-  },
-  watch: {},
-  computed: {
-    contextOptions() {
-      return [
-        {
-          name: "Close",
-          slug: "close",
-          handler: ({ event }) => this.maybeClose(event),
-        },
-        {
-          name: "Close Others",
-          slug: "close-others",
-          handler: ({ item }) => this.$emit("closeOther", item),
-        },
-        {
-          name: "Close All",
-          slug: "close-all",
-          handler: ({ item }) => this.$emit("closeAll", item),
-        },
-        {
-          name: "Close Tabs to Right",
-          slug: "close-to-right",
-          handler: ({ item }) => this.$emit("closeToRight", item),
-        },
-        {
-          name: "Duplicate",
-          slug: "duplicate",
-          handler: ({ item }) => this.$emit("duplicate", item),
-        },
-        {
-          name: "Copy Entity Name",
-          slug: "copy-name",
-          handler: ({ item }) => this.$emit("copyName", item),
-          disabled: !(
-            this.tab.tabType == "table" ||
-            this.tab.tabType == "table-properties"
-          ),
-        },
-      ].map((option) => ({
-        ...option,
-        class: option.disabled ? "disabled" : "",
-      }));
-    },
-    modalName() {
-      return `sure-${this.tab.id}`;
-    },
-    closeIcon() {
-      if (this.tab.alert) return "error_outline";
-      if (this.tab.unsavedChanges) return "fiber_manual_record";
-      return null;
-    },
-    keymap() {
-      const result = {};
-      if (this.selected) {
-        result[this.ctrlOrCmd("w")] = this.maybeClose;
-      }
+    watch: {},
+    computed: {
+      contextOptions() {
+        return [
+          { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
+          { name: "Close Others", slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
+          { name: 'Close All', slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
+          { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
+          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
+          { name: "Copy Entity Name", slug: "copy-name", handler: ({ item }) => this.$emit("copyName", item), disabled: !(this.tab.tabType === "table" || this.tab.tabType === "table-properties")}
+        ].map((option) => ({
+      ...option,
+      class: option.disabled ? "disabled" : "",}));
+      },
+      modalName() {
+        return `sure-${this.tab.id}`
+      },
+      closeIcon() {
+        if (this.tab.alert) return 'error_outline'
+        if (this.tab.unsavedChanges) return 'fiber_manual_record'
+        return null
+      },
+      keymap() {
+        let keymap = {};
+        if (!this.selected) return keymap;
 
-      return result;
-    },
-    cleanText() {
-      // no spaces
-      if (!this.tab.text) {
-        return null;
-      }
-      const result = this.tab.text.replace(/\s+/, "");
-      return result.length === 0 ? null : result;
-    },
-    scope() {
-      if (this.tab.titleScope) {
-        return " " + "[" + this.tab.titleScope + "]";
-      } else {
-        return "";
-      }
-    },
-    tableTabTitle() {
-      if (!this.tab.tabType === "table") return null;
-      let result = this.tab.table.name;
-      return result;
-    },
-    queryTabTitle() {
+        keymap[this.ctrlOrCmd("w")] = this.maybeClose;
+
+        Object.assign(keymap, this.$vHotkeyKeymap({"tab.closeTab": this.maybeClose,}));
+        return keymap;
+       },
+      cleanText() {
+        // no spaces
+        if (!this.tab.text) {
+          return null
+        }
+        const result = this.tab.text.replace(/\s+/, '')
+        return result.length === 0 ? null : result
+      },
+      scope() {
+        if (this.tab.titleScope) {
+          return " [" + this.tab.titleScope + "]";
+        } else {
+          return "";
+        }
+      },
+      tableTabTitle() {
+        if (!this.tab.tabType === 'table') return null;
+        let result = this.tab.table.name
+        return result
+      },
+      queryTabTitle() {
       if (!this.tab.tabType === "query") return null;
       if (this.tab.query && this.tab.query.title) {
         return this.tab.query.title;
@@ -219,7 +190,6 @@ export default {
       if (!this.cleanText) {
         return this.tab.title;
       }
-
       if (this.tab.query.text.length >= 32) {
         return `${this.tab.query.text.substring(0, 32)}...`;
       } else {
