@@ -1,0 +1,340 @@
+{
+  "common": {
+    "ok": "确定",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "add": "添加",
+    "close": "关闭",
+    "pin": "固定",
+    "refresh": "刷新",
+    "learnMore": "了解更多",
+    "readMore": "阅读更多"
+  },
+  "notification": {
+    "upsell": {
+      "text": "👋 Beekeeper Studio 由一个充满激情的小团队维护。订阅完整版来支持我们的开发工作，并解锁更多强大的功能。您的支持对我们意义重大！♥",
+      "getStarted": "获取完整版"
+    }
+  },
+  "connection": {
+    "title": "连接",
+    "connect": "连接",
+    "disconnect": "断开连接",
+    "connectionError": "连接错误",
+    "newConnection": "新建连接",
+    "importFromUrl": "从URL导入",
+    "connectionType": "连接类型",
+    "selectConnectionType": "选择连接类型...",
+    "saved": "已保存",
+    "pinned": "已固定",
+    "recent": "最近使用",
+    "authenticationMethod": "认证方式",
+    "host": "主机",
+    "port": "端口",
+    "database": "数据库",
+    "user": "用户",
+    "usernamePassword": "用户名 / 密码",
+    "connectionMode": "连接模式",
+    "hostAndPort": "主机和端口",
+    "socket": "套接字（Socket）",
+    "socketPath": "套接字路径（SocketPath）",
+    "enableSSL": "启用SSL",
+    "password": "密码",
+    "defaultDatabase": "默认数据库",
+    "keyspace": "键空间",
+    "optional": "可选",
+    "editConnection": "编辑连接",
+    "saveConnection": "保存连接",
+    "syncDatabase": "同步数据库",
+    "confirmDisconnect": "确认断开连接",
+    "activeExportsWarning": "当前有正在运行的导出任务。您确定要断开连接吗？",
+    "connectionName": "连接名称",
+    "savePasswords": "保存密码",
+    "encryptedPasswordsTooltip": "保存的密码将被加密",
+    "databaseSynced": "数据库已同步",
+    "ssl": {
+      "info": "提供证书文件是可选的。默认情况下，Beekeeper将直接信任服务器证书。",
+      "readMore": "阅读更多",
+      "caCert": "CA证书（可选）",
+      "certificate": "证书（可选）",
+      "keyFile": "密钥文件（可选）",
+      "rejectUnauthorized": "拒绝未授权",
+      "rejectUnauthorizedTooltip": "这仅在您提供证书文件时生效"
+    },
+    "ssh": {
+      "title": "SSH 隧道",
+      "info": "要使SSH隧道工作，必须在ssh服务器配置中将AllowTcpForwarding设置为\"yes\"。",
+      "hostname": "SSH 主机名",
+      "port": "端口",
+      "bastionHost": "堡垒机（跳板机）",
+      "keepaliveInterval": "保活间隔",
+      "keepaliveIntervalTooltip": "空闲时在此秒数后ping服务器 <br /> 以防止因不活动而断开连接 <br/> （类似ssh/config中的<code> ServerAliveInterval 60 </code>）",
+      "keepaliveIntervalPlaceholder": "（秒）",
+      "authentication": "SSH 认证",
+      "username": "SSH 用户名",
+      "agentInfo": {
+        "snapWarning": "由于Snap应用的安全模型，Snap版本的Beekeeper Studio无法使用SSH代理转发。",
+        "readMore": "了解更多",
+        "agentFound": "我们找到了您的SSH代理。一切准备就绪！",
+        "windowsInfo": "我们没有找到运行中的*nix ssh-agent，因此将尝试使用PuTTY代理pageant。",
+        "noAgentWarning": "您似乎没有运行SSH代理。"
+      },
+      "keyfile": {
+        "privateKey": "私钥文件",
+        "passphrase": "密钥文件密码",
+        "optional": "可选",
+        "snapWarning": "您需要启用SSH访问，然后重启Beekeeper以提供对.ssh目录的访问权限。"
+      },
+      "password": "SSH 密码",
+      "authTypes": {
+        "keyFile": "密钥文件",
+        "userPass": "用户名和密码",
+        "agent": "SSH 代理"
+      }
+    },
+    "readOnlyMode": "只读模式",
+    "upgradeForReadOnly": "升级以使用只读模式",
+    "test": "测试",
+    "pleaseFixErrors": "请修复以下错误",
+    "nameRequired": "名称是必填项",
+    "couldNotSave": "无法保存连接信息",
+    "couldNotParseUrl": "无法解析连接URL。",
+    "connectionLooksGood": "连接正常！",
+    "errorEstablishing": "建立连接时出错",
+    "connectionSaved": "连接已保存",
+    "mightNeedTrustCert": "您可能需要勾选\"信任服务器证书\"",
+    "notValidSqlite": "无法打开'{name}'。它不是有效的SQLite文件。",
+    "cockroach": {
+      "clusterId": "CockroachDB 云集群 ID",
+      "clusterIdTooltip": "前往 CockroachDB 在线 -> 连接 -> 仅参数 -> 从'选项'中复制"
+    },
+    "sqlite": {
+      "databaseFile": "数据库文件",
+      "runtimeExtensions": "运行时扩展",
+      "globalSetting": "这是一个全局设置，会影响所有的SQLite连接。",
+      "runtimeExtensionFile": "运行时扩展文件",
+      "fileExtensionHelp": "文件必须具有扩展名 .{extension}",
+      "snapWarning": "Snap用户请注意！如果您想使用外部驱动器上的sqlite数据库，您需要给Beekeeper一些额外的权限"
+    },
+    "sqlserver": {
+      "options": "SQL Server 选项",
+      "domain": "域",
+      "domainTooltip": "设置'域'以使用Windows集成身份验证(NTLM)登录",
+      "trustServerCertificate": "信任服务器证书？",
+      "trustServerCertificateTooltip": "用于本地开发服务器和自签名证书。如果启用了ssl，ssl -> rejectUnauthorized将覆盖此设置",
+      "server": "服务器",
+      "serverTooltip": "这是您Azure中SQL Server的<code>'服务器名称'</code>字段，<br/>您也可以将其视为主机名。<br/>例如：<code>example.database.windows.net</code>",
+      "signedIn": "已登录{account}",
+      "signOut": "退出登录",
+      "tenantId": "租户ID",
+      "tenantIdTooltip": "可以在Azure的<code>'Microsoft Entra ID'</code>部分找到，<br/>在概览中标记为<code>'租户ID'</code>",
+      "clientSecret": "客户端密钥",
+      "msiEndpoint": "MSI端点",
+      "azureAdSso": "Azure AD SSO",
+      "servicePrincipalSecret": "Azure 服务主体密钥"
+    },
+    "redshift": {
+      "iamAuthentication": "IAM 身份验证",
+      "clusterIdentifier": "集群标识符",
+      "clusterIdentifierTooltip": "这是您的Amazon Redshift集群的标识符",
+      "dbUser": "数据库用户",
+      "dbUserTooltip": "要连接的数据库用户",
+      "region": "AWS 区域",
+      "regionTooltip": "您的Redshift集群所在的AWS区域",
+      "accessKeyId": "访问密钥ID",
+      "secretAccessKey": "秘密访问密钥",
+      "roleArn": "角色ARN",
+      "sessionToken": "会话令牌",
+      "profile": "AWS 配置文件",
+      "iam": "认证类型已变更",
+      "iamAuthHelpText": "使用带凭证文件的AWS IAM身份验证连接临时集群凭证。",
+      "isServerless": "是否为无服务器实例",
+      "clusterIdentifierOrWorkgroup": "集群标识符或工作组名称",
+      "databaseGroup": "数据库组",
+      "tokenDuration": "令牌有效期",
+      "secondsOptional": "可选，以秒为单位",
+      "iamWithKeyAuth": "使用访问密钥和秘密密钥的IAM身份验证",
+      "iamWithFileAuth": "使用凭据文件的IAM身份验证"
+    },
+    "authentication": "身份验证",
+    "bigquery": {
+      "betaWarning": "BigQuery支持仍处于测试阶段。如有任何问题，请在以下位置报告",
+      "reportIssues": "我们的问题跟踪器",
+      "projectId": "项目ID",
+      "projectIdPlaceholder": "例如: example-project",
+      "defaultDataset": "默认数据集",
+      "serviceAccountInfo": "您需要一个拥有'BigQuery Data Viewer'和'BigQuery Job User'角色的服务账号 -",
+      "serviceAccountKey": "服务账号的JSON私钥"
+    },
+    "importButton": {
+      "importFromUrl": "从URL导入",
+      "pasteUrl": "粘贴URL",
+      "import": "导入",
+      "unableToDetermineType": "无法从URL确定数据库类型",
+      "unableToParseUrl": "无法解析URL"
+    }
+  },
+  "query": {
+    "run": "运行",
+    "runSelection": "运行选中",
+    "newQuery": "新建查询",
+    "saveQuery": "保存查询",
+    "results": "结果"
+  },
+  "table": {
+    "newTable": "新建表",
+    "editTable": "编辑表",
+    "deleteTable": "删除表",
+    "importData": "导入数据",
+    "exportData": "导出数据"
+  },
+  "settings": {
+    "title": "设置",
+    "general": "常规",
+    "appearance": "外观",
+    "shortcuts": "快捷键",
+    "language": "语言"
+  },
+  "sidebar": {
+    "refreshWorkspaces": "刷新工作区",
+    "languageSwitcher": "切换语言",
+    "accountStatus": "已登录 {count} 个账号",
+    "filter": "筛选"
+  },
+  "sorting": {
+    "sortBy": "排序方式",
+    "color": "颜色",
+    "created": "创建时间",
+    "name": "名称",
+    "type": "类型",
+    "ascending": "升序",
+    "descending": "降序"
+  },
+  "workspace": {
+    "addWorkspace": "添加工作区",
+    "manageWorkspace": "管理工作区",
+    "renameWorkspace": "重命名工作区",
+    "addUsers": "添加用户",
+    "signin": {
+      "title": "团队工作区账户登录",
+      "tooltip": "在云端存储连接和查询，与同事共享。点击了解更多。",
+      "reauthenticate": "重新验证",
+      "emailAddress": "电子邮件地址",
+      "emailPlaceholder": "例如：matthew@example.com",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码...",
+      "createAccount": "创建账户",
+      "forgotPassword": "忘记密码",
+      "submit": "提交"
+    }
+  },
+  "database": {
+    "mysql": "MySQL",
+    "tidb": "TiDB",
+    "mariadb": "MariaDB",
+    "postgresql": "Postgres",
+    "sqlite": "SQLite",
+    "sqlserver": "SQL Server",
+    "redshift": "Amazon Redshift",
+    "cockroachdb": "CockroachDB",
+    "bigquery": "BigQuery",
+    "libsql": "LibSQL*",
+    "oracle": "Oracle*",
+    "cassandra": "Cassandra*",
+    "firebird": "Firebird*",
+    "duckdb": "DuckDB*",
+    "clickhouse": "ClickHouse*",
+    "mongodb": "MongoDB*"
+  },
+  "upgrade": {
+    "pitch": "🌟 升级以获取更多功能，如对ClickHouse和Oracle的支持，以及便捷的表行JSON视图功能等！",
+    "link": "点此升级!",
+    "authenticationRequired": "需要升级才能使用此认证类型",
+    "title": "升级 Beekeeper Studio",
+    "getExclusiveFeatures": "升级获取独家功能：",
+    "license": {
+      "expired": "您现有的许可证对此版本的应用程序无效",
+      "buy": "购买许可证",
+      "buyTooltip": "任何购买都可获得应用终身访问权"
+    },
+    "trial": {
+        "start": "开始14天免费试用",
+        "tooltip": "无需提供电子邮件或信用卡信息，立即体验全部功能",
+        "ended": "您的免费试用已于{date}结束"
+    },
+      "features": {
+      "queryToFile": "直接将查询结果保存至文件",
+      "exportTables": "批量导出多个表",
+      "backupRestore": "轻松备份与恢复数据库",
+      "magicFormatting": "智能SQL格式化",
+      "tableFilters": "使用超过2个高级表格过滤器",
+      "dbEngines": "支持更多数据库引擎",
+      "dbEnginesTitle": "包括Oracle、Cassandra、BigQuery等",
+      "cloudSync": "跨设备云同步",
+      "readOnlyMode": "启用只读模式保护数据",
+      "sqliteExtensions": "利用SQLite扩展增强功能",
+      "importFromFile": "从文件快速导入数据"
+  }
+  },
+  "upsell": {
+    "upgradeRequired": "需要升级您的账户",
+    "getAccessToFeature": "获取此功能及更多专属权益：",
+    "features": {
+        "connectTo": "连接到多种数据库，包括Cassandra、Oracle、LibSQL、ClickHouse和DuckDB。",
+        "unlockFeatures": "解锁高级功能，如JSON视图、无限表格过滤器、数据导入/导出、备份与恢复等。",
+        "supportStaff": "享受专业的客户服务，我们的支持团队随时准备帮助您解决任何问题。",
+        "syncData": "通过云工作区和团队协作工具，在多台设备间无缝同步数据。"
+    }
+  },
+  "misc": {
+    "app": {
+      "name": "Beekeeper Studio",
+      "latestVersion": "最新版本"
+    },
+    "trial": {
+      "expires": "试用期将于{date}过期",
+      "upgradeSoon": "请尽快升级，以确保持续访问所有功能和服务。"
+    },
+    "duplicated": "{name}的副本",
+    "successfullyDuplicated": "连接已成功复制！"
+  },
+  "filePicker": {
+    "noFileSelected": "未选择文件",
+    "create": "创建",
+    "chooseFile": "选择文件",
+    "files": "个文件"
+  },
+  "sqlImport": {
+    "title": "导入SQL文件到已保存查询",
+    "message": "此操作将复制您的.sql文件并将其添加到Beekeeper Studio已保存的查询中。对原始.sql文件的任何更改都不会反映在Beekeeper Studio中。",
+    "chooseFiles": "选择文件",
+    "sqlFilesFilter": "SQL文件 (*.sql)",
+    "allFilesFilter": "所有文件",
+    "import": "导入"
+  },
+  "importTable": {
+    "notSupported": "Beekeeper目前不支持从文件导入到{dialect}☹️",
+    "closeTab": "关闭标签页",
+    "viewData": "查看{table}中的数据",
+    "abortedWithRollback": "整个导入已中止，事务已回滚",
+    "tryAgain": "重试",
+    "includedTables": "包含的表 {tables}",
+    "copy": "复制",
+    "copied": "已复制",
+    "copyToClipboard": "复制到剪贴板",
+    "copyErrorToClipboard": "复制错误到剪贴板",
+    "error": "错误",
+    "importing": "导入中...",
+    "importFailed": "导入失败",
+    "importSuccessful": "导入成功：{time}",
+    "seconds": "秒",
+    "steps": {
+      "chooseFile": "选择文件",
+      "mapToTable": "映射到表",
+      "reviewAndExecute": "检查并执行", 
+      "runImport": "运行导入"
+    }
+  }
+} 

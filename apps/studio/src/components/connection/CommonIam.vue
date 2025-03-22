@@ -3,15 +3,14 @@
     <h4
       class="advanced-heading flex"
     >
-      <span class="expand">IAM Authentication</span>
+      <span class="expand">{{ $t('connection.redshift.iamAuthentication') }}</span>
     </h4>
     <div class="advanced-body">
       <div class="row gutter">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>
-            Use AWS IAM authentication using credential file to connect with temporary cluster
-            credentials.
+            {{ $t('connection.redshift.iamAuthHelpText') }}
             <a
               href="https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html"
             >Amazon Docs</a> - <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rdb">Beekeeper Docs</a>
@@ -23,7 +22,7 @@
           class="advanced-heading flex"
           :class="{enabled: config.redshiftOptions.isServerless}"
         >
-          <span class="expand">Is Serverless Instance</span>
+          <span class="expand">{{ $t('connection.redshift.isServerless') }}</span>
           <x-switch
             @click.prevent="toggleServerless"
             :toggled="config.redshiftOptions.isServerless"
@@ -31,7 +30,7 @@
         </h4>
       </div>
       <div v-show="isProfileAuth" class="form-group">
-        <label for="awsProfile"> AWS Profile </label>
+        <label for="awsProfile">{{ $t('connection.redshift.profile') }}</label>
         <input
           name="awsProfile"
           type="text"
@@ -39,10 +38,10 @@
           v-model="config.redshiftOptions.awsProfile"
         >
       </div>
-      <template v-show="isKeyAuth" >
+      <template v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">
-            Access Key ID
+            {{ $t('connection.redshift.accessKeyId') }}
           </label>
           <input
             type="text"
@@ -52,7 +51,7 @@
         </div>
         <div class="form-group">
           <label for="Secret Access Key">
-            Secret Access Key
+            {{ $t('connection.redshift.secretAccessKey') }}
           </label>
           <input
             type="password"
@@ -63,7 +62,7 @@
       </template>
       <div class="form-group">
         <label for="AWS Region">
-          AWS Region
+          {{ $t('connection.redshift.region') }}
         </label>
         <input
           type="text"
@@ -73,7 +72,7 @@
       </div>
       <template v-show="isRedshift">
         <div class="form-group">
-          <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
+          <label for="Cluster Identifier">{{ $t('connection.redshift.clusterIdentifierOrWorkgroup') }}</label>
           <input
             type="text"
             class="form-control"
@@ -81,7 +80,7 @@
           >
         </div>
         <div class="form-group">
-          <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
+          <label for="Database Group">{{ $t('connection.redshift.databaseGroup') }} <span class="hint">({{ $t('connection.optional') }})</span></label>
           <input
             type="text"
             class="form-control"
@@ -89,7 +88,7 @@
           >
         </div>
         <div class="form-group">
-          <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
+          <label for="Token Duration">{{ $t('connection.redshift.tokenDuration') }} <span class="hint">({{ $t('connection.redshift.secondsOptional') }})</span></label>
           <input
             type="text"
             class="form-control"

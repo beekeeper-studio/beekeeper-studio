@@ -33,10 +33,11 @@
     <a
       @click.prevent="refresh"
       class="nav-item refresh"
-      title="Refresh Workspaces"
+      :title="String($t('sidebar.refreshWorkspaces'))"
     >
       <span class="avatar"><i class="material-icons">refresh</i></span>
     </a>
+    <language-switcher-button />
     <account-status-button />
   </div>
 </template>
@@ -47,6 +48,7 @@ import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.v
 import ContentPlaceholderImg from '@/components/common/loading/ContentPlaceholderImg.vue'
 import WorkspaceAvatar from '@/components/common/WorkspaceAvatar.vue'
 import AccountStatusButton from '@/components/sidebar/connection/AccountStatusButton.vue'
+import LanguageSwitcherButton from '@/components/sidebar/connection/LanguageSwitcherButton.vue'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { WSWithClient } from '@/store/modules/CredentialsModule'
 import Vue from 'vue'
@@ -55,7 +57,14 @@ import NewWorkspaceButton from './connection/NewWorkspaceButton.vue'
 import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
-components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentPlaceholderImg, ContentPlaceholder },
+components: { 
+  NewWorkspaceButton, 
+  WorkspaceAvatar, 
+  AccountStatusButton, 
+  LanguageSwitcherButton,
+  ContentPlaceholderImg, 
+  ContentPlaceholder 
+},
   props: ['activeItem'],
   computed: {
     ...mapState('credentials', ['credentials', 'loading']),
@@ -67,18 +76,18 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
   methods: {
     contextOptionsFor(blob: WSWithClient ) {
       const result = [
-        { name: "Manage Workspace", slug: "manage", handler: ({item}) => window.location.href = item.workspace.url}
+        { name: this.$t('workspace.manageWorkspace'), slug: "manage", handler: ({item}) => window.location.href = item.workspace.url}
       ]
       if (blob.workspace.isOwner) {
         result.push({
-          name: "Rename Workspace",
+          name: this.$t('workspace.renameWorkspace'),
           slug: 'rename',
           handler: () => this.$root.$emit(AppEvent.promptRenameWorkspace, {
             workspace: blob.workspace,
             client: blob.client,
           }),
         }, {
-          name: "Add Users",
+          name: this.$t('workspace.addUsers'),
           slug: 'invite',
           handler: ({item}) => window.location.href = `${item.workspace.url}/invitations/new`
         })

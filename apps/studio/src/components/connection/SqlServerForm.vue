@@ -1,26 +1,29 @@
 <template>
   <div class="with-connection-type sql-server-form">
     <div class="form-group col">
-      <label for="authenticationType">Authentication Method</label>
+      <label for="authenticationType">{{ $t('connection.authenticationMethod') }}</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
-        <option value="default">Username / Password</option>
-        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
+        <option value="default">
+          {{ $t('connection.usernamePassword') }}
+        </option>
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">
+          {{ t.name }}
         </option>
       </select>
     </div>
     <common-server-inputs v-show="!azureAuthEnabled" :config="config">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
-          SQL Server Options
+          {{ $t('connection.sqlserver.options') }}
         </h4>
         <div class="advanced-body">
           <div class="form-group">
             <label for="domain">
-              Domain
+              {{ $t('connection.sqlserver.domain') }}
               <i
                 class="material-icons"
-                v-tooltip="'Set \'domain\' to be logged in using Windows Integrated Authentication (NTLM)'"
+                v-tooltip="$t('connection.sqlserver.domainTooltip')"
               >help_outlined</i>
             </label>
             <input
@@ -40,10 +43,10 @@
                 v-model="config.trustServerCertificate"
                 id="trustServerCertificate"
               >
-              Trust Server Certificate?
+              {{ $t('connection.sqlserver.trustServerCertificate') }}
               <i
                 class="material-icons"
-                v-tooltip="'Use this for local dev servers and self-signed certificates. ssl -> rejectUnauthorized overrides this setting if ssl is enabled'"
+                v-tooltip="$t('connection.sqlserver.trustServerCertificateTooltip')"
               >help_outlined</i>
             </label>
           </div>
@@ -57,11 +60,11 @@
       >
         <div class="form-group">
           <label for="server">
-            Server <i
+            {{ $t('connection.sqlserver.server') }} <i
               class="material-icons"
               style="padding-left: 0.25rem"
               v-tooltip="{
-                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
+                content: $t('connection.sqlserver.serverTooltip'),
                 html: true }"
             >help_outlined</i>
           </label>
@@ -73,7 +76,7 @@
           >
         </div>
         <div class="form-group">
-          <label for="database">Database</label>
+          <label for="database">{{ $t('connection.database') }}</label>
           <input
             name="database"
             type="text"
@@ -83,7 +86,7 @@
         </div>
         <div class="advanced-connection-settings signed-in-as" v-if="hasAccessTokenCache">
           <div class="advanced-body">
-            <span class="info">Signed in{{ accountName ? ` as ${accountName}` : '' }}</span>
+            <span class="info">{{ accountName ? $t('connection.sqlserver.signedIn', {account: ` as ${accountName}`}) : $t('connection.sqlserver.signedIn', {account: ''}) }}</span>
             <button
               class="btn btn-flat btn-icon"
               type="button"
@@ -91,12 +94,12 @@
               :disabled="signingOut"
             >
               <i class="material-icons">logout</i>
-              Sign out
+              {{ $t('connection.sqlserver.signOut') }}
             </button>
           </div>
         </div>
         <div class="form-group" v-show="showUser">
-          <label for="user">User</label>
+          <label for="user">{{ $t('connection.user') }}</label>
           <input
             name="user"
             type="text"
@@ -105,7 +108,7 @@
           >
         </div>
         <div class="form-group" v-show="showPassword">
-          <label for="password">Password</label>
+          <label for="password">{{ $t('connection.password') }}</label>
           <input
             name="password"
             type="text"
@@ -115,11 +118,11 @@
         </div>
         <div class="form-group" v-show="showTenantId">
           <label for="tenantId">
-            Tenant ID <i
+            {{ $t('connection.sqlserver.tenantId') }} <i
               class="material-icons"
               style="padding-left: 0.25rem"
               v-tooltip="{
-                content: 'This can be found in the <code>\'Microsoft Entra ID\'</code> section of Azure, <br/> in the Overview labelled <code>\'Tenant ID\'</code>',
+                content: $t('connection.sqlserver.tenantIdTooltip'),
                 html: true }"
             >help_outlined</i>
           </label>
@@ -131,7 +134,7 @@
           >
         </div>
         <div class="form-group" v-show="showClientSecret">
-          <label for="clientSecret">Client Secret</label>
+          <label for="clientSecret">{{ $t('connection.sqlserver.clientSecret') }}</label>
           <input
             name="clientSecret"
             type="text"
@@ -140,7 +143,7 @@
           >
         </div>
         <div class="form-group" v-show="showMsiEndpoint">
-          <label for="msiEndpoint">MSI Endpoint</label>
+          <label for="msiEndpoint">{{ $t('connection.sqlserver.msiEndpoint') }}</label>
           <input
             name="msiEndpoint"
             type="text"
@@ -172,7 +175,6 @@
       return {
         azureAuthEnabled: false,
         authType: 'default',
-        authTypes: AzureAuthTypes,
         accountName: null,
         signingOut: false,
         errorSigningOut: null,
@@ -187,7 +189,7 @@
         } else {
           if (this.$store.getters.isCommunity) {
             // we want to display a modal
-            this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+            this.$root.$emit(AppEvent.upgradeModal, this.$t('upgrade.authenticationRequired'));
             this.authType = 'default'
           } else {
             this.azureAuthEnabled = true
@@ -208,6 +210,12 @@
     },
     computed: {
       ...mapState(['connection']),
+      authTypes() {
+        return AzureAuthTypes.map(type => ({
+          name: this.$t(type.nameKey || 'misc.app.name'),
+          value: type.value
+        }))
+      },
       showUser() {
         return [AzureAuthType.Password].includes(this.authType)
       },

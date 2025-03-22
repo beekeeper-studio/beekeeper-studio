@@ -14,30 +14,30 @@
           <div class="card-flat padding" :class="determineLabelColor" v-else>
             <div class="flex flex-between">
               <h3 class="card-title" v-if="!pageTitle">
-                New Connection
+                {{ $t('connection.newConnection') }}
               </h3>
               <h3 class="card-title" v-if="pageTitle">
                 {{ pageTitle }}
               </h3>
               <ImportButton :config="config">
-                Import from URL
+                {{ $t('connection.importFromUrl') }}
               </ImportButton>
             </div>
-            <error-alert :error="errors" title="Please fix the following errors" />
+            <error-alert :error="errors" :title="$t('connection.pleaseFixErrors')" />
             <form @action="submit" v-if="config">
               <div class="form-group">
-                <label for="connection-select">Connection Type</label>
+                <label for="connection-select">{{ $t('connection.connectionType') }}</label>
                 <select name="connectionType" class="form-control custom-select" v-model="config.connectionType"
                         id="connection-select"
                 >
                   <option disabled hidden value="null">
-                    Select a connection type...
+                    {{ $t('connection.selectConnectionType') }}
                   </option>
                   <option :key="`${t.value}-${t.name}`" v-for="t in communityConnectionTypes" :value="t.value">
-                    {{ t.name }}
+                    {{ $t(`database.${t.value}`) }}
                   </option>
                   <option :key="`${t.value}-${t.name}`" :value="t.value" v-for="t in ultimateConnectionTypes">
-                    {{ t.name }}
+                    {{ $t(`database.${t.value}`) }}
                   </option>
                 </select>
               </div>
@@ -85,8 +85,8 @@
                     <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
                            v-model="config.readOnlyMode"
                     >
-                    <span>Read Only Mode</span>
-                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
+                    <span>{{ $t('connection.readOnlyMode') }}</span>
+                    <i v-if="!isUltimate" v-tooltip="$t('connection.upgradeForReadOnly')" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
@@ -97,12 +97,12 @@
                     <button :disabled="testing || connecting" class="btn btn-flat" type="button"
                             @click.prevent="testConnection"
                     >
-                      Test
+                      {{ $t('connection.test') }}
                     </button>
                     <button :disabled="testing || connecting" class="btn btn-primary" type="submit"
                             @click.prevent="submit"
                     >
-                      Connect
+                      {{ $t('connection.connect') }}
                     </button>
                   </div>
                 </div>
@@ -119,20 +119,17 @@
           </div>
           <template v-if="!config.connectionType">
             <div class="pitch" v-if="!isUltimate">
-              🌟 <strong>Upgrade</strong> for more features like ClickHouse & Oracle support, JSON view for table rows,
-              and more!
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+              {{ $t('upgrade.pitch') }}
+              <a href="https://beekeeperstudio.io/pricing" class="">{{ $t('upgrade.link') }}</a>
             </div>
             <div class="pitch" v-else-if="isTrial">
-              🌟 <strong>Trial expires {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> Upgrade now to make sure you
-              don't lose access.
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+              🌟 <strong>{{ $t('misc.trial.expires', { date: $bks.timeAgo(trialLicense.validUntil) }) }}</strong> {{ $t('misc.trial.upgradeSoon') }}
+              <a href="https://beekeeperstudio.io/pricing" class="">{{ $t('upgrade.link') }}</a>
             </div>
           </template>
         </div>
 
-        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version
-        }}</a></small>
+        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">{{ $t('misc.app.name') }} {{ version }}</a></small>
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
@@ -271,7 +268,7 @@ export default Vue.extend({
         this.connectionError.message &&
         this.connectionError.message.includes('self signed certificate')
       ) {
-        this.errorHelp = `You might need to check 'Trust Server Certificate'`
+        this.errorHelp = this.$t('connection.mightNeedTrustCert')
       } else {
         this.errorHelp = null
       }
@@ -337,9 +334,8 @@ export default Vue.extend({
         this.config = conf;
         this.submit();
       } catch {
-        this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
+        this.$noty.error(this.$t('connection.notValidSqlite', { name: file.name }));
       }
-
     },
     create() {
       this.$util.send('appdb/saved/new').then((conn) => {
@@ -367,16 +363,15 @@ export default Vue.extend({
     async duplicate(config) {
       // Duplicates ES 6 class of the connection, without any reference to the old one.
       const duplicateConfig = await this.$store.dispatch('data/connections/clone', config)
-      duplicateConfig.name = 'Copy of ' + duplicateConfig.name
+      duplicateConfig.name = this.$t('misc.duplicated', { name: duplicateConfig.name })
 
       try {
         const id = await this.$store.dispatch('data/connections/save', duplicateConfig)
-        this.$noty.success(`The connection was successfully duplicated!`)
+        this.$noty.success(this.$t('misc.successfullyDuplicated'))
         this.config = this.connections.find((c) => c.id === id) || this.config
       } catch (ex) {
         this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
       }
-
     },
     async submit() {
       if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
@@ -421,11 +416,11 @@ export default Vue.extend({
         this.testing = true
         this.connectionError = null
         await this.$store.dispatch('test', this.config)
-        this.$noty.success("Connection looks good!")
+        this.$noty.success(this.$t('connection.connectionLooksGood'))
         return true
       } catch (ex) {
         this.connectionError = ex
-        this.$noty.error("Error establishing a connection")
+        this.$noty.error(this.$t('connection.errorEstablishing'))
       } finally {
         this.testing = false
         this.afterConnect()
@@ -436,7 +431,7 @@ export default Vue.extend({
         this.errors = null
         this.connectionError = null
         if (!this.config.name) {
-          throw new Error("Name is required")
+          throw new Error(this.$t('connection.nameRequired'))
         }
         // create token cache for azure auth
         if (this.config.azureAuthOptions?.azureAuthEnabled && !this.config.authId) {
@@ -452,20 +447,20 @@ export default Vue.extend({
           await this.$store.dispatch('data/usedconnections/save', this.config);
         }
 
-        this.$noty.success("Connection Saved")
+        this.$noty.success(this.$t('connection.connectionSaved'))
         // we want to fetch the saved one in case it's changed
         const connection = this.connections.find((c) => c.id === id)
         this.edit(connection)
       } catch (ex) {
         console.error(ex)
         this.errors = [ex.message]
-        this.$noty.error("Could not save connection information")
+        this.$noty.error(this.$t('connection.couldNotSave'))
       }
     },
     handleErrorMessage(message) {
       if (message) {
         this.errors = [message]
-        this.$noty.error("Could not parse connection URL.")
+        this.$noty.error(this.$t('connection.couldNotParseUrl'))
       } else {
         this.errors = null
       }

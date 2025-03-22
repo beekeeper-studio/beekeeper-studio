@@ -1,22 +1,22 @@
 <template>
   <div class="host-port-user-password">
-    <slot name="header"></slot>
+    <slot name="header" />
     <div class="row">
       <div
         class="form-group col"
         v-if="supportsSocketPath"
       >
-        <label for="connectionMode">Connection Mode</label>
+        <label for="connectionMode">{{ $t('connection.connectionMode') }}</label>
         <select
           name=""
           v-model="config.socketPathEnabled"
           id=""
         >
           <option :value="false">
-            Host and Port
+            {{ $t('connection.hostAndPort') }}
           </option>
           <option :value="true">
-            Socket
+            {{ $t('connection.socket') }}
           </option>
         </select>
       </div>
@@ -26,7 +26,7 @@
       v-show="config.socketPathEnabled"
     >
       <div class="col form-group" :class="{ s9: supportsSocketPathWithCustomPort }">
-        <label for="socketPath">Socket Path</label>
+        <label for="socketPath">{{ $t('connection.socketPath') }}</label>
         <input
           id="socketPath"
           class="form-control"
@@ -36,7 +36,7 @@
         >
       </div>
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
-        <label for="port">Port</label>
+        <label for="port">{{ $t('connection.port') }}</label>
         <input
           type="number"
           class="form-control"
@@ -50,7 +50,7 @@
       v-show="!config.socketPathEnabled"
     >
       <div class="col s9 form-group">
-        <label for="Host">Host</label>
+        <label for="Host">{{ $t('connection.host') }}</label>
         <input
           type="text"
           class="form-control"
@@ -60,7 +60,7 @@
         >
       </div>
       <div class="col s3 form-group">
-        <label for="port">Port</label>
+        <label for="port">{{ $t('connection.port') }}</label>
         <input
           type="number"
           class="form-control"
@@ -71,7 +71,7 @@
     </div>
 
     <toggle-form-area
-      title="Enable SSL"
+      :title="$t('connection.enableSSL')"
       v-if="supportComplexSSL"
     >
       <template v-slot:header>
@@ -86,16 +86,16 @@
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
             <div>
-              Providing certificate files is optional. By default Beekeeper will just trust the server certificate.
+              {{ $t('connection.ssl.info') }}
               <external-link href="https://docs.beekeeperstudio.io/pages/first-page#ssl">
-                Read More
+                {{ $t('connection.ssl.readMore') }}
               </external-link>
             </div>
           </div>
         </div>
         <div class="row gutter">
           <div class="col form-group">
-            <label>CA Cert (optional)</label>
+            <label>{{ $t('connection.ssl.caCert') }}</label>
             <file-picker
               v-model="config.sslCaFile"
               :disabled="!config.ssl"
@@ -105,7 +105,7 @@
 
         <div class="row gutter">
           <div class="col form-group">
-            <label>Certificate (optional)</label>
+            <label>{{ $t('connection.ssl.certificate') }}</label>
             <file-picker
               v-model="config.sslCertFile"
               :disabled="!config.ssl"
@@ -115,7 +115,7 @@
 
         <div class="row gutter">
           <div class="col form-group">
-            <label>Key File (optional)</label>
+            <label>{{ $t('connection.ssl.keyFile') }}</label>
             <file-picker
               v-model="config.sslKeyFile"
               :disabled="!config.ssl"
@@ -135,10 +135,10 @@
                 name="rememberPassword"
                 v-model="config.sslRejectUnauthorized"
               >
-              <span>Reject Unauthorized</span>
+              <span>{{ $t('connection.ssl.rejectUnauthorized') }}</span>
               <i
                 class="material-icons"
-                v-tooltip="'This only takes effect if you provide certificate files'"
+                v-tooltip="$t('connection.ssl.rejectUnauthorizedTooltip')"
               >help_outlined</i>
             </label>
           </div>
@@ -157,7 +157,7 @@
           class="advanced-heading flex"
           :class="{enabled: config.ssl}"
         >
-          <span class="expand">Enable SSL</span>
+          <span class="expand">{{ $t('connection.enableSSL') }}</span>
           <x-switch
             @click.prevent="toggleSsl"
             :toggled="config.ssl"
@@ -169,7 +169,7 @@
 
     <div class="row gutter">
       <div class="col s6 form-group">
-        <label for="user">User</label>
+        <label for="user">{{ $t('connection.user') }}</label>
         <input
           type="text"
           name="user"
@@ -178,7 +178,7 @@
         >
       </div>
       <div class="col s6 form-group">
-        <label for="password">Password</label>
+        <label for="password">{{ $t('connection.password') }}</label>
         <input
           :type="togglePasswordInputType"
           v-model="config.password"
@@ -195,11 +195,11 @@
       <label
         v-if="config.connectionType !== 'cassandra'"
         for="defaultDatabase"
-      >Default Database</label>
+      >{{ $t('connection.defaultDatabase') }}</label>
       <label
         v-else
         for="defaultDatabase"
-      >Keyspace <span class="optional-text">(optional)</span></label>
+      >{{ $t('connection.keyspace') }} <span class="optional-text">({{ $t('connection.optional') }})</span></label>
       <input
         type="text"
         class="form-control"

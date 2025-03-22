@@ -6,11 +6,11 @@
           <label
             for="Database"
             required
-          >Database File</label>
+          >{{ $t('connection.sqlite.databaseFile') }}</label>
           <file-picker v-model="config.defaultDatabase" />
 
           <toggle-form-area
-            title="Runtime Extensions"
+            :title="$t('connection.sqlite.runtimeExtensions')"
             :expand-initially="extensionChosen"
           >
             <template>
@@ -18,9 +18,9 @@
                 <i class="material-icons-outlined">info</i>
                 <span class="flex">
                   <span class="expand">
-                    This is a global setting that affects all SQLite connections. 
+                    {{ $t('connection.sqlite.globalSetting') }}
                   </span>
-                  <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+                  <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">{{ $t('common.learnMore') }}</a>
                 </span>
               </div>
 
@@ -43,8 +43,8 @@
                 v-else
                 setting-key="sqliteExtensionFile"
                 input-type="file"
-                title="Runtime extension file"
-                :help="`File must have extension .${loadExtensionFileType}`"
+                :title="$t('connection.sqlite.runtimeExtensionFile')"
+                :help="$t('connection.sqlite.fileExtensionHelp', {extension: loadExtensionFileType})"
               />
             </template>
           </toggle-form-area>
@@ -54,9 +54,9 @@
           >
             <i class="material-icons">error_outline</i>
             <div>
-              Hey snap user! If you want to use a sqlite database on an external drive you'll need to give Beekeeper some extra permissions
+              {{ $t('connection.sqlite.snapWarning') }}
               <external-link :href="snap">
-                Read more
+                {{ $t('common.readMore') }}
               </external-link>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default Vue.extend({
   methods: {
     async unloadExtension() {
       this.settings.sqliteExtensionFile.value = ''
-    	await this.$store.dispatch('settings/saveSetting', this.settings.sqliteExtensionFile)
+      await this.$store.dispatch('settings/saveSetting', this.settings.sqliteExtensionFile)
     },
   }
 })
