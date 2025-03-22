@@ -200,5 +200,5 @@ export default {
       return this.queryTabTitle || this.tableTabTitle || "Unknown";
     },
   },
-};
+}};
 </script>
