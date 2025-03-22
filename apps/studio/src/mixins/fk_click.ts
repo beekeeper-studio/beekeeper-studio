@@ -2,6 +2,7 @@ import rawLog from '@bksLogger'
 import { monthAgo } from '@/common/date';
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import { CellComponent } from 'tabulator-tables';
+import { AppEvent } from '@/common/AppEvent';
 
 const log = rawLog.scope('fk_click');
 
@@ -113,20 +114,24 @@ export const FkLinkMixin = {
         });
       });
 
-      let openDetailView = true
+      let openJsonViewer = true
       if (this.$store.getters.isCommunity) {
         const lastOpen = SmartLocalStorage.getDate('openJSONViewerViaFK__community')
         if (!lastOpen || lastOpen < monthAgo()) {
           SmartLocalStorage.setDate('openJSONViewerViaFK__community', new Date())
         } else {
-          openDetailView = false
+          openJsonViewer = false
         }
       }
 
       const payload = {
-        table, filters, titleScope: values.join(','), openDetailView,
+        table, filters, titleScope: values.join(','),
       }
       this.$root.$emit('loadTable', payload)
+      if (openJsonViewer) {
+        this.trigger(AppEvent.selectSecondarySidebarTab, "json-viewer")
+        this.trigger(AppEvent.toggleSecondarySidebar, true)
+      }
     },
 
   }

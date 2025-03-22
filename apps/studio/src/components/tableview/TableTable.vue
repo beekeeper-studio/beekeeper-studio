@@ -33,16 +33,6 @@
           ref="table"
           class="spreadsheet-table"
         />
-        <detail-view-sidebar
-          :title="detailViewTitle"
-          :value="selectedRowData"
-          :data-id="selectedRowIndex"
-          :hidden="!openDetailView"
-          :expandable-paths="expandablePaths"
-          :reinitialize="reinitializeDetailView"
-          @expandPath="expandForeignKey"
-          @close="toggleOpenDetailView(false)"
-        />
       </div>
       <ColumnFilterModal
         :modal-name="columnFilterModalName"
@@ -192,13 +182,6 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Toggle Right Sidebar`"
-          class="btn btn-flat"
-          @click="toggleOpenDetailView()"
-        >
-          <i class="material-icons material-icons-round">view_sidebar</i>
-        </x-button>
-        <x-button
           v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
@@ -332,8 +315,6 @@ import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
-import Split from 'split.js'
 import { ExpandablePath } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
@@ -342,7 +323,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -389,14 +370,11 @@ export default Vue.extend({
       selectedRowIndex: null,
       selectedRowData: {},
       expandablePaths: {},
-      split: null,
-      detailViewTitle: undefined,
-      reinitializeDetailView: 0,
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
-    ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'openDetailView']),
+    ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
     limit() {
       return this.$bksConfig.ui.tableTable.pageSize
     },
@@ -741,6 +719,11 @@ export default Vue.extend({
         label: createMenuItem("Open Column Filter"),
         action: this.showColumnFilterModal,
       }
+    },
+    rootBindings() {
+      return [
+        { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+      ]
     }
   },
 
@@ -760,14 +743,6 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
-      this.updateSplit()
-
-      if (this.active) {
-        this.reinitializeDetailView++
-        const splitSizes = this.$store.state.tableTableSplitSizes
-        this.split?.setSizes(splitSizes)
-      }
-
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -839,17 +814,23 @@ export default Vue.extend({
     },
   },
   beforeDestroy() {
+    this.handleTabInactive()
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
     }
+    this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
     if (this.shouldInitialize) {
-      this.$nextTick(async() => {
+      await this.$nextTick(async() => {
         await this.initialize()
       })
     }
+    if (this.active) {
+      this.handleTabActive()
+    }
+    this.registerHandlers(this.rootBindings)
   },
   methods: {
     handleTab(e: KeyboardEvent) {
@@ -985,25 +966,13 @@ export default Vue.extend({
           scrollPageUp: false,
           scrollPageDown: false
         },
+        onRangeChange: this.handleRangeChange,
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on("cellMouseUp", this.updateDetailView);
-      this.tabulator.on("headerMouseUp", this.updateDetailView);
-      this.tabulator.on(
-        "keyNavigate",
-        // This is slow if we do a long press. Debounce it so it feels good.
-        _.debounce(this.updateDetailView, 100, {
-          leading: true, trailing: true
-        })
-      );
-      // Tabulator range is reset after data is processed
-      this.tabulator.on("dataProcessed", this.updateDetailView);
-
-      this.updateSplit()
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
@@ -1031,8 +1000,9 @@ export default Vue.extend({
         {
           label: createMenuItem('See details'),
           action: () => {
-            this.toggleOpenDetailView(true)
-            this.updateDetailView({ range })
+            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+            this.trigger(AppEvent.toggleSecondarySidebar, true)
+            this.updateJsonViewer({ range })
           },
         },
       ]
@@ -1236,7 +1206,7 @@ export default Vue.extend({
       // reflect changes in the detail view
       if (this.indexRowOf(cell.getRow()) === this.selectedRowIndex) {
         cell.getRow().invalidateForeignCache(cell.getField())
-        this.updateDetailView()
+        this.updateJsonViewer()
       }
 
       // Dont handle cell edit if made on a pending insert
@@ -1699,19 +1669,10 @@ export default Vue.extend({
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
-    async toggleOpenDetailView(open?: boolean) {
-      if (typeof open === 'undefined') {
-        open = !this.openDetailView
-      }
-      this.updateSplit(open)
-      this.rootToggleOpenDetailView(open)
-    },
     indexRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
-    updateDetailView(options: { range?: RangeComponent } = {}) {
-      if (!this.openDetailView) return
-
+    updateJsonViewer(options: { range?: RangeComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
@@ -1723,7 +1684,6 @@ export default Vue.extend({
       const position = this.indexRowOf(row)
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
-      this.detailViewTitle = `Row ${position}`
       this.selectedRow = row
       this.selectedRowIndex = position
       this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
@@ -1734,20 +1694,13 @@ export default Vue.extend({
           tableKey: key,
         }))
       this.expandablePaths.push(...cachedExpandablePaths)
-    },
-    initializeSplit() {
-      const components = this.$refs.tableViewWrapper.children
-      const splitSizes = this.$store.state.tableTableSplitSizes
-      this.split = Split(components, {
-        elementStyle: (_dimension, size) => ({
-          'flex-basis': `calc(${size}%)`,
-        }),
-        sizes: splitSizes,
-        expandToMin: true,
-        onDragEnd: () => {
-          this.$store.dispatch("setTableTableSplitSizes", this.split.getSizes())
-        }
-      } as Split.Options)
+
+      const updatedData = {
+        value: this.selectedRowData,
+        expandablePaths: this.expandablePaths,
+      }
+
+      this.trigger(AppEvent.updateJsonViewerSidebar, updatedData)
     },
     exportTable() {
       this.trigger(AppEvent.beginExport, { table: this.table })
@@ -1844,28 +1797,48 @@ export default Vue.extend({
       const filteredExpandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
       this.expandablePaths = filteredExpandablePaths
       this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
+
+      const data = {
+        value: this.selectedRowData,
+        expandablePaths: this.expandablePaths,
+      }
+
+      this.trigger(AppEvent.updateJsonViewerSidebar, data)
     },
-    /**
-     * This should be called before showing/hiding the detail view
-     * @param {boolean} open - true if we want to open the detail view
-     */
-    updateSplit(open?: boolean) {
-      if (typeof open === 'undefined') {
-        open = this.openDetailView
+    handleRangeChange(ranges: RangeComponent[]) {
+      this.updateJsonViewer({ range: ranges[0] })
+    },
+    handleSwitchedTab(tab) {
+      if (tab === this.tab) {
+        this.handleTabActive()
+      } else {
+        this.handleTabInactive()
       }
-      if (open && !this.split) {
-        this.initializeSplit()
-      } else if (!open) {
-        this.split?.destroy()
-        this.split = null
+    },
+    handleTabActive() {
+      const data = {
+        value: this.selectedRowData,
+        expandablePaths: this.expandablePaths,
       }
+      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.registerHandlers([
+        {
+          event: AppEvent.jsonViewerSidebarExpandPath,
+          handler: this.expandForeignKey,
+        },
+      ])
+    },
+    handleTabInactive() {
+      this.unregisterHandlers([
+        {
+          event: AppEvent.jsonViewerSidebarExpandPath,
+          handler: this.expandForeignKey,
+        },
+      ])
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
     }, 300),
-    ...mapActions({
-      rootToggleOpenDetailView: "toggleOpenDetailView",
-    }),
   }
 });
 </script>

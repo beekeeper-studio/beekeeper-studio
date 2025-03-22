@@ -44,7 +44,7 @@
       </a>
     </div>
     <div class="tab-content">
-      <div class="empty flex-col  expand">
+      <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
           <shortcut-hints />
         </div>
@@ -563,8 +563,15 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openContextMenu(event, item) {
       this.contextEvent = { event, item }
     },
-    async setActiveTab(tab) {
+    async setActiveTab(tab: TransportOpenTab) {
+      const switchingTab = tab.id !== this.activeTab?.id
+      if (switchingTab) {
+        this.trigger(AppEvent.switchingTab, tab)
+      }
       await this.$store.dispatch('tabs/setActive', tab)
+      if (switchingTab) {
+        this.trigger(AppEvent.switchedTab, tab)
+      }
     },
     async addTab(item: TransportOpenTab) {
       const savedItem = await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
@@ -883,7 +890,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
-    async openTable({ table, filters, openDetailView }) {
+    async openTable({ table, filters }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
       tab.title = table.name ?? table.tableName
@@ -900,10 +907,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         await this.$store.dispatch('tabs/setActive', existing)
       } else {
         await this.addTab(tab)
-      }
-
-      if (openDetailView) {
-        this.$store.dispatch('toggleOpenDetailView', true)
       }
     },
     openExportModal(options) {

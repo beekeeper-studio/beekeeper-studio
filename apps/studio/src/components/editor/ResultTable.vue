@@ -27,6 +27,7 @@
   import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
+  import { AppEvent } from "@/common/AppEvent";
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -34,6 +35,7 @@
       return {
         tabulator: null,
         actualTableHeight: '100%',
+        selectedRowData: {},
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus'],
@@ -175,11 +177,17 @@
         const columns = 'columns-' + this.result.fields.reduce((str, field) => `${str},${field.name}`, '')
         return `${workspace}.${connection}.${table}.${columns}`
       },
+      rootBindings() {
+        return [
+          { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+        ]
+      },
     },
     beforeDestroy() {
       if (this.tabulator) {
         this.tabulator.destroy()
       }
+      this.unregisterHandlers(this.rootBindings)
     },
     async mounted() {
       this.initializeTabulator()
@@ -190,6 +198,10 @@
         }
         this.tabulator.on('tableBuilt', onTableBuilt)
       }
+      if (this.active) {
+        this.handleTabActive()
+      }
+      this.registerHandlers(this.rootBindings)
     },
     methods: {
       initializeTabulator() {
@@ -206,6 +218,7 @@
           downloadConfig: {
             columnHeaders: true
           },
+          onRangeChange: this.handleRangeChange,
         });
       },
       copySelection() {
@@ -318,6 +331,26 @@
       triggerFocus() {
         this.tabulator.rowManager.getElement().focus();
       },
-    }
+      handleRangeChange(ranges) {
+        this.selectedRowData = this.dataToJson(ranges[0].getRows()[0].getData(), true)
+        const data = {
+          value: this.selectedRowData,
+          expandablePaths: [],
+        }
+        this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      },
+      handleTabActive() {
+        const data = {
+          value: this.selectedRowData,
+          expandablePaths: [],
+        }
+        this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      },
+      handleSwitchedTab(tab) {
+        if (tab.id === this.tab.id) {
+          this.handleTabActive()
+        }
+      }
+    },
 	}
 </script>
