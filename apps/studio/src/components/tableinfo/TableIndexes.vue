@@ -126,6 +126,7 @@ import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
+import { SelectableCellMixin } from '@/mixins/selectableCell';
 
 interface State {
   mysqlTypes: string[]
@@ -141,7 +142,7 @@ export default Vue.extend({
     StatusBar,
     ErrorAlert,
   },
-  mixins: [data_mutators],
+  mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
@@ -213,13 +214,14 @@ export default Vue.extend({
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
       const result = [
-        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5}),
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
           editable,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell),
         },
         {
           title: 'Unique',
@@ -251,7 +253,8 @@ export default Vue.extend({
             autocomplete: true,
             listOnEmpty: true,
             freetext: true,
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         trashButton(this.removeRow)
       ]
@@ -381,7 +384,6 @@ export default Vue.extend({
       //   headerSort: false,
       // })
     }
-
   },
   mounted() {
     // this.initializeTabulator()
