@@ -32,7 +32,6 @@
         </div>
       </div>
       <sql-text-editor
-        v-if="connectionType !== 'mongodb'"
         v-model="unsavedText"
         v-bind.sync="editor"
         :focus="focusingElement === 'text-editor'"
@@ -41,15 +40,6 @@
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
-        @initialized="handleEditorInitialized"
-      />
-      <javascript-text-editor
-        v-else
-        v-model="unsavedText"
-        v-bind.sync="editor"
-        :focus="focusingElement === 'text-editor'"
-        @update:focus="updateTextEditorFocus"
-        :markers="editorMarkers"
         @initialized="handleEditorInitialized"
       />
       <span class="expand" />
@@ -338,7 +328,6 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
-  import JavascriptTextEditor from '@/components/common/texteditor/JavascriptTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -355,7 +344,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor, JavascriptTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean

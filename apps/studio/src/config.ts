@@ -1,5 +1,6 @@
 import { IPlatformInfo } from './common/IPlatformInfo';
 import { ConnectionTypes, keymapTypes } from './lib/db/types'
+import globals from '@/common/globals'
 
 let platformInfo: IPlatformInfo;
 let userDirectory: string;
@@ -32,7 +33,7 @@ export function buildConfig(platInfo: IPlatformInfo) {
       connectionTypes: ConnectionTypes,
       keymapTypes: keymapTypes,
     },
-    maxResults: 50000
+    maxResults: globals.maxResults
   }
   
 }

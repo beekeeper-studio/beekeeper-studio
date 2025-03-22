@@ -10,6 +10,7 @@ export default {
   maxColumnWidth: 1000,
   minColumnWidth: 100,
   maxInitialWidth: 500,
+  maxResults: 50000,
   defaultTableTableSplitSizes: [75, 25],
   maxDetailViewTextLength: 30,
   bigTableColumnWidth: 125,

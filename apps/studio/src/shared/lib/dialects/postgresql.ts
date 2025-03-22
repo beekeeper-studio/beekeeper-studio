@@ -45,6 +45,7 @@ export const PostgresData: DialectData = {
   },
   textEditorMode: "text/x-pgsql",
   disabledFeatures: {
+    shell: true,
     informationSchema: {
       extra: true
     },
