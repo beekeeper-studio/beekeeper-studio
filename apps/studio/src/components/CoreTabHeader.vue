@@ -138,8 +138,11 @@ import TabIcon from './tab/TabIcon.vue'
           { name: "Close Others", slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
           { name: 'Close All', slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
           { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
-          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) }
-        ]
+          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
+          { name: "Copy Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), disabled: !(this.tab.tabType === "table" || this.tab.tabType === "table-properties") }
+        ].map((option) => ({
+      ...option,
+      class: option.disabled ? "disabled" : "",}));
       },
       modalName() {
         return `sure-${this.tab.id}`
