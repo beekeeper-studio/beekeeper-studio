@@ -73,8 +73,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   .tabulator-tableholder {
     .tabulator-table {
       .tabulator-row {
-        &.tabulator-row-even,
-        &:nth-child(odd) {
+        &.tabulator-row-even {
           &.inserted,
           &.inserted:hover {
             background: $row-add;
@@ -151,11 +150,6 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           color: $text-light;
         }
       }
-    }
-  }
-  .tabulator-row {
-    &:nth-child(odd) {
-      background: rgba($theme-base, 0.025);
     }
   }
 

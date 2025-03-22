@@ -936,8 +936,6 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
-      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
@@ -1016,6 +1014,9 @@ export default Vue.extend({
       );
       // Tabulator range is reset after data is processed
       this.tabulator.on("dataProcessed", this.updateDetailView);
+
+      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.updateSplit()
     },
