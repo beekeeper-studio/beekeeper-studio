@@ -122,15 +122,36 @@
           >
             <i class="material-icons">refresh</i>
           </button>
-          <button
-            @click.prevent="newTable"
-            title="New Table"
-            class="create-table"
-            :disabled="tablesLoading"
-            v-if="canCreateTable"
+
+          <x-button
+            class="settings-btn"
+            menu
           >
             <i class="material-icons">add</i>
-          </button>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem
+                :disabled="tablesLoading"
+                @click.prevent="newTable"
+              >
+                <x-label>
+                  New Table
+                </x-label>
+              </x-menuitem>
+              <x-menuitem
+                :disabled="tablesLoading"
+                @click.prevent="newTableFromFile"
+              >
+                <x-label>
+                  New Table from File
+                  <i
+                    v-if="$store.getters.isCommunity"
+                    class="material-icons menu-icon"
+                  >stars</i>
+                </x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
         </div>
       </div>
 
@@ -317,6 +338,9 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       newTable() {
         this.$root.$emit(AppEvent.createTable)
       },
+      newTableFromFile() {
+        this.$root.$emit(AppEvent.createTableFromFile)
+      },
       maybeUnselect(e) {
         if (this.selectedSidebarItem) {
           if (this.$refs.wrapper.contains(e.target)) {
@@ -363,6 +387,10 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
   .table-action-wrapper{
     display: flex;
     flex-direction: row;
+  }
+  .settings-btn {
+    width: auto;
+    padding: 0;
   }
   p.no-entities {
     width: 100%;

@@ -366,6 +366,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         { event: AppEvent.closeAllTabs, handler: this.closeAll },
         { event: AppEvent.newTab, handler: this.createQuery },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
+        { event: AppEvent.createTableFromFile, handler: this.beginImport },
         { event: 'historyClick', handler: this.createQueryFromItem },
         { event: AppEvent.loadTable, handler: this.openTable },
         { event: AppEvent.openTableProperties, handler: this.openTableProperties },
@@ -659,16 +660,19 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing);
       this.addTab(t);
     },
-    beginImport({ table }) {
-      if (table.entityType !== 'table') {
+    beginImport(data = {}) {
+      const { table } = data
+      if (table && table.entityType !== 'table') {
         this.$noty.error("You can only import data into a table")
         return;
       }
       const t = { tabType: 'import-table' }
-      t.title = `Import Table: ${table.name}`
+      t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false
-      t.schemaName = table.schema
-      t.tableName = table.name
+      if (table) {
+        t.schemaName = table.schema
+        t.tableName = table.name
+      }
       const existing = this.tabItems.find(tab => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
