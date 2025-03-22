@@ -40,6 +40,7 @@
           :hidden="!openDetailView"
           :expandable-paths="expandablePaths"
           :reinitialize="reinitializeDetailView"
+          :signs="selectedRowDataSigns"
           @expandPath="expandForeignKey"
           @close="toggleOpenDetailView(false)"
         />
@@ -741,7 +742,17 @@ export default Vue.extend({
         label: createMenuItem("Open Column Filter"),
         action: this.showColumnFilterModal,
       }
-    }
+    },
+    /** This tells which fields have been modified */
+    selectedRowDataSigns() {
+      const signs = {}
+      for (const pendingUpdate of this.pendingChanges.updates) {
+        if (pendingUpdate.rowIndex === this.selectedRowIndex) {
+          signs[pendingUpdate.column] = "changed"
+        }
+      }
+      return signs
+    },
   },
 
   watch: {
@@ -1113,7 +1124,7 @@ export default Vue.extend({
     },
     buildPendingUpdates() {
       return this.pendingChanges.updates.map((update) => {
-        return _.omit(update, ['key', 'oldValue', 'cell'])
+        return _.omit(update, ['key', 'oldValue', 'cell', 'rowIndex'])
       });
     },
     buildPendingInserts() {
@@ -1270,7 +1281,7 @@ export default Vue.extend({
       if (currentEdit) {
         currentEdit.value = cell.getValue()
       } else {
-        const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
+        const payload: TableUpdate & { key: string, oldValue: any, cell: any, rowIndex: number } = {
           key: key,
           table: this.table.name,
           schema: this.table.schema,
@@ -1281,7 +1292,8 @@ export default Vue.extend({
           primaryKeys,
           oldValue: cell.getOldValue(),
           cell: cell,
-          value: cell.getValue(0)
+          value: cell.getValue(0),
+          rowIndex: this.indexRowOf(cell.getRow())
         }
         // remove existing pending updates with identical pKey-column combo
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
