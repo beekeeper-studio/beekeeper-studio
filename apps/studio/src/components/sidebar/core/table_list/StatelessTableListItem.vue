@@ -63,7 +63,7 @@
     >
       <span
         class="sub-item"
-        v-if="!loadingColumns && !(table.columns || table.columns.length)"
+        v-if="!loadingColumns && !(table.columns || table.columns?.length)"
       >
         No Columns
       </span>

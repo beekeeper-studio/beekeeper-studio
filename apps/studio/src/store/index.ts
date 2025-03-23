@@ -221,7 +221,7 @@ const store = new Vuex.Store<State>({
       return getters.schemas.length > 1
     },
     connectionColor(state) {
-      return state.usedConfig ? state.usedConfig.labelColor : 'default'
+      return state.usedConfig?.labelColor ?? 'default'
     },
     schemas(state) {
       if (state.tables.find((t) => !!t.schema)) {

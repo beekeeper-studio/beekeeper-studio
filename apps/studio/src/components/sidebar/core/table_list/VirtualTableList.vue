@@ -33,7 +33,7 @@ import { AppEvent } from "@/common/AppEvent";
 import { mapGetters, mapState } from "vuex";
 import { entityId } from "@/common/utils";
 import "scrollyfills";
-import { TransportPinnedEntity } from "@/common/transport";
+import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
 
 type Entity = TableOrView | Routine | string;
 

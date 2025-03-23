@@ -21,6 +21,7 @@
               <i class="clear material-icons">cancel</i>
             </x-button>
             <x-button
+              v-if="this.dialect != 'mongodb'"
               :title="entitiesHidden ? 'Filter active' : 'No filters'"
               class="btn btn-fab btn-link action-item"
               :class="{active: entitiesHidden}"
@@ -135,7 +136,7 @@
                 @click.prevent="newTable"
               >
                 <x-label>
-                  New Table
+                  {{ newTableOrCollection }}
                 </x-label>
               </x-menuitem>
               <x-menuitem
@@ -143,7 +144,7 @@
                 @click.prevent="newTableFromFile"
               >
                 <x-label>
-                  New Table from File
+                  {{ newTableOrCollection }} from File
                   <i
                     v-if="$store.getters.isCommunity"
                     class="material-icons menu-icon"
@@ -211,9 +212,14 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     computed: {
-      ...mapGetters(['dialectData']),
+      ...mapGetters(['dialectData', 'dialect']),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
+      },
+      newTableOrCollection() {
+        if (this.dialect === 'mongodb') return 'New Collection'
+
+        return 'New Table'
       },
       totalEntities() {
         return this.tables.length + this.routines.length - this.hiddenEntities.length
