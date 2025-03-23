@@ -323,8 +323,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   
       if (url.includes('@')) {
         const lastAtIndex = url.lastIndexOf('@')
-        const firstDoubleSlash = url.indexOf('//') + 1
-  
+        let firstDoubleSlash = url.indexOf('//') + 2
+        if (firstDoubleSlash === 1) firstDoubleSlash = 0
         const credentials = url.substring(firstDoubleSlash, lastAtIndex)
   
         const [user, ...passwordParts] = credentials.split(':')
@@ -336,18 +336,19 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
       const encodedUrl = encodeURI(cleanedUrl)
       const parsed = new ConnectionString(encodedUrl)
+      const ParsedUncoded = new ConnectionString(url)
   
       this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
 
-      if (parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) {
+      if (ParsedUncoded.hostname && ParsedUncoded.hostname.includes('cockroachlabs.cloud')) {
         this.connectionType = 'cockroachdb'
-        if (parsed.params?.options) {
+        if (ParsedUncoded.params?.options) {
           // TODO: fix this
           const regex = /--cluster=([A-Za-z0-9\-_]+)/
-          const clusters = parsed.params.options.match(regex)
+          const clusters = ParsedUncoded.params.options.match(regex)
           this.options['cluster'] = clusters ? clusters[1] : undefined
         }
       }
