@@ -42,6 +42,7 @@ import {
 } from "@/lib/editor/vim";
 import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
+import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -75,6 +76,7 @@ export default {
     "bookmarks",
     "foldAll",
     "unfoldAll",
+    "lineGutters",
   ],
   data() {
     return {
@@ -82,6 +84,7 @@ export default {
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
+      activeLineGutters: [],
       wasEditorFocused: false,
       firstInitialization: true,
     };
@@ -176,6 +179,9 @@ export default {
     bookmarks() {
       this.initializeBookmarks();
     },
+    lineGutters() {
+      this.initializeLineGutters();
+    },
     foldAll() {
       CodeMirror.commands.foldAll(this.editor)
     },
@@ -199,14 +205,6 @@ export default {
     async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
-      const indicatorOpen = document.createElement("span");
-      indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
-      indicatorOpen.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_down</i>`;
-
-      const indicatorFolded = document.createElement("span");
-      indicatorFolded.classList.add("foldgutter", "btn-fab", "open-close");
-      indicatorFolded.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_right</i>`;
-
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
         autoRefresh: true,
         lineNumbers: this.lineNumbers ?? true,
@@ -219,7 +217,6 @@ export default {
           [this.cmCtrlOrCmd("R")]: "replace",
           [this.cmCtrlOrCmd("Shift-R")]: "replaceAll",
         },
-        // @ts-expect-error not fully typed
         options: {
           closeOnBlur: false,
         },
@@ -229,8 +226,8 @@ export default {
         keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
-          gutters: ["CodeMirror-linenumbers", { className: "CodeMirror-foldgutter", style: "width: 18px" }],
-          foldGutter: { indicatorOpen, indicatorFolded },
+          gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+          foldGutter: true,
         }),
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {
@@ -361,11 +358,12 @@ export default {
       this.$nextTick(() => {
         this.initializeMarkers();
         this.initializeBookmarks();
+        this.initializeLineGutters();
         this.$emit("update:initialized", true);
       })
     },
     initializeMarkers() {
-      const markers = this.markers || [];
+      const markers: EditorMarker[] = this.markers || [];
       if (!this.editor) return;
 
       // Cleanup existing bookmarks
@@ -422,6 +420,21 @@ export default {
 
         this.bookmarkInstances.push(mark);
       }
+    },
+    initializeLineGutters() {
+      const lineGutters = this.lineGutters || [];
+      if (!this.editor) return;
+
+      // Cleanup existing line gutters
+      this.activeLineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.removeLineClass(lineGutter.line, "gutter", "changed");
+      })
+      this.activeLineGutters = []
+
+      lineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.addLineClass(lineGutter.line, "gutter", "changed");
+        this.activeLineGutters.push(lineGutter)
+      })
     },
     destroyEditor() {
       if (this.editor) {

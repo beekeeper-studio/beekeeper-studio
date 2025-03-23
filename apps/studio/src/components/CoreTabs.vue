@@ -245,6 +245,7 @@
     </confirmation-modal>
 
     <sql-files-import-modal @submit="importSqlFiles" />
+    <create-collection-modal />
   </div>
 </template>
 
@@ -265,7 +266,7 @@ import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import { FormatterDialect } from '@shared/lib/dialects/models'
+import { FormatterDialect, DialectTitles } from '@shared/lib/dialects/models'
 import Vue from 'vue';
 import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
 import TabWithTable from './common/TabWithTable.vue';
@@ -276,6 +277,7 @@ import { DropzoneDropEvent } from '@/common/dropzone'
 import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
+import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
@@ -298,8 +300,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       TabIcon,
       DatabaseBackup,
       PendingChangesButton,
-    ConfirmationModal,
-    SqlFilesImportModal,
+      ConfirmationModal,
+      SqlFilesImportModal,
+      CreateCollectionModal
     },
     data() {
       return {
@@ -418,6 +421,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         result['shift+meta+['] = this.previousTab
         result['shift+meta+]'] = this.nextTab
       }
+
       return result
     },
   },
@@ -874,6 +878,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
     },
     openTableBuilder() {
+      if (this.dialect === 'mongodb') {
+        this.$root.$emit(AppEvent.openCreateCollectionModal);
+        return;
+      }
       const tab = {} as TransportOpenTab;
       tab.tabType = 'table-builder';
       tab.title = "New Table"
