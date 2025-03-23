@@ -18,6 +18,7 @@
     "lint": "eslint",
     "electron:build": "yarn build && yarn electron-builder --config ./electron-builder-config.js",
     "electron:serve": "concurrently -c blue,green -n esbuild,vite 'yarn dev:esbuild' 'yarn dev:vite'",
+    "config:build": "CLI_MODE=1 node ./typesGenerator.mjs",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
@@ -41,6 +42,7 @@
     "@google-cloud/bigquery": "^6.2.0",
     "@libsql/knex-libsql": "^0.1.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
+    "@types/ini": "^4.1.0",
     "axios": "^1.7.4",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
@@ -55,13 +57,14 @@
     "core-js": "^3",
     "dateformat": "^3.0.3",
     "diff-match-patch": "^1.0.5",
-    "electron-devtools-installer": "^3.2.0",
+    "electron-devtools-installer": "^3.2.1",
     "electron-log": "^5.1.5",
     "electron-updater": "^6.3.0",
     "electron-util": "^0.14.1",
     "flexsearch": "beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d",
     "humanize-duration": "^3.23.1",
     "indent-string": "^4.0.0",
+    "ini": "^5.0.0",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
     "jsonc-parser": "^3.3.1",
@@ -133,6 +136,7 @@
     "@types/codemirror": "^0.0.97",
     "@types/dateformat": "^3.0.1",
     "@types/electron-devtools-installer": "^2.2.0",
+    "@types/ini": "^4.1.0",
     "@types/javascript-time-ago": "^2.0.1",
     "@types/jest": "^29.5.13",
     "@types/jquery": "^3.5.1",
@@ -156,6 +160,7 @@
     "babel-jest": "^29.7.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "dts-gen": "0.7.4",
     "electron": "31.7.3",
     "electron-builder": "~25.1.8",
     "esbuild": "^0.21.2",
@@ -184,7 +189,8 @@
   "eslintConfig": {
     "ignorePatterns": [
       "node_modules",
-      "../**/dist"
+      "../**/dist",
+      "bksConfig.d.ts$"
     ]
   },
   "browserslist": [

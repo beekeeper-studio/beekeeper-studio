@@ -28,6 +28,10 @@
     content: "keyboard_arrow_right";
   }
 
+  .CodeMirror-gutter-background.changed {
+    border-left: 2px solid $brand-warning;
+  }
+
   .CodeMirror-guttermaker-subtle {
     color: rgba($theme-base, 0.25);
   }

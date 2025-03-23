@@ -114,7 +114,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     reload: {
       id: 'reload-window',
-      label: "DEV Force Reload",
+      label: "Reload Window",
       accelerator: "CommandOrControl+Shift+R",
       click: actionHandler.reload
     },
