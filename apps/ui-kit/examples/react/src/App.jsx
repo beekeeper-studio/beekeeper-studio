@@ -18,7 +18,7 @@ function App() {
           <img src={bksLogo} className="logo bks" alt="Beekeeper Studio logo" />
         </a>
       </div>
-      <h1>Vite + React + @bks/ui-kit</h1>
+      <h1>Vite + React + @beekeeperstudio/ui-kit</h1>
       <Components />
     </>
   );
