@@ -32,6 +32,7 @@
         </div>
       </div>
       <sql-text-editor
+        v-if="connectionType !== 'mongodb'"
         v-model="unsavedText"
         v-bind.sync="editor"
         :focus="focusingElement === 'text-editor'"
@@ -40,6 +41,15 @@
         :connection-type="connectionType"
         :extra-keybindings="keybindings"
         :vim-config="vimConfig"
+        @initialized="handleEditorInitialized"
+      />
+      <javascript-text-editor
+        v-else
+        v-model="unsavedText"
+        v-bind.sync="editor"
+        :focus="focusingElement === 'text-editor'"
+        @update:focus="updateTextEditorFocus"
+        :markers="editorMarkers"
         @initialized="handleEditorInitialized"
       />
       <span class="expand" />
@@ -79,11 +89,13 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
+              :disabled="this.tab.isRunning"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
+              :disabled="this.tab.isRunning"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -326,6 +338,7 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
+  import JavascriptTextEditor from '@/components/common/texteditor/JavascriptTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -342,7 +355,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor, JavascriptTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -520,12 +533,12 @@
       },
       keymap() {
         if (!this.active) return {}
-        const result = {}
-        result[this.ctrlOrCmd('`')] = this.switchPaneFocus.bind(this)
-        result[this.ctrlOrCmd('l')] = this.selectEditor
-        result[this.ctrlOrCmd('i')] = this.submitQueryToFile
-        result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
-        return result
+        return this.$vHotkeyKeymap({
+          'queryEditor.switchPaneFocus': this.switchPaneFocus,
+          'queryEditor.selectEditor': this.selectEditor,
+          'queryEditor.submitQueryToFile': this.submitQueryToFile,
+          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+        })
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -924,8 +937,8 @@
 
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
+            if (result.rowCount > this.$bksConfig.ui.queryEditor.maxResults) {
+              result.rows = _.take(result.rows, this.$bksConfig.ui.queryEditor.maxResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
             }
@@ -936,6 +949,7 @@
             } else {
               result.tableName = "mytable"
             }
+            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
 

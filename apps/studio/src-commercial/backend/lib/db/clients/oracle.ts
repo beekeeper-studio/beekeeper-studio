@@ -2,7 +2,6 @@ import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
 import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
-
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import {
@@ -54,6 +53,8 @@ const log = rawLog.scope('oracle')
 
 oracle.fetchAsString = [oracle.CLOB]
 oracle.fetchAsBuffer = [oracle.BLOB]
+
+let oracleInitialized = false
 
 export class OracleClient extends BasicDatabaseClient<DriverResult> {
   pool: oracle.Pool;
@@ -545,31 +546,36 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async connect() {
     await super.connect();
 
-    // const cliLocation = this.platformPath(this.server.config.instantClientLocation)
+    const cliLocation = this.platformPath(this.server.config.instantClientLocation)
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration
     const configLocation = this.platformPath(this.server.config.oracleConfigLocation)
 
-
-    try {
-      // FIXME: Remove this entirely (5.1+)
-      // NB: If oracle users have issues, it's likely caused by this change
-      // 5.1 - disabling initOracleClient keeps the driver in THIN mode.
-      // See https://node-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html#oracle-client-library-loading
-      // this is the new all-js implementation
-      // const payload = {}
-      // if (cliLocation) payload['libDir'] = cliLocation
-      // oracle.initOracleClient(payload)
-      // oracle.initOracleClient()
-    } catch {
-      // do nothing
+    if (cliLocation && !oracleInitialized) {
+      const payload = {}
+      payload['libDir'] = cliLocation
+      if (configLocation) {
+        payload['configDir'] = configLocation
+      }
+      log.debug("initializing oracle client with", payload)
+      oracle.initOracleClient(payload)
+      oracleInitialized = true
+    } else {
+      if (!cliLocation) {
+        log.warn("Oracle is connecting using THIN mode -- some functionality might not be supported. Provide a path to the Oracle Instant client for full functionality")
+      }
     }
 
     const connectionMethod = this.server.config.options?.connectionMethod || 'manual'
 
-    let poolConfig = {}
+    let poolConfig: any = {
+      poolIncrement: 1,
+      poolMin: 1,
+      poolMax: 4,
+    }
 
     if (connectionMethod === 'connectionString') {
       poolConfig = {
+        ...poolConfig,
         connectString: this.server.config.options.connectionString,
       }
       const { user, password } = this.server.config
@@ -580,16 +586,17 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       const scheme = ssl ? 'tcps://' : ''
       const str = `${scheme}${host}:${port}/${serviceName}`
       poolConfig = {
+        ...poolConfig,
         user: this.server.config.user,
         password: this.server.config.password,
         connectString: str,
-        poolIncrement: 1,
-        poolMin: 1,
-        poolMax: 4,
       }
     }
-    if (configLocation) poolConfig['configDir'] = configLocation
-    console.log("Pool Config: ", poolConfig)
+    // we only do this in thin mode
+    if (configLocation && !cliLocation) {
+      poolConfig['configDir'] = configLocation
+    }
+    log.debug("Pool Config: ", poolConfig)
     this.pool = await oracle.createPool(poolConfig)
     const vSQL = `
       SELECT BANNER as BANNER FROM v$version
@@ -603,7 +610,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   async disconnect() {
-    await this.pool.close(1);
+    await this.pool?.close(1);
     await super.disconnect();
   }
 
@@ -744,7 +751,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           }
         } finally {
           cancelable.discard()
-          // close is called in driverExecuteMultiple -> rawExecuteQuery
+          // connection.close is called in driverExecuteMultiple -> rawExecuteQuery
           // so no need to do it here.
         }
       }).bind(this),

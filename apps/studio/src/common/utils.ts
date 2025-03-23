@@ -273,18 +273,24 @@ export function friendlyJsonObject<T extends object>(obj: T): T {
         return "[object Object]"
       }
     },
-    toString: {
-      value() {
-        try {
-          return stringifyWithBigInt(obj);
-        } catch (ex) {
-          console.warn('Error serializing object:', obj, ex);
-          return "[object Object]"
-        }
-      },
-      enumerable: false, // This tells js to not clone this property. Useful when we want to send this object to utility.
-    }
   });
+
+  if(!obj.hasOwnProperty("toString")){
+    Object.defineProperties(obj, {
+      toString: {
+        value() {
+          try {
+            return stringifyWithBigInt(obj);
+          } catch (ex) {
+            console.warn('Error serializing object:', obj, ex);
+            return "[object Object]"
+          }
+        },
+        enumerable: false, // This tells js to not clone this property. Useful when we want to send this object to utility.
+        }
+      })
+   }
+  
   return obj;
 }
 

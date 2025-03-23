@@ -10,8 +10,8 @@ export interface Result {
 export class Pool {
   private pool: Firebird.ConnectionPool;
 
-  constructor(config: Firebird.Options) {
-    this.pool = Firebird.pool(5, config);
+  constructor(poolSize: number, config: Firebird.Options) {
+    this.pool = Firebird.pool(poolSize, config);
   }
 
   async query(

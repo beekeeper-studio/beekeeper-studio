@@ -206,16 +206,14 @@ export default {
       if (this.savedConnection) {
         this.$emit('edit', this.savedConnection)
       } else {
-        const editable = await this.$store.dispatch('data/connections/clone', this.config)
-        this.$emit('edit', editable)
+        this.$emit('edit', this.config)
       }
     },
     async doubleClick() {
       if (this.savedConnection) {
         this.$emit('doubleClick', this.savedConnection)
       } else {
-        const editable = await this.$store.dispatch('data/connections/clone', this.config)
-        this.$emit('doubleClick', editable)
+        this.$emit('doubleClick', this.config)
       }
     },
     remove() {

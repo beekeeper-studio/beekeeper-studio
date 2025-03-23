@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function BksSqlTextEditor({ tables }) {
+export default function BksSqlTextEditor({ entities }) {
   const [initialized, setInitialized] = useState(false);
   const [text, setText] = useState("select * from users u\nwhere u.id = 1;");
   const containerRef = useRef(null);
@@ -11,9 +11,8 @@ export default function BksSqlTextEditor({ tables }) {
   }
 
   function handleUpdateValue(event) {
-    const [updatedText] = event.detail;
-    if (text === updatedText) return;
-    setText(updatedText);
+    if (text === event.detail.value) return;
+    setText(event.detail.value);
   }
 
   useEffect(() => {
@@ -45,8 +44,8 @@ export default function BksSqlTextEditor({ tables }) {
 
   useEffect(() => {
     if (!initialized) return;
-    sqlTextEditorRef.current.tables = tables;
-  }, [initialized, tables]);
+    sqlTextEditorRef.current.entities = entities;
+  }, [initialized, entities]);
 
   return <div ref={containerRef} />;
 }

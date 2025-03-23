@@ -44,6 +44,7 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
 (async () => {
 
   await window.main.requestPlatformInfo();
+  await window.main.requestBksConfigSource();
   rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")

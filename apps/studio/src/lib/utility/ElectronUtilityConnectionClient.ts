@@ -1,7 +1,7 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
 
 
@@ -146,6 +146,18 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/getRoutineCreateScript', { routine, type, schema });
   }
 
+  async createTable(table: CreateTableSpec): Promise<void> {
+    return await Vue.prototype.$util.send('conn/createTable', { table });
+  }
+
+  async getCollectionValidation(collection: string): Promise<any> {
+    return await Vue.prototype.$util.send('conn/getCollectionValidation', { collection });
+  }
+
+  async setCollectionValidation(params: any): Promise<void> {
+    return await Vue.prototype.$util.send('conn/setCollectionValidation', { params });
+  }
+
   async alterTableSql(change: AlterTableSpec): Promise<string> {
     return await Vue.prototype.$util.send('conn/alterTableSql', { change });
   }
@@ -280,5 +292,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   
   async importFinalCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
+  }
+
+  /** Returns a query for the given filter */
+  async getQueryForFilter(filter: TableFilter): Promise<string> {
+    return await Vue.prototype.$util.send('conn/getQueryForFilter', { filter });
   }
 }

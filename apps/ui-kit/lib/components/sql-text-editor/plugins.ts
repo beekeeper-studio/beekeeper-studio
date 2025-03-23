@@ -60,20 +60,41 @@ export function autocompleteHandler(
   //    - from, join
   const triggerWords = ["from", "join"];
   const triggers = {
-    "190": "period",
+    "Period": "period",
   };
-  const space = 32;
-  // const underscore = 189
 
   if (instance.state.completionActive) return;
-  if (triggers[e.keyCode]) {
+  
+  // Handle delete and backspace keys
+  if (e.key === "Backspace" || e.key === "Delete") {
+    // Get context at current cursor position
+    const cursor = instance.getCursor();
+    const line = instance.getLine(cursor.line);
+    
+    // Check if we're in a table name selection context (after FROM or JOIN)
+    const lineUntilCursor = line.substring(0, cursor.ch);
+    const fromRegex = /\b(from|join)\s+[\w\d_."]*$/i;
+    
+    if (fromRegex.test(lineUntilCursor)) {
+      if (!instance.state.completionActive) {
+        // eslint-disable-next-line
+        // @ts-ignore
+        CodeMirror.commands.autocomplete(instance, null, {
+          completeSingle: false,
+        });
+      }
+    }
+    return;
+  }
+  
+  if (triggers[e.code]) {
     // eslint-disable-next-line
     // @ts-ignore
     CodeMirror.commands.autocomplete(instance, null, {
       completeSingle: false,
     });
   }
-  if (e.keyCode === space) {
+  if (e.code === "Space") {
     try {
       const pos = _.clone(instance.getCursor());
       if (pos.ch > 0) {
@@ -91,6 +112,36 @@ export function autocompleteHandler(
       // do nothing
     }
   }
+}
+
+// Register a new handler for undo operations
+export function registerUndoHandler(instance: CodeMirror.Editor) {
+  // Listen for CodeMirror undo events
+  const handleUndo = (cm: CodeMirror.Editor, changeObj: CodeMirror.EditorChangeCancellable) => {
+    if (changeObj.origin === "undo") {
+      // Add delay to ensure undo operation completes
+      setTimeout(() => {
+        const cursor = cm.getCursor();
+        const line = cm.getLine(cursor.line);
+        
+        // Check if we're in a table name selection context (after FROM or JOIN)
+        const lineUntilCursor = line.substring(0, cursor.ch);
+        const fromRegex = /\b(from|join)\s+[\w\d_."]*$/i;
+        
+        if (fromRegex.test(lineUntilCursor) && !cm.state.completionActive) {
+          // eslint-disable-next-line
+          // @ts-ignore
+          CodeMirror.commands.autocomplete(cm, null, {
+            completeSingle: false,
+          });
+        }
+      }, 100);
+    }
+  };
+  
+  instance.on("beforeChange", handleUndo);
+  
+  return () => instance.off("beforeChange", handleUndo);
 }
 
 function registerAutoquote(
@@ -115,7 +166,12 @@ function registerAutoRemoveQueryQuotes(
 
 function registerAutoComplete(instance: CodeMirror.Editor) {
   instance.on("keyup", autocompleteHandler);
-  return () => instance.off("keyup", autocompleteHandler);
+  // Register undo handler
+  const undoCleanup = registerUndoHandler(instance);
+  return () => {
+    instance.off("keyup", autocompleteHandler);
+    undoCleanup();
+  };
 }
 
 export const autoquote = registerAutoquote;
