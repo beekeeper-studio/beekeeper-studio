@@ -336,6 +336,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     }
   },
   computed: {
+    ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection']),
     ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
@@ -958,6 +959,12 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       await this.$store.dispatch("tabs/remove", tab)
       if (tab.queryId) {
         await this.$store.dispatch('data/queries/reload', tab.queryId)
+      }
+
+      const { schemaName, tabType, tableName } = tab;
+      const closingSidebarItem = `${tabType}.${schemaName}.${tableName}`;
+      if(closingSidebarItem === this.selectedSidebarItem){
+        this.$store.commit('selectSidebarItem', null);
       }
     },
     async forceClose(tab: TransportOpenTab) {
