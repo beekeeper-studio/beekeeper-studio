@@ -43,7 +43,7 @@
           class="list saved-connection-list expand"
           ref="pinnedConnectionList"
           v-show="!noPins && !connFilter"
-          >
+        >
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
