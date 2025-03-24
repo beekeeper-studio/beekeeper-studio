@@ -45,7 +45,7 @@ export default {
       return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
     },
     cellTooltip(_event, cell: CellComponent) {
-      const binaryEncoding = cell.getColumn().getDefinition().binaryEncoding
+      const binaryEncoding = cell.getColumn().getDefinition().formatterParams.binaryEncoding
       let cellValue = cell.getValue()
       if (cellValue instanceof Uint8Array) {
         cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
@@ -55,10 +55,9 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (value: any, field: string, cell: CellComponent) => void },
+      params: { fk?: any[], isPK?: boolean, fkOnClick?: (value: any, field: string, cell: CellComponent) => void, binaryEncoding?: 'hex' | 'base64' } = {},
       onRendered: (func: () => void) => void
     ) {
-      const binaryEncoding = cell.getColumn().getDefinition().binaryEncoding
       const classNames = []
       let htmlPrefix = ''
       let cellValue = cell.getValue()
@@ -71,7 +70,7 @@ export default {
       if (nullValue) {
         return nullValue
       }
-      cellValue = this.niceString(cellValue, true, binaryEncoding)
+      cellValue = this.niceString(cellValue, true, params.binaryEncoding)
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
 
       // removing the <pre> will break selection / copy paste, see ResultTable

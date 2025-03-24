@@ -25,6 +25,7 @@ import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
 import rawLog from '@bksLogger'
 import { BksField } from "@/lib/db/models";
+import { typedArrayToString } from "@/common/utils";
 
 const log = rawLog.scope('NullableInputEditor')
 
@@ -117,9 +118,8 @@ export default Vue.extend({
     parseValue() {
       const typeHint = this.params.typeHint;
       const bksField: BksField = this.params.bksField;
-      if (bksField?.bksType === 'BINARY' || ArrayBuffer.isView(this.cell.getValue())) {
-        // @ts-expect-error polyfilled
-        return this.$bksConfig.binaryEncoding === 'base64' ? Uint8Array.fromBase64(this.value) : Uint8Array.fromHex(this.value)
+      if (bksField?.bksType === 'BINARY' || _.isTypedArray(this.cell.getValue())) {
+        return typedArrayToString(this.value, this.params.binaryEncoding)
       }
       if (typeof typeHint !== 'string') {
         return this.value

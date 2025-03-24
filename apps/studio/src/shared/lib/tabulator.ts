@@ -1,3 +1,4 @@
+import { typedArrayToString } from '@/common/utils';
 import _ from 'lodash'
 import {CellComponent} from 'tabulator-tables'
 
@@ -29,10 +30,9 @@ function yesNoResult(value: boolean) {
 export default {
   niceString(value: any, truncate = false, binaryEncoding?: 'hex' | 'base64') {
     let cellValue = value.toString();
-    if (value instanceof Uint8Array) {
-      // @ts-expect-error polyfilled
-      cellValue = binaryEncoding === 'base64' ? value.toBase64() : value.toHex()
-    } else if (_.isArray(value) || (_.isObject(value) && !ArrayBuffer.isView(value))) {
+    if (_.isTypedArray(value)) {
+      cellValue = typedArrayToString(value, binaryEncoding)
+    } else if (_.isArray(value) || _.isObject(value)) {
       cellValue = JSON.stringify(value)
     }
     return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue

@@ -36,7 +36,7 @@
         actualTableHeight: '100%',
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus'],
+    props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -118,6 +118,9 @@
           const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
           const defaults = {
             formatter: this.cellFormatter,
+            formatterParams: {
+              binaryEncoding: this.binaryEncoding,
+            },
           }
 
           const result = {
@@ -139,7 +142,6 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            binaryEncoding: this.$bksConfig.binaryEncoding,
             ...magicStuff
           }
 

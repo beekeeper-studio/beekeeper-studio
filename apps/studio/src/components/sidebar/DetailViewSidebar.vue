@@ -98,12 +98,13 @@ import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
+import { typedArrayToString } from '@/common/utils'
 
 const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { TextEditor, DetailViewSidebarUpsell },
-  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs"],
+  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs", "binaryEncoding"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -286,9 +287,8 @@ export default Vue.extend({
   },
   methods: {
     replacer(_key: string, value: unknown) {
-      if (value instanceof Uint8Array) {
-        // @ts-expect-error polyfilled
-        return this.$bksConfig.binaryEncoding === 'base64' ? value.toBase64() : value.toHex()
+      if (_.isTypedArray(value)) {
+        return typedArrayToString(value as ArrayBufferView, this.binaryEncoding)
       }
       return value
     },
