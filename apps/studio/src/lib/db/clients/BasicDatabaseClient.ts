@@ -1,5 +1,5 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField } from '../models';
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
@@ -188,6 +188,22 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return [];
   }
   abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
+
+  // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
+  async createTable(_table: CreateTableSpec): Promise<void> {
+    return Promise.resolve();
+  }
+
+  // MongoDB-specific schema validation methods
+  async getCollectionValidation(_collection: string): Promise<any> {
+    log.debug('getCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve(null);
+  }
+
+  async setCollectionValidation(_params: any): Promise<void> {
+    log.debug('setCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve();
+  }
   // ****************************************************************************
 
   // Make Changes ***************************************************************
