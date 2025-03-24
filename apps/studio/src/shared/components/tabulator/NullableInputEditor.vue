@@ -119,7 +119,7 @@ export default Vue.extend({
       const bksField: BksField = this.params.bksField;
       if (bksField?.bksType === 'BINARY' || ArrayBuffer.isView(this.cell.getValue())) {
         // @ts-expect-error polyfilled
-        return globalThis.binaryEncoding === 'base64' ? Uint8Array.fromBase64(this.value) : Uint8Array.fromHex(this.value)
+        return this.$bksConfig.binaryEncoding === 'base64' ? Uint8Array.fromBase64(this.value) : Uint8Array.fromHex(this.value)
       }
       if (typeof typeHint !== 'string') {
         return this.value

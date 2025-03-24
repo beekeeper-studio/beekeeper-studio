@@ -139,7 +139,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            binaryEncoding: globalThis.binaryEncoding,
+            binaryEncoding: this.$bksConfig.binaryEncoding,
             ...magicStuff
           }
 

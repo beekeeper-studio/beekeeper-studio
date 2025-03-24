@@ -288,7 +288,7 @@ export default Vue.extend({
     replacer(_key: string, value: unknown) {
       if (value instanceof Uint8Array) {
         // @ts-expect-error polyfilled
-        return globalThis.binaryEncoding === 'base64' ? value.toBase64() : value.toHex()
+        return this.$bksConfig.binaryEncoding === 'base64' ? value.toBase64() : value.toHex()
       }
       return value
     },
