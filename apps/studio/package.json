@@ -18,7 +18,7 @@
     "lint": "eslint",
     "electron:build": "yarn build && yarn electron-builder --config ./electron-builder-config.js",
     "electron:serve": "concurrently -c blue,green -n esbuild,vite 'yarn dev:esbuild' 'yarn dev:vite'",
-    "config:build": "CLI_MODE=1 node ./typesGenerator.mjs",
+    "config:build": "CLI_MODE=1 node ./src/config/typesGenerator.mjs",
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
