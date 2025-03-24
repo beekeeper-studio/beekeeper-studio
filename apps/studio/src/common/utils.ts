@@ -186,7 +186,7 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
 
       if (_.isTypedArray(value)) {
         value = typedArrayToString(value);
-      } else if (typeof value === "object") {
+      } else if (value && typeof value === "object") {
         value = JSON.stringify(value);
       }
 
@@ -251,7 +251,7 @@ export function friendlyJsonObject<T extends object>(obj: T): T {
         }
       })
    }
-  
+
   return obj;
 }
 

@@ -55,7 +55,7 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string },
+      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string } = {},
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
