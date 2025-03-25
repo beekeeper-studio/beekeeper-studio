@@ -305,6 +305,12 @@
 .material-icons.menu-icon {
   margin-left: 10px !important;
 }
+
+.bk-ellipsis-dots {
+  color: #3490dc;
+  cursor: pointer;
+  text-decoration: underline;
+}
 </style>
 
 <script lang="ts">
@@ -701,6 +707,10 @@ export default Vue.extend({
     }
   },
   methods: {
+    getTotalRowCount() {
+    if (!this.$refs.tabulator) return 0; // Substitua 'tabulator' pelo ref do seu componente
+    return this.$refs.tabulator.getDataCount(); // Retorna o total de linhas (incluindo paginação)
+  },
     createColumnFromProps(column) {
       // 1. add a column for a real column
       // if a FK, add another column with the link
@@ -835,7 +845,49 @@ export default Vue.extend({
         headerMenu: columnMenu,
         headerTooltip: headerTooltip,
         cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
-        formatter: this.cellFormatter,
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (!value) return '';
+
+          const strValue = String(value);
+          const column = cell.getColumn();
+          const columnWidth = column.getWidth(); // Largura atual da coluna em pixels
+          const charWidth = 6.5; // Ajuste conforme sua fonte (ex: 8px para Arial 12px)
+
+          // Calcula quantos caracteres cabem (descontando espaço para os dots)
+          const maxChars = Math.max(1, Math.floor(columnWidth / charWidth));
+          const shouldTruncate = strValue.length > maxChars;
+
+          // Texto exibido (corta 3 caracteres a menos para os "...")
+          const displayText = shouldTruncate ? 
+            strValue.substring(0, maxChars - 3) : 
+            strValue;
+
+          return `
+            <span class="bk-cell" 
+                  style="display: flex; ; 
+                        align-items: center; 
+                        width: 100%";
+                        font-family: Arial">
+              <span class="bk-truncated-text" 
+                    style="flex: 1; 
+                          overflow: hidden; 
+                          text-overflow: ${shouldTruncate ? 'clip' : 'ellipsis'}; 
+                          white-space: nowrap;
+                          text-align: left;
+                          line-height: 2.5;
+                          font-family: 'Segoe UI', Roboto, sans-serif !important">
+                ${escapeHtml(displayText)}
+              </span>
+              ${shouldTruncate ? 
+                `<span class="bk-ellipsis-dots" 
+                      style="flex-shrink: 0; 
+                            margin-left: 2px; " 
+                      title="${escapeHtml(strValue)}">...</span>` 
+                : ''}
+            </span>
+          `;
+        },
         formatterParams: {
           fk: hasKeyDatas && keyDatas[0][1],
           fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
