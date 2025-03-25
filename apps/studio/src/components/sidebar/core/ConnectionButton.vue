@@ -2,14 +2,18 @@
   <div
     class="connection-button flex flex-middle"
     v-if="config"
-    :title="$bks.buildConnectionString(config)"
+    :title="streamerMode ? 
+      'Connection details hidden by Streamer Mode' : 
+      $bks.buildConnectionString(config)"
   >
     <x-button
       class="btn btn-link btn-icon"
       menu
     >
       <i class="material-icons">link</i>
-      <span class="connection-name truncate expand">{{ connectionName }}</span>
+      <span class="connection-name truncate expand">
+        {{ connectionName }}
+      </span>
       <span
         class="connection-type badge truncate"
         v-tooltip="databaseVersion"
@@ -136,7 +140,14 @@ export default {
   },
   computed: {
       ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
+      ...mapGetters({
+        'hasRunningExports': 'exports/hasRunningExports', 
+        'workspace': 'workspace',
+        settings: 'settings/settings',
+      }),
+      streamerMode() {
+        return this.settings?.streamerMode || false
+      },
       connectionName() {
         return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
       },
