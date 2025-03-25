@@ -163,10 +163,10 @@
     "@babel/helper-string-parser" "^7.25.9"
     "@babel/helper-validator-identifier" "^7.25.9"
 
-"@beekeeperstudio/ui-kit@*":
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/ui-kit/-/ui-kit-0.0.12.tgz#bd3f729b76bb1fb9237ad87f53cbbc6e7890a6ed"
-  integrity sha512-6YbvriLf+XGhiZki9JCZ4/tCjiW8gede7/IO8rldA2FvLIPLXhnpMwD4gI0KZHmkLppaKSFbrRzpk6EQVkyGcw==
+"@beekeeperstudio/ui-kit@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/ui-kit/-/ui-kit-0.1.1.tgz#f543451d8ec6dc6a8bbbdbca7c1e3e4abbfb9697"
+  integrity sha512-iClBnRT0hEGMVdLlRY1wRkHm2DRhtykrUcQO9dn+60EkNJtMxiDAXur7ZcQt7gJgSZbP+qP+nG0SyhgXQH47bw==
 
 "@esbuild/aix-ppc64@0.24.0":
   version "0.24.0"
