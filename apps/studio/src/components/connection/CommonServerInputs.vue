@@ -38,10 +38,12 @@
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
         <label for="port">Port</label>
         <input
-          type="number"
+          :type="streamerMode ? 'text' : 'number'"
           class="form-control"
           name="port"
-          v-model.number="config.port"
+          :value="streamerMode ? '******' : config.port"
+          @input="!streamerMode && (config.port = $event.target.value)"
+          :readonly="streamerMode"
         >
       </div>
     </div>
@@ -56,16 +58,20 @@
           class="form-control"
           @paste="onPaste"
           name="host"
-          v-model="config.host"
+          :value="streamerMode ? '******' : config.host"
+          @input="!streamerMode && (config.host = $event.target.value)"
+          :readonly="streamerMode"
         >
       </div>
       <div class="col s3 form-group">
         <label for="port">Port</label>
         <input
-          type="number"
+          :type="streamerMode ? 'text' : 'number'"
           class="form-control"
           name="port"
-          v-model.number="config.port"
+          :value="streamerMode ? '******' : config.port"
+          @input="!streamerMode && (config.port = $event.target.value)"
+          :readonly="streamerMode"
         >
       </div>
     </div>
@@ -173,8 +179,10 @@
         <input
           type="text"
           name="user"
-          v-model="config.username"
+          :value="streamerMode ? '******' : config.username"
+          @input="!streamerMode && (config.username = $event.target.value)"
           class="form-control"
+          :readonly="streamerMode"
         >
       </div>
       <div class="col s6 form-group">
@@ -214,6 +222,7 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import { findClient } from '@/lib/db/clients'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
+import { mapGetters } from 'vuex'
 
   export default {
     props: {
@@ -236,6 +245,12 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
       }
     },
     computed: {
+      ...mapGetters({
+        settings: 'settings/settings'
+      }),
+      streamerMode() {
+        return this.settings?.streamerMode || false
+      },
       hasAdvancedSsl() {
         return this.config.sslCaFile || this.config.sslCertFile || this.config.sslKeyFile
       },
