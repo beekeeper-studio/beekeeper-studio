@@ -89,7 +89,7 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
-              :disabled="this.tab.isRunning"
+              :disabled="running"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
@@ -97,6 +97,7 @@
               class="btn btn-primary btn-small"
               :disabled="this.tab.isRunning"
               menu
+              :disabled="running"
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
@@ -874,6 +875,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
+        if(this.running) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
           this.submitQuery(this.currentlySelectedQuery.text)
@@ -883,6 +885,7 @@
         }
       },
       async submitTabQuery() {
+        if(this.running) return;
         const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
@@ -893,6 +896,12 @@
       },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+
+        //Cancel existing query before starting a new one
+        if(this.running && this.runningQuery){
+          await this.cancelQuery();
+        }
+
         this.tab.isRunning = true
         this.running = true
         this.error = null
