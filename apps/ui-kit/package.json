@@ -7,7 +7,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
