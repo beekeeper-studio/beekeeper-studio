@@ -1,5 +1,4 @@
 import Vue from 'vue'
-import "@beekeeperstudio/ui-kit/style.css"
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
 import VTooltip from 'v-tooltip'
