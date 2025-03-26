@@ -3,6 +3,8 @@
 Data Editor consists of [Table][table], [Entity List][entity-list] and
 [SQL Text Editor][sql-text-editor] components in one place.
 
+![Data Editor](./assets/images/data-editor.png)
+
 ## Basic Usage
 
 Similar to other components, Data Editor obtain its data from the `entities`

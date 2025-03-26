@@ -63,9 +63,9 @@ sudo rpm --import https://rpm.beekeeperstudio.io/beekeeper.key
 dnf repolist
 
 # Then
-yum install beekeeper-studio
-# or
-dnf install beekeeper-studio
+sudo dnf install beekeeper-studio
+# or, on legacy systems
+sudo yum install beekeeper-studio
 ```
 
 ## AUR
