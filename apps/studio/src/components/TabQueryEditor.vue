@@ -95,9 +95,8 @@
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
-              :disabled="this.tab.isRunning"
+              :disabled="this.tab.isRunning || running"
               menu
-              :disabled="running"
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
