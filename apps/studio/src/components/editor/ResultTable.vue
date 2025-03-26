@@ -255,7 +255,6 @@
           }
         }
 
-
         // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
         const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
         this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
