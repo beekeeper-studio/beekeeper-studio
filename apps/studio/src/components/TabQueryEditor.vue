@@ -62,13 +62,13 @@
         @initialized="handleEditorInitialized"
       />
       <span class="expand" />
-      <div class="toolbar text-right">
+      <div
+        class="toolbar text-right"
+        ref="toolbar"
+      >
         <div class="editor-help expand" />
         <div class="expand" />
-        <div
-          class="actions btn-group"
-          ref="actions"
-        >
+        <div class="actions btn-group">
           <x-button
             v-if="showDryRun"
             class="btn btn-flat btn-small dry-run-btn"
@@ -784,7 +784,7 @@
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
-        height -= this.$refs.actions.clientHeight
+        height -= this.$refs.toolbar.clientHeight
         this.editor.height = height
       },
       triggerSave() {

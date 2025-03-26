@@ -1,5 +1,5 @@
 
-.CodeMirror {
+:not(.BksSqlTextEditor) > .CodeMirror {
   font-family: $font-family-mono, monospace;
   background: $query-editor-bg!important;
   color: $text-dark!important;
