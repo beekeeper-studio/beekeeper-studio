@@ -1,5 +1,6 @@
 .json-viewer {
   --header-title-height: 2rem;
+  --hoz-gutter: 1rem;
 
   position: relative;
   overflow: hidden;
@@ -12,8 +13,8 @@
 
   .header {
     width: 100%;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: var(--hoz-gutter);
+    padding-right: var(--hoz-gutter);
 
     .header-group {
       display: flex;
@@ -141,13 +142,10 @@
 
   .empty-state {
     position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     inset: 0;
-    top: var(--header-title-height);
     z-index: 10;
-    font-weight: 700;
+    padding-inline: var(--hoz-gutter);
+    color: $text-light;
   }
 }
 

@@ -58,7 +58,7 @@
       :line-numbers="false"
     />
     <div class="empty-state" v-show="empty">
-      No Data
+      Open a table to view its data
     </div>
     <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" />
   </div>
