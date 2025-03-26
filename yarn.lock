@@ -3205,6 +3205,14 @@
   dependencies:
     playwright "1.50.1"
 
+"@queryleaf/lib@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@queryleaf/lib/-/lib-0.1.2.tgz#7adb2d7b24f9c3f8dd832f4dbfcdf0450ba9b19f"
+  integrity sha512-K7nXWBH7m6Ce2fGfSS9TROImLXcP/DkqIpgSonsbzEKEgqK38TKJMa05oW+kVoqtZ5Nd9RvgMZanIEX9pcpT8g==
+  dependencies:
+    debug "^4.4.0"
+    node-sql-parser "^4.11.0"
+
 "@rollup/pluginutils@^4.2.1":
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-4.2.1.tgz#e6c6c3aba0744edce3fb2074922d3776c0af2a6d"
@@ -5371,7 +5379,7 @@ better-sqlite3@~11.1.2:
     bindings "^1.5.0"
     prebuild-install "^7.1.1"
 
-big-integer@^1.6.44, big-integer@^1.6.51:
+big-integer@^1.6.44, big-integer@^1.6.48, big-integer@^1.6.51:
   version "1.6.52"
   resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.52.tgz#60a887f3047614a8e1bffe5d7173490a97dc8c85"
   integrity sha512-QxD8cf2eVqJOOz63z6JIN9BzvVs/dlySa5HGSBH5xtR8dPteIRQnBxxKqkNTiT6jbDTF6jAfrd4oMcND9RGbQg==
@@ -10234,6 +10242,13 @@ node-releases@^2.0.19:
   version "2.0.19"
   resolved "https://registry.yarnpkg.com/node-releases/-/node-releases-2.0.19.tgz#9e445a52950951ec4d177d843af370b411caf314"
   integrity sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==
+
+node-sql-parser@^4.11.0:
+  version "4.18.0"
+  resolved "https://registry.yarnpkg.com/node-sql-parser/-/node-sql-parser-4.18.0.tgz#516b6e633c55c5abbba1ca588ab372db81ae9318"
+  integrity sha512-2YEOR5qlI1zUFbGMLKNfsrR5JUvFg9LxIRVE+xJe962pfVLH0rnItqLzv96XVs1Y1UIR8FxsXAuvX/lYAWZ2BQ==
+  dependencies:
+    big-integer "^1.6.48"
 
 nopt@^5.0.0:
   version "5.0.0"

@@ -2,6 +2,7 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
+import { identify } from 'sql-query-identifier';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
@@ -14,6 +15,7 @@ import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
+import { QueryLeaf } from '@queryleaf/lib'
 
 const log = rawLog.scope('mongodb');
 
@@ -35,6 +37,7 @@ const mongoContext = {
 export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   conn: MongoClient;
   runtime: MongoRuntime;
+  queryLeaf: QueryLeaf;
   transcoders = [MongoDBObjectIdTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -61,6 +64,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const service = new NodeDriverServiceProvider(this.conn, new EventEmitter(), { productDocsLink: '', productName: 'BeekeeperStudio' });
     this.runtime = new MongoRuntime(service);
     this.runtime.evaluate(`use ${this.db}`)
+
+    this.queryLeaf = new QueryLeaf(this.conn, this.db);
   }
 
   async disconnect() {
@@ -267,7 +272,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         [sel]: 1
       }), init);
     }
-
 
     const result = await collection.aggregate([
       {
@@ -614,6 +618,58 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
+    const queries = this.identifyCommands(queryText).map((q) => q.text);
+    let results = [];
+
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+      const r = await this.queryLeaf.execute(query);
+      let fields = [];
+      if (r) {
+        let f = [];
+        if (_.isArray(r)) {
+          f = _.uniq(_.flatten(_.takeRight(r, 10).map((obj) => Object.keys(obj))))
+        } else {
+          f = Object.keys(r);
+        }
+        fields = f.map((k) => ({
+          name: k,
+          id: k
+        }));
+      }
+
+      let returnResult = true;
+
+      let affectedRows = 0
+      if (r?.acknowledged) {
+        affectedRows = r?.insertedCount ?? r?.deletedCount ?? r?.modifiedCount;
+        returnResult = false;
+      }
+
+      let result = _.isArray(r) ? r : [r];
+      if (!returnResult) result = [];
+
+      results.push({
+        rows: result,
+        rowCount: r?.length ?? 0,
+        affectedRows,
+        fields,
+        command: query
+      })
+    }
+
+    return results;
+  }
+
+  private identifyCommands(queryText: string) {
+    try {
+      return identify(queryText, { strict: false, dialect: 'psql' });
+    } catch (err) {
+      return [];
+    }
+  }
+
+  async executeCommand(commandText: string, _options?: any): Promise<NgQueryResult[]> {
     let results: NgQueryResult[] = [];
 
     const listener = {
@@ -629,7 +685,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
     this.runtime.setEvaluationListener(listener);
 
-    const ev = await this.runtime.evaluate(queryText);
+    const ev = await this.runtime.evaluate(commandText);
     log.info("EVAL: ", JSON.stringify(ev))
 
     let fields = [];
@@ -645,7 +701,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         rowCount: ev.printable?.documents?.length,
         fields,
         tableName: ev.source?.namespace?.collection ?? 'mycollection',
-        command: queryText
+        command: commandText
       })
     } else if (ev.type === 'Document') {
       if (ev.printable) {
@@ -659,7 +715,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         rowCount: ev.printable ? 1 : 0,
         fields,
         tableName: ev.source?.namespace?.collection ?? 'mycollection',
-        command: queryText
+        command: commandText
       })
     } else if (ev.type === null && ev.printable) {
       if (ev.printable?.length > 0) {
@@ -673,7 +729,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         rowCount: ev.printable?.length,
         fields,
         tableName: ev.source?.namespace?.collection ?? 'mycollection',
-        command: queryText
+        command: commandText
       })
     }
     log.info("RESULTS: ", results)
@@ -749,7 +805,16 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return null;
   }
 
-  async queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
+  async queryStream(query: string, _chunkSize: number): Promise<StreamResults> {
+    const statement = this.queryLeaf.parse(query);
+    const commands = this.queryLeaf.compile(statement);
+
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+
+    return {
+      totalRows,
+      columns
+    }
     log.error('MongoDB does not support querying');
     return null;
   }

@@ -34,6 +34,21 @@
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
         <!-- TODO (@day): when we have SQL queries for mongo, add an action dropdown here for shell/query tab -->
+        <x-button
+          class="add-tab-dropdown"
+          menu
+        >
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <x-menuitem @click.prevent="createQuery(null)">
+              <x-label>New Query</x-label>
+              <x-shortcut value="Control+T"/>
+            </x-menuitem>
+            <x-menuitem @click.prevent="createShell">
+              <x-label>New Shell</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
       </span>
       <a
         @click.prevent="showUpgradeModal"
@@ -346,7 +361,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
   },
   computed: {
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
-    ...mapState(['connection']),
+    ...mapState(['connection', 'connectionType']),
     ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
     tabIcon() {
       return {
@@ -622,9 +637,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       await this.addTab(result);
     },
     async createQuery(optionalText, queryTitle?) {
-      if (this.dialect === 'mongodb') {
-        return await this.createShell();
-      }
       // const text = optionalText ? optionalText : ""
       console.log("Creating tab")
       let qNum = 0
@@ -897,7 +909,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
     },
     openTableBuilder() {
-      if (this.dialect === 'mongodb') {
+      if (this.connectionType === 'mongodb') {
         this.$root.$emit(AppEvent.openCreateCollectionModal);
         return;
       }
@@ -1085,3 +1097,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
   }
 })
 </script>
+
+<style lang="scss">
+  .add-tab-dropdown {
+    padding: 0 0 !important;
+  }
+</style>

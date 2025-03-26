@@ -36,7 +36,7 @@
       ref="bottomPanel"
     >
       <progress-bar
-        @cancel="cancelQuery"
+        :canCancel="false"
         :message="runningText"
         v-if="running"
       />
@@ -139,7 +139,6 @@
           initialized: false,
         },
         mongoOutputResult: null,
-        runningQuery: null,
         error: null,
         errorMarker: null,
         saveError: null,
@@ -319,14 +318,6 @@
       close() {
         this.$root.$emit(AppEvent.closeTab)
       },
-      async cancelQuery() {
-        if (this.running && this.runningQuery) {
-          this.running = false
-          this.info = 'Command Execution Cancelled'
-          await this.runningQuery.cancel();
-          this.runningQuery = null;
-        }
-      },
       download(format) {
         this.$refs.table.download(format)
       },
@@ -363,9 +354,8 @@
         this.selectedResult = 0
 
         try {
-          this.runningQuery = await this.connection.query(command);
           const cmdStartTime = new Date();
-          const results = await this.runningQuery.execute();
+          const results = await this.connection.executeCommand(command);
           const cmdEndTime = new Date();
 
           // eslint-disable-next-line
