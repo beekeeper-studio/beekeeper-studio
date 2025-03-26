@@ -3,6 +3,8 @@
 The Entity List displays a list of database objects or entities in a tree
 structure that can be expanded and collapsed.
 
+![Entity List](./assets/images/entity-list.png)
+
 ## Basic Usage
 
 An entity list gets its data from the `entities` property, which is an array
