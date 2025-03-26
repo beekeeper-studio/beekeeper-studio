@@ -60,6 +60,7 @@ import {
   TableUpdate,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+import BksConfig from "@/common/bksConfig";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
@@ -146,7 +147,7 @@ async function configDatabase(
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,
-    connectTimeout: 60 * 60 * 1000,
+    connectTimeout: BksConfig.db.mysql.connectTimeout,
   };
 
   if (server.config.socketPathEnabled) {
@@ -657,11 +658,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     chunkSize: number,
     _schema?: string
   ): Promise<StreamResults> {
-    const qs = buildSelectTopQuery(table, null, null, orderBy, filters);
+    const { countQuery, query, params } = buildSelectTopQuery(table, null, null, orderBy, filters);
     const columns = await this.listTableColumns(table);
-    const rowCount = await this.driverExecuteSingle(qs.countQuery);
-    // TODO: DEBUG HERE
-    const { query, params } = qs;
+    const rowCount = await this.driverExecuteSingle(countQuery, { params });
 
     return {
       totalRows: Number(rowCount.rows[0].total),

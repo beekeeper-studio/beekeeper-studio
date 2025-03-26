@@ -13,3 +13,15 @@ CodeMirror.defineMIME("text/x-pgsql", {
   },
 });
 
+declare module "codemirror" {
+  interface Editor {
+    lastCompletionState?: {
+      token: string;
+      from: Position;
+      to: Position;
+      list: any[];
+      picked?: boolean;
+    };
+  }
+}
+

@@ -83,6 +83,7 @@
 </template>
 <script>
 import TabIcon from './tab/TabIcon.vue'
+import { mapState } from 'vuex'
 
   export default {
   components: { TabIcon },
@@ -130,8 +131,17 @@ import TabIcon from './tab/TabIcon.vue'
       }
     },
     watch: {
+      activeTab() {
+        if(!this.activeTab){
+           return;
+         }
+         const { schemaName, tabType, tableName } = this.activeTab;
+         const newSelectedSidebarItem = `${tabType}.${schemaName}.${tableName}`;
+         this.$store.commit('selectSidebarItem', newSelectedSidebarItem);
+      },
     },
     computed: {
+      ...mapState('tabs', { 'activeTab': 'active' }),
       contextOptions() {
         return [
           { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
@@ -150,12 +160,11 @@ import TabIcon from './tab/TabIcon.vue'
         return null
       },
       keymap() {
-        const result = {}
-        if (this.selected) {
-          result[this.ctrlOrCmd('w')] = this.maybeClose
-        }
+        if (!this.selected) return {}
 
-        return result
+        return this.$vHotkeyKeymap({
+          'tab.closeTab': this.maybeClose,
+        })
       },
       cleanText() {
         // no spaces
