@@ -11,7 +11,7 @@
           @click.prevent="$emit('create')"
         >
           <i class="material-icons">add</i>
-          <span>{{ $t('connection.newConnection') }}</span>
+          <span>New Connection</span>
         </a>
       </div>
       <!-- Filter -->
@@ -21,7 +21,7 @@
             <input
               class="filter-input"
               type="text"
-              :placeholder="$t('sidebar.filter')"
+              placeholder="Filter"
               v-model="connFilter"
             >
             <x-buttons class="filter-actions">
@@ -43,17 +43,17 @@
           class="list saved-connection-list expand"
           ref="pinnedConnectionList"
           v-show="!noPins && !connFilter"
-        >
+          >
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  {{ $t('connection.pinned') }} <span class="badge">{{ (pinnedConnections || []).length }}</span>
+                  Pinned <span class="badge">{{ (pinnedConnections || []).length }}</span>
                 </div>
               </div>
               <span class="expand" />
               <div class="actions">
-                <a @click.prevent="refreshPinned"><i class="material-icons">refresh</i></a>
+                <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
               </div>
             </div>
             <error-alert
@@ -95,7 +95,7 @@
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  {{ $t('connection.saved') }} <span class="badge">{{ (filteredConnections || []).length }}</span>
+                  Saved <span class="badge">{{ (filteredConnections || []).length }}</span>
                 </div>
                 <span class="expand" />
                 <div class="actions">
@@ -203,7 +203,7 @@
           <div class="list-group">
             <div class="list-heading">
               <div class="sub row flex-middle noselect">
-                {{ $t('connection.recent') }} <span class="badge">{{ usedConfigs.length }}</span>
+                Recent <span class="badge">{{ usedConfigs.length }}</span>
               </div>
             </div>
             <nav class="list-body">

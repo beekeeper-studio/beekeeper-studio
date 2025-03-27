@@ -7,7 +7,7 @@
     <div v-kbd-focus="true">
       <div class="dialog-content">
         <div class="dialog-c-title">
-          {{ $t('sqlImport.title') }}
+          Import SQL Files into Saved Queries
         </div>
         <a
           class="close-btn btn btn-fab"
@@ -17,17 +17,19 @@
           <i class="material-icons">clear</i>
         </a>
         <div class="message">
-          {{ $t('sqlImport.message') }}
+          This will make a copy of your .sql files and add them to your Beekeeper
+          Studio saved queries. Any changes to the original .sql files will not be
+          reflected in Beekeeper Studio.
         </div>
         <div class="file-picker-wrapper">
           <file-picker
             v-model="files"
             multiple
-            :button-text="$t('sqlImport.chooseFiles')"
+            button-text="Choose Files"
             :options="{
               filters: [
-                { name: $t('sqlImport.sqlFilesFilter'), extensions: ['sql'] },
-                { name: $t('sqlImport.allFilesFilter'), extensions: ['*'] },
+                { name: 'SQL files (*.sql)', extensions: ['sql'] },
+                { name: 'All files', extensions: ['*'] },
               ],
             }"
           />
@@ -39,7 +41,7 @@
           type="button"
           @click="close"
         >
-          {{ $t('common.cancel') }}
+          Cancel
         </button>
         <button
           class="btn btn-primary"
@@ -47,7 +49,7 @@
           :disabled="files.length === 0"
           @click="submit"
         >
-          {{ $t('sqlImport.import') }}
+          Import
         </button>
       </div>
     </div>

@@ -4,32 +4,32 @@
       <p class="intro">
         <i class="material-icons">stars</i>
         <span>
-          {{ $t('upsell.upgradeRequired') }}
+          Upgrade required
         </span>
       </p>
-      <p>{{ $t('upsell.getAccessToFeature') }}</p>
+      <p>Get access to this feature, plus:</p>
       <ul>
         <slot />
         <li class="flex flex-row">
           <span class="bullet">🥞</span>
           <span>
-            {{ $t('upsell.features.connectTo') }}
+            Connect to Cassandra, Oracle, LibSQL, ClickHouse, and DuckDB.
           </span>
         </li>
         <li class="flex flex-row">
           <span class="bullet">🚀</span>
           <span>
-            {{ $t('upsell.features.unlockFeatures') }}
+            Unlock JSON view, unlimited table filters, import/export, backup/restore, and more.
           </span>
         </li>
         <li class="flex flex-row">
           <span class="bullet">📬</span>
-          <span>{{ $t('upsell.features.supportStaff') }}</span>
+          <span>Email real support staff, we're here whenever you have a problem.</span>
         </li>
         <li class="flex flex-row">
           <span class="bullet">🤝</span>
           <span>
-            {{ $t('upsell.features.syncData') }}
+            Sync data across machines with cloud workspaces and team collaboration tools.
           </span>
         </li>
       </ul>

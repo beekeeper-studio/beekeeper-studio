@@ -6,7 +6,7 @@
       :id="inputId"
       type="text"
       class="form-control clickable"
-      :placeholder="$t('filePicker.noFileSelected')"
+      placeholder="No file selected"
       :title="value"
       :value="inputValue"
       :disabled="disabled"
@@ -34,7 +34,7 @@
         class="btn btn-flat"
         @click="openFilePickerDialog({ save: true })"
       >
-        {{ $t('filePicker.create') }}
+        Create
       </a>
     </div>
     <slot name="actions" />
@@ -80,9 +80,7 @@ export default {
     },
     buttonText: {
       type: String,
-      default() {
-        return this.$t ? this.$t('filePicker.chooseFile') : "Choose File"
-      }
+      default: "Choose File"
     },
     inputId: {
       type: String,
@@ -106,7 +104,7 @@ export default {
 
       if (Array.isArray(files)) {
         if (files.length > 1) {
-          return `${files[0]} (${files.length} ${this.$t('filePicker.files')})`
+          return `${files[0]} (${files.length} files)`
         }
         return files[0]
       }

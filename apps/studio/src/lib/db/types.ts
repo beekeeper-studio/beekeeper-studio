@@ -52,18 +52,18 @@ export enum AzureAuthType {
 }
 
 export const IamAuthTypes = [
-  { nameKey: 'connection.redshift.iamWithKeyAuth', value: 'iam_key' },
-  { nameKey: 'connection.redshift.iamWithFileAuth', value: 'iam_file' }
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [
   // Can't have 2FA, kinda redundant now
   // { name: 'Password', value: AzureAuthType.Password },
-  { nameKey: 'connection.sqlserver.azureAdSso', value: AzureAuthType.AccessToken },
+  { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
   // This may be reactivated when we move to client server architecture
   // { name: 'MSI VM', value: AzureAuthType.MSIVM },
-  { nameKey: 'connection.sqlserver.servicePrincipalSecret', value: AzureAuthType.ServicePrincipalSecret }
+  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
 ];
 
 export interface RedshiftOptions {
@@ -208,39 +208,40 @@ export interface IBasicDatabaseClient {
   alterTable(change: AlterTableSpec): Promise<void>,
   alterIndexSql(changes: IndexAlterations): Promise<string | null>,
   alterIndex(changes: IndexAlterations): Promise<void>,
-  alterRelationSql(changes: RelationAlterations): Promise<string | null>,
+  alterRelationSql(changes: RelationAlterations): Promise<string | null>
   alterRelation(changes: RelationAlterations): Promise<void>,
   alterPartitionSql(changes: AlterPartitionsSpec): Promise<string | null>,
   alterPartition(changes: AlterPartitionsSpec): Promise<void>,
 
   applyChangesSql(changes: TableChanges): Promise<string>,
   applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
-  setTableDescription(table: string, description: string, schema?: string): Promise<string>,
+  setTableDescription(table: string, description: string, schema?: string): Promise<string>
   setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
-  truncateAllTables(schema?: string): Promise<void>,
+  truncateAllTables(schema?: string): Promise<void>
+
 
   getTableLength(table: string, schema?: string): Promise<number>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>,
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>
 
-  queryStream(query: string, chunkSize: number): Promise<StreamResults>,
+  queryStream(query: string, chunkSize: number): Promise<StreamResults>
 
-  duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>,
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>,
+  duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>
+  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
 
-  getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>,
-  syncDatabase(): Promise<void>,
+  getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
+  syncDatabase(): Promise<void>
 
-  importStepZero(table: TableOrView): Promise<any>,
-  importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>,
-  importTruncateCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>,
-  importLineReadCommand (table: TableOrView, sqlString: string|string[], importOptions?: ImportFuncOptions): Promise<any>,
-  importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>,
-  importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>,
-  importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>,
+  importStepZero(table: TableOrView): Promise<any>
+  importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importTruncateCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importLineReadCommand (table: TableOrView, sqlString: string|string[], importOptions?: ImportFuncOptions): Promise<any>
+  importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+  importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
 
   /** Returns a query for the given filter */
   getQueryForFilter(filter: TableFilter): Promise<string>

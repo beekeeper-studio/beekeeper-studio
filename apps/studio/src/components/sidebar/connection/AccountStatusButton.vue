@@ -21,7 +21,7 @@
     >
       <div class="dialog-content">
         <div class="dialog-c-title">
-          {{ $t('connection.title') }}
+          Connected Accounts
         </div>
         <div class="list-group">
           <div class="list-body">
@@ -58,7 +58,7 @@
                         </x-label>
                       </x-menuitem>
                       <x-menuitem @click.prevent="refresh">
-                        <x-label>{{ $t('common.refresh') }}</x-label>
+                        <x-label>Refresh</x-label>
                       </x-menuitem>
                       <x-menuitem
                         @click.prevent="reauth(blob)"
@@ -86,7 +86,7 @@
           type="button"
           @click.prevent="$modal.hide('account-status-modal')"
         >
-          {{ $t('common.close') }}
+          Close
         </button>
         <button
           class="btn btn-primary"
@@ -122,8 +122,8 @@ export default Vue.extend({
     title() {
       const errorCount = this.credentials.filter((c) => c.error).length
       if (this.error) return this.error.message
-      return this.$t('sidebar.accountStatus', { count: this.credentials.length }) + 
-             (errorCount ? ` (${errorCount} Problems)` : '')
+      const result = `Signed into ${this.credentials.length} Accounts`
+      return errorCount ? `${result} (${errorCount} Problems)` : result
     },
   },
   methods: {
