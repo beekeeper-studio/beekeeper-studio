@@ -1054,7 +1054,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
     },
     copyName(item) {
-      (item.tabType !== 'table' || item.tabType !== "table-properties") && this.$copyText(item.tableName)
+      if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
+      this.$copyText(item.tableName)
     }
   },
   beforeDestroy() {
