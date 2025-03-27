@@ -1,19 +1,10 @@
 <template>
   <div
-    class="sidebar detail-view-sidebar flex-col"
+    class="json-viewer"
     ref="sidebar"
     v-show="!hidden"
   >
     <div class="header">
-      <div class="header-group">
-        <span class="title sub">{{ sidebarTitle }}</span>
-        <button
-          class="close-btn btn btn-fab"
-          @click="close"
-        >
-          <i class="material-icons">close</i>
-        </button>
-      </div>
       <div
         class="header-group"
         v-show="!empty"
@@ -67,7 +58,7 @@
       :line-numbers="false"
     />
     <div class="empty-state" v-show="empty">
-      No Data
+      Open a table to view its data
     </div>
     <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" />
   </div>
@@ -287,9 +278,6 @@ export default Vue.extend({
   methods: {
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
-    },
-    close() {
-      this.$emit("close")
     },
   },
 });

@@ -141,8 +141,12 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
-  toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
-    if (win) win.webContents.send(AppEvent.toggleSidebar)
+  togglePrimarySidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
+    if (win) win.webContents.send(AppEvent.togglePrimarySidebar)
+  }
+
+  toggleSecondarySidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
+    if (win) win.webContents.send(AppEvent.toggleSecondarySidebar)
   }
 
   disconnect = (_1: Electron.MenuItem, win: ElectronWindow): void => {

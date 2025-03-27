@@ -1,4 +1,4 @@
-#sidebar {
+.sidebar {
   flex: 0 1 100%;
   max-height: 100%;
   min-width: 300px;
@@ -31,7 +31,7 @@
   .sidebar-heading {
     display: flex;
     align-items: center;
-    padding: $gutter-h $gutter-w;
+    padding: $gutter-h 1rem;
     height: $tab-height;
     font-size: 14px;
     line-height: 28px;
@@ -43,6 +43,22 @@
       padding: 0 $gutter-h;
       // box-shadow: 0 1px darken($theme-bg, 6%);
       box-shadow: 0 1px $border-color;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: $gutter-h;
+      margin-left: auto;
+    }
+    .btn .material-icons {
+      font-size: 18px;
+      color: $text-light;
+    }
+    .close-btn {
+      // color: $text;
+      &:not(:hover) {
+        background-color: transparent;
+      }
     }
   }
   .tab-content {

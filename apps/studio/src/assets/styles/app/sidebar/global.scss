@@ -95,7 +95,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 44px;
+      width: var(--sidebar-min-width);
       height: 44px;
       font-size: 18px;
       color: rgba($theme-base, 0.38);
