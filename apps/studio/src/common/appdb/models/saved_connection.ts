@@ -336,19 +336,19 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
       const encodedUrl = encodeURI(cleanedUrl)
       const parsed = new ConnectionString(encodedUrl)
-      const ParsedUncoded = new ConnectionString(url)
+      const parsedUncoded = new ConnectionString(url)
   
       this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
 
-      if (ParsedUncoded.hostname && ParsedUncoded.hostname.includes('cockroachlabs.cloud')) {
+      if (parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) {
         this.connectionType = 'cockroachdb'
-        if (ParsedUncoded.params?.options) {
+        if (parsedUncoded.params?.options) {
           // TODO: fix this
           const regex = /--cluster=([A-Za-z0-9\-_]+)/
-          const clusters = ParsedUncoded.params.options.match(regex)
+          const clusters = parsedUncoded.params.options.match(regex)
           this.options['cluster'] = clusters ? clusters[1] : undefined
         }
       }
