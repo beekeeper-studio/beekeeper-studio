@@ -2,7 +2,7 @@
   <div class="language-switcher-button">
     <a
       class="nav-item language"
-      :title="String($t('sidebar.languageSwitcher'))"
+      :title="String($t('Switch Language'))"
       @click.prevent="showLanguageModal"
     >
       <span class="avatar">
@@ -17,7 +17,7 @@
     >
       <div class="dialog-content">
         <div class="dialog-c-title">
-          {{ $t('settings.language') }}
+          {{ $t('Language Settings') }}
         </div>
         <div class="list-group">
           <div class="list-body">
@@ -44,7 +44,7 @@
           type="button"
           @click.prevent="$modal.hide('language-switcher-modal')"
         >
-          {{ $t('common.close') }}
+          {{ $t('Close') }}
         </button>
       </div>
     </modal>
@@ -86,16 +86,16 @@ export default Vue.extend({
       
       this.$modal.hide('language-switcher-modal')
       
-      // Show success message
+      // 显示成功消息，根据切换的语言显示不同的消息
       if (locale === 'en') {
         this.$noty.success('Language switched to English')
       } else if (locale === 'zh-CN') {
-        this.$noty.success('Language switched to Chinese')
+        this.$noty.success('已切换到中文')
       }
     }
   },
   mounted() {
-    // Load language from settings, only apply if user has manually set it
+    // 加载语言设置，只有当用户手动设置过时才应用
     const savedLanguageSetting = this.$store.state.settings.settings.language
     if (savedLanguageSetting && savedLanguageSetting.value && savedLanguageSetting._userValue) {
       setI18nLanguage(savedLanguageSetting.value)

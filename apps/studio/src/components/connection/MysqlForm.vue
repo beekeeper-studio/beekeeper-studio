@@ -1,11 +1,11 @@
 <template>
   <div class="with-connection-type">
     <div class="form-group col">
-      <label for="authenticationType">Authentication Method</label>
+      <label for="authenticationType">{{ $t('Authentication Method') }}</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
-          {{ t.name }}
+          {{ $t(t.name) }}
         </option>
       </select>
     </div>
@@ -15,22 +15,22 @@
       <div class="row gutter">
         <div class="form-group col s9">
           <label for="server">
-            Host
+            {{ $t('Host') }}
           </label>
           <input name="server" type="text" class="form-control" v-model="config.host">
         </div>
         <div class="form-group col s3">
-          <label for="database">Port</label>
+          <label for="database">{{ $t('Port') }}</label>
           <input type="number" class="form-control" name="port" v-model.number="config.port">
         </div>
       </div>
       <div class="gutter">
         <div class="form-group">
-          <label for="database">Database</label>
+          <label for="database">{{ $t('Database') }}</label>
           <input name="database" type="text" class="form-control" v-model="config.defaultDatabase">
         </div>
         <div class="form-group">
-          <label for="user">User</label>
+          <label for="user">{{ $t('User') }}</label>
           <input name="user" type="text" class="form-control" v-model="config.username">
         </div>
       </div>
