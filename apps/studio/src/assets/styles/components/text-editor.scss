@@ -6,11 +6,26 @@
   }
 
   .CodeMirror-foldgutter {
-    padding-left: 1rem;
+    width: 1.2rem;
   }
 
-  .CodeMirror-gutter-elt [class^=CodeMirror-foldgutter] {
-    padding-left: 1rem;
+  .CodeMirror-foldgutter-open,
+  .CodeMirror-foldgutter-folded {
+    font-family: "Material Icons";
+    font-size: 1.2rem;
+    color: rgba($theme-base, 0.37);
+
+    &:hover {
+      color: $text-dark;
+    }
+  }
+
+  .CodeMirror-foldgutter-open::after {
+    content: "keyboard_arrow_down";
+  }
+
+  .CodeMirror-foldgutter-folded::after {
+    content: "keyboard_arrow_right";
   }
 
   .CodeMirror-gutter-background.changed {
@@ -19,22 +34,5 @@
 
   .CodeMirror-guttermaker-subtle {
     color: rgba($theme-base, 0.25);
-  }
-
-  .CodeMirror-gutter-elt .btn-fab {
-    min-width: 18px;
-    width: 18px;
-    height: 18px;
-    color: rgba($theme-base, 0.37);
-
-    &:hover,
-    &:focus {
-      background-color: transparent;
-      color: $text-dark;
-    }
-
-    .dropdown-icon {
-      color: inherit;
-    }
   }
 }

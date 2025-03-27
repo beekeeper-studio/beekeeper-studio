@@ -25,6 +25,7 @@
           @closeToRight="closeToRight"
           @forceClose="forceClose"
           @duplicate="duplicate"
+          @copyName="copyName"
         />
       </Draggable>
       <!-- </div> -->
@@ -345,6 +346,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     }
   },
   computed: {
+    ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection']),
     ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
@@ -985,6 +987,12 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (tab.queryId) {
         await this.$store.dispatch('data/queries/reload', tab.queryId)
       }
+
+      const { schemaName, tabType, tableName } = tab;
+      const closingSidebarItem = `${tabType}.${schemaName}.${tableName}`;
+      if(closingSidebarItem === this.selectedSidebarItem){
+        this.$store.commit('selectSidebarItem', null);
+      }
     },
     async forceClose(tab: TransportOpenTab) {
       // ensure the tab is active
@@ -1070,6 +1078,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     createQueryFromItem(item) {
       this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
+    },
+    copyName(item) {
+      if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
+      this.$copyText(item.tableName)
     }
   },
   beforeDestroy() {

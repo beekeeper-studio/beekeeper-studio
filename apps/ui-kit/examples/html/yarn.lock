@@ -2,7 +2,6 @@
 # yarn lockfile v1
 
 
-"@beekeeperstudio/ui-kit@*":
-  version "0.0.13"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/ui-kit/-/ui-kit-0.0.13.tgz#efe9beb3d14fd95fee5ee0a4bd7b8f36f28ca36d"
-  integrity sha512-0mR9et7s/kVLAk1xZR+MMNZIAvVPNLLyzS+YTjmDlx9qehaRGuHptiwMrTQ+foIOeH/o5Tsnu64m8Jxhq8S8eg==
+"@beekeeperstudio/ui-kit@link:../..":
+  version "0.0.0"
+  uid ""

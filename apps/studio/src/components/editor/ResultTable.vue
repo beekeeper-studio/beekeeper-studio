@@ -27,6 +27,7 @@
   import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
+  import XLSX from 'xlsx';
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -209,7 +210,10 @@
         });
       },
       copySelection() {
-        if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
+        const classes = [...document.activeElement.classList.values()];
+        const isFocusingTable = classes.some(c => c.startsWith('tabulator'));
+
+        if (!this.active || !isFocusingTable) return
         copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
       },
       dataToJson(rawData, firstObjectOnly) {
@@ -220,23 +224,52 @@
         return firstObjectOnly ? result[0] : result
       },
       download(format) {
-        let formatter = format !== 'md' ? format : (rows, options, setFileContents) => {
-          const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value))
-          setFileContents(markdownTable(values), 'text/markdown')
-        };
+        let formatter = format;
+        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss');
+        const title = this.query.title ? _.snakeCase(this.query.title) : 'query_results';
+
+        if(format === 'md'){
+          formatter = (rows, options, setFileContents) => {
+            const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value));
+            setFileContents(markdownTable(values), 'text/markdown')
+          };
+        }
+
         // Fix Issue #1493 Lost column names in json query download
         // by overriding the tabulator-generated json with ...what cipboard() does, below:
-        formatter = format !== 'json' ? formatter : (rows, options, setFileContents) => {
-          setFileContents(
-            JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
-           )
-        };
-        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
-        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
+        if(format === 'json'){
+          formatter = (rows, options, setFileContents) => {
+             const newValue = JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  ");
+             setFileContents(newValue, 'text/json');
+          };
+        }
 
-        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
-        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
-        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
+        // Fix Issue #2863 replacing null values with empty string
+        if(format === 'xlsx'){
+          formatter = (rows, options, setFileContents) => {
+             const values = rows.map(row => row.columns.map(col => {
+               if(col.value === null){
+                 return '';
+               }
+
+               if(typeof col.value === 'object'){
+                 return JSON.stringify(col.value);
+               }
+
+               return col.value;
+              })
+            );
+
+             const ws = XLSX.utils.aoa_to_sheet(values);
+             const wb = XLSX.utils.book_new();
+
+             XLSX.utils.book_append_sheet(wb, ws, title);
+             const excel = XLSX.write(wb, { type: 'buffer' });
+             setFileContents(excel);
+          }
+        }
+
+        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
       },
       clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")

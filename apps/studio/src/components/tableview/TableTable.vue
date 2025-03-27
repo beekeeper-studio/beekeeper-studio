@@ -780,7 +780,7 @@ export default Vue.extend({
       const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
       const hasKeyDatas = keyDatas && keyDatas.length > 0
       const columnWidth = this.table.columns.length > 30 ?
-        this.defaultColumnWidth(slimDataType, $bksConfig.ui.tableTable.defaultColumnWidth) :
+        this.defaultColumnWidth(slimDataType, this.$bksConfig.ui.tableTable.defaultColumnWidth) :
         undefined;
 
       let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
