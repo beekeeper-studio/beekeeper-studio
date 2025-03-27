@@ -4,7 +4,6 @@ import zhCN from './locales/zh-CN.json'
 
 Vue.use(VueI18n)
 
-// 使用any类型以解决类型检查问题
 const messages: any = {
   'en': {},  // Empty object, as English will be used as the key names
   'zh-CN': zhCN
@@ -13,6 +12,7 @@ const messages: any = {
 // Default to English
 const defaultLocale = 'en'
 
+// Initialize the VueI18n instance
 const i18n = new VueI18n({
   locale: defaultLocale, 
   fallbackLocale: 'en', 
@@ -25,9 +25,16 @@ const i18n = new VueI18n({
   }
 })
 
+/**
+ * Set the i18n language
+ * @param locale The target language code
+ */
 export const setI18nLanguage = (locale: string) => {
+  // Only set when the language actually changes
   if (i18n.locale !== locale) {
     i18n.locale = locale
+    // Also set the language attribute of the document
+    document.querySelector('html')?.setAttribute('lang', locale)
   }
 }
 

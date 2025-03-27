@@ -74,31 +74,44 @@ export default Vue.extend({
       this.$modal.show('language-switcher-modal')
     },
     async switchLanguage(locale: string) {
-      // Update i18n language setting
-      setI18nLanguage(locale)
-      
-      // Save user language setting to local storage, including _userValue to indicate it's a user-set value
-      await this.$store.dispatch('settings/save', { 
-        key: 'language', 
-        value: locale,
-        _userValue: true // Mark as user-set
-      })
-      
-      this.$modal.hide('language-switcher-modal')
-      
-      // 显示成功消息，根据切换的语言显示不同的消息
-      if (locale === 'en') {
-        this.$noty.success('Language switched to English')
-      } else if (locale === 'zh-CN') {
-        this.$noty.success('已切换到中文')
+      try {
+        setI18nLanguage(locale)
+        
+        // Save the user language setting to localStorage
+        // Ensure access to settings through key directly, not through the possibly non-existent language object
+        await this.$store.dispatch('settings/save', { 
+          key: 'language', 
+          value: locale,
+          _userValue: true // Mark as a user-set value
+        })
+        
+        this.$modal.hide('language-switcher-modal')
+        
+        // Display success message, show different messages based on the switched language
+        if (locale === 'en') {
+          this.$noty.success('Language switched to English')
+        } else if (locale === 'zh-CN') {
+          this.$noty.success('已切换到中文')
+        }
+      } catch (error) {
+        console.error('Error switching language:', error)
+        this.$noty.error('Failed to switch language')
       }
     }
   },
   mounted() {
-    // 加载语言设置，只有当用户手动设置过时才应用
-    const savedLanguageSetting = this.$store.state.settings.settings.language
-    if (savedLanguageSetting && savedLanguageSetting.value && savedLanguageSetting._userValue) {
-      setI18nLanguage(savedLanguageSetting.value)
+    // Load the user language setting
+    try {
+      const savedLanguageSetting = this.$store.state.settings.settings.language
+      
+      // If there is a saved language setting, use it
+      if (savedLanguageSetting && savedLanguageSetting.value) {
+        setI18nLanguage(savedLanguageSetting.value)
+      }
+    } catch (error) {
+      console.error('Error loading language setting:', error)
+      // If there is an error, use the default language (English)
+      setI18nLanguage('en')
     }
   }
 })

@@ -5,7 +5,14 @@
   "Port": "端口",
   "Database": "数据库",
   "User": "用户",
+  "Password": "密码",
+  "Default Database": "默认数据库",
+  "Connection Mode": "连接模式",
+  "Host and Port": "主机和端口",
+  "Socket": "套接字",
+  "Socket Path": "套接字路径",
+  "Enable SSL": "启用SSL",
   "Switch Language": "切换语言",
-  "Language Settings": "切换语言",
+  "Language Settings": "语言设置",
   "Close": "关闭"
 }
