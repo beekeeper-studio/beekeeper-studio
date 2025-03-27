@@ -223,9 +223,9 @@
       download(format) {
         let formatter = format;
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss');
-        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results";
+        const title = this.query.title ? _.snakeCase(this.query.title) : 'query_results';
 
-        if(format === "md"){
+        if(format === 'md'){
           formatter = (rows, options, setFileContents) => {
             const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value));
             setFileContents(markdownTable(values), 'text/markdown')
@@ -234,7 +234,7 @@
 
         // Fix Issue #1493 Lost column names in json query download
         // by overriding the tabulator-generated json with ...what cipboard() does, below:
-        if(format === "json"){
+        if(format === 'json'){
           formatter = (rows, options, setFileContents) => {
              const newValue = JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  ");
              setFileContents(newValue, 'text/json');
@@ -242,22 +242,31 @@
         }
 
         // Fix Issue #2863 replacing null values with empty string
-        if(format === "xlsx"){
+        if(format === 'xlsx'){
           formatter = (rows, options, setFileContents) => {
-             const values = rows.map(row => row.columns.map(col => col.value === null ? "" : typeof col.value === "object" ? JSON.stringify(col.value) : col.value));
+             const values = rows.map(row => row.columns.map(col => {
+               if(col.value === null){
+                 return '';
+               }
+
+               if(typeof col.value === 'object'){
+                 return JSON.stringify(col.value);
+               }
+
+               return col.value;
+              })
+            );
 
              const ws = XLSX.utils.aoa_to_sheet(values);
              const wb = XLSX.utils.book_new();
 
              XLSX.utils.book_append_sheet(wb, ws, title);
-             const excel = XLSX.write(wb, { type: "buffer" });
+             const excel = XLSX.write(wb, { type: 'buffer' });
              setFileContents(excel);
           }
         }
 
-        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
-        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
-        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
+        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
       },
       clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")
