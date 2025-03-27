@@ -209,7 +209,10 @@
         });
       },
       copySelection() {
-        if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
+        const classes = [...document.activeElement.classList.values()];
+        const isFocusingTable = classes.some(c => c.startsWith('tabulator'));
+
+        if (!this.active || !isFocusingTable) return
         copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
       },
       dataToJson(rawData, firstObjectOnly) {
