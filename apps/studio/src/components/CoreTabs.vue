@@ -25,6 +25,7 @@
           @closeToRight="closeToRight"
           @forceClose="forceClose"
           @duplicate="duplicate"
+          @copyName="copyName"
         />
       </Draggable>
       <!-- </div> -->
@@ -1051,6 +1052,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     createQueryFromItem(item) {
       this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
+    },
+    copyName(item) {
+      if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
+      this.$copyText(item.tableName)
     }
   },
   beforeDestroy() {
