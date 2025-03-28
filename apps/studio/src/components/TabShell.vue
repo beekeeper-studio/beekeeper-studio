@@ -96,366 +96,375 @@
 </template>
 
 <script lang="ts">
+import Vue from 'vue';
+import _ from 'lodash'
+import Split from 'split.js'
+import { mapGetters, mapState } from 'vuex'
 
-  import _ from 'lodash'
-  import Split from 'split.js'
-  import { mapGetters, mapState } from 'vuex'
+import ProgressBar from './editor/ProgressBar.vue'
+import ResultTable from './editor/ResultTable.vue'
+import ShortcutHints from './editor/ShortcutHints.vue'
+import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
+import MongoShell from '@/components/common/texteditor/MongoShell.vue'
 
-  import ProgressBar from './editor/ProgressBar.vue'
-  import ResultTable from './editor/ResultTable.vue'
-  import ShortcutHints from './editor/ShortcutHints.vue'
-  import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
-  import MongoShell from '@/components/common/texteditor/MongoShell.vue'
+import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
+import rawlog from '@bksLogger'
+import ErrorAlert from './common/ErrorAlert.vue'
+import MergeManager from '@/components/editor/MergeManager.vue'
+import { AppEvent } from '@/common/AppEvent'
+import { PropType } from 'vue'
+import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
 
-  import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
-  import rawlog from '@bksLogger'
-  import ErrorAlert from './common/ErrorAlert.vue'
-  import MergeManager from '@/components/editor/MergeManager.vue'
-  import { AppEvent } from '@/common/AppEvent'
-  import { PropType } from 'vue'
-  import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
+const log = rawlog.scope('query-editor')
 
-  const log = rawlog.scope('query-editor')
-
-  export default {
-    // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor, MongoShell },
-    props: {
-      tab: Object as PropType<TransportOpenTab>,
-      active: Boolean
-    },
-    data() {
-      return {
-        results: [],
-        running: false,
-        runningCount: 1,
-        selectedResult: 0,
-        editor: {
-          height: 100,
-          selection: null,
-          readOnly: false,
-          cursorIndex: 0,
-          cursorIndexAnchor: 0,
-          initialized: false,
-        },
-        mongoOutputResult: null,
-        error: null,
-        errorMarker: null,
-        saveError: null,
-        info: null,
-        split: null,
-        tableHeight: 0,
-        savePrompt: false,
-        lastWord: null,
-        marker: null,
-        executeTime: 0,
+export default Vue.extend({
+  components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor, MongoShell },
+  props: {
+    tab: Object as PropType<TransportOpenTab>,
+    active: Boolean
+  },
+  data() {
+    return {
+      results: [],
+      running: false,
+      runningCount: 1,
+      selectedResult: 0,
+      editor: {
+        height: 100,
+        selection: null,
+        readOnly: false,
+        cursorIndex: 0,
+        cursorIndexAnchor: 0,
         initialized: false,
-        containerResizeObserver: null,
-        onTextEditorBlur: null,
+      },
+      mongoOutputResult: null,
+      runningQuery: null,
+      error: null,
+      errorMarker: null,
+      saveError: null,
+      info: null,
+      split: null,
+      tableHeight: 0,
+      savePrompt: false,
+      lastWord: null,
+      marker: null,
+      executeTime: 0,
+      initialized: false,
+      containerResizeObserver: null,
+      onTextEditorBlur: null,
 
-        /**
-         * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
-         * if we want to switch focus. Why two states? We need a feedback from
-         * text editor cause it can't release focus automatically.
-         *
-         * Possible values: 'text-editor', 'table', 'none'
-         */
-        focusElement: 'none',
-        focusingElement: 'none',
+      /**
+       * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
+       * if we want to switch focus. Why two states? We need a feedback from
+       * text editor cause it can't release focus automatically.
+       *
+       * Possible values: 'text-editor', 'table', 'none'
+       */
+      focusElement: 'none',
+      focusingElement: 'none',
+    }
+  },
+  computed: {
+    ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
+    ...mapGetters({
+      'isCommunity': 'licenses/isCommunity',
+      'userKeymap': 'settings/userKeymap',
+    }),
+    ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
+    ...mapState('data/queries', {'savedQueries': 'items'}),
+    ...mapState('settings', ['settings']),
+    ...mapState('tabs', { 'activeTab': 'active' }),
+    enabled() {
+      return !this.dialectData?.disabledFeatures?.shell;
+    },
+    shouldInitialize() {
+      return this.storeInitialized && this.active && !this.initialized
+    },
+    errors() {
+      const result = [
+        this.error,
+        this.saveError
+      ].filter((e) => e)
+
+      return result.length ? result : null
+    },
+    runningText() {
+      return `Running (${window.main.pluralize('command', this.runningCount, true)})`
+    },
+    result() {
+      return this.results[this.selectedResult]
+    },
+    rowCount() {
+      return this.result && this.result.rows ? this.result.rows.length : 0
+    },
+    splitElements() {
+      return [
+        this.$refs.topPanel,
+        this.$refs.bottomPanel,
+      ]
+    },
+    keymap() {
+      if (!this.active) return {}
+      return this.$vHotkeyKeymap({
+        'queryEditor.switchPaneFocus': this.switchPaneFocus,
+        'queryEditor.selectEditor': this.selectEditor,
+      })
+    },
+   keybindings() {
+      const keybindings: any = {}
+
+      if(this.userKeymap === "vim") {
+        keybindings["Ctrl-Esc"] = this.cancelQuery
+      } else {
+        keybindings["Esc"] = this.cancelQuery
+      }
+
+      return keybindings
+    },
+    vimConfig() {
+      const exCommands = [
+        { name: "quit", prefix: "q", handler: this.close },
+        { name: "qa", prefix: "qa", handler: () => this.$root.$emit(AppEvent.closeAllTabs) },
+        { name: "tabnew", prefix: "tabnew", handler: (_cn, params) => {
+          if(params.args && params.args.length > 0){
+            let queryName = params.args[0]
+            this.$root.$emit(AppEvent.newTab,"", queryName)
+            return
+          }
+          this.$root.$emit(AppEvent.newTab)
+        }},
+      ]
+
+      return { exCommands }
+    },
+    showResultTable() {
+      return this.rowCount > 0
+    },
+  },
+  watch: {
+    error() {
+      this.errorMarker = null
+    },
+    shouldInitialize() {
+      if (this.shouldInitialize) this.initialize()
+    },
+    unsavedChanges() {
+      this.tab.unsavedChanges = this.unsavedChanges
+    },
+    async active() {
+      if (!this.editor.initialized) {
+        return
+      }
+
+      // HACK: we couldn't focus the editor immediately each time the tab is
+      // clicked because something steals the focus. So we defer focusing
+      // the editor at the end of the call stack with timeout, and
+      // this.$nextTick doesn't work in this case.
+      if (this.active) {
+        setTimeout(this.selectEditor, 0)
+      }
+
+      if (!this.active) {
+        this.focusElement = 'none'
       }
     },
-    computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
-      ...mapGetters({
-        'isCommunity': 'licenses/isCommunity',
-        'userKeymap': 'settings/userKeymap',
-      }),
-      ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
-      ...mapState('data/queries', {'savedQueries': 'items'}),
-      ...mapState('settings', ['settings']),
-      ...mapState('tabs', { 'activeTab': 'active' }),
-      enabled() {
-        return !this.dialectData?.disabledFeatures?.shell;
-      },
-      shouldInitialize() {
-        return this.storeInitialized && this.active && !this.initialized
-      },
-      errors() {
-        const result = [
-          this.error,
-          this.saveError
-        ].filter((e) => e)
-
-        return result.length ? result : null
-      },
-      runningText() {
-        return `Running (${window.main.pluralize('command', this.runningCount, true)})`
-      },
-      result() {
-        return this.results[this.selectedResult]
-      },
-      rowCount() {
-        return this.result && this.result.rows ? this.result.rows.length : 0
-      },
-      splitElements() {
-        return [
-          this.$refs.topPanel,
-          this.$refs.bottomPanel,
-        ]
-      },
-      keymap() {
-        if (!this.active) return {}
-        return this.$vHotkeyKeymap({
-          'queryEditor.switchPaneFocus': this.switchPaneFocus,
-          'queryEditor.selectEditor': this.selectEditor,
-        })
-      },
-     keybindings() {
-        const keybindings: any = {}
-
-        if(this.userKeymap === "vim") {
-          keybindings["Ctrl-Esc"] = this.cancelQuery
-        } else {
-          keybindings["Esc"] = this.cancelQuery
-        }
-
-        return keybindings
-      },
-      vimConfig() {
-        const exCommands = [
-          { name: "quit", prefix: "q", handler: this.close },
-          { name: "qa", prefix: "qa", handler: () => this.$root.$emit(AppEvent.closeAllTabs) },
-          { name: "tabnew", prefix: "tabnew", handler: (_cn, params) => {
-            if(params.args && params.args.length > 0){
-              let queryName = params.args[0]
-              this.$root.$emit(AppEvent.newTab,"", queryName)
-              return
-            }
-            this.$root.$emit(AppEvent.newTab)
-          }},
-        ]
-
-        return { exCommands }
-      },
-      showResultTable() {
-        return this.rowCount > 0
-      },
+    async focusElement(element, oldElement) {
+      if (oldElement === 'text-editor' && element !== 'text-editor') {
+        await this.blurTextEditor()
+      }
+      this.focusingElement = element
     },
-    watch: {
-      error() {
-        this.errorMarker = null
-      },
-      shouldInitialize() {
-        if (this.shouldInitialize) this.initialize()
-      },
-      unsavedChanges() {
-        this.tab.unsavedChanges = this.unsavedChanges
-      },
-      async active() {
-        if (!this.editor.initialized) {
-          return
-        }
+  },
+  methods: {
+    initialize() {
+      this.initialized = true
+      this.tab.unsavedChanges = this.unsavedChanges
 
-        // HACK: we couldn't focus the editor immediately each time the tab is
-        // clicked because something steals the focus. So we defer focusing
-        // the editor at the end of the call stack with timeout, and
-        // this.$nextTick doesn't work in this case.
-        if (this.active) {
-          setTimeout(this.selectEditor, 0)
-        }
+      if (this.split) {
+        this.split.destroy();
+        this.split = null;
+      }
 
-        if (!this.active) {
-          this.focusElement = 'none'
-        }
-      },
-      async focusElement(element, oldElement) {
-        if (oldElement === 'text-editor' && element !== 'text-editor') {
-          await this.blurTextEditor()
-        }
-        this.focusingElement = element
-      },
-    },
-    methods: {
-      initialize() {
-        this.initialized = true
-        this.tab.unsavedChanges = this.unsavedChanges
-
-        if (this.split) {
-          this.split.destroy();
-          this.split = null;
-        }
-
-        this.$nextTick(() => {
-          this.split = Split(this.splitElements, {
-            elementStyle: (_dimension, size) => ({
-                'flex-basis': `calc(${size}%)`,
-            }),
-            sizes: [50,50],
-            gutterSize: 8,
-            direction: 'vertical',
-            onDragEnd: () => {
-              this.$nextTick(() => {
-                this.tableHeight = this.$refs.bottomPanel.clientHeight
-                this.updateEditorHeight()
-              })
-            }
-          })
-
-          this.$nextTick(() => {
-            this.tableHeight = this.$refs.bottomPanel.clientHeight
-            this.updateEditorHeight()
-          })
+      this.$nextTick(() => {
+        this.split = Split(this.splitElements, {
+          elementStyle: (_dimension, size) => ({
+              'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [50,50],
+          gutterSize: 8,
+          direction: 'vertical',
+          onDragEnd: () => {
+            this.$nextTick(() => {
+              this.tableHeight = this.$refs.bottomPanel.clientHeight
+              this.updateEditorHeight()
+            })
+          }
         })
-      },
-      handleEditorInitialized() {
-        // this gives the dom a chance to kick in and render these
-        // before we try to read their heights
+
         this.$nextTick(() => {
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
         })
-      },
-      close() {
-        this.$root.$emit(AppEvent.closeTab)
-      },
-      download(format) {
-        this.$refs.table.download(format)
-      },
-      clipboard() {
-        this.$refs.table.clipboard()
-      },
-      clipboardJson() {
-        // eslint-disable-next-line
-        // @ts-ignore
-        const data = this.$refs.table.clipboard('json')
-      },
-      clipboardMarkdown() {
-        // eslint-disable-next-line
-        // @ts-ignore
-        const data = this.$refs.table.clipboard('md')
-      },
-      selectEditor() {
-        this.focusElement = 'text-editor'
-      },
-      selectTitleInput() {
-        this.$refs.titleInput.select()
-      },
-      updateEditorHeight() {
-        this.editor.height = this.$refs.topPanel.clientHeight
-      },
-      clear() {
-        this.selectedResult = 0;
-        this.results = [];
-      },
-      async submitMongoCommand(command) {
-        this.tab.isRunning = true
-        this.running = true
-        this.error = null
-        this.selectedResult = 0
-
-        try {
-          const cmdStartTime = new Date();
-          const results = await this.connection.executeCommand(command);
-          const cmdEndTime = new Date();
-
-          // eslint-disable-next-line
-          // @ts-ignore
-          this.executeTime = cmdEndTime - cmdStartTime;
-          results.forEach((result) => {
-            result.rowCount = result.rowCount || 0
-
-            // TODO (matthew): remove truncation logic somewhere sensible
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
-              result.truncated = true
-              result.totalRowCount = result.rowCount
-            }
-          })
-          const printable = results.find((r) => !!r.output);
-          if (printable) {
-            this.mongoOutputResult = printable
-          } else {
-            this.mongoOutputResult = {
-              output: ''
-            }
-          }
-          // get rid of old empty results
-          this.results = Object.freeze([...this.results.filter((r) => !!r.rows?.length), ...results])
-          log.info('RESULTS: ', this.results)
-          const nonEmptyResult = _.chain(this.results).findLastIndex((r) => !!r.rows?.length).value()
-          console.log("non empty result", nonEmptyResult)
-          this.selectedResult = nonEmptyResult === -1 ? this.results.length - 1 : nonEmptyResult;
-        } catch (ex) {
-          this.mongoOutputResult = {
-            output: ex.message
-          }
-          log.error(ex)
-          if(this.running) {
-            this.error = ex
-          }
-        } finally {
-          this.running = false
-          this.tab.isRunning = false
-        }
-      },
-      updateTextEditorFocus(focused: boolean) {
-        if (!focused) {
-          this.onTextEditorBlur?.()
-        }
-      },
-      async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
-        if (target) {
-          this.focusElement = target
-        } else {
-          this.focusElement = this.focusElement === 'text-editor'
-            ? 'table'
-            : 'text-editor'
-        }
-      },
-      blurTextEditor() {
-        let timedOut = false
-        let resolved = false
-        return new Promise<void>((resolvePromise) => {
-          const resolve = () => {
-            this.onTextEditorBlur = null
-            resolvePromise()
-          }
-          this.onTextEditorBlur = () => {
-            resolved = true
-            if (!timedOut) {
-              resolve()
-            }
-          }
-          setTimeout(() => {
-            if (!resolved) {
-              timedOut = true
-              log.warn('Timed out waiting for text editor to blur')
-              resolve()
-            }
-          }, 1000)
-          this.focusingElement = 'none'
-        })
-      },
+      })
     },
-    async mounted() {
-      if (this.shouldInitialize) this.initialize()
-
-      this.containerResizeObserver = new ResizeObserver(() => {
+    handleEditorInitialized() {
+      // this gives the dom a chance to kick in and render these
+      // before we try to read their heights
+      this.$nextTick(() => {
+        this.tableHeight = this.$refs.bottomPanel.clientHeight
         this.updateEditorHeight()
       })
-      this.containerResizeObserver.observe(this.$refs.container)
+    },
+    close() {
+      this.$root.$emit(AppEvent.closeTab)
+    },
+    async cancelQuery() {
+      if (this.running && this.runningQuery) {
+        this.running = false
+        this.info = 'Command Execution Cancelled'
+        await this.runningQuery.cancel();
+        this.runningQuery = null;
+      }
+    },
+    download(format) {
+      this.$refs.table.download(format)
+    },
+    clipboard() {
+      this.$refs.table.clipboard()
+    },
+    clipboardJson() {
+      // eslint-disable-next-line
+      // @ts-ignore
+      const data = this.$refs.table.clipboard('json')
+    },
+    clipboardMarkdown() {
+      // eslint-disable-next-line
+      // @ts-ignore
+      const data = this.$refs.table.clipboard('md')
+    },
+    selectEditor() {
+      this.focusElement = 'text-editor'
+    },
+    selectTitleInput() {
+      this.$refs.titleInput.select()
+    },
+    updateEditorHeight() {
+      this.editor.height = this.$refs.topPanel.clientHeight
+    },
+    clear() {
+      this.selectedResult = 0;
+      this.results = [];
+    },
+    async submitMongoCommand(command) {
+      this.tab.isRunning = true
+      this.running = true
+      this.error = null
+      this.selectedResult = 0
 
-      if (this.active) {
-        await this.$nextTick()
-        this.focusElement = 'text-editor'
+      try {
+        this.runningQuery = await this.connection.query(command);
+        const cmdStartTime = new Date();
+        const results = await this.runningQuery.execute();
+        const cmdEndTime = new Date();
+
+        // eslint-disable-next-line
+        // @ts-ignore
+        this.executeTime = cmdEndTime - cmdStartTime;
+        results.forEach((result) => {
+          result.rowCount = result.rowCount || 0
+
+          // TODO (matthew): remove truncation logic somewhere sensible
+          if (result.rowCount > this.$config.maxResults) {
+            result.rows = _.take(result.rows, this.$config.maxResults)
+            result.truncated = true
+            result.totalRowCount = result.rowCount
+          }
+        })
+        const printable = results.find((r) => !!r.output);
+        if (printable) {
+          this.mongoOutputResult = printable
+        } else {
+          this.mongoOutputResult = {
+            output: ''
+          }
+        }
+        // get rid of old empty results
+        this.results = Object.freeze([...this.results.filter((r) => !!r.rows?.length), ...results])
+        log.info('RESULTS: ', this.results)
+        const nonEmptyResult = _.chain(this.results).findLastIndex((r) => !!r.rows?.length).value()
+        console.log("non empty result", nonEmptyResult)
+        this.selectedResult = nonEmptyResult === -1 ? this.results.length - 1 : nonEmptyResult;
+      } catch (ex) {
+        this.mongoOutputResult = {
+          output: ex.message
+        }
+        log.error(ex)
+        if(this.running) {
+          this.error = ex
+        }
+      } finally {
+        this.running = false
+        this.tab.isRunning = false
       }
     },
-    beforeDestroy() {
-      if(this.split) {
-        this.split.destroy()
+    updateTextEditorFocus(focused: boolean) {
+      if (!focused) {
+        this.onTextEditorBlur?.()
       }
-      this.containerResizeObserver.disconnect()
     },
-  }
+    async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
+      if (target) {
+        this.focusElement = target
+      } else {
+        this.focusElement = this.focusElement === 'text-editor'
+          ? 'table'
+          : 'text-editor'
+      }
+    },
+    blurTextEditor() {
+      let timedOut = false
+      let resolved = false
+      return new Promise<void>((resolvePromise) => {
+        const resolve = () => {
+          this.onTextEditorBlur = null
+          resolvePromise()
+        }
+        this.onTextEditorBlur = () => {
+          resolved = true
+          if (!timedOut) {
+            resolve()
+          }
+        }
+        setTimeout(() => {
+          if (!resolved) {
+            timedOut = true
+            log.warn('Timed out waiting for text editor to blur')
+            resolve()
+          }
+        }, 1000)
+        this.focusingElement = 'none'
+      })
+    },
+  },
+  async mounted() {
+    if (this.shouldInitialize) this.initialize()
+
+    this.containerResizeObserver = new ResizeObserver(() => {
+      this.updateEditorHeight()
+    })
+    this.containerResizeObserver.observe(this.$refs.container)
+
+    if (this.active) {
+      await this.$nextTick()
+      this.focusElement = 'text-editor'
+    }
+  },
+  beforeDestroy() {
+    if(this.split) {
+      this.split.destroy()
+    }
+    this.containerResizeObserver.disconnect()
+  },
+});
 </script>
 
