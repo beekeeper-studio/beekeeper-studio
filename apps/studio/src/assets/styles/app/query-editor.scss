@@ -130,8 +130,11 @@
 
   }
 
-  .CodeMirror {
-    padding-bottom: 0.25rem;
+  .BksSqlTextEditor {
+    min-height: 0;
+    .CodeMirror {
+      padding-bottom: 0.25rem;
+    }
   }
 
   .CodeMirror-linenumbers {
