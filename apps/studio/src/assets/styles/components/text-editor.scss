@@ -1,3 +1,5 @@
+@import "./text-editor-plugins/partial-read-only.scss";
+
 .text-editor {
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
@@ -34,5 +36,11 @@
 
   .CodeMirror-guttermaker-subtle {
     color: rgba($theme-base, 0.25);
+  }
+
+  .bks-error-marker {
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: rgba($brand-danger, 0.6);
   }
 }
