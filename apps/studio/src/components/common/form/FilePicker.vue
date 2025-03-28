@@ -46,6 +46,11 @@
 /* options and all for the native file picker can be found here https://www.electronjs.org/docs/latest/api/dialog */
 export default {
   props: {
+    allowedFileExtensions:{
+      type: Array,
+      required: false,
+      default: () => ([])
+    },
     value: {
       required: true,
     },
@@ -119,7 +124,8 @@ export default {
       }
 
       const dialogConfig = {
-        properties: ['openFile']
+        properties: ['openFile'],
+        filters: [{ name: 'Allowed File Extensions', extensions: this.allowedFileExtensions }]
       }
 
       if (this.defaultPath.toString().length > 0) {
