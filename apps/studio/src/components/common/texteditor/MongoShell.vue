@@ -61,10 +61,22 @@ export default {
   computed: {
     ...mapGetters({ 'userKeymap': 'settings/userKeymap' }),
     ...mapState(['connection']),
+    prompt() {
+      const maxLength = 50;
+      if (this.promptSymbol.length <= maxLength) return this.promptSymbol;
+
+      const startLength = Math.floor((maxLength - 3) / 2);
+      const endLength = maxLength - 3 - startLength;
+
+      const start = this.promptSymbol.substring(0, startLength);
+      const end = this.promptSymbol.substring(this.promptSymbol.length - endLength);
+
+      return `${start}...${end}`
+    },
     hintOptions() {
       return {
         promptLine: this.promptLine,
-        promptSymbol: this.promptSymbol,
+        promptSymbol: this.prompt,
         connection: this.connection
       }
     },
@@ -174,13 +186,15 @@ export default {
       });
 
       cm.getWrapperElement().classList.add("text-editor");
-      cm.setValue(this.promptSymbol);
-      cm.setCursor({ line: cm.lineCount() - 1, ch: this.promptSymbol.length });
+      cm.setValue(this.prompt);
+      cm.setCursor({ line: cm.lineCount() - 1, ch: this.prompt.length });
 
       cm.on("beforeChange", (_cm, change) => {
         // Prevent editing before current prompt
-        if (change.from.line < this.promptLine || (change.from.line === this.promptLine && change.from.ch < this.promptSymbol.length)) {
-          change.cancel();
+        if (change.from.line < this.promptLine || (change.from.line === this.promptLine && change.from.ch < this.prompt.length)) {
+          // Update the change to type in the prompt, and move the cursor there
+          change.update({ line: this.shell.lastLine(), ch: Infinity }, { line: this.shell.lastLine(), ch: Infinity });
+          this.shell.setCursor({ line: this.shell.lastLine(), ch: Infinity });
         }
       })
 
@@ -240,7 +254,7 @@ export default {
     async executeCommand() {
       const doc = this.shell.getDoc();
       const lastLineNum = this.shell.lastLine();
-      const userCommand = doc.getRange({ line: this.promptLine, ch: this.promptSymbol.length }, { line: lastLineNum, ch: Infinity }).trim();
+      const userCommand = doc.getRange({ line: this.promptLine, ch: this.prompt.length }, { line: lastLineNum, ch: Infinity }).trim();
 
       if (!userCommand) return;
 
@@ -257,10 +271,10 @@ export default {
     },
     resetPrompt() {
       const doc = this.shell.getDoc();
-      doc.replaceRange(`\n${this.promptSymbol}`, { line: this.shell.lineCount(), ch: 0 });
+      doc.replaceRange(`\n${this.prompt}`, { line: this.shell.lineCount(), ch: 0 });
 
       this.promptLine = this.shell.lastLine();
-      this.shell.setCursor({ line: this.promptLine, ch: this.promptSymbol.length });
+      this.shell.setCursor({ line: this.promptLine, ch: this.prompt.length });
 
       this.$nextTick(() => {
         setTimeout(() => this.shell.scrollTo(null, this.shell.getScrollInfo().height), 10);
@@ -273,11 +287,11 @@ export default {
       this.historyIndex += direction;
       if (this.historyIndex < 0) this.historyIndex = 0;
       if (this.historyIndex >= this.commandHistory.length) {
-        doc.replaceRange('', { line: this.promptLine, ch: this.promptSymbol.length }, { line: this.shell.lastLine(), ch: Infinity });
+        doc.replaceRange('', { line: this.promptLine, ch: this.prompt.length }, { line: this.shell.lastLine(), ch: Infinity });
         return;
       }
 
-      doc.replaceRange(this.commandHistory[this.historyIndex], { line: this.promptLine, ch: this.promptSymbol.length }, { line: this.shell.lastLine(), ch: Infinity });
+      doc.replaceRange(this.commandHistory[this.historyIndex], { line: this.promptLine, ch: this.prompt.length }, { line: this.shell.lastLine(), ch: Infinity });
     },
     handleSwitchUserKeymap(value) {
       this.initialize({ userKeymap: value });

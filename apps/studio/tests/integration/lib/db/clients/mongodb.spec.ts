@@ -634,6 +634,244 @@ describe(`MongoDB`, () => {
     });
   });
 
+  describe("executeQuery Function", () => {
+    // Helper function to generate unique collection names
+    const getTestCollectionName = (testName: string) => {
+      return `query_test_${testName}_${Date.now()}`;
+    };
+    
+    it("should execute basic find command", async () => {
+      const result = await connection.executeQuery("db.users.find({})");
+      
+      // Check that we have results
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+
+      // Validate the result structure
+      const queryResult = result[0];
+      expect(queryResult.rows).toBeDefined();
+      expect(queryResult.rows.length).toBe(5); // From the setupDB script
+      expect(queryResult.rowCount).toBe(5);
+      expect(queryResult.fields).toBeDefined();
+
+      // Validate the data content - check for existence of expected fields
+      const firstRow = queryResult.rows[0];
+      expect(firstRow).toHaveProperty('name');
+      expect(firstRow).toHaveProperty('age');
+      expect(firstRow).toHaveProperty('email');
+    });
+
+    it("should execute find command with filter", async () => {
+      const result = await connection.executeQuery("db.users.find({ age: 30 })");
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      const queryResult = result[0];
+      expect(queryResult.rowCount).toBe(1);
+      
+      const user = queryResult.rows[0];
+      expect(user.name).toBe('Bob');
+      expect(user.age).toBe(30);
+      expect(user.email).toBe('bob@example.com');
+    });
+
+    it("should execute findOne command", async () => {
+      const result = await connection.executeQuery("db.users.findOne({ name: 'Alice' })");
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      const queryResult = result[0];
+      expect(queryResult.rows.length).toBe(1);
+      
+      const user = queryResult.rows[0];
+      expect(user.name).toBe('Alice');
+      expect(user.age).toBe(25);
+    });
+
+    it("should execute projection in find command", async () => {
+      const result = await connection.executeQuery("db.users.find({}, { name: 1, _id: 0 })");
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      const queryResult = result[0];
+      expect(queryResult.rows.length).toBe(5);
+      
+      // Check that only name field is returned (and not _id, age, or email)
+      const firstUser = queryResult.rows[0];
+      expect(Object.keys(firstUser)).toEqual(['name']);
+      expect(firstUser).not.toHaveProperty('_id');
+      expect(firstUser).not.toHaveProperty('age');
+      expect(firstUser).not.toHaveProperty('email');
+    });
+
+    it("should handle sort in find command", async () => {
+      const result = await connection.executeQuery("db.users.find({}).sort({ age: -1 })");
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      const queryResult = result[0];
+      expect(queryResult.rows.length).toBe(5);
+      
+      // Check that results are sorted by age in descending order
+      const ages = queryResult.rows.map(user => user.age);
+      expect(ages).toEqual([45, 40, 35, 30, 25]);
+    });
+
+    it("should handle limit in find command", async () => {
+      const result = await connection.executeQuery("db.users.find({}).limit(2)");
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      const queryResult = result[0];
+      expect(queryResult.rows.length).toBe(2);
+    });
+
+    it("should handle skip in find command", async () => {
+      // Get all users sorted by age ascending for reference
+      const allUsersResult = await connection.executeQuery("db.users.find({}).sort({ age: 1 })");
+      const allUsers = allUsersResult[0].rows;
+      
+      // Now get users with skip
+      const result = await connection.executeQuery("db.users.find({}).sort({ age: 1 }).skip(2)");
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      const queryResult = result[0];
+      expect(queryResult.rows.length).toBe(3); // 5 total - 2 skipped = 3
+      
+      // First user in skipped result should be the third user in the full result
+      expect(queryResult.rows[0].age).toBe(allUsers[2].age);
+    });
+
+    it("should execute count command", async () => {
+      const result = await connection.executeQuery("db.users.countDocuments({})");
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      // Find a result with rows that has a count property
+      const countResult = result.find(r => r.rows && r.rows.length > 0 && r.rows[0].count !== undefined);
+      
+      // We should have a count result
+      expect(countResult).toBeDefined();
+      
+      // And it should be 5
+      expect(countResult.rows[0].count).toBe(5);
+    });
+
+    it("should handle complex aggregation pipeline", async () => {
+      const result = await connection.executeQuery(`
+        db.jobs.aggregate([
+          { $match: { salary: { $gte: 100000 } } },
+          { $group: { _id: "$type", averageSalary: { $avg: "$salary" }, count: { $sum: 1 } } },
+          { $sort: { averageSalary: -1 } }
+        ])
+      `);
+      
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+      
+      // Find a result with rows containing our aggregation data
+      const resultWithRows = result.find(r => r.rows && r.rows.length > 0);
+      expect(resultWithRows).toBeDefined();
+      expect(resultWithRows.rows.length).toBeGreaterThan(0);
+      
+      // Check structure of aggregation results
+      const firstResult = resultWithRows.rows[0];
+      expect(firstResult).toHaveProperty('_id');       // group by field
+      expect(firstResult).toHaveProperty('averageSalary');
+      expect(firstResult).toHaveProperty('count');
+    });
+
+    it("should handle multi-statement commands", async () => {
+      const testCollection = getTestCollectionName('multi_statement');
+      
+      try {
+        // Create a test collection and insert data using multi-statement command
+        const result = await connection.executeQuery(`
+          db.createCollection("${testCollection}");
+          db.${testCollection}.insertOne({ test: "multi-statement" });
+          db.${testCollection}.find({});
+        `);
+        
+        expect(result).toBeDefined();
+        
+        // The last statement's result should contain the inserted document
+        const lastResult = result.filter(r => r.rows && r.rows.length > 0).pop();
+        expect(lastResult).toBeDefined();
+        expect(lastResult.rows[0].test).toBe("multi-statement");
+      } finally {
+        // Clean up
+        try {
+          await connection.dropElement(testCollection, DatabaseElement.TABLE);
+        } catch (e) {
+          // Ignore errors
+        }
+      }
+    });
+
+    it("should handle updates and return appropriate results", async () => {
+      const testCollection = getTestCollectionName('update_query');
+      
+      try {
+        // Create a test collection
+        await connection.createTable({ table: testCollection });
+        
+        // Insert test documents
+        await connection.executeQuery(`
+          db.${testCollection}.insertMany([
+            { value: "initial1" },
+            { value: "initial2" }
+          ])
+        `);
+        
+        // Execute update
+        const result = await connection.executeQuery(`
+          db.${testCollection}.updateMany(
+            { value: /initial/ },
+            { $set: { value: "updated", updated: true } }
+          )
+        `);
+        
+        expect(result).toBeDefined();
+        
+        // Verify the update worked by checking the collection
+        const verifyResult = await connection.executeQuery(`db.${testCollection}.find({})`);
+        const updatedDocs = verifyResult[0].rows;
+        
+        expect(updatedDocs.length).toBe(2);
+        expect(updatedDocs[0].value).toBe("updated");
+        expect(updatedDocs[0].updated).toBe(true);
+        expect(updatedDocs[1].value).toBe("updated");
+        expect(updatedDocs[1].updated).toBe(true);
+      } finally {
+        // Clean up
+        try {
+          await connection.dropElement(testCollection, DatabaseElement.TABLE);
+        } catch (e) {
+          // Ignore errors
+        }
+      }
+    });
+
+    it("should handle errors gracefully", async () => {
+      try {
+        // Intentionally invalid query
+        await connection.executeQuery("db.invalidOperation()");
+        fail("Should have thrown an error");
+      } catch (error) {
+        // This is expected - the function should reject with an error
+        expect(error).toBeDefined();
+      }
+    });
+  });
+
   describe("Schema Validation", () => {
     // Helper function to generate unique collection names
     const getTestCollectionName = (testName: string) => {

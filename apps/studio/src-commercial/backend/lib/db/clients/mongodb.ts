@@ -9,7 +9,6 @@ import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
 import { ElectronRuntime as MongoRuntime } from '@mongosh/browser-runtime-electron';
 import { NodeDriverServiceProvider } from '@mongosh/service-provider-node-driver';
-import vm from "vm";
 import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import EventEmitter from "events";
@@ -605,7 +604,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async getCompletions(cmd: string): Promise<string[]> {
-    log.info('GETTING COMPLETIONS FOR: ', cmd)
     return (await this.runtime.getCompletions(cmd)).map((c) => c.completion)
   }
 
@@ -619,7 +617,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const listener = {
       onPrint: (value): void => {
         value.map((v) => {
-          log.info("PRINT: ", v)
           results.push({
             output: v.printable
           })
@@ -630,10 +627,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     this.runtime.setEvaluationListener(listener);
 
     const ev = await this.runtime.evaluate(queryText);
-    log.info("EVAL: ", JSON.stringify(ev))
 
     let fields = [];
-    if (ev.type === 'Cursor') {
+    if (ev.type === 'Cursor' || ev.type === 'AggregationCursor') {
       if (ev.printable?.documents?.length > 0) {
         fields = Object.keys(ev.printable?.documents[0]).map((k) => ({
           name: k,
@@ -662,6 +658,14 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         command: queryText
       })
     } else if (ev.type === null && ev.printable) {
+      if (typeof ev.printable === 'number') {
+        results.push({
+          rows: [{ count: ev.printable }],
+          rowCount: 1,
+          fields: [{ name: 'count', id: 'count' }],
+          command: queryText
+        });
+      }
       if (ev.printable?.length > 0) {
         fields = Object.keys(ev.printable[0]).map((k) => ({
           name: k,
@@ -676,7 +680,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         command: queryText
       })
     }
-    log.info("RESULTS: ", results)
+    log.debug("RESULTS: ", results);
 
     return results;
   }
