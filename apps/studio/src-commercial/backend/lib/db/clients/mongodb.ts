@@ -721,20 +721,21 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           fields: [{ name: 'count', id: 'count' }],
           command: commandText
         });
+      } else {
+        if (ev.printable?.length > 0) {
+          fields = Object.keys(ev.printable[0]).map((k) => ({
+            name: k,
+            id: k
+          }));
+        }
+        results.push({
+          rows: ev.printable,
+          rowCount: ev.printable?.length,
+          fields,
+          tableName: ev.source?.namespace?.collection ?? 'mycollection',
+          command: commandText
+        })
       }
-      if (ev.printable?.length > 0) {
-        fields = Object.keys(ev.printable[0]).map((k) => ({
-          name: k,
-          id: k
-        }));
-      }
-      results.push({
-        rows: ev.printable,
-        rowCount: ev.printable?.length,
-        fields,
-        tableName: ev.source?.namespace?.collection ?? 'mycollection',
-        command: commandText
-      })
     }
     log.debug("RESULTS: ", results);
 
