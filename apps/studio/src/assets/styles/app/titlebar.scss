@@ -36,13 +36,19 @@ $titlebar-actions-height:   30px;
     margin: -11px 0;
   }
   .titlebar-title {
-    position: absolute;
+    position: relative;
     left: 0;
     right: 0;
     text-align: center;
     color: $text-light;
     font-size: 0.85rem;
     line-height: 2;
+    align-self: flex-start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 25%;
+    margin-right: 10%;
     @media (max-width: 900px) {
       display: none;
     }

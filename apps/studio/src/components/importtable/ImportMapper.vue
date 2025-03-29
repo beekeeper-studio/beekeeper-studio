@@ -9,6 +9,14 @@
         >
         Truncate the table before importing new data
       </label>
+      <label class="checkbox-group">
+        <input
+          type="checkbox"
+          class="form-control"
+          v-model="runAsUpsert"
+        >
+        Import data as an Upsert (Be sure to map a primary key field!)
+      </label>
     </div>
     <div
       class="mapper-wrapper"
@@ -49,7 +57,8 @@ export default {
       previewData: null,
       nonNullableColumns: [],
       ignoreText: 'IGNORE',
-      truncateTable: false
+      truncateTable: false,
+      runAsUpsert: false
     }
   },
   computed: {
@@ -223,6 +232,7 @@ export default {
       const importOptions =  await this.tablesToImport.get(this.tableKey())
       importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
       importOptions.truncateTable = this.truncateTable
+      importOptions.runAsUpsert = this.runAsUpsert
 
       const importData = {
         table: this.tableKey(),
@@ -243,7 +253,7 @@ export default {
 
         acc.tableColumnNames[column.columnName] = `${columnText.join(' ')}`
 
-        if (!column.nullable && column.defaultValue === null) {
+        if (!column.nullable && !column.hasDefault) {
           acc.nonNullableColumns.push(column.columnName)
         }
 
@@ -272,5 +282,8 @@ export default {
 <style lang="scss" scoped>
   .mapper-wrapper {
     margin-top: 2rem;
+  }
+  .checkbox-group:last-of-type {
+    padding-top: 1rem;
   }
 </style>

@@ -8,7 +8,10 @@
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
-          <div class="card-flat padding" :class="determineLabelColor">
+          <div class="card-flat padding" v-if="!isConfigReady">
+            <content-placeholder-heading />
+          </div>
+          <div class="card-flat padding" :class="determineLabelColor" v-else>
             <div class="flex flex-between">
               <h3 class="card-title" v-if="!pageTitle">
                 New Connection
@@ -68,6 +71,12 @@
                 />
                 <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
                               :testing="testing"
+                />
+                <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config" :testing="testing" />
+                <duck-db-form
+                  v-else-if="config.connectionType === 'duckdb'"
+                  :config="config"
+                  :testing="testing"
                 />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
@@ -145,6 +154,8 @@ import ClickHouseForm from './connection/ClickHouseForm.vue'
 import LibSQLForm from './connection/LibSQLForm.vue'
 import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
+import MongoDbForm from './connection/MongoDBForm.vue'
+import DuckDbForm from './connection/DuckDBForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -160,12 +171,15 @@ import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm },
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm,
+    ContentPlaceholderHeading,
+  },
 
   data() {
     return {
@@ -180,7 +194,8 @@ export default Vue.extend({
       importError: null,
       sidebarShown: true,
       loadingSSOModalOpened: false,
-      version: this.$config.appVersion
+      version: this.$config.appVersion,
+      isConfigReady: false,
     }
   },
   computed: {
@@ -188,6 +203,9 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapGetters(['isUltimate']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
+    ...mapGetters({
+      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
+    }),
     communityConnectionTypes() {
       return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
     },
@@ -260,39 +278,46 @@ export default Vue.extend({
     }
   },
   async mounted() {
+    this.registerHandlers(this.rootBindings)
+    const components = [
+      this.$refs.sidebar.$refs.sidebar,
+      this.$refs.content
+    ]
+    const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
+    const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
+
+    this.split = Split(components, {
+      elementStyle: (_dimension, size) => ({
+        'flex-basis': `calc(${size}%)`,
+      }),
+      sizes: splitSizes,
+      gutterize: 8,
+      minSize: [25, 75],
+      expandToMin: true,
+      onDragEnd: () => {
+        const splitSizes = this.split.getSizes()
+        SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
+      }
+    } as Split.Options)
+
     if (!this.$store.getters.workspace) {
       await this.$store.commit('workspace', this.$store.state.localWorkspace)
     }
-    this.$util.send('appdb/saved/new').then((conn) => {
+
+    try {
+      const conn = await this.$util.send('appdb/saved/new')
       this.config = conn;
-    })
+      this.config.sshUsername = await window.main.fetchUsername()
+    } catch (e) {
+      log.error(e)
+      this.$noty.error(e.message)
+    } finally {
+      this.isConfigReady = true;
+    }
+
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
-    this.config.sshUsername = await window.main.fetchUsername()
-    this.$nextTick(() => {
-      const components = [
-        this.$refs.sidebar.$refs.sidebar,
-        this.$refs.content
-      ]
-      const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
-      const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
-
-      this.split = Split(components, {
-        elementStyle: (_dimension, size) => ({
-          'flex-basis': `calc(${size}%)`,
-        }),
-        sizes: splitSizes,
-        gutterize: 8,
-        minSize: [25, 75],
-        expandToMin: true,
-        onDragEnd: () => {
-          const splitSizes = this.split.getSizes()
-          SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
-        }
-      } as Split.Options)
-    })
     await this.$store.dispatch('credentials/load')
-    this.registerHandlers(this.rootBindings)
   },
   beforeDestroy() {
     if (this.split) {
@@ -362,6 +387,15 @@ export default Vue.extend({
       this.connectionError = null
       try {
         this.connecting = true
+        // If this is an existing used connection that doesn't have an associated saved connection
+        // we need to see if changes have been made to the config
+        if (this.config.connectionId === null && this.config.id) {
+          const oldConfig = this.usedConfigs.find((c) => c.id === this.config.id);
+          if (!_.isEqual(this.config, oldConfig)) {
+            this.config.id = null;
+          }
+        }
+
         await this.$store.dispatch('connect', this.config)
       } catch (ex) {
         this.connectionError = ex
@@ -411,6 +445,13 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
+
+        // This feels wrong but it works. It's undefined on savedConnections
+        if (this.config.connectionId === null) {
+          this.config.connectionId = id;
+          await this.$store.dispatch('data/usedconnections/save', this.config);
+        }
+
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed
         const connection = this.connections.find((c) => c.id === id)

@@ -96,7 +96,7 @@ nav:
       - user_guide/connecting/oracle-database.md
       - user_guide/connecting/amazon-rdb.md
       - user_guide/connecting/firebird.md
-  - Using Beekeeper Studio:
+  - Usage Guide:
     - user_guide/using-the-sql-editor.md
     - user_guide/editing-data.md
     - user_guide/data-export.md

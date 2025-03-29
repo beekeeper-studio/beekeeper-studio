@@ -221,7 +221,7 @@ const store = new Vuex.Store<State>({
       return getters.schemas.length > 1
     },
     connectionColor(state) {
-      return state.usedConfig ? state.usedConfig.labelColor : 'default'
+      return state.usedConfig?.labelColor ?? 'default'
     },
     schemas(state) {
       if (state.tables.find((t) => !!t.schema)) {
@@ -412,12 +412,12 @@ const store = new Vuex.Store<State>({
       let title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
-      if (context.getters.isUltimate) {
-        title += ' Ultimate Edition'
-      }
       if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
+      }
+      if (context.getters.isCommunity) {
+        title += ' - Free Version'
       }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
@@ -454,6 +454,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
 
+        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id }) 
       } else {
         throw "No username provided"
       }
@@ -505,6 +506,7 @@ const store = new Vuex.Store<State>({
     },
     async updateDatabaseList(context) {
       const databaseList = await context.state.connection.listDatabases();
+      log.info("databaseList: ", databaseList)
       context.commit('databaseList', databaseList)
     },
     async updateTables(context) {

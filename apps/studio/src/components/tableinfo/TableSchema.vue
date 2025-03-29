@@ -183,14 +183,12 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState(['database', 'connection']),
     hotkeys() {
-      if (!this.active) return {}
-      const result = {}
-      result['f5'] = this.refreshColumns.bind(this)
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-      result[this.ctrlOrCmd('r')] = this.refreshColumns.bind(this)
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'general.refresh': this.refreshColumns,
+        'general.addRow': this.addRow,
+        'general.save': this.submitApply,
+        'general.openInSqlEditor': this.submitSql,
+      })
     },
     editable() {
       // (sept 23) we don't need a primary key to make schemas editable
@@ -297,7 +295,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           minWidth: 90,
         }),
-        {
+        (this.disabledFeatures?.primary ? null : {
           title: 'Primary',
           field: 'primary',
           tooltip: false,
@@ -308,7 +306,7 @@ export default Vue.extend({
           },
           width: 70,
           cssClass: 'read-only never-editable',
-        },
+        }),
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
       return result.map((col) => {
@@ -385,8 +383,8 @@ export default Vue.extend({
       })
 
       const drops = this.removedRows.map((row) => row.getData()['columnName'])
-      
-      const reorder = (this.reorderedRows.length > 0) 
+
+      const reorder = (this.reorderedRows.length > 0)
         ? { oldOrder: this.initialColumns.slice(0), newOrder: this.tabulator.getData() }
         : null
 
@@ -477,7 +475,7 @@ export default Vue.extend({
         this.removedRows = _.without(this.removedRows, row)
       } else {
         if (this.disabledFeatures?.alter?.dropColumn) {
-          this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+          this.$noty.info(`Removing columns is not supported by ${this.dialect}`)
           return
         }
         this.removedRows.push(row)
