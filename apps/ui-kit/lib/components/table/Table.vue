@@ -349,6 +349,13 @@ export default Vue.extend({
 
         this.tabulator = tabulator
 
+        const unwatchTableColumns = this.$watch("tableColumns", () => {
+          this.setColumns(this.tableColumns);
+        });
+        const unwatchData = this.$watch("data", () => {
+          this.setData(this.data);
+        })
+
         tabulator.on("sortChanged", (sorters) => {
           this.$emit("bks-sorters-change", {
             sorters: sorters.map(({ field, dir }) => ({ field, dir }))
@@ -362,6 +369,8 @@ export default Vue.extend({
         tabulator.on('dataProcessed', this.maybeScrollAndSetWidths);
         tabulator.on("tableDestroyed", () => {
           this.$refs.table.removeEventListener("keydown", this.keydown);
+          unwatchTableColumns();
+          unwatchData();
         })
 
         this.$refs.table.addEventListener("keydown", this.keydown);
