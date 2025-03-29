@@ -16,7 +16,15 @@ export default defineConfig({
   plugins: [vue(), commonjs()],
   base: '/', // Set the base URL for the app
   optimizeDeps: {
-    exclude: []
+    include: [
+      'codemirror',
+      'lodash',
+      'sql-formatter',
+      'sql-query-identifier',
+      'tabulator-tables'
+    ],
+    exclude: [],
+    dedupe: ['vue']
   },
   resolve: {
     alias: {
@@ -24,7 +32,10 @@ export default defineConfig({
       "@commercial": path.resolve(__dirname, "./src-commercial"),
       "@shared": path.resolve(__dirname, "./src/shared"),
       "assets": path.resolve(__dirname, './src/assets'),
-      "@bksLogger": path.resolve(__dirname, './src/lib/log/rendererLogger')
+      "@bksLogger": path.resolve(__dirname, './src/lib/log/rendererLogger'),
+      "@beekeeperstudio/ui-kit/vue/sql-text-editor": path.resolve(__dirname, "../ui-kit/lib/components/sql-text-editor/SqlTextEditor.vue"),
+      "@beekeeperstudio/ui-kit/vue/table": path.resolve(__dirname, "../ui-kit/lib/components/table/Table.vue"),
+      "@beekeeperstudio/ui-kit/vue/entity-list": path.resolve(__dirname, "../ui-kit/lib/components/entity-list/EntityList.vue"),
     },
   },
   build: {
