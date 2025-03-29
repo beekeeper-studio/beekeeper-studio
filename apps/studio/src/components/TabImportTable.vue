@@ -113,6 +113,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import Stepper from './stepper/Stepper.vue'
   import ImportFile from './importtable/ImportFile.vue'
+  import ImportTable from './importtable/ImportTable.vue'
   import ImportMapper from './importtable/ImportMapper.vue'
   import ImportPreview from './importtable/ImportPreview.vue'
   import UpsellContent from '@/components/upsell/UpsellContent.vue'
@@ -131,11 +132,11 @@
       schema: {
         type: String,
         required: false,
-        default: ''
+        default: null
       },
       table: {
         type: String,
-        required: true,
+        required: false,
         default: ''
       },
       tab: {
@@ -160,7 +161,20 @@
             icon: 'attach_file',
             stepperProps: {
               schema: this.schema,
-              table: this.table
+              table: this.table,
+              tabId: this.tab.id
+            },
+            completed: false,
+            completePrevious: false,
+            nextButtonText: 'Select or Create Table',
+            nextButtonIcon: 'keyboard_arrow_right'
+          },
+          {
+            component: ImportTable,
+            title: 'Select/Create Table',
+            icon: 'grid_on',
+            stepperProps: {
+              tabId: this.tab.id
             },
             completed: false,
             completePrevious: false,
@@ -172,8 +186,7 @@
             title: 'Map to Table',
             icon: 'settings',
             stepperProps: {
-              schema: this.schema,
-              table: this.table
+              tabId: this.tab.id
             },
             completed: false,
             validateOnNext: true,
@@ -186,8 +199,7 @@
             title: 'Review & Execute',
             icon: 'check',
             stepperProps: {
-              schema: this.schema,
-              table: this.table
+              tabId: this.tab.id
             },
             completed: false,
             completePrevious: true,
@@ -208,14 +220,17 @@
         return `tab-import-table-statusbar-${this.tab.id}`
       },
       tableName () {
-        const schema = this.schema ? `${this.schema}.` : ''
-        return `${schema}${this.table}`
+        const schema = this.importTable?.schema ? `${this.importTable?.schema}.` : ''
+        return `${schema}${this.importTable?.name}`
       },
       dialectTitle () {
         return DialectTitles[this.dialect]
       },
       isSupported () {
         return !this.dialectData.disabledFeatures.importFromFile
+      },
+      importKey() {
+        return `new-import-${this.tab.id}`
       },
       tableKey() {
         const schema = this.schema ? `${this.schema}_` : ''
@@ -273,7 +288,9 @@
         this.importStarted = false
       },
       async handleImport() {
-        const importOptions = await this.tablesToImport.get(this.tableKey)
+        const importOptions = await this.tablesToImport.get(this.importKey)
+        this.schema = importOptions.table.schema
+        this.table = importOptions.table.name
         let importerClass
         if (!importOptions.importProcessId) {
           importerClass = await this.$util.send('import/init', { options: importOptions })
@@ -294,6 +311,54 @@
           this.tab.isRunning = false
         }
       }
+    },
+    mounted() {
+      const steps = [{
+        component: ImportFile,
+        title: 'Choose File',
+        icon: 'attach_file',
+        stepperProps: {
+          schema: this.schema,
+          table: this.table,
+          tabId: this.tab.id
+        },
+        completed: false,
+        completePrevious: false,
+        nextButtonText: 'Map to Table',
+        nextButtonIcon: 'keyboard_arrow_right'
+      }]
+      const latterSteps = [
+        {
+          component: ImportMapper,
+          title: 'Map to Table',
+          icon: 'settings',
+          stepperProps: {
+            schema: this.schema,
+            table: this.table,
+            tabId: this.tab.id
+          },
+          completed: false,
+          validateOnNext: true,
+          completePrevious: true,
+          nextButtonText: 'Review & Execute',
+          nextButtonIcon: 'keyboard_arrow_right'
+        },
+        {
+          component: ImportPreview,
+          title: 'Review & Execute',
+          icon: 'check',
+          stepperProps: {
+            schema: this.schema,
+            table: this.table,
+            tabId: this.tab.id
+          },
+          completed: false,
+          completePrevious: true,
+          nextButtonText: 'Run The Import',
+          nextButtonIcon: 'keyboard_arrow_right'
+        }
+      ]
+      this.importSteps = [...steps, ...latterSteps]
     }
   }
 </script>
