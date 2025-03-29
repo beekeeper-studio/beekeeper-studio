@@ -98,12 +98,13 @@ import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
+import { typedArrayToString } from '@/common/utils'
 
 const log = rawLog.scope("detail-view-sidebar");
 
 export default Vue.extend({
   components: { TextEditor, DetailViewSidebarUpsell },
-  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs"],
+  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs", "binaryEncoding"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -147,9 +148,9 @@ export default Vue.extend({
       }
       if (this.filter) {
         const filtered = deepFilterObjectProps(this.processedValue, this.filter);
-        return JSON.stringify(filtered, null, 2);
+        return JSON.stringify(filtered, this.replacer, 2);
       }
-      return JSON.stringify(this.processedValue, null, 2);
+      return JSON.stringify(this.processedValue, this.replacer, 2);
     },
     debouncedFilter: {
       get() {
@@ -285,6 +286,12 @@ export default Vue.extend({
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
+    replacer(_key: string, value: unknown) {
+      if (_.isTypedArray(value)) {
+        return typedArrayToString(value as ArrayBufferView, this.binaryEncoding)
+      }
+      return value
+    },
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
     },

@@ -155,9 +155,13 @@ import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
 import TextEditor from '@/components/common/texteditor/TextEditor.vue'
+import { typedArrayToString } from "@/common/utils";
 
 export default Vue.extend({
   name: "CellEditorModal",
+  props: {
+    binaryEncoding: String,
+  },
   data() {
     return {
       editorFocus: false,
@@ -202,8 +206,8 @@ export default Vue.extend({
     openModal(content: any, language: LanguageData, eventParams?: any) {
       if (content === null) {
         content = ""
-      } else if (ArrayBuffer.isView(content)) {
-        content = content.toString()
+      } else if (_.isTypedArray(content)) {
+        content = typedArrayToString(content, this.binaryEncoding)
       } else if (typeof content !== 'string') {
         content = JSON.stringify(content)
       }
