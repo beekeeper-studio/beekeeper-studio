@@ -86,6 +86,7 @@
             <x-label>Download as Markdown</x-label>
           </x-menuitem>
           <span
+            v-if="dialect !== 'mongodb'"
             v-tooltip="{
               content: downloadFullTooltip
             }"
@@ -204,6 +205,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['dialect']),
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
