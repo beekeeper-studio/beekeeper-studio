@@ -415,6 +415,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const result = this.$vHotkeyKeymap({
         'tab.nextTab': this.nextTab,
         'tab.previousTab': this.previousTab,
+        "ctrl+pageup": this.previousTab,
+        "ctrl+pagedown": this.nextTab,
         'tab.reopenLastClosedTab': this.reopenLastClosedTab,
         'tab.switchTab1': this.handleSwitchTab.bind(this, 0),
         'tab.switchTab2': this.handleSwitchTab.bind(this, 1),
