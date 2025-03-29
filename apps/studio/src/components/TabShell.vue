@@ -36,7 +36,7 @@
       ref="bottomPanel"
     >
       <progress-bar
-        @cancel="cancelQuery"
+        :canCancel="false"
         :message="runningText"
         v-if="running"
       />

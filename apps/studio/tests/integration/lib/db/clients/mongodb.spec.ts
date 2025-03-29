@@ -634,14 +634,14 @@ describe(`MongoDB`, () => {
     });
   });
 
-  describe("executeQuery Function", () => {
+  describe("executeCommand Function", () => {
     // Helper function to generate unique collection names
     const getTestCollectionName = (testName: string) => {
       return `query_test_${testName}_${Date.now()}`;
     };
     
     it("should execute basic find command", async () => {
-      const result = await connection.executeQuery("db.users.find({})");
+      const result = await connection.executeCommand("db.users.find({})");
       
       // Check that we have results
       expect(result).toBeDefined();
@@ -662,7 +662,7 @@ describe(`MongoDB`, () => {
     });
 
     it("should execute find command with filter", async () => {
-      const result = await connection.executeQuery("db.users.find({ age: 30 })");
+      const result = await connection.executeCommand("db.users.find({ age: 30 })");
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -677,7 +677,7 @@ describe(`MongoDB`, () => {
     });
 
     it("should execute findOne command", async () => {
-      const result = await connection.executeQuery("db.users.findOne({ name: 'Alice' })");
+      const result = await connection.executeCommand("db.users.findOne({ name: 'Alice' })");
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -691,7 +691,7 @@ describe(`MongoDB`, () => {
     });
 
     it("should execute projection in find command", async () => {
-      const result = await connection.executeQuery("db.users.find({}, { name: 1, _id: 0 })");
+      const result = await connection.executeCommand("db.users.find({}, { name: 1, _id: 0 })");
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -708,7 +708,7 @@ describe(`MongoDB`, () => {
     });
 
     it("should handle sort in find command", async () => {
-      const result = await connection.executeQuery("db.users.find({}).sort({ age: -1 })");
+      const result = await connection.executeCommand("db.users.find({}).sort({ age: -1 })");
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -722,7 +722,7 @@ describe(`MongoDB`, () => {
     });
 
     it("should handle limit in find command", async () => {
-      const result = await connection.executeQuery("db.users.find({}).limit(2)");
+      const result = await connection.executeCommand("db.users.find({}).limit(2)");
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -733,11 +733,11 @@ describe(`MongoDB`, () => {
 
     it("should handle skip in find command", async () => {
       // Get all users sorted by age ascending for reference
-      const allUsersResult = await connection.executeQuery("db.users.find({}).sort({ age: 1 })");
+      const allUsersResult = await connection.executeCommand("db.users.find({}).sort({ age: 1 })");
       const allUsers = allUsersResult[0].rows;
       
       // Now get users with skip
-      const result = await connection.executeQuery("db.users.find({}).sort({ age: 1 }).skip(2)");
+      const result = await connection.executeCommand("db.users.find({}).sort({ age: 1 }).skip(2)");
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -750,7 +750,7 @@ describe(`MongoDB`, () => {
     });
 
     it("should execute count command", async () => {
-      const result = await connection.executeQuery("db.users.countDocuments({})");
+      const result = await connection.executeCommand("db.users.countDocuments({})");
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -766,7 +766,7 @@ describe(`MongoDB`, () => {
     });
 
     it("should handle complex aggregation pipeline", async () => {
-      const result = await connection.executeQuery(`
+      const result = await connection.executeCommand(`
         db.jobs.aggregate([
           { $match: { salary: { $gte: 100000 } } },
           { $group: { _id: "$type", averageSalary: { $avg: "$salary" }, count: { $sum: 1 } } },
@@ -794,7 +794,7 @@ describe(`MongoDB`, () => {
       
       try {
         // Create a test collection and insert data using multi-statement command
-        const result = await connection.executeQuery(`
+        const result = await connection.executeCommand(`
           db.createCollection("${testCollection}");
           db.${testCollection}.insertOne({ test: "multi-statement" });
           db.${testCollection}.find({});
@@ -824,7 +824,7 @@ describe(`MongoDB`, () => {
         await connection.createTable({ table: testCollection });
         
         // Insert test documents
-        await connection.executeQuery(`
+        await connection.executeCommand(`
           db.${testCollection}.insertMany([
             { value: "initial1" },
             { value: "initial2" }
@@ -832,7 +832,7 @@ describe(`MongoDB`, () => {
         `);
         
         // Execute update
-        const result = await connection.executeQuery(`
+        const result = await connection.executeCommand(`
           db.${testCollection}.updateMany(
             { value: /initial/ },
             { $set: { value: "updated", updated: true } }
@@ -842,7 +842,7 @@ describe(`MongoDB`, () => {
         expect(result).toBeDefined();
         
         // Verify the update worked by checking the collection
-        const verifyResult = await connection.executeQuery(`db.${testCollection}.find({})`);
+        const verifyResult = await connection.executeCommand(`db.${testCollection}.find({})`);
         const updatedDocs = verifyResult[0].rows;
         
         expect(updatedDocs.length).toBe(2);
@@ -863,7 +863,7 @@ describe(`MongoDB`, () => {
     it("should handle errors gracefully", async () => {
       try {
         // Intentionally invalid query
-        await connection.executeQuery("db.invalidOperation()");
+        await connection.executeCommand("db.invalidOperation()");
         fail("Should have thrown an error");
       } catch (error) {
         // This is expected - the function should reject with an error
