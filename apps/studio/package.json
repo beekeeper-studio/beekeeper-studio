@@ -46,7 +46,7 @@
     "@mongosh/service-provider-node-driver": "^3.6.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@types/ini": "^4.1.0",
-    "axios": "^1.7.4",
+    "axios": "^1.8.2",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "better-sqlite3": "~11.1.2",
