@@ -1,5 +1,6 @@
 <template>
   <div class="account-status-button">
+    <language-switcher-button />
     <a
       class="nav-item account"
       :title="title"
@@ -106,9 +107,10 @@ import Vue from 'vue'
 import { mapState } from 'vuex'
 import pluralize from 'pluralize'
 import StatusBadge from './StatusBadge.vue'
+import LanguageSwitcherButton from '../connection/LanguageSwitcherButton.vue'
 
 export default Vue.extend({
-  components: { StatusBadge },
+  components: { StatusBadge, LanguageSwitcherButton },
   data() {
     return {
     }
