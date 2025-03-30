@@ -919,9 +919,7 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
-      const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
-      this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+      await this.getTableKeys();
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
 
@@ -1645,7 +1643,7 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
-            this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
+            await this.getTableKeys();
             resolve({
               last_page: 1,
               data
@@ -1681,6 +1679,11 @@ export default Vue.extend({
     },
     clearQueryError() {
       this.queryError = null
+    },
+    async getTableKeys() {
+      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
+      const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
+      this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
     },
     async refreshTable() {
       if (!this.tabulator) return;
