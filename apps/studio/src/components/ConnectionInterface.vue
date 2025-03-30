@@ -114,6 +114,9 @@
                   </div>
                 </div>
                 <SaveConnectionForm v-if="!shouldUpsell" :config="config" @save="save" />
+                <div class="to-the-right">
+                  <copy-connection-to-app :config="config" />
+                </div>
               </div>
             </form>
           </div>
@@ -142,6 +145,7 @@
 <script lang="ts">
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
 import MysqlForm from './connection/MysqlForm.vue'
+import CopyConnectionToApp from '@/components/copy-connection-to-app/CopyConnectionToApp.vue'
 import PostgresForm from './connection/PostgresForm.vue'
 import RedshiftForm from './connection/RedshiftForm.vue'
 import Sidebar from './common/Sidebar.vue'
@@ -178,7 +182,7 @@ const log = rawLog.scope('ConnectionInterface')
 
 export default Vue.extend({
   components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm,
-    ContentPlaceholderHeading,
+    ContentPlaceholderHeading, CopyConnectionToApp
   },
 
   data() {
@@ -491,4 +495,9 @@ export default Vue.extend({
 })
 </script>
 
-<style></style>
+<style>
+.to-the-right {
+  margin-top: 1rem;
+  text-align: right;
+}
+</style>

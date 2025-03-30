@@ -67,6 +67,7 @@
     "ini": "^5.0.0",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
+    "js-yaml": "^4.1.0",
     "jsonc-parser": "^3.3.1",
     "knex": "^2.4.1",
     "knex-firebird-dialect": "1.4.6",
