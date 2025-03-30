@@ -844,15 +844,6 @@ export default Vue.extend({
         this.enabledMinimalModeWhileInactive = this.minimalMode
       }
     },
-    tables: {
-      deep: true,
-      async handler(newTables, _) {
-        const updatedTable = newTables.find(t => t.name === this.table.name && t.schema === this.table.schema);
-        if (updatedTable) {
-          this.rawTableKeys = await this.connection.getTableKeys(updatedTable.name, updatedTable.schema);
-        }
-      },
-    },
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
@@ -1654,6 +1645,7 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
+            this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
             resolve({
               last_page: 1,
               data
@@ -1695,8 +1687,8 @@ export default Vue.extend({
 
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
-      await this.tabulator.setColumns(this.tableColumns)
       await this.tabulator.replaceData()
+      await this.tabulator.setColumns(this.tableColumns)
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
