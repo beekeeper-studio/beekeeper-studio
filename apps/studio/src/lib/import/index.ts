@@ -178,8 +178,9 @@ export default class Import {
       return 'numberType'
     }
 
-    return 'stringType'
+    if (data.length > 255) return 'longStringType'
 
+    return 'stringType'
   }
 
   async generateColumnTypesFromFile (): Promise<any> {

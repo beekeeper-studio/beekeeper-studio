@@ -8,6 +8,7 @@ export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
 interface ImportDefaultDataTypes {
   stringType?: string
+  longStringType?: string 
   dateType?: string
   booleanType?: string
   integerType?: string

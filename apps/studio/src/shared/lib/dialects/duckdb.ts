@@ -30,12 +30,13 @@ export const DuckDBData: DialectData = {
   usesOffsetPagination: true,
   requireDataset: false,
   importDataType: {
-    stringType: 'varchar',
+    stringType: 'varchar(255)',
+    longStringType: 'varchar',
     dateType: 'datetime',
     booleanType: 'boolean',
     integerType: 'integer',
     numberType: 'float',
-    defaultType: 'varchar'
+    defaultType: 'varchar(255)'
   },
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {

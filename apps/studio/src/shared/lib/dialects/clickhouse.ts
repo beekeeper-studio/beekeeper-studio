@@ -76,6 +76,7 @@ export const ClickHouseData: DialectData = {
   },
   importDataType: {
     stringType: 'String',
+    longStringType: 'String',
     dateType: 'Date',
     booleanType: 'Bool',
     integerType: 'INT',

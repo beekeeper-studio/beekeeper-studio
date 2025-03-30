@@ -40,12 +40,13 @@ export const PostgresData: DialectData = {
   defaultSchema: 'public',
   requireDataset: false,
   importDataType: {
-    stringType: 'varchar',
+    stringType: 'varchar(255)',
+    longStringType: 'text',
     dateType: 'date',
     booleanType: 'boolean',
     integerType: 'integer',
     numberType: 'float',
-    defaultType: 'varchar'
+    defaultType: 'varchar(255)'
   },
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);

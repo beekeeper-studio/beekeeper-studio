@@ -43,12 +43,13 @@ export const FirebirdData: DialectData = {
   constraintActions: [],
   wrapIdentifier,
   importDataType: {
-    stringType: 'VARCHAR',
+    stringType: 'VARCHAR(255)',
+    longStringType: 'BLOB SUB_TYPE TEXT',
     dateType: 'DATE',
     booleanType: 'BOOLEAN',
     integerType: 'INT',
     numberType: 'FLOAT',
-    defaultType: 'VARCHAR'
+    defaultType: 'VARCHAR(255)'
   },
   // NOTE I HAVE NO IDEA IF THIS IS RIGHT
   usesOffsetPagination: false,

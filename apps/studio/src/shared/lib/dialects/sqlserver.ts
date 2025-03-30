@@ -38,12 +38,13 @@ export const SqlServerData: DialectData = {
   wrapLiteral: defaultWrapLiteral,
   requireDataset: false,
   importDataType: {
-    stringType: 'varchar',
+    stringType: 'varchar(255)',
+    longStringType: 'nvarchar(max)',
     dateType: 'date',
     booleanType: 'bit',
     integerType: 'int',
     numberType: 'float',
-    defaultType: 'varchar'
+    defaultType: 'varchar(255)'
   },
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);

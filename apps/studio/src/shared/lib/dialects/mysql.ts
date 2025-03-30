@@ -29,12 +29,13 @@ export const MysqlData: DialectData = {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
   importDataType: {
-    stringType: 'varchar',
+    stringType: 'varchar(255)',
+    longStringType: 'text',
     dateType: 'date',
     booleanType: 'boolean',
     integerType: 'int',
     numberType: 'float',
-    defaultType: 'varchar'
+    defaultType: 'varchar(255)'
   },
   usesOffsetPagination: true,
   editorFriendlyIdentifier: (s) => s,
