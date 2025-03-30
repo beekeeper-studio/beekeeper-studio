@@ -84,6 +84,7 @@ export const ClickHouseData: DialectData = {
   },
   textEditorMode: "text/x-mysql",
   disabledFeatures: {
+    shell: true,
     triggers: true,
     createIndex: true,
     generatedColumns: true,

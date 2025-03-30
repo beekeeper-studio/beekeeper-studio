@@ -369,7 +369,6 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     mounted() {
-      document.addEventListener('mousedown', this.maybeUnselect)
       const components = [this.$refs.pinned, this.$refs.tables]
       this.split = Split(components, {
         elementStyle: (_dimension, size) => ({

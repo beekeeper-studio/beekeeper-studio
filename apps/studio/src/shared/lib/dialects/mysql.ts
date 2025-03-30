@@ -49,6 +49,7 @@ export const MysqlData: DialectData = {
   },
   textEditorMode: "text/x-mysql",
   disabledFeatures: {
+    shell: true,
     alter: {
       multiStatement: true,
       renameSchema: true,
