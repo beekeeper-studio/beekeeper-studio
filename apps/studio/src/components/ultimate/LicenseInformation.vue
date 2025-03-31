@@ -2,7 +2,7 @@
   <div class="license-information card card-flat padding">
     <h3 class="card-title flex flex-middle">
       <span class="expand">{{ license.email }}</span>
-      <a @click.prevent="destroy" class="btn btn-danger btn-icon"><i class="material-icons">delete_outline</i><span>Remove from app</span></a></h3>
+      <a v-if="!licenseStatus.fromFile" @click.prevent="destroy" class="btn btn-danger btn-icon"><i class="material-icons">delete_outline</i><span>Remove from app</span></a></h3>
     <div class="card-body">
       <table class="simple-table">
         <tr>

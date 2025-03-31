@@ -15,12 +15,28 @@ To solve this problem, if you purchased a yearly professional license or team li
 
 ## How to use an offline license
 
-
 1. Go to [the license management dashboard](https://app.beekeeperstudio.io/purchases)
-2. Click the `menu` button next to your license
-3. Click `Download offline key` - this will give your your offline license key
-4. Place the key in the Beekeeper Studio configuration directory:
-    - Linux: `~/.config/beekeeper-studio`
-    - Linux (snap): `~/snap/beekeeper-studio/current/.config/beekeeper-studio`
-    - Windows: `~\AppData\Roaming\beekeeper-studio`
-    - MacOS: `~/Library/Application Support/beekeeper-studio`
+2. Click on your license
+3. Click `Download offline key` - this will give you your offline license key
+  ![License](../assets/images/download-key.png)
+4. Save the file as `license.json` in the Beekeeper Studio configuration directory:
+    - Linux: `~/.config/beekeeper-studio/license.json`
+    - Linux (snap): `~/snap/beekeeper-studio/current/.config/beekeeper-studio/license.json`
+    - Windows: `~\AppData\Roaming\beekeeper-studio\license.json`
+    - MacOS: `~/Library/Application Support/beekeeper-studio/license.json`
+5. Restart Beekeeper Studio
+6. Check `Help -> Manage License Keys` and you should see it registered
+  ![Offline license](../assets/images/offline-license.png)
+
+## How offline licenses work
+
+The offline license file contains a digitally signed license key that Beekeeper Studio can verify locally without contacting any servers. When present, the offline license takes priority over any online licenses. The app verifies the license signature using a public key that's bundled with the application.
+
+## Troubleshooting
+
+If your offline license isn't recognized:
+
+- Make sure the file is named exactly `license.json`
+- Verify the file is in the correct directory for your operating system
+- Check that the file wasn't corrupted during download
+- Try downloading the license file again from the dashboard
