@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'trino'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -42,7 +42,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   oracle: "Oracle Database",
   duckdb: "DuckDB",
   clickhouse: "ClickHouse",
-  mongodb: "MongoDB"
+  mongodb: "MongoDB",
+  trino: "Trino"
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -53,6 +54,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'sqlite') return 'sqlite3'
   if (d === 'oracle') return 'oracledb'
   if (d === 'cassandra') return 'cassandra-knex'
+  if (d === 'trino') return 'postgres' // Using 'postgres' as the Knex dialect for Trino, which is what we do in the client
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
@@ -66,6 +68,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
   if (d === 'duckdb') return 'sql'
+  if (d === 'trino') return 'postgresql' // Trino has SQL syntax similar to PostgreSQL
   return 'mysql' // we want this as the default
 }
 

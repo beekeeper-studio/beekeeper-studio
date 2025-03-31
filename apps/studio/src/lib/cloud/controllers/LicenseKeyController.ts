@@ -2,9 +2,6 @@ import { ILicenseKey } from "@/common/interfaces/ILicenseKey";
 import { AxiosInstance } from "axios";
 import { res, url } from "../ClientHelpers";
 
-
-
-
 export class LicenseKeyController {
   constructor(protected axios: AxiosInstance) {
 
