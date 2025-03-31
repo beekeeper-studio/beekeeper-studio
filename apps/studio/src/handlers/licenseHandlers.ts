@@ -27,7 +27,7 @@ export const LicenseHandlers: ILicenseHandlers = {
     // priority over ALL other licenses
     const offline = OfflineLicense.load()
     let status = null
-    if (offline) {
+    if (offline && offline.isValid) {
       status = offline.toLicenseStatus()
     } else {
       await LicenseKey.getLicenseStatus();

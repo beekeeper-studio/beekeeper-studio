@@ -106,7 +106,7 @@ export const LicenseModule: Module<State, RootState>  = {
       } else {
         const result = await CloudClient.getLicense(window.platformInfo.cloudUrl, email, key);
         // if we got here, license is good.
-        let license = {} as TransportLicenseKey;
+        const license = {} as TransportLicenseKey;
         license.key = key;
         license.email = email;
         license.validUntil = new Date(result.validUntil);

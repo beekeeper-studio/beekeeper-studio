@@ -12,6 +12,7 @@ import { ConnectionFoldersController } from '@/lib/cloud/controllers/ConnectionF
 import { QueryFoldersController } from '@/lib/cloud/controllers/QueryFoldersController';
 import { UsedQueriesController } from '@/lib/cloud/controllers/UsedQueriesController';
 import { LicenseKeyController } from './controllers/LicenseKeyController';
+import { camelCaseObjectKeys, snakeCaseObjectKeys } from '@/common/utils';
 
 const log = rawLog.scope('cloudClient')
 
@@ -21,19 +22,11 @@ const defaultTransformRequest = ad.transformRequest as AxiosRequestTransformer[]
 const defaultTransformResponse = ad.transformResponse as AxiosResponseTransformer[]
 
 const snakeCaseData: AxiosRequestTransformer = (data) => {
-  const result = _.mapKeys(data, (_value, key) => {
-    return _.snakeCase(key)
-  })
-  return result
+  return snakeCaseObjectKeys(data)
 }
 
 const camelCaseData: AxiosResponseTransformer = (data) => {
-  if (_.isPlainObject(data)) {
-    const result = _.deepMapKeys(data, (_value, key) => _.camelCase(key))
-    return result
-
-  }
-  return data
+  return camelCaseObjectKeys(data)
 }
 
 
