@@ -114,7 +114,7 @@
                   </div>
                 </div>
                 <SaveConnectionForm v-if="!shouldUpsell" :config="config" @save="save" />
-                <div class="to-the-right">
+                <div class="to-the-right" v-if="!shouldUpsell">
                   <copy-connection-to-app :config="config" />
                 </div>
               </div>

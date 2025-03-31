@@ -6,17 +6,17 @@
         :name="modalName"
       >
         <div class="dialog-c-title">
-          Add Field
-          <a
+          {{ applicationTitle }}
+          <button
+            type="button"
             class="close-btn btn btn-fab"
-            href="#"
             @click.prevent="close"
           >
             <i class="material-icons">clear</i>
-          </a>
+          </button>
         </div>
-        <div>
-          {{ connectionText }}
+        <div class="code-container">
+          <pre><code>{{ connectionText }}</code></pre>
         </div>
         <div class="vue-dialog-buttons">
           <button 
@@ -26,7 +26,8 @@
           >
             Close
           </button>
-          <a
+          <button
+            type="button"
             v-clipboard:copy="connectionText"
             v-clipboard:success="onCopySuccess"
             v-clipboard:error="onCopyError"
@@ -38,7 +39,7 @@
               content_copy
             </span>
             Copy Code to Clipboard
-          </a>
+          </button>
         </div>
       </modal>
     </portal>
@@ -50,6 +51,9 @@
       <x-menu>
         <x-menuitem @click.prevent="copyConnection('ruby')">
           <x-label>To Ruby</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="copyConnection('knex')">
+          <x-label>To Knex.js</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="copyConnection('jdbc')">
           <x-label>To JDBC Connection String</x-label>
@@ -66,7 +70,14 @@
 </template>
 
 <script>
-import { generateRubyDatabaseYaml } from './utils'
+import { 
+  generateRubyDatabaseYaml,
+  generateKnexConnection,
+  generateJdbcConnectionString,
+  generateSqlAlchemyConnection,
+  generateConnectionString
+} from './utils'
+
 export default {
   props: ['config'],
   data() {
@@ -84,6 +95,26 @@ export default {
         case 'ruby':
           this.applicationTitle = 'Ruby Database.yaml'
           this.connectionText = generateRubyDatabaseYaml(this.config)
+          this.open()
+          break;
+        case 'knex':
+          this.applicationTitle = 'Knex.js Connection'
+          this.connectionText = generateKnexConnection(this.config)
+          this.open()
+          break;
+        case 'jdbc':
+          this.applicationTitle = 'JDBC Connection String'
+          this.connectionText = generateJdbcConnectionString(this.config)
+          this.open()
+          break;
+        case 'sqlalchemy':
+          this.applicationTitle = 'SQLAlchemy Connection'
+          this.connectionText = generateSqlAlchemyConnection(this.config)
+          this.open()
+          break;
+        case 'connectionstring':
+          this.applicationTitle = 'Connection String'
+          this.connectionText = generateConnectionString(this.config)
           this.open()
           break;
         default:
@@ -110,4 +141,16 @@ export default {
 </script>
 
 <style scoped>
+.code-container {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
 </style>
