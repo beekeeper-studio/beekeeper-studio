@@ -63,7 +63,6 @@ export function generateRubyDatabaseYaml(config: ISimpleConnection): string {
 }
 
 export function generateKnexConnection(config: ISimpleConnection): string {
-  console.log(config)
   const client = mapConnectionTypeToKnexClient(config.connectionType);
   
   const knexConfig = `// Knex.js connection configuration
