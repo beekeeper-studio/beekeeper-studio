@@ -5,18 +5,20 @@
         class="vue-dialog beekeeper-modal"
         :name="modalName"
       >
-        <div class="dialog-c-title">
-          {{ applicationTitle }}
-          <button
-            type="button"
-            class="close-btn btn btn-fab"
-            @click.prevent="close"
-          >
-            <i class="material-icons">clear</i>
-          </button>
-        </div>
-        <div class="code-container">
-          <pre><code>{{ connectionText }}</code></pre>
+        <div class="dialog-content">
+          <div class="dialog-c-title">
+            {{ applicationTitle }}
+            <button
+              type="button"
+              class="close-btn btn btn-fab"
+              @click.prevent="close"
+            >
+              <i class="material-icons">clear</i>
+            </button>
+          </div>
+          <div class="code-container">
+            <pre><code>{{ connectionText }}</code></pre>
+          </div>
         </div>
         <div class="vue-dialog-buttons">
           <button 
@@ -125,7 +127,6 @@ export default {
     },
     onCopySuccess() {
       this.$noty.info('Copied to Clipboard')
-      this.close()
     },
     onCopyError(e) {
       this.$noty.error(`Error copying to clipboard: ${e.message}`)
