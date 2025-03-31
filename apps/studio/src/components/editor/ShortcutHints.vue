@@ -126,7 +126,7 @@
         <span>Ctrl</span><span>F</span>
       </div>
     </div>
-    <div class="shortcut-item">
+    <div v-if="!isMongo" class="shortcut-item">
       <div>Find and Replace</div>
       <div
         class="shortcut"
@@ -145,6 +145,7 @@
 </template>
 <script type="text/javascript">
   export default {
+    props: ['isMongo'],
     data() {
       return {
 
