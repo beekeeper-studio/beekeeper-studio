@@ -154,4 +154,10 @@ pre {
   word-break: break-word;
   margin: 0;
 }
+
+.close-btn {
+  background-color: transparent;
+}
+
+
 </style>
