@@ -1,16 +1,17 @@
 import yaml from 'js-yaml'
-import { IDbConnectionServerConfig, ConnectionTypes, ConnectionType } from "../../lib/db/types";
+import { ConnectionTypes, ConnectionType } from "../../lib/db/types";
+import { ISimpleConnection } from '@/common/interfaces/IConnection';
 
-export function generateRubyDatabaseYaml(config: IDbConnectionServerConfig): string {
+export function generateRubyDatabaseYaml(config: ISimpleConnection): string {
   const adapter = ConnectionTypes.find(conn => conn.name.toLowerCase() === config.connectionType.toLowerCase()) ?? 'postgresql'
   
   const databaseYaml: any = {
     development: {
       adapter,
-      database: config.domain,
+      database: config.defaultDatabase,
       host: config.host,
       port: config.port,
-      username: config.user,
+      username: config.username,
       password: 'ENTER YOUR PASSWORD HERE',
       sslmode: config.ssl ? 'require' : 'disable',
       ssl: config.ssl ? {
@@ -23,10 +24,10 @@ export function generateRubyDatabaseYaml(config: IDbConnectionServerConfig): str
     },
     test: {
       adapter,
-      database: config.domain ? `${config.domain}_test` : undefined,
+      database: config.defaultDatabase ? `${config.defaultDatabase}_test` : undefined,
       host: config.host,
       port: config.port,
-      username: config.user,
+      username: config.username,
       password: 'ENTER YOUR PASSWORD HERE',
       sslmode: config.ssl ? 'require' : 'disable',
       ssl: config.ssl ? {
@@ -39,10 +40,10 @@ export function generateRubyDatabaseYaml(config: IDbConnectionServerConfig): str
     },
     production: {
       adapter,
-      database: config.domain,
+      database: config.defaultDatabase,
       host: config.host,
       port: config.port,
-      username: config.user,
+      username: config.username,
       password: 'ENTER YOUR PASSWORD HERE',
       sslmode: config.ssl ? 'require' : 'disable',
       ssl: config.ssl ? {
@@ -61,18 +62,20 @@ export function generateRubyDatabaseYaml(config: IDbConnectionServerConfig): str
   return yaml.dump(sanitizedConfig);
 }
 
-export function generateKnexConnection(config: IDbConnectionServerConfig): string {
-  const client = mapConnectionTypeToKnexClient(config.client as ConnectionType);
+export function generateKnexConnection(config: ISimpleConnection): string {
+  console.log(config)
+  const client = mapConnectionTypeToKnexClient(config.connectionType);
   
   const knexConfig = `// Knex.js connection configuration
-const knex = require('knex')({
+import knexLib from 'knex'
+export const knex = knexLib({
   client: '${client}',
   connection: {
     host: '${config.host || 'localhost'}',
-    port: ${config.port || getDefaultPortForType(config.client as ConnectionType)},
-    user: '${config.user || ''}',
+    port: ${config.port || getDefaultPortForType(config.connectionType)},
+    user: '${config.username || ''}',
     password: 'ENTER YOUR PASSWORD HERE',
-    database: '${config.domain || ''}',
+    database: '${config.defaultDatabase || ''}',
     ${config.ssl ? `
     ssl: {
       rejectUnauthorized: ${config.sslRejectUnauthorized},
@@ -84,20 +87,19 @@ const knex = require('knex')({
   },
   ${client === 'mysql' || client === 'mysql2' ? `pool: { min: 0, max: 7 },` : ''}
   debug: false,
-});
-
-module.exports = knex;`;
+});`;
 
   return knexConfig;
 }
 
-export function generateJdbcConnectionString(config: IDbConnectionServerConfig): string {
-  const connectionType = config.client as ConnectionType;
+export function generateJdbcConnectionString(config: ISimpleConnection): string {
+  const connectionType = config.connectionType;
   const host = config.host || 'localhost';
   const port = config.port || getDefaultPortForType(connectionType);
-  const database = config.domain || '';
-  const user = config.user || '';
-  
+  const database = config.defaultDatabase || '';
+  const user = config.username || '';
+  const serviceName = config.serviceName || '';
+
   let jdbcUrl = '';
   let additionalProps = config.ssl ? '?ssl=true' : '';
   
@@ -119,7 +121,6 @@ export function generateJdbcConnectionString(config: IDbConnectionServerConfig):
       jdbcUrl = `jdbc:sqlserver://${host}:${port};databaseName=${database}${additionalProps ? ';' + additionalProps.substring(1).replace(/&/g, ';') : ''}`;
       break;
     case 'oracle':
-      const serviceName = config.serviceName || '';
       if (serviceName) {
         jdbcUrl = `jdbc:oracle:thin:@//${host}:${port}/${serviceName}`;
       } else {
@@ -148,21 +149,20 @@ Connection connection = DriverManager.getConnection(url, user, password);`;
   return connectionString;
 }
 
-export function generateSqlAlchemyConnection(config: IDbConnectionServerConfig): string {
-  const connectionType = config.client as ConnectionType;
+export function generateSqlAlchemyConnection(config: ISimpleConnection): string {
+  const connectionType = config.connectionType;
   const host = config.host || 'localhost';
   const port = config.port || getDefaultPortForType(connectionType);
-  const database = config.domain || '';
-  const user = config.user || '';
+  const database = config.defaultDatabase || '';
+  const user = config.username || '';
+  const serviceName = config.serviceName || '';
   
-  let dialectName = '';
   let connectionUrl = '';
   let additionalImports = '';
   
   switch (connectionType) {
     case 'postgresql':
     case 'cockroachdb':
-      dialectName = 'postgresql';
       connectionUrl = `postgresql://${user}:PASSWORD@${host}:${port}/${database}`;
       if (config.ssl) {
         additionalImports = 'import ssl\nfrom sqlalchemy import create_engine\n';
@@ -172,17 +172,13 @@ export function generateSqlAlchemyConnection(config: IDbConnectionServerConfig):
     case 'mysql':
     case 'mariadb':
     case 'tidb':
-      dialectName = 'mysql';
       connectionUrl = `mysql+pymysql://${user}:PASSWORD@${host}:${port}/${database}`;
       break;
     case 'sqlserver':
-      dialectName = 'mssql';
       connectionUrl = `mssql+pyodbc://${user}:PASSWORD@${host}:${port}/${database}`;
       additionalImports = 'import pyodbc\n';
       break;
     case 'oracle':
-      dialectName = 'oracle';
-      const serviceName = config.serviceName || '';
       if (serviceName) {
         connectionUrl = `oracle+cx_oracle://${user}:PASSWORD@${host}:${port}/?service_name=${serviceName}`;
       } else {
@@ -192,15 +188,12 @@ export function generateSqlAlchemyConnection(config: IDbConnectionServerConfig):
       break;
     case 'sqlite':
     case 'libsql':
-      dialectName = 'sqlite';
       connectionUrl = `sqlite:///${database}`;
       break;
     case 'redshift':
-      dialectName = 'postgresql';
       connectionUrl = `postgresql+psycopg2://${user}:PASSWORD@${host}:${port}/${database}`;
       break;
     default:
-      dialectName = connectionType;
       connectionUrl = `${connectionType}://${user}:PASSWORD@${host}:${port}/${database}`;
   }
 
@@ -252,39 +245,43 @@ for user in users:
   return sqlAlchemyConfig;
 }
 
-export function generateConnectionString(config: IDbConnectionServerConfig): string {
-  const connectionType = config.client as ConnectionType;
+export function generateConnectionString(config: ISimpleConnection): string {
+  const connectionType = config.connectionType;
   const host = config.host || 'localhost';
   const port = config.port || getDefaultPortForType(connectionType);
-  const database = config.domain || '';
-  const user = config.user || '';
+  const database = config.defaultDatabase || '';
+  const user = config.username || '';
+  const serviceName = config.serviceName || '';
+  const projectId = config.bigQueryOptions?.projectId || '';
+
+  let connectionString = ''
+
   
   switch (connectionType) {
     case 'postgresql':
     case 'cockroachdb':
-      let pgConnectionString = `postgresql://${user}:PASSWORD@${host}:${port}/${database}`;
+      connectionString = `postgresql://${user}:PASSWORD@${host}:${port}/${database}`;
       if (config.ssl) {
-        pgConnectionString += '?sslmode=require';
+        connectionString += '?sslmode=require';
         if (config.sslRejectUnauthorized === false) {
-          pgConnectionString += '&sslmode=require';
+          connectionString += '&sslmode=require';
         }
       }
-      return pgConnectionString;
+      return connectionString;
     
     case 'mysql':
     case 'mariadb':
     case 'tidb':
-      let mysqlConnectionString = `mysql://${user}:PASSWORD@${host}:${port}/${database}`;
+      connectionString = `mysql://${user}:PASSWORD@${host}:${port}/${database}`;
       if (config.ssl) {
-        mysqlConnectionString += '?ssl=true';
+        connectionString += '?ssl=true';
       }
-      return mysqlConnectionString;
+      return connectionString;
     
     case 'sqlserver':
       return `Server=${host},${port};Database=${database};User Id=${user};Password=PASSWORD;${config.trustServerCertificate ? 'TrustServerCertificate=True;' : ''}`;
     
     case 'oracle':
-      const serviceName = config.serviceName || '';
       if (serviceName) {
         return `${user}/PASSWORD@${host}:${port}/${serviceName}`;
       } else {
@@ -296,11 +293,11 @@ export function generateConnectionString(config: IDbConnectionServerConfig): str
       return `sqlite:${database}`;
     
     case 'redshift':
-      let redshiftConnectionString = `postgresql://${user}:PASSWORD@${host}:${port}/${database}`;
+      connectionString = `postgresql://${user}:PASSWORD@${host}:${port}/${database}`;
       if (config.ssl) {
-        redshiftConnectionString += '?sslmode=require';
+        connectionString += '?sslmode=require';
       }
-      return redshiftConnectionString;
+      return connectionString;
     
     case 'clickhouse':
       return `clickhouse://${user}:PASSWORD@${host}:${port}/${database}`;
@@ -312,7 +309,6 @@ export function generateConnectionString(config: IDbConnectionServerConfig): str
       return `mongodb://${user}:PASSWORD@${host}:${port}/${database}`;
       
     case 'bigquery':
-      const projectId = config.bigQueryOptions?.projectId || '';
       return `bigquery://${projectId}`;
       
     case 'duckdb':
