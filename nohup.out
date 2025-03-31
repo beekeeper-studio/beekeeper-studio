@@ -1,0 +1,1100 @@
+yarn run v1.22.22
+$ yarn bks:dev
+$ yarn workspace beekeeper-studio electron:serve
+$ concurrently -c blue,green -n esbuild,vite 'yarn dev:esbuild' 'yarn dev:vite'
+[esbuild] $ ./esbuild.mjs watch
+[vite] $ vite dev
+[esbuild] Path to electron:  /Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron
+[esbuild] ESBUILD: Building Main  🏗
+[vite] Port 3003 is in use, trying another one...
+[vite] 
+[vite]   VITE v5.4.15  ready in 498 ms
+[vite] 
+[vite]   ➜  Local:   http://localhost:3004/
+[vite]   ➜  Network: use --host to expose
+[esbuild] ESBUILD: Built Main ✅
+[esbuild] spawned electron, pid:  9871
+[esbuild] 01:19:09.533 [MAIN] (BksConfig)           › Loading configs.
+[esbuild] 01:19:09.542 [MAIN] (BksConfig)           › Configs successfully loaded with 0 warnings.
+[esbuild] 01:19:09.542 [MAIN] (BksConfig)           › Warnings: []
+[esbuild] 01:19:09.543 [MAIN] (BksConfig)           › Default config: {
+[esbuild]   "general": {
+[esbuild]     "checkForUpdatesInterval": 86400000,
+[esbuild]     "dataSyncInterval": 30000,
+[esbuild]     "workspaceSyncInterval": 5000
+[esbuild]   },
+[esbuild]   "ui": {
+[esbuild]     "queryEditor": {
+[esbuild]       "maxResults": 50000
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "pageSize": 100,
+[esbuild]       "largeFieldWidth": 300,
+[esbuild]       "maxColumnWidth": 1000,
+[esbuild]       "minColumnWidth": 100,
+[esbuild]       "maxInitialWidth": 500,
+[esbuild]       "defaultColumnWidth": 125
+[esbuild]     },
+[esbuild]     "tableTriggers": {
+[esbuild]       "maxColumnWidth": 300
+[esbuild]     },
+[esbuild]     "tableList": {
+[esbuild]       "itemHeight": 22.8
+[esbuild]     },
+[esbuild]     "export": {
+[esbuild]       "errorNoticeTimeout": 60000
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "db": {
+[esbuild]     "mysql": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "mariadb": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "postgres": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "cockroachdb": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "redshift": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "keybindings": {
+[esbuild]     "general": {
+[esbuild]       "refresh": [
+[esbuild]         "f5",
+[esbuild]         "ctrlOrCmd+r"
+[esbuild]       ],
+[esbuild]       "addRow": "ctrlOrCmd+n",
+[esbuild]       "save": "ctrlOrCmd+s",
+[esbuild]       "openInSqlEditor": "ctrlOrCmd+shift+s",
+[esbuild]       "openQuickSearch": "ctrlOrCmd+p",
+[esbuild]       "copySelection": "ctrlOrCmd+c",
+[esbuild]       "pasteSelection": "ctrlOrCmd+v",
+[esbuild]       "cloneSelection": "ctrlOrCmd+d",
+[esbuild]       "deleteSelection": "delete"
+[esbuild]     },
+[esbuild]     "tab": {
+[esbuild]       "closeTab": "ctrlOrCmd+w",
+[esbuild]       "nextTab": "ctrlOrCmd+tab",
+[esbuild]       "previousTab": "ctrlOrCmd+shift+tab",
+[esbuild]       "reopenLastClosedTab": "ctrlOrCmd+shift+t",
+[esbuild]       "switchTab1": "alt+1",
+[esbuild]       "switchTab2": "alt+2",
+[esbuild]       "switchTab3": "alt+3",
+[esbuild]       "switchTab4": "alt+4",
+[esbuild]       "switchTab5": "alt+5",
+[esbuild]       "switchTab6": "alt+6",
+[esbuild]       "switchTab7": "alt+7",
+[esbuild]       "switchTab8": "alt+8",
+[esbuild]       "switchTab9": "alt+9"
+[esbuild]     },
+[esbuild]     "quickSearch": {
+[esbuild]       "focusSearch": [
+[esbuild]         "ctrlOrCmd+k",
+[esbuild]         "ctrlOrCmd+o"
+[esbuild]       ],
+[esbuild]       "close": "esc",
+[esbuild]       "selectUp": [
+[esbuild]         "up",
+[esbuild]         "ctrlOrCmd+p"
+[esbuild]       ],
+[esbuild]       "selectDown": [
+[esbuild]         "down",
+[esbuild]         "ctrlOrCmd+n"
+[esbuild]       ],
+[esbuild]       "open": "enter",
+[esbuild]       "altOpen": "ctrlOrCmd+enter",
+[esbuild]       "openInBackground": "right",
+[esbuild]       "altOpenInBackground": "ctrlOrCmd+right"
+[esbuild]     },
+[esbuild]     "queryEditor": {
+[esbuild]       "selectEditor": "ctrlOrCmd+l",
+[esbuild]       "submitQueryToFile": "ctrlOrCmd+i",
+[esbuild]       "submitCurrentQueryToFile": "ctrlOrCmd+shift+i",
+[esbuild]       "selectNextResult": "shift+up",
+[esbuild]       "selectPreviousResult": "shift+down",
+[esbuild]       "copyResultSelection": "ctrlOrCmd+c",
+[esbuild]       "switchPaneFocus": "ctrlOrCmd+`"
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "nextPage": "ctrlOrCmd+right",
+[esbuild]       "previousPage": "ctrlOrCmd+left",
+[esbuild]       "focusOnFilterInput": "ctrlOrCmd+f",
+[esbuild]       "openEditorModal": "shift+enter"
+[esbuild]     }
+[esbuild]   }
+[esbuild] }
+[esbuild] 01:19:09.543 [MAIN] (BksConfig)           › System config: {}
+[esbuild] 01:19:09.544 [MAIN] (BksConfig)           › User config: {}
+[esbuild] 01:19:09.585 [MAIN]                       › initializing background
+[esbuild] 01:19:09.585 [MAIN]                       › initializing user ORM connection!
+[esbuild] 01:19:09.585 [MAIN]                       › ELECTRON BOOTING
+[esbuild] 01:19:09.585 [MAIN]                       › ####################################
+[esbuild] 01:19:09.585 [MAIN]                       › Platform Information (Electron)
+[esbuild] 01:19:09.585 [MAIN]                       › {
+[esbuild]   "isWindows": false,
+[esbuild]   "isMac": true,
+[esbuild]   "isArm": true,
+[esbuild]   "oracleSupported": true,
+[esbuild]   "parsedArgs": {
+[esbuild]     "_": []
+[esbuild]   },
+[esbuild]   "isLinux": false,
+[esbuild]   "isWayland": false,
+[esbuild]   "isPortable": false,
+[esbuild]   "isDevelopment": true,
+[esbuild]   "isAppImage": false,
+[esbuild]   "sshAuthSock": "/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners",
+[esbuild]   "resourcesPath": "/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/extra_resources",
+[esbuild]   "env": {
+[esbuild]     "development": true,
+[esbuild]     "test": false,
+[esbuild]     "production": false
+[esbuild]   },
+[esbuild]   "debugEnabled": false,
+[esbuild]   "platform": "mac",
+[esbuild]   "darkMode": true,
+[esbuild]   "userDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio",
+[esbuild]   "downloadsDirectory": "/Users/jeancarlospaivamiranda/Downloads",
+[esbuild]   "homeDirectory": "/Users/jeancarlospaivamiranda",
+[esbuild]   "pluginsDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/plugins",
+[esbuild]   "testMode": false,
+[esbuild]   "appDbPath": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/app-dev.db",
+[esbuild]   "updatesDisabled": false,
+[esbuild]   "appVersion": "5.1.5",
+[esbuild]   "parsedAppVersion": {
+[esbuild]     "major": 5,
+[esbuild]     "minor": 1,
+[esbuild]     "patch": 5,
+[esbuild]     "channel": "stable"
+[esbuild]   },
+[esbuild]   "cloudUrl": "https://app.beekeeperstudio.io",
+[esbuild]   "locale": ""
+[esbuild] }
+[esbuild] 01:19:09.585 [MAIN]                       › registering schema
+[esbuild] not watching for restart trigger, file does not exist
+[esbuild] Setting DEV KILL flags
+[esbuild] Dev mode detected, disabling CORS
+[esbuild] Added Extension:  Vue.js devtools
+[esbuild] LD_LIBRARY_PATH undefined
+[esbuild] 01:19:10.095 [MAIN]                       › running migrations!!
+[esbuild] running migrations
+[esbuild] 01:19:10.107 [MAIN] (migrations)          › Checking migration 20200101_initialize
+[esbuild] 01:19:10.107 [MAIN] (migrations)          › Checking migration 20200422-add-ssl-column
+[esbuild] 01:19:10.107 [MAIN] (migrations)          › Checking migration 20200513-add-bastion-host
+[esbuild] 01:19:10.107 [MAIN] (migrations)          › Checking migration 20200517-add-label-color-column
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration create-licensekeys
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20220415-service-name
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20200519-add-domain
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20200624_create_settings
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20200703_add_zoom_level
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20200707-add-sc-to-used-connections
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 202001008-add-ssl-files
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20201231-sslreject
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20210713_create_pins
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20210811_add_sort_to_settings
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration add-app-id
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20211007_workspace_scoping
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration 20211015_workspace_used_query
+[esbuild] 01:19:10.108 [MAIN] (migrations)          › Checking migration add-opentabs
+[esbuild] 01:19:10.109 [MAIN] (migrations)          › Checking migration 20211227_add_workspaceid_to_saved_connections
+[esbuild] 01:19:10.109 [MAIN] (migrations)          › Checking migration 20220307-default-theme-system
+[esbuild] 01:19:10.109 [MAIN] (migrations)          › Checking migration 20220401-trust-server-certificate
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20220408-add-socket-path
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20220426-connection-options
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20220709-add-keepalive_interval
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20220817-add-redshift_options
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20220907_create_hidden_entities
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20220908_create_hidden_schemas
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20221120_add_cassandra_options
+[esbuild] 01:19:10.111 [MAIN] (migrations)          › Checking migration 20221103-add-readonly
+[esbuild] 01:19:10.112 [MAIN] (migrations)          › Checking migration 20230308_create_connection_pins
+[esbuild] 01:19:10.112 [MAIN] (migrations)          › Checking migration 20230619_fix_keymap_type
+[esbuild] 01:19:10.112 [MAIN] (migrations)          › Checking migration 20230426-add-bigquery_options
+[esbuild] 01:19:10.112 [MAIN] (migrations)          › Checking migration dev-4-fixtures
+[esbuild] 01:19:10.112 [MAIN] (migrations)          › Checking migration 20240122_add_default_export_path
+[esbuild] 01:19:10.112 [MAIN] (migrations)          › Checking migration 20240303_user_settings_window_position
+[esbuild] 01:19:10.112 [MAIN] (migrations)          › Checking migration 20240421_seed_with_demo_data
+[esbuild] 01:19:10.113 [MAIN] (migrations)          › Checking migration 20240514_user_settings_minimal_mode
+[esbuild] 01:19:10.113 [MAIN] (migrations)          › Checking migration 20240430-add-token-cache
+[esbuild] 01:19:10.113 [MAIN] (migrations)          › Checking migration 20240528_add_libsql_options
+[esbuild] 01:19:10.113 [MAIN] (migrations)          › Checking migration 20230715_add_name_to_token_cache
+[esbuild] 01:19:10.113 [MAIN] (migrations)          › Checking migration 20240923_user_settings_default_workspace
+[esbuild] 01:19:10.113 [MAIN] (migrations)          › Checking migration 20240920-max-allowed-app-release
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20241017_add_user_setting_keymap
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20241017_add_missing_user_settings
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20241009-add-beta-toggle
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20241115-delete-duplicate_connections
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20241116-tab-history-updates
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 2025_add_new_url_field_take_2
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20250211-add-tab-history-index
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20250225_oracle_default_connection_method
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration 20200917-encrypt-passwords
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration dev-1-fixtures
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration dev-2-fixtures
+[esbuild] 01:19:10.114 [MAIN] (migrations)          › Checking migration dev-3-fixtures
+[esbuild] 01:19:10.115 [MAIN] (migrations)          › Checking migration dev-4-fixtures
+[esbuild] 01:19:10.115 [MAIN] (migrations)          › Checking migration dev-5-fixtures
+[esbuild] 01:19:10.115 [MAIN] (migrations)          › Checking migration dev-6-fixtures
+[esbuild] 01:19:10.115 [MAIN] (migrations)          › Checking migration dev-7-fixtures
+[esbuild] 01:19:10.115 [MAIN]                       › getting settings
+[esbuild] 01:19:10.118 [MAIN]                       › setting up the menu
+[esbuild] 01:19:10.120 [MAIN]                       › Building the window
+[esbuild] 01:19:10.120 [MAIN]                       › managing updates
+[esbuild] 01:19:10.121 [MAIN] (update-manager)      › Not running in AppImageLauncher
+[esbuild] 01:19:10.122 [MAIN] (update-manager)      › {"NVM_INC":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/include/node","npm_package_dependencies_portfinder":"^1.0.26","npm_package_scripts_test_e2e":"xvfb-maybe yarn playwright test e2e/*","npm_package_dependencies_electron_devtools_installer":"^3.2.1","npm_package_dependencies_diff_match_patch":"^1.0.5","npm_package_devDependencies_electron_builder":"~25.1.8","npm_package_dependencies_vue_class_component":"^7.2.3","rvm_bin_path":"/Users/jeancarlospaivamiranda/.rvm/bin","TERM_PROGRAM":"vscode","npm_package_dependencies_markdown_table":"^3.0.2","NODE":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node","INIT_CWD":"/Users/jeancarlospaivamiranda/Documents/beekeeper-studio","NVM_CD_FLAGS":"-q","GEM_HOME":"/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0","ANDROID_HOME":"/Users/jeancarlospaivamiranda/Library/Android/sdk","_P9K_TTY":"/dev/ttys003","npm_config_version_git_tag":"true","npm_package_devDependencies_typescript":"~4.3.0","npm_package_dependencies_vue_js_modal":"^1.3.33","npm_package_dependencies_mysql2":"~3.11.2","npm_package_dependencies_axios":"^1.8.2","npm_package_dependencies__babel_plugin_transform_class_static_block":"^7.26.0","npm_package_dependencies__aws_sdk_client_redshift_serverless":"^3.651.1","SHELL":"/bin/zsh","TERM":"xterm-256color","npm_package_devDependencies_vite":"~5.4.15","npm_package_devDependencies_jest":"^29.7.0","npm_package_devDependencies_esbuild_node_externals":"^1.13.1","npm_package_scripts_dev_esbuild":"./esbuild.mjs watch","npm_package_devDependencies_vue_template_compiler":"^2.7.16","npm_package_dependencies__aws_sdk_rds_signer":"^3.651.0","TMPDIR":"/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/","HOMEBREW_REPOSITORY":"/opt/homebrew","IRBRC":"/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0/.irbrc","npm_package_eslintConfig_ignorePatterns_1":"../**/dist","npm_package_devDependencies_esbuild":"^0.21.2","npm_package_devDependencies__types_sql_formatter":"^4.0.0","npm_package_scripts_all_lint":"yarn workspace beekeeper-studio lint && yarn workspace sqltools lint && npx eslint 'shared/**' --fix","npm_package_scripts_electron_build":"yarn build && yarn electron-builder --config ./electron-builder-config.js","npm_config_init_license":"MIT","npm_package_eslintConfig_ignorePatterns_0":"node_modules","npm_package_dependencies_oracledb":"~6.7.2","npm_package_dependencies_better_sqlite3":"~11.1.2","npm_package_scripts_lint":"eslint","TERM_PROGRAM_VERSION":"1.74.1","npm_package_scripts_prepack":"pinst --disable","npm_package_dependencies_v_hotkey":"^0.8.0","npm_package_dependencies_typeface_source_code_pro":"^1.1.3","npm_package_dependencies_simple_encryptor":"^3.0.0","npm_package_dependencies_javascript_time_ago":"^2.0.8","npm_package_dependencies_base64_url":"^2.3.3","npm_package_eslintConfig_ignorePatterns_2":"bksConfig.d.ts$","MallocNanoZone":"0","ORIGINAL_XDG_CURRENT_DESKTOP":"undefined","ZDOTDIR":"/Users/jeancarlospaivamiranda","npm_package_dependencies_xel":"beekeeper-studio/xel","npm_package_dependencies_flexsearch":"beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d","npm_package_dependencies__types_ini":"^4.1.0","npm_package_dependencies__aws_sdk_client_redshift":"^3.651.1","npm_package_scripts_dev_vite":"vite dev","MY_RUBY_HOME":"/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0","npm_package_scripts_test_ci":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js","npm_package_dependencies_ini":"^5.0.0","npm_package_dependencies__aws_sdk_credential_providers":"^3.651.0","npm_package_private":"true","npm_config_registry":"https://registry.yarnpkg.com","npm_package_devDependencies__types_javascript_time_ago":"^2.0.1","npm_package_dependencies_pg_hstore":"^2.3.3","npm_package_dependencies_mock_aws_s3":"^4.0.2","npm_package_dependencies_bytes":"^3.1.0","npm_package_scripts_internal_integration":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js","ZSH":"/Users/jeancarlospaivamiranda/.oh-my-zsh","npm_package_repository_url":"git@github.com:beekeeper-studio/beekeeper-studio.git","npm_package_devDependencies_tmp":"^0.2.3","npm_package_dependencies__pdanpdan_vue_keyboard_trap":"^1.0.19","npm_package_readmeFilename":"README.md","npm_package_devDependencies__types_tmp":"^0.2.6","npm_package_dependencies_xlsx":"https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz","npm_package_dependencies_vue2_datepicker":"^3.11.1","USER":"jeancarlospaivamiranda","NVM_DIR":"/Users/jeancarlospaivamiranda/.nvm","rvm_stored_umask":"022","npm_package_description":"An easy-to use SQL query editor and database UI for Mac, Windows, and Linux","npm_package_dependencies_yargs_parser":"^20.2.7","npm_package_license":"MIT","npm_package_devDependencies_jest_transform_stub":"^2.0.0","npm_package_devDependencies__types_papaparse":"^5.2.5","npm_package_dependencies_vue_clipboard2":"^0.3.1","npm_package_dependencies_cassandra_driver":"^4.6.4","COMMAND_MODE":"unix2003","npm_package_devDependencies__types_pluralize":"^0.0.30","npm_package_dependencies_vue_property_decorator":"^8.4.2","npm_package_dependencies_typeorm":"^0.3.20","npm_package_dependencies_popper_js":"^1.15.0","npm_package_scripts_electron_serve":"concurrently -c blue,green -n esbuild,vite 'yarn dev:esbuild' 'yarn dev:vite'","npm_package_dependencies_vuedraggable":"^2.24.2","npm_package_dependencies__cleverbrush_deep":"^1.1.10","rvm_path":"/Users/jeancarlospaivamiranda/.rvm","npm_package_devDependencies_babel_jest":"^29.7.0","npm_package_devDependencies__babel_core":"^7.24.7","npm_package_dependencies_ssh2":"^1.14.0","npm_package_dependencies_indent_string":"^4.0.0","SSH_AUTH_SOCK":"/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners","npm_package_scripts_bks_config_build":"yarn workspace beekeeper-studio config:build","npm_package_dependencies_typeface_roboto":"^0.0.75","npm_package_dependencies_lodash":"^4.17.21","npm_package_dependencies_libsql":"^0.4.6","__CF_USER_TEXT_ENCODING":"0x1F5:0x0:0x47","npm_package_devDependencies_eslint":"^6.7.2","npm_package_devDependencies__types_jest":"^29.5.13","npm_package_devDependencies__babel_plugin_transform_private_methods":"^7.24.7","npm_package_dependencies_pluralize":"^8.0.0","npm_execpath":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/yarn/bin/yarn.js","npm_package_scripts_web_serve":"yarn sqltools:dev","npm_package_devDependencies__typescript_eslint_eslint_plugin":"^4.18.0","npm_package_devDependencies__types_dateformat":"^3.0.1","npm_package_dependencies_sql_query_identifier":"^2.8.0","npm_package_dependencies_module_alias":"^2.2.3","npm_package_dependencies__google_cloud_bigquery":"^6.2.0","PAGER":"less","npm_package_resolutions_cpu_features":"file:./.yarn/packages/empty-package","npm_package_dependencies_marked":"^4.0.10","npm_package_author_name":"Beekeeper Studio Team","npm_package_dependencies_vue_select":"^3.20.0","npm_package_dependencies__mongosh_browser_runtime_electron":"^3.8.0","LSCOLORS":"Gxfxcxdxbxegedabagacad","npm_package_dependencies_tinyduration":"^3.2.4","npm_package_dependencies_scrollyfills":"^1.0.0","npm_package_dependencies_connection_string":"^3.4.2","rvm_prefix":"/Users/jeancarlospaivamiranda","npm_package_devDependencies_pinst":"^3.0.0","npm_package_devDependencies_jest_serializer_vue":"^3.1.0","npm_package_devDependencies__typescript_eslint_parser":"^4.18.0","npm_package_dependencies_sql_formatter":"~10.7.2","PATH":"/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463143995-0.17003648023978934:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463143263-0.7490850744009996:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463142748-0.08928202146746189:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463142245-0.5035466820212366:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.yarn/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin:/opt/homebrew/bin:/Users/jeancarlospaivamiranda/Library/Android/sdk/platform-tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools/bin:/opt/homebrew/opt/libpq/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0@global/bin:/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v18.12.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/usr/local/share/dotnet:~/.dotnet/tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/platform-tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools/bin:/opt/homebrew/opt/libpq/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0@global/bin:/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v18.12.0/bin:/Users/jeancarlospaivamiranda/Library/Application Support/JetBrains/Toolbox/scripts:/Users/jeancarlospaivamiranda/.rvm/bin:/Users/jeancarlospaivamiranda/Library/Application Support/JetBrains/Toolbox/scripts:/Users/jeancarlospaivamiranda/.rvm/bin","npm_config_argv":"{\"remain\":[],\"cooked\":[\"run\",\"electron:serve\"],\"original\":[\"run\",\"electron:serve\"]}","npm_package_scripts_postinstall":"electron-builder install-app-deps","npm_package_devDependencies_vite_plugin_commonjs":"^0.10.1","npm_package_devDependencies__types_oracledb":"^6.5.3","npm_package_devDependencies__types_better_sqlite3":"^5.4.1","npm_package_devDependencies__babel_plugin_proposal_private_methods":"^7.18.6","npm_package_dependencies_v_tooltip":"^2.1.3","npm_package_dependencies_username":"^5.1.0","npm_package_dependencies__libsql_knex_libsql":"^0.1.0","_":"./esbuild.mjs","npm_package_scripts_postpack":"pinst --enable","npm_package_devDependencies_sass_embedded":"^1.77.1","npm_package_dependencies_vue":"^2.7.16","__CFBundleIdentifier":"com.microsoft.VSCode","USER_ZDOTDIR":"/Users/jeancarlospaivamiranda","rvm_loaded_flag":"1","npm_package_devDependencies_ts_jest":"^29.1.5","PWD":"/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio","npm_package_dependencies_mongodb":"^6.12.0","JAVA_HOME":"/Library/Java/JavaVirtualMachines/zulu-23.jdk/Contents/Home","npm_package_devDependencies__types_lodash":"^4.14.159","npm_package_dependencies_portal_vue":"^2.1.7","npm_package_dependencies_core_js":"^3","npm_package_author_url":"https://beekeeperstudio.io","P9K_SSH":"0","npm_lifecycle_event":"dev:esbuild","npm_package_scripts_sqltools_dev":"yarn workspace sqltools serve","npm_package_devDependencies__vitejs_plugin_vue2":"^2.3.1","npm_package_dependencies_mssql":"^11.0.1","npm_package_dependencies_concurrently":"^8.2.2","npm_package_dependencies__electron_remote":"^2.0.10","LANG":"pt_BR.UTF-8","P9K_TTY":"old","npm_package_packageManager":"yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e","npm_package_repository_type":"git","npm_package_name":"beekeeper-studio","npm_package_devDependencies_execa":"npm:@esm2cjs/execa","npm_package_dependencies_electron_log":"^5.1.5","npm_package_scripts_test_integration":"../../bin/integration-tests.sh","npm_package_dependencies_query_string":"^7.0.0","npm_package_scripts_config_build":"CLI_MODE=1 node ./typesGenerator.mjs","npm_config_version_commit_hooks":"true","npm_package_devDependencies_sass":"~1.77.1","npm_package_devDependencies__types_pg":"^8.11.3","npm_package_dependencies_electron_util":"^0.14.1","npm_package_scripts_build":"concurrently -n esbuild,vite \"yarn build:esbuild\" \"yarn build:vite\"","XPC_FLAGS":"0x0","VSCODE_GIT_ASKPASS_EXTRA_ARGS":"--ms-enable-electron-run-as-node","npm_package_devDependencies__types_codemirror":"^0.0.97","npm_package_dependencies__mongosh_service_provider_node_driver":"^3.6.0","npm_config_bin_links":"true","npm_package_dependencies_cassandra_knex":"beekeeper-studio/cassandra-knex#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a","npm_config_wrap_output":"","npm_package_devDependencies__aws_sdk_types":"^3.127.0","npm_package_dependencies_noty":"beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6","npm_package_dependencies__coresql_mysql2_auth_ed25519":"^1.0.0","npm_package_devDependencies__types_mkdirp":"^1.0.1","npm_package_devDependencies__types_bytes":"^3.1.0","npm_package_dependencies__azure_msal_node":"^2.12.0","npm_package_main":"dist/main.js","XPC_SERVICE_NAME":"0","npm_package_scripts_test_codemirror":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.codemirror.config.js","npm_package_version":"5.1.5","npm_package_scripts_build_vite":"vite build","rvm_version":"1.29.12-next (master)","VSCODE_INJECTION":"1","npm_package_devDependencies_testcontainers":"~9.12.0","npm_package_dependencies_dateformat":"^3.0.3","HOME":"/Users/jeancarlospaivamiranda","SHLVL":"6","npm_package_devDependencies_node_gyp":"^10.1.0","npm_package_devDependencies__types_electron_devtools_installer":"^2.2.0","npm_package_dependencies_node_firebird":"^1.1.9","VSCODE_GIT_ASKPASS_MAIN":"/private/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/AppTranslocation/9AEA53FD-965A-4212-AC1B-76C574214E28/d/Visual Studio Code 4.app/Contents/Resources/app/extensions/git/dist/askpass-main.js","npm_package_devDependencies_eslint_plugin_vue":"^6.2.2","npm_package_devDependencies__vue_babel_preset_app":"^5.0.8","npm_package_dependencies_papaparse":"^5.3.0","npm_package_dependencies__cleverbrush_async":"^1.1.10","npm_config_save_prefix":"^","npm_config_strict_ssl":"true","npm_package_devDependencies__types_mssql":"^9.1.5","HOMEBREW_PREFIX":"/opt/homebrew","npm_package_devDependencies_husky":"8.0.3","npm_config_version_git_message":"v%s","npm_package_devDependencies_cross_env":"^7.0.3","npm_package_devDependencies_babel_eslint":"^10.0.1","npm_package_dependencies_vuex_persist":"^2.0.1","npm_package_dependencies_jsonc_parser":"^3.3.1","npm_package_dependencies_knex":"^2.4.1","npm_package_dependencies__duckdb_node_api":"1.1.3-alpha.10","npm_package_browserslist_1":"last 2 versions","LOGNAME":"jeancarlospaivamiranda","LESS":"-R","YARN_WRAP_OUTPUT":"false","npm_package_scripts_lib_dev":"yarn workspace @bks/ui-kit lib:dev","npm_package_scripts_bks_build":"yarn workspace beekeeper-studio electron:build","npm_package_browserslist_0":"> 1%","npm_package_devDependencies_node_abi":"^3.65.0","npm_lifecycle_script":"./esbuild.mjs watch","npm_package_devDependencies_dts_gen":"0.7.4","npm_package_dependencies_reflect_metadata":"^0.1.10","npm_package_dependencies_postgres_interval":"^4.0.0","GEM_PATH":"/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0@global","VSCODE_GIT_IPC_HANDLE":"/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/vscode-git-2d6fbf8f19.sock","npm_package_author_email":"matthew@rathbonelabs.com","npm_package_dependencies_vuex":"^3.1.1","npm_package_dependencies_humanize_duration":"^3.23.1","npm_package_scripts_bks_dev":"yarn workspace beekeeper-studio electron:serve","npm_package_dependencies_mkdirp":"^1.0.4","npm_package_dependencies_axios_retry":"^3.2.4","npm_package_dependencies__clickhouse_client":"^1.8.1","NVM_BIN":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin","npm_package_dependencies_split_js":"^1.5.11","npm_package_dependencies_jquery":"^3.5.0","npm_package_scripts_build_esbuild":"node ./esbuild.mjs","npm_config_version_git_sign":"","npm_config_ignore_scripts":"","npm_config_user_agent":"yarn/1.22.22 npm/? node/v20.18.1 darwin arm64","npm_package_devDependencies_jest_watch_typeahead":"^2.2.2","npm_package_dependencies_vue_virtual_scroll_list":"^2.3.5","HOMEBREW_CELLAR":"/opt/homebrew/Cellar","INFOPATH":"/opt/homebrew/share/info:/opt/homebrew/share/info:","GIT_ASKPASS":"/private/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/AppTranslocation/9AEA53FD-965A-4212-AC1B-76C574214E28/d/Visual Studio Code 4.app/Contents/Resources/app/extensions/git/dist/askpass.sh","VSCODE_GIT_ASKPASS_NODE":"/private/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/AppTranslocation/9AEA53FD-965A-4212-AC1B-76C574214E28/d/Visual Studio Code 4.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper","npm_package_devDependencies__types_node":"^12.12.54","npm_package_devDependencies__playwright_test":"^1.44.0","npm_package_dependencies_material_icons":"^1.13.12","npm_package_devDependencies_jest_environment_jsdom":"^29.7.0","npm_package_dependencies_pg":"^8.11.3","npm_package_dependencies_knex_firebird_dialect":"1.4.6","npm_package_scripts_docs_serve":"yarn workspace beekeeper-studio docs:serve","npm_package_devDependencies_xvfb_maybe":"^0.2.1","npm_package_devDependencies__types_tabulator_tables":"^6.2.0","npm_package_devDependencies__types_jquery":"^3.5.1","npm_package_dependencies_pg_cursor":"^2.5.2","npm_package_dependencies_codemirror":"^5.63.1","npm_config_init_version":"1.0.0","npm_config_ignore_optional":"","npm_package_dependencies_builder_util_runtime":"^9.1.1","RUBY_VERSION":"ruby-3.1.0","npm_package_dependencies_source_map_support":"^0.5.21","npm_package_dependencies_electron_updater":"^6.3.0","rvm_user_install_flag":"1","npm_package_scripts_sqltools_build":"yarn workspace sqltools build","npm_package_workspaces_0":"apps/*","npm_package_devDependencies_electron":"31.7.3","COLORTERM":"truecolor","npm_node_execpath":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node","npm_package_scripts_test_unit":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.config.js","npm_config_version_tag_prefix":"v","npm_package_devDependencies__vue_vue2_jest":"^29.2.6","npm_package_dependencies_tabulator_tables":"beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b"}
+[esbuild] 01:19:10.713 [UTILITY] (utilityPlatformInfo) › {
+[esbuild]   isWindows: false,
+[esbuild]   isMac: true,
+[esbuild]   isArm: true,
+[esbuild]   oracleSupported: true,
+[esbuild]   parsedArgs: { _: [] },
+[esbuild]   isLinux: false,
+[esbuild]   isWayland: false,
+[esbuild]   isPortable: false,
+[esbuild]   isDevelopment: true,
+[esbuild]   isAppImage: false,
+[esbuild]   sshAuthSock: '/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners',
+[esbuild]   resourcesPath: '/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/extra_resources',
+[esbuild]   env: { development: true, test: false, production: false },
+[esbuild]   debugEnabled: false,
+[esbuild]   platform: 'mac',
+[esbuild]   darkMode: true,
+[esbuild]   userDirectory: '/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio',
+[esbuild]   downloadsDirectory: '/Users/jeancarlospaivamiranda/Downloads',
+[esbuild]   homeDirectory: '/Users/jeancarlospaivamiranda',
+[esbuild]   pluginsDirectory: '/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/plugins',
+[esbuild]   testMode: false,
+[esbuild]   appDbPath: '/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/app-dev.db',
+[esbuild]   updatesDisabled: false,
+[esbuild]   appVersion: '5.1.5',
+[esbuild]   parsedAppVersion: { major: 5, minor: 1, patch: 5, channel: 'stable' },
+[esbuild]   cloudUrl: 'https://app.beekeeperstudio.io',
+[esbuild]   locale: ''
+[esbuild] }
+[esbuild] [9871:0401/011910.904018:ERROR:extensions_browser_client.cc(70)] Extension Error:
+[esbuild]   OTR:     false
+[esbuild]   Level:   1
+[esbuild]   Source:  manifest.json
+[esbuild]   Message: Service worker registration failed. Status code: 2
+[esbuild]   ID:      nginojgbggpngmceffmfiekbknnapbmp
+[esbuild]   Type:    ManifestError
+[esbuild] 01:19:11.018 [UTILITY] (BksConfig)           › Loading configs.
+[esbuild] 01:19:11.023 [UTILITY] (BksConfig)           › Configs successfully loaded with 0 warnings.
+[esbuild] 01:19:11.023 [UTILITY] (BksConfig)           › Warnings: []
+[esbuild] 01:19:11.024 [UTILITY] (BksConfig)           › Default config: {
+[esbuild]   "general": {
+[esbuild]     "checkForUpdatesInterval": 86400000,
+[esbuild]     "dataSyncInterval": 30000,
+[esbuild]     "workspaceSyncInterval": 5000
+[esbuild]   },
+[esbuild]   "ui": {
+[esbuild]     "queryEditor": {
+[esbuild]       "maxResults": 50000
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "pageSize": 100,
+[esbuild]       "largeFieldWidth": 300,
+[esbuild]       "maxColumnWidth": 1000,
+[esbuild]       "minColumnWidth": 100,
+[esbuild]       "maxInitialWidth": 500,
+[esbuild]       "defaultColumnWidth": 125
+[esbuild]     },
+[esbuild]     "tableTriggers": {
+[esbuild]       "maxColumnWidth": 300
+[esbuild]     },
+[esbuild]     "tableList": {
+[esbuild]       "itemHeight": 22.8
+[esbuild]     },
+[esbuild]     "export": {
+[esbuild]       "errorNoticeTimeout": 60000
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "db": {
+[esbuild]     "mysql": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "mariadb": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "postgres": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "cockroachdb": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "redshift": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "keybindings": {
+[esbuild]     "general": {
+[esbuild]       "refresh": [
+[esbuild]         "f5",
+[esbuild]         "ctrlOrCmd+r"
+[esbuild]       ],
+[esbuild]       "addRow": "ctrlOrCmd+n",
+[esbuild]       "save": "ctrlOrCmd+s",
+[esbuild]       "openInSqlEditor": "ctrlOrCmd+shift+s",
+[esbuild]       "openQuickSearch": "ctrlOrCmd+p",
+[esbuild]       "copySelection": "ctrlOrCmd+c",
+[esbuild]       "pasteSelection": "ctrlOrCmd+v",
+[esbuild]       "cloneSelection": "ctrlOrCmd+d",
+[esbuild]       "deleteSelection": "delete"
+[esbuild]     },
+[esbuild]     "tab": {
+[esbuild]       "closeTab": "ctrlOrCmd+w",
+[esbuild]       "nextTab": "ctrlOrCmd+tab",
+[esbuild]       "previousTab": "ctrlOrCmd+shift+tab",
+[esbuild]       "reopenLastClosedTab": "ctrlOrCmd+shift+t",
+[esbuild]       "switchTab1": "alt+1",
+[esbuild]       "switchTab2": "alt+2",
+[esbuild]       "switchTab3": "alt+3",
+[esbuild]       "switchTab4": "alt+4",
+[esbuild]       "switchTab5": "alt+5",
+[esbuild]       "switchTab6": "alt+6",
+[esbuild]       "switchTab7": "alt+7",
+[esbuild]       "switchTab8": "alt+8",
+[esbuild]       "switchTab9": "alt+9"
+[esbuild]     },
+[esbuild]     "quickSearch": {
+[esbuild]       "focusSearch": [
+[esbuild]         "ctrlOrCmd+k",
+[esbuild]         "ctrlOrCmd+o"
+[esbuild]       ],
+[esbuild]       "close": "esc",
+[esbuild]       "selectUp": [
+[esbuild]         "up",
+[esbuild]         "ctrlOrCmd+p"
+[esbuild]       ],
+[esbuild]       "selectDown": [
+[esbuild]         "down",
+[esbuild]         "ctrlOrCmd+n"
+[esbuild]       ],
+[esbuild]       "open": "enter",
+[esbuild]       "altOpen": "ctrlOrCmd+enter",
+[esbuild]       "openInBackground": "right",
+[esbuild]       "altOpenInBackground": "ctrlOrCmd+right"
+[esbuild]     },
+[esbuild]     "queryEditor": {
+[esbuild]       "selectEditor": "ctrlOrCmd+l",
+[esbuild]       "submitQueryToFile": "ctrlOrCmd+i",
+[esbuild]       "submitCurrentQueryToFile": "ctrlOrCmd+shift+i",
+[esbuild]       "selectNextResult": "shift+up",
+[esbuild]       "selectPreviousResult": "shift+down",
+[esbuild]       "copyResultSelection": "ctrlOrCmd+c",
+[esbuild]       "switchPaneFocus": "ctrlOrCmd+`"
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "nextPage": "ctrlOrCmd+right",
+[esbuild]       "previousPage": "ctrlOrCmd+left",
+[esbuild]       "focusOnFilterInput": "ctrlOrCmd+f",
+[esbuild]       "openEditorModal": "shift+enter"
+[esbuild]     }
+[esbuild]   }
+[esbuild] }
+[esbuild] 01:19:11.024 [UTILITY] (BksConfig)           › System config: {}
+[esbuild] 01:19:11.024 [UTILITY] (BksConfig)           › User config: {}
+[esbuild] [9871:0401/011911.909808:ERROR:service_worker_storage.cc(2016)] Failed to delete the database: Database IO error
+[esbuild] 01:19:12.050 [UTILITY]                       › initializing utility
+[esbuild] 01:19:12.064 [MAIN] (WindowBuilder)       › constructing the window
+[esbuild] PRELOAD PATH: /Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/dist/preload.js
+[esbuild] 01:19:12.252 [MAIN]                       › window created!!!
+[esbuild] 01:19:13.992 (main.ts) › starting logging
+[esbuild] 01:19:13.993 (main.ts) › APP BOOTING
+[esbuild] 01:19:13.993 (main.ts) › ####################################
+[esbuild] 01:19:13.993 (main.ts) › Platform Information (App)
+[esbuild] 01:19:13.994 (main.ts) › {
+[esbuild]   "isWindows": false,
+[esbuild]   "isMac": true,
+[esbuild]   "isArm": true,
+[esbuild]   "oracleSupported": true,
+[esbuild]   "parsedArgs": {
+[esbuild]     "_": []
+[esbuild]   },
+[esbuild]   "isLinux": false,
+[esbuild]   "isWayland": false,
+[esbuild]   "isPortable": false,
+[esbuild]   "isDevelopment": true,
+[esbuild]   "isAppImage": false,
+[esbuild]   "sshAuthSock": "/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners",
+[esbuild]   "resourcesPath": "/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/extra_resources",
+[esbuild]   "env": {
+[esbuild]     "development": true,
+[esbuild]     "test": false,
+[esbuild]     "production": false
+[esbuild]   },
+[esbuild]   "debugEnabled": false,
+[esbuild]   "platform": "mac",
+[esbuild]   "darkMode": true,
+[esbuild]   "userDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio",
+[esbuild]   "downloadsDirectory": "/Users/jeancarlospaivamiranda/Downloads",
+[esbuild]   "homeDirectory": "/Users/jeancarlospaivamiranda",
+[esbuild]   "pluginsDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/plugins",
+[esbuild]   "testMode": false,
+[esbuild]   "appDbPath": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/app-dev.db",
+[esbuild]   "updatesDisabled": false,
+[esbuild]   "appVersion": "5.1.5",
+[esbuild]   "parsedAppVersion": {
+[esbuild]     "major": 5,
+[esbuild]     "minor": 1,
+[esbuild]     "patch": 5,
+[esbuild]     "channel": "stable"
+[esbuild]   },
+[esbuild]   "cloudUrl": "https://app.beekeeperstudio.io",
+[esbuild]   "locale": ""
+[esbuild] }
+[esbuild] 01:19:14.001 (renderer/utilityconnection) › QUEUEING REQUEST FOR NAME, ID:  license/getStatus 804b44cf-6d51-4788-bb2c-b838208caf6b
+[esbuild] 01:19:14.002 [MAIN]                       › Client requested ports
+[esbuild] 01:19:14.002 [MAIN]                       › SENDING PORT TO RENDERER:  04a1b6cf-4c5d-496b-913e-3759cb99f91b
+[esbuild] 01:19:14.003 (main.ts)                    › Received port in renderer with sId:  04a1b6cf-4c5d-496b-913e-3759cb99f91b
+[esbuild] 01:19:14.004 (renderer/utilityconnection) › RECEIVED PORT IN UtilityConnection:  {}
+[esbuild] 01:19:14.004 (renderer/utilityconnection) › PROCESSING QUEUED REQUEST:  license/getStatus 804b44cf-6d51-4788-bb2c-b838208caf6b
+[esbuild] 01:19:14.004 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/setting/find 4a21a2f2-7eab-43c4-9e76-3266832f8745
+[esbuild] 01:19:14.005 [UTILITY] (UtilityProcess)      › RECEIVED PORT:  {
+[esbuild]   _events: {},
+[esbuild]   _eventsCount: 0,
+[esbuild]   _internalPort: {
+[esbuild]     postMessage: '[function] function postMessage() { [native code] }',
+[esbuild]     start: '[function] function start() { [native code] }',
+[esbuild]     close: '[function] function close() { [native code] }',
+[esbuild]     emit: '[function] (e,t)=>{"message"===e&&(t={...t,ports:t.ports.map((e=>new MessagePortMain(e)))}),this.emit(e,t)}'
+[esbuild]   }
+[esbuild] }
+[esbuild] 01:19:14.007 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/getStatus 804b44cf-6d51-4788-bb2c-b838208caf6b
+[esbuild] 01:19:14.016 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/setting/find 4a21a2f2-7eab-43c4-9e76-3266832f8745
+[esbuild] 01:19:14.016 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  804b44cf-6d51-4788-bb2c-b838208caf6b
+[esbuild] 01:19:14.017 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  license/get 5e0d26a8-8d42-4064-893e-2b48fd5e8052
+[esbuild] 01:19:14.020 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/get 5e0d26a8-8d42-4064-893e-2b48fd5e8052
+[esbuild] 01:19:14.021 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  enum/init 8ce16f26-9844-480c-8c9b-6fadd9c10f08
+[esbuild] 01:19:14.024 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  enum/load d1c1ab70-3cea-4e61-b31a-eed56692a700
+[esbuild] 01:19:14.027 [MAIN] (WindowBuilder)       › initialize finished
+[esbuild] 01:19:14.021 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  4a21a2f2-7eab-43c4-9e76-3266832f8745
+[esbuild] 01:19:14.021 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  5e0d26a8-8d42-4064-893e-2b48fd5e8052
+[esbuild] 01:19:14.021 (LicenseModule)              › Credential refreshing is disabled (dev mode detected)
+[esbuild] 01:19:14.021 (renderer/utilityconnection) › ADDED LISTENER:  enumFileChanged 267783a9-2694-479a-be7c-99fdf0f5a0ff
+[esbuild] 01:19:14.021 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  enum/init 8ce16f26-9844-480c-8c9b-6fadd9c10f08
+[esbuild] 01:19:14.024 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  8ce16f26-9844-480c-8c9b-6fadd9c10f08
+[esbuild] 01:19:14.024 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  enum/load d1c1ab70-3cea-4e61-b31a-eed56692a700
+[esbuild] 01:19:14.033 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  d1c1ab70-3cea-4e61-b31a-eed56692a700
+[esbuild] 01:19:14.053 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/query/find f6bb1aec-2ca5-4fe5-aaa5-756e1bc5e82b
+[esbuild] 01:19:14.053 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/query/find f6bb1aec-2ca5-4fe5-aaa5-756e1bc5e82b
+[esbuild] 01:19:14.054 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/saved/find 79c45cf9-ac28-4a20-9448-43abc4c4548c
+[esbuild] 01:19:14.055 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/usedQuery/find 5df0cc4c-c5f0-4d5a-8b6f-f0c5dc7e5814
+[esbuild] 01:19:14.055 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/used/find 2f458c6c-7f0b-4010-922e-b5b49ee90c84
+[esbuild] 01:19:14.056 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  license/getStatus ff86176e-8df2-4d3b-9752-4d837bf5c483
+[esbuild] 01:19:14.056 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/saved/find 79c45cf9-ac28-4a20-9448-43abc4c4548c
+[esbuild] 01:19:14.059 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/usedQuery/find 5df0cc4c-c5f0-4d5a-8b6f-f0c5dc7e5814
+[esbuild] 01:19:14.061 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/used/find 2f458c6c-7f0b-4010-922e-b5b49ee90c84
+[esbuild] 01:19:14.065 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/getStatus ff86176e-8df2-4d3b-9752-4d837bf5c483
+[esbuild] 01:19:14.085 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/credential/find d6c10e16-e12b-48a1-baf9-9097df0b87db
+[esbuild] 01:19:14.085 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/credential/find d6c10e16-e12b-48a1-baf9-9097df0b87db
+[esbuild] 01:19:14.127 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/setting/get 002f0465-01a2-4ffd-b027-3b931d5cd8fd
+[esbuild] 01:19:14.128 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/setting/get 002f0465-01a2-4ffd-b027-3b931d5cd8fd
+[esbuild] 01:19:14.127 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/setting/get 37aa9613-1c58-4191-b49f-624f39441da7
+[esbuild] 01:19:14.128 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/saved/new f193f543-7520-45c8-8d55-6d10d220a3e8
+[esbuild] 01:19:14.129 [MAIN] (update-manager)      › checking for updates right now
+[esbuild] 01:19:14.129 [MAIN] (update-manager)      › Skip checkForUpdates because application is not packed and dev update config is not forced
+[esbuild] 01:19:14.129 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/setting/get 37aa9613-1c58-4191-b49f-624f39441da7
+[esbuild] 01:19:14.130 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/saved/new f193f543-7520-45c8-8d55-6d10d220a3e8
+[esbuild] 01:19:14.152 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  f6bb1aec-2ca5-4fe5-aaa5-756e1bc5e82b
+[esbuild] 01:19:14.152 (StateManager)               › removing from search index 0
+[esbuild] 01:19:14.152 (StateManager)               › adding to search index 1
+[esbuild] 01:19:14.153 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  79c45cf9-ac28-4a20-9448-43abc4c4548c
+[esbuild] 01:19:14.155 (StateManager)               › removing from search index 0
+[esbuild] 01:19:14.155 (StateManager)               › adding to search index 15
+[esbuild] 01:19:14.290 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  5df0cc4c-c5f0-4d5a-8b6f-f0c5dc7e5814
+[esbuild] 01:19:14.290 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  2f458c6c-7f0b-4010-922e-b5b49ee90c84
+[esbuild] 01:19:14.301 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  ff86176e-8df2-4d3b-9752-4d837bf5c483
+[esbuild] 01:19:14.302 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/get 9bba95b0-a8a1-47a3-8a41-2ce1643534e5
+[esbuild] 01:19:14.301 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  license/get 9bba95b0-a8a1-47a3-8a41-2ce1643534e5
+[esbuild] 01:19:14.302 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  d6c10e16-e12b-48a1-baf9-9097df0b87db
+[esbuild] 01:19:14.305 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  002f0465-01a2-4ffd-b027-3b931d5cd8fd
+[esbuild] 01:19:14.305 (settings-plugin)            › get {"id":10,"createdAt":"2025-01-15T12:15:12.000Z","updatedAt":"2025-01-15T12:15:12.000Z","_userValue":"name","defaultValue":"name","valueType":0,"version":0,"key":"connectionsSortBy","linuxDefault":null,"macDefault":null,"windowsDefault":null,"value":"name"}
+[esbuild] 01:19:14.307 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/saved/new 597735bf-aa07-43e8-af4c-e4b8a3980ddb
+[esbuild] 01:19:14.305 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  37aa9613-1c58-4191-b49f-624f39441da7
+[esbuild] 01:19:14.306 (settings-plugin)            › get {"id":11,"createdAt":"2025-01-15T12:15:12.000Z","updatedAt":"2025-01-15T12:15:12.000Z","_userValue":"asc","defaultValue":"asc","valueType":0,"version":0,"key":"connectionsSortOrder","linuxDefault":null,"macDefault":null,"windowsDefault":null,"value":"asc"}
+[esbuild] 01:19:14.306 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  f193f543-7520-45c8-8d55-6d10d220a3e8
+[esbuild] 01:19:14.306 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/saved/new 597735bf-aa07-43e8-af4c-e4b8a3980ddb
+[esbuild] 01:19:14.311 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/pinconn/find 4ff4f6a6-bac2-4fc4-b26e-f25cc3a25f42
+[esbuild] 01:19:14.313 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/pinconn/find 4ff4f6a6-bac2-4fc4-b26e-f25cc3a25f42
+[esbuild] 01:19:14.343 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  9bba95b0-a8a1-47a3-8a41-2ce1643534e5
+[esbuild] 01:19:14.351 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  597735bf-aa07-43e8-af4c-e4b8a3980ddb
+[esbuild] 01:19:14.355 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  4ff4f6a6-bac2-4fc4-b26e-f25cc3a25f42
+[esbuild] 01:19:14.357 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/pinconn/save c4003459-d15c-49e7-b388-d6ba6ae725d2
+[esbuild] 01:19:14.358 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/pinconn/save c4003459-d15c-49e7-b388-d6ba6ae725d2
+[esbuild] 01:19:14.365 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/credential/find 33918439-540d-45ec-88de-8827054c81ca
+[esbuild] [9871:0401/011914.367495:ERROR:service_worker_task_queue.cc(244)] DidStartWorkerFail nginojgbggpngmceffmfiekbknnapbmp: 2
+[esbuild] 01:19:14.363 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  c4003459-d15c-49e7-b388-d6ba6ae725d2
+[esbuild] 01:19:14.363 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/credential/find 33918439-540d-45ec-88de-8827054c81ca
+[esbuild] 01:19:14.368 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  33918439-540d-45ec-88de-8827054c81ca
+[esbuild] [9871:0401/011914.794368:ERROR:CONSOLE(2)] "Electron sandboxed_renderer.bundle.js script failed to run", source: node:electron/js2c/sandbox_bundle (2)
+[esbuild] [9871:0401/011914.794404:ERROR:CONSOLE(2)] "TypeError: object null is not iterable (cannot read property Symbol(Symbol.iterator))", source: node:electron/js2c/sandbox_bundle (2)
+[esbuild] [9871:0401/011914.934411:ERROR:CONSOLE(1)] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[esbuild] [9871:0401/011914.934496:ERROR:CONSOLE(1)] "Request Autofill.setAddresses failed. {"code":-32601,"message":"'Autofill.setAddresses' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[esbuild] 01:19:18.525 [UTILITY] (UtilityProcess)      › REMOVING STATE FOR:  04a1b6cf-4c5d-496b-913e-3759cb99f91b
+[esbuild] 01:19:36.457 [MAIN]                       › UTILITY DEAD 0
+[esbuild] electron exited 0 null
+[esbuild] yarn dev:esbuild exited with code 0
+yarn run v1.22.22
+$ yarn bks:dev
+$ yarn workspace beekeeper-studio electron:serve
+$ concurrently -c blue,green -n esbuild,vite 'yarn dev:esbuild' 'yarn dev:vite'
+[esbuild] $ ./esbuild.mjs watch
+[vite] $ vite dev
+[esbuild] Path to electron:  /Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron
+[esbuild] ESBUILD: Building Main  🏗
+[vite] Port 3003 is in use, trying another one...
+[vite] Port 3004 is in use, trying another one...
+[vite] 
+[vite]   VITE v5.4.15  ready in 369 ms
+[vite] 
+[vite]   ➜  Local:   http://localhost:3005/
+[vite]   ➜  Network: use --host to expose
+[esbuild] ESBUILD: Built Main ✅
+[esbuild] spawned electron, pid:  9976
+[esbuild] 01:20:30.589 [MAIN] (BksConfig)           › Loading configs.
+[esbuild] 01:20:30.597 [MAIN] (BksConfig)           › Configs successfully loaded with 0 warnings.
+[esbuild] 01:20:30.598 [MAIN] (BksConfig)           › Warnings: []
+[esbuild] 01:20:30.599 [MAIN] (BksConfig)           › Default config: {
+[esbuild]   "general": {
+[esbuild]     "checkForUpdatesInterval": 86400000,
+[esbuild]     "dataSyncInterval": 30000,
+[esbuild]     "workspaceSyncInterval": 5000
+[esbuild]   },
+[esbuild]   "ui": {
+[esbuild]     "queryEditor": {
+[esbuild]       "maxResults": 50000
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "pageSize": 100,
+[esbuild]       "largeFieldWidth": 300,
+[esbuild]       "maxColumnWidth": 1000,
+[esbuild]       "minColumnWidth": 100,
+[esbuild]       "maxInitialWidth": 500,
+[esbuild]       "defaultColumnWidth": 125
+[esbuild]     },
+[esbuild]     "tableTriggers": {
+[esbuild]       "maxColumnWidth": 300
+[esbuild]     },
+[esbuild]     "tableList": {
+[esbuild]       "itemHeight": 22.8
+[esbuild]     },
+[esbuild]     "export": {
+[esbuild]       "errorNoticeTimeout": 60000
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "db": {
+[esbuild]     "mysql": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "mariadb": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "postgres": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "cockroachdb": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "redshift": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "keybindings": {
+[esbuild]     "general": {
+[esbuild]       "refresh": [
+[esbuild]         "f5",
+[esbuild]         "ctrlOrCmd+r"
+[esbuild]       ],
+[esbuild]       "addRow": "ctrlOrCmd+n",
+[esbuild]       "save": "ctrlOrCmd+s",
+[esbuild]       "openInSqlEditor": "ctrlOrCmd+shift+s",
+[esbuild]       "openQuickSearch": "ctrlOrCmd+p",
+[esbuild]       "copySelection": "ctrlOrCmd+c",
+[esbuild]       "pasteSelection": "ctrlOrCmd+v",
+[esbuild]       "cloneSelection": "ctrlOrCmd+d",
+[esbuild]       "deleteSelection": "delete"
+[esbuild]     },
+[esbuild]     "tab": {
+[esbuild]       "closeTab": "ctrlOrCmd+w",
+[esbuild]       "nextTab": "ctrlOrCmd+tab",
+[esbuild]       "previousTab": "ctrlOrCmd+shift+tab",
+[esbuild]       "reopenLastClosedTab": "ctrlOrCmd+shift+t",
+[esbuild]       "switchTab1": "alt+1",
+[esbuild]       "switchTab2": "alt+2",
+[esbuild]       "switchTab3": "alt+3",
+[esbuild]       "switchTab4": "alt+4",
+[esbuild]       "switchTab5": "alt+5",
+[esbuild]       "switchTab6": "alt+6",
+[esbuild]       "switchTab7": "alt+7",
+[esbuild]       "switchTab8": "alt+8",
+[esbuild]       "switchTab9": "alt+9"
+[esbuild]     },
+[esbuild]     "quickSearch": {
+[esbuild]       "focusSearch": [
+[esbuild]         "ctrlOrCmd+k",
+[esbuild]         "ctrlOrCmd+o"
+[esbuild]       ],
+[esbuild]       "close": "esc",
+[esbuild]       "selectUp": [
+[esbuild]         "up",
+[esbuild]         "ctrlOrCmd+p"
+[esbuild]       ],
+[esbuild]       "selectDown": [
+[esbuild]         "down",
+[esbuild]         "ctrlOrCmd+n"
+[esbuild]       ],
+[esbuild]       "open": "enter",
+[esbuild]       "altOpen": "ctrlOrCmd+enter",
+[esbuild]       "openInBackground": "right",
+[esbuild]       "altOpenInBackground": "ctrlOrCmd+right"
+[esbuild]     },
+[esbuild]     "queryEditor": {
+[esbuild]       "selectEditor": "ctrlOrCmd+l",
+[esbuild]       "submitQueryToFile": "ctrlOrCmd+i",
+[esbuild]       "submitCurrentQueryToFile": "ctrlOrCmd+shift+i",
+[esbuild]       "selectNextResult": "shift+up",
+[esbuild]       "selectPreviousResult": "shift+down",
+[esbuild]       "copyResultSelection": "ctrlOrCmd+c",
+[esbuild]       "switchPaneFocus": "ctrlOrCmd+`"
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "nextPage": "ctrlOrCmd+right",
+[esbuild]       "previousPage": "ctrlOrCmd+left",
+[esbuild]       "focusOnFilterInput": "ctrlOrCmd+f",
+[esbuild]       "openEditorModal": "shift+enter"
+[esbuild]     }
+[esbuild]   }
+[esbuild] }
+[esbuild] 01:20:30.599 [MAIN] (BksConfig)           › System config: {}
+[esbuild] 01:20:30.599 [MAIN] (BksConfig)           › User config: {}
+[esbuild] 01:20:30.647 [MAIN]                       › initializing background
+[esbuild] 01:20:30.647 [MAIN]                       › initializing user ORM connection!
+[esbuild] 01:20:30.647 [MAIN]                       › ELECTRON BOOTING
+[esbuild] 01:20:30.648 [MAIN]                       › ####################################
+[esbuild] 01:20:30.648 [MAIN]                       › Platform Information (Electron)
+[esbuild] 01:20:30.648 [MAIN]                       › {
+[esbuild]   "isWindows": false,
+[esbuild]   "isMac": true,
+[esbuild]   "isArm": true,
+[esbuild]   "oracleSupported": true,
+[esbuild]   "parsedArgs": {
+[esbuild]     "_": []
+[esbuild]   },
+[esbuild]   "isLinux": false,
+[esbuild]   "isWayland": false,
+[esbuild]   "isPortable": false,
+[esbuild]   "isDevelopment": true,
+[esbuild]   "isAppImage": false,
+[esbuild]   "sshAuthSock": "/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners",
+[esbuild]   "resourcesPath": "/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/extra_resources",
+[esbuild]   "env": {
+[esbuild]     "development": true,
+[esbuild]     "test": false,
+[esbuild]     "production": false
+[esbuild]   },
+[esbuild]   "debugEnabled": false,
+[esbuild]   "platform": "mac",
+[esbuild]   "darkMode": true,
+[esbuild]   "userDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio",
+[esbuild]   "downloadsDirectory": "/Users/jeancarlospaivamiranda/Downloads",
+[esbuild]   "homeDirectory": "/Users/jeancarlospaivamiranda",
+[esbuild]   "pluginsDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/plugins",
+[esbuild]   "testMode": false,
+[esbuild]   "appDbPath": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/app-dev.db",
+[esbuild]   "updatesDisabled": false,
+[esbuild]   "appVersion": "5.1.5",
+[esbuild]   "parsedAppVersion": {
+[esbuild]     "major": 5,
+[esbuild]     "minor": 1,
+[esbuild]     "patch": 5,
+[esbuild]     "channel": "stable"
+[esbuild]   },
+[esbuild]   "cloudUrl": "https://app.beekeeperstudio.io",
+[esbuild]   "locale": ""
+[esbuild] }
+[esbuild] 01:20:30.648 [MAIN]                       › registering schema
+[esbuild] not watching for restart trigger, file does not exist
+[esbuild] Setting DEV KILL flags
+[esbuild] Dev mode detected, disabling CORS
+[esbuild] Added Extension:  Vue.js devtools
+[esbuild] LD_LIBRARY_PATH undefined
+[esbuild] 01:20:31.031 [MAIN]                       › running migrations!!
+[esbuild] running migrations
+[esbuild] 01:20:31.039 [MAIN] (migrations)          › Checking migration 20200101_initialize
+[esbuild] 01:20:31.039 [MAIN] (migrations)          › Checking migration 20200422-add-ssl-column
+[esbuild] 01:20:31.039 [MAIN] (migrations)          › Checking migration 20200513-add-bastion-host
+[esbuild] 01:20:31.039 [MAIN] (migrations)          › Checking migration 20200517-add-label-color-column
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration create-licensekeys
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20220415-service-name
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20200519-add-domain
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20200624_create_settings
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20200703_add_zoom_level
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20200707-add-sc-to-used-connections
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 202001008-add-ssl-files
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20201231-sslreject
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20210713_create_pins
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration 20210811_add_sort_to_settings
+[esbuild] 01:20:31.040 [MAIN] (migrations)          › Checking migration add-app-id
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20211007_workspace_scoping
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20211015_workspace_used_query
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration add-opentabs
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20211227_add_workspaceid_to_saved_connections
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20220307-default-theme-system
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20220401-trust-server-certificate
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20220408-add-socket-path
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20220426-connection-options
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20220709-add-keepalive_interval
+[esbuild] 01:20:31.041 [MAIN] (migrations)          › Checking migration 20220817-add-redshift_options
+[esbuild] 01:20:31.042 [MAIN] (migrations)          › Checking migration 20220907_create_hidden_entities
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20220908_create_hidden_schemas
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20221120_add_cassandra_options
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20221103-add-readonly
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20230308_create_connection_pins
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20230619_fix_keymap_type
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20230426-add-bigquery_options
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration dev-4-fixtures
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20240122_add_default_export_path
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20240303_user_settings_window_position
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20240421_seed_with_demo_data
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20240514_user_settings_minimal_mode
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20240430-add-token-cache
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20240528_add_libsql_options
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20230715_add_name_to_token_cache
+[esbuild] 01:20:31.043 [MAIN] (migrations)          › Checking migration 20240923_user_settings_default_workspace
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20240920-max-allowed-app-release
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20241017_add_user_setting_keymap
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20241017_add_missing_user_settings
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20241009-add-beta-toggle
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20241115-delete-duplicate_connections
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20241116-tab-history-updates
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 2025_add_new_url_field_take_2
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20250211-add-tab-history-index
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20250225_oracle_default_connection_method
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration 20200917-encrypt-passwords
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration dev-1-fixtures
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration dev-2-fixtures
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration dev-3-fixtures
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration dev-4-fixtures
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration dev-5-fixtures
+[esbuild] 01:20:31.044 [MAIN] (migrations)          › Checking migration dev-6-fixtures
+[esbuild] 01:20:31.045 [MAIN] (migrations)          › Checking migration dev-7-fixtures
+[esbuild] 01:20:31.045 [MAIN]                       › getting settings
+[esbuild] 01:20:31.048 [MAIN]                       › setting up the menu
+[esbuild] 01:20:31.050 [MAIN]                       › Building the window
+[esbuild] 01:20:31.050 [MAIN]                       › managing updates
+[esbuild] 01:20:31.050 [MAIN] (update-manager)      › Not running in AppImageLauncher
+[esbuild] 01:20:31.051 [MAIN] (update-manager)      › {"NVM_INC":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/include/node","npm_package_dependencies_portfinder":"^1.0.26","npm_package_scripts_test_e2e":"xvfb-maybe yarn playwright test e2e/*","npm_package_dependencies_electron_devtools_installer":"^3.2.1","npm_package_dependencies_diff_match_patch":"^1.0.5","npm_package_devDependencies_electron_builder":"~25.1.8","npm_package_dependencies_vue_class_component":"^7.2.3","rvm_bin_path":"/Users/jeancarlospaivamiranda/.rvm/bin","TERM_PROGRAM":"vscode","npm_package_dependencies_markdown_table":"^3.0.2","NODE":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node","INIT_CWD":"/Users/jeancarlospaivamiranda/Documents/beekeeper-studio","NVM_CD_FLAGS":"-q","GEM_HOME":"/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0","ANDROID_HOME":"/Users/jeancarlospaivamiranda/Library/Android/sdk","_P9K_TTY":"/dev/ttys003","npm_config_version_git_tag":"true","npm_package_devDependencies_typescript":"~4.3.0","npm_package_dependencies_vue_js_modal":"^1.3.33","npm_package_dependencies_mysql2":"~3.11.2","npm_package_dependencies_axios":"^1.8.2","npm_package_dependencies__babel_plugin_transform_class_static_block":"^7.26.0","npm_package_dependencies__aws_sdk_client_redshift_serverless":"^3.651.1","SHELL":"/bin/zsh","TERM":"xterm-256color","npm_package_devDependencies_vite":"~5.4.15","npm_package_devDependencies_jest":"^29.7.0","npm_package_devDependencies_esbuild_node_externals":"^1.13.1","npm_package_scripts_dev_esbuild":"./esbuild.mjs watch","npm_package_devDependencies_vue_template_compiler":"^2.7.16","npm_package_dependencies__aws_sdk_rds_signer":"^3.651.0","TMPDIR":"/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/","HOMEBREW_REPOSITORY":"/opt/homebrew","IRBRC":"/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0/.irbrc","npm_package_eslintConfig_ignorePatterns_1":"../**/dist","npm_package_devDependencies_esbuild":"^0.21.2","npm_package_devDependencies__types_sql_formatter":"^4.0.0","npm_package_scripts_all_lint":"yarn workspace beekeeper-studio lint && yarn workspace sqltools lint && npx eslint 'shared/**' --fix","npm_package_scripts_electron_build":"yarn build && yarn electron-builder --config ./electron-builder-config.js","npm_config_init_license":"MIT","npm_package_eslintConfig_ignorePatterns_0":"node_modules","npm_package_dependencies_oracledb":"~6.7.2","npm_package_dependencies_better_sqlite3":"~11.1.2","npm_package_scripts_lint":"eslint","TERM_PROGRAM_VERSION":"1.74.1","npm_package_scripts_prepack":"pinst --disable","npm_package_dependencies_v_hotkey":"^0.8.0","npm_package_dependencies_typeface_source_code_pro":"^1.1.3","npm_package_dependencies_simple_encryptor":"^3.0.0","npm_package_dependencies_javascript_time_ago":"^2.0.8","npm_package_dependencies_base64_url":"^2.3.3","npm_package_eslintConfig_ignorePatterns_2":"bksConfig.d.ts$","MallocNanoZone":"0","ORIGINAL_XDG_CURRENT_DESKTOP":"undefined","ZDOTDIR":"/Users/jeancarlospaivamiranda","npm_package_dependencies_xel":"beekeeper-studio/xel","npm_package_dependencies_flexsearch":"beekeeper-studio/flexsearch#2e6c65dc03acf378cbeef5c700658d9b26a3e09d","npm_package_dependencies__types_ini":"^4.1.0","npm_package_dependencies__aws_sdk_client_redshift":"^3.651.1","npm_package_scripts_dev_vite":"vite dev","MY_RUBY_HOME":"/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0","npm_package_scripts_test_ci":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js","npm_package_dependencies_ini":"^5.0.0","npm_package_dependencies__aws_sdk_credential_providers":"^3.651.0","npm_package_private":"true","npm_config_registry":"https://registry.yarnpkg.com","npm_package_devDependencies__types_javascript_time_ago":"^2.0.1","npm_package_dependencies_pg_hstore":"^2.3.3","npm_package_dependencies_mock_aws_s3":"^4.0.2","npm_package_dependencies_bytes":"^3.1.0","npm_package_scripts_internal_integration":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js","ZSH":"/Users/jeancarlospaivamiranda/.oh-my-zsh","npm_package_repository_url":"git@github.com:beekeeper-studio/beekeeper-studio.git","npm_package_devDependencies_tmp":"^0.2.3","npm_package_dependencies__pdanpdan_vue_keyboard_trap":"^1.0.19","npm_package_readmeFilename":"README.md","npm_package_devDependencies__types_tmp":"^0.2.6","npm_package_dependencies_xlsx":"https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz","npm_package_dependencies_vue2_datepicker":"^3.11.1","USER":"jeancarlospaivamiranda","NVM_DIR":"/Users/jeancarlospaivamiranda/.nvm","rvm_stored_umask":"022","npm_package_description":"An easy-to use SQL query editor and database UI for Mac, Windows, and Linux","npm_package_dependencies_yargs_parser":"^20.2.7","npm_package_license":"MIT","npm_package_devDependencies_jest_transform_stub":"^2.0.0","npm_package_devDependencies__types_papaparse":"^5.2.5","npm_package_dependencies_vue_clipboard2":"^0.3.1","npm_package_dependencies_cassandra_driver":"^4.6.4","COMMAND_MODE":"unix2003","npm_package_devDependencies__types_pluralize":"^0.0.30","npm_package_dependencies_vue_property_decorator":"^8.4.2","npm_package_dependencies_typeorm":"^0.3.20","npm_package_dependencies_popper_js":"^1.15.0","npm_package_scripts_electron_serve":"concurrently -c blue,green -n esbuild,vite 'yarn dev:esbuild' 'yarn dev:vite'","npm_package_dependencies_vuedraggable":"^2.24.2","npm_package_dependencies__cleverbrush_deep":"^1.1.10","rvm_path":"/Users/jeancarlospaivamiranda/.rvm","npm_package_devDependencies_babel_jest":"^29.7.0","npm_package_devDependencies__babel_core":"^7.24.7","npm_package_dependencies_ssh2":"^1.14.0","npm_package_dependencies_indent_string":"^4.0.0","SSH_AUTH_SOCK":"/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners","npm_package_scripts_bks_config_build":"yarn workspace beekeeper-studio config:build","npm_package_dependencies_typeface_roboto":"^0.0.75","npm_package_dependencies_lodash":"^4.17.21","npm_package_dependencies_libsql":"^0.4.6","__CF_USER_TEXT_ENCODING":"0x1F5:0x0:0x47","npm_package_devDependencies_eslint":"^6.7.2","npm_package_devDependencies__types_jest":"^29.5.13","npm_package_devDependencies__babel_plugin_transform_private_methods":"^7.24.7","npm_package_dependencies_pluralize":"^8.0.0","npm_execpath":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/yarn/bin/yarn.js","npm_package_scripts_web_serve":"yarn sqltools:dev","npm_package_devDependencies__typescript_eslint_eslint_plugin":"^4.18.0","npm_package_devDependencies__types_dateformat":"^3.0.1","npm_package_dependencies_sql_query_identifier":"^2.8.0","npm_package_dependencies_module_alias":"^2.2.3","npm_package_dependencies__google_cloud_bigquery":"^6.2.0","PAGER":"less","npm_package_resolutions_cpu_features":"file:./.yarn/packages/empty-package","npm_package_dependencies_marked":"^4.0.10","npm_package_author_name":"Beekeeper Studio Team","npm_package_dependencies_vue_select":"^3.20.0","npm_package_dependencies__mongosh_browser_runtime_electron":"^3.8.0","LSCOLORS":"Gxfxcxdxbxegedabagacad","npm_package_dependencies_tinyduration":"^3.2.4","npm_package_dependencies_scrollyfills":"^1.0.0","npm_package_dependencies_connection_string":"^3.4.2","rvm_prefix":"/Users/jeancarlospaivamiranda","npm_package_devDependencies_pinst":"^3.0.0","npm_package_devDependencies_jest_serializer_vue":"^3.1.0","npm_package_devDependencies__typescript_eslint_parser":"^4.18.0","npm_package_dependencies_sql_formatter":"~10.7.2","PATH":"/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463224736-0.6105546592470157:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463223994-0.8409939583356156:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463223524-0.26670349858022857:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/yarn--1743463223169-0.691418189976948:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.config/yarn/link/node_modules/.bin:/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/node_modules/.bin:/Users/jeancarlospaivamiranda/.yarn/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/libexec/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/lib/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node_modules/npm/bin/node-gyp-bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin:/opt/homebrew/bin:/Users/jeancarlospaivamiranda/Library/Android/sdk/platform-tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools/bin:/opt/homebrew/opt/libpq/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0@global/bin:/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v18.12.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/usr/local/share/dotnet:~/.dotnet/tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/platform-tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools:/Users/jeancarlospaivamiranda/Library/Android/sdk/tools/bin:/opt/homebrew/opt/libpq/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0@global/bin:/Users/jeancarlospaivamiranda/.rvm/rubies/ruby-3.1.0/bin:/Users/jeancarlospaivamiranda/.nvm/versions/node/v18.12.0/bin:/Users/jeancarlospaivamiranda/Library/Application Support/JetBrains/Toolbox/scripts:/Users/jeancarlospaivamiranda/.rvm/bin:/Users/jeancarlospaivamiranda/Library/Application Support/JetBrains/Toolbox/scripts:/Users/jeancarlospaivamiranda/.rvm/bin","npm_config_argv":"{\"remain\":[],\"cooked\":[\"run\",\"electron:serve\"],\"original\":[\"run\",\"electron:serve\"]}","npm_package_scripts_postinstall":"electron-builder install-app-deps","npm_package_devDependencies_vite_plugin_commonjs":"^0.10.1","npm_package_devDependencies__types_oracledb":"^6.5.3","npm_package_devDependencies__types_better_sqlite3":"^5.4.1","npm_package_devDependencies__babel_plugin_proposal_private_methods":"^7.18.6","npm_package_dependencies_v_tooltip":"^2.1.3","npm_package_dependencies_username":"^5.1.0","npm_package_dependencies__libsql_knex_libsql":"^0.1.0","_":"./esbuild.mjs","npm_package_scripts_postpack":"pinst --enable","npm_package_devDependencies_sass_embedded":"^1.77.1","npm_package_dependencies_vue":"^2.7.16","__CFBundleIdentifier":"com.microsoft.VSCode","USER_ZDOTDIR":"/Users/jeancarlospaivamiranda","rvm_loaded_flag":"1","npm_package_devDependencies_ts_jest":"^29.1.5","PWD":"/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio","npm_package_dependencies_mongodb":"^6.12.0","JAVA_HOME":"/Library/Java/JavaVirtualMachines/zulu-23.jdk/Contents/Home","npm_package_devDependencies__types_lodash":"^4.14.159","npm_package_dependencies_portal_vue":"^2.1.7","npm_package_dependencies_core_js":"^3","npm_package_author_url":"https://beekeeperstudio.io","P9K_SSH":"0","npm_lifecycle_event":"dev:esbuild","npm_package_scripts_sqltools_dev":"yarn workspace sqltools serve","npm_package_devDependencies__vitejs_plugin_vue2":"^2.3.1","npm_package_dependencies_mssql":"^11.0.1","npm_package_dependencies_concurrently":"^8.2.2","npm_package_dependencies__electron_remote":"^2.0.10","LANG":"pt_BR.UTF-8","P9K_TTY":"old","npm_package_packageManager":"yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e","npm_package_repository_type":"git","npm_package_name":"beekeeper-studio","npm_package_devDependencies_execa":"npm:@esm2cjs/execa","npm_package_dependencies_electron_log":"^5.1.5","npm_package_scripts_test_integration":"../../bin/integration-tests.sh","npm_package_dependencies_query_string":"^7.0.0","npm_package_scripts_config_build":"CLI_MODE=1 node ./typesGenerator.mjs","npm_config_version_commit_hooks":"true","npm_package_devDependencies_sass":"~1.77.1","npm_package_devDependencies__types_pg":"^8.11.3","npm_package_dependencies_electron_util":"^0.14.1","npm_package_scripts_build":"concurrently -n esbuild,vite \"yarn build:esbuild\" \"yarn build:vite\"","XPC_FLAGS":"0x0","VSCODE_GIT_ASKPASS_EXTRA_ARGS":"--ms-enable-electron-run-as-node","npm_package_devDependencies__types_codemirror":"^0.0.97","npm_package_dependencies__mongosh_service_provider_node_driver":"^3.6.0","npm_config_bin_links":"true","npm_package_dependencies_cassandra_knex":"beekeeper-studio/cassandra-knex#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a","npm_config_wrap_output":"","npm_package_devDependencies__aws_sdk_types":"^3.127.0","npm_package_dependencies_noty":"beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6","npm_package_dependencies__coresql_mysql2_auth_ed25519":"^1.0.0","npm_package_devDependencies__types_mkdirp":"^1.0.1","npm_package_devDependencies__types_bytes":"^3.1.0","npm_package_dependencies__azure_msal_node":"^2.12.0","npm_package_main":"dist/main.js","XPC_SERVICE_NAME":"0","npm_package_scripts_test_codemirror":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.codemirror.config.js","npm_package_version":"5.1.5","npm_package_scripts_build_vite":"vite build","rvm_version":"1.29.12-next (master)","VSCODE_INJECTION":"1","npm_package_devDependencies_testcontainers":"~9.12.0","npm_package_dependencies_dateformat":"^3.0.3","HOME":"/Users/jeancarlospaivamiranda","SHLVL":"6","npm_package_devDependencies_node_gyp":"^10.1.0","npm_package_devDependencies__types_electron_devtools_installer":"^2.2.0","npm_package_dependencies_node_firebird":"^1.1.9","VSCODE_GIT_ASKPASS_MAIN":"/private/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/AppTranslocation/9AEA53FD-965A-4212-AC1B-76C574214E28/d/Visual Studio Code 4.app/Contents/Resources/app/extensions/git/dist/askpass-main.js","npm_package_devDependencies_eslint_plugin_vue":"^6.2.2","npm_package_devDependencies__vue_babel_preset_app":"^5.0.8","npm_package_dependencies_papaparse":"^5.3.0","npm_package_dependencies__cleverbrush_async":"^1.1.10","npm_config_save_prefix":"^","npm_config_strict_ssl":"true","npm_package_devDependencies__types_mssql":"^9.1.5","HOMEBREW_PREFIX":"/opt/homebrew","npm_package_devDependencies_husky":"8.0.3","npm_config_version_git_message":"v%s","npm_package_devDependencies_cross_env":"^7.0.3","npm_package_devDependencies_babel_eslint":"^10.0.1","npm_package_dependencies_vuex_persist":"^2.0.1","npm_package_dependencies_jsonc_parser":"^3.3.1","npm_package_dependencies_knex":"^2.4.1","npm_package_dependencies__duckdb_node_api":"1.1.3-alpha.10","npm_package_browserslist_1":"last 2 versions","LOGNAME":"jeancarlospaivamiranda","LESS":"-R","YARN_WRAP_OUTPUT":"false","npm_package_scripts_lib_dev":"yarn workspace @bks/ui-kit lib:dev","npm_package_scripts_bks_build":"yarn workspace beekeeper-studio electron:build","npm_package_browserslist_0":"> 1%","npm_package_devDependencies_node_abi":"^3.65.0","npm_lifecycle_script":"./esbuild.mjs watch","npm_package_devDependencies_dts_gen":"0.7.4","npm_package_dependencies_reflect_metadata":"^0.1.10","npm_package_dependencies_postgres_interval":"^4.0.0","GEM_PATH":"/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0:/Users/jeancarlospaivamiranda/.rvm/gems/ruby-3.1.0@global","VSCODE_GIT_IPC_HANDLE":"/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/vscode-git-2d6fbf8f19.sock","npm_package_author_email":"matthew@rathbonelabs.com","npm_package_dependencies_vuex":"^3.1.1","npm_package_dependencies_humanize_duration":"^3.23.1","npm_package_scripts_bks_dev":"yarn workspace beekeeper-studio electron:serve","npm_package_dependencies_mkdirp":"^1.0.4","npm_package_dependencies_axios_retry":"^3.2.4","npm_package_dependencies__clickhouse_client":"^1.8.1","NVM_BIN":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin","npm_package_dependencies_split_js":"^1.5.11","npm_package_dependencies_jquery":"^3.5.0","npm_package_scripts_build_esbuild":"node ./esbuild.mjs","npm_config_version_git_sign":"","npm_config_ignore_scripts":"","npm_config_user_agent":"yarn/1.22.22 npm/? node/v20.18.1 darwin arm64","npm_package_devDependencies_jest_watch_typeahead":"^2.2.2","npm_package_dependencies_vue_virtual_scroll_list":"^2.3.5","HOMEBREW_CELLAR":"/opt/homebrew/Cellar","INFOPATH":"/opt/homebrew/share/info:/opt/homebrew/share/info:","GIT_ASKPASS":"/private/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/AppTranslocation/9AEA53FD-965A-4212-AC1B-76C574214E28/d/Visual Studio Code 4.app/Contents/Resources/app/extensions/git/dist/askpass.sh","VSCODE_GIT_ASKPASS_NODE":"/private/var/folders/gq/p5465n2s7mgfgjb1wxmnpct40000gn/T/AppTranslocation/9AEA53FD-965A-4212-AC1B-76C574214E28/d/Visual Studio Code 4.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper","npm_package_devDependencies__types_node":"^12.12.54","npm_package_devDependencies__playwright_test":"^1.44.0","npm_package_dependencies_material_icons":"^1.13.12","npm_package_devDependencies_jest_environment_jsdom":"^29.7.0","npm_package_dependencies_pg":"^8.11.3","npm_package_dependencies_knex_firebird_dialect":"1.4.6","npm_package_scripts_docs_serve":"yarn workspace beekeeper-studio docs:serve","npm_package_devDependencies_xvfb_maybe":"^0.2.1","npm_package_devDependencies__types_tabulator_tables":"^6.2.0","npm_package_devDependencies__types_jquery":"^3.5.1","npm_package_dependencies_pg_cursor":"^2.5.2","npm_package_dependencies_codemirror":"^5.63.1","npm_config_init_version":"1.0.0","npm_config_ignore_optional":"","npm_package_dependencies_builder_util_runtime":"^9.1.1","RUBY_VERSION":"ruby-3.1.0","npm_package_dependencies_source_map_support":"^0.5.21","npm_package_dependencies_electron_updater":"^6.3.0","rvm_user_install_flag":"1","npm_package_scripts_sqltools_build":"yarn workspace sqltools build","npm_package_workspaces_0":"apps/*","npm_package_devDependencies_electron":"31.7.3","COLORTERM":"truecolor","npm_node_execpath":"/Users/jeancarlospaivamiranda/.nvm/versions/node/v20.18.1/bin/node","npm_package_scripts_test_unit":"cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.config.js","npm_config_version_tag_prefix":"v","npm_package_devDependencies__vue_vue2_jest":"^29.2.6","npm_package_dependencies_tabulator_tables":"beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b"}
+[esbuild] 01:20:31.474 [UTILITY] (utilityPlatformInfo) › {
+[esbuild]   isWindows: false,
+[esbuild]   isMac: true,
+[esbuild]   isArm: true,
+[esbuild]   oracleSupported: true,
+[esbuild]   parsedArgs: { _: [] },
+[esbuild]   isLinux: false,
+[esbuild]   isWayland: false,
+[esbuild]   isPortable: false,
+[esbuild]   isDevelopment: true,
+[esbuild]   isAppImage: false,
+[esbuild]   sshAuthSock: '/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners',
+[esbuild]   resourcesPath: '/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/extra_resources',
+[esbuild]   env: { development: true, test: false, production: false },
+[esbuild]   debugEnabled: false,
+[esbuild]   platform: 'mac',
+[esbuild]   darkMode: true,
+[esbuild]   userDirectory: '/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio',
+[esbuild]   downloadsDirectory: '/Users/jeancarlospaivamiranda/Downloads',
+[esbuild]   homeDirectory: '/Users/jeancarlospaivamiranda',
+[esbuild]   pluginsDirectory: '/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/plugins',
+[esbuild]   testMode: false,
+[esbuild]   appDbPath: '/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/app-dev.db',
+[esbuild]   updatesDisabled: false,
+[esbuild]   appVersion: '5.1.5',
+[esbuild]   parsedAppVersion: { major: 5, minor: 1, patch: 5, channel: 'stable' },
+[esbuild]   cloudUrl: 'https://app.beekeeperstudio.io',
+[esbuild]   locale: ''
+[esbuild] }
+[esbuild] 01:20:31.669 [UTILITY] (BksConfig)           › Loading configs.
+[esbuild] 01:20:31.671 [UTILITY] (BksConfig)           › Configs successfully loaded with 0 warnings.
+[esbuild] 01:20:31.671 [UTILITY] (BksConfig)           › Warnings: []
+[esbuild] 01:20:31.671 [UTILITY] (BksConfig)           › Default config: {
+[esbuild]   "general": {
+[esbuild]     "checkForUpdatesInterval": 86400000,
+[esbuild]     "dataSyncInterval": 30000,
+[esbuild]     "workspaceSyncInterval": 5000
+[esbuild]   },
+[esbuild]   "ui": {
+[esbuild]     "queryEditor": {
+[esbuild]       "maxResults": 50000
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "pageSize": 100,
+[esbuild]       "largeFieldWidth": 300,
+[esbuild]       "maxColumnWidth": 1000,
+[esbuild]       "minColumnWidth": 100,
+[esbuild]       "maxInitialWidth": 500,
+[esbuild]       "defaultColumnWidth": 125
+[esbuild]     },
+[esbuild]     "tableTriggers": {
+[esbuild]       "maxColumnWidth": 300
+[esbuild]     },
+[esbuild]     "tableList": {
+[esbuild]       "itemHeight": 22.8
+[esbuild]     },
+[esbuild]     "export": {
+[esbuild]       "errorNoticeTimeout": 60000
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "db": {
+[esbuild]     "mysql": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "mariadb": {
+[esbuild]       "connectTimeout": 3600000
+[esbuild]     },
+[esbuild]     "postgres": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "cockroachdb": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     },
+[esbuild]     "redshift": {
+[esbuild]       "connectionTimeout": 15000,
+[esbuild]       "idleTimeout": 20000,
+[esbuild]       "maxClient": 5
+[esbuild]     }
+[esbuild]   },
+[esbuild]   "keybindings": {
+[esbuild]     "general": {
+[esbuild]       "refresh": [
+[esbuild]         "f5",
+[esbuild]         "ctrlOrCmd+r"
+[esbuild]       ],
+[esbuild]       "addRow": "ctrlOrCmd+n",
+[esbuild]       "save": "ctrlOrCmd+s",
+[esbuild]       "openInSqlEditor": "ctrlOrCmd+shift+s",
+[esbuild]       "openQuickSearch": "ctrlOrCmd+p",
+[esbuild]       "copySelection": "ctrlOrCmd+c",
+[esbuild]       "pasteSelection": "ctrlOrCmd+v",
+[esbuild]       "cloneSelection": "ctrlOrCmd+d",
+[esbuild]       "deleteSelection": "delete"
+[esbuild]     },
+[esbuild]     "tab": {
+[esbuild]       "closeTab": "ctrlOrCmd+w",
+[esbuild]       "nextTab": "ctrlOrCmd+tab",
+[esbuild]       "previousTab": "ctrlOrCmd+shift+tab",
+[esbuild]       "reopenLastClosedTab": "ctrlOrCmd+shift+t",
+[esbuild]       "switchTab1": "alt+1",
+[esbuild]       "switchTab2": "alt+2",
+[esbuild]       "switchTab3": "alt+3",
+[esbuild]       "switchTab4": "alt+4",
+[esbuild]       "switchTab5": "alt+5",
+[esbuild]       "switchTab6": "alt+6",
+[esbuild]       "switchTab7": "alt+7",
+[esbuild]       "switchTab8": "alt+8",
+[esbuild]       "switchTab9": "alt+9"
+[esbuild]     },
+[esbuild]     "quickSearch": {
+[esbuild]       "focusSearch": [
+[esbuild]         "ctrlOrCmd+k",
+[esbuild]         "ctrlOrCmd+o"
+[esbuild]       ],
+[esbuild]       "close": "esc",
+[esbuild]       "selectUp": [
+[esbuild]         "up",
+[esbuild]         "ctrlOrCmd+p"
+[esbuild]       ],
+[esbuild]       "selectDown": [
+[esbuild]         "down",
+[esbuild]         "ctrlOrCmd+n"
+[esbuild]       ],
+[esbuild]       "open": "enter",
+[esbuild]       "altOpen": "ctrlOrCmd+enter",
+[esbuild]       "openInBackground": "right",
+[esbuild]       "altOpenInBackground": "ctrlOrCmd+right"
+[esbuild]     },
+[esbuild]     "queryEditor": {
+[esbuild]       "selectEditor": "ctrlOrCmd+l",
+[esbuild]       "submitQueryToFile": "ctrlOrCmd+i",
+[esbuild]       "submitCurrentQueryToFile": "ctrlOrCmd+shift+i",
+[esbuild]       "selectNextResult": "shift+up",
+[esbuild]       "selectPreviousResult": "shift+down",
+[esbuild]       "copyResultSelection": "ctrlOrCmd+c",
+[esbuild]       "switchPaneFocus": "ctrlOrCmd+`"
+[esbuild]     },
+[esbuild]     "tableTable": {
+[esbuild]       "nextPage": "ctrlOrCmd+right",
+[esbuild]       "previousPage": "ctrlOrCmd+left",
+[esbuild]       "focusOnFilterInput": "ctrlOrCmd+f",
+[esbuild]       "openEditorModal": "shift+enter"
+[esbuild]     }
+[esbuild]   }
+[esbuild] }
+[esbuild] 01:20:31.672 [UTILITY] (BksConfig)           › System config: {}
+[esbuild] 01:20:31.672 [UTILITY] (BksConfig)           › User config: {}
+[esbuild] 01:20:32.567 [UTILITY]                       › initializing utility
+[esbuild] 01:20:32.599 [MAIN] (WindowBuilder)       › constructing the window
+[esbuild] PRELOAD PATH: /Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/dist/preload.js
+[esbuild] 01:20:32.734 [MAIN]                       › window created!!!
+[esbuild] 01:20:33.884 (main.ts) › starting logging
+[esbuild] 01:20:33.885 (main.ts) › APP BOOTING
+[esbuild] 01:20:33.885 (main.ts) › ####################################
+[esbuild] 01:20:33.885 (main.ts) › Platform Information (App)
+[esbuild] 01:20:33.885 (main.ts) › {
+[esbuild]   "isWindows": false,
+[esbuild]   "isMac": true,
+[esbuild]   "isArm": true,
+[esbuild]   "oracleSupported": true,
+[esbuild]   "parsedArgs": {
+[esbuild]     "_": []
+[esbuild]   },
+[esbuild]   "isLinux": false,
+[esbuild]   "isWayland": false,
+[esbuild]   "isPortable": false,
+[esbuild]   "isDevelopment": true,
+[esbuild]   "isAppImage": false,
+[esbuild]   "sshAuthSock": "/private/tmp/com.apple.launchd.ZXlELBSHwM/Listeners",
+[esbuild]   "resourcesPath": "/Users/jeancarlospaivamiranda/Documents/beekeeper-studio/apps/studio/extra_resources",
+[esbuild]   "env": {
+[esbuild]     "development": true,
+[esbuild]     "test": false,
+[esbuild]     "production": false
+[esbuild]   },
+[esbuild]   "debugEnabled": false,
+[esbuild]   "platform": "mac",
+[esbuild]   "darkMode": true,
+[esbuild]   "userDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio",
+[esbuild]   "downloadsDirectory": "/Users/jeancarlospaivamiranda/Downloads",
+[esbuild]   "homeDirectory": "/Users/jeancarlospaivamiranda",
+[esbuild]   "pluginsDirectory": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/plugins",
+[esbuild]   "testMode": false,
+[esbuild]   "appDbPath": "/Users/jeancarlospaivamiranda/Library/Application Support/beekeeper-studio/app-dev.db",
+[esbuild]   "updatesDisabled": false,
+[esbuild]   "appVersion": "5.1.5",
+[esbuild]   "parsedAppVersion": {
+[esbuild]     "major": 5,
+[esbuild]     "minor": 1,
+[esbuild]     "patch": 5,
+[esbuild]     "channel": "stable"
+[esbuild]   },
+[esbuild]   "cloudUrl": "https://app.beekeeperstudio.io",
+[esbuild]   "locale": ""
+[esbuild] }
+[esbuild] 01:20:33.890 (renderer/utilityconnection) › QUEUEING REQUEST FOR NAME, ID:  license/getStatus 61762bcd-85e0-47f6-a244-58fc9b2b9836
+[esbuild] 01:20:33.890 [MAIN]                       › Client requested ports
+[esbuild] 01:20:33.891 [MAIN]                       › SENDING PORT TO RENDERER:  05ab08fc-6826-4d80-bf64-2d4efc442597
+[esbuild] 01:20:33.892 (main.ts)                    › Received port in renderer with sId:  05ab08fc-6826-4d80-bf64-2d4efc442597
+[esbuild] 01:20:33.893 (renderer/utilityconnection) › RECEIVED PORT IN UtilityConnection:  {}
+[esbuild] 01:20:33.893 (renderer/utilityconnection) › PROCESSING QUEUED REQUEST:  license/getStatus 61762bcd-85e0-47f6-a244-58fc9b2b9836
+[esbuild] 01:20:33.893 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/setting/find 145f2060-0b0c-47e8-91ae-81131c98b564
+[esbuild] 01:20:33.895 [UTILITY] (UtilityProcess)      › RECEIVED PORT:  {
+[esbuild]   _events: {},
+[esbuild]   _eventsCount: 0,
+[esbuild]   _internalPort: {
+[esbuild]     postMessage: '[function] function postMessage() { [native code] }',
+[esbuild]     start: '[function] function start() { [native code] }',
+[esbuild]     close: '[function] function close() { [native code] }',
+[esbuild]     emit: '[function] (e,t)=>{"message"===e&&(t={...t,ports:t.ports.map((e=>new MessagePortMain(e)))}),this.emit(e,t)}'
+[esbuild]   }
+[esbuild] }
+[esbuild] 01:20:33.898 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/getStatus 61762bcd-85e0-47f6-a244-58fc9b2b9836
+[esbuild] 01:20:33.910 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/setting/find 145f2060-0b0c-47e8-91ae-81131c98b564
+[esbuild] 01:20:33.910 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  61762bcd-85e0-47f6-a244-58fc9b2b9836
+[esbuild] 01:20:33.910 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  license/get 213d4e0b-5253-4eb0-aec5-0984dc52c046
+[esbuild] 01:20:33.914 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/get 213d4e0b-5253-4eb0-aec5-0984dc52c046
+[esbuild] 01:20:33.914 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  145f2060-0b0c-47e8-91ae-81131c98b564
+[esbuild] 01:20:33.915 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  213d4e0b-5253-4eb0-aec5-0984dc52c046
+[esbuild] 01:20:33.916 (LicenseModule)              › Credential refreshing is disabled (dev mode detected)
+[esbuild] 01:20:33.916 (renderer/utilityconnection) › ADDED LISTENER:  enumFileChanged 0d9d51fe-2a1d-480e-a419-d36b0ea90ab0
+[esbuild] 01:20:33.916 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  enum/init 759a2f13-ef48-469a-bdca-97a9c7b54c72
+[esbuild] 01:20:33.916 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  enum/init 759a2f13-ef48-469a-bdca-97a9c7b54c72
+[esbuild] 01:20:33.919 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  enum/load a25bd1cc-75b3-46ea-8bd2-7d0b3ccbdfb6
+[esbuild] 01:20:33.924 [MAIN] (WindowBuilder)       › initialize finished
+[esbuild] 01:20:33.919 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  759a2f13-ef48-469a-bdca-97a9c7b54c72
+[esbuild] 01:20:33.919 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  enum/load a25bd1cc-75b3-46ea-8bd2-7d0b3ccbdfb6
+[esbuild] 01:20:33.920 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  a25bd1cc-75b3-46ea-8bd2-7d0b3ccbdfb6
+[esbuild] 01:20:33.932 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/query/find 9baf3d39-e29b-4c3d-99e7-498a10e9ad8b
+[esbuild] 01:20:33.932 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/query/find 9baf3d39-e29b-4c3d-99e7-498a10e9ad8b
+[esbuild] 01:20:33.933 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/saved/find 4da67e20-c8fa-4908-ba4d-7d27c2adc219
+[esbuild] 01:20:33.933 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/usedQuery/find bed8eae0-4b34-43cb-8656-cd40b9aa80ce
+[esbuild] 01:20:33.933 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/used/find 59da54a4-0422-4337-bffe-fc30bb096ef0
+[esbuild] 01:20:33.934 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  license/getStatus cb8a0bc5-95a4-427e-85b6-b59d020cf558
+[esbuild] 01:20:33.936 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/saved/find 4da67e20-c8fa-4908-ba4d-7d27c2adc219
+[esbuild] 01:20:33.939 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/usedQuery/find bed8eae0-4b34-43cb-8656-cd40b9aa80ce
+[esbuild] 01:20:33.940 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/used/find 59da54a4-0422-4337-bffe-fc30bb096ef0
+[esbuild] 01:20:33.943 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/getStatus cb8a0bc5-95a4-427e-85b6-b59d020cf558
+[esbuild] 01:20:33.960 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/credential/find 56968b60-8b58-4cc2-9e9b-f846dacad954
+[esbuild] 01:20:33.960 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/credential/find 56968b60-8b58-4cc2-9e9b-f846dacad954
+[esbuild] 01:20:33.986 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/setting/get 88c51ee9-a640-4ef9-af37-6b68beadb246
+[esbuild] 01:20:33.985 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/setting/get 88c51ee9-a640-4ef9-af37-6b68beadb246
+[esbuild] 01:20:33.985 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/setting/get 02c40495-6790-4076-848b-a89b41d6c930
+[esbuild] 01:20:33.987 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/saved/new 494898d0-1dfd-4392-890f-94a3454308e2
+[esbuild] 01:20:33.987 [MAIN] (update-manager)      › checking for updates right now
+[esbuild] 01:20:33.988 [MAIN] (update-manager)      › Skip checkForUpdates because application is not packed and dev update config is not forced
+[esbuild] 01:20:33.988 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/setting/get 02c40495-6790-4076-848b-a89b41d6c930
+[esbuild] 01:20:33.988 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/saved/new 494898d0-1dfd-4392-890f-94a3454308e2
+[esbuild] 01:20:34.019 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  9baf3d39-e29b-4c3d-99e7-498a10e9ad8b
+[esbuild] 01:20:34.019 (StateManager)               › removing from search index 0
+[esbuild] 01:20:34.019 (StateManager)               › adding to search index 1
+[esbuild] 01:20:34.020 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  4da67e20-c8fa-4908-ba4d-7d27c2adc219
+[esbuild] 01:20:34.022 (StateManager)               › removing from search index 0
+[esbuild] 01:20:34.022 (StateManager)               › adding to search index 15
+[esbuild] 01:20:34.049 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  bed8eae0-4b34-43cb-8656-cd40b9aa80ce
+[esbuild] 01:20:34.049 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  59da54a4-0422-4337-bffe-fc30bb096ef0
+[esbuild] 01:20:34.055 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  license/get bd97ea51-7888-4553-953d-f4a0d24e24f7
+[esbuild] 01:20:34.055 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  cb8a0bc5-95a4-427e-85b6-b59d020cf558
+[esbuild] 01:20:34.055 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  license/get bd97ea51-7888-4553-953d-f4a0d24e24f7
+[esbuild] 01:20:34.055 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  56968b60-8b58-4cc2-9e9b-f846dacad954
+[esbuild] 01:20:34.060 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/saved/new 708698de-daf6-4e1f-a270-609a164cdcc8
+[esbuild] 01:20:34.058 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  88c51ee9-a640-4ef9-af37-6b68beadb246
+[esbuild] 01:20:34.058 (settings-plugin)            › get {"id":10,"createdAt":"2025-01-15T12:15:12.000Z","updatedAt":"2025-01-15T12:15:12.000Z","_userValue":"name","defaultValue":"name","valueType":0,"version":0,"key":"connectionsSortBy","linuxDefault":null,"macDefault":null,"windowsDefault":null,"value":"name"}
+[esbuild] 01:20:34.058 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  02c40495-6790-4076-848b-a89b41d6c930
+[esbuild] 01:20:34.058 (settings-plugin)            › get {"id":11,"createdAt":"2025-01-15T12:15:12.000Z","updatedAt":"2025-01-15T12:15:12.000Z","_userValue":"asc","defaultValue":"asc","valueType":0,"version":0,"key":"connectionsSortOrder","linuxDefault":null,"macDefault":null,"windowsDefault":null,"value":"asc"}
+[esbuild] 01:20:34.065 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/pinconn/find 35e93cd3-b9a5-47a5-9c38-13ae447a067f
+[esbuild] 01:20:34.058 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  494898d0-1dfd-4392-890f-94a3454308e2
+[esbuild] 01:20:34.059 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/saved/new 708698de-daf6-4e1f-a270-609a164cdcc8
+[esbuild] 01:20:34.063 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/pinconn/find 35e93cd3-b9a5-47a5-9c38-13ae447a067f
+[esbuild] 01:20:34.089 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  bd97ea51-7888-4553-953d-f4a0d24e24f7
+[esbuild] 01:20:34.090 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  708698de-daf6-4e1f-a270-609a164cdcc8
+[esbuild] 01:20:34.091 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  35e93cd3-b9a5-47a5-9c38-13ae447a067f
+[esbuild] 01:20:34.092 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/pinconn/save 4c45ebf8-230e-4ce5-a530-37bf22df64e4
+[esbuild] 01:20:34.092 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/pinconn/save 4c45ebf8-230e-4ce5-a530-37bf22df64e4
+[esbuild] 01:20:34.094 [UTILITY] (UtilityProcess)      › RECEIVED REQUEST FOR NAME, ID:  appdb/credential/find 1512bf9f-a9fd-4ae6-abdc-5e11308320e8
+[esbuild] 01:20:34.094 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  4c45ebf8-230e-4ce5-a530-37bf22df64e4
+[esbuild] 01:20:34.094 (renderer/utilityconnection) › SENDING REQUEST FOR NAME, ID:  appdb/credential/find 1512bf9f-a9fd-4ae6-abdc-5e11308320e8
+[esbuild] 01:20:34.096 (renderer/utilityconnection) › RECEIVED REPLY FOR REQUEST ID:  1512bf9f-a9fd-4ae6-abdc-5e11308320e8
+[esbuild] [9976:0401/012034.513860:ERROR:CONSOLE(2)] "Electron sandboxed_renderer.bundle.js script failed to run", source: node:electron/js2c/sandbox_bundle (2)
+[esbuild] [9976:0401/012034.513983:ERROR:CONSOLE(2)] "TypeError: object null is not iterable (cannot read property Symbol(Symbol.iterator))", source: node:electron/js2c/sandbox_bundle (2)
+[esbuild] [9976:0401/012034.871856:ERROR:CONSOLE(1)] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[esbuild] [9976:0401/012034.871929:ERROR:CONSOLE(1)] "Request Autofill.setAddresses failed. {"code":-32601,"message":"'Autofill.setAddresses' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[esbuild] 01:22:13.838 [UTILITY] (UtilityProcess)      › REMOVING STATE FOR:  05ab08fc-6826-4d80-bf64-2d4efc442597
+[esbuild] 01:22:14.223 [MAIN]                       › UTILITY DEAD 0
+[esbuild] electron exited 0 null
+[esbuild] yarn dev:esbuild exited with code 0

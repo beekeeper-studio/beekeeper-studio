@@ -17,6 +17,8 @@ let window;
 let queryTab;
 let resultPane;
 let userAttemptsTo;
+let newDatabaseConnection;
+
 
 test.describe("Postgres query execution", () => {
 
