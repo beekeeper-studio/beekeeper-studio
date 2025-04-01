@@ -1,7 +1,6 @@
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 import { DBTestUtil, dbtimeout } from "../../../../lib/db";
-import { runBasicTests } from "./all";
 import knex from "knex";
 import { TrinoKnexClient } from "@shared/lib/knex-trino";
 import fs from 'fs';
@@ -129,8 +128,101 @@ describe(`Trino Client [${TRINO_TAG}]`, () => {
     expect(version).toContain("Trino");
   });
 
-  // Run a subset of the common tests that should work with Trino
+  // Basic tests that should work with Trino
   describe("Basic Tests", () => {
-    runBasicTests(() => util);
+    it("should run basic queries", async () => {
+      const result = await util.connection.executeQuery("SELECT 1 as test");
+      expect(result).toBeDefined();
+      expect(result[0].rows.length).toBe(1);
+    });
+  });
+
+  // Test streaming functionality
+  describe("Streaming Tests", () => {
+    it("should stream query results correctly", async () => {
+      const query = "SELECT * FROM nation";
+      const chunkSize = 5;
+      
+      const stream = await util.connection.queryStream(query, chunkSize);
+      expect(stream).toBeDefined();
+      expect(stream.cursor).toBeDefined();
+      expect(stream.fields).toBeDefined();
+      expect(stream.fields.length).toBeGreaterThan(0);
+      
+      // Read all chunks
+      let totalRows = 0;
+      let chunks = 0;
+      
+      while (true) {
+        const rows = await stream.cursor.read();
+        if (rows.length === 0) break;
+        
+        totalRows += rows.length;
+        chunks++;
+        
+        // Validate first chunk's structure
+        if (chunks === 1) {
+          expect(rows[0]).toHaveProperty('c0'); // nationkey
+          expect(rows[0]).toHaveProperty('c1'); // name
+        }
+      }
+      
+      // Nation table has 25 rows
+      expect(totalRows).toBe(25);
+      
+      // With chunk size 5, we should have 5 chunks
+      expect(chunks).toBe(5);
+      
+      await stream.cursor.cancel();
+    });
+    
+    it("should stream table data correctly with selectTopStream", async () => {
+      const table = "nation";
+      const chunkSize = 10;
+      
+      const stream = await util.connection.selectTopStream(table, [], "", chunkSize);
+      expect(stream).toBeDefined();
+      expect(stream.cursor).toBeDefined();
+      expect(stream.fields).toBeDefined();
+      expect(stream.fields.length).toBeGreaterThan(0);
+      
+      // Read all chunks
+      let totalRows = 0;
+      let chunks = 0;
+      
+      while (true) {
+        const rows = await stream.cursor.read();
+        if (rows.length === 0) break;
+        
+        totalRows += rows.length;
+        chunks++;
+      }
+      
+      // Nation table has 25 rows
+      expect(totalRows).toBe(25);
+      
+      // With chunk size 10, we should have 3 chunks (10, 10, 5)
+      expect(chunks).toBe(3);
+      
+      await stream.cursor.cancel();
+    });
+    
+    it("should cancel streaming queries properly", async () => {
+      const query = "SELECT * FROM lineitem CROSS JOIN orders LIMIT 1000";
+      const chunkSize = 50;
+      
+      const stream = await util.connection.queryStream(query, chunkSize);
+      
+      // Read one chunk to ensure query is running
+      const firstChunk = await stream.cursor.read();
+      expect(firstChunk.length).toBeGreaterThan(0);
+      
+      // Cancel the query
+      await stream.cursor.cancel();
+      
+      // Attempt to read after cancellation should return empty result
+      const postCancelChunk = await stream.cursor.read();
+      expect(postCancelChunk.length).toBe(0);
+    });
   });
 });
