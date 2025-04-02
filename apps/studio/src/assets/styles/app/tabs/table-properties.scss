@@ -1,5 +1,6 @@
+@use "sass:color";
 
-$row-highlight:          lighten($query-editor-bg, 1%);
+$row-highlight:          color.adjust($query-editor-bg, $lightness: 1%);
 $row-add:                #104633;
 $row-delete:             #8A3937;
 $row-error:              #38201F;

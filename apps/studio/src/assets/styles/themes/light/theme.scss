@@ -1,3 +1,4 @@
+@use "sass:color";
 @import "codemirror/theme/xq-light";
 
 // Global
@@ -8,12 +9,12 @@ $sidebar-list-icons:       $theme-primary;
 
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 darken($theme-bg, 4%);
-$codemirror-hint-bg:       darken($theme-bg, 2%);
+$tab-link:                 color.adjust($theme-bg, $lightness: -4%);
+$codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
-$row-highlight:            darken($query-editor-bg, 3%);
-$row-handle-selected: darken($query-editor-bg, 10%);
+$row-highlight:            color.adjust($query-editor-bg, $lightness: -3%);
+$row-handle-selected: color.adjust($query-editor-bg, $lightness: -10%);
 $row-add:                  #5ff3c0;
 $row-delete:               #FC8A87;
 $row-error:                #F9B8B7;
@@ -138,9 +139,9 @@ x-buttons {
 // -----------------------------------------
 .connection-label {
   &.connection-label-color-yellow {
-    background-color: darken($theme-primary, 4%);
+    background-color: color.adjust($theme-primary, $lightness: -4%);
     &:checked {
-      background-color: darken($theme-primary, 4%);
+      background-color: color.adjust($theme-primary, $lightness: -4%);
     }
   }
 }
@@ -199,7 +200,7 @@ x-buttons {
   }
 }
 .item-icon {
-  color: darken($theme-primary, 6%);
+  color: color.adjust($theme-primary, $lightness: -6%);
 }
 
 // Editor
@@ -281,20 +282,20 @@ x-buttons {
           background: $cell-edited;
           --row-bg-color: #{$cell-edited};
           &:hover {
-            background: darken($cell-edited, 5%);
+            background: color.adjust($cell-edited, $lightness: -5%);
             --row-hover-bg-color: darken($cell-edited, 5%);
           }
         }
         &.edit-error {
           background: $cell-error;
           &:hover {
-            background: darken($cell-error, 5%);
+            background: color.adjust($cell-error, $lightness: -5%);
           }
         }
         &.edit-success {
           background: $cell-success;
           &:hover {
-            background: darken($cell-success, 5%);
+            background: color.adjust($cell-success, $lightness: -5%);
           }
         }
         &.foreign-key-button {
@@ -327,7 +328,7 @@ x-buttons {
     .tabulator-col {
       &.foreign-key {
         &:before {
-          color: darken($brand-primary, 6%);
+          color: color.adjust($brand-primary, $lightness: -6%);
         }
       }
       .badge {
@@ -499,7 +500,7 @@ x-buttons {
   }
   .tabulator-row {
     &.tabulator-moving {
-      background: lighten($theme-bg, 15%)!important;
+      background: color.adjust($theme-bg, $lightness: 15%)!important;
     }
   }
 }
@@ -508,7 +509,7 @@ x-buttons {
 // CodeMirror
 // ----------------------------------
 .CodeMirror-hints {
-  background: darken($theme-bg, 5%)!important;
+  background: color.adjust($theme-bg, $lightness: -5%)!important;
   li {
     &.CodeMirror-hint-active {
       background: $brand-info;
@@ -549,7 +550,7 @@ x-buttons {
     color: $brand-warning;
   }
   .CodeMirror-line .cm-string {
-    color: darken($brand-success, 20%);
+    color: color.adjust($brand-success, $lightness: -20%);
   }
   .CodeMirror-cursor {
     border-color: $text-dark;
@@ -561,7 +562,7 @@ x-buttons {
 
 // Noty
 .noty_theme__mint.noty_type__success {
-  color: darken($brand-success, 5%);
+  color: color.adjust($brand-success, $lightness: -5%);
 }
 
 // Switch
@@ -585,6 +586,6 @@ x-switch {
 // Quicksearch
 .quicksearch {
   .quicksearch-bg {
-    background: rgba(darken($theme-bg, 8%), 0.5);
+    background: rgba(color.adjust($theme-bg, $lightness: -8%), 0.5);
   }
 }

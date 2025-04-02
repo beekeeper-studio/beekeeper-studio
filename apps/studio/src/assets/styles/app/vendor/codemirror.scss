@@ -1,3 +1,4 @@
+@use "sass:color";
 
 .CodeMirror {
   font-family: $font-family-mono, monospace;
@@ -50,7 +51,7 @@
 // --------------------------------------
 .CodeMirror-hints {
   font-family: $font-family-mono, monospace;
-  background: lighten($theme-bg, 5%);
+  background: color.adjust($theme-bg, $lightness: 5%);
   color: $text-dark;
   padding: $gutter-h 0;
   border: 0;
@@ -61,7 +62,7 @@
       background: rgba($theme-base, 0.05);
     }
     &.CodeMirror-hint-active {
-      background: darken($theme-secondary, 25%);
+      background: color.adjust($theme-secondary, $lightness: -25%);
       color: white;
     }
   }
