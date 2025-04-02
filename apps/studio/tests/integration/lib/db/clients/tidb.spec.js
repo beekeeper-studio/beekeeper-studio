@@ -37,4 +37,10 @@ describe("TiDB Tests", () => {
   describe("Common Tests", () => {
     runCommonTests(() => util)
   })
+
+  describe("Param tests", () => {
+    it("Should be able to handle positional (?) params", async () => {
+      await util.paramTest(['?']);
+    })
+  })
 })
