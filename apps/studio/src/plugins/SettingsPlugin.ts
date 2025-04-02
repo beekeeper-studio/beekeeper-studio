@@ -17,10 +17,9 @@ export const SettingsPlugin = {
     return defaultValue || null;
   },
 
-  async set(key, value) {
-    const util = await this.waitForUtil();
-    log.info("set", key, value);
-    await util.send('appdb/setting/set', { key, value });
+  async set(key: string, value: string) {
+    log.info("set", key, value)
+    await Vue.prototype.$util.send('appdb/setting/set', { key, value });
   }
 }
 
