@@ -54,7 +54,10 @@ export function tabulatorForTableData(
       width: 38,
       hozAlign: "center",
       formatter: "rownum",
-      formatterParams: { relativeToPage: true },
+      formatterParams: {
+        relativeToPage: true,
+        binaryEncoding: window.bksConfig.ui.general.binaryEncoding,
+      },
       contextMenu: (_e, cell) => {
         return copyActionsMenu({ ranges: cell.getRanges(), table: table || "mytable", schema });
       },

@@ -149,6 +149,7 @@
         :result="result"
         :query="query"
         :tab="tab"
+        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
         class="message"

@@ -80,6 +80,10 @@ export default Vue.extend({
       type: Array as PropType<Array<OrderBy>>,
       default: () => [],
     },
+    binaryEncoding: {
+      type: String as PropType<'hex' | 'base64'>,
+      default: 'hex',
+    },
     cellContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     columnHeaderContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     rowHeaderContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
@@ -203,6 +207,7 @@ export default Vue.extend({
           resizable: "header",
           cssClass,
           sorter: column.sorter === 'none' ? () => 0 : column.sorter,
+          binaryEncoding: this.binaryEncoding,
         };
 
         const customDef =
