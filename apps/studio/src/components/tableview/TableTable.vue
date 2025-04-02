@@ -933,9 +933,7 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
-      const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
-      this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+      await this.getTableKeys();
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
@@ -1682,6 +1680,7 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
+            await this.getTableKeys();
             resolve({
               last_page: 1,
               data
@@ -1718,12 +1717,18 @@ export default Vue.extend({
     clearQueryError() {
       this.queryError = null
     },
+    async getTableKeys() {
+      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
+      const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
+      this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+    },
     async refreshTable() {
       if (!this.tabulator) return;
 
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
+      await this.tabulator.setColumns(this.tableColumns)
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
