@@ -11,6 +11,7 @@ export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import BksConfig from '@/common/bksConfig'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { IDbConnectionPublicServer } from './db/serverTypes'
@@ -1593,6 +1594,27 @@ export class DBTestUtil {
       { name: ID, bksType: 'UNKNOWN' },
       { name: BIN, bksType: 'BINARY' },
     ])
+  }
+
+  async getQueryForFilterTest() {
+    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb'> = {
+      sqlite: "`bananas` = 'pears'",
+      mysql: "`bananas` = 'pears'",
+      postgresql: `"bananas" = 'pears'`,
+      sqlserver: "[bananas] = 'pears'",
+      oracle: `"bananas" = 'pears'`,
+      firebird: `bananas = 'pears'`,
+      duckdb: `"bananas" = 'pears'`,
+      clickhouse: `"bananas" = 'pears'`,
+    }
+
+    const actualQuery = await this.connection.getQueryForFilter({
+      field: "bananas",
+      type: "=",
+      value: "pears",
+    })
+
+    expect(actualQuery).toBe(expectedQueries[this.dbType] || expectedQueries[this.dialect])
   }
 
   private async createTables() {

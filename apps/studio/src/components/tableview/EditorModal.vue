@@ -49,16 +49,23 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu style="--align: end">
                 <x-menuitem
+                  togglable
                   @click.prevent="format"
                   v-show="!language.noBeautify"
                 >
                   <x-label>Format {{ language.label }}</x-label>
                 </x-menuitem>
-                <x-menuitem @click.prevent="minify">
+                <x-menuitem @click.prevent="minify" togglable>
                   <x-label>Minify text</x-label>
                 </x-menuitem>
-                <x-menuitem @click.prevent="toggleWrapText">
-                  <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
+                <x-menuitem
+                  togglable
+                  :toggled="wrapText"
+                  @click.prevent="toggleWrapText"
+                >
+                  <x-label class="flex-between">
+                    Wrap Text
+                  </x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -155,9 +162,13 @@ import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
 import TextEditor from '@/components/common/texteditor/TextEditor.vue'
+import { typedArrayToString } from "@/common/utils";
 
 export default Vue.extend({
   name: "CellEditorModal",
+  props: {
+    binaryEncoding: String,
+  },
   data() {
     return {
       editorFocus: false,
@@ -202,8 +213,8 @@ export default Vue.extend({
     openModal(content: any, language: LanguageData, eventParams?: any) {
       if (content === null) {
         content = ""
-      } else if (ArrayBuffer.isView(content)) {
-        content = content.toString()
+      } else if (_.isTypedArray(content)) {
+        content = typedArrayToString(content, this.binaryEncoding)
       } else if (typeof content !== 'string') {
         content = JSON.stringify(content)
       }
@@ -271,7 +282,7 @@ export default Vue.extend({
       this.content = this.language.minify(this.content)
     },
     handleKeyUp(e: KeyboardEvent) {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && this.userKeymap !== 'vim') {
         this.$modal.hide(this.modalName)
       }
     }

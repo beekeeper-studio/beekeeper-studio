@@ -249,8 +249,7 @@ x-buttons {
 // -------------------------------
 .tabulator-table {
   .tabulator-row {
-    &.tabulator-row-even,
-    &:nth-child(odd) {
+    &.tabulator-row-even {
       &.inserted,
       &.inserted:hover {
         background: $row-add!important;
@@ -324,19 +323,13 @@ x-buttons {
     }
   }
 }
-.tabulator-row {
-  &:nth-child(odd) {
-    background: rgba($theme-base, 0.025);
-  }
-}
 
 // Table Builder
 // -------------------------
 .table-builder .table-builder-wrap,
 .table-properties .table-properties-wrap {
   .tabulator-row {
-    &.tabulator-row-even,
-    &:nth-child(odd) {
+    &.tabulator-row-even {
       background: rgba($theme-base, 0.06);
     }
     &.inserted {
@@ -381,8 +374,7 @@ x-buttons {
 
   // Field Rows
   .tabulator-row {
-    &.tabulator-row-even,
-    &:nth-child(odd) {
+    &.tabulator-row-even {
       background: rgba($theme-base, 0.05);
     }
     .tabulator-cell {
@@ -490,59 +482,23 @@ x-buttons {
   }
 }
 
+.BksTextEditor {
+  --bks-text-editor-string-fg-color: #{$brand-success};
+  --bks-text-editor-number-fg-color: #{$brand-warning};
+  --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
+  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-bracket-fg-color: #{$text};
 
-// CodeMirror
-// ----------------------------------
-.CodeMirror-hints {
-  background: darken($theme-bg, 5%)!important;
-  li {
-    &.CodeMirror-hint-active {
-      background: $brand-info;
-      color: white;
-    }
-  }
-}
-
-.cm-s-monokai {
-  span {
-    .cm-string {
-      color: $brand-success;
-    }
-  }
-  .CodeMirror-line {
-    .cm-number {
-      color: $brand-warning;
-    }
-  }
-}
-
-
-.cm-s-monokai {
   font-weight: 500;
-  span.cm-keyword {
-    color: $brand-pink;
-  }
-  span.cm-variable-2 {
-    color: $brand-secondary;
-  }
-  div.CodeMirror-selected {
-    background: rgba($theme-secondary, 0.25);
-  }
-  .CodeMirror-linenumber {
-    color: rgba($theme-base, 0.25);
-  }
-  .CodeMirror-line .cm-number {
-    color: $brand-warning;
-  }
-  .CodeMirror-line .cm-string {
-    color: $brand-success;
-  }
-  .CodeMirror-cursor {
-    border-color: $text-dark;
-  }
-  span.cm-bracket {
-    color: $text;
-  }
+}
+
+.BksTextEditor-hints {
+  --bks-text-editor-context-menu-bg-color: #{darken($theme-bg, 5%)};
+  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
 }
 
 // Noty

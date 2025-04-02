@@ -28,6 +28,7 @@
     />
     <dropzone />
     <data-manager />
+    <configuration-warning-modal />
     <enter-license-modal />
     <workspace-sign-in-modal />
     <workspace-create-modal />
@@ -54,6 +55,7 @@ import AutoUpdater from './components/AutoUpdater.vue'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
+import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vue'
 
 import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
 import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
@@ -88,6 +90,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
+    ConfigurationWarningModal,
   },
   data() {
     return {

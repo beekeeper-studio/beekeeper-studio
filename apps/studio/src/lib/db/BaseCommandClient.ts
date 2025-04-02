@@ -48,7 +48,7 @@ export abstract class BaseCommandClient {
 
   protected static _password?: string;
   static get quotedPassword() {
-    return `"${BaseCommandClient._password.replace(/"/g, window.platformInfo.isWindows ? `""` : `\\"`)}"`;
+    return `"${(BaseCommandClient._password || '').replace(/"/g, window.platformInfo.isWindows ? `""` : `\\"`)}"`;
   }
 
   set connConfig(value: IConnection) {

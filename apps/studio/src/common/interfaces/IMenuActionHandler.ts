@@ -6,7 +6,8 @@ type ElectronWindow = Electron.BrowserWindow | undefined
 
 
 export interface IMenuActionHandler {
-  toggleSidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
+  togglePrimarySidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
+  toggleSecondarySidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   quit: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   undo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   redo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void

@@ -1,5 +1,5 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField } from '../models';
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
@@ -102,6 +102,14 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   async defaultSchema(): Promise<string | null> {
     return null
   }
+
+  async getCompletions(_cmd: string): Promise<string[]> {
+    return [];
+  }
+
+  async getShellPrompt(): Promise<string> {
+    return '';
+  }
   // ****************************************************************************
 
   // Connection *****************************************************************
@@ -188,6 +196,22 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return [];
   }
   abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
+
+  // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
+  async createTable(_table: CreateTableSpec): Promise<void> {
+    return Promise.resolve();
+  }
+
+  // MongoDB-specific schema validation methods
+  async getCollectionValidation(_collection: string): Promise<any> {
+    log.debug('getCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve(null);
+  }
+
+  async setCollectionValidation(_params: any): Promise<void> {
+    log.debug('setCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve();
+  }
   // ****************************************************************************
 
   // Make Changes ***************************************************************
@@ -562,6 +586,27 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     } finally {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
+  }
+
+  async getQueryForFilter(filter: TableFilter): Promise<string> {
+    if (!this.knex) {
+      log.warn("No knex instance found. Cannot get query for filter.");
+      return ""
+    }
+
+    let queryBuilder: Knex.QueryBuilder;
+
+    if (filter.type == 'is') {
+      queryBuilder = this.knex.whereNull(filter.field);
+    } else if (filter.type == 'is not') {
+      queryBuilder = this.knex.whereNotNull(filter.field);
+    } else {
+      queryBuilder = this.knex.where(filter.field, filter.type, filter.value);
+    }
+
+    return queryBuilder.toString()
+      .split("where")[1]
+      .trim();
   }
 
 }
