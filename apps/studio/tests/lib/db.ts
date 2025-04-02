@@ -27,6 +27,7 @@ import { buffer as b, uint8 as u } from '@tests/utils'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
 import { DuckDBBlobValue } from '@duckdb/node-api'
+import { TrinoKnexClient } from '@/shared/lib/knex-trino'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -72,6 +73,7 @@ const KnexTypes: any = {
   "firebird": Client_Firebird,
   "oracle": Client_Oracledb,
   "duckdb": Client_DuckDB,
+  "trino": TrinoKnexClient,
 }
 
 export interface Options {

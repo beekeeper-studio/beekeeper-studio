@@ -9,15 +9,15 @@ import { SupportedFeatures, FilterOptions, TableOrView, Routine, SchemaFilterOpt
 import { RequestInfo, RequestInit, Response } from 'node-fetch';
 import { TrinoKnexClient } from '../../shared/lib/knex-trino/index';
 import { TrinoCursor } from './trino/TrinoCursor';
-import { 
-  generateCountQuery, 
-  generateListCatalogsQuery, 
-  generateListColumnsQuery, 
-  generateListSchemasQuery, 
-  generateListTablesQuery, 
-  generateListViewsQuery, 
-  generateSelectTopSql, 
-  generateVersionQuery 
+import {
+  generateCountQuery,
+  generateListCatalogsQuery,
+  generateListColumnsQuery,
+  generateListSchemasQuery,
+  generateListTablesQuery,
+  generateListViewsQuery,
+  generateSelectTopSql,
+  generateVersionQuery
 } from './trino/scripts';
 
 const log = logRaw.scope('trino');
@@ -34,7 +34,7 @@ export interface TrinoQueryResult {
 const trinoContext: AppContextProvider = NoOpContextProvider;
 
 export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
-  
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     // Initialize the Trino custom client with full connection options
     const connectionConfig: any = {
@@ -50,7 +50,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
     if (server.config?.password) {
       connectionConfig.password = server.config.password;
     }
-    
+
     // Handle authentication types if specified
     if (server.config?.authType) {
       switch (server.config.authType) {
@@ -66,75 +66,75 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
             connectionConfig.kerberosRemoteServiceName = server.config.kerberosRemoteServiceName;
           }
           break;
-          
+
         case 'jwt':
           if (server.config?.accessToken) {
             connectionConfig.accessToken = server.config.accessToken;
           }
           break;
-          
+
         case 'oauth':
           if (server.config?.accessToken) {
             connectionConfig.accessToken = server.config.accessToken;
           }
           break;
-          
+
         case 'basic':
         default:
           // Basic auth is handled by the default password setting
           break;
       }
     }
-    
+
     // SSL/TLS options
     if (server.config?.ssl) {
       connectionConfig.ssl = true;
-      
+
       // Add SSL certificate options if provided
       if (server.config?.sslCaFile) {
         connectionConfig.sslCaFile = server.config.sslCaFile;
       }
-      
+
       if (server.config?.sslKeyFile) {
         connectionConfig.sslKeyFile = server.config.sslKeyFile;
       }
-      
+
       if (server.config?.sslCertFile) {
         connectionConfig.sslCertFile = server.config.sslCertFile;
       }
-      
+
       // Optional: reject unauthorized SSL certificates
       if (server.config?.sslRejectUnauthorized !== undefined) {
         connectionConfig.rejectUnauthorized = server.config.sslRejectUnauthorized;
       }
     }
-    
+
     // Add additional connection options if provided
     if (server.config?.connectionTimeout) {
       connectionConfig.connectTimeout = server.config.connectionTimeout;
     }
-    
+
     // Add query timeout if provided
     if (server.config?.queryTimeout) {
       connectionConfig.queryTimeout = server.config.queryTimeout;
     }
-    
+
     // Create a Knex instance with our custom Trino client
     const knex = knexlib({
       client: TrinoKnexClient,
       connection: connectionConfig
     });
-    
+
     super(knex, trinoContext, server, database);
-    
+
     this.dialect = 'trino';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    
+
     // Initialize necessary properties to prevent errors
     if (!this.server.db) {
       this.server.db = {};
     }
-    
+
     if (this.database.database) {
       this.server.db[this.database.database] = {};
     }
@@ -170,12 +170,12 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
 
   async connect(): Promise<void> {
     log.debug('connect() called');
-    
+
     try {
       // Test the connection by checking version information
       const versionQuery = generateVersionQuery();
       const result = await this.executeQuery(versionQuery);
-      
+
       // Verify the connection credentials by checking catalog access
       if (this.server.config?.catalog) {
         try {
@@ -188,19 +188,19 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
           // even if the specific catalog isn't accessible
         }
       }
-      
+
       // Test schema access if a schema is specified
       if (this.database.database && this.database.database !== 'default') {
         try {
-          // Test if we can access the specified schema 
+          // Test if we can access the specified schema
           const schemaQuery = `
-            SELECT 1 
-            FROM ${this.server.config?.catalog || 'default'}.information_schema.schemata 
+            SELECT 1
+            FROM ${this.server.config?.catalog || 'default'}.information_schema.schemata
             WHERE schema_name = '${this.database.database}'
             LIMIT 1
           `;
           const schemaResult = await this.executeQuery(schemaQuery);
-          
+
           // If the schema doesn't exist or isn't accessible, warn but don't fail
           if (schemaResult[0].rows.length === 0) {
             log.warn(`Connected to Trino, but schema '${this.database.database}' doesn't exist or isn't accessible`);
@@ -210,7 +210,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
           // We don't throw here for the same reason as catalog access
         }
       }
-      
+
       log.debug('Connection successful');
     } catch (err) {
       log.error('Connection failed', err);
@@ -235,7 +235,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         generateListTablesQuery(filter),
         {}
       );
-      
+
       return result.rows.map(row => ({
         name: row.name,
         schema: row.schema,
@@ -254,7 +254,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         generateListViewsQuery(filter),
         {}
       );
-      
+
       return result.rows.map(row => ({
         name: row.name,
         schema: row.schema,
@@ -277,16 +277,16 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
 
   async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
     if (!table) return [];
-    
+
     schema = schema || this.database.name;
     const catalog = this.server.config?.catalog || 'default';
-    
+
     try {
       const result = await this.rawExecuteQuery(
         generateListColumnsQuery(table, schema, catalog),
         {}
       );
-      
+
       return result.rows.map(row => ({
         columnName: row.columnName,
         dataType: row.dataType,
@@ -317,7 +317,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         generateListSchemasQuery(catalog),
         {}
       );
-      
+
       return result.rows.map(row => row.schema_name);
     } catch (err) {
       log.error('Error listing schemas', err);
@@ -338,7 +338,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     try {
       const result = await this.rawExecuteQuery(queryText, options || {});
-      
+      console.log("RAW RESULT", result)
       return [{
         rowCount: result.rows.length,
         fields: result.columns.map(col => this.parseTableColumn(col)),
@@ -353,7 +353,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
       throw err;
     }
   }
-  
+
   // Helper to determine affected rows for DML statements
   private getAffectedRows(result: TrinoQueryResult): number {
     // For non-SELECT queries that don't return rows, try to determine affected rows
@@ -373,11 +373,11 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
           }
         }
       }
-      
+
       // Default affected rows for DML statements with no explicit count
       return 0;
     }
-    
+
     // For SELECT queries, affected rows is 0
     return 0;
   }
@@ -389,7 +389,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         generateListCatalogsQuery(),
         {}
       );
-      
+
       return result.rows.map(row => row.catalog_name);
     } catch (err) {
       log.error('Error listing catalogs', err);
@@ -437,13 +437,13 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
 
   async getTableLength(table: string, schema?: string): Promise<number> {
     schema = schema || this.database.name;
-    
+
     try {
       const result = await this.rawExecuteQuery(
         generateCountQuery(table, schema),
         {}
       );
-      
+
       return result.rows[0].count;
     } catch (err) {
       log.error('Error getting table length', err);
@@ -454,25 +454,25 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
     schema = schema || this.database.name;
     const selectClause = selects && selects.length > 0 ? selects.join(', ') : '*';
-    
+
     let query = `SELECT ${selectClause} FROM "${schema}"."${table}"`;
-    
+
     // Add WHERE clause if filters are provided
     if (filters && (typeof filters === 'string' || filters.length > 0)) {
       query += ` WHERE ${typeof filters === 'string' ? filters : '1=1'}`; // Simplified
     }
-    
+
     // Add ORDER BY clause if orderBy is provided
     if (orderBy && orderBy.length > 0) {
       const orderClauses = orderBy.map(ord => `"${ord.field}" ${ord.dir}`);
       query += ` ORDER BY ${orderClauses.join(', ')}`;
     }
-    
+
     query += ` LIMIT ${limit} OFFSET ${offset}`;
-    
+
     try {
       const result = await this.rawExecuteQuery(query, {});
-      
+
       return {
         result: result.rows,
         totalRows: await this.getTableLength(table, schema),
@@ -516,7 +516,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
 
     // Read the first chunk to get column metadata
     const rows = await cursor.read();
-    
+
     if (rows.length === 0) {
       // No results, return empty data
       return {
@@ -536,7 +536,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
     try {
       // Get the total row count (may be approximate)
       const totalRows = await this.getApproximateRowCount(query);
-      
+
       return {
         cursor,
         fields,
@@ -551,7 +551,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
       };
     }
   }
-  
+
   // Helper method to get approximate row count for a query
   private async getApproximateRowCount(query: string): Promise<number> {
     try {
@@ -563,7 +563,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
       return -1; // Unknown count
     }
   }
-  
+
   // Helper method to infer BksType from a value
   private inferBksType(value: any): string {
     if (value === null || value === undefined) return 'NULL';
@@ -587,7 +587,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
   protected async rawExecuteQuery(q: string, options: any): Promise<TrinoQueryResult> {
     try {
       log.debug('Executing Trino query:', q);
-      
+
       // Create a Trino cursor for proper HTTP pagination
       const connectionConfig = {
         host: this.server.config?.host || 'localhost',
@@ -598,7 +598,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         schema: this.database.database || 'default',
         ssl: this.server.config?.ssl || false
       };
-      
+
       // Use the TrinoCursor to handle pagination properly
       const cursor = new TrinoCursor({
         connectionConfig,
@@ -606,15 +606,15 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         // Use a large chunk size for non-streaming queries
         chunkSize: 10000
       });
-      
+
       // Start the cursor
       await cursor.start();
-      
+
       // Accumulate all results
       let allRows: any[] = [];
       let columns: { name: string, type: string }[] = [];
       let queryType = 'UNKNOWN';
-      
+
       // Determine query type by looking at the first token in the query
       const trimmedQuery = q.trim().toLowerCase();
       if (trimmedQuery.startsWith('select')) {
@@ -637,22 +637,22 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         // WITH clauses are typically for CTEs in SELECT queries
         queryType = 'SELECT';
       }
-      
+
       try {
         // Read all results in chunks until there's no more data
         while (true) {
           const chunk = await cursor.read();
           if (chunk.length === 0) break;
-          
+
           // Add chunk to accumulated rows
           allRows = allRows.concat(chunk);
-          
+
           // If this is the first chunk, extract column information
           if (allRows.length > 0 && columns.length === 0) {
             // For object mode, extract column names from the first row
             if (typeof allRows[0] === 'object' && !Array.isArray(allRows[0])) {
-              columns = Object.keys(allRows[0]).map(key => ({ 
-                name: key, 
+              columns = Object.keys(allRows[0]).map(key => ({
+                name: key,
                 type: this.inferColumnType(allRows[0][key])
               }));
             }
@@ -662,7 +662,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
         // Always cancel the cursor to clean up resources
         await cursor.cancel();
       }
-      
+
       // Format the results in the expected TrinoQueryResult format
       return {
         columns: columns.length > 0 ? columns : [],
@@ -675,12 +675,12 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
       throw err;
     }
   }
-  
+
   // Helper method to infer column type from a value
   private inferColumnType(value: any): string {
     if (value === null || value === undefined) return 'null';
     const type = typeof value;
-    
+
     if (type === 'number') {
       if (Number.isInteger(value)) return 'integer';
       return 'double';
@@ -699,17 +699,17 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
     } else if (type === 'object') {
       return 'map';
     }
-    
+
     return 'unknown';
   }
 
   protected parseTableColumn(column: any): BksField {
     const name = column.name || column.columnName;
     const dataType = column.type || column.dataType || '';
-    
+
     // Map Trino data types to BksTypes
     let bksType = 'UNKNOWN';
-    
+
     // Simple type mapping
     if (/^varchar|text|char|json|varbinary|array/.test(dataType.toLowerCase())) {
       bksType = 'TEXT';
@@ -730,7 +730,7 @@ export class TrinoClient extends BaseV1DatabaseClient<TrinoQueryResult> {
     } else if (/^map|json/.test(dataType.toLowerCase())) {
       bksType = 'JSON';
     }
-    
+
     return {
       name,
       bksType

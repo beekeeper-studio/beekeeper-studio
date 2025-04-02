@@ -14,9 +14,13 @@ volumes:
   bigquery:
   firebird:
   mongodb:
+  trino:
 
 services:
-
+  trino:
+    image: trinodb/trino:latest
+    ports:
+      - 8090:8080
   mongodb:
     image: mongo
     environment:

@@ -219,5 +219,9 @@ export const CLIENTS: ClientConfig[] = [
   {
     key: 'mongodb',
     name: 'MongoDB'
-  }
+  },
+  {
+    key: 'trino',
+    name: "Trino"
+  },
 ];

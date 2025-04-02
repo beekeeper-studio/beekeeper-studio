@@ -5,8 +5,8 @@ import TableCompiler from "./schema/trino-tablecompiler";
 import TableBuilder from "./schema/trino-tablebuilder";
 import ViewCompiler from "./schema/trino-viewcompiler";
 import QueryCompiler from "./schema/trino-querycompiler";
-
-import * as Knex from 'knex';
+import Client from 'knex/lib/client'
+import { Knex } from 'knex'
 import { makeEscape } from './makeEscape';
 import { retry } from '@cleverbrush/async';
 import { deepExtend } from '@cleverbrush/deep';
@@ -53,25 +53,25 @@ interface TrinoConnectionConfig {
     ssl?: boolean;
 }
 
-export class TrinoKnexClient extends Knex.Client {
+export class TrinoKnexClient extends Client {
     static dialectName = 'trino';
     static driverName = 'trino';
-    
+
     _driver() {
         return { name: 'trino' };
     }
 
     private retryOptions: Parameters<typeof retry>[1];
 
-    constructor(config: Knex.Config & AdditionalClientOptions = {}) {
+    constructor(private config: Knex.Config & AdditionalClientOptions = { }) {
         // Make a copy of the config to avoid modifying it
         const clientConfig = { ...config };
-        
+
         super(clientConfig);
 
         // Extract retry options from config
         const retryOptions = config.retry;
-        
+
         this.retryOptions = retryOptions
             ? deepExtend(
                   {
@@ -85,9 +85,9 @@ export class TrinoKnexClient extends Knex.Client {
               )
             : null;
     }
-    
+
     // This factory method is used by Knex for initialization
-    static get(config: Knex.Config & AdditionalClientOptions = {}) {
+    static get(config: any = { }) {
         return new TrinoKnexClient(config);
     }
 
@@ -230,18 +230,18 @@ export class TrinoKnexClient extends Knex.Client {
     private async executeQuery(connection: any, query: string): Promise<Response> {
         try {
             const { catalog, schema, user, password, host, port } = connection.config;
-            
+
             const headers: Record<string, string> = {
                 'X-Trino-User': user || 'trino',
                 'Content-Type': 'application/json'
             };
-            
+
             if (password) {
                 headers['X-Trino-Password'] = password;
             }
 
             const url = `${connection.config.ssl ? 'https' : 'http'}://${host}:${port}/v1/statement`;
-            
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers,
@@ -251,13 +251,13 @@ export class TrinoKnexClient extends Knex.Client {
                     schema
                 })
             });
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || `HTTP Error: ${response.status}`);
             }
-            
-            return response;
+
+            return response as any;
         } catch (error) {
             console.error('Trino query execution error:', error);
             throw error;

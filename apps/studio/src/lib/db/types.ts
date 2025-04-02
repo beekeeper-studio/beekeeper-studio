@@ -162,6 +162,7 @@ export interface IDbConnectionServerConfig {
   authId?: number
   libsqlOptions?: LibSQLOptions
   runtimeExtensions?: string[]
+  catalog?: string
 }
 
 export interface IBasicDatabaseClient {
