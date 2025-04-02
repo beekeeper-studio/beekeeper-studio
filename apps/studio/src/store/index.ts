@@ -495,6 +495,7 @@ const store = new Vuex.Store<State>({
     },
     async updateDatabaseList(context) {
       const databaseList = await context.state.connection.listDatabases();
+      log.info("databaseList: ", databaseList)
       context.commit('databaseList', databaseList)
     },
     async updateTables(context) {

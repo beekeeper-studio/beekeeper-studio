@@ -7,9 +7,11 @@ import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryRe
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
-import vm from "vm";
+import { ElectronRuntime as MongoRuntime } from '@mongosh/browser-runtime-electron';
+import { NodeDriverServiceProvider } from '@mongosh/service-provider-node-driver';
 import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
+import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 
 const log = rawLog.scope('mongodb');
@@ -31,6 +33,7 @@ const mongoContext = {
 
 export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   conn: MongoClient;
+  runtime: MongoRuntime;
   transcoders = [MongoDBObjectIdTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -52,6 +55,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
     // pre connect to pool
     await this.conn.connect();
+
+    // @ts-ignore
+    const service = new NodeDriverServiceProvider(this.conn, new EventEmitter(), { productDocsLink: '', productName: 'BeekeeperStudio' });
+    this.runtime = new MongoRuntime(service);
+    this.runtime.evaluate(`use ${this.db}`)
   }
 
   async disconnect() {
@@ -595,29 +603,87 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
+  async getCompletions(cmd: string): Promise<string[]> {
+    return (await this.runtime.getCompletions(cmd)).map((c) => c.completion)
+  }
+
+  async getShellPrompt(): Promise<string> {
+    return await this.runtime.getShellPrompt()
+  }
+
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
-    const db = this.conn.db(this.db);
+    let results: NgQueryResult[] = [];
 
-    let result = [];
-
-    let display = function (data: any) {
-      result.push(this.parseRowQueryResult(data));
+    const listener = {
+      onPrint: (value): void => {
+        value.map((v) => {
+          results.push({
+            output: v.printable
+          })
+        })
+      }
     }
-    const sandbox = {
-      db,
-      display: display.bind(this)
-    };
 
-    const userScript = `
-      (async () => {
-        ${queryText}
-      })()
-    `
+    this.runtime.setEvaluationListener(listener);
 
-    vm.createContext(sandbox)
-    await vm.runInContext(userScript, sandbox)
+    const ev = await this.runtime.evaluate(queryText);
 
-    return result;
+    let fields = [];
+    if (ev.type === 'Cursor' || ev.type === 'AggregationCursor') {
+      if (ev.printable?.documents?.length > 0) {
+        fields = Object.keys(ev.printable?.documents[0]).map((k) => ({
+          name: k,
+          id: k
+        }));
+      }
+      results.push({
+        rows: ev.printable?.documents,
+        rowCount: ev.printable?.documents?.length,
+        fields,
+        tableName: ev.source?.namespace?.collection ?? 'mycollection',
+        command: queryText
+      })
+    } else if (ev.type === 'Document') {
+      if (ev.printable) {
+        fields = Object.keys(ev.printable).map((k) => ({
+          name: k,
+          id: k
+        }));
+      }
+      results.push({
+        rows: ev.printable ? [ev.printable] : [],
+        rowCount: ev.printable ? 1 : 0,
+        fields,
+        tableName: ev.source?.namespace?.collection ?? 'mycollection',
+        command: queryText
+      })
+    } else if (ev.type === null && ev.printable) {
+      if (typeof ev.printable === 'number') {
+        results.push({
+          rows: [{ count: ev.printable }],
+          rowCount: 1,
+          fields: [{ name: 'count', id: 'count' }],
+          command: queryText
+        });
+      } else {
+        if (ev.printable?.length > 0) {
+          fields = Object.keys(ev.printable[0]).map((k) => ({
+            name: k,
+            id: k
+          }));
+        }
+        results.push({
+          rows: ev.printable,
+          rowCount: ev.printable?.length,
+          fields,
+          tableName: ev.source?.namespace?.collection ?? 'mycollection',
+          command: queryText
+        })
+      }
+    }
+    log.debug("RESULTS: ", results);
+
+    return results;
   }
 
   // ********************** UNSUPPORTED ***************************

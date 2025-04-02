@@ -77,12 +77,16 @@ declare interface IBksConfig {
         tableTable: {
             focusOnFilterInput: string;
             nextPage: string;
+            openEditorModal: string;
             previousPage: string;
         };
     };
     ui: {
         export: {
             errorNoticeTimeout: number;
+        };
+        general: {
+            binaryEncoding: string;
         };
         queryEditor: {
             maxResults: number;

@@ -5,6 +5,8 @@
     :hidden="hidden"
     :expandable-paths="expandablePaths"
     :reinitialize="reinitializeJsonViewer"
+    :signs="signs"
+    :binary-encoding="$bksConfig.ui.general.binaryEncoding"
     @expandPath="handleExpandPath"
   />
 </template>
@@ -13,6 +15,7 @@
 import Vue from "vue";
 import JsonViewer from "./JsonViewer.vue";
 import { AppEvent } from '@/common/AppEvent'
+import { LineGutter } from "@/lib/editor/utils";
 
 export default Vue.extend({
   name: "JsonViewerSidebar",
@@ -27,6 +30,7 @@ export default Vue.extend({
     return {
       value: {},
       expandablePaths: [],
+      signs: {},
     };
   },
   computed: {
@@ -50,9 +54,10 @@ export default Vue.extend({
     handleExpandPath(expandablePaths: string[]) {
       this.trigger(AppEvent.jsonViewerSidebarExpandPath, expandablePaths)
     },
-    update(options: { value: Record<string, unknown>; expandablePaths: string[] }) {
+    update(options: { value: Record<string, unknown>; expandablePaths: string[], signs: Record<string, LineGutter['type']>}) {
       this.value = options.value
       this.expandablePaths = options.expandablePaths
+      this.signs = options.signs
     },
     handleSwitchingTab() {
       this.reset()
