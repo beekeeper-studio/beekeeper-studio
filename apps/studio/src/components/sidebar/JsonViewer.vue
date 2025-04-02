@@ -82,7 +82,7 @@ import {
   deepFilterObjectProps,
   getPaths,
   eachPaths,
-} from "@/lib/data/detail_view";
+} from "@/lib/data/jsonViewer";
 import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";

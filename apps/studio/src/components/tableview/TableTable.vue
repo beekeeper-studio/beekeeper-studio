@@ -320,7 +320,7 @@ import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import { ExpandablePath } from '@/lib/data/detail_view'
+import { ExpandablePath } from '@/lib/data/jsonViewer'
 import { stringToTypedArray } from "@/common/utils";
 
 const log = rawLog.scope('TableTable')

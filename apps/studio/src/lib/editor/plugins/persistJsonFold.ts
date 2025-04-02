@@ -4,7 +4,7 @@
  **/
 
 import _ from "lodash";
-import { findKeyPosition } from "@/lib/data/detail_view";
+import { findKeyPosition } from "@/lib/data/jsonViewer";
 import { getLocation, JSONPath } from "jsonc-parser";
 import CodeMirror from "codemirror";
 
