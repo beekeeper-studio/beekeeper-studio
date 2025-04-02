@@ -280,7 +280,7 @@ export default Vue.extend({
           checked: this.expandFKDetailsByDefault,
         },
         {
-          name: "Toggle Wrap Text",
+          name: "Wrap Text",
           handler: () => {
             this.wrapText = !this.wrapText
           },

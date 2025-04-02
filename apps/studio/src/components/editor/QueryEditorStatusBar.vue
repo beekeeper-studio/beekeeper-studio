@@ -148,7 +148,7 @@
             @click.prevent="$emit('wrap-text')"
           >
             <x-label class="flex-between">
-              Toggle Wrap Text
+              Wrap Text
             </x-label>
           </x-menuitem>
         </x-menu>
