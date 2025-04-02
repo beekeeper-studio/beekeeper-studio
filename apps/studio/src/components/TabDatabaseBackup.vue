@@ -15,7 +15,7 @@
     v-else-if="isCommunity"
     class="tab-upsell-wrapper"
   >
-    <upsell-content></upsell-content>
+    <upsell-content />
   </div>
   <div
     v-else-if="dataLoaded"
