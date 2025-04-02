@@ -37,6 +37,7 @@ export const DuckDBData: DialectData = {
   },
   textEditorMode: "text/x-sql",
   disabledFeatures: {
+    shell: true,
     triggers: true,
     multipleDatabases: true,
     alter: {

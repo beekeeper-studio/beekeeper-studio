@@ -6,7 +6,7 @@ import fs from "fs";
 import dtsGen from "dts-gen";
 import path from "path";
 import _ from "lodash";
-import { parseIni } from "./helpers";
+import { parseIni } from "./helpers.js";
 
 function resolveRootPath() {
   const __dirname = path.resolve();
@@ -14,7 +14,7 @@ function resolveRootPath() {
   if (dirpath.includes("node_modules")) {
     return dirpath.split("node_modules")[0];
   }
-  return path.resolve(dirpath, "../..");
+  return dirpath;
 }
 
 export function generateConfigTypes() {
@@ -34,7 +34,7 @@ export function generateConfigTypes() {
       .replace("declare const IBksConfig:", "declare interface IBksConfig");
 
   fs.writeFileSync(
-    path.join(rootPath, "apps/studio/src/typings/bksConfig.d.ts"),
+    path.join(rootPath, "src/typings/bksConfig.d.ts"),
     result
   );
 }

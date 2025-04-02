@@ -4,8 +4,8 @@
  **/
 
 import _ from "lodash";
-import { findKeyPosition } from "@/lib/data/detail_view";
 // FIXME (azmi): maybe use json-source-map instead?
+import { findKeyPosition } from "@/lib/data/jsonViewer";
 import { getLocation, JSONPath } from "jsonc-parser";
 import CodeMirror from "codemirror";
 

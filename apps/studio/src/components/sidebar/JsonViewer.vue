@@ -1,19 +1,10 @@
 <template>
   <div
-    class="sidebar detail-view-sidebar flex-col"
+    class="json-viewer"
     ref="sidebar"
     v-show="!hidden"
   >
     <div class="header">
-      <div class="header-group">
-        <span class="title sub">{{ sidebarTitle }}</span>
-        <button
-          class="close-btn btn btn-fab"
-          @click="close"
-        >
-          <i class="material-icons">close</i>
-        </button>
-      </div>
       <div
         class="header-group"
         v-show="!empty"
@@ -62,14 +53,15 @@
       :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
       :markers="markers"
       :plugins="textEditorPlugins"
+      :line-wrapping="wrapText"
       :line-gutters="lineGutters"
       :line-numbers="false"
       :extra-keybindings="disableReplaceKeybindings"
     />
     <div class="empty-state" v-show="empty">
-      No Data
+      Open a table to view its data
     </div>
-    <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" />
+    <json-viewer-upsell v-if="$store.getters.isCommunity" />
   </div>
 </template>
 
@@ -90,23 +82,24 @@ import {
   deepFilterObjectProps,
   getPaths,
   eachPaths,
-} from "@/lib/data/detail_view";
+} from "@/lib/data/jsonViewer";
 import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
 import PartialReadOnlyPlugin from "@/lib/editor/plugins/PartialReadOnlyPlugin";
-import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
+import JsonViewerUpsell from '@/components/upsell/JsonViewerSidebarUpsell.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
 import JsonSourceMap from "json-source-map";
 import JsonPointer from "json-pointer";
+import { typedArrayToString } from '@/common/utils'
 
-const log = rawLog.scope("detail-view-sidebar");
+const log = rawLog.scope("json-viewer");
 
 export default Vue.extend({
-  components: { TextEditor, DetailViewSidebarUpsell },
-  props: ["value", "hidden", "expandablePaths", "editablePaths", "dataId", "title", "reinitialize", "signs"],
+  components: { TextEditor, JsonViewerUpsell },
+  props: ["value", "hidden", "expandablePaths", "editablePaths", "dataId", "title", "reinitialize", "signs", "binaryEncoding"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -119,6 +112,7 @@ export default Vue.extend({
         [this.cmCtrlOrCmd("R")]: () => false,
         [this.cmCtrlOrCmd("Shift-R")]: () => false,
       },
+      wrapText: false,
     };
   },
   watch: {
@@ -324,6 +318,13 @@ export default Vue.extend({
           },
           checked: this.expandFKDetailsByDefault,
         },
+        {
+          name: "Wrap Text",
+          handler: () => {
+            this.wrapText = !this.wrapText
+          },
+          checked: this.wrapText,
+        },
 
       ]
     },
@@ -336,11 +337,14 @@ export default Vue.extend({
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
+    replacer(_key: string, value: unknown) {
+      if (_.isTypedArray(value)) {
+        return typedArrayToString(value as ArrayBufferView, this.binaryEncoding)
+      }
+      return value
+    },
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
-    },
-    close() {
-      this.$emit("close")
     },
     handleEditableRangeChange: _.debounce(function (range, value) {
       this.editableRangeErrors = []

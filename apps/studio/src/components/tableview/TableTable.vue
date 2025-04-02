@@ -6,6 +6,7 @@
   >
     <editor-modal
       ref="editorModal"
+      :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       @save="onSaveEditorModal"
     />
     <template v-if="!table && initialized">
@@ -32,19 +33,6 @@
         <div
           ref="table"
           class="spreadsheet-table"
-        />
-        <detail-view-sidebar
-          :title="detailViewTitle"
-          :value="selectedRowData"
-          :data-id="selectedRowIndex"
-          :hidden="!openDetailView"
-          :expandable-paths="expandablePaths"
-          :editable-paths="editablePaths"
-          :reinitialize="reinitializeDetailView"
-          :signs="selectedRowDataSigns"
-          @expandPath="expandForeignKey"
-          @close="toggleOpenDetailView(false)"
-          @bks-json-value-change="handleJsonValueChange"
         />
       </div>
       <ColumnFilterModal
@@ -196,13 +184,6 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Toggle Right Sidebar`"
-          class="btn btn-flat"
-          @click="toggleOpenDetailView()"
-        >
-          <i class="material-icons material-icons-round">view_sidebar</i>
-        </x-button>
-        <x-button
           v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
@@ -339,17 +320,15 @@ import { escapeHtml } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
-import Split from 'split.js'
-import { ExpandablePath } from '@/lib/data/detail_view'
-import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
+import { ExpandablePath } from '@/lib/data/jsonViewer'
+import { stringToTypedArray } from "@/common/utils";
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, DetailViewSidebar, AddFieldModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, AddFieldModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -398,14 +377,11 @@ export default Vue.extend({
       selectedRowPosition: null,
       selectedRowData: {},
       expandablePaths: {},
-      split: null,
-      detailViewTitle: undefined,
-      reinitializeDetailView: 0,
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
-    ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'openDetailView']),
+    ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
     limit() {
       return this.$bksConfig.ui.tableTable.pageSize
     },
@@ -584,6 +560,11 @@ export default Vue.extend({
         action: this.showColumnFilterModal,
       }
     },
+    rootBindings() {
+      return [
+        { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+      ]
+    },
     /** This tells which fields have been modified */
     selectedRowDataSigns() {
       const signs = {}
@@ -624,14 +605,6 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
-      this.updateSplit()
-
-      if (this.active) {
-        this.reinitializeDetailView++
-        const splitSizes = this.$store.state.tableTableSplitSizes
-        this.split?.setSizes(splitSizes)
-      }
-
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -703,17 +676,23 @@ export default Vue.extend({
     },
   },
   beforeDestroy() {
+    this.handleTabInactive()
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
     }
+    this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
     if (this.shouldInitialize) {
-      this.$nextTick(async() => {
+      await this.$nextTick(async() => {
         await this.initialize()
       })
     }
+    if (this.active) {
+      this.handleTabActive()
+    }
+    this.registerHandlers(this.rootBindings)
   },
   methods: {
     createColumnFromProps(column) {
@@ -795,7 +774,7 @@ export default Vue.extend({
       const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
       const hasKeyDatas = keyDatas && keyDatas.length > 0
       const columnWidth = this.table.columns.length > 30 ?
-        this.defaultColumnWidth(slimDataType, $bksConfig.ui.tableTable.defaultColumnWidth) :
+        this.defaultColumnWidth(slimDataType, this.$bksConfig.ui.tableTable.defaultColumnWidth) :
         undefined;
 
       let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
@@ -854,7 +833,8 @@ export default Vue.extend({
         formatterParams: {
           fk: hasKeyDatas && keyDatas[0][1],
           fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
-          isPK: isPK
+          isPK: isPK,
+          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
         },
         editorParams: {
           verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
@@ -868,6 +848,7 @@ export default Vue.extend({
           },
           typeHint: column.dataType?.toLowerCase(),
           bksField: column.bksField,
+          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
         },
       }
 
@@ -955,8 +936,6 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
-      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
@@ -1018,23 +997,16 @@ export default Vue.extend({
           scrollPageUp: false,
           scrollPageDown: false
         },
+        onRangeChange: this.handleRangeChange,
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on("cellMouseUp", this.updateDetailView);
-      this.tabulator.on("headerMouseUp", this.updateDetailView);
-      this.tabulator.on(
-        "keyNavigate",
-        // This is slow if we do a long press. Debounce it so it feels good.
-        _.debounce(this.updateDetailView, 100, {
-          leading: true, trailing: true
-        })
-      );
-      // Tabulator range is reset after data is processed
-      this.tabulator.on("dataProcessed", this.updateDetailView);
+
+      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.updateSplit()
     },
@@ -1064,8 +1036,9 @@ export default Vue.extend({
         {
           label: createMenuItem('See details'),
           action: () => {
-            this.toggleOpenDetailView(true)
-            this.updateDetailView({ range })
+            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+            this.trigger(AppEvent.toggleSecondarySidebar, true)
+            this.updateJsonViewer({ range })
           },
         },
       ]
@@ -1106,35 +1079,38 @@ export default Vue.extend({
         })
       }
     },
+    openCellEditorModal(cell: CellComponent, isReadOnly: boolean) {
+      const eventParams = { cell, isReadOnly };
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
+    },
+
     openEditorMenuByShortcut() {
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       // FIXME maybe we can avoid calling child methods directly like this?
       // it should be done by calling an event using this.$modal.show(modalName)
       // or this.$trigger(AppEvent.something) if possible
-      if (this.isPrimaryKey(cell.getField())) return;
-      const eventParams = {
-        cell,
-        isReadOnly: this.isEditorMenuDisabled(cell)
-      };
-      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
+      this.openCellEditorModal(cell, this.isEditorMenuDisabled(cell))
     },
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
       return {
         label: createMenuItem(isReadOnly? "View in modal" : "Edit in modal", "Shift + Enter"),
         action: () => {
-          if (this.isPrimaryKey(cell.getField())) return
-          this.$refs.editorModal.openModal(cell.getValue(), undefined, { cell, isReadOnly })
+          this.openCellEditorModal(cell, isReadOnly)
         }
       }
     },
-    onSaveEditorModal(content: string, _: LanguageData, cell: CellComponent){
-      if (ArrayBuffer.isView(cell.getValue())) {
-        cell.setValue(friendlyUint8Array(hexToUint8Array(content)))
-      } else {
-        cell.setValue(content)
+    onSaveEditorModal(content: string, _l: LanguageData, cell: CellComponent){
+      const column = this.table.columns.find((col) => col.columnName === cell.getField());
+      const isBinary = column?.bksField?.bksType === 'BINARY' || _.isTypedArray(cell.getValue());
+
+      let value = content;
+      if (isBinary) {
+        value = stringToTypedArray(content)
       }
+
+      cell.setValue(value)
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
@@ -1269,7 +1245,7 @@ export default Vue.extend({
       // reflect changes in the detail view
       if (this.positionRowOf(cell.getRow()) === this.selectedRowIndex) {
         cell.getRow().invalidateForeignCache(cell.getField())
-        this.updateDetailView()
+        this.updateJsonViewer()
       }
 
       // Dont handle cell edit if made on a pending insert
@@ -1751,19 +1727,10 @@ export default Vue.extend({
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
-    async toggleOpenDetailView(open?: boolean) {
-      if (typeof open === 'undefined') {
-        open = !this.openDetailView
-      }
-      this.updateSplit(open)
-      this.rootToggleOpenDetailView(open)
-    },
     positionRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
-    updateDetailView(options: { range?: RangeComponent } = {}) {
-      if (!this.openDetailView) return
-
+    updateJsonViewer(options: { range?: RangeComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
@@ -1775,7 +1742,6 @@ export default Vue.extend({
       const position = this.positionRowOf(row)
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
-      this.detailViewTitle = `Row ${position}`
       this.selectedRow = row
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
@@ -1787,20 +1753,15 @@ export default Vue.extend({
           tableKey: key,
         }))
       this.expandablePaths.push(...cachedExpandablePaths)
-    },
-    initializeSplit() {
-      const components = this.$refs.tableViewWrapper.children
-      const splitSizes = this.$store.state.tableTableSplitSizes
-      this.split = Split(components, {
-        elementStyle: (_dimension, size) => ({
-          'flex-basis': `calc(${size}%)`,
-        }),
-        sizes: splitSizes,
-        expandToMin: true,
-        onDragEnd: () => {
-          this.$store.dispatch("setTableTableSplitSizes", this.split.getSizes())
-        }
-      } as Split.Options)
+
+      const updatedData = {
+        value: this.selectedRowData,
+        expandablePaths: this.expandablePaths,
+        signs: this.selectedRowDataSigns,
+        editablePaths: this.editablePaths,
+      }
+
+      this.trigger(AppEvent.updateJsonViewerSidebar, updatedData)
     },
     exportTable() {
       this.trigger(AppEvent.beginExport, { table: this.table })
@@ -1897,31 +1858,56 @@ export default Vue.extend({
       const filteredExpandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
       this.expandablePaths = filteredExpandablePaths
       this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
-    },
-    /**
-     * This should be called before showing/hiding the detail view
-     * @param {boolean} open - true if we want to open the detail view
-     */
-    updateSplit(open?: boolean) {
-      if (typeof open === 'undefined') {
-        open = this.openDetailView
+
+      const data = {
+        value: this.selectedRowData,
+        expandablePaths: this.expandablePaths,
+        signs: this.selectedRowDataSigns,
+        editablePaths: this.editablePaths,
       }
-      if (open && !this.split) {
-        this.initializeSplit()
-      } else if (!open) {
-        this.split?.destroy()
-        this.split = null
+
+      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+    },
+    handleRangeChange(ranges: RangeComponent[]) {
+      this.updateJsonViewer({ range: ranges[0] })
+    },
+    handleSwitchedTab(tab) {
+      if (tab === this.tab) {
+        this.handleTabActive()
+      } else {
+        this.handleTabInactive()
       }
     },
+    handleTabActive() {
+      const data = {
+        value: this.selectedRowData,
+        expandablePaths: this.expandablePaths,
+        signs: this.selectedRowDataSigns,
+        editablePaths: this.editablePaths,
+      }
+      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.registerHandlers([
+        {
+          event: AppEvent.jsonViewerSidebarExpandPath,
+          handler: this.expandForeignKey,
+        },
+      ])
+    },
+    handleTabInactive() {
+      this.unregisterHandlers([
+        {
+          event: AppEvent.jsonViewerSidebarExpandPath,
+          handler: this.expandForeignKey,
+        },
+      ])
+    },
+    // FIXME use appevent
     handleJsonValueChange({key, value}) {
       this.selectedRow?.getCell(key).setValue(value)
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
     }, 300),
-    ...mapActions({
-      rootToggleOpenDetailView: "toggleOpenDetailView",
-    }),
   }
 });
 </script>

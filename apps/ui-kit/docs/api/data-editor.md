@@ -20,8 +20,7 @@ For examples and usage details, visit [Data Editor][data-editor] page.
 ## Events
 
 All events of [Table][table-api-events], [Entity List][entity-list-events]
-and [SQL Text Editor][sql-text-editor-events] components are available are
-available, in addition to the following events:
+and [SQL Text Editor][sql-text-editor-events] components are available, in addition to the following events:
 
 | Name               | Description                          | Event Detail        |
 | ------------------ | ------------------------------------ | ------------------- |
