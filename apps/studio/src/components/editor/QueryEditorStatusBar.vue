@@ -130,20 +130,25 @@
         <i class="material-icons">settings</i>
         <i class="material-icons">arrow_drop_down</i>
         <x-menu>
-          <x-menuitem disabled>
+          <x-menuitem disabled togglable>
             <x-label>Editor keymap</x-label>
           </x-menuitem>
           <x-menuitem
             :key="t.value"
             v-for="t in keymapTypes"
+            togglable
+            :toggled="t.value === userKeymap"
             @click.prevent="userKeymap = t.value"
           >
+            <x-label>{{ t.name }}</x-label>
+          </x-menuitem>
+          <x-menuitem
+            togglable
+            :toggled="wrapText"
+            @click.prevent="$emit('wrap-text')"
+          >
             <x-label class="flex-between">
-              {{ t.name }}
-              <span
-                class="material-icons"
-                v-if="t.value === userKeymap"
-              >done</span>
+              Wrap Text
             </x-label>
           </x-menuitem>
         </x-menu>
@@ -174,7 +179,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText'],
   components: { Statusbar },
   data() {
     return {

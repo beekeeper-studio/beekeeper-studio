@@ -41,6 +41,7 @@
         :identifier-dialect="identifierDialect"
         :keybindings="keybindings"
         :vim-config="vimConfig"
+        :line-wrapping="wrapText"
         :keymap="userKeymap"
         :entities="entities"
         :columns-getter="columnsGetter"
@@ -201,6 +202,7 @@
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
+        @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
       />
     </div>
@@ -396,6 +398,7 @@
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
+        wrapText: false,
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
