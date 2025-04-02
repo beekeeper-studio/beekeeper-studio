@@ -73,27 +73,21 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   .tabulator-tableholder {
     .tabulator-table {
       .tabulator-row {
-        &.tabulator-row-even,
-        &:nth-child(odd) {
+        &.tabulator-row-even {
           &.inserted,
           &.inserted:hover {
-            background: $row-add!important;
-            --row-bg-color: #{$row-add};
-            --row-hover-bg-color: rgba($theme-base, 0.05);
+            background: $row-add;
           }
           &.deleted,
           &.deleted:hover {
-            background: $row-delete!important;
-            --row-bg-color: #{$row-delete};
-            --row-hover-bg-color: #{$row-delete};
+            background: $row-delete;
           }
           &.edit-error {
-            background: $row-error!important;
-            --row-bg-color: #{$row-error};
+            background: $row-error;
           }
         }
         &.edit-error {
-          background: $row-error !important;
+          background: $row-error ;
         }
         .tabulator-cell {
           &.edited,
@@ -103,10 +97,8 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           }
           &.edited {
             background: $cell-edited;
-            --row-bg-color: #{$cell-edited};
             &:hover {
               background: darken($cell-edited, 5%);
-              --row-hover-bg-color: darken($cell-edited, 5%);
             }
           }
           &.edit-error {
@@ -160,11 +152,6 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       }
     }
   }
-  .tabulator-row {
-    &:nth-child(odd) {
-      background: rgba($theme-base, 0.025);
-    }
-  }
 
   .tabulator-tableholder .tabulator-table {
 
@@ -185,7 +172,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       }
       &.inserted {
         .tabulator-editing {
-          box-shadow: inset 0 -1px $theme-base!important;
+          box-shadow: inset 0 -1px $theme-base;
         }
       }
       &.deleted,
@@ -193,7 +180,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         background: $row-delete;
       }
       &.edit-error {
-        background: $cell-error!important;
+        background: $cell-error;
       }
       &.inserted,
       &.deleted,
@@ -203,21 +190,20 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         .tabulator-cell {
           &.foreign-key-button {
             &:hover {
-              background: transparent!important;
+              background: transparent;
             }
           }
         }
       }
       &.deleted {
         .tabulator-cell {
-          cursor: default!important;
+          cursor: default;
           &:hover {
-            background: transparent!important;
-            --row-hover-bg-color: transparent;
+            background: transparent;
           }
           .tabulator-bks-checkbox {
             input {
-              cursor: default!important;
+              cursor: default;
             }
           }
         }
@@ -243,13 +229,13 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       .tabulator-cell {
         &.tabulator-editing {
           &.no-edit-highlight {
-            box-shadow: none!important;
+            box-shadow: none;
             input[type="checkbox"] {
               &:active,
               &:checked,
               &:checked:active {
                 &:after {
-                  color: $theme-bg!important;
+                  color: $theme-bg;
                 }
               }
             }
@@ -306,11 +292,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       }
       textarea {
         border-color: transparent;
-        padding: 4px 6px!important;
+        padding: 4px 6px;
         line-height: $row-height - 8px; // row-height - vertical padding
         z-index: 10;
         box-shadow: inset 1px solid $theme-base;
-        height: auto!important;
+        height: auto;
         &:before {
           content: '';
           position: absolute;
@@ -328,7 +314,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       }
 
       &.copied {
-        background: rgba($theme-base, 0.4) !important;
+        background: rgba($theme-base, 0.4);
       }
 
       // Cell States
@@ -339,7 +325,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         color: $theme-base;
       }
       &.tabulator-editing {
-        box-shadow: inset 0 -1px $theme-base!important;
+        box-shadow: inset 0 -1px $theme-base;
         background: rgba($theme-base, 0.08);
         padding-left: 0;
         padding-right: 0;
@@ -347,35 +333,35 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         line-height: $row-height;
         border-radius: $cell-radius;
         overflow-y: visible;
-        height: auto!important;
+        height: auto;
         &:focus {
-          box-shadow: inset 0 -1px $theme-base!important;
+          box-shadow: inset 0 -1px $theme-base;
         }
         pre, input:not([type="checkbox"]), textarea {
-          padding: 0 $cell-padding!important;
+          padding: 0 $cell-padding;
           min-height: $row-height;
         }
         pre, input:not([type="checkbox"]) {
-          line-height: $row-height!important;
+          line-height: $row-height;
           &:focus {
-            outline-offset: 0!important;
+            outline-offset: 0;
           }
         }
         input:not([type="checkbox"]) {
           &.nullible-input {
-            padding-right: 18px!important;
+            padding-right: 18px;
           }
         }
         .tabulator-bks-checkbox {
-          padding: 0!important;
+          padding: 0;
         }
         input[type="checkbox"] {
-          box-shadow: inset 0 0 0 2px $theme-base!important;
+          box-shadow: inset 0 0 0 2px $theme-base;
           &:active,
           &:checked,
           &:checked:active {
             &:after {
-              color: $theme-bg!important;
+              color: $theme-bg;
             }
           }
         }
@@ -395,11 +381,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     }
 
     &.copied {
-      background: rgba($theme-base, 0.4) !important;
+      background: rgba($theme-base, 0.4) ;
       .tabulator-cell {
 
         &:hover {
-          background: rgba($theme-base, 0.4) !important;
+          background: rgba($theme-base, 0.4) ;
         }
       }
     }
@@ -487,7 +473,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       width: -webkit-fill-available;
       z-index: 1;
       .tabulator-col {
-        height: 32px!important;
+        height: 32px;
         font-size: 90%;
         line-height: 1;
         flex-direction: row;
@@ -577,9 +563,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           padding: 0 4px 0 8px;
           line-height: 32px;
           width: 100%;
-          .tabulator-arrow {
+        }
+        &.tabulator-sortable[aria-sort] .tabulator-col-content {
+          .tabulator-col-sorter .tabulator-arrow {
             top: 14px;
-            border-width: 4px!important;
+            border-width: 4px;
           }
         }
       }
@@ -744,7 +732,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     }
     input[type="number"] {
       font-weight: bold;
-      color: $statusbar-text!important;
+      color: $statusbar-text;
       border-color: rgba($statusbar-text, 0.2);
       padding: 0 ($gutter-h * 1.5);
       width: 60px;

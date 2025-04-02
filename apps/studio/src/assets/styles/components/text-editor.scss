@@ -1,15 +1,35 @@
 .text-editor {
-  &.fold-without-line-numbers {
-    margin-left: -2rem;
-    .CodeMirror-linenumber {
-      display: none;
-    }
-  }
-
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;
     }
+  }
+
+  .CodeMirror-foldgutter {
+    width: 1.2rem;
+  }
+
+  .CodeMirror-foldgutter-open,
+  .CodeMirror-foldgutter-folded {
+    font-family: "Material Icons";
+    font-size: 1.2rem;
+    color: rgba($theme-base, 0.37);
+
+    &:hover {
+      color: $text-dark;
+    }
+  }
+
+  .CodeMirror-foldgutter-open::after {
+    content: "keyboard_arrow_down";
+  }
+
+  .CodeMirror-foldgutter-folded::after {
+    content: "keyboard_arrow_right";
+  }
+
+  .CodeMirror-gutter-background.changed {
+    border-left: 2px solid $brand-warning;
   }
 
   .CodeMirror-guttermaker-subtle {

@@ -169,7 +169,7 @@
 
   .CodeMirror-matchingbracket {
     text-decoration: underline;
-    color: var(--bks-text-editor-matchingbracket-fg-color) !important;
+    color: var(--bks-text-editor-matchingbracket-fg-color);
   }
 
   .CodeMirror-focused .CodeMirror-selected {
@@ -181,13 +181,6 @@
     text-shadow: none;
   }
 
-  .fold-without-line-numbers {
-    margin-left: -2rem;
-    .CodeMirror-linenumber {
-      display: none;
-    }
-  }
-
   .remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;
@@ -195,15 +188,32 @@
   }
 
   .CodeMirror-code {
-    line-height: 1.3!important;
+    line-height: 1.3;
   }
 
   .CodeMirror-scrollbar-filler {
     background-color: transparent;
   }
+
+  .CodeMirror-gutter-elt .btn-fab {
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
+    color: rgba($theme-base, 0.37);
+
+    &:hover,
+    &:focus {
+      background-color: transparent;
+      color: $text-dark;
+    }
+
+    .dropdown-icon {
+      color: inherit;
+    }
+  }
 }
 
-.BksTextEditor-hints {
+.BksTextEditor-hints.CodeMirror-hints {
   --bks-text-editor-context-menu-bg-color: #{darken($theme-bg, 5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
   --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
