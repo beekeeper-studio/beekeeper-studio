@@ -61,7 +61,7 @@
     <div class="empty-state" v-show="empty">
       Open a table to view its data
     </div>
-    <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" />
+    <json-viewer-upsell v-if="$store.getters.isCommunity" />
   </div>
 </template>
 
@@ -86,16 +86,16 @@ import {
 import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
-import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
+import JsonViewerUpsell from '@/components/upsell/JsonViewerSidebarUpsell.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
 import { typedArrayToString } from '@/common/utils'
 
-const log = rawLog.scope("detail-view-sidebar");
+const log = rawLog.scope("json-viewer");
 
 export default Vue.extend({
-  components: { TextEditor, DetailViewSidebarUpsell },
+  components: { TextEditor, JsonViewerUpsell },
   props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs", "binaryEncoding"],
   data() {
     return {
