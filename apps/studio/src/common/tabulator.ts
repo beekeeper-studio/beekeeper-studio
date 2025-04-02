@@ -16,6 +16,7 @@ import _ from "lodash";
 interface Options extends TabulatorOptions {
   table?: string;
   schema?: string;
+  onRangeChange?: (ranges: RangeComponent[]) => void;
 }
 
 export function tabulatorForTableData(
@@ -76,5 +77,22 @@ export function tabulatorForTableData(
     },
   };
   const mergedOptions = _.merge(defaultOptions, tabulatorOptions);
-  return new TabulatorFull(el, mergedOptions);
+  const tabulator = new TabulatorFull(el, mergedOptions);
+  if (options.onRangeChange) {
+    function onRangeChange() {
+      options.onRangeChange(tabulator.getRanges());
+    }
+    tabulator.on("cellMouseUp", onRangeChange);
+    tabulator.on("headerMouseUp", onRangeChange);
+    tabulator.on(
+      "keyNavigate",
+      // This is slow if we do a long press. Debounce it so it feels good.
+      _.debounce(onRangeChange, 100, {
+        leading: true, trailing: true
+      })
+    );
+    // Tabulator range is reset after data is processed
+    tabulator.on("dataProcessed", onRangeChange);
+  }
+  return tabulator
 }
