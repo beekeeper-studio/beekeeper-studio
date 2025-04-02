@@ -132,10 +132,11 @@ export function autocompleteHandler(
     "Period": "period",
   };
 
-  if (instance.state.completionActive) return;
+  // Fix for issue #2884: Don't prevent completions when pressing Escape or deleting text
+  if (instance.state.completionActive && e.key !== "Escape") return;
   
-  // Handle delete and backspace keys
-  if (e.key === "Backspace" || e.key === "Delete") {
+  // Handle delete and backspace keys or Escape key (when completion was active)
+  if (e.key === "Backspace" || e.key === "Delete" || (e.key === "Escape" && instance.state.completionActive)) {
     // Get context at current cursor position
     const cursor = instance.getCursor();
     const line = instance.getLine(cursor.line);
@@ -145,13 +146,17 @@ export function autocompleteHandler(
     const fromRegex = /\b(from|join)\s+[\w\d_."]*$/i;
     
     if (fromRegex.test(lineUntilCursor)) {
-      if (!instance.state.completionActive) {
-        // eslint-disable-next-line
-        // @ts-ignore
-        CodeMirror.commands.autocomplete(instance, null, {
-          completeSingle: false,
-        });
-      }
+      // Reset completion state after a short delay to allow the Escape key to close
+      // the current completion first
+      setTimeout(() => {
+        if (!instance.state.completionActive) {
+          // eslint-disable-next-line
+          // @ts-ignore
+          CodeMirror.commands.autocomplete(instance, null, {
+            completeSingle: false,
+          });
+        }
+      }, e.key === "Escape" ? 100 : 0);
     }
     return;
   }

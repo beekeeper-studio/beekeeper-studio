@@ -78,6 +78,20 @@ import CodeMirror from "codemirror";
   Completion.prototype = {
     close: function() {
       if (!this.active()) return;
+      
+      // Fix for issue #2884: Store the completion state before clearing it
+      // This helps with re-triggering the same suggestions after pressing Escape
+      if (!this.cm.lastCompletionState && this.data) {
+        this.cm.lastCompletionState = {
+          token: "",
+          from: this.data.from,
+          to: this.cm.getCursor(),
+          list: this.data.list || [],
+          picked: false,
+          dismissed: true  // Flag that this was explicitly dismissed
+        };
+      }
+      
       this.cm.state.completionActive = null;
       this.tick = null;
       if (this.options.updateOnCursorActivity) {
@@ -166,7 +180,16 @@ import CodeMirror from "codemirror";
     update: function(first) {
       if (this.tick == null) return
       var self = this, myTick = ++this.tick
-      fetchHints(this.options.hint, this.cm, this.options, function(data) {
+      
+      // Fix for issue #2884: Use lastCompletionState to help with re-showing suggestions 
+      // after they've been dismissed with Escape
+      var options = this.options;
+      if (this.cm.lastCompletionState && this.cm.lastCompletionState.dismissed) {
+        // Reset the dismissed flag to allow normal hint behavior
+        this.cm.lastCompletionState.dismissed = false;
+      }
+      
+      fetchHints(options.hint, this.cm, options, function(data) {
         if (self.tick == myTick) self.finishUpdate(data, first)
       })
     },
