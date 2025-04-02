@@ -60,6 +60,7 @@ export enum AppEvent {
   switchUserKeymap = 'switchUserKeymap',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
+  jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
   switchingTab = 'switchingTab',
   switchedTab = 'switchedTab',
 }

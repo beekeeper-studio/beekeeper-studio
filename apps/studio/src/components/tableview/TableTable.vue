@@ -368,12 +368,13 @@ export default Vue.extend({
       initialized: false,
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
+      selectedRowIndex: null,
 
       /** This is true when we switch to minimal mode while TableTable is not active */
       enabledMinimalModeWhileInactive: false,
 
       selectedRow: null,
-      selectedRowIndex: null,
+      selectedRowPosition: null,
       selectedRowData: {},
       expandablePaths: {},
     };
@@ -568,11 +569,23 @@ export default Vue.extend({
     selectedRowDataSigns() {
       const signs = {}
       for (const pendingUpdate of this.pendingChanges.updates) {
-        if (pendingUpdate.rowIndex === this.selectedRowIndex) {
+        if (pendingUpdate.rowIndex === this.selectedRowPosition) {
           signs[pendingUpdate.column] = "changed"
         }
       }
       return signs
+    },
+    editablePaths() {
+      if (!this.table.columns) return []
+
+      const paths = []
+      for (const column of this.table.columns) {
+        if(this.isPrimaryKey(column.columnName) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
+          continue
+        }
+        paths.push(column.columnName)
+      }
+      return paths
     },
   },
 
@@ -906,7 +919,11 @@ export default Vue.extend({
       this.$root.$emit(AppEvent.closeTab)
     },
     isPrimaryKey(column) {
-      return this.primaryKeys.includes(column);
+      return this.primaryKeys?.includes(column);
+    },
+    isForeignKey(column: string) {
+      const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column);
+      return keyDatas && keyDatas.length > 0
     },
     isGeneratedColumn(columnName: string) {
       const column: ExtendedTableColumn = this.table.columns.find((col: ExtendedTableColumn) => col.columnName === columnName);
@@ -1226,7 +1243,7 @@ export default Vue.extend({
       }
 
       // reflect changes in the detail view
-      if (this.indexRowOf(cell.getRow()) === this.selectedRowIndex) {
+      if (this.positionRowOf(cell.getRow()) === this.selectedRowIndex) {
         cell.getRow().invalidateForeignCache(cell.getField())
         this.updateJsonViewer()
       }
@@ -1274,12 +1291,13 @@ export default Vue.extend({
           oldValue: cell.getOldValue(),
           cell: cell,
           value: cell.getValue(0),
-          rowIndex: this.indexRowOf(cell.getRow())
+          rowIndex: this.positionRowOf(cell.getRow())
         }
         // remove existing pending updates with identical pKey-column combo
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
         pendingUpdates.push(payload)
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
+        this.updateDetailView()
       }
     },
     cloneSelection(range?: RangeComponent) {
@@ -1709,7 +1727,7 @@ export default Vue.extend({
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
-    indexRowOf(row: RowComponent) {
+    positionRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
     updateJsonViewer(options: { range?: RangeComponent } = {}) {
@@ -1717,15 +1735,16 @@ export default Vue.extend({
       const row = range.getRows()[0]
       if (!row) {
         this.selectedRow = null
-        this.selectedRowIndex = null
+        this.selectedRowPosition = null
         this.selectedRowData = {}
         return
       }
-      const position = this.indexRowOf(row)
+      const position = this.positionRowOf(row)
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
       this.selectedRow = row
-      this.selectedRowIndex = position
+      this.selectedRowPosition = position
+      this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
       this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
@@ -1739,6 +1758,7 @@ export default Vue.extend({
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,
+        editablePaths: this.editablePaths,
       }
 
       this.trigger(AppEvent.updateJsonViewerSidebar, updatedData)
@@ -1843,6 +1863,7 @@ export default Vue.extend({
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,
+        editablePaths: this.editablePaths,
       }
 
       this.trigger(AppEvent.updateJsonViewerSidebar, data)
@@ -1862,12 +1883,17 @@ export default Vue.extend({
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,
+        editablePaths: this.editablePaths,
       }
       this.trigger(AppEvent.updateJsonViewerSidebar, data)
       this.registerHandlers([
         {
           event: AppEvent.jsonViewerSidebarExpandPath,
           handler: this.expandForeignKey,
+        },
+        {
+          event: AppEvent.jsonViewerSidebarValueChange,
+          handler: this.handleJsonValueChange,
         },
       ])
     },
@@ -1877,7 +1903,14 @@ export default Vue.extend({
           event: AppEvent.jsonViewerSidebarExpandPath,
           handler: this.expandForeignKey,
         },
+        {
+          event: AppEvent.jsonViewerSidebarValueChange,
+          handler: this.handleJsonValueChange,
+        },
       ])
+    },
+    handleJsonValueChange({key, value}) {
+      this.selectedRow?.getCell(key).setValue(value)
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)
