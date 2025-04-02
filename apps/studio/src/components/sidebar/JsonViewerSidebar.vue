@@ -7,6 +7,8 @@
     :reinitialize="reinitializeJsonViewer"
     :signs="signs"
     :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+    :editable-paths="editablePaths"
+    @bks-json-value-change="handleJsonValueChange"
     @expandPath="handleExpandPath"
   />
 </template>
@@ -30,6 +32,7 @@ export default Vue.extend({
     return {
       value: {},
       expandablePaths: [],
+      editablePaths: [],
       signs: {},
     };
   },
@@ -54,7 +57,10 @@ export default Vue.extend({
     handleExpandPath(expandablePaths: string[]) {
       this.trigger(AppEvent.jsonViewerSidebarExpandPath, expandablePaths)
     },
-    update(options: { value: Record<string, unknown>; expandablePaths: string[], signs: Record<string, LineGutter['type']>}) {
+    handleJsonValueChange(detail: { key: string; value: unknown }) {
+      this.trigger(AppEvent.jsonViewerSidebarValueChange, detail)
+    },
+    update(options: { value: Record<string, unknown>; expandablePaths: string[], signs: Record<string, LineGutter['type']>, editablePaths: string[] }) {
       this.value = options.value
       this.expandablePaths = options.expandablePaths
       this.signs = options.signs

@@ -1891,6 +1891,10 @@ export default Vue.extend({
           event: AppEvent.jsonViewerSidebarExpandPath,
           handler: this.expandForeignKey,
         },
+        {
+          event: AppEvent.jsonViewerSidebarValueChange,
+          handler: this.handleJsonValueChange,
+        },
       ])
     },
     handleTabInactive() {
@@ -1899,9 +1903,12 @@ export default Vue.extend({
           event: AppEvent.jsonViewerSidebarExpandPath,
           handler: this.expandForeignKey,
         },
+        {
+          event: AppEvent.jsonViewerSidebarValueChange,
+          handler: this.handleJsonValueChange,
+        },
       ])
     },
-    // FIXME use appevent
     handleJsonValueChange({key, value}) {
       this.selectedRow?.getCell(key).setValue(value)
     },
