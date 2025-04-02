@@ -32,7 +32,6 @@
         </div>
       </div>
       <sql-text-editor
-        v-if="connectionType !== 'mongodb'"
         :value="unsavedText"
         :height="editor.height"
         :read-only="editor.readOnly"
@@ -51,15 +50,6 @@
         @bks-value-change="unsavedText = $event.value"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
-      />
-      <javascript-text-editor
-        v-else
-        v-model="unsavedText"
-        v-bind.sync="editor"
-        :focus="focusingElement === 'text-editor'"
-        @update:focus="$event === false && onTextEditorBlur?.()"
-        :markers="editorMarkers"
-        @initialized="handleEditorInitialized"
       />
       <span class="expand" />
       <div
@@ -98,13 +88,13 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
-              :disabled="this.tab.isRunning"
+              :disabled="running"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
-              :disabled="this.tab.isRunning"
+              :disabled="this.tab.isRunning || running"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -168,6 +158,7 @@
         :result="result"
         :query="query"
         :tab="tab"
+        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
         class="message"
@@ -346,7 +337,6 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
-  import JavascriptTextEditor from '@/components/common/texteditor/JavascriptTextEditor.vue'
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -367,7 +357,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, JavascriptTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -850,6 +840,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
+        if(this.running) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
           this.submitQuery(this.currentlySelectedQuery.text)
@@ -859,6 +850,7 @@
         }
       },
       async submitTabQuery() {
+        if(this.running) return;
         const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
@@ -869,6 +861,12 @@
       },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+
+        //Cancel existing query before starting a new one
+        if(this.running && this.runningQuery){
+          await this.cancelQuery();
+        }
+
         this.tab.isRunning = true
         this.running = true
         this.error = null

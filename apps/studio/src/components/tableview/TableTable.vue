@@ -6,6 +6,7 @@
   >
     <editor-modal
       ref="editorModal"
+      :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       @save="onSaveEditorModal"
     />
     <template v-if="!table && initialized">
@@ -41,6 +42,7 @@
           :expandable-paths="expandablePaths"
           :reinitialize="reinitializeDetailView"
           :signs="selectedRowDataSigns"
+          :binary-encoding="$bksConfig.ui.general.binaryEncoding"
           @expandPath="expandForeignKey"
           @close="toggleOpenDetailView(false)"
         />
@@ -340,7 +342,7 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
 import { ExpandablePath } from '@/lib/data/detail_view'
-import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
+import { stringToTypedArray } from "@/common/utils";
 
 const log = rawLog.scope('TableTable')
 
@@ -780,7 +782,7 @@ export default Vue.extend({
       const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
       const hasKeyDatas = keyDatas && keyDatas.length > 0
       const columnWidth = this.table.columns.length > 30 ?
-        this.defaultColumnWidth(slimDataType, $bksConfig.ui.tableTable.defaultColumnWidth) :
+        this.defaultColumnWidth(slimDataType, this.$bksConfig.ui.tableTable.defaultColumnWidth) :
         undefined;
 
       let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
@@ -839,7 +841,8 @@ export default Vue.extend({
         formatterParams: {
           fk: hasKeyDatas && keyDatas[0][1],
           fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
-          isPK: isPK
+          isPK: isPK,
+          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
         },
         editorParams: {
           verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
@@ -853,6 +856,7 @@ export default Vue.extend({
           },
           typeHint: column.dataType?.toLowerCase(),
           bksField: column.bksField,
+          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
         },
       }
 
@@ -936,8 +940,6 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
-      this.filters = normalizeFilters(this.tableFilters || [])
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
@@ -1017,6 +1019,9 @@ export default Vue.extend({
       // Tabulator range is reset after data is processed
       this.tabulator.on("dataProcessed", this.updateDetailView);
 
+      this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
+      this.filters = normalizeFilters(this.tableFilters || [])
+
       this.updateSplit()
     },
     rowActionsMenu(range: RangeComponent) {
@@ -1087,35 +1092,38 @@ export default Vue.extend({
         })
       }
     },
+    openCellEditorModal(cell: CellComponent, isReadOnly: boolean) {
+      const eventParams = { cell, isReadOnly };
+      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
+    },
+
     openEditorMenuByShortcut() {
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       // FIXME maybe we can avoid calling child methods directly like this?
       // it should be done by calling an event using this.$modal.show(modalName)
       // or this.$trigger(AppEvent.something) if possible
-      if (this.isPrimaryKey(cell.getField())) return;
-      const eventParams = {
-        cell,
-        isReadOnly: this.isEditorMenuDisabled(cell)
-      };
-      this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
+      this.openCellEditorModal(cell, this.isEditorMenuDisabled(cell))
     },
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
       return {
         label: createMenuItem(isReadOnly? "View in modal" : "Edit in modal", "Shift + Enter"),
         action: () => {
-          if (this.isPrimaryKey(cell.getField())) return
-          this.$refs.editorModal.openModal(cell.getValue(), undefined, { cell, isReadOnly })
+          this.openCellEditorModal(cell, isReadOnly)
         }
       }
     },
-    onSaveEditorModal(content: string, _: LanguageData, cell: CellComponent){
-      if (ArrayBuffer.isView(cell.getValue())) {
-        cell.setValue(friendlyUint8Array(hexToUint8Array(content)))
-      } else {
-        cell.setValue(content)
+    onSaveEditorModal(content: string, _l: LanguageData, cell: CellComponent){
+      const column = this.table.columns.find((col) => col.columnName === cell.getField());
+      const isBinary = column?.bksField?.bksType === 'BINARY' || _.isTypedArray(cell.getValue());
+
+      let value = content;
+      if (isBinary) {
+        value = stringToTypedArray(content)
       }
+
+      cell.setValue(value)
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
