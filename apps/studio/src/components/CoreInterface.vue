@@ -14,7 +14,7 @@
       <sidebar
         ref="sidebar"
         class="primary-sidebar"
-        :style="{ '--sidebar-min-width': primarySidebarMinWidth + 'px' }"
+        :style="{ '--sidebar-min-width': $bksConfig.ui.layout.primarySidebarMinWidth + 'px' }"
       >
         <core-sidebar
           @databaseSelected="databaseSelected"
@@ -62,9 +62,6 @@
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
 
-  const MAIN_CONTENT_MIN_WIDTH = 200 // in pixels
-  const PRIMARY_SIDEBAR_MIN_WIDTH = 44 // in pixels
-
   export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar },
     data() {
@@ -73,7 +70,6 @@
         split: null,
         quickSearchShown: false,
         initializing: true,
-        primarySidebarMinWidth: PRIMARY_SIDEBAR_MIN_WIDTH,
       }
       /* eslint-enable */
     },
@@ -118,7 +114,7 @@
           this.split = Split(this.splitElements, {
             snapOffset: [150, 0, 150],
             sizes: splitSizes,
-            minSize: [PRIMARY_SIDEBAR_MIN_WIDTH, MAIN_CONTENT_MIN_WIDTH, 0],
+            minSize: [this.$bksConfig.ui.layout.primarySidebarMinWidth, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
             gutterSize: 5,
             elementStyle: (_dimension, elementSize) => ({
               width: `calc(${elementSize}%)`,
@@ -133,7 +129,7 @@
 
               // Handle primary sidebar collapse/expand
               const primarySidebarWidth = this.splitElements[0].offsetWidth
-              const threshold = this.primarySidebarMinWidth + 5
+              const threshold = this.$bksConfig.ui.layout.primarySidebarMinWidth + 5
 
               if (primarySidebarWidth <= threshold) {
                 this.setPrimarySidebarOpen(false)

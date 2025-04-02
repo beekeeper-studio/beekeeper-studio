@@ -88,6 +88,10 @@ declare interface IBksConfig {
         general: {
             binaryEncoding: string;
         };
+        layout: {
+            mainContentMinWidth: number;
+            primarySidebarMinWidth: number;
+        };
         queryEditor: {
             maxResults: number;
         };
