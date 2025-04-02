@@ -39,15 +39,16 @@
 <script>
 import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
-import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
 import { mapGetters, mapState } from 'vuex'
+import { SelectableCellMixin } from '@/mixins/selectableCell';
+
 
 export default {
   components: {
     StatusBar,
   },
-  mixins: [data_mutators],
+  mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties"],
   data() {
     return {
@@ -66,17 +67,17 @@ export default {
     },
     sqliteTableColumns() {
       return [
-        { field: 'name', title: 'Name', tooltip: true},
-        { field: 'sql', title: 'SQL', tooltip: true}
+        { field: 'name', title: 'Name', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'sql', title: 'SQL', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     normalTableColumns() {
       return [
-        { field: 'name', title: "Name", tooltip: true},
-        { field: 'timing', title: "Timing"},
-        { field: 'manipulation', title: "Manipulation"},
-        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5},
-        { field: 'condition', title: "Condition", formatter: this.cellFormatter}
+        { field: 'name', title: "Name", tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'timing', title: "Timing", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'manipulation', title: "Manipulation", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'condition', title: "Condition", formatter: this.cellFormatter, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     tableData() {
@@ -96,7 +97,7 @@ export default {
       columnDefaults: {
         tooltip: true,
         headerSort: true,
-        maxInitialWidth: globals.maxColumnWidthTableInfo,
+        maxInitialWidth: this.$bksConfig.ui.tableTriggers.maxColumnWidth,
       },
       placeholder: "No triggers",
       layout: 'fitColumns'

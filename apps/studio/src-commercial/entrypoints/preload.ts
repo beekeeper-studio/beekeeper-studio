@@ -32,6 +32,10 @@ export const api = {
     const platformInfo = await ipcRenderer.invoke('platformInfo')
     contextBridge.exposeInMainWorld('platformInfo', platformInfo);
   },
+  async requestBksConfigSource() {
+    const bksConfigSource = await ipcRenderer.invoke('bksConfigSource')
+    contextBridge.exposeInMainWorld('bksConfigSource', bksConfigSource);
+  },
   isReady() {
     ipcRenderer.send('ready');
   },

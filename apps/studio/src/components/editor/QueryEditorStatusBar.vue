@@ -86,6 +86,7 @@
             <x-label>Download as Markdown</x-label>
           </x-menuitem>
           <span
+            v-if="dialect !== 'mongodb'"
             v-tooltip="{
               content: downloadFullTooltip
             }"
@@ -204,6 +205,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['dialect']),
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
@@ -260,10 +262,10 @@ export default {
       return `Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)`
     },
     keymap() {
-      const result = {}
-      result['shift+up'] = () => this.changeSelectedResult(-1);
-      result['shift+down'] = () => this.changeSelectedResult(1);
-      return result
+      return this.$vHotkeyKeymap({
+        'queryEditor.selectNextResult': this.changeSelectedResult.bind(this, 1),
+        'queryEditor.selectPreviousResult': this.changeSelectedResult.bind(this, -1),
+      })
     }
   },
   methods: {

@@ -79,11 +79,13 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
+              :disabled="running"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
+              :disabled="this.tab.isRunning || running"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -520,12 +522,12 @@
       },
       keymap() {
         if (!this.active) return {}
-        const result = {}
-        result[this.ctrlOrCmd('`')] = this.switchPaneFocus.bind(this)
-        result[this.ctrlOrCmd('l')] = this.selectEditor
-        result[this.ctrlOrCmd('i')] = this.submitQueryToFile
-        result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
-        return result
+        return this.$vHotkeyKeymap({
+          'queryEditor.switchPaneFocus': this.switchPaneFocus,
+          'queryEditor.selectEditor': this.selectEditor,
+          'queryEditor.submitQueryToFile': this.submitQueryToFile,
+          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+        })
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -872,6 +874,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
+        if(this.running) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
           this.submitQuery(this.currentlySelectedQuery.text)
@@ -881,6 +884,7 @@
         }
       },
       async submitTabQuery() {
+        if(this.running) return;
         const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
@@ -891,6 +895,12 @@
       },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+
+        //Cancel existing query before starting a new one
+        if(this.running && this.runningQuery){
+          await this.cancelQuery();
+        }
+
         this.tab.isRunning = true
         this.running = true
         this.error = null
@@ -941,8 +951,8 @@
 
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
+            if (result.rowCount > this.$bksConfig.ui.queryEditor.maxResults) {
+              result.rows = _.take(result.rows, this.$bksConfig.ui.queryEditor.maxResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
             }
@@ -953,6 +963,7 @@
             } else {
               result.tableName = "mytable"
             }
+            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
 

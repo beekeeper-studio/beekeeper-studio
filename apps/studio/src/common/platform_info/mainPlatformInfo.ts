@@ -59,6 +59,7 @@ export function mainPlatformInfo(): IPlatformInfo {
   if (p.env.PORTABLE_EXECUTABLE_DIR) {
     userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
   }
+  const pluginsDirectory = join(userDirectory, 'plugins')
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
@@ -96,6 +97,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     userDirectory,
     downloadsDirectory,
     homeDirectory,
+    pluginsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     updatesDisabled,
