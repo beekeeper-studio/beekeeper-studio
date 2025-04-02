@@ -5,7 +5,7 @@ import ISavedQuery from "../interfaces/ISavedQuery";
 
 type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
 
-const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
+const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'cursorIndex', 'cursorIndexAnchor', 'tableName', 'schemaName']
 
 export interface TransportOpenTab extends Transport {
   tabType: TabType,
@@ -17,6 +17,8 @@ export interface TransportOpenTab extends Transport {
   active: boolean,
   queryId?: number,
   unsavedQueryText?: string,
+  cursorIndex?: number, // Add cursor position index
+  cursorIndexAnchor?: number, // Add cursor anchor position index
   tableName?: string,
   schemaName?: string,
   entityType?: string,
