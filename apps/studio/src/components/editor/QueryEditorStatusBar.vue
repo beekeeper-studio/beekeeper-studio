@@ -222,7 +222,7 @@ export default {
     },
     hasUsedDropdown: {
       get() {
-        return this.settings?.hideResultsDropdown.value ?? false
+        return this.settings?.hideResultsDropdown?.value ?? false
       },
       set(value) {
         this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
