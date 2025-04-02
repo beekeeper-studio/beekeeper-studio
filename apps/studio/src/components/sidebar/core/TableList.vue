@@ -21,6 +21,7 @@
               <i class="clear material-icons">cancel</i>
             </x-button>
             <x-button
+              v-if="this.dialect != 'mongodb'"
               :title="entitiesHidden ? 'Filter active' : 'No filters'"
               class="btn btn-fab btn-link action-item"
               :class="{active: entitiesHidden}"
@@ -122,9 +123,10 @@
           >
             <i class="material-icons">refresh</i>
           </button>
+          <!-- FIXME (@day): we don't want to have per-db testing in the UI -->
           <button
             @click.prevent="newTable"
-            title="New Table"
+            :title="`New ${this.dialect === 'mongodb' ? 'Collection' : 'Table'}`"
             class="create-table"
             :disabled="tablesLoading"
             v-if="canCreateTable"
@@ -190,7 +192,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     computed: {
-      ...mapGetters(['dialectData']),
+      ...mapGetters(['dialectData', 'dialect']),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
       },
@@ -339,7 +341,6 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     mounted() {
-      document.addEventListener('mousedown', this.maybeUnselect)
       const components = [this.$refs.pinned, this.$refs.tables]
       this.split = Split(components, {
         elementStyle: (_dimension, size) => ({
