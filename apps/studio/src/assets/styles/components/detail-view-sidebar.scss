@@ -108,7 +108,6 @@
     position: absolute;
     z-index: 10;
     inset: 0;
-    top: var(--header-title-height);
     backdrop-filter: blur(6px);
     background-color: rgba($theme-bg, 0.5);
     padding: 2rem;
