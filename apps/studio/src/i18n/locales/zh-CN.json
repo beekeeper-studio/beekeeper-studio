@@ -147,5 +147,21 @@
   "Learn more": "了解更多",
   "Runtime extension file": "运行时扩展文件",
   "...": "null",
-  "DEV MODE OVERRIDES": "开发者模式"
+  "DEV MODE OVERRIDES": "开发者模式",
+  "Restore": "恢复",
+  "Backup": "备份",
+  "Progress": "进度",
+  "Backup started": "备份已开始",
+  "Backup ended": "备份已完成",
+  "Time elapsed": "已用时间",
+  "Logs (last 100 lines)": "日志（最近100行）",
+  "Open Log File": "打开日志文件",
+  "Show In Folder": "在文件夹中显示",
+  "The command has not outputted any logs": "该命令尚未输出任何日志",
+  "Retry": "重试",
+  "Review Command(s)": "检查命令",
+  "Beekeeper Studio will execute the following command. If you would prefer to run the backup yourself, you can copy the command to the clipboard.": "Beekeeper Studio 将执行以下命令。如果您想自己运行备份，可以将命令复制到剪贴板。",
+  "Execute": "执行",
+  "Some arguments are provided as environment variables on execution for security purposes (eg. password).": "出于安全考虑，某些参数在执行时会作为环境变量提供（例如密码）。",
+  "Choose Directory": "选择目录"
 }
