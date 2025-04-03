@@ -15,6 +15,10 @@ import { errors } from "@/lib/errors";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { QueryLeaf } from '@queryleaf/lib'
+import { wrapIdentifier } from "@/lib/db/clients/postgresql"; 
+import knexlib from 'knex'
+
+const knex = knexlib({ client: 'pg' })
 
 const log = rawLog.scope('mongodb');
 
@@ -40,7 +44,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   transcoders = [MongoDBObjectIdTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(null, mongoContext, server, database);
+    super(knex, mongoContext, server, database);
   }
 
   async connect(): Promise<void> {
@@ -244,9 +248,60 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async selectTopSql(_table: string, _offset: number, _limit: number, _orderBy: OrderBy[], _filters: string | TableFilter[], _schema?: string, _selects?: string[]): Promise<string> {
-    log.error("MongoDB does not support generating SQL scripts");
-    return '';
+  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[] = ['*']): Promise<string> {
+    let orderByString = ""
+    let filterString = ""
+    let params: (string | string[])[] = []
+
+    if (orderBy && orderBy.length > 0) {
+      orderByString = "ORDER BY " + (orderBy.map((item) => {
+        if (_.isObject(item)) {
+          return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
+        } else {
+          return wrapIdentifier(item)
+        }
+      })).join(",")
+    }
+
+    if (_.isString(filters)) {
+      filterString = `WHERE ${filters}`
+    } else if (filters && filters.length > 0) {
+      let paramIdx = 1
+      const allFilters = filters.map((item) => {
+        if (item.type === 'in' && _.isArray(item.value)) {
+          const values = item.value.map((v, idx) => {
+            return knex.raw('?', [v]).toQuery();
+          })
+          paramIdx += values.length
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
+        } else if (item.type.includes('is')) {
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
+        }
+        const value = knex.raw('?', [item.value]);
+        paramIdx += 1
+        return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
+      })
+      filterString = "WHERE " + joinFilters(allFilters, filters)
+
+      params = filters.filter((item) => !!item.value).flatMap((item) => {
+        return _.isArray(item.value) ? item.value : [item.value]
+      })
+    }
+
+    const selectSQL = `SELECT ${selects.join(', ')}`
+    const baseSQL = `
+      FROM ${wrapIdentifier(table)}
+      ${filterString}
+    `
+
+    const query = `
+      ${selectSQL} ${baseSQL}
+      ${orderByString}
+      ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
+      ${_.isNumber(offset) ? `OFFSET ${offset}` : ''}
+      `;
+
+    return query;
   }
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {

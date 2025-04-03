@@ -143,6 +143,7 @@
             <x-label>{{ t.name }}</x-label>
           </x-menuitem>
           <x-menuitem
+            v-if="!hideWrapText"
             togglable
             :toggled="wrapText"
             @click.prevent="$emit('wrap-text')"
@@ -179,7 +180,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'hideWrapText'],
   components: { Statusbar },
   data() {
     return {
