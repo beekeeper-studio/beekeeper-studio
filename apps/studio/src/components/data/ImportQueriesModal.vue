@@ -6,10 +6,10 @@
   >
     <div class="dialog-content">
       <div class="dialog-c-title">
-        Import Queries
+        {{ $t('Import Queries') }}
       </div>
       <div class="dialog-c-subtitle">
-        Importing a query will <strong>copy</strong> it from your local workspace into the personal folder of your team workspace.
+        {{ $t('Importing a query will') }} <strong>{{ $t('copy') }}</strong> {{ $t('it from your local workspace into the personal folder of your team workspace.') }}
       </div>
       <error-alert
         :error="error"
@@ -22,7 +22,7 @@
               v-if="!queries || !queries.length"
               class="list-item"
             >
-              Import not available: You don't have any queries in your local workspace.
+              {{ $t('Import not available: You don\'t have any queries in your local workspace.') }}
             </div>
             <div
               class="list-item"
@@ -52,7 +52,7 @@
         class="btn btn-flat"
         @click.prevent="$modal.hide('import-queries')"
       >
-        Close
+        {{ $t('Close') }}
       </button>
       <button
         v-if="queries && queries.length"
@@ -60,7 +60,7 @@
         class="btn btn-primary"
         @click.prevent="doImport"
       >
-        {{ loading ? '...' : 'Import' }}
+        {{ loading ? '...' : $t('Import') }}
       </button>
     </div>
   </modal>
