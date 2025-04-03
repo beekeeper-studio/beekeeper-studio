@@ -53,6 +53,9 @@
               </div>
               <span class="expand" />
               <div class="actions">
+                <a @click.prevent="streamerMode = !streamerMode" :title="streamerMode ? 'Disable streamer mode' : 'Enable streamer mode'">
+                  <i class="material-icons">{{ streamerMode ? 'visibility_off' : 'visibility' }}</i>
+                </a>
                 <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
               </div>
             </div>
@@ -75,6 +78,7 @@
                 :selected-config="selectedConfig"
                 :show-duplicate="true"
                 :pinned="true"
+                :streamer-mode="streamerMode"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -104,6 +108,9 @@
                     @click.prevent="importFromLocal"
                     title="Import connections from local workspace"
                   ><i class="material-icons">save_alt</i></a>
+                  <a @click.prevent="streamerMode = !streamerMode" :title="streamerMode ? 'Disable streamer mode' : 'Enable streamer mode'">
+                    <i class="material-icons">{{ streamerMode ? 'visibility_off' : 'visibility' }}</i>
+                  </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
                     v-model="sort"
@@ -170,6 +177,7 @@
                   :selected-config="selectedConfig"
                   :show-duplicate="true"
                   :pinned="pinnedConnections.includes(c)"
+                  :streamer-mode="streamerMode"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
@@ -183,6 +191,7 @@
                 :selected-config="selectedConfig"
                 :show-duplicate="true"
                 :pinned="pinnedConnections.includes(c)"
+                :streamer-mode="streamerMode"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -214,6 +223,7 @@
                 :selected-config="selectedConfig"
                 :is-recent-list="true"
                 :show-duplicate="false"
+                :streamer-mode="streamerMode"
                 @edit="edit"
                 @remove="removeUsedConfig"
                 @doubleClick="connect"
@@ -245,6 +255,7 @@ export default {
   components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons, WorkspaceSidebar },
   props: ['selectedConfig'],
   data: () => ({
+    streamerMode : false,
     split: null,
     sortables: {
       labelColor: "Color",
@@ -260,6 +271,9 @@ export default {
       await this.$settings.set('connectionsSortOrder', this.sort.order)
       await this.$settings.set('connectionsSortBy', this.sort.field)
     },
+    async streamerMode(newVal) {
+      await this.$settings.set('streamerMode', newVal)
+    }
   },
   computed: {
     ...mapState('data/connections', {'connectionsLoading': 'loading', 'connectionsError': 'error', 'connectionFilter': 'filter'}),
@@ -349,7 +363,10 @@ export default {
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
-      this.$settings.get('connectionsSortOrder', 'asc')
+      this.$settings.get('connectionsSortOrder', 'asc'),
+      this.$settings.get('streamerMode', false).then(mode => {
+        this.streamerMode = mode
+      })
     ])
     this.sort.field = field
     this.sort.order = order
