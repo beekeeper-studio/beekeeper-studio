@@ -44,20 +44,22 @@
         </x-button>
       </div>
     </div>
-    <text-editor
-      :fold-gutter="true"
-      :fold-all="foldAll"
-      :unfold-all="unfoldAll"
-      :value="text"
-      :mode="mode"
-      :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
-      :markers="markers"
-      :plugins="textEditorPlugins"
-      :line-wrapping="wrapText"
-      :line-gutters="lineGutters"
-      :line-numbers="false"
-      :extra-keybindings="disableReplaceKeybindings"
-    />
+    <div class="text-editor-wrapper">
+      <text-editor
+        :fold-gutter="true"
+        :fold-all="foldAll"
+        :unfold-all="unfoldAll"
+        :value="text"
+        :mode="mode"
+        :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
+        :markers="markers"
+        :plugins="textEditorPlugins"
+        :line-wrapping="wrapText"
+        :line-gutters="lineGutters"
+        :line-numbers="false"
+        :extra-keybindings="disableReplaceKeybindings"
+      />
+    </div>
     <div class="empty-state" v-show="empty">
       Open a table to view its data
     </div>
