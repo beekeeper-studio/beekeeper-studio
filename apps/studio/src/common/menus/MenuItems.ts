@@ -162,11 +162,17 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       accelerator: "Shift+CommandOrControl+Q",
       click: actionHandler.disconnect
     },
-    sidebarToggle: {
+    primarySidebarToggle: {
       id: 'menu-toggle-sidebar',
-      label: 'Toggle Sidebar',
+      label: 'Toggle Primary Sidebar',
       accelerator: "Alt+S",
-      click: actionHandler.toggleSidebar,
+      click: actionHandler.togglePrimarySidebar,
+    },
+    secondarySidebarToggle: {
+      id: 'menu-secondary-sidebar',
+      label: 'Toggle Secondary Sidebar',
+      // accelerator: "Alt+S",
+      click: actionHandler.toggleSecondarySidebar,
     },
     themeToggle: {
       id: "theme-toggle-menu",
