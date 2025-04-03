@@ -617,6 +617,20 @@
         this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
+      'editor.cursorIndex'() {
+        if (this.editor.initialized) {
+          this.tab.cursorIndex = this.editor.cursorIndex
+          this.tab.cursorIndexAnchor = this.editor.cursorIndexAnchor
+          this.saveTab()
+        }
+      },
+      'editor.cursorIndexAnchor'() {
+        if (this.editor.initialized) {
+          this.tab.cursorIndex = this.editor.cursorIndex
+          this.tab.cursorIndexAnchor = this.editor.cursorIndexAnchor
+          this.saveTab()
+        }
+      },
       remoteDeleted() {
         if (this.remoteDeleted) {
           this.editor.readOnly = 'nocursor'
@@ -733,6 +747,15 @@
         this.$nextTick(() => {
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
+          
+          // Set cursor position if saved in tab
+          if (this.editor.initialized && this.tab.cursorIndex !== undefined) {
+            const doc = this.editor.initialized.getDoc();
+            const pos = doc.posFromIndex(this.tab.cursorIndex);
+            const anchorPos = this.tab.cursorIndexAnchor !== undefined ? 
+              doc.posFromIndex(this.tab.cursorIndexAnchor) : pos;
+            doc.setSelection(anchorPos, pos);
+          }
         })
       },
       saveTab: _.debounce(function() {
@@ -962,6 +985,14 @@
         if (originalText) {
           this.originalText = originalText
           this.unsavedText = originalText
+        }
+        
+        // Restore cursor position if available
+        if (this.tab.cursorIndex !== undefined) {
+          this.editor.cursorIndex = this.tab.cursorIndex
+        }
+        if (this.tab.cursorIndexAnchor !== undefined) {
+          this.editor.cursorIndexAnchor = this.tab.cursorIndexAnchor
         }
       },
       fakeRemoteChange() {

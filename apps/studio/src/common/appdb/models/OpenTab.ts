@@ -8,7 +8,7 @@ import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
 type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
 
-const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
+const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'cursorIndex', 'cursorIndexAnchor', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
 
 interface ConnectionIds {
   connectionId: number,
@@ -57,6 +57,12 @@ export class OpenTab extends ApplicationEntity {
 
   @Column({type: 'text', nullable: true})
   unsavedQueryText?: string
+
+  @Column({type: 'integer', nullable: true})
+  cursorIndex?: number
+
+  @Column({type: 'integer', nullable: true})
+  cursorIndexAnchor?: number
 
   // TABLE TAB
   @Column({type: 'varchar', length: 255, nullable: true})
