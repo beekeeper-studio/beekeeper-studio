@@ -35,8 +35,7 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        schema: '',
-        table: '',
+        tabId: null,
         importStarted: false,
         timer: null,
         importError: null
@@ -72,11 +71,14 @@ export default {
       return totalColumns - mappedColumns
     },
     tableName () {
-      const schema = this.stepperProps.schema ? `${this.stepperProps.schema}.` : ''
-      return `${schema}${this.stepperProps.table}`
+      const schema = this.table?.schema ? `${this.table?.schema}.` : ''
+      return `${schema}${this.table?.name}`
     }
   },
   methods: {
+    importKey() {
+      return `new-import-${this.stepperProps.tabId}`
+    },
     getTable({schema, name: tableName}) {
       let foundSchema = ''
       if (this.schemaTables.length > 1) {
@@ -85,10 +87,6 @@ export default {
         foundSchema = this.schemaTables[0]
       }
       return foundSchema.tables.find(t => t.name === tableName)
-    },
-    tableKey() {
-      const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
-      return `${schema}${this.stepperProps.table}`
     },
     async tableData() {
       return await this.$util.send('import/getImportPreview', { id: this.importerClass })
@@ -115,7 +113,7 @@ export default {
       }
     },
     async initialize () {
-      const importOptions = await this.tablesToImport.get(this.tableKey())
+      const importOptions = await this.tablesToImport.get(this.importKey())
       this.table = importOptions.table
       this.importOptions = importOptions
       if (!importOptions.importProcessId) {
