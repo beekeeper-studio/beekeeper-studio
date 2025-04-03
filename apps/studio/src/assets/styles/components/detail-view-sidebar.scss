@@ -1,33 +1,20 @@
-div.sidebar.detail-view-sidebar {
-  --header-title-height: 2.8rem;
+.json-viewer {
+  --header-title-height: 2rem;
+  --hoz-gutter: 1rem;
 
   position: relative;
   overflow: hidden;
   max-width: 100%;
-  min-width: 22rem;
+  min-width: 10rem;
   width: auto;
   flex-grow: 1;
-  border: 1px solid $border-color;
-  border-bottom: none;
-  border-right: none;
-  background-color: $theme-bg;
   position: relative;
-
-  .close-btn, .menu-btn {
-    i.material-icons {
-      color: $text;
-    }
-
-    &:not(:hover) {
-      background-color: transparent;
-    }
-  }
+  margin-top: 0.35rem;
 
   .header {
     width: 100%;
-    padding-top: 0.5rem;
-    padding-left: 1rem;
-    padding-right: 0.5rem;
+    padding-left: var(--hoz-gutter);
+    padding-right: var(--hoz-gutter);
 
     .header-group {
       display: flex;
@@ -40,13 +27,10 @@ div.sidebar.detail-view-sidebar {
       }
     }
 
-    .title {
-      color: $text-dark;
-    }
-
-    .close-btn, .menu-btn {
+    .menu-btn {
       i.material-icons {
-        color: $text;
+        font-size: 18px;
+        color: $text-light;
       }
 
       &:not(:hover) {
@@ -85,8 +69,9 @@ div.sidebar.detail-view-sidebar {
     }
   }
 
-  .CodeMirror.text-editor {
+  .text-editor {
     width: 100%;
+    height: auto;
     padding-left: 1rem;
 
     &, .CodeMirror-gutters {
@@ -123,7 +108,6 @@ div.sidebar.detail-view-sidebar {
     position: absolute;
     z-index: 10;
     inset: 0;
-    top: var(--header-title-height);
     backdrop-filter: blur(6px);
     background-color: rgba($theme-bg, 0.5);
     padding: 2rem;
@@ -148,27 +132,30 @@ div.sidebar.detail-view-sidebar {
 
     .actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
       justify-content: end;
       margin-top: 1rem;
       padding-right: 0;
     }
-
-    .close-btn {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-    }
   }
 
   .empty-state {
     position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     inset: 0;
-    top: var(--header-title-height);
     z-index: 10;
-    font-weight: 700;
+    padding-inline: var(--hoz-gutter);
+    color: $text-light;
+  }
+}
+
+.secondary-sidebar .json-viewer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0.5rem;
+
+  .text-editor {
+    flex: 1;
   }
 }
