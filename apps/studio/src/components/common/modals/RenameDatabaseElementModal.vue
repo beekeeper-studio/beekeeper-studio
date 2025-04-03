@@ -8,20 +8,20 @@
       <div v-kbd-trap="true">
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Rename {{ elementType.toLowerCase() }}
+            {{ $t('Rename') }} {{ elementType.toLowerCase() }}
           </div>
           <div class="alert alert-warning">
             <i class="material-icons">warning</i>
             <span>
-              Be cautious when renaming database object, as it may disrupt related queries, functions, procedures, or other objects that reference it.
+              {{ $t('Be cautious when renaming database object, as it may disrupt related queries, functions, procedures, or other objects that reference it.') }}
             </span>
           </div>
           <error-alert
             :error="errors"
-            :title="`Failed to rename ${elementType.toLowerCase()}`"
+            :title="$t(`Failed to rename ${elementType.toLowerCase()}`)"
           />
           <div class="form-group">
-            <label for="element-name">Name</label>
+            <label for="element-name">{{ $t('Name') }}</label>
             <input id="element-name" name="name" v-model="elementNewName" type="text" ref="nameInput">
           </div>
         </div>
@@ -31,14 +31,14 @@
             type="button"
             @click.prevent="close"
           >
-            Cancel
+            {{ $t('Cancel') }}
           </button>
           <x-buttons :disabled="loading">
             <x-button
               class="btn btn-primary"
               @click.prevent="rename"
             >
-              Apply
+              {{ $t('Apply') }}
             </x-button>
             <x-button
               class="btn btn-primary"
@@ -47,10 +47,10 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu style="--align: end;">
                 <x-menuitem @click.prevent="rename">
-                  <x-label>Apply</x-label>
+                  <x-label>{{ $t('Apply') }}</x-label>
                 </x-menuitem>
                 <x-menuitem @click.prevent="renameSql">
-                  <x-label>Copy to SQL</x-label>
+                  <x-label>{{ $t('Copy to SQL') }}</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -115,7 +115,7 @@ export default Vue.extend({
       this.$modal.hide(this.modalName)
     },
     async rename() {
-      if (!await this.$confirm(`Are you sure you want to rename the ${this.elementType.toLowerCase()}?`, "", { confirmLabel: "Yes" })) {
+      if (!await this.$confirm(this.$t(`Are you sure you want to rename the ${this.elementType.toLowerCase()}?`), "", { confirmLabel: this.$t("Yes") })) {
         return
       }
 

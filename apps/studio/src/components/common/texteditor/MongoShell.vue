@@ -224,7 +224,7 @@ export default {
         const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
 
         if (!codeMirrorVimInstance) {
-          console.error("Could not find code mirror vim instance");
+          console.error(this.$t("Could not find code mirror vim instance"));
         } else {
           if (this.vimConfig) {
             applyConfig(codeMirrorVimInstance, this.vimConfig);
