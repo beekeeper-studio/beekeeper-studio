@@ -1,6 +1,6 @@
 <template>
   <toggle-form-area
-    title="SSH Tunnel"
+    :title="$t('SSH Tunnel')"
     hide-toggle="true"
     :expanded="config.sshEnabled"
   >

@@ -17,7 +17,7 @@
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>
         <i
-          title="Schema"
+          :title="$t('Schema')"
           class="schema-icon item-icon material-icons"
         >folder</i>
         <span
@@ -37,7 +37,7 @@
             v-else
             class="list-item empty"
           >
-            {{ placeholder || "No items" }}
+            {{ placeholder || $t("No items") }}
           </div>
         </template>
       </div>

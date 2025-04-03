@@ -12,7 +12,7 @@
     </a>
     <div class="alert-title">
       <i class="material-icons">error_outline</i>
-      <b class="error-title">{{ title || "There was a problem" }}</b>
+      <b class="error-title">{{ title || $t("There was a problem") }}</b>
     </div>
     <div class="alert-body">
       <ul class="error-list">
@@ -21,10 +21,10 @@
           @click="click(e)"
           v-for="(e, idx) in errors"
           :key="idx"
-          title="Click to copy"
+          :title="$t('Click to copy').toString()"
         >
           {{ e.message || e.toString() }}
-          {{ e.marker ? ` - line ${e.marker.line}, ch ${e.marker.ch}` : '' }}
+          {{ e.marker ? ` - ${$t("line")} ${e.marker.line}, ${$t("ch")} ${e.marker.ch}` : '' }}
           {{ helpText ? ` - ${helpText}` : '' }}
         </li>
       </ul>
@@ -34,8 +34,8 @@
       >
         <a
           :href="helpLink"
-          title="Read about this error on the Beekeeper Studio docs"
-        >Learn more about this error</a>
+          :title="$t('Read about this error on the Beekeeper Studio docs').toString()"
+        >{{ $t("Learn more about this error") }}</a>
       </div>
     </div>
   </div>

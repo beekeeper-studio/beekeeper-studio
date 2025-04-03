@@ -16,7 +16,7 @@
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>
         <i
-          title="Schema"
+          :title="$t('Schema').toString()"
           class="schema-icon item-icon material-icons"
         >folder</i>
         <span
