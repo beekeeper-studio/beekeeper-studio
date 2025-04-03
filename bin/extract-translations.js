@@ -10,17 +10,77 @@ const { execSync } = require('child_process');
 const LOCALE_DIR = path.join(__dirname, '../apps/studio/src/i18n/locales');
 const LOCALES = ['zh-CN']; // Add more locales as needed
 
-// Helper function to extract $t('...') strings from content
+// Example/test keys that should be excluded
+const EXCLUDED_KEYS = [
+  'text',
+  'text {var}',
+  'text {var1} more {var2}',
+  'sample text',
+  'example'
+];
+
+// Helper function to extract i18n translation strings from content
 function extractTranslationKeys(content) {
-  const regex = /\$t\(['"](.+?)['"]\)/g;
   const keys = new Set();
+  
+  // 1. Extract simple $t('...') or $t("...") patterns
+  const simpleRegex = /\$t\(['"](.+?)['"]\)/g;
   let match;
   
-  while ((match = regex.exec(content)) !== null) {
-    keys.add(match[1]);
+  while ((match = simpleRegex.exec(content)) !== null) {
+    if (!EXCLUDED_KEYS.includes(match[1])) {
+      keys.add(match[1]);
+    }
+  }
+  
+  // 2. Extract from patterns like $t('text {var1} more {var2}', {var1: x, var2: y})
+  const interpolationRegex = /\$t\(['"](.+?)['"](?:,\s*\{.+?\})?\)/g;
+  while ((match = interpolationRegex.exec(content)) !== null) {
+    // Only add if it's not already added by the simpler regex and not excluded
+    if (!EXCLUDED_KEYS.includes(match[1])) {
+      keys.add(match[1]);
+    }
+  }
+  
+  // 3. Extract from v-tooltip="$t('text {var}', {var: x})" patterns
+  const attributeRegex = /v-\w+(?::[^=]+)?=["']\$t\(['"](.+?)['"](?:,\s*\{.+?\})?\)['"]/g;
+  while ((match = attributeRegex.exec(content)) !== null) {
+    if (!EXCLUDED_KEYS.includes(match[1])) {
+      keys.add(match[1]);
+    }
+  }
+  
+  // 4. Extract from JSX/TSX style: {$t('text')} or {$t("text")}
+  const jsxRegex = /\{\s*\$t\(['"](.+?)['"]\)\s*\}/g;
+  while ((match = jsxRegex.exec(content)) !== null) {
+    if (!EXCLUDED_KEYS.includes(match[1])) {
+      keys.add(match[1]);
+    }
+  }
+  
+  // 5. Extract from template literal styles like `${$t('text')}`
+  const templateLiteralRegex = /\$\{\s*\$t\(['"](.+?)['"]\)\s*\}/g;
+  while ((match = templateLiteralRegex.exec(content)) !== null) {
+    if (!EXCLUDED_KEYS.includes(match[1])) {
+      keys.add(match[1]);
+    }
   }
   
   return Array.from(keys);
+}
+
+// Get all relevant files in project
+function getAllFiles() {
+  try {
+    // Get all tracked files in the git repository
+    const allFiles = execSync('git ls-files').toString().trim().split('\n');
+    
+    // Filter for .vue, .ts, and .js files
+    return allFiles.filter(file => file && (file.endsWith('.vue') || file.endsWith('.ts') || file.endsWith('.js')));
+  } catch (error) {
+    console.error('Error getting all files:', error.message);
+    return [];
+  }
 }
 
 // Get changed files
@@ -39,17 +99,22 @@ function getChangedFiles() {
   }
 }
 
-// Extract keys from changed files
-function extractKeysFromChangedFiles() {
-  const changedFiles = getChangedFiles();
-  console.log(`Found ${changedFiles.length} changed files to scan`);
+// Extract keys from files
+function extractKeysFromFiles(scanAll = false) {
+  const files = scanAll ? getAllFiles() : getChangedFiles();
+  console.log(`Found ${files.length} ${scanAll ? 'total' : 'changed'} files to scan`);
   
   const allKeys = new Set();
   
-  for (const file of changedFiles) {
+  for (const file of files) {
     try {
       const filePath = path.join(process.cwd(), file);
       if (!fs.existsSync(filePath)) continue;
+      
+      // Skip files that are likely to contain example code
+      if (file.includes('examples/') || file.includes('test/') || file.includes('__tests__/')) {
+        continue;
+      }
       
       const content = fs.readFileSync(filePath, 'utf-8');
       const keys = extractTranslationKeys(content);
@@ -119,8 +184,11 @@ function updateLocaleFiles(keys) {
 
 // Main function
 function main() {
-  console.log('Extracting translation keys from changed files...');
-  const keys = extractKeysFromChangedFiles();
+  // Check if --all flag is provided
+  const scanAll = process.argv.includes('--all');
+  
+  console.log(`Extracting translation keys from ${scanAll ? 'all' : 'changed'} files...`);
+  const keys = extractKeysFromFiles(scanAll);
   updateLocaleFiles(keys);
 }
 

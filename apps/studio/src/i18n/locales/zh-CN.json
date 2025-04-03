@@ -218,5 +218,9 @@
   "error": "错误",
   "Unknown": "未知",
   "Click to fetch total record count": "点击获取总记录数",
-  "unable to fetch total records": "无法获取总记录数"
+  "unable to fetch total records": "无法获取总记录数",
+  "Sorted by {sortOption} ({sortOrder})": "按 {sortOption} ({sortOrder}) 排序",
+  "Approximately {count} Records": "约 {count} 条记录",
+  "files": "文件"
 }
+  
