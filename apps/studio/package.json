@@ -128,7 +128,7 @@
     "vuex-persist": "^2.0.1",
     "xel": "beekeeper-studio/xel",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "yargs-parser": "^20.2.7"
+    "yargs-parser": "^21.0.0"
   },
   "devDependencies": {
     "@aws-sdk/types": "^3.127.0",
