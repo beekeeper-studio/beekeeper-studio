@@ -18,7 +18,7 @@
         <div class="dialog-content">
           <div class="top">
             <div class="dialog-c-title">
-              {{ isReadOnly ? "Viewing " : "Editing " }}as
+              {{ isReadOnly ? $t("Viewing ") : $t("Editing ") }}as
             </div>
 
             <select
@@ -30,7 +30,7 @@
                 value=""
                 v-if="!languageName"
               >
-                Select a language
+                {{ $t('Select a language') }}
               </option>
               <option
                 v-for="lang in languages"
@@ -43,7 +43,7 @@
 
             <x-button
               class="btn btn-flat"
-              title="Actions"
+              :title="$t('Actions')"
             >
               <i class="material-icons">settings</i>
               <i class="material-icons">arrow_drop_down</i>
@@ -53,10 +53,10 @@
                   @click.prevent="format"
                   v-show="!language.noBeautify"
                 >
-                  <x-label>Format {{ language.label }}</x-label>
+                  <x-label>{{ $t('Format') }} {{ language.label }}</x-label>
                 </x-menuitem>
                 <x-menuitem @click.prevent="minify" togglable>
-                  <x-label>Minify text</x-label>
+                  <x-label>{{ $t('Minify text') }}</x-label>
                 </x-menuitem>
                 <x-menuitem
                   togglable
@@ -64,7 +64,7 @@
                   @click.prevent="toggleWrapText"
                 >
                   <x-label class="flex-between">
-                    Wrap Text
+                    {{ $t('Wrap Text') }}
                   </x-label>
                 </x-menuitem>
               </x-menu>
@@ -101,13 +101,13 @@
               @click.prevent="$modal.hide(modalName)"
               class="btn btn-sm btn-flat"
             >
-              Cancel
+              {{ $t('Cancel') }}
             </button>
             <button
               class="btn btn-sm btn-flat"
               @click.prevent="copy"
             >
-              Copy
+              {{ $t('Copy') }}
             </button>
             <x-button
               v-if="language.noMinify"
@@ -115,7 +115,7 @@
               @click.prevent="save"
               :disabled="isReadOnly"
             >
-              <x-label>Apply</x-label>
+              <x-label>{{ $t('Apply') }}</x-label>
             </x-button>
             <x-buttons v-else>
               <x-button
@@ -123,7 +123,7 @@
                 :disabled="isReadOnly"
                 @click.prevent="saveAndMinify"
               >
-                <x-label>Minify & Apply</x-label>
+                <x-label>{{ $t('Minify & Apply') }}</x-label>
               </x-button>
               <x-button
                 :disabled="isReadOnly"
@@ -133,7 +133,7 @@
                 <i class="material-icons">arrow_drop_down</i>
                 <x-menu style="--align: end">
                   <x-menuitem @click.prevent="save">
-                    <x-label>Apply (no minify)</x-label>
+                    <x-label>{{ $t('Apply (no minify)') }}</x-label>
                   </x-menuitem>
                 </x-menu>
               </x-button>
@@ -233,7 +233,7 @@ export default Vue.extend({
 
     copy() {
       this.$copyText(this.content)
-      this.$noty.success("Copied the data to your clipboard!")
+      this.$noty.success(this.$t("Copied the data to your clipboard!"))
     },
 
     saveAndMinify() {
@@ -269,7 +269,7 @@ export default Vue.extend({
     },
     debouncedCheckForErrors: _.debounce(function() {
       const isValid = this.language.isValid(this.content)
-      this.error = isValid ? "" : `Invalid ${this.language.label} content`
+      this.error = isValid ? "" : this.$t('Invalid {0} content', [this.language.label])
     }, 50),
     toggleWrapText() {
       this.wrapText = !this.wrapText

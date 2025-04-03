@@ -22,7 +22,7 @@
             class="btn btn-flat btn-fab"
             type="button"
             @click.stop="toggleFilterMode"
-            title="Toggle Filter Type"
+            :title="$t('Toggle Filter Type')"
           >
             <i class="material-icons-outlined">filter_alt</i>
           </button>
@@ -35,7 +35,7 @@
               v-model="filterRaw"
               @blur="updateMinimalModeByFilterRaw"
               ref="valueInput"
-              placeholder="Enter condition, eg: name like 'Matthew%'"
+              :placeholder="$t('Enter condition, eg: name like \'Matthew%\'')"
             >
             <button
               type="button"
@@ -50,7 +50,7 @@
           <button
             class="btn btn-primary btn-fab"
             type="submit"
-            title="Filter"
+            :title="$t('Filter')"
             v-if="!minimalMode"
           >
             <i class="material-icons">search</i>
@@ -67,7 +67,7 @@
               class="btn btn-flat btn-fab"
               type="button"
               @click.stop="toggleFilterMode"
-              title="Toggle Filter Type"
+              :title="$t('Toggle Filter Type')"
             >
               <i class="material-icons">code</i>
             </button>
@@ -82,7 +82,7 @@
               type="button"
               :disabled="dialectData.disabledFeatures && dialectData.disabledFeatures.filterWithOR"
               @click.stop="filter.op = filter.op === 'AND' ? 'OR' : 'AND'"
-              title="Toggle Filter AND / OR"
+              :title="$t('Toggle Filter AND / OR')"
             >
               {{ filter.op }}
             </button>
@@ -132,7 +132,7 @@
                 v-if="filters.length > 1"
                 class="btn btn-flat btn-fab remove-filter"
                 type="button"
-                title="Remove filter"
+                :title="$t('Remove filter')"
                 @click="removeFilter(-1)"
               >
                 <i class="material-icons">remove</i>
@@ -141,7 +141,7 @@
                 <button
                   class="btn btn-flat btn-fab"
                   type="button"
-                  title="Add filter"
+                  :title="$t('Add filter')"
                   @click="addFilter"
                 >
                   <i class="material-icons">add</i>
@@ -154,7 +154,7 @@
                 <button
                   class="btn btn-primary btn-fab"
                   type="submit"
-                  title="Apply filter"
+                  :title="$t('Apply filter')"
                 >
                   <i class="material-icons">search</i>
                 </button>
@@ -169,7 +169,7 @@
             <button
               class="btn btn-flat btn-fab remove-filter"
               type="button"
-              title="Remove filter"
+              :title="$t('Remove filter')"
               @click="removeFilter(index)"
             >
               <i class="material-icons">remove</i>
@@ -260,7 +260,7 @@ export default Vue.extend({
     addFilter() {
       if (this.isCommunity) {
         if (this.filters.length >= 2) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use more than 2 filters")
+          this.$root.$emit(AppEvent.upgradeModal, this.$t("Upgrade required to use more than 2 filters"))
           return;
         }
       }
