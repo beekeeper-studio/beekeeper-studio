@@ -144,6 +144,9 @@ export default Vue.extend({
       return { name: "javascript", json: true };
     },
     text() {
+      if (this.empty) {
+        return ""
+      }
       return this.sourceMap.json
     },
     debouncedFilter: {
