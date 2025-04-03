@@ -5,22 +5,22 @@
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <div class="expand">
-              Saved Queries
+              {{ $t('Saved Queries') }}
             </div>
             <div class="actions">
               <x-button
-                title="Import queries"
+                :title="$t('Import queries')"
               >
                 <i class="material-icons">save_alt</i>
                 <x-menu style="--align: end;">
                   <x-menuitem @click.prevent="importFromComputer">
-                    <x-label>Import .sql files into Saved Queries</x-label>
+                    <x-label>{{ $t('Import .sql files into Saved Queries') }}</x-label>
                   </x-menuitem>
                   <x-menuitem
                     v-if="isCloud"
                     @click.prevent="importFromLocal"
                   >
-                    <x-label>Import from local workspace</x-label>
+                    <x-label>{{ $t('Import from local workspace') }}</x-label>
                     <i
                       v-if="$store.getters.isCommunity"
                       class="material-icons menu-icon"
@@ -33,7 +33,7 @@
                 @click.prevent="refresh"
               >
                 <i
-                  title="Refresh Saved Queries"
+                  :title="$t('Refresh Saved Queries')"
                   class="material-icons"
                 >refresh</i>
               </a>
@@ -47,7 +47,7 @@
               <input
                 class="filter-input"
                 type="text"
-                placeholder="Filter"
+                :placeholder="$t('Filter')"
                 v-model="filterQuery"
               >
               <x-buttons class="filter-actions">
@@ -64,7 +64,7 @@
         <error-alert
           v-if="error"
           :error="error"
-          title="Problem loading queries"
+          :title="$t('Problem loading queries')"
         />
         <sidebar-loading v-if="loading" />
         <nav
@@ -109,7 +109,7 @@
           class="empty"
           v-else
         >
-          <span class="empty-title">No Saved Queries</span>
+          <span class="empty-title">{{ $t('No Saved Queries') }}</span>
           <span
             class="empty-actions"
             v-if="isCloud"
@@ -117,8 +117,8 @@
             <a
               class="btn btn-flat btn-block btn-icon"
               @click.prevent="importFromLocal"
-              title="Import queries from local workspace"
-            ><i class="material-icons">save_alt</i> Import</a>
+              :title="$t('Import queries from local workspace')"
+            ><i class="material-icons">save_alt</i> {{ $t('Import') }}</a>
           </span>
         </div>
       </div>
@@ -137,7 +137,7 @@
           v-if="renameMe"
         >
           <div class="dialog-c-title">
-            Rename {{ renameMe.title }}
+            {{ $t('Rename {title}', { title: renameMe.title }) }}
           </div>
           <query-rename-form
             :query="renameMe"
@@ -210,7 +210,7 @@ export default {
       })
     },
     removeTitle() {
-      return `Remove ${this.checkedFavorites.length} saved queries`;
+      return this.$t('Remove {count} saved queries', { count: this.checkedFavorites.length });
     }
   },
   methods: {
@@ -258,7 +258,7 @@ export default {
       this.$root.$emit('favoriteClick', item)
     },
     async remove(favorite) {
-      if (await this.$confirm("Really delete?")) {
+      if (await this.$confirm(this.$t("Really delete?"))) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
     },

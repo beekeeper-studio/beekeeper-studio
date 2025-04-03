@@ -89,13 +89,13 @@ export default Vue.extend({
         
         // Display success message, show different messages based on the switched language
         if (locale === 'en') {
-          this.$noty.success('Language switched to English')
+          this.$noty.success(this.$t('Language switched to English'))
         } else if (locale === 'zh-CN') {
-          this.$noty.success('已切换到中文')
+          this.$noty.success(this.$t('已切换到中文'))
         }
       } catch (error) {
         console.error('Error switching language:', error)
-        this.$noty.error('Failed to switch language')
+        this.$noty.error(this.$t('Failed to switch language'))
       }
     }
   },

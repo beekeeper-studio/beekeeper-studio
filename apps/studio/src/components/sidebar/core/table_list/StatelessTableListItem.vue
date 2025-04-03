@@ -22,7 +22,7 @@
         @mousedown="selectItem"
       >
         <span
-          :title="draggable ? 'drag me!' : ''"
+          :title="draggable ? String($t('drag me!')) : ''"
           class="table-item-wrapper"
           :class="{ draggable: draggable, 'drag-handle': draggable }"
         >
@@ -49,7 +49,7 @@
         <span
           class="btn-fab pin"
           :class="{ pinned: pinned }"
-          :title="pinned ? 'Unpin' : 'Pin'"
+          :title="pinned ? String($t('Unpin')) : String($t('Pin'))"
           @mousedown.prevent.stop="$emit('pin', $event)"
         >
           <i class="bk-pin" />
@@ -65,7 +65,7 @@
         class="sub-item"
         v-if="!loadingColumns && !(table.columns || table.columns?.length)"
       >
-        No Columns
+        {{ $t('No Columns') }}
       </span>
       <template v-else-if="table.columns && table.columns.length > 0">
         <span
@@ -90,7 +90,7 @@
         class="sub-item"
         v-else
       >
-        Loading columns...
+        {{ $t('Loading columns...') }}
       </span>
     </div>
   </div>

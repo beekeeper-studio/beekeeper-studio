@@ -40,7 +40,7 @@ export default Vue.extend({
         .filter((folder) => folder.id !== this.item.queryFolderId)
         .map((folder: IQueryFolder) => {
         return {
-          name: `Move to ${folder.name}`,
+          name: this.$t('Move to {name}', { name: folder.name }),
           handler: this.moveItem,
           folder
         }
@@ -63,14 +63,14 @@ export default Vue.extend({
     async moveItem({ item, option }) {
       try {
         const folder = option.folder
-        console.log("moving item!", folder)
+        console.log(this.$t("moving item!"), folder)
         if (!folder || !folder.id) return
         const updated = _.clone(item)
         updated.queryFolderId = folder.id
         await this.$store.dispatch('data/queries/save', updated)
 
       } catch (ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
+        this.$noty.error(this.$t('Move Error: {message}', { message: ex.message }))
         console.error(ex)
       }
     },
@@ -79,23 +79,23 @@ export default Vue.extend({
         item, event,
         options: [
           {
-            name: "Open",
+            name: this.$t("Open"),
             handler: ({ item }) => this.$emit('open', item)
           },
           {
-            name: "Rename",
+            name: this.$t("Rename"),
             handler: ({ item }) => this.$emit('rename', item)
             
           },
           {
-            name: "Delete",
+            name: this.$t("Delete"),
             handler: ({ item }) => this.$emit('remove', item)
           },
           {
             type: 'divider'
           },
           {
-            name: "Export",
+            name: this.$t("Export"),
             handler: ({ item }) => this.$emit('export', item)
           },
           {

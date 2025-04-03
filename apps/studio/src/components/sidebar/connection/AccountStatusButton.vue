@@ -22,7 +22,7 @@
     >
       <div class="dialog-content">
         <div class="dialog-c-title">
-          Connected Accounts
+          {{ $t('Connected Accounts') }}
         </div>
         <div class="list-group">
           <div class="list-body">
@@ -55,23 +55,23 @@
                     <x-menu style="--target-align: right;">
                       <x-menuitem>
                         <x-label>
-                          <a href="https://app.beekeeperstudio.io">Account Dashboard</a>
+                          <a href="https://app.beekeeperstudio.io">{{ $t('Account Dashboard') }}</a>
                         </x-label>
                       </x-menuitem>
                       <x-menuitem @click.prevent="refresh">
-                        <x-label>Refresh</x-label>
+                        <x-label>{{ $t('Refresh') }}</x-label>
                       </x-menuitem>
                       <x-menuitem
                         @click.prevent="reauth(blob)"
-                        title="Sign in again with the same email and a new password"
+                        :title="$t('Sign in again with the same email and a new password')"
                       >
-                        <x-label>Re-authenticate</x-label>
+                        <x-label>{{ $t('Re-authenticate') }}</x-label>
                       </x-menuitem>
                       <x-menuitem
                         @click.prevent="logout(blob)"
-                        title="Sign out of this account"
+                        :title="$t('Sign out of this account')"
                       >
-                        <x-label>Log out</x-label>
+                        <x-label>{{ $t('Log out') }}</x-label>
                       </x-menuitem>
                     </x-menu>
                   </x-button>
@@ -87,14 +87,14 @@
           type="button"
           @click.prevent="$modal.hide('account-status-modal')"
         >
-          Close
+          {{ $t('Close') }}
         </button>
         <button
           class="btn btn-primary"
           type="button"
           @click.prevent="login"
         >
-          Add Account
+          {{ $t('Add Account') }}
         </button>
       </div>
     </modal>
@@ -124,8 +124,8 @@ export default Vue.extend({
     title() {
       const errorCount = this.credentials.filter((c) => c.error).length
       if (this.error) return this.error.message
-      const result = `Signed into ${this.credentials.length} Accounts`
-      return errorCount ? `${result} (${errorCount} Problems)` : result
+      const result = this.$t('Signed into {count} Accounts', { count: this.credentials.length })
+      return errorCount ? this.$t('{result} ({errorCount} Problems)', { result, errorCount }) : result
     },
   },
   methods: {
@@ -133,7 +133,10 @@ export default Vue.extend({
       window.location.href = "https://app.beekeeperstudio.io"
     },
     workspaceText(blob: CredentialBlob) {
-      return pluralize("Workspace", blob.workspaces.length, true)
+      return this.$t('{count} {label}', { 
+        count: blob.workspaces.length,
+        label: blob.workspaces.length === 1 ? this.$t('Workspace') : this.$t('Workspaces')
+      })
     },
     showAccountsModal() {
       if (this.credentials.length) {
