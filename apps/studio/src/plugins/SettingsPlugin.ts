@@ -6,15 +6,13 @@ const log = rawLog.scope('settings-plugin')
 export const SettingsPlugin = {
 
   async get(key, defaultValue) {
-    if (!Vue.prototype.$util) {
-      return defaultValue || null;
-    }
     const result = await Vue.prototype.$util.send('appdb/setting/get', { key });
+    result.value = defaultValue;
     log.info("get", JSON.stringify(result));
     if (result) {
       return result.value
     }
-    return defaultValue || null;
+    return defaultValue;
   },
 
   async set(key: string, value: string) {

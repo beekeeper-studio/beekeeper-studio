@@ -277,6 +277,7 @@ import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
+import path from 'path';
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
@@ -833,11 +834,14 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
     },
     async handlePromptQueryExport(query) {
-      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_')
+      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');
+      const fileName = `${safeFilename}.sql`;
+
+      const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.getLastExportPath(fileName));
 
       const filePath = this.$native.dialog.showSaveDialogSync({
         title: "Export Query",
-        defaultPath: await window.main.getLastExportPath(`${safeFilename}.sql`),
+        defaultPath: lastExportPath,
         filters: [
           { name: 'SQL (*.sql)', extensions: ['sql'] },
           { name: 'All Files (*.*)', extensions: ['*'] },

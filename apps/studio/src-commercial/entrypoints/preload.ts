@@ -87,10 +87,7 @@ export const api = {
     return [];
   },
   async getLastExportPath(filename?: string) {
-    return await SettingsPlugin.get(
-      "lastExportPath",
-      path.join(homedir(), filename)
-    );
+    return path.join(homedir(), filename);
   },
   showOpenDialogSync(args: any) {
     return electron.dialog.showOpenDialogSync(args);
