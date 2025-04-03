@@ -282,7 +282,7 @@ x-buttons {
           --row-bg-color: #{$cell-edited};
           &:hover {
             background: color.adjust($cell-edited, $lightness: -5%);
-            --row-hover-bg-color: darken($cell-edited, 5%);
+            --row-hover-bg-color: color.adjust($cell-edited, $lightness: -5%);
           }
         }
         &.edit-error {

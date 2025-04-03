@@ -497,7 +497,7 @@ x-buttons {
 }
 
 .BksTextEditor-hints {
-  --bks-text-editor-context-menu-bg-color: #{darken($theme-bg, 5%)};
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
 }

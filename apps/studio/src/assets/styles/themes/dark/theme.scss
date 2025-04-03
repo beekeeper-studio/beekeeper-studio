@@ -134,9 +134,9 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
 }
 
 .BksTextEditor-hints {
-  --bks-text-editor-context-menu-bg-color: #{lighten($theme-bg, 5%)};
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-item-bg-color-active: #{darken($theme-secondary, 25%)};
+  --bks-text-editor-context-menu-item-bg-color-active: #{color.adjust($theme-secondary, $lightness: -25%)};
   --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
 }
