@@ -1,5 +1,8 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { Nullable } from '@/common/interfaces/Nullable'
+import { FormatterDialect } from '@shared/lib/dialects/models'
+import i18n from "@/i18n"
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
@@ -54,6 +57,12 @@ export enum AzureAuthType {
 export const IamAuthTypes = [
   { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
   { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+]
+
+// 动态获取翻译后的IAM认证类型
+export const getIamAuthTypes = () => [
+  { name: i18n.t('IAM Authentication Using Access Key and Secret Key'), value: 'iam_key' },
+  { name: i18n.t('IAM Authentication Using Credentials File'), value: 'iam_file' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you

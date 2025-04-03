@@ -18,7 +18,7 @@
 
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
-import {IamAuthTypes} from "@/lib/db/types";
+import {IamAuthTypes, getIamAuthTypes} from "@/lib/db/types";
 import {AppEvent} from "@/common/AppEvent";
 import _ from "lodash";
 import CommonIam from "@/components/connection/CommonIam.vue";
@@ -28,7 +28,7 @@ export default {
   data() {
     return {
       authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes]
+      authTypes: [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()]
     }
   },
   computed: {

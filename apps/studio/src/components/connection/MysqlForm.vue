@@ -46,7 +46,7 @@ import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import CommonIam from './CommonIam.vue'
 import {AppEvent} from "@/common/AppEvent";
-import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
+import {AzureAuthType, AzureAuthTypes, IamAuthTypes, getIamAuthTypes} from "@/lib/db/types";
 import _ from "lodash";
 import { mapGetters } from 'vuex';
 
@@ -57,7 +57,7 @@ export default {
     return {
       iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
       authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
+      authTypes: [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()],
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
