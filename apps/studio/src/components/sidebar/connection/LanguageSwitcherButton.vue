@@ -75,7 +75,7 @@ export default Vue.extend({
     },
     async switchLanguage(locale: string) {
       try {
-        setI18nLanguage(locale)
+        await setI18nLanguage(locale)
         
         // Save the user language setting to localStorage
         // Ensure access to settings through key directly, not through the possibly non-existent language object
@@ -99,19 +99,19 @@ export default Vue.extend({
       }
     }
   },
-  mounted() {
+  async mounted() {
     // Load the user language setting
     try {
       const savedLanguageSetting = this.$store.state.settings.settings.language
       
       // If there is a saved language setting, use it
       if (savedLanguageSetting && savedLanguageSetting.value) {
-        setI18nLanguage(savedLanguageSetting.value)
+        await setI18nLanguage(savedLanguageSetting.value)
       }
     } catch (error) {
       console.error('Error loading language setting:', error)
       // If there is an error, use the default language (English)
-      setI18nLanguage('en')
+      await setI18nLanguage('en')
     }
   }
 })
