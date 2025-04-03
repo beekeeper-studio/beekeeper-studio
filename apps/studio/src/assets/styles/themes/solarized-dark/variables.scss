@@ -1,3 +1,4 @@
+@use "sass:color";
 @import 'codemirror/theme/solarized';
 
 
@@ -95,5 +96,5 @@ $statusbar-bg:              rgba($theme-base, 0.1);
 // $statusbar-bg:             rgba($theme-primary, 0.4);
 $statusbar-text:            $text-dark;
 
-$grouped-tables-base: lighten($theme-bg, 2%);
-$grouped-tables-light: lighten($grouped-tables-base, 2%);
+$grouped-tables-base: color.adjust($theme-bg, $lightness: 2%);
+$grouped-tables-light: color.adjust($grouped-tables-base, $lightness: 2%);

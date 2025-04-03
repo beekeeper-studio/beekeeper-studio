@@ -1,5 +1,6 @@
 @use "variables" as *;
 @use "mixins" as *;
+@use "sass:color";
 
 .BksUiKit {
   // Global
@@ -139,7 +140,7 @@
     background: $brand-info;
     color: rgba(black, 0.87);
     &:hover, &:focus {
-      background: lighten($brand-info, 8%);
+      background: color.adjust($brand-info, $lightness: 8%);
       color: rgba(black, 0.87);
     }
   }
@@ -192,7 +193,7 @@
         color: rgba(black, 0.87);
       }
       &:hover, &:focus {
-        background: darken($theme-primary, 8%);
+        background: color.adjust($theme-primary, $lightness: -8%);
         .material-icons {
           color: rgba(black, 0.87);
         }
@@ -347,7 +348,7 @@
     background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent ;
     padding: 0 0.75rem;
     option {
-      background: lighten($theme-bg, 3%);
+      background: color.adjust($theme-bg, $lightness: 3%);
       color: $text;
       &:checked,
       &:hover {
@@ -454,7 +455,7 @@
     transition: background 0.2s ease-in-out;
     cursor: pointer;
     &:checked{
-      background: darken($theme-primary, 10%);
+      background: color.adjust($theme-primary, $lightness: -10%);
       color: rgba(black, 0.87);
       box-shadow: none;
     }
@@ -501,7 +502,7 @@
     color: $brand-info;
   }
   .text-danger {
-    color: lighten($brand-danger, 5%);
+    color: color.adjust($brand-danger, $lightness: 5%);
   }
   .text-warning {
     color: $brand-warning;
@@ -552,7 +553,7 @@
   }
   .item-icon {
     font-size: 12px;
-    color: darken($theme-primary, 15%);
+    color: color.adjust($theme-primary, $lightness: -15%);
     &.schema-icon {
       color: $text-lighter;
     }
@@ -655,7 +656,7 @@
     justify-content: flex-end;
   }
   .card {
-    background: lighten($theme-bg, 6%);
+    background: color.adjust($theme-bg, $lightness: 6%);
     @include card-shadow;
   }
   .card-flat {
@@ -773,16 +774,16 @@
     }
   }
   .alert-danger {
-    color: lighten($brand-danger, 5%);
+    color: color.adjust($brand-danger, $lightness: 5%);
   }
   .alert-warning {
-    color: lighten($brand-warning, 5%);
+    color: color.adjust($brand-warning, $lightness: 5%);
   }
   .alert-info {
-    color: lighten($brand-info, 5%);
+    color: color.adjust($brand-info, $lightness: 5%);
   }
   .alert-success {
-    color: lighten($brand-success, 5%);
+    color: color.adjust($brand-success, $lightness: 5%);
   }
 
   // Dropdown

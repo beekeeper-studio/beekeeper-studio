@@ -61,8 +61,8 @@ declare interface IBksConfig {
         };
         tab: {
             closeTab: string;
-            nextTab: string;
-            previousTab: string;
+            nextTab: string[];
+            previousTab: string[];
             reopenLastClosedTab: string;
             switchTab1: string;
             switchTab2: string;

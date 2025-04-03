@@ -1,3 +1,4 @@
+@use "sass:color";
 // Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
 
 .vue-simple-context-menu {
@@ -9,7 +10,7 @@
   list-style: none;
   position: absolute;
   z-index: 1000000;
-  background: lighten($theme-bg, 5%);
+  background: color.adjust($theme-bg, $lightness: 5%);
   color: $text;
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
@@ -37,8 +38,8 @@
   }
   &.disabled {
     pointer-events: none;
-    color: darken($text-dark, 25%);
-    background: darken(rgba($theme-base, 0.05), 25%);
+    color: color.adjust($text-dark, $lightness: -25%);
+    background: color.adjust(rgba($theme-base, 0.05), $lightness: -25%);
   }
   i {
     height: 24px!important;
@@ -49,7 +50,7 @@
   }
   .shortcut {
     padding-left: 5px;
-    color: darken($text-dark, 30%);
+    color: color.adjust($text-dark, $lightness: -30%);
   }
   i.material-icons.menu-icon   {
     margin-right:0!important;

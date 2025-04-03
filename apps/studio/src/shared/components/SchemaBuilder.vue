@@ -257,6 +257,7 @@ export default Vue.extend({
 
 
 <style lang="scss">
+  @use 'sass:color';
   @import '../../shared/assets/styles/_variables';
   @import '../../shared/assets/styles/_extends';
   $row-height:             42px;
@@ -461,7 +462,7 @@ export default Vue.extend({
       &.tabulator-moving {
         @extend .card-shadow-hover;
         border: 0;
-        background: lighten($theme-bg, 15%)!important;
+        background: color.adjust($theme-bg, $lightness: 15%)!important;
         opacity: 1!important;
       }
     }

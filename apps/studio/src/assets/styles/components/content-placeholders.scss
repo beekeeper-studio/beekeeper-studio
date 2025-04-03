@@ -1,3 +1,4 @@
+@use "sass:color";
 // Original Copyright https://github.com/michalsnik/vue-content-placeholders
 
 // Variables
@@ -45,7 +46,7 @@ $vue-content-placeholders-spacing: 10px !default;
     width: 100vw;
     max-width: 1000px;
     height: 100%;
-    background: linear-gradient(to right, transparent 0%, darken($vue-content-placeholders-secondary-color, 5%) 15%, transparent 30%);
+    background: linear-gradient(to right, transparent 0%, color.adjust($vue-content-placeholders-secondary-color, $lightness: -5%) 15%, transparent 30%);
     animation-duration: 1.5s;
     animation-fill-mode: forwards;
     animation-iteration-count: infinite;
