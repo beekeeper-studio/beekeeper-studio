@@ -4,7 +4,7 @@
       <form v-kbd-trap="true" @submit.prevent="submit">
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Add Field
+            {{ $t('Add Field') }}
             <a
               class="close-btn btn btn-fab"
               href="#"
@@ -14,18 +14,18 @@
             </a>
           </div >
           <div class="form-group">
-            <label for="field-name">Field Name</label>
+            <label for="field-name">{{ $t('Field Name') }}</label>
             <input type="text" id="field-name" name="field-name" ref="fieldInput" v-model="fieldName">
           </div>
           <div class="form-group">
-            <label for="type-hint">Type Hint</label>
+            <label for="type-hint">{{ $t('Type Hint') }}</label>
             <div class="data-select-wrap">
               <v-select
-                :title="'Type Hint: ' + typeHint"
+                :title="$t('Type Hint') + ': ' + typeHint"
                 v-model="typeHint"
                 :options="columnTypes"
                 :components="{OpenIndicator}"
-                placeholder="Select a type hint..."
+                :placeholder="$t('Select a type hint...')"
                 class="dropdown-search"
               />
             </div>
@@ -38,14 +38,14 @@
             ref="cancelBtn"
             @click.prevent="close"
           >
-            Cancel
+            {{ $t('Cancel') }}
           </button>
           <button
             class="btn btn-primary"
             type="submit"
             :disabled="!canSubmit"
           >
-            Add
+            {{ $t('Add') }}
           </button>
         </div>
       </form>
@@ -98,7 +98,7 @@ export default Vue.extend({
       if (!this.canSubmit) return;
 
       this.$emit('done', { fieldName: this.fieldName, typeHint: this.typeHint});
-      this.$noty.success(`${this.fieldName} added`);
+      this.$noty.success(this.$t(`${this.fieldName} added`));
       this.close();
     }
   },

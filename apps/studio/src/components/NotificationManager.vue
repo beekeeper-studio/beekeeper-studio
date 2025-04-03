@@ -7,7 +7,7 @@ import Noty from 'noty'
 import { mapGetters } from 'vuex'
 
 export default Vue.extend({
-  data: () => {
+  data() {
     return {
       notificationInterval: null,
       timeoutID: null,
@@ -36,6 +36,20 @@ export default Vue.extend({
     }
   },
   methods: {
+    getUpsellOptions() {
+      return {
+        text: this.$t("👋 Beekeeper Studio is run by a small team. Buy the full version of Beekeeper Studio to support development and get more features. Thank you ♥"),
+        timeout: 1000 * 60 * 5,
+        queue: "upsell",
+        killer: 'upsell',
+        layout: 'bottomRight',
+        closeWith: ['button'],
+        buttons: [
+          Noty.button(this.$t('Close'), 'btn btn-flat', () => Noty.closeAll('upsell')),
+          Noty.button(this.$t('Get Started'), 'btn btn-primary', () => window.main.openExternally('https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition'))
+        ]
+      };
+    },
     initNotifyInterval() {
       const intervalTime = 1000 * 60 * 60 * 3
       if (this.notificationInterval) {
@@ -51,11 +65,11 @@ export default Vue.extend({
       }
 
       this.notificationInterval = setInterval(() => {
-        new Noty(this.upsellNotificationOptions).show()
+        new Noty(this.getUpsellOptions()).show()
       }, intervalTime)
 
       this.timeoutID = setTimeout(() => {
-        new Noty(this.upsellNotificationOptions).show()
+        new Noty(this.getUpsellOptions()).show()
       }, 1000 * 60 * 5)
     }
   },

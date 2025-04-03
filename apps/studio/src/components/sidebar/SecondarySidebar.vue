@@ -8,7 +8,7 @@
           :selected="secondaryActiveTabId === tab.id"
           @click="handleTabClick(tab)"
         >
-          <x-label>{{ tab.label }}</x-label>
+          <x-label>{{ $t(tab.label) }}</x-label>
         </x-tab>
       </x-tabs>
       <div class="actions">

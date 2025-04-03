@@ -2,25 +2,26 @@
   <portal to="modals">
     <modal class="vue-dialog beekeeper-modal" :name="modalName">
       <div class="dialog-content">
-        <div class="dialog-c-title">Your license has ended</div>
+        <div class="dialog-c-title">
+          {{ $t('Your license has ended') }}
+        </div>
         <div>
-          Your license has ended. But you can continue using all features using
-          Beekeeper Studio version {{ maxAllowedVersion }} or later.
+          {{ $t('Your license has ended. But you can continue using all features using Beekeeper Studio version {0} or later.', [maxAllowedVersion]) }}
         </div>
       </div>
       <div class="vue-dialog-buttons">
         <button class="btn btn-flat" type="button" @click.prevent="close">
-          Close
+          {{ $t('Close') }}
         </button>
         <a
           ref="learnMore"
           href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
           class="btn btn-flat"
         >
-          Learn more
+          {{ $t('Learn more') }}
         </a>
         <button class="btn btn-flat" type="button" @click.prevent="purchase">
-          Purchase a license
+          {{ $t('Purchase a license') }}
         </button>
       </div>
     </modal>

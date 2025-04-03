@@ -2,7 +2,7 @@
   <div class="with-connection-type">
     <div class="form-group">
       <label for="dataCenter">
-        Local Data Center
+        {{ $t('Local Data Center') }}
       </label>
       <input
         type="text"

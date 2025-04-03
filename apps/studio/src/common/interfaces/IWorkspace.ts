@@ -1,4 +1,4 @@
-
+import i18n from "@/i18n";
 
 export interface IWorkspace {
   id: number
@@ -16,9 +16,9 @@ export interface IWorkspace {
 export const LocalWorkspace: IWorkspace = {
   // can never exist in a real database
   id: -1,
-  level: 'local',
+  level: i18n.t('local').toString(),
   type: 'local',
-  name: 'Local Workspace',
+  name: i18n.t('Local Workspace').toString(),
   icon: 'laptop',
   active: true
 

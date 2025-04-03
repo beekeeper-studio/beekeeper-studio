@@ -67,9 +67,9 @@ export default Vue.extend({
 
         if (status == ExportStatus.Error) {
           const error = this.$util.send('export/error', { id: exp.id });
-          const error_notice = this.$noty.error(`Export of ${exportName} failed: ${error}`, {
+          const error_notice = this.$noty.error(this.$t('Export of {exportName} failed: {error}', {exportName, error}), {
             buttons: [
-              Noty.button('Close', "btn btn-primary", () => {
+              Noty.button(this.$t('Close'), "btn btn-primary", () => {
                 error_notice.close()
               })
             ]
@@ -77,16 +77,16 @@ export default Vue.extend({
           return
         }
         if (status !== ExportStatus.Completed) return;
-        const n = this.$noty.success(`Export of ${exportName} complete`, {
+        const n = this.$noty.success(this.$t('Export of {exportName} complete', {exportName}), {
           buttons: [
-            Noty.button('Show', "btn btn-primary", () => {
+            Noty.button(this.$t('Show'), "btn btn-primary", () => {
               this.$native.files.showItemInFolder(options.filePath)
               n.close()
             })
           ]
         })
       } catch (e) {
-        this.$noty.error(`Failed to export: ${e?.message ?? e}`, {
+        this.$noty.error(this.$t('Failed to export: {message}', {message: e?.message ?? e}), {
         })
       }
     },

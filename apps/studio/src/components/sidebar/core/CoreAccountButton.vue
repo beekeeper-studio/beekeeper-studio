@@ -19,20 +19,20 @@
           <x-label>{{ title }}</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="manage">
-          <x-label>Manage Workspace</x-label>
+          <x-label>{{ $t('Manage Workspace') }}</x-label>
         </x-menuitem>
         <x-menuitem
           v-if="workspace.level === 'team' && workspace.isOwner"
           @click.prevent="invite"
         >
-          <x-label>Add Users</x-label>
+          <x-label>{{ $t('Add Users') }}</x-label>
         </x-menuitem>
         <x-menuitem
           v-if="pollError"
           @click.prevent="reAuthenticate"
         >
           <x-label>
-            Log In Again
+            {{ $t('Log In Again') }}
           </x-label>
         </x-menuitem>
       </x-menu>
@@ -51,7 +51,7 @@ export default Vue.extend({
     title() {
       if (this.pollError) return this.pollError.message
 
-      return `Connected to ${this.workspace.name}`
+      return this.$t('Connected to {name}', { name: this.workspace.name })
     },
   },
   methods: {

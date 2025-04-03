@@ -17,7 +17,7 @@
       <div class="statusbar-info col flex expand">
         <span
           class="statusbar-item"
-          :title="`Selected Tables ${selectedTables}`"
+          :title="$t('Selected Tables {0}', [selectedTables])"
         >
           <i class="material-icons">backup_table</i>
           <span>{{ selectedTables }}</span>
@@ -39,13 +39,13 @@
             <i class="material-icons">check</i>
           </div>
         </div>
-        <div>All Tables Have Been Successfully Exported</div>
+        <div>{{ $t('All Tables Have Been Successfully Exported') }}</div>
         <button
           ref="closeTab"
           @click="showFiles"
           class="btn btn-primary primary-action"
         >
-          Show Files
+          {{ $t('Show Files') }}
         </button>
         <button
           @click="$modal.hide(`success-modal-${tab.id}`)"
@@ -66,13 +66,13 @@
             !
           </div>
         </div>
-        <div>Batch Export Failed.</div>
+        <div>{{ $t('Batch Export Failed.') }}</div>
         <button
           ref="tryAgain"
           @click="retryFailedExports"
           class="btn btn-primary primary-action"
         >
-          Retry Failed Exports
+          {{ $t('Retry Failed Exports') }}
         </button>
         <button
           @click="$modal.hide(`fail-modal-${tab.id}`)"
@@ -108,30 +108,30 @@
         exportSteps: [
           {
             component: ExportObjects,
-            title: 'Select Tables',
+            title: this.$t('Select Tables'),
             icon: 'data_object',
             stepperProps: {},
             completed: true,
             completePrevious: false,
-            nextButtonText: 'Configure Export',
+            nextButtonText: this.$t('Configure Export'),
             nextButtonIcon: 'arrow_forward',
-            nextButtonDisabledTooltip: 'You must select at least 1 table to continue.'
+            nextButtonDisabledTooltip: this.$t('You must select at least 1 table to continue.')
           },
           {
             component: ExportOptions,
-            title: 'Configure Export',
+            title: this.$t('Configure Export'),
             icon: 'settings',
             stepperProps: {},
             completed: false,
             completePrevious: true,
-            nextButtonText: 'Review & Execute',
+            nextButtonText: this.$t('Review & Execute'),
             nextButtonIcon: 'arrow_forward',
-            nextButtonDisabledTooltip: 'Please ensure that all required fields are filled out.',
+            nextButtonDisabledTooltip: this.$t('Please ensure that all required fields are filled out.'),
             allowScroll: true
           },
           {
             component: ExportConfirmation,
-            title: 'Review & Execute',
+            title: this.$t('Review & Execute'),
             icon: 'check',
             stepperProps: {
               exportsStarted: false,
@@ -140,7 +140,7 @@
             },
             completed: false,
             completePrevious: true,
-            nextButtonText: 'Run Export',
+            nextButtonText: this.$t('Run Export'),
             allowScroll: true
           }
         ]

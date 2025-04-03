@@ -2,10 +2,10 @@
   <div class="import mini-wrap">
     <form class="import-section-wrapper card-flat padding">
       <h3 class="card-title">
-        Import Data Into Table '{{ stepperProps.table }}'
+        {{ $t('Import Data Into Table \'{0}\'', [stepperProps.table]) }}
       </h3>
       <div class="form-group">
-        <label for="fileName">Select File To Import (.csv, .xlsx, .json, .jsonl only)</label>
+        <label for="fileName">{{ $t('Select File To Import (.csv, .xlsx, .json, .jsonl only)') }}</label>
         <file-picker
           v-model="fileName"
           :options="filePickerOptions"
@@ -20,11 +20,11 @@
               type="checkbox"
               v-model="trimWhitespaces"
               class="form-control"
-            > Automatically Trim Whitespace
+            > {{ $t('Automatically Trim Whitespace') }}
           </label>
         </div>
         <toggle-form-area
-          title="Auto Detect Separators"
+          :title="$t('Auto Detect Separators')"
           :hide-toggle="true"
           :expanded="!isAutodetect"
         >
@@ -44,7 +44,7 @@
               <div class="col s6">
                 <div class="form-group">
                   <label for="columnDelimeter">
-                    Column Separator
+                    {{ $t('Column Separator') }}
                   </label>
                   <input
                     type="text"
@@ -55,7 +55,7 @@
                 </div>
                 <div class="form-group">
                   <label for="quoteCharacter">
-                    Text Quote Character
+                    {{ $t('Text Quote Character') }}
                   </label>
                   <input
                     type="text"
@@ -68,7 +68,7 @@
               <div class="col s6">
                 <div class="form-group">
                   <label for="escapeCharacter">
-                    Escape Character
+                    {{ $t('Escape Character') }}
                   </label>
                   <input
                     type="text"
@@ -79,7 +79,7 @@
                 </div>
                 <div class="form-group">
                   <label for="newlineCharacter">
-                    Newline Character
+                    {{ $t('Newline Character') }}
                   </label>
                   <input
                     type="text"
@@ -93,8 +93,8 @@
           </template>
         </toggle-form-area>
         <div class="options-wrapper flex-row">
-          <toggle-form-area title="Null Value Detection">
-            <label>Select which values should be interpreted as NULL</label>
+          <toggle-form-area :title="$t('Null Value Detection')">
+            <label>{{ $t('Select which values should be interpreted as NULL') }}</label>
             <fieldset class="form-group row gutters">
               <div class="col s6">
                 <label class="checkbox-group">
@@ -103,7 +103,7 @@
                     value=""
                     v-model="nullableValues"
                     class="form-control"
-                  > Empty String
+                  > {{ $t('Empty String') }}
                 </label>
                 <label class="checkbox-group">
                   <input
@@ -139,8 +139,8 @@
           class="options-wrapper flex-row"
           v-if="this.fileType === 'xlsx'"
         >
-          <toggle-form-area title="Select Sheet to import">
-            <label>Only 1 sheet can be imported at a time.</label>
+          <toggle-form-area :title="$t('Select Sheet to import')">
+            <label>{{ $t('Only 1 sheet can be imported at a time.') }}</label>
             <fieldset class="form-group row gutters">
               <div class="col s6">
                 <label
@@ -168,14 +168,14 @@
             type="button"
             @click.prevent="previewFile"
           >
-            Preview File With Selection
+            {{ $t('Preview File With Selection') }}
           </button>
           <button
             class="btn btn-primary btn-icon"
             type="button"
             @click.prevent="$emit('finish')"
           >
-            <span>Map To Table</span>
+            <span>{{ $t('Map To Table') }}</span>
             <span class="material-icons">
               keyboard_arrow_right
             </span>
@@ -185,7 +185,7 @@
     </form>
     <div>
       <h3 v-show="tabulator">
-        Parsed File Preview
+        {{ $t('Parsed File Preview') }}
       </h3>
       <div
         class="file-picker-wrapper"
@@ -240,7 +240,7 @@
       filePickerOptions() {
         return {
           filters: [
-            { name: 'Import Files', extensions: ['csv', 'json', 'jsonl', 'xlsx']}
+            { name: this.$t('Import Files'), extensions: ['csv', 'json', 'jsonl', 'xlsx']}
           ]
         }
       },

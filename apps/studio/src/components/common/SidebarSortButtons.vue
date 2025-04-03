@@ -17,7 +17,7 @@
     </x-button>
     <x-button
       class="actions-btn btn btn-link btn-sm"
-      v-tooltip="`Sorted by ${sortOptions[sortBy]} (${sortOrderTooltip})`"
+      v-tooltip="$t('Sorted by {sortOption} ({sortOrder})', {sortOption: sortOptions[sortBy], sortOrder: sortOrderTooltip})"
     >
       <i class="material-icons-outlined">sort</i>
       <x-menu style="--target-align:right;">
@@ -63,7 +63,7 @@ export default Vue.extend({
   },
   computed: {
     sortOrderTooltip() {
-      return this.sortOrder === 'desc' ? 'Descending' : 'Ascending'
+      return this.sortOrder === 'desc' ? this.$t('Descending') : this.$t('Ascending')
     }
   },
   watch: {

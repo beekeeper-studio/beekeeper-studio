@@ -11,6 +11,7 @@ import _ from "lodash";
 import { readClipboard, writeClipboard } from "../../utils/clipboard";
 import { InternalContextItem as ColumnMenuItem, divider } from "../context-menu/menu";
 import { ctrlOrCmd } from "../../utils/platform";
+import { i18n } from "../../i18n";
 
 type RangeData = Record<string, any>[];
 interface ExtractedData {

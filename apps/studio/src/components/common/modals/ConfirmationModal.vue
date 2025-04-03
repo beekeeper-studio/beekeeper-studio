@@ -10,11 +10,11 @@
         <div class="dialog-content">
           <div class="dialog-c-title">
             <slot name="title">
-              Are you sure?
+              {{ $t('Are you sure?') }}
             </slot>
           </div>
           <slot name="message">
-            <div>This action cannot be undone.</div>
+            <div>{{ $t('This action cannot be undone.') }}</div>
           </slot>
         </div>
         <div class="vue-dialog-buttons">
@@ -26,7 +26,7 @@
             @click.prevent="cancel"
           >
             <slot name="cancel-label">
-              Cancel
+              {{ $t('Cancel') }}
             </slot>
           </button>
           <button
@@ -35,7 +35,7 @@
             @click.prevent="confirm"
           >
             <slot name="confirm-label">
-              Confirm
+              {{ $t('Confirm') }}
             </slot>
           </button>
         </div>

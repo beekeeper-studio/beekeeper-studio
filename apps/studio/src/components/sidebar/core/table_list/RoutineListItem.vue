@@ -20,7 +20,7 @@
       </span>
       <span class="item-wrapper flex flex-middle expand">
         <div
-          :title="draggable ? 'drag me!' : ''"
+          :title="draggable ? $t('drag me!') : ''"
           class="table-item-wrapper"
           :class="{ 'draggable': draggable, 'drag-handle': draggable }"
         >
@@ -48,20 +48,20 @@
           v-if="!pinned"
           @mousedown.prevent.stop="pin"
           class="btn-fab pin"
-          :title="'Pin'"
+          :title="$t('Pin')"
         ><i class="bk-pin" /></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
           class="btn-fab unpin"
-          :title="'Unpin'"
+          :title="$t('Unpin')"
         ><i class="material-icons">clear</i></span>
         <span
           v-if="pinned"
           class="btn-fab pinned"
         ><i
           class="bk-pin"
-          :title="'Unpin'"
+          :title="$t('Unpin')"
         /></span>
       </span>
     </a>

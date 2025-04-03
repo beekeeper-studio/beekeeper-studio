@@ -10,25 +10,25 @@
       </p>
       <v-select
         v-else
-        :title="'Database: ' + selectedDatabase"
+        :title="$t('Database: {database}', { database: selectedDatabase })"
         v-model="selectedDatabase"
         :options="availableDatabases"
         :components="{OpenIndicator}"
-        placeholder="Select a database..."
+        :placeholder="$t('Select a database...')"
         class="dropdown-search"
       />
       <a
         v-if="supportsMultipleDatabases"
         class="refresh"
         @click.prevent="refreshDatabases"
-        :title="'Refresh Databases'"
+        :title="$t('Refresh Databases')"
       >
         <i class="material-icons">refresh</i>
       </a>
       <a
         class="refresh"
         @click.prevent="$modal.show('config-add-database')"
-        :title="'Add Database'"
+        :title="$t('Add Database')"
       >
         <i class="material-icons">add</i>
       </a>
@@ -47,26 +47,26 @@
           v-kbd-trap="true"
         >
           <p>
-            Oracle has a lot of <a
+            {{ $t('Oracle has a lot of') }} <a
               class="external-link"
               href="https://docs.oracle.com/cd/B19306_01/server.102/b14231/create.htm#i1008760"
-            >configuration requirements to create a new database</a> which makes it difficult for Beekeeper to do automatically.
+            >{{ $t('configuration requirements to create a new database') }}</a> {{ $t('which makes it difficult for Beekeeper to do automatically.') }}
           </p>
-          <p>Beekeeper can generate you some boilerplate code to get you started if you like.</p>
+          <p>{{ $t('Beekeeper can generate you some boilerplate code to get you started if you like.') }}</p>
           <div class="vue-dialog-buttons">
             <button
               class="btn btn-flat"
               type="button"
               @click.prevent="$modal.hide('config-add-database')"
             >
-              Cancel
+              {{ $t('Cancel') }}
             </button>
             <button
               class="btn btn-primary"
               type="button"
               @click.prevent="createDatabaseSQL"
             >
-              Generate Create Database Boilerplate
+              {{ $t('Generate Create Database Boilerplate') }}
             </button>
           </div>
         </div>

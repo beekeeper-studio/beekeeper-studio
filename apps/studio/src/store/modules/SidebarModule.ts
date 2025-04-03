@@ -2,6 +2,7 @@ import _ from "lodash";
 import { Module } from "vuex";
 import { State as RootState } from "../index";
 import { SmartLocalStorage } from "@/common/LocalStorage";
+import i18n from "@/i18n";
 
 interface SidebarTab {
   id: string;
@@ -31,7 +32,7 @@ export const SidebarModule: Module<State, RootState> = {
     tabs: [
       {
         id: "json-viewer",
-        label: "JSON Viewer",
+        label: i18n.t("JSON Viewer").toString(),
       },
     ],
 

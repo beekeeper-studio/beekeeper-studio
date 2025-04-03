@@ -4,11 +4,11 @@
       <div class="dialog-content">
         <div class="dialog-c-title">
           <i class="material-icons alert-warning">warning</i>
-          Configuration Warnings
+          {{ $t("Configuration Warnings") }}
         </div>
         <div class="alert config-modal-warnings">
           <template v-if="'unrecognized-key' in groupedWarnings">
-            <span>Unrecognized keys</span>
+            <span>{{ $t("Unrecognized keys") }}</span>
             <ul>
               <li
                 v-for="warning in groupedWarnings['unrecognized-key']"
@@ -18,24 +18,23 @@
                   <span style="font-weight: bold">[{{ warning.section }}]</span>
                 </template>
                 <template v-else>
-                  <span style="font-weight: bold">{{ warning.path }}</span> at
+                  <span style="font-weight: bold">{{ warning.path }}</span> {{ $t("at") }}
                   <span style="font-weight: bold">[{{ warning.section }}]</span>
                 </template>
-                in {{ warning.sourceName }} config.
+                {{ $t("in") }} {{ warning.sourceName }} {{ $t("config") }}.
               </li>
             </ul>
           </template>
           <template v-if="'system-user-conflict' in groupedWarnings">
             <span>
-              System settings can't be overridden. The following keys are
-              ignored:
+              {{ $t("System settings can't be overridden. The following keys are ignored:") }}
             </span>
             <ul>
               <li
                 v-for="warning in groupedWarnings['system-user-conflict']"
                 :key="`${warning.sourceName}-${warning.path}-${warning.section}`"
               >
-                <span style="font-weight: bold">{{ warning.path }}</span> at
+                <span style="font-weight: bold">{{ warning.path }}</span> {{ $t("at") }}
                 <span style="font-weight: bold">[{{ warning.section }}]</span>
               </li>
             </ul>
@@ -49,7 +48,7 @@
           @click.prevent="$modal.hide(modalName)"
           autofocus
         >
-          Close
+          {{ $t("Close") }}
         </button>
       </div>
     </modal>

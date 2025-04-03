@@ -1,7 +1,7 @@
 <template>
   <div class="shortcuts">
     <div class="shortcut-item">
-      <div>Quick Search</div>
+      <div>{{ $t('Quick Search') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -16,13 +16,13 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Autocomplete</div>
+      <div>{{ $t('Autocomplete') }}</div>
       <div class="shortcut">
         <span>Ctrl</span><span>Space</span>
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Run</div>
+      <div>{{ $t('Run') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -37,7 +37,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Run Current</div>
+      <div>{{ $t('Run Current') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -52,7 +52,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>New Window</div>
+      <div>{{ $t('New Window') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -67,7 +67,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>New Tab</div>
+      <div>{{ $t('New Tab') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -82,7 +82,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Reopen Closed Tabs</div>
+      <div>{{ $t('Reopen Closed Tabs') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -97,7 +97,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Close Tab</div>
+      <div>{{ $t('Close Tab') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -112,7 +112,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Find</div>
+      <div>{{ $t('Find') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -127,7 +127,7 @@
       </div>
     </div>
     <div v-if="!isMongo" class="shortcut-item">
-      <div>Find and Replace</div>
+      <div>{{ $t('Find and Replace') }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"

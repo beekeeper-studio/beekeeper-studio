@@ -24,14 +24,14 @@ export default Vue.extend({
         const newIds = newDb.map((i) => i.id)
         const oldIds = oldDb.map((i)=> i.id)
         const removed = oldDb.filter((i) => !newIds.includes(i.id))
-        log.debug("removing from search index", removed.length)
+        log.debug(this.$t('removing from search index'), removed.length)
         removed.forEach((blob) => {
           this.searchIndex.removeAsync(blob.id)
         })
 
 
         const newItems = newDb.filter((i) => !oldIds.includes(i.id))
-        log.debug("adding to search index", newItems.length)
+        log.debug(this.$t('adding to search index'), newItems.length)
         this.updateDatabase(newItems)
       }
     }

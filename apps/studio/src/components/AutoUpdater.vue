@@ -11,47 +11,47 @@ export default Vue.extend({
     /* eslint-disable */
     return {
       manualNotification: new Noty({
-        text: "A new version is available. Download from our website now.",
+        text: this.$t("A new version is available. Download from our website now.").toString(),
         layout: 'bottomRight',
         timeout: false,
         closeWith: ['button'],
         buttons: [ 
-          Noty.button('Not now', 'btn btn-flat', () => {
+          Noty.button(this.$t('Not now').toString(), 'btn btn-flat', () => {
             // @ts-ignore
             this.manualNotification.close();
           }),
           // @ts-ignore
-          Noty.button('Download', 'btn btn-primary', this.linkToDownload)
+          Noty.button(this.$t('Download').toString(), 'btn btn-primary', this.linkToDownload)
         ],
         queue: 'download'
       }),
       downloadNotification: new Noty({
-        text: 'A new version is available. Download now?',
+        text: this.$t('A new version is available. Download now?').toString(),
         layout: 'bottomRight',
         timeout: false,
         closeWith: ['button'],
         buttons: [
-          Noty.button('Not now', 'btn btn-flat', () => {
+          Noty.button(this.$t('Not now').toString(), 'btn btn-flat', () => {
               // @ts-ignore
               this.downloadNotification.close();
           }),
           // @ts-ignore
-          Noty.button('Download', 'btn btn-primary', this.triggerDownload)
+          Noty.button(this.$t('Download').toString(), 'btn btn-primary', this.triggerDownload)
         ],
         queue: 'download'
       }),
       installNotification: new Noty({
-        text: "Update downloaded. Restart Beekeeper Studio to install",
+        text: this.$t("Update downloaded. Restart Beekeeper Studio to install").toString(),
         layout: 'bottomRight',
         timeout: false,
         closeWith: ['button'],
         buttons: [
-          Noty.button('Later', 'btn btn-flat', () => {
+          Noty.button(this.$t('Later').toString(), 'btn btn-flat', () => {
             // @ts-ignore
             this.installNotification.close()
           }),
           // @ts-ignore
-          Noty.button('Restart Now', 'btn btn-primary', this.triggerInstall)
+          Noty.button(this.$t('Restart Now').toString(), 'btn btn-primary', this.triggerInstall)
         ],
         queue: 'download'
       })
@@ -73,7 +73,7 @@ export default Vue.extend({
     triggerDownload() {
       window.main.triggerDownload();
       this.downloadNotification.close()
-      this.$noty.info("Hold tight! Downloading update...")
+      this.$noty.info(this.$t("Hold tight! Downloading update...").toString())
     },
     notifyManual() {
       this.closeAll()

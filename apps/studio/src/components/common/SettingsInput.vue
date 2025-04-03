@@ -12,7 +12,7 @@
       v-else-if="inputType === 'directory'"
       v-model="value"
       :options="{properties: ['openDirectory']}"
-      button-text="Choose Directory"
+      :button-text="$t('Choose Directory').toString()"
     />
     <input
       v-else

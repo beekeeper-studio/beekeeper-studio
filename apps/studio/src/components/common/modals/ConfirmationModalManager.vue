@@ -94,10 +94,10 @@ export default Vue.extend({
     async createModal(options: ModalOptions) {
       const modal: ModalContext = {
         id: `${MODAL_NAME_PREFIX}-${this.idCounter++}`,
-        title: options.title || DEFAULT_TITLE,
-        message: options.message || DEFAULT_MESSAGE,
-        cancelLabel: options.cancelLabel || DEFAULT_NO_LABEL,
-        confirmLabel: options.confirmLabel || DEFAULT_YES_LABEL,
+        title: options.title || this.$t(DEFAULT_TITLE),
+        message: options.message || this.$t(DEFAULT_MESSAGE),
+        cancelLabel: options.cancelLabel || this.$t(DEFAULT_NO_LABEL),
+        confirmLabel: options.confirmLabel || this.$t(DEFAULT_YES_LABEL),
         onConfirm: options.onConfirm,
         onCancel: options.onCancel,
         noDisplay: false,

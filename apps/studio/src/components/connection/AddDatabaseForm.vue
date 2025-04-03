@@ -7,13 +7,13 @@
       class="dialog-c-title"
       v-if="this.connectionType === 'cassandra'"
     >
-      Add Keyspace
+      {{ $t('Add Keyspace') }}
     </h3>
     <h3
       class="dialog-c-title"
       v-else
     >
-      Add database
+      {{ $t('Add database') }}
     </h3>
 
     <div
@@ -29,7 +29,7 @@
         v-model="databaseName"
         @keydown.enter.prevent.stop="save"
         type="text"
-        placeholder="Database Name"
+        :placeholder="$t('Database Name')"
       >
     </div>
 
@@ -41,7 +41,7 @@
         for="addDatabaseCharset"
         v-if="this.connectionType === 'cassandra'"
       >
-        Select Replication Strategy
+        {{ $t('Select Replication Strategy') }}
       </label>
       <select
         v-model="selectedCharset"
@@ -79,14 +79,14 @@
         type="button"
         @click.prevent="$emit('cancel')"
       >
-        Cancel
+        {{ $t('Cancel') }}
       </button>
       <button
         class="btn btn-primary save"
         type="submit"
         :disabled="!databaseName"
       >
-        Add
+        {{ $t('Add') }}
       </button>
     </div>
   </form>
@@ -124,10 +124,10 @@
       async save() {
         try {
           const createdDb = await this.connection.createDatabase(this.databaseName, this.selectedCharset, this.selectedCollation);
-          this.$noty.success('The database was created')
+          this.$noty.success(this.$t('The database was created'))
           this.$emit('databaseCreated', createdDb)
         } catch (err) {
-          this.error = `The database could not be created: ${err.message}"`
+          this.error = `${this.$t('The database could not be created')}: ${err.message}"`
         }
       }
     },

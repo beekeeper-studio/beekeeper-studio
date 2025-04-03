@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="form-group">
-      <label>Field Delimitor</label>
+      <label>{{ $t('Field Delimitor') }}</label>
       <input
         v-model="options.delimiter"
         type="text"
@@ -22,7 +22,7 @@
           name="headerRow"
           class="form-control"
         >
-        <span>Include Header</span>
+        <span>{{ $t('Include Header') }}</span>
       </label>
     </div>
   </div>

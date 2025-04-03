@@ -11,7 +11,7 @@
       >
         <div class="dialog-content filter-modal">
           <div class="dialog-c-title flex flex-middle">
-            Choose Columns To Display
+            {{ $t('Choose Columns To Display') }}
           </div>
           <a
             class="close-btn btn btn-fab"
@@ -24,7 +24,7 @@
             <div class="search-wrapper">
               <input
                 type="text"
-                placeholder="Filter"
+                :placeholder="$t('Filter')"
                 v-model="searchQuery"
               >
               <span
@@ -47,7 +47,7 @@
                       @click.stop="toggleSelectAllColumn"
                       :checked="allSelected"
                     >
-                    All
+                    {{ $t('All') }}
 
                   </span>
                 </label>
@@ -82,7 +82,7 @@
                 class="no-matching-results"
                 v-show="searchedColumns.length === 0"
               >
-                No matching results
+                {{ $t('No matching results') }}
               </div>
             </div>
           </div>
@@ -93,19 +93,19 @@
             type="button"
             @click.prevent="closeModal"
           >
-            Cancel
+            {{ $t('Cancel') }}
           </button>
           <x-button
             class="btn btn-primary btn-icon"
             @click.prevent="onSubmit"
-            v-tooltip="hasPendingChanges && anyChanges ? 'Heads up: This will discard pending data changes' : null"
+            v-tooltip="hasPendingChanges && anyChanges ? $t('Heads up: This will discard pending data changes') : null"
             :disabled="noneSelected"
           >
             <i
               v-if="hasPendingChanges && anyChanges"
               class="material-icons"
             >error_outline</i>
-            <span> Apply</span>
+            <span> {{ $t('Apply') }}</span>
           </x-button>
         </div>
       </form>

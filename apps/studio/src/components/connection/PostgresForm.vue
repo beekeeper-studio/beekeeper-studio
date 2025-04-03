@@ -1,11 +1,11 @@
 <template>
   <div class="with-connection-type">
     <div class="form-group col" v-show="!isCockroach">
-      <label for="authenticationType">Authentication Method</label>
+      <label for="authenticationType">{{ $t('Authentication Method') }}</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
-          {{ t.name }}
+          {{ $t(t.name) }}
         </option>
       </select>
     </div>
@@ -15,30 +15,30 @@
       <div class="row gutter">
         <div class="form-group col s9">
           <label for="server">
-            Host
+            {{ $t('Host') }}
           </label>
           <input name="server" type="text" class="form-control" v-model="config.host">
         </div>
         <div class="form-group col s3">
-          <label for="database">Port</label>
+          <label for="database">{{ $t('Port') }}</label>
           <input type="number" class="form-control" name="port" v-model.number="config.port">
         </div>
       </div>
       <div class="form-group">
-        <label for="database">Database</label>
+        <label for="database">{{ $t('Database') }}</label>
         <input name="database" type="text" class="form-control" v-model="config.defaultDatabase">
       </div>
       <div class="form-group">
-        <label for="user">User</label>
+        <label for="user">{{ $t('User') }}</label>
         <input name="user" type="text" class="form-control" v-model="config.username">
       </div>
     </div>
 
     <div class="form-group" v-if="isCockroach">
       <label for="Cluster ID">
-        CockroachDB Cloud Cluster ID
+        {{ $t('CockroachDB Cloud Cluster ID') }}
         <i class="material-icons"
-           v-tooltip="`Go to CockroachDB online -> Connect -> parameters only -> copy from 'options'`"
+           v-tooltip="$t('Go to CockroachDB online -> Connect -> parameters only -> copy from \'options\'')"
         >help_outlined</i>
       </label>
       <input type="text" class="form-control" v-model="config.options.cluster">
@@ -54,7 +54,7 @@ import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import CommonIam from './CommonIam.vue'
 import {AppEvent} from "@/common/AppEvent";
-import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
+import {AzureAuthType, AzureAuthTypes, getIamAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import { mapGetters } from 'vuex';
 import _ from "lodash";
 
@@ -65,13 +65,20 @@ export default {
     return {
       iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
       authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
+      authTypes: [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()],
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
     }
   },
   watch: {
+    '$i18n.locale': {
+      immediate: true,
+      handler() {
+        // Update authentication type options when language changes
+        this.authTypes = [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()]
+      }
+    },
     isCockroach() {
       if(this.isCockroach) {
         this.iamAuthenticationEnabled = false
@@ -84,7 +91,7 @@ export default {
       } else {
         if (this.isCommunity) {
           // we want to display a modal
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+          this.$root.$emit(AppEvent.upgradeModal, this.$t("Upgrade required to use this authentication type"));
           this.authType = 'default'
         } else {
           this.config.redshiftOptions.authType = this.authType

@@ -6,7 +6,7 @@
       <div class="page-content">
         <div class="flex flex-between">
           <h3 class="card-title">
-            File Options
+            {{ $t('File Options') }}
           </h3>
         </div>
         <div class="export-form">
@@ -15,7 +15,7 @@
           </div>
           <div class="flex">
             <div class="file-name form-group expand">
-              <label for="fileName">File name format
+              <label for="fileName">{{ $t('File name format') }}
                 <i
                   class="material-icons"
                   v-tooltip="fileFormatTooltip"
@@ -28,7 +28,7 @@
               >
             </div>
             <div class="format form-group">
-              <label for="exportFormat">Format</label>
+              <label for="exportFormat">{{ $t('Format') }}</label>
               <select
                 name="exportFormat"
                 class="form-control custom-select"
@@ -39,7 +39,7 @@
                   disabled
                   value="null"
                 >
-                  Select a format...
+                  {{ $t('Select a format...') }}
                 </option>
                 <option
                   :key="f.value"
@@ -54,13 +54,13 @@
           </div>
           <!-- Location -->
           <div class="form-group">
-            <label for="fileDirectory">Output Directory</label>
+            <label for="fileDirectory">{{ $t('Output Directory') }}</label>
             <file-picker
               v-model="fileDirectory"
               :default-path="defaultPath"
               :save="false"
               :options="dialogOptions"
-              button-text="Choose"
+              :button-text="$t('Choose')"
             />
           </div>
         </div>
@@ -72,7 +72,7 @@
           <!-- Advanced Options -->
           <div class="flex flex-between">
             <h3 class="card-title">
-              Advanced Export Options
+              {{ $t('Advanced Export Options') }}
             </h3>
           </div>
           <div class="advanced-options open">
@@ -82,7 +82,7 @@
             />
             <div class="modal-form export-form export-advanced-options">
               <div class="form-group row">
-                <label title="How many records to read at once from the cursor">Chunk size</label>
+                <label :title="$t('How many records to read at once from the cursor')">{{ $t('Chunk size') }}</label>
                 <input
                   v-model="options.chunkSize"
                   type="number"
@@ -104,7 +104,7 @@
                     name="deleteOnAbort"
                     class="form-control"
                   >
-                  <span>Delete file on abort/error</span>
+                  <span>{{ $t('Delete file on abort/error') }}</span>
                 </label>
               </div>
             </div>
@@ -169,7 +169,7 @@ export default {
       )
     },
     filesToBeExported() {
-      return `${pluralize('files', this.tablesToExport.length, true)} will be created, one for each table exported`
+      return this.$t('{0} will be created, one for each table exported', [pluralize('files', this.tablesToExport.length, true)])
     },
     optionalFileName () {
       if (this.fileName) return `_${this.fileName}`
@@ -183,7 +183,7 @@ export default {
       return this.fileDirectory || null
     },
     dialogOptions() {
-      const result = { buttonLabel: 'Choose Directory', properties: [ 'openDirectory', 'createDirectory'] }
+      const result = { buttonLabel: this.$t('Choose Directory'), properties: [ 'openDirectory', 'createDirectory'] }
       return result
     },
     defaultPath() {
@@ -192,7 +192,7 @@ export default {
       return previous || this.$config.downloadsDirectory
     },
     fileFormatTooltip() {
-      return `Format of Export File Names is ${this.filenameSchema}${this.optionalFileName}.${this.selectedExportFormat.key}`
+      return this.$t('Format of Export File Names is {0}{1}.{2}', [this.filenameSchema, this.optionalFileName, this.selectedExportFormat.key])
     }
   },
   methods: {

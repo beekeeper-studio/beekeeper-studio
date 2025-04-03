@@ -12,7 +12,7 @@
 
         <div class="table-subheader">
           <div class="table-title">
-            <h2>Partitions</h2>
+            <h2>{{ $t('Partitions') }}</h2>
           </div>
           <slot />
           <span class="expand" />
@@ -43,7 +43,7 @@
           class="btn btn-flat reset"
           @click.prevent="submitUndo"
         >
-          Reset
+          {{ $t('Reset') }}
         </x-button>
         <x-buttons
           v-if="hasEdits"
@@ -61,7 +61,7 @@
               class="badge"
               v-if="!error"
             ><small>{{ editCount }}</small></span>
-            <span>Apply</span>
+            <span>{{ $t('Apply') }}</span>
           </x-button>
           <x-button
             class="btn btn-primary"
@@ -70,11 +70,11 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
-                <x-label>Apply</x-label>
+                <x-label>{{ $t('Apply') }}</x-label>
                 <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
-                <x-label>Copy to SQL</x-label>
+                <x-label>{{ $t('Copy to SQL') }}</x-label>
                 <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
@@ -144,14 +144,14 @@ export default Vue.extend({
     tableColumns() {
       const result = [
         {
-          title: 'Name',
+          title: this.$t('Name'),
           field: 'name',
           editor: vueEditor(NullableInputEditorVue),
           editable: this.isCellEditable.bind(this),
           formatter: this.cellFormatter
         },
         {
-          title: 'Partition Expression',
+          title: this.$t('Partition Expression'),
           field: 'expression',
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
@@ -190,7 +190,7 @@ export default Vue.extend({
           headerSort: false,
         },
         data: this.tableData,
-        placeholder: "No Partitions",
+        placeholder: this.$t("No Partitions"),
       })
     },
     isCellEditable(cell: CellComponent) {
@@ -276,7 +276,7 @@ export default Vue.extend({
         await this.refreshPartitions();
         this.clearChanges();
         this.$nextTick(() => this.initializeTabulator());
-        this.$noty.success(`${this.table.name} Partitions Updated`);
+        this.$noty.success(`${this.table.name} ${this.$t('Partitions Updated')}`);
       } catch(ex) {
         this.error = ex;
       }

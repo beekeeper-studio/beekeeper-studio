@@ -1,11 +1,11 @@
 <template>
   <div class="with-connection-type">
     <div class="form-group col">
-      <label for="authenticationType">Authentication Method</label>
+      <label for="authenticationType">{{ $t('Authentication Method') }}</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
         <option :key="`${t.value}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
-          {{ t.name }}
+          {{ $t(t.name) }}
         </option>
       </select>
     </div>
@@ -18,7 +18,7 @@
 
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
-import {IamAuthTypes} from "@/lib/db/types";
+import {IamAuthTypes, getIamAuthTypes} from "@/lib/db/types";
 import {AppEvent} from "@/common/AppEvent";
 import _ from "lodash";
 import CommonIam from "@/components/connection/CommonIam.vue";
@@ -28,7 +28,7 @@ export default {
   data() {
     return {
       authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes]
+      authTypes: [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()]
     }
   },
   computed: {
@@ -38,6 +38,13 @@ export default {
     }
   },
   watch: {
+    '$i18n.locale': {
+      immediate: true,
+      handler() {
+        // Update authentication type options when language changes
+        this.authTypes = [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()]
+      }
+    },
     async authType() {
       console.log("Auth type changed", this.authType, 'community?', this.$config.isCommunity)
       this.iamAuthenticationEnabled = this.authType.includes('iam');

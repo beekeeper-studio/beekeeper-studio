@@ -12,7 +12,7 @@
 
         <div class="table-subheader">
           <div class="table-title">
-            <h2>Schema Validation</h2>
+            <h2>{{ $t('Schema Validation') }}</h2>
           </div>
           <slot />
           <span class="expand" />
@@ -28,38 +28,48 @@
         <div class="validation-settings">
           <div class="form-row">
             <div class="form-group col-md-6">
-              <label for="validation-level">Validation Level</label>
+              <label for="validation-level">{{ $t('Validation Level') }}</label>
               <select v-model="validationLevel" id="validation-level" class="form-control">
-                <option value="off">Off (No validation)</option>
-                <option value="moderate">Moderate (Apply to inserts and updates)</option>
-                <option value="strict">Strict (Apply to all operations)</option>
+                <option value="off">
+                  {{ $t('Off (No validation)') }}
+                </option>
+                <option value="moderate">
+                  {{ $t('Moderate (Apply to inserts and updates)') }}
+                </option>
+                <option value="strict">
+                  {{ $t('Strict (Apply to all operations)') }}
+                </option>
               </select>
               <small class="form-text text-muted">
-                Controls how strictly MongoDB applies validation rules to existing documents during updates
+                {{ $t('Controls how strictly MongoDB applies validation rules to existing documents during updates') }}
               </small>
             </div>
 
             <div class="form-group col-md-6">
-              <label for="validation-action">Validation Action</label>
+              <label for="validation-action">{{ $t('Validation Action') }}</label>
               <select v-model="validationAction" id="validation-action" class="form-control">
-                <option value="error">Error (Reject invalid documents)</option>
-                <option value="warn">Warn (Allow invalid documents, but log warnings)</option>
+                <option value="error">
+                  {{ $t('Error (Reject invalid documents)') }}
+                </option>
+                <option value="warn">
+                  {{ $t('Warn (Allow invalid documents, but log warnings)') }}
+                </option>
               </select>
               <small class="form-text text-muted">
-                Controls whether MongoDB rejects invalid documents or just logs warnings
+                {{ $t('Controls whether MongoDB rejects invalid documents or just logs warnings') }}
               </small>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="schema-editor">JSON Schema</label>
+            <label for="schema-editor">{{ $t('JSON Schema') }}</label>
             <text-editor
               mode="application/json"
               v-model="schemaJSON"
               class="schema-editor"
             />
             <small class="form-text text-muted">
-              MongoDB uses JSON Schema to validate document structure
+              {{ $t('MongoDB uses JSON Schema to validate document structure') }}
             </small>
           </div>
         </div>
@@ -76,7 +86,7 @@
           class="btn btn-flat reset"
           @click.prevent="resetForm"
         >
-          Reset
+          {{ $t('Reset') }}
         </x-button>
         <x-buttons
           v-if="isDirty"
@@ -90,7 +100,7 @@
               v-if="error"
               class="material-icons"
             >error</i>
-            <span>Apply</span>
+            <span>{{ $t('Apply') }}</span>
           </x-button>
         </x-buttons>
         <slot name="actions" />
@@ -178,7 +188,7 @@ export default {
   },
   methods: {
     ctrlOrCmd(key) {
-      return platformInfo.isMac ? `⌘${key.toUpperCase()}` : `Ctrl+${key}`
+      return this.$platform.isMac ? `⌘${key.toUpperCase()}` : `Ctrl+${key}`
     },
     
     async loadValidation() {
@@ -231,7 +241,7 @@ export default {
     
     async submitApply() {
       if (!this.isValidJSON) {
-        this.$noty.error('Invalid JSON schema')
+        this.$noty.error(this.$t('Invalid JSON schema'))
         return
       }
       
@@ -252,7 +262,7 @@ export default {
         this.initialLevel = this.validationLevel
         this.initialAction = this.validationAction
         
-        this.$noty.success(`Schema validation updated for ${this.table.name}`)
+        this.$noty.success(this.$t(`Schema validation updated for ${this.table.name}`))
         this.hasExistingValidation = true
         this.$emit('actionCompleted')
       } catch (err) {

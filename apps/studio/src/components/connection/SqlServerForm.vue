@@ -1,26 +1,26 @@
 <template>
   <div class="with-connection-type sql-server-form">
     <div class="form-group col">
-      <label for="authenticationType">Authentication Method</label>
+      <label for="authenticationType">{{ $t('Authentication Method') }}</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
-        <option value="default">Username / Password</option>
-        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
+        <option value="default">{{ $t('Username / Password') }}</option>
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{ $t(t.name) }}
         </option>
       </select>
     </div>
     <common-server-inputs v-show="!azureAuthEnabled" :config="config">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
-          SQL Server Options
+          {{ $t('SQL Server Options') }}
         </h4>
         <div class="advanced-body">
           <div class="form-group">
             <label for="domain">
-              Domain
+              {{ $t('Domain') }}
               <i
                 class="material-icons"
-                v-tooltip="'Set \'domain\' to be logged in using Windows Integrated Authentication (NTLM)'"
+                v-tooltip="$t('Set \'domain\' to be logged in using Windows Integrated Authentication (NTLM)')"
               >help_outlined</i>
             </label>
             <input
@@ -40,10 +40,10 @@
                 v-model="config.trustServerCertificate"
                 id="trustServerCertificate"
               >
-              Trust Server Certificate?
+              {{ $t('Trust Server Certificate?') }}
               <i
                 class="material-icons"
-                v-tooltip="'Use this for local dev servers and self-signed certificates. ssl -> rejectUnauthorized overrides this setting if ssl is enabled'"
+                v-tooltip="$t('Use this for local dev servers and self-signed certificates. ssl -> rejectUnauthorized overrides this setting if ssl is enabled')"
               >help_outlined</i>
             </label>
           </div>
@@ -57,11 +57,11 @@
       >
         <div class="form-group">
           <label for="server">
-            Server <i
+            {{ $t('Server') }} <i
               class="material-icons"
               style="padding-left: 0.25rem"
               v-tooltip="{
-                content: 'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
+                content: $t('This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>'),
                 html: true }"
             >help_outlined</i>
           </label>
@@ -73,7 +73,7 @@
           >
         </div>
         <div class="form-group">
-          <label for="database">Database</label>
+          <label for="database">{{ $t('Database') }}</label>
           <input
             name="database"
             type="text"
@@ -83,7 +83,7 @@
         </div>
         <div class="advanced-connection-settings signed-in-as" v-if="hasAccessTokenCache">
           <div class="advanced-body">
-            <span class="info">Signed in{{ accountName ? ` as ${accountName}` : '' }}</span>
+            <span class="info">{{ $t('Signed in') }}{{ accountName ? ` ${$t('as')} ${accountName}` : '' }}</span>
             <button
               class="btn btn-flat btn-icon"
               type="button"
@@ -91,12 +91,12 @@
               :disabled="signingOut"
             >
               <i class="material-icons">logout</i>
-              Sign out
+              {{ $t('Sign out') }}
             </button>
           </div>
         </div>
         <div class="form-group" v-show="showUser">
-          <label for="user">User</label>
+          <label for="user">{{ $t('User') }}</label>
           <input
             name="user"
             type="text"
@@ -105,7 +105,7 @@
           >
         </div>
         <div class="form-group" v-show="showPassword">
-          <label for="password">Password</label>
+          <label for="password">{{ $t('Password') }}</label>
           <input
             name="password"
             type="text"
@@ -115,11 +115,11 @@
         </div>
         <div class="form-group" v-show="showTenantId">
           <label for="tenantId">
-            Tenant ID <i
+            {{ $t('Tenant ID') }} <i
               class="material-icons"
               style="padding-left: 0.25rem"
               v-tooltip="{
-                content: 'This can be found in the <code>\'Microsoft Entra ID\'</code> section of Azure, <br/> in the Overview labelled <code>\'Tenant ID\'</code>',
+                content: $t('This can be found in the <code>\'Microsoft Entra ID\'</code> section of Azure, <br/> in the Overview labelled <code>\'Tenant ID\'</code>'),
                 html: true }"
             >help_outlined</i>
           </label>
@@ -131,7 +131,7 @@
           >
         </div>
         <div class="form-group" v-show="showClientSecret">
-          <label for="clientSecret">Client Secret</label>
+          <label for="clientSecret">{{ $t('Client Secret') }}</label>
           <input
             name="clientSecret"
             type="text"
@@ -140,7 +140,7 @@
           >
         </div>
         <div class="form-group" v-show="showMsiEndpoint">
-          <label for="msiEndpoint">MSI Endpoint</label>
+          <label for="msiEndpoint">{{ $t('MSI Endpoint') }}</label>
           <input
             name="msiEndpoint"
             type="text"
@@ -179,6 +179,13 @@
       }
     },
     watch: {
+      '$i18n.locale': {
+        immediate: true,
+        handler() {
+          // Force update view to ensure all translated texts are refreshed
+          this.$forceUpdate()
+        }
+      },
       async authType() {
         if (this.authType === 'default') {
           // this is good
@@ -187,7 +194,7 @@
         } else {
           if (this.$store.getters.isCommunity) {
             // we want to display a modal
-            this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+            this.$root.$emit(AppEvent.upgradeModal, this.$t("Upgrade required to use this authentication type"));
             this.authType = 'default'
           } else {
             this.azureAuthEnabled = true

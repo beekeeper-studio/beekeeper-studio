@@ -240,7 +240,7 @@ export default Vue.extend({
     }),
     ...mapState(['database']),
     filePickerOptions() {
-      return { buttonLabel: 'Choose Directory', properties: ['openDirectory', 'createDirectory'] };
+      return { buttonLabel: this.$t('Choose Directory'), properties: ['openDirectory', 'createDirectory'] };
     },
     controls() {
       return _.flatten(this.sections.map((x) => x.controls));

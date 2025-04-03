@@ -4,14 +4,13 @@
       class="vue-dialog beekeeper-modal upgrade-modal"
       name="upgrade-modal"
       height="auto"
-      @opened="$refs.learnMore.focus()"
     >
       <div
         class="dialog-content"
         v-kbd-trap="true"
       >
         <h3 class="dialog-c-title has-icon">
-          <i class="material-icons">stars</i> <span>Upgrade Beekeeper Studio</span>
+          <i class="material-icons">stars</i> <span>{{ $t('Upgrade Beekeeper Studio') }}</span>
         </h3>
 
         <a
@@ -22,29 +21,29 @@
           <i class="material-icons">clear</i>
         </a>
         <div class="checkbox-wrapper">
-          <!-- <p class="text-muted">This feature is not included in the Community Edition. Please upgrade the app to continue.</p> -->
+          <!-- <p class="text-muted">{{ $t('This feature is not included in the Community Edition. Please upgrade the app to continue.') }}</p> -->
           <p class="text-muted">
-            <strong v-if="message">{{ message }}.</strong> Upgrade to get exclusive features:
+            <strong v-if="message">{{ message }}.</strong> {{ $t('Upgrade to get exclusive features:') }}
           </p>
           <div class="row">
             <div class="col s6">
               <ul class="check-list">
-                <li>Run queries directly to file</li>
-                <li>Export multiple tables</li>
-                <li>Backup & restore</li>
-                <li>Magic formatting</li>
-                <li>More than 2 table filters</li>
+                <li>{{ $t('Run queries directly to file') }}</li>
+                <li>{{ $t('Export multiple tables') }}</li>
+                <li>{{ $t('Backup & restore') }}</li>
+                <li>{{ $t('Magic formatting') }}</li>
+                <li>{{ $t('More than 2 table filters') }}</li>
               </ul>
             </div>
             <div class="col s6">
               <ul class="check-list">
-                <li title="Oracle, Cassandra, BigQuery, and more">
-                  More database engines
+                <li :title="$t('Oracle, Cassandra, BigQuery, and more').toString()">
+                  {{ $t('More database engines') }}
                 </li>
-                <li>Cloud sync</li>
-                <li>Read-only mode</li>
-                <li>SQLite Extensions</li>
-                <li>Import from file</li>
+                <li>{{ $t('Cloud sync') }}</li>
+                <li>{{ $t('Read-only mode') }}</li>
+                <li>{{ $t('SQLite Extensions') }}</li>
+                <li>{{ $t('Import from file') }}</li>
               </ul>
             </div>
           </div>

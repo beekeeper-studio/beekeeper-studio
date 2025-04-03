@@ -23,14 +23,14 @@
           type="button"
           @click.prevent="$emit('done')"
         >
-          Cancel
+          {{ $t('Cancel') }}
         </button>
         <button
           class="btn btn-primary"
           :disabled="working"
           type="submit"
         >
-          Save
+          {{ $t('Save') }}
         </button>
       </div>
     </form>
@@ -62,7 +62,7 @@ export default Vue.extend({
       this.working = true
       try {
         await this.$store.dispatch('data/queries/save', payload)
-        this.$noty.success("Query successfully renamed")
+        this.$noty.success(this.$t("Query successfully renamed"))
         this.$emit('done')
       } catch (ex) {
         this.saveError = ex.message
