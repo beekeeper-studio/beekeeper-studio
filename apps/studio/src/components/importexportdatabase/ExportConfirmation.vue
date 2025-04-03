@@ -5,7 +5,7 @@
         <div class="card card-flat padding text-center">
           <div v-if="exportsAllDone">
             <p class="verify">
-              All Export processes completed
+              {{ $t('All Export processes completed') }}
             </p>
             <button
               class="btn btn-primary"
@@ -13,24 +13,24 @@
               type="button"
               v-if="exportsAllDone"
             >
-              Show Files
+              {{ $t('Show Files') }}
             </button>
           </div>
           <div v-else-if="hasRunningExports">
             <p class="verify">
-              Running exports...
+              {{ $t('Running exports...') }}
             </p>
           </div>
           <div v-else>
             <p class="verify">
-              Ready to export {{ listTables.length }} tables
+              {{ $t('Ready to export {0} tables', [listTables.length]) }}
             </p>
             <a
               v-if="!stepperProps.exportsStarted"
               @click.prevent="$emit('finish')"
               class="btn btn-primary"
             >
-              Run Export
+              {{ $t('Run Export') }}
             </a>
           </div>
         </div>

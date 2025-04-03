@@ -84,11 +84,18 @@ import { mapState } from 'vuex'
 
 export default Vue.extend({
   components: { CommonServerInputs, CommonAdvanced, SettingsInput },
-  props: ['config'],
-  data: () => ({
-    help: "Optional, but required for advanced functionality like Native Network Encryption.",
-    oracleExpanded: true,
-  }),
+  props: {
+    config: {
+      type: Object,
+      required: true
+    }
+  },
+  data() {
+    return {
+      help: this.$t("Optional, but required for advanced functionality like Native Network Encryption."),
+      oracleExpanded: true,
+    }
+  },
   computed: {
     ...mapState('settings', { 'settings': 'settings'}),
     connectionMethod: {
