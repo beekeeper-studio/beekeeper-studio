@@ -106,7 +106,7 @@
         const columns = this.result.fields.flatMap((column, index) => {
           const results = []
           const magic = MagicColumnBuilder.build(column.name) || {}
-          const title = magic?.title ?? column.name ?? `Result ${index}`
+          const title = magic?.title ?? column.name ?? this.$t('Result') + ` ${index}`
 
           let cssClass = 'hide-header-menu-icon'
 
@@ -242,7 +242,7 @@
       download(format) {
         let formatter = format;
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss');
-        const title = this.query.title ? _.snakeCase(this.query.title) : 'query_results';
+        const title = this.query.title ? _.snakeCase(this.query.title) : this.$t('query_results');
 
         if(format === 'md'){
           formatter = (rows, options, setFileContents) => {

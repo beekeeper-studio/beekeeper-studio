@@ -6,20 +6,20 @@
     >
       <i class="material-icons">info_outlined</i>
       <div class="alert-body">
-        Merge Completed
+        {{ $t('Merge Completed') }}
       </div>
       <span class="alert-footer btn-group">
         <span class="expand" />
         <a
           class="btn btn-sm btn-link"
           @click.prevent="undoMerge"
-          title="What have you done to my query!?"
-        >Undo</a>
+          :title="String($t('What have you done to my query!?'))"
+        >{{ String($t('Undo')) }}</a>
         <a
           class="btn btn-sm btn-primary"
           @click.prevent="acceptMerge"
-          title="Like magic"
-        >Looks Good</a>
+          :title="String($t('Like magic'))"
+        >{{ String($t('Looks Good')) }}</a>
       </span>
     </div>
 
@@ -29,20 +29,20 @@
     >
       <i class="material-icons">error_outline</i>
       <div class="alert-body">
-        This query has been updated by someone else.
+        {{ $t('This query has been updated by someone else.') }}
       </div>
       <span class="alert-footer btn-group">
         <span class="expand" />
         <x-button
           @click.prevent="viewDiff"
           class="btn btn-link"
-        >Preview Merge</x-button>
+        >{{ $t('Preview Merge') }}</x-button>
         <x-buttons>
           <x-button
-            title="Merge local and remote changes together"
+            :title="$t('Merge local and remote changes together')"
             class="btn btn-primary btn-small"
             @click.prevent="merge"
-          >Merge</x-button>
+          >{{ $t('Merge') }}</x-button>
           <x-button
             class="btn btn-primary btn-small"
             menu
@@ -50,10 +50,10 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem
-                title="Discard local changes and reload with only the remote changes"
+                :title="$t('Discard local changes and reload with only the remote changes')"
                 @click.prevent="discardLocal"
               >
-                <x-label>Discard Local Changes</x-label>
+                <x-label>{{ $t('Discard Local Changes') }}</x-label>
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -70,7 +70,7 @@
           <!-- TODO: Make sure one of the elements in this modal is focused so that the keyboard trap works -->
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Merge Preview
+              {{ $t('Merge Preview') }}
             </div>
             <diff-viewer
               v-if="diff"
@@ -82,7 +82,7 @@
               class="btn btn-flat"
               @click.prevent="$modal.hide('diff-modal')"
             >
-              Close
+              {{ $t('Close') }}
             </button>
           </div>
         </div>

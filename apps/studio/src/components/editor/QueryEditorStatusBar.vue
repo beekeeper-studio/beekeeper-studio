@@ -8,11 +8,11 @@
         <span
           v-show="results.length > 1"
           class="statusbar-item result-selector"
-          :title="'Results'"
+          :title="$t('Results')"
         >
           <div
             class="select-wrap"
-            v-tooltip="{ content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info'] }"
+            v-tooltip="{ content: $t('More query results in here'), placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info'] }"
           >
             <select
               name="resultSelector"
@@ -26,7 +26,7 @@
                 :key="index"
                 :value="index"
               >
-                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row', resultOption.rows.length, false) }}
+                {{ $t('Result') }} {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize($t('row'), resultOption.rows.length, false) }}
               </option>
             </select>
           </div>
@@ -34,7 +34,7 @@
         <div
           class="statusbar-item row-counts"
           v-if="rowCount > 0"
-          v-tooltip="`${rowCount} Records${result && result.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
+          v-tooltip="`${rowCount} ${$t('Records')}${result && result.truncated ? ' ' + $t('(Truncated) - get the full resultset in the Download menu') : ''}`"
         >
           <i class="material-icons">list_alt</i>
           <span class="num-rows">{{ rowCount }}</span>
@@ -46,10 +46,10 @@
         <div
           class="statusbar-item affected-rows"
           v-if="affectedRowsText"
-          :title="affectedRowsText + ' ' + 'Rows Affected'"
+          :title="affectedRowsText + ' ' + $t('Rows Affected')"
         >
           <i class="material-icons">clear_all</i>
-          <span>{{ affectedRowsText }} affected</span>
+          <span>{{ affectedRowsText }} {{ $t('affected') }}</span>
         </div>
         <span
           class="statusbar-item execute-time "
@@ -63,7 +63,7 @@
     </template>
     <template v-else>
       <span class="expand" />
-      <span class="empty">No Data</span>
+      <span class="empty">{{ $t('No Data') }}</span>
     </template>
     <div class="flex flex-right statusbar-right-actions">
       <x-button
@@ -71,19 +71,19 @@
         :disabled="results.length === 0"
         menu
       >
-        Download <i class="material-icons">arrow_drop_down</i>
+        {{ $t('Download') }} <i class="material-icons">arrow_drop_down</i>
         <x-menu>
           <x-menuitem @click.prevent="download('csv')">
-            <x-label>Download as CSV</x-label>
+            <x-label>{{ $t('Download as CSV') }}</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="download('xlsx')">
-            <x-label>Download as Excel</x-label>
+            <x-label>{{ $t('Download as Excel') }}</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="download('json')">
-            <x-label>Download as JSON</x-label>
+            <x-label>{{ $t('Download as JSON') }}</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="download('md')">
-            <x-label>Download as Markdown</x-label>
+            <x-label>{{ $t('Download as Markdown') }}</x-label>
           </x-menuitem>
           <span
             v-if="dialect !== 'mongodb'"
@@ -95,7 +95,7 @@
               @click.prevent="$event => submitCurrentQueryToFile()"
               :disabled="!(result && result.truncated)"
             >
-              <x-label>Download Full Resultset</x-label>
+              <x-label>{{ $t('Download Full Resultset') }}</x-label>
               <i
                 v-if="$store.getters.isCommunity"
                 class="material-icons menu-icon"
@@ -104,22 +104,22 @@
           </span>
           <hr>
           <x-menuitem
-            title="Probably don't do this with large results (500+)"
+            :title="$t('Probably don\'t do this with large results (500+)')"
             @click.prevent="copyToClipboard"
           >
-            <x-label>Copy to Clipboard (TSV / Excel)</x-label>
+            <x-label>{{ $t('Copy to Clipboard (TSV / Excel)') }}</x-label>
           </x-menuitem>
           <x-menuitem
-            title="Probably don't do this with large results (500+)"
+            :title="$t('Probably don\'t do this with large results (500+)')"
             @click.prevent="copyToClipboardJson"
           >
-            <x-label>Copy to Clipboard (JSON)</x-label>
+            <x-label>{{ $t('Copy to Clipboard (JSON)') }}</x-label>
           </x-menuitem>
           <x-menuitem
-            title="Probably don't do this with large results (500+)"
+            :title="$t('Probably don\'t do this with large results (500+)')"
             @click.prevent="copyToClipboardMarkdown"
           >
-            <x-label>Copy to Clipboard (Markdown)</x-label>
+            <x-label>{{ $t('Copy to Clipboard (Markdown)') }}</x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
@@ -131,7 +131,7 @@
         <i class="material-icons">arrow_drop_down</i>
         <x-menu>
           <x-menuitem disabled togglable>
-            <x-label>Editor keymap</x-label>
+            <x-label>{{ $t('Editor keymap') }}</x-label>
           </x-menuitem>
           <x-menuitem
             :key="t.value"
@@ -148,7 +148,7 @@
             @click.prevent="$emit('wrap-text')"
           >
             <x-label class="flex-between">
-              Wrap Text
+              {{ $t('Wrap Text') }}
             </x-label>
           </x-menuitem>
         </x-menu>
@@ -162,21 +162,23 @@ import Statusbar from '../common/StatusBar.vue'
 import { mapState, mapGetters } from 'vuex';
 import { AppEvent } from '@/common/AppEvent'
 
-const shortEnglishHumanizer = humanizeDuration.humanizer({
-  language: "shortEn",
-  languages: {
-    shortEn: {
-      y: () => "y",
-      mo: () => "mo",
-      w: () => "w",
-      d: () => "d",
-      h: () => "h",
-      m: () => "m",
-      s: () => "s",
-      ms: () => "ms",
+const shortEnglishHumanizer = function(vm) {
+  return humanizeDuration.humanizer({
+    language: "shortEn",
+    languages: {
+      shortEn: {
+        y: () => vm.$t("y"),
+        mo: () => vm.$t("mo"),
+        w: () => vm.$t("w"),
+        d: () => vm.$t("d"),
+        h: () => vm.$t("h"),
+        m: () => vm.$t("m"),
+        s: () => vm.$t("s"),
+        ms: () => vm.$t("ms"),
+      },
     },
-  },
-});
+  });
+};
 
 export default {
   props: ['results', 'running', 'value', 'executeTime', 'wrapText'],
@@ -252,19 +254,19 @@ export default {
       }
       const executeTime = this.executeTime || 0
 
-      return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(executeTime)
+      return (executeTime < 5000) ? `${executeTime}ms` : shortEnglishHumanizer(this)(executeTime)
     },
     executionTimeTitle() {
       if (!this.executeTime) {
         return null;
       }
-      return `Execution time: ${humanizeDuration(this.executeTime)}`
+      return `${this.$t('Execution time:')} ${humanizeDuration(this.executeTime)}`
     },
     downloadFullTooltip() {
       if (this.result?.truncated) {
-        return `Re - run the query and send the full result to a file${ this.result?.truncated ? ' (' + this.result.totalRowCount + ' rows)' : '' }`
+        return `${this.$t('Re - run the query and send the full result to a file')}${ this.result?.truncated ? ' (' + this.result.totalRowCount + ' ' + this.$t('rows') + ')' : '' }`
       }
-      return `Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)`
+      return this.$t('Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)')
     },
     keymap() {
       return this.$vHotkeyKeymap({
