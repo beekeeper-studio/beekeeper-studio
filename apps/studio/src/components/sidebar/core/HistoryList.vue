@@ -82,7 +82,6 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
     data: function () {
       return {
         checkedHistoryQueries: [],
-        timeAgo: new TimeAgo('en-US'),
         selected: null
       }
     },
@@ -101,7 +100,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
     methods: {
       formatTimeAgo(item) {
         const dt = _.isDate(item.createdAt) ? item.createdAt : new Date(item.createdAt * 1000)
-        return this.timeAgo.format(dt)
+        return this.$bks.getTimeAgo().format(dt)
       },
       maybeUnselect(e) {
         if (!this.selected) return

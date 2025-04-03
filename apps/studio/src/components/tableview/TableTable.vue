@@ -353,10 +353,11 @@ export default Vue.extend({
         updates: [],
         deletes: []
       },
+      // @ts-expect-error Fix typings
       paginationStates: [null], // used for pagination that is not based on offsets. Null is always the starter one because that means "just bring back em back from the beginning"
       queryError: null,
       saveError: null,
-      timeAgo: new TimeAgo('en-US'),
+      timeAgo: null,
       lastUpdated: null,
       lastUpdatedText: null,
       // @ts-expect-error Fix typings
@@ -683,6 +684,8 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
+    // 不需要在这里初始化TimeAgo，watch会立即执行
+    
     if (this.shouldInitialize) {
       await this.$nextTick(async() => {
         await this.initialize()
@@ -1704,7 +1707,7 @@ export default Vue.extend({
     },
     setlastUpdatedText() {
       if (!this.lastUpdated) return null
-      this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
+      this.lastUpdatedText = this.$bks.getTimeAgo().format(this.lastUpdated)
     },
     setQueryError(title, message) {
       this.queryError = {

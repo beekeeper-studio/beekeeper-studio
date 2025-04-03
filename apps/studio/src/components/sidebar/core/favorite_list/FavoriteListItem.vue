@@ -23,12 +23,10 @@ import _ from 'lodash'
 import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
 import { mapState } from 'vuex'
-import TimeAgo from 'javascript-time-ago'
 
 export default Vue.extend({
   props: ['item', 'selected', 'active'],
   data: () => ({
-    timeAgo: new TimeAgo('en-US')
   }),
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
@@ -51,9 +49,9 @@ export default Vue.extend({
       if (this.item.user?.name) result.push(`${this.item.user.name}`)
       if (this.item.createdAt) {
         if (_.isNumber(this.item.createdAt)) {
-          result.push(this.timeAgo.format(new Date(this.item.createdAt * 1000)))
+          result.push(this.$bks.getTimeAgo().format(new Date(this.item.createdAt * 1000)))
         } else {
-          result.push(this.timeAgo.format(this.item.createdAt))
+          result.push(this.$bks.getTimeAgo().format(this.item.createdAt))
         }
       }
       return result.join(" ")

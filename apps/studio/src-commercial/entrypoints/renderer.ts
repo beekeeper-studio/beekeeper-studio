@@ -23,6 +23,7 @@ import AppEventHandler from '@/lib/events/AppEventHandler'
 import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
+import zhCN from 'javascript-time-ago/locale/zh'
 import VueClipboard from 'vue-clipboard2'
 import { AppEventMixin } from '@/common/AppEvent'
 import BeekeeperPlugin from '@/plugins/BeekeeperPlugin'
@@ -76,6 +77,7 @@ import i18n, { setI18nLanguage } from '@/i18n'
 
     window.main.setTlsMinVersion("TLSv1");
     TimeAgo.addLocale(en)
+    TimeAgo.addLocale(zhCN)
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';

@@ -76,7 +76,6 @@ export default {
   // if that is true, we need to find the companion saved connection
   props: ['config', 'isRecentList', 'selectedConfig', 'showDuplicate', 'pinned'],
   data: () => ({
-    timeAgo: new TimeAgo('en-US'),
     split: null
   }),
   computed: {
@@ -121,7 +120,7 @@ export default {
     },
     subtitleSimple() {
       if (this.isRecentList) {
-        return this.timeAgo.format(this.config.updatedAt)
+        return this.$bks.getTimeAgo().format(this.config.updatedAt)
       } else {
         return this.$bks.simpleConnectionString(this.config)
       }

@@ -696,8 +696,8 @@
   "Test": "测试",
   "Upgrade": "升级",
   "for more features like ClickHouse & Oracle support, JSON view for table rows, and more!": "获取更多功能，如 ClickHouse 和 Oracle 支持、表格行的 JSON 视图等！",
-  "Trial expires": "试用期到期",
-  "Upgrade now to make sure you don't lose access.": "立即升级以确保不会失去访问权限。",
+  "Trial expires": "试用期将在此时到期:",
+  "Upgrade now to make sure you don't lose access.": "立即升级以确保您不会失去访问权限。",
   "Copy of": "副本",
   "Error establishing a connection": "建立连接时出错",
   "Connection looks good!": "连接正常！",
@@ -818,5 +818,10 @@
   "Index Size {size}": "索引大小 {size}",
   "Utility Process Crashed": "工具进程崩溃",
   "Looks like the utility process has crashed! We\\'ve automatically restarted it, but you may need to reconnect to your database if you were previously connected. If this persists, please report it on our": "看起来工具进程崩溃了！我们已经自动重启了它，但如果您之前已连接，可能需要重新连接到数据库。如果问题持续存在，请在我们的",
-  "issue tracker": "问题跟踪器"
+  "issue tracker": "问题跟踪器",
+  "database changed": "数据库已更改",
+  "Buy a License": "购买许可证",
+  "Enter License": "输入许可证",
+  "Error opening {url}: {error}": "打开 {url} 时出错：{error}",
+  "Your free trial expires {date} ({localDate})": "您的免费试用期将于 {localDate} ({date}) 到期"
 }
