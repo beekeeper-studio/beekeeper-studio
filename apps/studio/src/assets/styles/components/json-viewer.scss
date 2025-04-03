@@ -42,6 +42,10 @@
       --checkmark-margin: 0 0.3rem 0 0;
       --checkmark-height: 1.4rem;
       --checkmark-width: 1.4rem;
+
+      &:not([togglable]) {
+        padding-left: calc(var(--checkmark-width) + 0.45rem);
+      }
     }
 
     .filter-wrap {
@@ -74,7 +78,7 @@
     height: auto;
     padding-left: 1rem;
 
-    &, .CodeMirror-gutters {
+    &.CodeMirror, .CodeMirror-gutters {
       background-color: $theme-bg !important;
     }
 
@@ -155,7 +159,18 @@
   flex-direction: column;
   padding-bottom: 0.5rem;
 
-  .text-editor {
-    flex: 1;
+  .text-editor-wrapper {
+    flex: 1 1 auto;
+    height: 100%;
+    position:relative;
+
+    .text-editor {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%
+    }
   }
 }

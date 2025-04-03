@@ -1,16 +1,18 @@
 <template>
-  <json-viewer
-    :value="value"
-    :data-id="dataId"
-    :hidden="hidden"
-    :expandable-paths="expandablePaths"
-    :reinitialize="reinitializeJsonViewer"
-    :signs="signs"
-    :binary-encoding="$bksConfig.ui.general.binaryEncoding"
-    :editable-paths="editablePaths"
-    @bks-json-value-change="handleJsonValueChange"
-    @expandPath="handleExpandPath"
-  />
+  <div class="json-viewer-sidebar">
+    <json-viewer
+      :value="value"
+      :data-id="dataId"
+      :hidden="hidden"
+      :expandable-paths="expandablePaths"
+      :reinitialize="reinitializeJsonViewer"
+      :signs="signs"
+      :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+      :editable-paths="editablePaths"
+      @bks-json-value-change="handleJsonValueChange"
+      @expandPath="handleExpandPath"
+    />
+  </div>
 </template>
 
 <script lang="ts">
