@@ -18,13 +18,13 @@
         <span
           class="clear"
           @click.prevent="searchTerm = null"
-        ><i class="material-icons">cancel</i></span>
+        ><i class="material-icons">{{ $t('cancel') }}</i></span>
       </div>
       <ul
         class="results no-results"
         v-if="!results.length && searchTerm"
       >
-        <li>No Results</li>
+        <li>{{ $t('No Results') }}</li>
       </ul>
       <ul
         class="results"
@@ -44,19 +44,19 @@
           <i
             class="material-icons item-icon query"
             v-else-if="blob.tabType === 'table-properties' || blob.tabDetails?.tabType === 'table-properties'"
-          >construction</i>
+          >{{ $t('construction') }}</i>
           <i
             class="material-icons item-icon connection"
             v-else-if="blob.tabType === 'connection' || blob.tabDetails?.tabType === 'connection'"
-          >power</i>
+          >{{ $t('power') }}</i>
           <i
             class="material-icons item-icon database"
             v-else-if="blob.tabType === 'database' || blob.tabDetails?.tabType === 'database'"
-          >storage</i>
+          >{{ $t('storage') }}</i>
           <i
             class="material-icons item-icon database"
             v-else
-          >code</i>
+          >{{ $t('code') }}</i>
           <span v-html="highlightHistory(blob)" />
         </li>
       </ul>
@@ -64,39 +64,39 @@
         class="results empty"
         v-if="!results.length && !searchTerm"
       >
-        <p>Type a table name or query name</p>
+        <p>{{ $t('Type a table name or query name') }}</p>
         <div class="shortcut-item">
-          <div>Open </div>
+          <div>{{ $t('Open') }}</div>
           <div class="shortcut">
-            <span>Enter</span>
+            <span>{{ $t('Enter') }}</span>
           </div>
         </div>
         <div class="shortcut-item">
-          <div>Alt Open</div>
+          <div>{{ $t('Alt Open') }}</div>
           <div class="shortcut">
-            <span v-if="this.$config.isMac">Cmd</span>
-            <span v-if="!this.$config.isMac">Ctrl</span>
-            <span>Enter</span>
+            <span v-if="$config && $config.isMac">{{ $t('Cmd') }}</span>
+            <span v-if="$config && !$config.isMac">{{ $t('Ctrl') }}</span>
+            <span>{{ $t('Enter') }}</span>
           </div>
-          <span class="hint">(tables only)</span>
+          <span class="hint">{{ $t('(tables only)') }}</span>
         </div>
         <div class="shortcut-item">
-          <div>Open In Background</div>
+          <div>{{ $t('Open In Background') }}</div>
           <div class="shortcut">
             <!-- <span v-if="this.$config.isMac">Cmd</span>
             <span v-if="!this.$config.isMac">Ctrl</span> -->
-            <span>Right Arrow</span>
+            <span>{{ $t('Right Arrow') }}</span>
           </div>
-          <span class="hint">(tables only)</span>
+          <span class="hint">{{ $t('(tables only)') }}</span>
         </div>
         <div class="shortcut-item">
-          <div>Alt In Background</div>
+          <div>{{ $t('Alt In Background') }}</div>
           <div class="shortcut">
-            <span v-if="this.$config.isMac">Cmd</span>
-            <span v-if="!this.$config.isMac">Ctrl</span>
-            <span>Right Arrow</span>
+            <span v-if="$config && $config.isMac">{{ $t('Cmd') }}</span>
+            <span v-if="$config && !$config.isMac">{{ $t('Ctrl') }}</span>
+            <span>{{ $t('Right Arrow') }}</span>
           </div>
-          <span class="hint">(tables only)</span>
+          <span class="hint">{{ $t('(tables only)') }}</span>
         </div>
       </div>
       <ul
@@ -117,15 +117,15 @@
           <i
             class="material-icons item-icon query"
             v-if="blob.type === 'query'"
-          >code</i>
+          >{{ $t('code') }}</i>
           <i
             class="material-icons item-icon connection"
             v-if="blob.type === 'connection'"
-          >power</i>
+          >{{ $t('power') }}</i>
           <i
             class="material-icons item-icon database"
             v-if="blob.type === 'database'"
-          >storage</i>
+          >{{ $t('storage') }}</i>
           <span v-html="highlight(blob)" />
         </li>
       </ul>
