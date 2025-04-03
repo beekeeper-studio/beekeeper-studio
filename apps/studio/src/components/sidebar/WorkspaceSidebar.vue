@@ -86,9 +86,10 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
       return result
     },
     workspaceTitle(workspace: IWorkspace) {
-      const result = [workspace.name, `(${workspace.level})`]
+      let displayName = workspace.id === -1 ? this.$t('Local Workspace') : workspace.name
+      const result = [displayName, `(${this.$t(workspace.level)})`]
       if (workspace.trialEndsIn) {
-        result.push(`[trial ends ${workspace.trialEndsIn}]`)
+        result.push(`[${this.$t('trial ends')} ${workspace.trialEndsIn}]`)
       }
 
       return result.join(" ")

@@ -514,5 +514,9 @@
   "Collapse all": "全部折叠",
   "Expand all": "全部展开",
   "Always Expand Foreign Keys": "始终展开外键",
-  "Refresh Workspaces": "刷新工作区"
+  "Refresh Workspaces": "刷新工作区",
+  "JSON Viewer": "JSON 查看器",
+  "Local Workspace": "本地工作区",
+  "local": "本地",
+  "trial ends": "试用结束"
 }
