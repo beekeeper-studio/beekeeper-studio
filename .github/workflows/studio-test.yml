@@ -152,9 +152,15 @@ jobs:
   #       run: yarn install --frozen-lockfile
   #       env:
   #         npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+      
+  #     - name: Start psql docker container
+  #       run: docker compose up psql15 -d && sleep 10
 
-  #     - name: E2E Tests
-  #       run: yarn workspace beekeeper-studio run test:e2e
+  #     - name: Start the electron app
+  #       run: nohup yarn run electron:serve & sleep 20
+      
+  #     - name: Run E2E tests
+  #       run: yarn run test:e2e
 
   #     - name: Upload test results
   #       if: ${{ !cancelled() }}
