@@ -687,10 +687,7 @@
       initialize() {
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
-        this.initializeQueries()
         this.query.title = this.activeTab.title
-
-        this.tab.unsavedChanges = this.unsavedChanges
 
         if (this.split) {
           this.split.destroy();
@@ -698,6 +695,9 @@
         }
 
         this.$nextTick(() => {
+          this.initializeQueries()
+          this.tab.unsavedChanges = this.unsavedChanges
+
           this.split = Split(this.splitElements, {
             elementStyle: (_dimension, size) => ({
                 'flex-basis': `calc(${size}%)`,
