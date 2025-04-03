@@ -21,7 +21,7 @@
 
         <div class="table-subheader">
           <div class="table-title">
-            <h2>Columns</h2>
+            <h2>{{ $t('Columns') }}</h2>
           </div>
           <slot />
           <span class="expand" />
@@ -45,8 +45,8 @@
           v-if="this.table.columns.length"
           class="columns-loading-disclaimer"
         >
-          <p>Columns loading.</p>
-          <p>This may take a few minutes depending on column count.</p>
+          <p>{{ $t('Columns loading.') }}</p>
+          <p>{{ $t('This may take a few minutes depending on column count.') }}</p>
         </div>
       </div>
     </div>
@@ -61,7 +61,7 @@
           class="btn btn-flat reset"
           @click.prevent="submitUndo"
         >
-          Reset
+          {{ $t('Reset') }}
         </x-button>
         <x-buttons
           v-if="hasEdits"
@@ -79,7 +79,7 @@
               class="badge"
               v-if="!error"
             ><small>{{ editCount }}</small></span>
-            <span>Apply</span>
+            <span>{{ $t('Apply') }}</span>
           </x-button>
           <x-button
             class="btn btn-primary"
@@ -88,11 +88,11 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
-                <x-label>Apply</x-label>
+                <x-label>{{ $t('Apply') }}</x-label>
                 <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
-                <x-label>Copy to SQL</x-label>
+                <x-label>{{ $t('Copy to SQL') }}</x-label>
                 <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
@@ -224,7 +224,7 @@ export default Vue.extend({
       const result = [
         (canMoveRows) ? moveRowHandle() : null,
         {
-          title: 'Name',
+          title: this.$t('Name'),
           field: 'columnName',
           editor: vueEditor(NullableInputEditorVue),
           cellEdited: this.cellEdited,
@@ -237,7 +237,7 @@ export default Vue.extend({
           minWidth: 100,
         },
         {
-          title: 'Type',
+          title: this.$t('Type'),
           field: 'dataType',
           editor: 'list',
           editorParams: autocompleteOptions,
@@ -247,9 +247,9 @@ export default Vue.extend({
           minWidth: 90,
         },
         (this.disabledFeatures?.nullable) ? null : {
-          title: 'Nullable',
+          title: this.$t('Nullable'),
           field: 'nullable',
-          headerTooltip: "Allow this column to contain a null value",
+          headerTooltip: this.$t("Allow this column to contain a null value"),
           editor: vueEditor(CheckboxEditorVue),
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
@@ -261,10 +261,10 @@ export default Vue.extend({
           cssClass: this.customColumnCssClass('alterColumn') + ' no-padding no-edit-highlight',
         },
         (this.disabledFeatures?.defaultValue) ? null : {
-          title: 'Default Value',
+          title: this.$t('Default Value'),
           field: 'defaultValue',
           editor: vueEditor(NullableInputEditorVue),
-          headerTooltip: "Be sure to 'quote' string values.",
+          headerTooltip: this.$t("Be sure to 'quote' string values."),
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
@@ -272,10 +272,10 @@ export default Vue.extend({
           minWidth: 90,
         },
         (this.disabledFeatures?.informationSchema?.extra ? null : {
-          title: "Extra",
+          title: this.$t("Extra"),
           field: 'extra',
           tooltip: true,
-          headerTooltip: 'eg AUTO_INCREMENT',
+          headerTooltip: this.$t('eg AUTO_INCREMENT'),
           editable: this.isCellEditable.bind(this, 'alterColumn'),
           cssClass: this.customColumnCssClass('alterColumn'),
           formatter: this.cellFormatter,
@@ -284,10 +284,10 @@ export default Vue.extend({
           minWidth: 90,
         }),
         (this.disabledFeatures?.comments ? null : {
-          title: 'Comment',
+          title: this.$t('Comment'),
           field: 'comment',
           tooltip: true,
-          headerTooltip: "Leave a friendly comment for other database users about this column",
+          headerTooltip: this.$t("Leave a friendly comment for other database users about this column"),
           editable: this.isCellEditable.bind(this, 'alterColumn'),
           cssClass: this.customColumnCssClass('alterColumn'),
           formatter: this.cellFormatter,
@@ -296,7 +296,7 @@ export default Vue.extend({
           minWidth: 90,
         }),
         (this.disabledFeatures?.primary ? null : {
-          title: 'Primary',
+          title: this.$t('Primary'),
           field: 'primary',
           tooltip: false,
           editable: false,
@@ -354,7 +354,7 @@ export default Vue.extend({
     },
     async refreshColumns() {
       if(this.hasEdits) {
-        const confirmed = await this.$confirm("Are you sure? You will lose unsaved changes")
+        const confirmed = await this.$confirm(this.$t("Are you sure? You will lose unsaved changes"))
         if (!confirmed) {
           return
         }
@@ -410,7 +410,7 @@ export default Vue.extend({
         this.$nextTick(() => {
           this.initializeTabulator()
         })
-        this.$noty.success(`${this.table.name} Updated`)
+        this.$noty.success(this.$t(`${this.table.name} Updated`))
       } catch(ex) {
         this.error = ex
         console.error(ex)
@@ -447,7 +447,7 @@ export default Vue.extend({
     // table edit callbacks
     async addRow(): Promise<void> {
       if (this.disabledFeatures?.alter?.addColumn) {
-        this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+        this.$noty.info(this.$t(`Adding columns is not supported by ${this.dialect}`))
       }
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`
@@ -475,7 +475,7 @@ export default Vue.extend({
         this.removedRows = _.without(this.removedRows, row)
       } else {
         if (this.disabledFeatures?.alter?.dropColumn) {
-          this.$noty.info(`Removing columns is not supported by ${this.dialect}`)
+          this.$noty.info(this.$t(`Removing columns is not supported by ${this.dialect}`))
           return
         }
         this.removedRows.push(row)
@@ -523,7 +523,7 @@ export default Vue.extend({
           headerSort: false,
         },
         data: this.tableData,
-        placeholder: "No Columns",
+        placeholder: this.$t("No Columns"),
       })
 
       this.tabulator.on('rowMoved', (row) => this.movedRows(row))
@@ -539,7 +539,7 @@ export default Vue.extend({
     columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
       let canCopy: boolean = !this.editable || this.disabledFeatures?.alter?.renameColumn;
       const cellName = escapeHtml(cell.getValue());
-      return canCopy ? `${cellName} - Click to Copy` : cellName;
+      return canCopy ? `${cellName} - ${this.$t('Click to Copy')}` : cellName;
     },
   },
   async mounted() {

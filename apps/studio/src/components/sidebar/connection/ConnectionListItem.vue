@@ -166,7 +166,7 @@ export default {
           handler: this.duplicate
         },
         {
-          name: this.$t(`Copy ${this.connectionType}`),
+          name: this.$t('Copy {type}', { type: this.$t(this.connectionType) }),
           handler: this.copyUrl
         },
         {
@@ -225,9 +225,9 @@ export default {
     async copyUrl() {
       try {
         await this.$copyText(this.$bks.buildConnectionString(this.config))
-        this.$noty.success(this.$t(`The {type} was successfully copied!`, { type: this.connectionType }))
+        this.$noty.success(this.$t('The {type} was successfully copied!', { type: this.$t(this.connectionType) }))
       } catch (err) {
-        this.$noty.success(this.$t(`The {type} could not be copied!`, { type: this.connectionType }))
+        this.$noty.error(this.$t('The {type} could not be copied!', { type: this.$t(this.connectionType) }))
       }
     },
     pin() {
