@@ -8,6 +8,22 @@ import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
 import type { Stream } from 'stream';
 
+export function camelCaseObjectKeys(data) {
+  if (_.isPlainObject(data)) {
+    const result = _.deepMapKeys(data, (_value, key) => _.camelCase(key))
+    return result
+  }
+  return data
+}
+
+// I don't know why different, but don't want to edit.
+export function snakeCaseObjectKeys(data) {
+  const result = _.mapKeys(data, (_value, key) => {
+    return _.snakeCase(key)
+  })
+  return result
+}
+
 export function parseIndexColumn(str: string): IndexColumn {
   str = str.trim()
 

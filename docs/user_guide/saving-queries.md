@@ -29,4 +29,4 @@ To import query files, you can click the import button, and then click `Import .
 
 ## Where does Beekeeper Studio save my SQL Queries?
 
-When you save SQL queries in Beekeeper Studio they are persisted to a SQLite database in your local configuration directory. Please see [Data Storage Location](/support/data-location) for more details.
+When you save SQL queries in Beekeeper Studio they are persisted to a SQLite database in your local configuration directory. Please see [Data Storage Location](../support/data-location.md) for more details.

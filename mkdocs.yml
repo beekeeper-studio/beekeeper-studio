@@ -78,13 +78,16 @@ markdown_extensions:
 nav:
   - Introduction: index.md
   - getting-started-guide.md
-  - purchasing-a-license.md
-  - Installation:
+  - Installing:
     - installation/index.md
-    - installation/windows.md
-    - installation/macos-m1-intel.md
-    - installation/linux.md
-  - Databases:
+    - Supported Platforms:
+      - installation/windows.md
+      - installation/macos-m1-intel.md
+      - installation/linux.md
+  - Purchasing:
+    - purchasing/purchasing-a-license.md
+    - purchasing/license-types.md
+  - Connecting To Your Database:
     - user_guide/connecting/supported-databases.md
     - Connecting To A Database: user_guide/connecting/connecting.md
     - DB Specific Guides:
@@ -93,10 +96,12 @@ nav:
       - user_guide/connecting/oracle-database.md
       - user_guide/connecting/amazon-rdb.md
       - user_guide/connecting/firebird.md
+      - user_guide/connecting/clickhouse.md
       - user_guide/connecting/duckdb.md
       - user_guide/connecting/mongodb.md
-  - User Guide:
+  - Usage Guide:
     - user_guide/using-the-sql-editor.md
+    - user_guide/saving-queries.md
     - user_guide/editing-data.md
     - user_guide/data-export.md
     - user_guide/modify-tables.md
