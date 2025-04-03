@@ -43,21 +43,21 @@ export default {
       const dialect: DialectData = this.$store.getters.dialectData;
       return [
         {
-          name: "View Data",
+          name: this.$t("View Data"),
           slug: 'view-data',
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.loadTable, { table: item })
           }
         },
         {
-          name: "View Structure",
+          name: this.$t("View Structure"),
           slug: 'view-structure',
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.openTableProperties, { table: item })
           }
         },
         {
-          name: "Export To File",
+          name: this.$t("Export To File"),
           slug: 'export',
           class: disabled(dialect.disabledFeatures?.exportTable),
           handler: ({ item }) => {
@@ -65,7 +65,7 @@ export default {
           }
         },
         {
-          name: "Import from File",
+          name: this.$t("Import from File"),
           class: disabled(dialect.disabledFeatures?.importFromFile),
           slug: 'import',
           ultimate: true,
@@ -77,14 +77,14 @@ export default {
           type: 'divider'
         },
         {
-          name: "Copy Name",
+          name: this.$t("Copy Name"),
           slug: 'copy-name',
           handler: ({ item }) => {
             this.$copyText(item.name)
           }
         },
         {
-          name: "Hide",
+          name: this.$t("Hide"),
           slug: 'hide-entity',
           handler: ({ item }) => {
             this.trigger(AppEvent.toggleHideEntity, item, true)
@@ -95,7 +95,7 @@ export default {
           type: 'divider'
         },
         {
-          name: "SQL: Create",
+          name: this.$t("SQL: Create"),
           slug: 'sql-create',
           class: disabled(dialect.disabledFeatures?.sqlCreate),
           handler: ({ item }) => {
@@ -103,7 +103,7 @@ export default {
           }
         },
         {
-          name: "Rename",
+          name: this.$t("Rename"),
           slug: 'rename',
           class: ({ item  }) => {
             if (item.entityType === 'table' && dialect.disabledFeatures?.alter?.renameTable) {
@@ -122,7 +122,7 @@ export default {
           }
         },
         {
-          name: "Drop",
+          name: this.$t("Drop"),
           slug: 'sql-drop',
           class: disabled(dialect.disabledFeatures?.dropTable),
           handler: ({ item }) => {
@@ -130,7 +130,7 @@ export default {
           }
         },
         {
-          name: "Truncate",
+          name: this.$t("Truncate"),
           slug: 'sql-truncate',
           class: disabled(dialect.disabledFeatures?.truncateElement),
           handler: ({ item }) => {
@@ -138,7 +138,7 @@ export default {
           }
         },
         {
-          name: "Duplicate",
+          name: this.$t("Duplicate"),
           slug: 'sql-duplicate',
           class: disabled(dialect.disabledFeatures?.duplicateTable),
           handler: ({ item }) => {

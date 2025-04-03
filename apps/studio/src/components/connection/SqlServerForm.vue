@@ -179,6 +179,13 @@
       }
     },
     watch: {
+      '$i18n.locale': {
+        immediate: true,
+        handler() {
+          // Force update view to ensure all translated texts are refreshed
+          this.$forceUpdate()
+        }
+      },
       async authType() {
         if (this.authType === 'default') {
           // this is good

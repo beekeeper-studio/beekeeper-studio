@@ -3,24 +3,24 @@ import VueI18n from 'vue-i18n'
 
 Vue.use(VueI18n)
 
-// 语言资源加载器
+// Language resource loader
 const loadedLanguages: string[] = []
 
-// 初始消息对象，英文为空（将使用key作为文本）
+// Initial message object, English is empty (will use key as text)
 const messages: any = {
   'en': {},  // Empty object, as English will be used as the key names
 }
 
-// 默认使用英文
+// Default to English
 const defaultLocale = 'en'
 
-// 初始化VueI18n实例
+// Initialize VueI18n instance
 const i18n = new VueI18n({
   locale: defaultLocale, 
   fallbackLocale: 'en', 
   messages,
   silentTranslationWarn: true,
-  // 设置英文的fallback处理，当处于英文模式时返回key作为文本
+  // Set English fallback handling, returns key as text when in English mode
   missing: (locale, key) => {
     if (locale === 'en') return key
     return null
@@ -28,29 +28,29 @@ const i18n = new VueI18n({
 })
 
 /**
- * 动态加载语言文件
- * @param locale 要加载的语言代码
+ * Dynamically load language files
+ * @param locale Language code to load
  */
 const loadLanguageAsync = async (locale: string): Promise<string> => {
-  // 如果语言已加载或是英文（英文不需要加载资源）
+  // If language is already loaded or is English (English doesn't need resources)
   if (loadedLanguages.includes(locale) || locale === 'en') {
     return Promise.resolve(locale)
   }
 
-  // 根据locale动态导入对应语言文件
+  // Dynamically import corresponding language file based on locale
   try {
     let langResource
     
-    // 基于locale决定加载哪个语言文件
+    // Choose which language file to load based on locale
     if (locale === 'zh-CN') {
       langResource = await import('./locales/zh-CN.json')
     } else {
-      // 如果需要其他语言，可以在这里添加
+      // If other languages are needed, they can be added here
       console.warn(`Language ${locale} is not supported yet.`)
       return Promise.resolve(defaultLocale)
     }
     
-    // 设置语言消息
+    // Set language messages
     i18n.setLocaleMessage(locale, langResource.default || langResource)
     loadedLanguages.push(locale)
     return Promise.resolve(locale)
@@ -61,19 +61,19 @@ const loadLanguageAsync = async (locale: string): Promise<string> => {
 }
 
 /**
- * 设置i18n语言并确保语言资源已加载
- * @param locale 目标语言代码
+ * Set i18n language and ensure language resources are loaded
+ * @param locale Target language code
  */
 export const setI18nLanguage = async (locale: string): Promise<void> => {
-  // 仅在语言实际变化时才设置
+  // Only set when language actually changes
   if (i18n.locale !== locale) {
-    // 先加载语言资源
+    // First load language resources
     const loadedLocale = await loadLanguageAsync(locale)
     
-    // 设置Vue I18n语言
+    // Set Vue I18n language
     i18n.locale = loadedLocale
     
-    // 同时设置文档的语言属性
+    // Also set document's language attribute
     document.querySelector('html')?.setAttribute('lang', loadedLocale)
   }
 }

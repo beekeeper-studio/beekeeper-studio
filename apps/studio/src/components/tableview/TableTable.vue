@@ -24,7 +24,7 @@
         v-show="isEmpty"
         class="empty-placeholder"
       >
-        No Data
+        {{ $t("No Data") }}
       </div>
       <div
         class="table-view-wrapper"
@@ -556,7 +556,7 @@ export default Vue.extend({
     },
     openColumnFilterMenuItem() {
       return {
-        label: createMenuItem("Open Column Filter"),
+        label: createMenuItem(this.$t("Open Column Filter").toString()),
         action: this.showColumnFilterModal,
       }
     },
@@ -684,7 +684,7 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
-    // 不需要在这里初始化TimeAgo，watch会立即执行
+    // No need to initialize TimeAgo here, watch will execute immediately
     
     if (this.shouldInitialize) {
       await this.$nextTick(async() => {
@@ -724,7 +724,7 @@ export default Vue.extend({
           if (keyDatas?.length > 0) {
             keyDatas.forEach(keyData => {
               menu.push({
-                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
+                label: createMenuItem(this.$i18n.t("Go to {table} ({column})", {table: keyData.toTable, column: keyData.toColumn}).toString()),
                 action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
@@ -737,7 +737,7 @@ export default Vue.extend({
       const columnMenu = (_e, column: ColumnComponent) => {
         const ranges = (column as any).getRanges();
         const range = _.last(ranges) as RangeComponent;
-        let hideColumnLabel = `Hide ${column.getDefinition().title}`
+        let hideColumnLabel = this.$i18n.t("Hide {title}", {title: column.getDefinition().title}).toString()
 
         if (hideColumnLabel.length > 33) {
           hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
@@ -759,7 +759,7 @@ export default Vue.extend({
             action: () => this.hideColumnByField(column.getField()),
           },
           {
-            label: createMenuItem(`Reset layout`),
+            label: createMenuItem(this.$i18n.t("Reset layout").toString()),
             action: () => column.getTable().setColumnLayout(this.tableColumns),
           },
           this.openColumnFilterMenuItem,

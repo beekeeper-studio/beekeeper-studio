@@ -59,11 +59,16 @@ export const IamAuthTypes = [
   { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
 ]
 
-// 动态获取翻译后的IAM认证类型
-export const getIamAuthTypes = () => [
-  { name: i18n.t('IAM Authentication Using Access Key and Secret Key'), value: 'iam_key' },
-  { name: i18n.t('IAM Authentication Using Credentials File'), value: 'iam_file' }
-]
+// Use function method to dynamically get translations, so each call will get the latest translations
+export const getIamAuthTypes = () => {
+  return [
+    { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
+    { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+  ].map(type => ({
+    ...type,
+    name: i18n.t(type.name)
+  }))
+}
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [

@@ -38,6 +38,13 @@ export default {
     }
   },
   watch: {
+    '$i18n.locale': {
+      immediate: true,
+      handler() {
+        // Update authentication type options when language changes
+        this.authTypes = [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()]
+      }
+    },
     async authType() {
       console.log("Auth type changed", this.authType, 'community?', this.$config.isCommunity)
       this.iamAuthenticationEnabled = this.authType.includes('iam');

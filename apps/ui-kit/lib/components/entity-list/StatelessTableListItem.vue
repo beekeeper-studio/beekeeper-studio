@@ -65,7 +65,7 @@
         class="sub-item"
         v-if="!loadingColumns && !(table.columns?.length)"
       >
-        No Columns
+        {{ $t("No Columns") }}
       </span>
       <template v-else-if="table.columns?.length > 0">
         <span
@@ -89,7 +89,7 @@
         class="sub-item"
         v-else
       >
-        Loading columns...
+        {{ $t("Loading columns...") }}
       </span>
     </div>
   </div>

@@ -72,6 +72,13 @@ export default {
     }
   },
   watch: {
+    '$i18n.locale': {
+      immediate: true,
+      handler() {
+        // Update authentication type options when language changes
+        this.authTypes = [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()]
+      }
+    },
     isCockroach() {
       if(this.isCockroach) {
         this.iamAuthenticationEnabled = false
