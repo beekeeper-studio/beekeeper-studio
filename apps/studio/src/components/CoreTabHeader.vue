@@ -53,12 +53,12 @@
       >
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Really close <span class="tab-like"><tab-icon
+            {{ $t("Really close") }} <span class="tab-like"><tab-icon
               :tab="tab"
               :force-icon="true"
             /> {{ this.tab.title }}</span>?
           </div>
-          <p>{{ tab.isRunning ? 'There is an active process still running. Closing the tab now will force it to stop and could result in catastrophe.' : 'You will lose unsaved changes' }}</p>
+          <p>{{ tab.isRunning ? $t('There is an active process still running. Closing the tab now will force it to stop and could result in catastrophe.') : $t('You will lose unsaved changes') }}</p>
         </div>
         <div class="vue-dialog-buttons">
           <span class="expand" />
@@ -67,14 +67,14 @@
             @click.prevent="$modal.hide(modalName)"
             class="btn btn-sm btn-flat"
           >
-            Cancel
+            {{ $t("Cancel") }}
           </button>
           <button
             @focusout="sureOpen && $refs.no && $refs.no.focus()"
             @click.prevent="closeForReal"
             class="btn btn-sm btn-primary"
           >
-            Close Tab
+            {{ $t("Close Tab") }}
           </button>
         </div>
       </modal>
@@ -205,7 +205,7 @@ import { mapState } from 'vuex'
         }
       },
       title() {
-        return this.queryTabTitle || this.tableTabTitle || "Unknown"
+        return this.queryTabTitle || this.tableTabTitle || this.$t("Unknown")
       },
     }
   }

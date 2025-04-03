@@ -39,10 +39,10 @@
       <a
         @click.prevent="showUpgradeModal"
         class="btn btn-brand btn-icon btn-upgrade"
-        v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
+        v-tooltip="$t('Upgrade for: backup/restore, import from file, larger query results, and more!')"
         v-if="$store.getters.isCommunity"
       >
-        <i class="material-icons">stars</i> Upgrade
+        <i class="material-icons">stars</i> {{ $t("Upgrade") }}
       </a>
     </div>
     <div class="tab-content">
@@ -148,11 +148,11 @@
         <div v-kbd-trap="true">
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Really {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon
+              {{ $t("Really") }} {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon
                 :tab="tabIcon"
               /> {{ this.dbElement }}</span>?
             </div>
-            <p>This change cannot be undone</p>
+            <p>{{ $t("This change cannot be undone") }}</p>
           </div>
           <div class="vue-dialog-buttons">
             <span class="expand" />
@@ -161,7 +161,7 @@
               @click.prevent="$modal.hide(modalName)"
               class="btn btn-sm btn-flat"
             >
-              Cancel
+              {{ $t("Cancel") }}
             </button>
             <button
               @focusout="sureOpen && $refs.no && $refs.no.focus()"
@@ -189,7 +189,7 @@
             v-if="this.dialectData.disabledFeatures.duplicateTable"
           >
             <div class="dialog-c-title text-center">
-              Table Duplication not supported for {{ this.dialectTitle }} yet. Stay tuned!
+              {{ $t("Table Duplication not supported for") }} {{ this.dialectTitle }} {{ $t("yet. Stay tuned!") }}
             </div>
           </div>
           <div
@@ -201,7 +201,7 @@
                 {{ this.dbElement }}</span>?
             </div>
             <div class="form-group">
-              <label for="duplicateTableName">New table name</label>
+              <label for="duplicateTableName">{{ $t("New table name") }}</label>
               <input
                 type="text"
                 name="duplicateTableName"
@@ -212,8 +212,7 @@
                 ref="duplicateTableNameInput"
               >
             </div>
-            <small>This will create a new table and copy all existing data into it. Keep in mind that any indexes,
-              relations, or triggers associated with the original table will not be duplicated in the new table</small>
+            <small>{{ $t("This will create a new table and copy all existing data into it. Keep in mind that any indexes, relations, or triggers associated with the original table will not be duplicated in the new table") }}</small>
           </div>
           <div
             v-if="!this.dialectData.disabledFeatures.duplicateTable"
@@ -225,7 +224,7 @@
               @click.prevent="$modal.hide(duplicateTableModal)"
               class="btn btn-sm btn-flat"
             >
-              Cancel
+              {{ $t("Cancel") }}
             </button>
             <pending-changes-button
               :submit-apply="duplicateTable"
@@ -238,7 +237,7 @@
 
     <confirmation-modal :id="confirmModalId">
       <template v-slot:title>
-        Really close
+        {{ $t("Really close") }}
         <span
           class="tab-like"
           v-if="closingTab"
@@ -248,7 +247,7 @@
         ?
       </template>
       <template v-slot:message>
-        You will lose unsaved changes
+        {{ $t("You will lose unsaved changes") }}
       </template>
     </confirmation-modal>
 
@@ -446,7 +445,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     completeDeleteAction() {
       const { schema, name: dbName, entityType } = this.dbDeleteElementParams
       if (entityType !== 'table' && this.dbAction == 'truncate') {
-        this.$noty.warning("Sorry, you can only truncate tables.")
+        this.$noty.warning(this.$t("Sorry, you can only truncate tables."))
         return;
       }
       this.$modal.hide(this.modalName)
@@ -467,10 +466,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
             await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema);
           }
 
-          this.$noty.success(`${this.dbAction} completed successfully`)
+          this.$noty.success(this.$t(`${this.dbAction} completed successfully`))
 
         } catch (ex) {
-          this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          this.$noty.error(this.$t(`Error performing ${this.dbAction}: ${ex.message}`))
         }
       })
     },
@@ -478,17 +477,17 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const { tableName, schema, entityType } = this.dbDuplicateTableParams
 
       if (entityType !== 'table' && this.dbAction == 'duplicate') {
-        this.$noty.warning("Sorry, you can only duplicate tables.")
+        this.$noty.warning(this.$t("Sorry, you can only duplicate tables."))
         return;
       }
 
       if (tableName === this.duplicateTableName) {
-        this.$noty.warning("Sorry, you can't duplicate with the same name.")
+        this.$noty.warning(this.$t("Sorry, you can't duplicate with the same name."))
         return;
       }
 
       if (this.duplicateTableName === null || this.duplicateTableName === '' || this.duplicateTableName === undefined) {
-        this.$noty.warning("Please enter a name for the new table.")
+        this.$noty.warning(this.$t("Please enter a name for the new table."))
         return;
       }
 
@@ -499,7 +498,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         const tab = {} as TransportOpenTab;
         tab.tabType = 'query';
         tab.unsavedQueryText = formatted
-        tab.title = `Duplicating table: ${tableName}`
+        tab.title = this.$t(`Duplicating table: ${tableName}`)
         tab.active = true
         tab.unsavedChanges = false
         tab.alert = false
@@ -508,7 +507,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         await this.addTab(tab)
 
       } catch (ex) {
-        this.$noty.error(`Error printing ${this.dbAction} query: ${ex.message}`)
+        this.$noty.error(this.$t(`Error printing ${this.dbAction} query: ${ex.message}`))
       } finally {
         this.$modal.hide(this.duplicateTableModal)
       }
@@ -517,17 +516,17 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const { tableName, schema, entityType } = this.dbDuplicateTableParams
 
       if (entityType !== 'table' && this.dbAction == 'duplicate') {
-        this.$noty.warning("Sorry, you can only duplicate tables.")
+        this.$noty.warning(this.$t("Sorry, you can only duplicate tables."))
         return;
       }
 
       if (tableName === this.duplicateTableName) {
-        this.$noty.warning("Sorry, you can't duplicate with the same name.")
+        this.$noty.warning(this.$t("Sorry, you can't duplicate with the same name."))
         return;
       }
 
       if (this.duplicateTableName === null || this.duplicateTableName === '' || this.duplicateTableName === undefined) {
-        this.$noty.warning("Please enter a name for the new table.")
+        this.$noty.warning(this.$t("Please enter a name for the new table."))
         return;
       }
 
@@ -548,10 +547,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
           }, 500)
 
 
-          this.$noty.success(`${this.dbAction} completed successfully`)
+          this.$noty.success(this.$t(`${this.dbAction} completed successfully`))
 
         } catch (ex) {
-          this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          this.$noty.error(this.$t(`Error performing ${this.dbAction}: ${ex.message}`))
         } finally {
           this.duplicateTableName = null
           this.dbDuplicateTableParams = null
@@ -618,10 +617,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     async createShell() {
       let sNum = 0;
-      let tabName = "Shell";
+      let tabName = this.$t("Shell");
       do {
         sNum = sNum + 1;
-        tabName = `Shell #${sNum}`;
+        tabName = this.$t(`Shell #${sNum}`);
       } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
 
       const result = {} as TransportOpenTab;
@@ -637,13 +636,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       // const text = optionalText ? optionalText : ""
       console.log("Creating tab")
       let qNum = 0
-      let tabName = "New Query"
+      let tabName = this.$t("New Query")
       if (queryTitle) {
         tabName = queryTitle
       } else {
         do {
           qNum = qNum + 1
-          tabName = `Query #${qNum}`
+          tabName = this.$t(`Query #${qNum}`)
         } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       }
 
@@ -660,7 +659,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       else if (table.entityType === 'view') method = 'getViewCreateScript'
       else if (table.entityType === 'materialized-view') method = 'getMaterializedViewCreateScript'
       if (!method) {
-        this.$noty.error(`Can't find script for ${table.name} (${table.entityType})`)
+        this.$noty.error(this.$t(`Can't find script for ${table.name} (${table.entityType})`))
         return
       }
       try {
@@ -668,7 +667,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       } catch (ex) {
-        this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+        this.$noty.error(this.$t(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`))
         throw ex
       }
 
@@ -684,7 +683,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     importExportTables() {
       // we want this to open a tab with the schema and tables open
       const t = { tabType: 'import-export-database' }
-      t.title = `Data Export`
+      t.title = this.$t(`Data Export`)
       t.unsavedChanges = false
       const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
@@ -692,7 +691,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     backupDatabase() {
       const t = { tabType: 'backup' }
-      t.title = 'Backup';
+      t.title = this.$t('Backup');
       t.unsavedChanges = false;
       const existing = this.tabItems.find((tab) => matches(tab, t));
       if (existing) return this.$store.dispatch('tabs/setActive', existing);
@@ -700,11 +699,11 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     beginImport({ table }) {
       if (table.entityType !== 'table') {
-        this.$noty.error("You can only import data into a table")
+        this.$noty.error(this.$t("You can only import data into a table"))
         return;
       }
       const t = { tabType: 'import-table' }
-      t.title = `Import Table: ${table.name}`
+      t.title = this.$t(`Import Table: ${table.name}`)
       t.unsavedChanges = false
       t.schemaName = table.schema
       t.tableName = table.name
@@ -714,7 +713,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     restoreDatabase() {
       const t = { tabType: 'restore' };
-      t.title = 'Restore';
+      t.title = this.$t('Restore');
       t.unsavedChanges = false;
       const existing = this.tabItems.find((tab) => matches(tab, t));
       if (existing) return this.$store.dispatch('tabs/setActive', existing);
@@ -742,7 +741,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }))
 
       if (!files.every(({ file }) => file.name.endsWith('.sql'))) {
-        this.$noty.error('Only .sql files are supported')
+        this.$noty.error(this.$t('Only .sql files are supported'))
         return
       }
 
@@ -757,13 +756,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
 
       const notyQueue = 'load-queries'
-      const notyText = `Loading <span class="counter">1</span> of ${files.length} files`
+      const notyText = this.$t(`Loading <span class="counter">1</span> of ${files.length} files`)
 
       const noty = this.$noty.info(notyText,  {
         queue: notyQueue,
         allowRawHtml: true,
         buttons: [
-          Noty.button('Abort', 'btn btn-danger', abort)
+          Noty.button(this.$t('Abort'), 'btn btn-danger', abort)
         ],
       })
 
@@ -798,11 +797,11 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
 
       if (aborted) {
-        this.$noty.info('Loading aborted', { killer: notyQueue })
+        this.$noty.info(this.$t('Loading aborted'), { killer: notyQueue })
       } else if (files.some(({ error }) => error)) {
-        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
+        this.$noty.error(this.$t('Some files could not be loaded'), { killer: notyQueue })
       } else {
-        this.$noty.success('All files loaded', { killer: notyQueue })
+        this.$noty.success(this.$t('All files loaded'), { killer: notyQueue })
       }
 
       noty.close()
@@ -825,13 +824,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
 
       const notyQueue = 'load-queries'
-      const notyText = `Loading <span class="counter">1</span> of ${files.length} files`
+      const notyText = this.$t(`Loading <span class="counter">1</span> of ${files.length} files`)
 
       const noty = this.$noty.info(notyText,  {
         queue: notyQueue,
         allowRawHtml: true,
         buttons: [
-          Noty.button('Abort', 'btn btn-danger', abort)
+          Noty.button(this.$t('Abort'), 'btn btn-danger', abort)
         ],
       })
 
@@ -864,22 +863,22 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
 
       if (aborted) {
-        this.$noty.info('Loading aborted', { killer: notyQueue })
+        this.$noty.info(this.$t('Loading aborted'), { killer: notyQueue })
       } else if (files.some(({ error }) => error)) {
-        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
+        this.$noty.error(this.$t('Some files could not be loaded'), { killer: notyQueue })
       } else {
-        this.$noty.success('All files loaded', { killer: notyQueue })
+        this.$noty.success(this.$t('All files loaded'), { killer: notyQueue })
       }
     },
     async handlePromptQueryExport(query) {
       const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_')
 
       const filePath = this.$native.dialog.showSaveDialogSync({
-        title: "Export Query",
+        title: this.$t("Export Query"),
         defaultPath: await window.main.getLastExportPath(`${safeFilename}.sql`),
         filters: [
-          { name: 'SQL (*.sql)', extensions: ['sql'] },
-          { name: 'All Files (*.*)', extensions: ['*'] },
+          { name: this.$t('SQL (*.sql)'), extensions: ['sql'] },
+          { name: this.$t('All Files (*.*)'), extensions: ['*'] },
         ],
       })
 
@@ -887,14 +886,14 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (!filePath) return
 
       const notyQueue = 'export-query'
-      this.$noty.info('Exporting query',  { queue: notyQueue })
+      this.$noty.info(this.$t('Exporting query'),  { queue: notyQueue })
 
       try {
         await this.$util.send('file/write', { path: filePath, text: query.text, options: { encoding: 'utf8' }})
-        this.$noty.success('Query exported!', { killer: notyQueue })
+        this.$noty.success(this.$t('Query exported!'), { killer: notyQueue })
       } catch (e) {
         console.error(e)
-        this.$noty.error('Query could not be exported. See console for details.', { killer: notyQueue })
+        this.$noty.error(this.$t('Query could not be exported. See console for details.'), { killer: notyQueue })
       }
     },
     async loadRoutineCreate(routine) {
@@ -912,7 +911,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
       const tab = {} as TransportOpenTab;
       tab.tabType = 'table-builder';
-      tab.title = "New Table"
+      tab.title = this.$t("New Table")
       tab.unsavedChanges = true
       this.addTab(tab)
     },
@@ -960,7 +959,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openSettings() {
       const tab = {} as TransportOpenTab
       tab.tabType = 'settings'
-      tab.title = "Settings"
+      tab.title = this.$t("Settings")
       this.addTab(tab)
     },
     async click(tab) {
@@ -1013,8 +1012,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
-          'Close all tabs?',
-          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`
+          this.$t('Close all tabs?'),
+          this.$t(`You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`)
         )
         if (!confirmed) return
       }
@@ -1025,8 +1024,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const unsavedTabs = others.filter((t) => t.unsavedChanges)
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
-          'Close other tabs?',
-          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`
+          this.$t('Close other tabs?'),
+          this.$t(`You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`)
         )
         if (!confirmed) return
       }
@@ -1045,8 +1044,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const unsavedTabs = tabsToRight.filter((t) => t.unsavedChanges)
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
-          'Close tabs to the right?',
-          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`
+          this.$t('Close tabs to the right?'),
+          this.$t(`You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`)
         )
         if (!confirmed) return
       }
@@ -1061,7 +1060,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const tab = duplicate(other);
 
       if (tab.tabType === 'query') {
-        tab.title = "Query #" + (this.tabItems.length + 1)
+        tab.title = this.$t("Query #") + (this.tabItems.length + 1)
         tab.unsavedChanges = true
       }
       this.addTab(tab)

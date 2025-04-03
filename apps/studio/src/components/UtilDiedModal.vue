@@ -6,10 +6,10 @@
     >
       <div class="dialog-content">
         <div class="dialog-c-title">
-          Utility Process Crashed
+          {{ $t('Utility Process Crashed') }}
         </div>
         <div>
-          Looks like the utility process has crashed! We've automatically restarted it, but you may need to reconnect to your database if you were previously connected. If this persists, please report it on our <a class="text-primary" href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">issue tracker</a>.
+          {{ $t('Looks like the utility process has crashed! We\'ve automatically restarted it, but you may need to reconnect to your database if you were previously connected. If this persists, please report it on our') }} <a class="text-primary" href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">{{ $t('issue tracker') }}</a>.
         </div>
       </div>
       <div class="vue-dialog-buttons">
@@ -19,7 +19,7 @@
           type="button"
           @click.prevent="close"
         >
-          Close
+          {{ $t('Close') }}
         </button>
         <button 
           class="btn btn-primary"
@@ -27,7 +27,7 @@
           @click.prevent="disconnect"
           autofocus
         >
-          Disconnect
+          {{ $t('Disconnect') }}
         </button>
       </div>
     </modal>

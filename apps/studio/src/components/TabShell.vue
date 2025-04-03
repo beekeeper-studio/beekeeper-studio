@@ -25,10 +25,10 @@
     </div>
     <div class="not-supported" v-if="!enabled">
       <span class="title">
-        Shell
+        {{ $t('Shell') }}
       </span>
       <div class="body">
-        <p> We don't currently support a shell for {{ dialect }} </p>
+        <p> {{ $t('We don\'t currently support a shell for') }} {{ dialect }} </p>
       </div>
     </div>
     <div
@@ -55,7 +55,7 @@
       >
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
-          <span>Command {{ selectedResult + 1 }}/{{ results.length }}: No Results. {{ result.affectedRows || 0 }} rows affected. See the select box in the bottom left ↙ for more command results.</span>
+          <span>{{ $t('Command') }} {{ selectedResult + 1 }}/{{ results.length }}: {{ $t('No Results.') }} {{ result.affectedRows || 0 }} {{ $t('rows affected. See the select box in the bottom left ↙ for more command results.') }}</span>
         </div>
       </div>
       <div
@@ -321,7 +321,7 @@ export default Vue.extend({
     async cancelQuery() {
       if (this.running && this.runningQuery) {
         this.running = false
-        this.info = 'Command Execution Cancelled'
+        this.info = this.$t('Command Execution Cancelled')
         await this.runningQuery.cancel();
         this.runningQuery = null;
       }
