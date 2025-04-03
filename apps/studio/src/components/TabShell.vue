@@ -308,6 +308,8 @@ export default Vue.extend({
       })
     },
     handleEditorInitialized() {
+      this.editor.initialized = true;
+
       // this gives the dom a chance to kick in and render these
       // before we try to read their heights
       this.$nextTick(() => {
