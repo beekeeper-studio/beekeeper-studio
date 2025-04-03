@@ -42,6 +42,10 @@
       --checkmark-margin: 0 0.3rem 0 0;
       --checkmark-height: 1.4rem;
       --checkmark-width: 1.4rem;
+
+      &:not([togglable]) {
+        padding-left: calc(var(--checkmark-width) + 0.45rem);
+      }
     }
 
     .filter-wrap {

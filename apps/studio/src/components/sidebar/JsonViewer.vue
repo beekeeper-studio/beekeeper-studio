@@ -35,7 +35,7 @@
               v-for="option in menuOptions"
               :key="option.name"
               :toggled="option.checked"
-              togglable
+              :togglable="typeof option.checked !== 'undefined'"
               @click.prevent="option.handler"
             >
               <x-label>{{ option.name }}</x-label>
