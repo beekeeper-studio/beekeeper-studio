@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const fs = require('fs');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { execSync } = require('child_process');
 
 const LOCALE_DIR = path.join(__dirname, '../apps/studio/src/i18n/locales');

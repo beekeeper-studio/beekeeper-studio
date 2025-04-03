@@ -1,11 +1,11 @@
 <template>
   <div class="with-connection-type">
     <div class="form-group col">
-      <label for="authenticationType">Authentication Method</label>
+      <label for="authenticationType">{{ $t('Authentication Method') }}</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
         <option :key="`${t.value}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
-          {{ t.name }}
+          {{ $t(t.name) }}
         </option>
       </select>
     </div>

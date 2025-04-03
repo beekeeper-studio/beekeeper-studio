@@ -74,7 +74,7 @@ export default {
       } else {
         if (this.isCommunity) {
           // we want to display a modal
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+          this.$root.$emit(AppEvent.upgradeModal, this.$t("Upgrade required to use this authentication type"));
           this.authType = 'default'
         } else {
           this.config.redshiftOptions.authType = this.authType

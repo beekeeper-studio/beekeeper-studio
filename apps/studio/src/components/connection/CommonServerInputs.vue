@@ -86,16 +86,16 @@
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
             <div>
-              Providing certificate files is optional. By default Beekeeper will just trust the server certificate.
+              {{ $t('Providing certificate files is optional. By default Beekeeper will just trust the server certificate.') }}
               <external-link href="https://docs.beekeeperstudio.io/pages/first-page#ssl">
-                Read More
+                {{ $t('Read More') }}
               </external-link>
             </div>
           </div>
         </div>
         <div class="row gutter">
           <div class="col form-group">
-            <label>CA Cert (optional)</label>
+            <label>{{ $t('CA Cert (optional)') }}</label>
             <file-picker
               v-model="config.sslCaFile"
               :disabled="!config.ssl"
@@ -105,7 +105,7 @@
 
         <div class="row gutter">
           <div class="col form-group">
-            <label>Certificate (optional)</label>
+            <label>{{ $t('Certificate (optional)') }}</label>
             <file-picker
               v-model="config.sslCertFile"
               :disabled="!config.ssl"
@@ -115,7 +115,7 @@
 
         <div class="row gutter">
           <div class="col form-group">
-            <label>Key File (optional)</label>
+            <label>{{ $t('Key File (optional)') }}</label>
             <file-picker
               v-model="config.sslKeyFile"
               :disabled="!config.ssl"
@@ -135,10 +135,10 @@
                 name="rememberPassword"
                 v-model="config.sslRejectUnauthorized"
               >
-              <span>Reject Unauthorized</span>
+              <span>{{ $t('Reject Unauthorized') }}</span>
               <i
                 class="material-icons"
-                v-tooltip="'This only takes effect if you provide certificate files'"
+                v-tooltip="$t('This only takes effect if you provide certificate files')"
               >help_outlined</i>
             </label>
           </div>
@@ -199,7 +199,7 @@
       <label
         v-else
         for="defaultDatabase"
-      >Keyspace <span class="optional-text">(optional)</span></label>
+      >{{ $t('Keyspace') }} <span class="optional-text">({{ $t('optional') }})</span></label>
       <input
         type="text"
         class="form-control"

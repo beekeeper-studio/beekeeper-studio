@@ -146,5 +146,6 @@
   "This is a global setting that affects all SQLite connections.": "这是一个影响所有SQLite连接的全局设置。",
   "Learn more": "了解更多",
   "Runtime extension file": "运行时扩展文件",
-  "...": "null"
+  "...": "null",
+  "DEV MODE OVERRIDES": "开发者模式"
 }

@@ -19,7 +19,7 @@
         >
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Import from URL
+              {{ $t('Import from URL') }}
             </div>
             <div
               v-if="importError"
@@ -28,7 +28,7 @@
               {{ importError }}
             </div>
             <div class="form-group">
-              <label for="url">Paste URL</label>
+              <label for="url">{{ $t('Paste URL') }}</label>
               <input
                 class="form-control"
                 ref="importInput"
@@ -43,14 +43,14 @@
               type="button"
               @click.prevent="$modal.hide('import-modal')"
             >
-              Cancel
+              {{ $t('Cancel') }}
             </button>
             <button
               class="btn btn-primary"
               type="submit"
               @click.prevent="importFromUrl"
             >
-              Import
+              {{ $t('Import') }}
             </button>
           </div>
         </form>
@@ -73,13 +73,13 @@ export default {
           const conf = await this.$util.send('appdb/saved/parseUrl', { url: this.url });
           Object.assign(this.config, conf);
           if (!this.config.connectionType) {
-            this.importError = "Unable to determine database type from the URL";
+            this.importError = this.$t("Unable to determine database type from the URL");
           } else {
             this.url = null;
             this.$modal.hide('import-modal')
           }
         } catch {
-          this.importError = "Unable to parse url"
+          this.importError = this.$t("Unable to parse url");
         }
       },
     }
