@@ -16,13 +16,13 @@ export default {
       exportName: null,
       notification: new Noty({
         // NOTE (@day): not sure this actually works lol
-        text: `Exporting '${this.exportName}'`,
+        text: this.$t('Exporting \'{exportName}\'', {exportName: this.exportName}),
         layout: "bottomRight",
         timeout: false,
         closeWith: 'button',
         buttons: [
-          Noty.button("Cancel", "btn btn-flat", this.cancelExport.bind(this)),
-          Noty.button("Hide", "btn btn-primary", () => this.notification.close()),
+          Noty.button(this.$t('Cancel'), "btn btn-flat", this.cancelExport.bind(this)),
+          Noty.button(this.$t('Hide'), "btn btn-primary", () => this.notification.close()),
         ],
         queue: "export",
       }),
@@ -35,8 +35,8 @@ export default {
       const countExported = this.countExported;
       const percentComplete = this.percentComplete;
       return percentComplete
-        ? `(${percentComplete}%) Exporting table '${this.exportName}'`
-        : `(${countExported} rows) Exporting query '${this.exportName}'`
+        ? this.$t('({percent}%) Exporting table \'{exportName}\'', {percent: percentComplete, exportName: this.exportName})
+        : this.$t('({rows} rows) Exporting query \'{exportName}\'', {rows: countExported, exportName: this.exportName})
     },
   },
   methods: {
@@ -47,7 +47,7 @@ export default {
       await this.$util.send('export/cancel', { id: this.exportId });
       this.notification.close();
       const exportName = await this.$util.send('export/name', { id: this.exportId });
-      this.$noty.error(`${exportName} export aborted`);
+      this.$noty.error(this.$t('{exportName} export aborted', {exportName}));
     },
     async updateExportName() {
       this.exportName = await this.$util.send('export/name', { id: this.exportId });

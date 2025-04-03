@@ -12,7 +12,7 @@
           name="prettyprint"
           class="form-control"
         >
-        <span>Pretty-print</span>
+        <span>{{ $t('Pretty-print') }}</span>
       </label>
     </div>
   </div>

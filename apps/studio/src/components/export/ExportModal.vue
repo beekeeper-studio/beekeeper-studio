@@ -15,22 +15,21 @@
         <div class="dialog-content">
           <div class="dialog-c-title flex flex-middle">
             <div>
-              Export
+              {{ $t('Export') }}
               <span class="text-primary truncate">{{ table ? table.name : queryName }}</span>
               <span
                 v-if="filters"
                 class="text-light"
                 v-tooltip="filterTooltip"
-              >(Filtered)</span>
-              <span class="badge badge-info">Beta</span>
+              >({{ $t('Filtered') }})</span>
+              <span class="badge badge-info">{{ $t('Beta') }}</span>
             </div>
           </div>
 
-          <p>This will {{ table ? 'export table rows' : 'run your query and save the results' }}  directly to a file.</p>
-          <p>You can choose the format and file name.</p>
+          <p>{{ $t('This will {type} directly to a file.', { type: table ? $t('export table rows') : $t('run your query and save the results') }) }}</p>
+          <p>{{ $t('You can choose the format and file name.') }}</p>
           <p>
-            For {{ table ? 'tables with many' : 'queries with many results' }} rows, this will run in the background,
-            allowing you to continue to do other work.
+            {{ $t('For {type} rows, this will run in the background, allowing you to continue to do other work.', { type: table ? $t('tables with many') : $t('queries with many results') }) }}
           </p>
 
           <span class="close-btn btn btn-fab">
@@ -44,13 +43,13 @@
             class="alert alert-danger"
           >
             <i class="material-icons">error_outline</i>
-            <div>Error: {{ error.message }}</div>
+            <div>{{ $t('Error: {message}', { message: error.message }) }}</div>
           </div>
           <div class="modal-form export-form">
             <div class="flex">
               <!-- File Name -->
               <div class="file-name form-group expand">
-                <label for="fileName">File Name</label>
+                <label for="fileName">{{ $t('File Name') }}</label>
                 <input
                   type="text"
                   spellcheck="false"
@@ -60,7 +59,7 @@
 
               <!-- Format -->
               <div class="format form-group">
-                <label for="connectionType">Format</label>
+                <label for="connectionType">{{ $t('Format') }}</label>
                 <select
                   name="connectionType"
                   class="form-control custom-select"
@@ -71,7 +70,7 @@
                     disabled
                     value="null"
                   >
-                    Select a format...
+                    {{ $t('Select a format...') }}
                   </option>
                   <option
                     :key="f.value"
@@ -88,13 +87,13 @@
 
             <!-- Location -->
             <div class="form-group">
-              <label for="fileDirectory">Output Directory</label>
+              <label for="fileDirectory">{{ $t('Output Directory') }}</label>
               <file-picker
                 v-model="fileDirectory"
                 :default-path="defaultPath"
                 :save="false"
                 :options="dialogOptions"
-                button-text="Choose"
+                :button-text="$t('Choose')"
               />
             </div>
 
@@ -104,7 +103,7 @@
               @click.prevent="toggleAdvanced"
             >
               <i class="material-icons">{{ toggleIcon }}</i>
-              <span>Advanced Options</span>
+              <span>{{ $t('Advanced Options') }}</span>
             </div>
             <div
               class="advanced-options"
@@ -116,7 +115,7 @@
               />
               <div class="modal-form export-form export-advanced-options">
                 <div class="form-group row" v-if="!this.dialectData.disabledFeatures.chunkSizeStream">
-                  <label title="How many records to read at once from the cursor">Chunk size</label>
+                  <label :title="$t('How many records to read at once from the cursor')">{{ $t('Chunk size') }}</label>
                   <input
                     v-model="options.chunkSize"
                     type="number"
@@ -138,7 +137,7 @@
                       name="deleteOnAbort"
                       class="form-control"
                     >
-                    <span>Delete file on abort/error</span>
+                    <span>{{ $t('Delete file on abort/error') }}</span>
                   </label>
                 </div>
               </div>
@@ -152,14 +151,14 @@
             @click.prevent="importExportTables"
           >
             <i class="material-icons">tab</i>
-            Export multiple tables
+            {{ $t('Export multiple tables') }}
           </button>
           <button
             class="btn btn-primary"
             type="submit"
             :disabled="!filePath"
           >
-            Run
+            {{ $t('Run') }}
           </button>
         </div>
       </form>

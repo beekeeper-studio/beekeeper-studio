@@ -12,7 +12,7 @@
           name="schema"
           class="form-control"
         >
-        <span>Include Table Schema (If Applicable)</span>
+        <span>{{ $t('Include Table Schema (If Applicable)') }}</span>
       </label>
     </div>
     <div class="form-group row">
@@ -27,7 +27,7 @@
           name="createTable"
           class="form-control"
         >
-        <span>Create Table Before Inserting</span>
+        <span>{{ $t('Create Table Before Inserting') }}</span>
       </label>
     </div>
   </div>
