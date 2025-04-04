@@ -21,9 +21,6 @@
           @toggleSidebar="handleToggleOpenPrimarySidebar"
           :sidebar-shown="primarySidebarOpen"
         />
-        <statusbar>
-          <ConnectionButton />
-        </statusbar>
       </sidebar>
       <div
         ref="content"
@@ -34,6 +31,7 @@
       </div>
       <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
+    <global-status-bar />
     <quick-search
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
@@ -50,20 +48,19 @@
   import SecondarySidebar from './sidebar/SecondarySidebar.vue'
   import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
-  import Statusbar from './common/StatusBar.vue'
-  import ConnectionButton from './sidebar/core/ConnectionButton.vue'
   import ExportManager from './export/ExportManager.vue'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import LostConnectionModal from './LostConnectionModal.vue'
+  import GlobalStatusBar from './GlobalStatusBar.vue'
   import Vue from 'vue'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar },
+    components: { CoreSidebar, CoreTabs, Sidebar, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalStatusBar },
     data() {
       /* eslint-disable */
       return {
