@@ -23,6 +23,7 @@
     "postinstall": "electron-builder install-app-deps",
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
+    "dev:electron": "vite dev -c vite.electron.config.mjs",
     "dev:esbuild": "./esbuild.mjs watch",
     "dev:vite": "vite dev"
   },
@@ -188,6 +189,8 @@
     "typescript": "~4.3.0",
     "vite": "~5.4.15",
     "vite-plugin-commonjs": "^0.10.1",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6",
     "vue-template-compiler": "^2.7.16",
     "xvfb-maybe": "^0.2.1"
   },
