@@ -52,13 +52,12 @@
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
 
-  import { mapState, mapGetters } from 'vuex'
+  import { mapState, mapGetters, mapActions } from 'vuex'
   import rawLog from '@bksLogger'
 
   const log = rawLog.scope('core-sidebar')
 
   export default {
-    props: ['sidebarShown'],
     components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
@@ -67,7 +66,6 @@
         filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
-        activeItem: 'tables',
       }
     },
     computed: {
@@ -84,13 +82,17 @@
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },
+      ...mapState("sidebar", {
+        "activeItem": "globalSidebarActiveItem",
+        "sidebarShown": "primarySidebarOpen",
+      }),
       ...mapState(['tables', 'database']),
       ...mapGetters(['minimalMode']),
     },
     watch: {
       minimalMode() {
         if (this.minimalMode) {
-          this.activeItem = 'tables'
+          this.setActiveItem('tables')
         }
       },
     },
@@ -102,8 +104,9 @@
         }
       },
       click(item) {
-        this.activeItem = item;
+        this.setActiveItem(item);
         if(!this.sidebarShown) {
+          this.setPrimarySidebarOpen(true)
           this.$emit('toggleSidebar')
         }
       },
@@ -118,6 +121,10 @@
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
       },
+      ...mapActions({
+        setActiveItem: "sidebar/setGlobalSidebarActiveItem",
+        setPrimarySidebarOpen: "sidebar/setPrimarySidebarOpen",
+      }),
     }
   }
 </script>
