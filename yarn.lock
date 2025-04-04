@@ -13203,6 +13203,16 @@ vite-plugin-dynamic-import@^1.6.0:
     fast-glob "^3.3.2"
     magic-string "^0.30.11"
 
+vite-plugin-electron-renderer@^0.14.6:
+  version "0.14.6"
+  resolved "https://registry.yarnpkg.com/vite-plugin-electron-renderer/-/vite-plugin-electron-renderer-0.14.6.tgz#45fa5072d2ad39bcaa6d3eedf09f5bb9e04ac0a4"
+  integrity sha512-oqkWFa7kQIkvHXG7+Mnl1RTroA4sP0yesKatmAy0gjZC4VwUqlvF9IvOpHd1fpLWsqYX/eZlVxlhULNtaQ78Jw==
+
+vite-plugin-electron@^0.29.0:
+  version "0.29.0"
+  resolved "https://registry.yarnpkg.com/vite-plugin-electron/-/vite-plugin-electron-0.29.0.tgz#a30e0288c46f55848d23ed49582fb574e8573fc6"
+  integrity sha512-HP0DI9Shg41hzt55IKYVnbrChWXHX95QtsEQfM+szQBpWjVhVGMlqRjVco6ebfQjWNr+Ga+PeoBjMIl8zMaufw==
+
 vite-plugin-vue2@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/vite-plugin-vue2/-/vite-plugin-vue2-2.0.3.tgz#19aab2720e13a969b9d9272f85e899c671930ef2"
