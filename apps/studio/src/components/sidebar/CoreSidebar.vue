@@ -1,12 +1,5 @@
 <template>
   <div class="sidebar-wrap row">
-    <global-sidebar
-      v-if="!minimalMode"
-      @selected="click"
-      v-on="$listeners"
-      :active-item="activeItem"
-    />
-
     <div class="tab-content">
       <!-- Tables -->
       <div
@@ -46,7 +39,6 @@
 
 <script>
   import _ from 'lodash'
-  import GlobalSidebar from './GlobalSidebar.vue'
   import TableList from './core/TableList.vue'
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
@@ -58,7 +50,7 @@
   const log = rawLog.scope('core-sidebar')
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
+    components: { TableList, DatabaseDropdown, HistoryList, FavoriteList},
     data() {
       return {
         tableLoadError: null,
@@ -101,13 +93,6 @@
         return {
           show: (this.activeItem === item),
           active: (this.activeItem === item)
-        }
-      },
-      click(item) {
-        this.setActiveItem(item);
-        if(!this.sidebarShown) {
-          this.setPrimarySidebarOpen(true)
-          this.$emit('toggleSidebar')
         }
       },
       async databaseSelected(db) {
