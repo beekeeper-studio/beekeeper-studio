@@ -231,7 +231,7 @@
                 >stars</i>
               </x-label>
             </x-menuitem>
-            <x-menuitem @click="openQueryTab" :disabled="dialect === 'mongodb'">
+            <x-menuitem @click="openQueryTab">
               <x-label>Copy view to SQL</x-label>
             </x-menuitem>
           </x-menu>
@@ -390,6 +390,9 @@ export default Vue.extend({
     },
     isCassandra() {
       return this.connectionType === 'cassandra'
+    },
+    queryDialect() {
+      return this.dialectData?.queryDialectOverride ?? this.dialect;
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -1434,7 +1437,7 @@ export default Vue.extend({
           deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
-        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
         console.error(ex);
@@ -1569,7 +1572,7 @@ export default Vue.extend({
         this.table.schema,
         selects
       ).then((query: string) => {
-        const language = FormatterDialect(this.dialect);
+        const language = FormatterDialect(this.queryDialect);
         const formatted = safeSqlFormat(query, { language });
         this.$root.$emit(AppEvent.newTab, formatted);
       }).catch((e: unknown) => {

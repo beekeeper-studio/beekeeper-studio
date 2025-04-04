@@ -89,6 +89,7 @@ export class ColumnType {
 }
 
 export interface DialectData {
+  queryDialectOverride?: string,
   columnTypes?: ColumnType[],
   constraintActions?: string[]
   wrapIdentifier?: (s: string) => string
