@@ -43,7 +43,7 @@
       />
     </template>
 
-    <statusbar :mode="statusbarMode">
+    <statusbar :mode="statusbarMode" :active="active">
       <div class="truncate statusbar-info">
         <x-button
           @click.prevent="openProperties"

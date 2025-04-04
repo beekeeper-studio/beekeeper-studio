@@ -1,17 +1,27 @@
 $button-height:     $statusbar-height * 0.72;
 
-.statusbar {
+.global-status-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   background: $statusbar-bg;
   color: rgba($statusbar-text, 0.87);
   min-height: $statusbar-height;
   height: $statusbar-height;
   line-height: $statusbar-height;
   font-size: 0.8rem;
-  padding: 0 $gutter-h;
   // overflow: hidden;
+
+  > .vue-portal-target {
+    flex-grow: 1;
+  }
+
+  .statusbar {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 $gutter-h;
+  }
 
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {
@@ -21,7 +31,7 @@ $button-height:     $statusbar-height * 0.72;
   }
 
 
-  > .col {
+  .statusbar > .col {
     display: flex;
     align-items: center;
   }
@@ -58,32 +68,14 @@ $button-height:     $statusbar-height * 0.72;
   }
 
 
-  // Row Actions
-  // -------------------------
-  .connection-button > .btn {
-    &:hover {
-      background: rgba(white, 0.1);
-    }
-  }
-
-
   .connection-button {
     > .btn{
+      padding: 0;
+      margin: 0;
       box-shadow: none!important;
-      background: transparent;
       color: $statusbar-text;
-      height: $button-height;
-      line-height: $button-height;
       min-width: min-content;
-      margin: 0 0.15rem;
-      margin-top: -1px;
-      padding: 0 0.35rem;
-      --ripple-background: none;
       border-radius: $btn-border-radius-small;
-      transition: background 0.15s ease-in-out;
-      .material-icons {
-        width: 16px;
-      }
     }
   }
 
@@ -306,24 +298,13 @@ $button-height:     $statusbar-height * 0.72;
 
   // Connection Status
   // ---------------------------
-  .connection-button,
-  .connection-button > .btn {
-    height: $statusbar-height;
-    line-height: $statusbar-height;
-    margin: -$gutter-h;
-    padding: 0 $gutter-h;
-    flex: 1 1 100%;
-    justify-content: flex-start;
-    overflow: hidden;
-  }
   .connection-name {
     font-size: 0.85rem;
   }
   .connection-button {
-    position: relative;
+    margin-left: 0.75rem;
     .material-icons {
       font-size: 20px;
-      min-width: 38px;
       text-align: center;
     }
     > .btn {
