@@ -1,9 +1,11 @@
 import { BeeCursor } from "@/lib/db/models";
 import { CursorResult, QueryLeaf } from "@queryleaf/lib";
+import { AggregationCursor } from "mongodb";
 
 interface CursorOptions {
-  query: string,
-  queryLeaf: QueryLeaf,
+  query?: string,
+  queryLeaf?: QueryLeaf,
+  cursor?: AggregationCursor,
   chunkSize: number
 }
 
@@ -22,7 +24,14 @@ export class MongoDBCursor extends BeeCursor {
   }
 
   async start(): Promise<void> {
-    this.cursor = await this.options.queryLeaf.executeCursor(this.options.query, { batchSize: this.chunkSize });
+    if (this.options.queryLeaf) {
+      this.cursor = await this.options.queryLeaf.executeCursor(this.options.query, { batchSize: this.chunkSize });
+    } else if (this.options.cursor) {
+      // @ts-expect-error stupid peer dependencies
+      this.cursor = this.options.cursor;
+    } else {
+      throw new Error('You need either a cursor or a queryleaf instance to be passed to the cursor');
+    }
     this.cursor.on('error', this.handleError.bind(this));
   }
 

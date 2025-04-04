@@ -1,7 +1,7 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
-import { Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
+import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
 import { identify } from 'sql-query-identifier';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
@@ -305,7 +305,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return query;
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
+  private buildSelectTopCursor(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], selects?: string[], batchSize?: number): AggregationCursor {
     const collection = this.conn.db(this.db).collection(table);
 
     const convertedOrders = orderBy.length > 0 ? orderBy.reduce((all, ord) => ({
@@ -328,23 +328,45 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       }), init);
     }
 
-    const result = await collection.aggregate([
+    let skip = null;
+    if (offset) {
+      skip = {
+        "$skip": offset
+      };
+    }
+
+    let limitObj = null;
+    if (limit) {
+      limitObj = {
+        "$limit": limit
+      };
+    }
+
+    const options: any = {};
+
+    if (batchSize) {
+      options.batchSize = batchSize;
+    }
+
+    const result = collection.aggregate([
       {
         "$match": convertedFilters
       },
       convertedOrders ? {
         "$sort": convertedOrders
       } : null,
-      {
-        "$skip": offset
-      },
-      {
-        "$limit": limit
-      },
+      skip,
+      limitObj,
       convertedSelects ? {
         "$project": convertedSelects
       } : null
-    ].filter((v) => !!v)).toArray();
+    ].filter((v) => !!v), options);
+
+    return result;
+  }
+
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
+    const result = await this.buildSelectTopCursor(table, offset, limit, orderBy, filters, selects).toArray();
 
     const fields = this.parseQueryResultColumns(result[0] || {});
     const rows = await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)
@@ -861,15 +883,13 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return [];
   }
 
-  // we could probably do this without queryleaf, so maybe we should
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
-    const sql = await this.selectTopSql(table, null, null, orderBy, filters);
+    const cursor = this.buildSelectTopCursor(table, null, null, orderBy, filters, null, chunkSize);
 
     const columns = await this.listTableColumns(table);
 
     const cursorOpts = {
-      query: sql,
-      queryLeaf: this.queryLeaf,
+      cursor,
       chunkSize
     };
 
