@@ -3213,10 +3213,10 @@
   dependencies:
     playwright "1.50.1"
 
-"@queryleaf/lib@^0.1.2":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@queryleaf/lib/-/lib-0.1.2.tgz#7adb2d7b24f9c3f8dd832f4dbfcdf0450ba9b19f"
-  integrity sha512-K7nXWBH7m6Ce2fGfSS9TROImLXcP/DkqIpgSonsbzEKEgqK38TKJMa05oW+kVoqtZ5Nd9RvgMZanIEX9pcpT8g==
+"@queryleaf/lib@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@queryleaf/lib/-/lib-0.2.2.tgz#87200730afb8aa6a0ae785e7b739622372a89e94"
+  integrity sha512-HwIQ/2Zeyj+loXc0k8i7Js/PXyNHVseJdXCH6/d5EHoEqHnPHvqEMeYYCI1s7ocYe+1YIgKxg76LWpoLOPsK1g==
   dependencies:
     debug "^4.4.0"
     node-sql-parser "^4.11.0"

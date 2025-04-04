@@ -15,7 +15,6 @@ export const MongoDBData: DialectData = {
     truncateElement: true,
     sqlCreate: true,
     importFromFile: true,
-    exportTable: true,
     nullable: true,
     defaultValue: true,
     primary: true,

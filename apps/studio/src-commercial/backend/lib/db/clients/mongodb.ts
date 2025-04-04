@@ -15,6 +15,7 @@ import { errors } from "@/lib/errors";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { QueryLeaf } from '@queryleaf/lib'
+import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql"; 
 import knexlib from 'knex'
 
@@ -860,20 +861,38 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return [];
   }
 
-  async selectTopStream(_table: string, _orderBy: OrderBy[], _filters: string | TableFilter[], _chunkSize: number, _schema?: string): Promise<StreamResults> {
-    log.error('MongoDB does not currently support streaming results');
-    return null;
+  // we could probably do this without queryleaf, so maybe we should
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
+    const sql = await this.selectTopSql(table, null, null, orderBy, filters);
+
+    const columns = await this.listTableColumns(table);
+
+    const cursorOpts = {
+      query: sql,
+      queryLeaf: this.queryLeaf,
+      chunkSize
+    };
+
+    return {
+      totalRows: 0,// need to figure this out
+      columns,
+      cursor: new MongoDBCursor(cursorOpts)
+    };
   }
 
-  async queryStream(query: string, _chunkSize: number): Promise<StreamResults> {
-    const statement = this.queryLeaf.parse(query);
-    const commands = this.queryLeaf.compile(statement);
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const cursorOpts = {
+      query: query,
+      queryLeaf: this.queryLeaf,
+      chunkSize
+    };
 
     const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
 
     return {
       totalRows,
-      columns
+      columns,
+      cursor: new MongoDBCursor(cursorOpts)
     }
     log.error('MongoDB does not support querying');
     return null;
