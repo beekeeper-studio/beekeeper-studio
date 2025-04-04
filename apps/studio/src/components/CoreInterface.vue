@@ -11,20 +11,21 @@
       v-else
       class="interface-wrap row"
     >
+      <global-sidebar
+        v-if="!minimalMode"
+        @select="handleSelectGlobalSidebarItem"
+        :active-item="globalSidebarActiveItem"
+      />
+
       <sidebar
         ref="sidebar"
         class="primary-sidebar"
-        :style="{ '--sidebar-min-width': $bksConfig.ui.layout.primarySidebarMinWidth + 'px' }"
       >
         <core-sidebar
           @databaseSelected="databaseSelected"
-          @toggleSidebar="handleToggleOpenPrimarySidebar"
-          :sidebar-shown="primarySidebarOpen"
         />
-        <statusbar>
-          <ConnectionButton />
-        </statusbar>
       </sidebar>
+
       <div
         ref="content"
         class="page-content flex-col main-content"
@@ -32,6 +33,7 @@
       >
         <core-tabs />
       </div>
+
       <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
     <quick-search
@@ -48,6 +50,7 @@
   import Sidebar from './common/Sidebar.vue'
   import CoreSidebar from './sidebar/CoreSidebar.vue'
   import SecondarySidebar from './sidebar/SecondarySidebar.vue'
+  import GlobalSidebar from './sidebar/GlobalSidebar.vue'
   import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
   import Statusbar from './common/StatusBar.vue'
@@ -63,7 +66,7 @@
   import _ from "lodash"
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalSidebar },
     data() {
       /* eslint-disable */
       return {
@@ -80,6 +83,7 @@
         "primarySidebarSize",
         "secondarySidebarOpen",
         "secondarySidebarSize",
+        "globalSidebarActiveItem",
       ]),
       keymap() {
         return this.$vHotkeyKeymap({
@@ -88,7 +92,7 @@
       },
       splitElements() {
         return [
-          this.$refs.sidebar.$refs.sidebar,
+          this.$refs.sidebar.$el,
           this.$refs.content,
           this.$refs.secondarySidebar.$el
         ]
@@ -105,19 +109,23 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
+          const primarySidebarSize = this.primarySidebarOpen ? this.primarySidebarSize : 0
+          const secondarySidebarSize = this.secondarySidebarOpen ? this.secondarySidebarSize : 0
           const splitSizes = [
-            this.primarySidebarSize,
-            100 - (this.primarySidebarSize + this.secondarySidebarSize),
-            this.secondarySidebarSize,
+            primarySidebarSize,
+            100 - (primarySidebarSize + secondarySidebarSize),
+            secondarySidebarSize,
           ]
 
+          const snapOffset = 150
+
           this.split = Split(this.splitElements, {
-            snapOffset: [150, 0, 150],
+            snapOffset: [snapOffset, 0, snapOffset],
             sizes: splitSizes,
-            minSize: [this.$bksConfig.ui.layout.primarySidebarMinWidth, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
+            minSize: [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
             gutterSize: 5,
             elementStyle: (_dimension, elementSize) => ({
-              width: `calc(${elementSize}%)`,
+              width: `${elementSize}%`,
             }),
             gutter: (_index, direction) => {
                 const gutter = document.createElement('div')
@@ -127,26 +135,16 @@
             onDragEnd: () => {
               const [primarySidebarSize, _m, secondarySidebarSize] = this.split.getSizes()
 
-              // Handle primary sidebar collapse/expand
-              const primarySidebarWidth = this.splitElements[0].offsetWidth
-              const threshold = this.$bksConfig.ui.layout.primarySidebarMinWidth + 5
-
-              if (primarySidebarWidth <= threshold) {
-                this.setPrimarySidebarOpen(false)
-              } else {
+              if (this.splitElements[0].offsetWidth > snapOffset) {
                 this.setPrimarySidebarSize(primarySidebarSize)
-                this.setPrimarySidebarOpen(true)
+              } else {
+                this.setPrimarySidebarOpen(false)
               }
 
-              // Handle secondary sidebar collapse/expand
-              const secondarySidebarWidth = this.splitElements[2].offsetWidth
-              const secondaryThreshold = 0 + 5
-
-              if (secondarySidebarWidth <= secondaryThreshold) {
-                this.setSecondarySidebarOpen(false)
-              } else {
+              if (this.splitElements[2].offsetWidth > snapOffset) {
                 this.setSecondarySidebarSize(secondarySidebarSize)
-                this.setSecondarySidebarOpen(true)
+              } else {
+                this.setSecondarySidebarOpen(false)
               }
             },
           })
@@ -177,6 +175,7 @@
         setPrimarySidebarSize: "sidebar/setPrimarySidebarSize",
         setSecondarySidebarOpen: "sidebar/setSecondarySidebarOpen",
         setSecondarySidebarSize: "sidebar/setSecondarySidebarSize",
+        setGlobalSidebarActiveItem: "sidebar/setGlobalSidebarActiveItem",
       }),
       showQuickSearch() {
         this.quickSearchShown = true
@@ -184,7 +183,7 @@
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
       },
-      handleToggleOpenPrimarySidebar(force?: boolean) {
+      toggleOpenPrimarySidebar(force?: boolean) {
         const open = typeof force === 'undefined'
           ? !this.primarySidebarOpen
           : force
@@ -203,6 +202,9 @@
         }
 
         this.setPrimarySidebarOpen(open)
+      },
+      handleToggleOpenPrimarySidebar() {
+        this.toggleOpenPrimarySidebar()
       },
       handleToggleOpenSecondarySidebar(force?: boolean) {
         const open = typeof force === 'undefined'
@@ -223,6 +225,14 @@
         }
 
         this.setSecondarySidebarOpen(open)
+      },
+      handleSelectGlobalSidebarItem(item) {
+        if (this.globalSidebarActiveItem === item) {
+          this.toggleOpenPrimarySidebar()
+        } else if(!this.primarySidebarOpen) {
+          this.toggleOpenPrimarySidebar(true)
+        }
+        this.setGlobalSidebarActiveItem(item);
       },
     }
   })

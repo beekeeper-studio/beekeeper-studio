@@ -1,4 +1,4 @@
-#sidebar {
+.interface-wrap {
   .global-items {
     display: flex;
     flex-direction: column;
@@ -95,7 +95,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: var(--sidebar-min-width);
       height: 44px;
       font-size: 18px;
       color: rgba($theme-base, 0.38);
