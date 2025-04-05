@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { Module } from "vuex";
+import { install, Module } from "vuex";
 import rawLog from '@bksLogger'
 import { State as RootState } from '../index'
 import { CloudError } from '@/lib/cloud/ClientHelpers';
@@ -15,7 +15,8 @@ interface State {
   licenses: TransportLicenseKey[]
   error: CloudError | Error | null
   now: Date
-  status: LicenseStatus
+  status: LicenseStatus,
+  installationId: string | null
 }
 
 const log = rawLog.scope('LicenseModule')
@@ -36,6 +37,7 @@ export const LicenseModule: Module<State, RootState>  = {
     error: null,
     now: new Date(),
     status: defaultStatus,
+    installationId: null
   }),
   getters: {
     trialLicense(state) {
@@ -77,6 +79,9 @@ export const LicenseModule: Module<State, RootState>  = {
     setInitialized(state, b: boolean) {
       state.initialized = b
     },
+    installationId(state, id: string) {
+      state.installationId = id
+    },
     setNow(state, date: Date) {
       state.now = date
     },
@@ -91,6 +96,10 @@ export const LicenseModule: Module<State, RootState>  = {
         return
       }
       await context.dispatch('sync')
+      const installationId = await Vue.prototype.$util.send('license/getInstallationId');
+      context.commit('installationId', installationId)
+
+
       if (!window.platformInfo.isDevelopment) {
         // refreshing in dev mode resets the dev credentials added by the menu
         setInterval(() => context.dispatch('sync'), globals.licenseCheckInterval)
@@ -105,17 +114,18 @@ export const LicenseModule: Module<State, RootState>  = {
         await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
       } else {
         // Get the installation ID from the backend
-        const installationId = await Vue.prototype.$util.send('license/getInstallationId');
-        
+        const installationId = context.state.installationId
+
         const result = await CloudClient.getLicense(
-          window.platformInfo.cloudUrl, 
-          email, 
-          key, 
-          installationId
+          window.platformInfo.cloudUrl,
+          email,
+          key,
+          installationId,
+          window.platformInfo
         );
-        
+
         // if we got here, license is good.
-        let license = {} as TransportLicenseKey;
+        const license = {} as TransportLicenseKey;
         license.key = key;
         license.email = email;
         license.validUntil = new Date(result.validUntil);
@@ -133,15 +143,16 @@ export const LicenseModule: Module<State, RootState>  = {
       const isDevUpdate = window.platformInfo.isDevelopment && license.email == "fake_email";
       try {
         // Get the installation ID
-        const installationId = await Vue.prototype.$util.send('license/getInstallationId');
-        
+        const installationId = _context.state.installationId
+
         const data = isDevUpdate ? license : await CloudClient.getLicense(
-          window.platformInfo.cloudUrl, 
-          license.email, 
+          window.platformInfo.cloudUrl,
+          license.email,
           license.key,
-          installationId
+          installationId,
+          window.platformInfo
         );
-        
+
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
         license.maxAllowedAppRelease = data.maxAllowedAppRelease
@@ -152,6 +163,7 @@ export const LicenseModule: Module<State, RootState>  = {
           license.validUntil = new Date()
           await Vue.prototype.$util.send('appdb/license/save', { obj: license });
         } else {
+          log.error("Problems getting license", error)
           // eg 500 errors
           // do nothing
         }

@@ -1,23 +1,27 @@
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
+import rawLog from '@bksLogger'
 
-@Entity({ name: 'installation_id' })
+const log = rawLog.scope('InstallationId')
+
+@Entity({ name: 'installation_ids' })
 export class InstallationId extends ApplicationEntity {
 
   withProps(props: any) {
-    this.installation_id = props.installation_id
+    this.installationId = props.installationId
     return this
   }
 
   @Column({ type: 'varchar', nullable: false })
-  installation_id!: string;
+  installationId!: string;
 
   static async get(): Promise<string | null> {
     try {
-      const record = await InstallationId.findOne({
-        order: { id: 'ASC' }
-      });
-      return record?.installation_id || null;
+      const records = await InstallationId.find()
+      const record = records[0]
+      log.info("Found ID:", record)
+
+      return record?.installationId || null;
     } catch (error) {
       console.error('Error retrieving installation ID:', error);
       return null;
