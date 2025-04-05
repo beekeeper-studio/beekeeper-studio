@@ -336,6 +336,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 
   i.fk-link {
     display:none;
+    position: absolute;
+    right: 5px;
+    background-color: $theme-bg;
     cursor: pointer;
     color: $text-light;
     font-size: 14px;
