@@ -32,13 +32,20 @@ const models = [
   InstallationId
 ]
 
+interface IConnectionState {
+  connection: Connection | null
+}
+
+export const ConnectionState: IConnectionState = {
+  connection: null
+}
 
 export default class Connection {
-  private connection?: DataSource
+  public connection?: DataSource
 
   constructor(private path: string, private logging: LoggerOptions = false) {}
 
-  async connect(options: any = {}): Promise<DataSource> {
+  async connect(options: any = {}): Promise<void> {
     this.connection = new DataSource({
       database: this.path,
       type: 'better-sqlite3',
@@ -49,7 +56,7 @@ export default class Connection {
       ...options
     })
     await this.connection.initialize()
-    return this.connection
+    ConnectionState.connection = this
   }
 
   async disconnect() {

@@ -19,7 +19,7 @@ function v(strings: TemplateStringsArray) {
 
 function expectStatus() {
   return expect(
-    LicenseKey.getLicenseStatus().then((s) => _.omit(s, ["license"]))
+    LicenseKey.getLicenseStatus().then((s) => _.omit(s, ["license", "fromFile", "filePath"]))
   ).resolves;
 }
 

@@ -1,3 +1,5 @@
+import { OfflineLicense } from "@/backend/lib/OfflineLicense";
+import { ConnectionState } from "@/common/appdb/Connection";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { TransportLicenseKey } from "@/common/transport";
 import { LicenseStatus } from "@/lib/license";
@@ -23,7 +25,15 @@ export const LicenseHandlers: ILicenseHandlers = {
     }
   },
   "license/getStatus": async function () {
-    const status = await LicenseKey.getLicenseStatus();
+    // If someone has a file-based license, that takes
+    // priority over ALL other licenses
+    const offline = OfflineLicense.load()
+    let status = null
+    if (offline && offline.isValid) {
+      status = offline.toLicenseStatus()
+    } else {
+      await LicenseKey.getLicenseStatus();
+    }
     return {
       ...status,
       isUltimate: status.isUltimate,
@@ -35,6 +45,8 @@ export const LicenseHandlers: ILicenseHandlers = {
     };
   },
   "license/get": async function () {
+    const offline = OfflineLicense.load()
+    if (offline) return [offline.toLicenseKey()]
     return await LicenseKey.find();
   },
   "license/wipe": async function() {
