@@ -1,19 +1,10 @@
 <template>
   <div
-    class="sidebar detail-view-sidebar flex-col"
+    class="json-viewer"
     ref="sidebar"
     v-show="!hidden"
   >
     <div class="header">
-      <div class="header-group">
-        <span class="title sub">{{ sidebarTitle }}</span>
-        <button
-          class="close-btn btn btn-fab"
-          @click="close"
-        >
-          <i class="material-icons">close</i>
-        </button>
-      </div>
       <div
         class="header-group"
         v-show="!empty"
@@ -44,7 +35,7 @@
               v-for="option in menuOptions"
               :key="option.name"
               :toggled="option.checked"
-              togglable
+              :togglable="typeof option.checked !== 'undefined'"
               @click.prevent="option.handler"
             >
               <x-label>{{ option.name }}</x-label>
@@ -53,23 +44,26 @@
         </x-button>
       </div>
     </div>
-    <text-editor
-      :read-only="true"
-      :fold-gutter="true"
-      :fold-all="foldAll"
-      :unfold-all="unfoldAll"
-      :value="text"
-      :mode="mode"
-      :force-initizalize="reinitializeTextEditor + (reinitialize ?? 0)"
-      :markers="markers"
-      :plugins="textEditorPlugins"
-      :line-gutters="lineGutters"
-      :line-numbers="false"
-    />
-    <div class="empty-state" v-show="empty">
-      No Data
+    <div class="text-editor-wrapper">
+      <text-editor
+        :fold-gutter="true"
+        :fold-all="foldAll"
+        :unfold-all="unfoldAll"
+        :value="text"
+        :mode="mode"
+        :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
+        :markers="markers"
+        :plugins="textEditorPlugins"
+        :line-wrapping="wrapText"
+        :line-gutters="lineGutters"
+        :line-numbers="false"
+        :extra-keybindings="disableReplaceKeybindings"
+      />
     </div>
-    <detail-view-sidebar-upsell v-if="$store.getters.isCommunity" />
+    <div class="empty-state" v-show="empty">
+      Open a table to view its data
+    </div>
+    <json-viewer-upsell v-if="$store.getters.isCommunity" />
   </div>
 </template>
 
@@ -90,20 +84,24 @@ import {
   deepFilterObjectProps,
   getPaths,
   eachPaths,
-} from "@/lib/data/detail_view";
+} from "@/lib/data/jsonViewer";
 import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
-import DetailViewSidebarUpsell from '@/components/upsell/DetailViewSidebarUpsell.vue'
+import PartialReadOnlyPlugin from "@/lib/editor/plugins/PartialReadOnlyPlugin";
+import JsonViewerUpsell from '@/components/upsell/JsonViewerSidebarUpsell.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
+import JsonSourceMap from "json-source-map";
+import JsonPointer from "json-pointer";
+import { typedArrayToString } from '@/common/utils'
 
-const log = rawLog.scope("detail-view-sidebar");
+const log = rawLog.scope("json-viewer");
 
 export default Vue.extend({
-  components: { TextEditor, DetailViewSidebarUpsell },
-  props: ["value", "hidden", "expandablePaths", "dataId", "title", "reinitialize", "signs"],
+  components: { TextEditor, JsonViewerUpsell },
+  props: ["value", "hidden", "expandablePaths", "editablePaths", "dataId", "title", "reinitialize", "signs", "binaryEncoding"],
   data() {
     return {
       reinitializeTextEditor: 0,
@@ -111,6 +109,12 @@ export default Vue.extend({
       foldAll: 0,
       unfoldAll: 0,
       restoredTruncatedPaths: [],
+      editableRangeErrors: [],
+      disableReplaceKeybindings: {
+        [this.cmCtrlOrCmd("R")]: () => false,
+        [this.cmCtrlOrCmd("Shift-R")]: () => false,
+      },
+      wrapText: false,
     };
   },
   watch: {
@@ -143,13 +147,9 @@ export default Vue.extend({
     },
     text() {
       if (this.empty) {
-        return "";
+        return ""
       }
-      if (this.filter) {
-        const filtered = deepFilterObjectProps(this.processedValue, this.filter);
-        return JSON.stringify(filtered, null, 2);
-      }
-      return JSON.stringify(this.processedValue, null, 2);
+      return this.sourceMap.json
     },
     debouncedFilter: {
       get() {
@@ -158,6 +158,18 @@ export default Vue.extend({
       set: _.debounce(function (value) {
         this.filter = value;
       }, 500),
+    },
+    sourceMap() {
+      return JsonSourceMap.stringify(this.filteredValue, null, 2);
+    },
+    filteredValue() {
+      if (this.empty) {
+        return {}
+      }
+      if (!this.filter) {
+        return this.processedValue
+      }
+      return deepFilterObjectProps(this.processedValue, this.filter);
     },
     processedValue() {
       const clonedValue = _.cloneDeep(this.value)
@@ -231,6 +243,14 @@ export default Vue.extend({
           log.warn(e);
         }
       })
+      _.forEach(this.editableRangeErrors, ({ error, from, to }) => {
+        markers.push({
+          type: "error",
+          from,
+          to,
+          message: error.message,
+        });
+      })
       return markers;
     },
     lines() {
@@ -248,6 +268,33 @@ export default Vue.extend({
         lineGutters.push({ line, type });
       })
       return lineGutters;
+    },
+    editableRanges() {
+      const editablePaths = this.editablePaths
+
+      if (_.isEmpty(editablePaths)) {
+        return []
+      }
+
+      const ranges = []
+
+      editablePaths.forEach((path: string) => {
+        const pointer = JsonPointer.compile(path.split("."))
+        const position = this.sourceMap.pointers[pointer]
+
+        if (!position) {
+          log.warn(`Unable to find editable path \`${path}\` in value object.`)
+          return
+        }
+
+        ranges.push({
+          id: path,
+          from: { line: position.value.line, ch: position.value.column },
+          to: { line: position.valueEnd.line, ch: position.valueEnd.column },
+        })
+      })
+
+      return ranges
     },
     menuOptions() {
       return [
@@ -276,21 +323,43 @@ export default Vue.extend({
           },
           checked: this.expandFKDetailsByDefault,
         },
+        {
+          name: "Wrap Text",
+          handler: () => {
+            this.wrapText = !this.wrapText
+          },
+          checked: this.wrapText,
+        },
 
       ]
     },
     textEditorPlugins() {
-      return [persistJsonFold]
+      return [
+        persistJsonFold,
+        new PartialReadOnlyPlugin(this.editableRanges, this.handleEditableRangeChange),
+      ]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
+    replacer(_key: string, value: unknown) {
+      if (_.isTypedArray(value)) {
+        return typedArrayToString(value as ArrayBufferView, this.binaryEncoding)
+      }
+      return value
+    },
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
     },
-    close() {
-      this.$emit("close")
-    },
+    handleEditableRangeChange: _.debounce(function (range, value) {
+      this.editableRangeErrors = []
+      try {
+        const parsed = JSON.parse(value)
+        this.$emit("bks-json-value-change", {key: range.id, value: parsed});
+      } catch (error) {
+        this.editableRangeErrors.push({ id: range.id, error, from: range.from, to: range.to })
+      }
+    }, 250),
   },
 });
 </script>

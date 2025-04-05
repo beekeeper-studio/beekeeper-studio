@@ -25,6 +25,7 @@
           @closeToRight="closeToRight"
           @forceClose="forceClose"
           @duplicate="duplicate"
+          @copyName="copyName"
         />
       </Draggable>
       <!-- </div> -->
@@ -33,6 +34,7 @@
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
+        <!-- TODO (@day): when we have SQL queries for mongo, add an action dropdown here for shell/query tab -->
       </span>
       <a
         @click.prevent="showUpgradeModal"
@@ -44,7 +46,7 @@
       </a>
     </div>
     <div class="tab-content">
-      <div class="empty flex-col  expand">
+      <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
           <shortcut-hints />
         </div>
@@ -60,6 +62,12 @@
       >
         <QueryEditor
           v-if="tab.tabType === 'query'"
+          :active="activeTab.id === tab.id"
+          :tab="tab"
+          :tab-id="tab.id"
+        />
+        <Shell
+          v-if="tab.tabType === 'shell'"
           :active="activeTab.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
@@ -266,7 +274,7 @@ import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import { FormatterDialect, DialectTitles } from '@shared/lib/dialects/models'
+import { FormatterDialect } from '@shared/lib/dialects/models'
 import Vue from 'vue';
 import { CloseTabOptions } from '@/common/appdb/models/CloseTab';
 import TabWithTable from './common/TabWithTable.vue';
@@ -279,6 +287,7 @@ import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
+import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
@@ -302,7 +311,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       PendingChangesButton,
       ConfirmationModal,
       SqlFilesImportModal,
-      CreateCollectionModal
+      CreateCollectionModal,
+      Shell
     },
     data() {
       return {
@@ -336,6 +346,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     }
   },
   computed: {
+    ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection']),
     ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
@@ -567,8 +578,15 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openContextMenu(event, item) {
       this.contextEvent = { event, item }
     },
-    async setActiveTab(tab) {
+    async setActiveTab(tab: TransportOpenTab) {
+      const switchingTab = tab.id !== this.activeTab?.id
+      if (switchingTab) {
+        this.trigger(AppEvent.switchingTab, tab)
+      }
       await this.$store.dispatch('tabs/setActive', tab)
+      if (switchingTab) {
+        this.trigger(AppEvent.switchedTab, tab)
+      }
     },
     async addTab(item: TransportOpenTab) {
       const savedItem = await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
@@ -598,7 +616,24 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     handleCreateTab() {
       this.createQuery()
     },
+    async createShell() {
+      let sNum = 0;
+      let tabName = "Shell";
+      do {
+        sNum = sNum + 1;
+        tabName = `Shell #${sNum}`;
+      } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
+
+      const result = {} as TransportOpenTab;
+      result.tabType = 'shell';
+      result.title = tabName;
+      result.unsavedChanges = false;
+      await this.addTab(result);
+    },
     async createQuery(optionalText, queryTitle?) {
+      if (this.dialect === 'mongodb') {
+        return await this.createShell();
+      }
       // const text = optionalText ? optionalText : ""
       console.log("Creating tab")
       let qNum = 0
@@ -891,7 +926,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
-    async openTable({ table, filters, openDetailView }) {
+    async openTable({ table, filters }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
       tab.title = table.name ?? table.tableName
@@ -908,10 +943,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         await this.$store.dispatch('tabs/setActive', existing)
       } else {
         await this.addTab(tab)
-      }
-
-      if (openDetailView) {
-        this.$store.dispatch('toggleOpenDetailView', true)
       }
     },
     openExportModal(options) {
@@ -958,6 +989,12 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       await this.$store.dispatch("tabs/remove", tab)
       if (tab.queryId) {
         await this.$store.dispatch('data/queries/reload', tab.queryId)
+      }
+
+      const { schemaName, tabType, tableName } = tab;
+      const closingSidebarItem = `${tabType}.${schemaName}.${tableName}`;
+      if(closingSidebarItem === this.selectedSidebarItem){
+        this.$store.commit('selectSidebarItem', null);
       }
     },
     async forceClose(tab: TransportOpenTab) {
@@ -1044,6 +1081,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     },
     createQueryFromItem(item) {
       this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
+    },
+    copyName(item) {
+      if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
+      this.$copyText(item.tableName)
     }
   },
   beforeDestroy() {

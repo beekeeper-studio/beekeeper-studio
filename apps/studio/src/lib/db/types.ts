@@ -174,6 +174,8 @@ export interface IBasicDatabaseClient {
   listCharsets(): Promise<string[]>,
   getDefaultCharset(): Promise<string>,
   listCollations(charset: string): Promise<string[]>,
+  getCompletions(cmd: string): Promise<string[]>,
+  getShellPrompt(): Promise<string>,
 
   connect(): Promise<void>,
   disconnect(): Promise<void>,

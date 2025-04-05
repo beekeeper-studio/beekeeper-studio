@@ -9,10 +9,11 @@
     "apps/*"
   ],
   "scripts": {
-    "bks:build": "yarn workspace beekeeper-studio electron:build",
-    "bks:dev": "yarn workspace beekeeper-studio electron:serve",
+    "bks:build": "yarn lib:build && yarn workspace beekeeper-studio electron:build",
+    "bks:dev": "yarn lib:build && yarn workspace beekeeper-studio electron:serve",
     "bks:config:build": "yarn workspace beekeeper-studio config:build",
-    "lib:dev": "yarn workspace @bks/ui-kit lib:dev",
+    "lib:dev": "yarn workspace @beekeeperstudio/ui-kit lib:dev",
+    "lib:build": "yarn workspace @beekeeperstudio/ui-kit build",
     "sqltools:build": "yarn workspace sqltools build",
     "sqltools:dev": "yarn workspace sqltools serve",
     "electron:build": "yarn bks:build",
@@ -23,6 +24,7 @@
     "test:integration": "yarn workspace beekeeper-studio test:integration",
     "test:unit": "yarn workspace beekeeper-studio test:unit",
     "test:ci": "yarn workspace beekeeper-studio test:ci",
+    "test:codemirror": "yarn workspace beekeeper-studio test:codemirror",
     "all:lint": "yarn workspace beekeeper-studio lint && yarn workspace sqltools lint && npx eslint 'shared/**' --fix",
     "postinstall": "husky install",
     "prepack": "pinst --disable",

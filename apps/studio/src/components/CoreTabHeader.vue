@@ -83,6 +83,7 @@
 </template>
 <script>
 import TabIcon from './tab/TabIcon.vue'
+import { mapState } from 'vuex'
 
   export default {
   components: { TabIcon },
@@ -130,16 +131,28 @@ import TabIcon from './tab/TabIcon.vue'
       }
     },
     watch: {
+      activeTab() {
+        if(!this.activeTab){
+           return;
+         }
+         const { schemaName, tabType, tableName } = this.activeTab;
+         const newSelectedSidebarItem = `${tabType}.${schemaName}.${tableName}`;
+         this.$store.commit('selectSidebarItem', newSelectedSidebarItem);
+      },
     },
     computed: {
+      ...mapState('tabs', { 'activeTab': 'active' }),
       contextOptions() {
+        const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
+
         return [
           { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
           { name: "Close Others", slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
           { name: 'Close All', slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
           { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
-          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) }
-        ]
+          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
+          { name: "Copy Entity Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass }
+        ];
       },
       modalName() {
         return `sure-${this.tab.id}`
