@@ -1302,7 +1302,7 @@ export default Vue.extend({
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
           if (!this.primaryKeys?.includes(d)) {
-            if(data[d] !== "null" && typeof data[d] !== "string") {
+            if(data[d] !== null && (typeof data[d] === "object" || typeof data[d] === "boolean")) {
               acc[d] = JSON.stringify(data[d])
             } else {
               acc[d] = data[d]
