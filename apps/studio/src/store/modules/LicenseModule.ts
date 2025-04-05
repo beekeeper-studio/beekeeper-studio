@@ -104,7 +104,16 @@ export const LicenseModule: Module<State, RootState>  = {
         await Vue.prototype.$util.send('license/createTrialLicense')
         await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
       } else {
-        const result = await CloudClient.getLicense(window.platformInfo.cloudUrl, email, key);
+        // Get the installation ID from the backend
+        const installationId = await Vue.prototype.$util.send('license/getInstallationId');
+        
+        const result = await CloudClient.getLicense(
+          window.platformInfo.cloudUrl, 
+          email, 
+          key, 
+          installationId
+        );
+        
         // if we got here, license is good.
         let license = {} as TransportLicenseKey;
         license.key = key;
@@ -123,7 +132,16 @@ export const LicenseModule: Module<State, RootState>  = {
       // This is to allow for dev switching
       const isDevUpdate = window.platformInfo.isDevelopment && license.email == "fake_email";
       try {
-        const data = isDevUpdate ? license : await CloudClient.getLicense(window.platformInfo.cloudUrl, license.email, license.key)
+        // Get the installation ID
+        const installationId = await Vue.prototype.$util.send('license/getInstallationId');
+        
+        const data = isDevUpdate ? license : await CloudClient.getLicense(
+          window.platformInfo.cloudUrl, 
+          license.email, 
+          license.key,
+          installationId
+        );
+        
         license.validUntil = new Date(data.validUntil)
         license.supportUntil = new Date(data.supportUntil)
         license.maxAllowedAppRelease = data.maxAllowedAppRelease
