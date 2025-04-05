@@ -36,7 +36,7 @@ export class LicenseKeyController {
       const encodedInstallationInfo = Buffer.from(JSON.stringify(installationInfo)).toString('base64');
 
       // Add the installation info header to the request
-      headers['X-Installation-Id'] = encodedInstallationInfo;
+      headers['x-installation-id'] = encodedInstallationInfo;
     }
 
     const response = await this.axios.get(url(this.path, key), {
