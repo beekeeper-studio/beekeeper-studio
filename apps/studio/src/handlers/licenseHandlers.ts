@@ -3,6 +3,7 @@ import { ConnectionState } from "@/common/appdb/Connection";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { TransportLicenseKey } from "@/common/transport";
 import { LicenseStatus } from "@/lib/license";
+import { InstallationId } from "@/common/appdb/models/installation_id";
 
 export interface ILicenseHandlers {
   "license/createTrialLicense": () => Promise<void>;
@@ -10,6 +11,7 @@ export interface ILicenseHandlers {
   "license/get": () => Promise<TransportLicenseKey[]>;
   "license/remove": (({ id }: { id: number }) => Promise<void>);
   "license/wipe": () => Promise<void>;
+  "license/getInstallationId": () => Promise<string>;
 }
 
 export const LicenseHandlers: ILicenseHandlers = {
@@ -49,5 +51,10 @@ export const LicenseHandlers: ILicenseHandlers = {
   },
   "license/wipe": async function() {
     await LicenseKey.wipe();
+  },
+  "license/getInstallationId": async function() {
+    // Make sure we return a string, not null
+    const id = await InstallationId.get();
+    return id || "";
   }
 };

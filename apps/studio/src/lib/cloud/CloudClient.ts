@@ -14,6 +14,8 @@ import { UsedQueriesController } from '@/lib/cloud/controllers/UsedQueriesContro
 import { LicenseKeyController } from './controllers/LicenseKeyController';
 import { camelCaseObjectKeys, snakeCaseObjectKeys } from '@/common/utils';
 
+import { IPlatformInfo } from '@/common/IPlatformInfo';
+
 const log = rawLog.scope('cloudClient')
 
 const ad = axios.defaults
@@ -60,9 +62,10 @@ export class CloudClient {
   }
 
 
-  public static async getLicense(baseUrl: string, email: string, key: string) {
+  public static async getLicense(baseUrl: string, email: string, key: string, installationId = "", platformInfo: IPlatformInfo) {
     const controller = new LicenseKeyController(staticAxios(baseUrl))
-    return await controller.get(email, key)
+    log.info("Fetching license info! Installation id", installationId)
+    return await controller.get(email, key, installationId, platformInfo)
   }
 
   axios: AxiosInstance
