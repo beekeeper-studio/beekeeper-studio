@@ -1,10 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 
 @Entity({ name: 'installation_id' })
 export class InstallationId extends ApplicationEntity {
-  @PrimaryGeneratedColumn()
-  id!: number;
+
+  withProps(props: any) {
+    this.installation_id = props.installation_id
+    return this
+  }
 
   @Column({ type: 'varchar', nullable: false })
   installation_id!: string;
