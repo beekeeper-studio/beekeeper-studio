@@ -25,6 +25,9 @@ export default {
   iamRefreshTime: 13 * 60 * 1000, // 13 minutes
   iamExpiryTime: 15 * 60 * 1000, // 15 minutes
   iamRefreshBeforeTime: 2 * 60 * 1000, // 2 minutes
+  azSQLLoginScope: 'https://ossrdbms-aad.database.windows.net',
+  azureCloudTokenUrl: 'https://app.beekeeperstudio.io/api/cloud_tokens',
+  azureCloudScopes: ['https://database.windows.net/.default', 'offline_access'],
   firebird: {
     poolSize: 5,
   },

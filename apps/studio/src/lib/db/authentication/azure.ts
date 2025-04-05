@@ -173,7 +173,7 @@ export class AzureAuthService {
 
   private async getAzureCLIToken(): Promise<AuthConfig | null> {
     return new Promise((resolve, reject) => {
-      const command = "az account get-access-token --resource https://ossrdbms-aad.database.windows.net --output json";
+      const command = `az account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
       exec(command, { encoding: "utf8" }, (error, stdout) => {
         if (error) {
           console.error("Error getting token:", error);
@@ -202,11 +202,11 @@ export class AzureAuthService {
       return refreshToken;
     }
     log.debug('Getting beekeeper cloud token');
-    const res = await axios.post('https://app.beekeeperstudio.io/api/cloud_tokens') as Response;
+    const res = await axios.post(globals.azureCloudTokenUrl) as Response;
 
     const beekeeperCloudToken = res.data?.cloud_token;
     const authCodeUrlParams = {
-      scopes: ['https://database.windows.net/.default', 'offline_access'],
+      scopes: globals.azureCloudScopes,
       redirectUri: beekeeperCloudToken.fulfillment_url,
       state: beekeeperCloudToken.id,
       prompt: 'consent'
@@ -229,7 +229,7 @@ export class AzureAuthService {
     if (code) {
       const tokenRequest = {
         code: code,
-        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        scopes: globals.azureCloudScopes,
         redirectUri: beekeeperCloudToken.fulfillment_url,
         state: beekeeperCloudToken.id
       };
@@ -268,7 +268,7 @@ export class AzureAuthService {
     try {
       refreshTokenResponse = await this.pca.acquireTokenSilent({
         account: account,
-        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        scopes: globals.azureCloudScopes,
         forceRefresh: true
       });
     } catch {
