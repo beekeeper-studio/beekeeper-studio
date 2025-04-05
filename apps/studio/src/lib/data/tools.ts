@@ -101,7 +101,7 @@ export const Mutators = {
 
   /** Stringify json data for MySQL column */
   jsonMutator(value: any): JsonFriendly {
-    if (_.isString(value) || _.isNull(value) || _.isUndefined(value)) return value
+    if (_.isString(value) || _.isNull(value) || _.isUndefined(value) || _.isBoolean(value)) return value
     return friendlyJsonObject(value)
   },
 }
