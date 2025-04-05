@@ -13,6 +13,7 @@ import { HiddenEntity } from "./models/HiddenEntity"
 import { HiddenSchema } from "./models/HiddenSchema"
 import { PinnedConnection } from "./models/PinnedConnection"
 import { TokenCache } from "./models/token_cache"
+import { InstallationId } from "./models/installation_id"
 
 const models = [
   SavedConnection,
@@ -27,7 +28,8 @@ const models = [
   HiddenEntity,
   HiddenSchema,
   PinnedConnection,
-  TokenCache
+  TokenCache,
+  InstallationId
 ]
 
 
