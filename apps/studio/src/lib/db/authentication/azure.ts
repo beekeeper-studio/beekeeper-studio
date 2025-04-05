@@ -1,10 +1,13 @@
 import * as msal from '@azure/msal-node';
-import axios, { AxiosResponse } from 'axios';
-import { wait } from '@shared/lib/wait';
+import axios, {AxiosResponse} from 'axios';
+import {wait} from '@shared/lib/wait';
 import rawLog from '@bksLogger';
-import { TokenCache } from '@/common/appdb/models/token_cache';
+import {TokenCache} from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
-import { AzureAuthType } from '../types';
+import {AzureAuthType} from '../types';
+import {exec} from 'child_process'
+import {getEntraOptions} from "@/lib/db/clients/utils";
+import {IDbConnectionServer} from "@/lib/db/backendTypes";
 
 const log = rawLog.scope('auth/azure');
 
@@ -88,7 +91,20 @@ export class AzureAuthService {
     this.pca = new msal.PublicClientApplication(clientConfig);
   }
 
+  public async configDB(server: IDbConnectionServer, config: any){
+    await this.init(server.config.authId)
+
+    const options = getEntraOptions(config, { signal: 0 })
+
+    const authentication = await this.auth(server.config.azureAuthOptions.azureAuthType, options);
+    config.password = authentication.options.token
+    console.log(config)
+    config.ssl = {}
+    return config;
+  }
+
   public async auth(authType: AzureAuthType, options: AuthOptions): Promise<AuthConfig> {
+    console.log(authType);
     this.signal = options.signal;
     switch (authType) {
       case AzureAuthType.AccessToken:
@@ -99,6 +115,8 @@ export class AzureAuthService {
         return this.msiVM(options);
       case AzureAuthType.ServicePrincipalSecret:
         return this.servicePrincipal(options);
+      case AzureAuthType.CLI:
+        return await this.getAzureCLIToken();
       case AzureAuthType.Default:
       default:
         return this.default();
@@ -153,17 +171,42 @@ export class AzureAuthService {
     }
   }
 
+  private async getAzureCLIToken(): Promise<AuthConfig | null> {
+    return new Promise((resolve, reject) => {
+      const command = `az account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
+      exec(command, { encoding: "utf8" }, (error, stdout) => {
+        if (error) {
+          console.error("Error getting token:", error);
+          reject(null);
+          return;
+        }
+        try {
+          const tokenData = JSON.parse(stdout);
+          resolve(  {
+            type: 'azure-active-directory-default',
+            options: {
+              token: tokenData.accessToken,
+            }
+          });
+        } catch (parseError) {
+          console.error("Error parsing token JSON:", parseError);
+          reject(null);
+        }
+      });
+    });
+  }
+
   private async accessToken(): Promise<AuthConfig> {
     const refreshToken = await this.tryRefresh();
     if (refreshToken) {
       return refreshToken;
     }
     log.debug('Getting beekeeper cloud token');
-    const res = await axios.post('https://app.beekeeperstudio.io/api/cloud_tokens') as Response;
+    const res = await axios.post(globals.azureCloudTokenUrl) as Response;
 
     const beekeeperCloudToken = res.data?.cloud_token;
     const authCodeUrlParams = {
-      scopes: ['https://database.windows.net/.default', 'offline_access'],
+      scopes: globals.azureCloudScopes,
       redirectUri: beekeeperCloudToken.fulfillment_url,
       state: beekeeperCloudToken.id,
       prompt: 'consent'
@@ -186,7 +229,7 @@ export class AzureAuthService {
     if (code) {
       const tokenRequest = {
         code: code,
-        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        scopes: globals.azureCloudScopes,
         redirectUri: beekeeperCloudToken.fulfillment_url,
         state: beekeeperCloudToken.id
       };
@@ -225,7 +268,7 @@ export class AzureAuthService {
     try {
       refreshTokenResponse = await this.pca.acquireTokenSilent({
         account: account,
-        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        scopes: globals.azureCloudScopes,
         forceRefresh: true
       });
     } catch {
