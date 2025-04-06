@@ -70,6 +70,7 @@
     "ini": "^5.0.0",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
+    "js-yaml": "^4.1.0",
     "json-pointer": "^0.6.2",
     "json-source-map": "^0.6.1",
     "jsonc-parser": "^3.3.1",
