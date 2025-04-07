@@ -18,10 +18,10 @@ interface State {
   globalSidebarActiveItem: "tables" | "history" | "queries";
 }
 
-const PRIMARY_SIDEBAR_OPEN_KEY = 'primarySidebarOpen'
-const PRIMARY_SIDEBAR_SIZE_KEY = 'primarySidebarOpenSize'
-const SECONDARY_SIDEBAR_OPEN_KEY = 'secondarySidebarOpen'
-const SECONDARY_SIDEBAR_SIZE_KEY = 'secondarySidebarCurrentSize'
+const PRIMARY_SIDEBAR_OPEN_KEY = 'primarySidebarOpen-v2'
+const PRIMARY_SIDEBAR_SIZE_KEY = 'primarySidebarOpenSize-v2'
+const SECONDARY_SIDEBAR_OPEN_KEY = 'secondarySidebarOpen-v2'
+const SECONDARY_SIDEBAR_SIZE_KEY = 'secondarySidebarCurrentSize-v2'
 
 const PRIMARY_SIDEBAR_INITIAL_SIZE = 35 // in percent
 const SECONDARY_SIDEBAR_INITIAL_SIZE = 30 // in percent

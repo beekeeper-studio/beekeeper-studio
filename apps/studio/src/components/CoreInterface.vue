@@ -10,6 +10,7 @@
     <div
       v-else
       class="interface-wrap row"
+      ref="splitContainer"
     >
       <global-sidebar
         v-if="!minimalMode"
@@ -111,16 +112,16 @@
         this.$nextTick(() => {
           const primarySidebarSize = this.primarySidebarOpen ? this.primarySidebarSize : 0
           const secondarySidebarSize = this.secondarySidebarOpen ? this.secondarySidebarSize : 0
+          const mainContentSize = 100 - (primarySidebarSize + secondarySidebarSize)
+
           const splitSizes = [
             primarySidebarSize,
-            100 - (primarySidebarSize + secondarySidebarSize),
+            mainContentSize,
             secondarySidebarSize,
           ]
 
-          const snapOffset = 150
-
           this.split = Split(this.splitElements, {
-            snapOffset: [snapOffset, 0, snapOffset],
+            snapOffset: [this.$bksConfig.ui.layout.primarySidebarMinWidth, 0, this.$bksConfig.ui.layout.secondarySidebarMinWidth],
             sizes: splitSizes,
             minSize: [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
             gutterSize: 5,
@@ -132,19 +133,24 @@
                 gutter.className = `gutter gutter-${direction}`
                 return gutter
             },
-            onDragEnd: () => {
-              const [primarySidebarSize, _m, secondarySidebarSize] = this.split.getSizes()
+            onDragEnd: ([primarySidebarSize, _mainContentSize, secondarySidebarSize]) => {
+              // Define a very small threshold to detect if sidebar has effectively zero width
+              // Use a tiny value like 1% to account for any rounding errors
+              const COLLAPSE_THRESHOLD = 1
 
-              if (this.splitElements[0].offsetWidth > snapOffset) {
+              // Check if sidebars are effectively collapsed
+              const primaryOpen = primarySidebarSize > COLLAPSE_THRESHOLD
+              const secondaryOpen = secondarySidebarSize > COLLAPSE_THRESHOLD
+
+              this.setPrimarySidebarOpen(primaryOpen)
+              this.setSecondarySidebarOpen(secondaryOpen)
+
+              if (primaryOpen) {
                 this.setPrimarySidebarSize(primarySidebarSize)
-              } else {
-                this.setPrimarySidebarOpen(false)
               }
 
-              if (this.splitElements[2].offsetWidth > snapOffset) {
+              if (secondaryOpen) {
                 this.setSecondarySidebarSize(secondarySidebarSize)
-              } else {
-                this.setSecondarySidebarOpen(false)
               }
             },
           })
@@ -183,20 +189,77 @@
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
       },
+      // Normalizes the sizes array to ensure they sum to exactly 100
+      normalizeSizes(sizes: [number, number, number]) {
+        const sum = sizes.reduce((acc, size) => acc + size, 0)
+        if (Math.abs(sum - 100) < 0.001) return sizes // Already very close to 100
+        if (sum === 0) return [0, 100, 0] // Fallback to default distribution
+        return sizes.map((size) => (size / sum) * 100)
+      },
+
+      // Expands a pane to the specified size while respecting minimum widths
+      expandSplitPane(paneIndex: number, targetSize: number) {
+        // size = in percent, width = in pixels
+        const containerSize = this.$refs.splitContainer.offsetWidth
+        const mainContentMinSize = (this.$bksConfig.ui.layout.mainContentMinWidth / containerSize) * 100
+        const primarySidebarMinSize = (this.$bksConfig.ui.layout.primarySidebarMinWidth / containerSize) * 100
+        const secondarySidebarMinSize = (this.$bksConfig.ui.layout.secondarySidebarMinWidth / containerSize) * 100
+
+        // Get current sizes
+        const currentSizes = this.split.getSizes()
+        const updatedSizes = [...currentSizes]
+
+        // Calculate available space and needed space
+        const mainIndex = 1 // Main content is always at index 1
+        const otherPaneIndex = paneIndex === 0 ? 2 : 0 // Other sidebar index
+
+        // Calculate size changes
+        const sizeChange = targetSize - currentSizes[paneIndex]
+        updatedSizes[paneIndex] = targetSize
+
+        // Try to take space from main content first
+        if (currentSizes[mainIndex] - sizeChange >= mainContentMinSize) {
+          // Main content has enough space
+          updatedSizes[mainIndex] = currentSizes[mainIndex] - sizeChange
+        } else {
+          // Main content needs to maintain minimum size
+          updatedSizes[mainIndex] = mainContentMinSize
+
+          // Need to take remaining space from other pane
+          const remainingChange = sizeChange - (currentSizes[mainIndex] - mainContentMinSize)
+          const otherPaneMinSize = otherPaneIndex === 0 ? primarySidebarMinSize : secondarySidebarMinSize
+
+          if (currentSizes[otherPaneIndex] - remainingChange >= otherPaneMinSize) {
+            // Other pane has enough space
+            updatedSizes[otherPaneIndex] = currentSizes[otherPaneIndex] - remainingChange
+          } else {
+            // Other pane needs to maintain minimum size
+            updatedSizes[otherPaneIndex] = otherPaneMinSize
+
+            // If we get here, we need to reduce the target pane's size
+            const totalAvailable = 100 - mainContentMinSize - otherPaneMinSize
+            updatedSizes[paneIndex] = totalAvailable
+          }
+        }
+
+        // Normalize sizes to ensure they sum to 100
+        const normalizedSizes = this.normalizeSizes(updatedSizes as [number, number, number])
+        this.split.setSizes(normalizedSizes)
+
+        if (this.primarySidebarOpen) {
+          this.setPrimarySidebarSize(normalizedSizes[0])
+        }
+        if (this.secondarySidebarOpen) {
+          this.setSecondarySidebarSize(normalizedSizes[2])
+        }
+      },
       toggleOpenPrimarySidebar(force?: boolean) {
         const open = typeof force === 'undefined'
           ? !this.primarySidebarOpen
           : force
 
         if (open) {
-          const previousSize = this.primarySidebarSize
-          const [primarySidebar, mainContent, secondarySidebar] = this.split.getSizes()
-          const updatedSizes = [
-            primarySidebar + previousSize,
-            mainContent - previousSize,
-            secondarySidebar,
-          ]
-          this.split.setSizes(updatedSizes)
+          this.expandSplitPane(0, this.primarySidebarSize)
         } else {
           this.split.collapse(0)
         }
@@ -212,14 +275,7 @@
           : force
 
         if (open) {
-          const previousSize = this.secondarySidebarSize
-          const [primarySidebar, mainContent, secondarySidebar] = this.split.getSizes()
-          const updatedSizes = [
-            primarySidebar,
-            mainContent - previousSize,
-            secondarySidebar + previousSize,
-          ]
-          this.split.setSizes(updatedSizes)
+          this.expandSplitPane(2, this.secondarySidebarSize)
         } else {
           this.split.collapse(2)
         }
