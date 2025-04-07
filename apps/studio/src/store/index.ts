@@ -34,6 +34,7 @@ import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
+import { SidebarModule } from './modules/SidebarModule'
 
 
 const log = RawLog.scope('store/index')
@@ -71,8 +72,6 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
-  openDetailView: boolean
-  tableTableSplitSizes: number[]
 }
 
 Vue.use(Vuex)
@@ -92,7 +91,8 @@ const store = new Vuex.Store<State>({
     pinnedConnections: PinConnectionModule,
     multiTableExports: MultiTableExportStoreModule,
     imports: ImportStoreModule,
-    backups: BackupModule
+    backups: BackupModule,
+    sidebar: SidebarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -126,8 +126,6 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
-    openDetailView: SmartLocalStorage.getBool('openDetailView', true),
-    tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
   },
 
   getters: {
@@ -247,9 +245,6 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
-    },
-    openDetailView(state) {
-      return state.openDetailView
     },
   },
   mutations: {
@@ -385,12 +380,6 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
-    openDetailView(state, value: boolean) {
-      state.openDetailView = value
-    },
-    tableTableSplitSizes(state, value: number[]) {
-      state.tableTableSplitSizes = value
-    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -506,6 +495,7 @@ const store = new Vuex.Store<State>({
     },
     async updateDatabaseList(context) {
       const databaseList = await context.state.connection.listDatabases();
+      log.info("databaseList: ", databaseList)
       context.commit('databaseList', databaseList)
     },
     async updateTables(context) {
@@ -604,18 +594,6 @@ const store = new Vuex.Store<State>({
       SmartLocalStorage.setBool(flag, value)
       context.commit(flag, value)
       return value
-    },
-    toggleOpenDetailView(context, value?: boolean) {
-      if (typeof value === 'undefined') {
-        value = !context.state.openDetailView
-      }
-      SmartLocalStorage.setBool('openDetailView', value)
-      context.commit('openDetailView', value)
-      return value
-    },
-    setTableTableSplitSizes(context, value: number[]) {
-      SmartLocalStorage.addItem('tableTableSplitSizes', value)
-      context.commit('tableTableSplitSizes', value)
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })

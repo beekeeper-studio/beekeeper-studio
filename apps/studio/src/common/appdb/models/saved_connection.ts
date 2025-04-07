@@ -317,7 +317,27 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         }
       }
 
-      const parsed = new ConnectionString(url.replaceAll(/\s/g, "%20"))
+      let cleanedUrl = url
+      let extractedUser = undefined
+      let extractedPassword = undefined
+  
+      if (url.includes('@')) {
+        const lastAtIndex = url.lastIndexOf('@')
+        let firstDoubleSlash = url.indexOf('//') + 2
+        if (firstDoubleSlash === 1) firstDoubleSlash = 0
+        const credentials = url.substring(firstDoubleSlash, lastAtIndex)
+  
+        const [user, ...passwordParts] = credentials.split(':')
+        extractedUser = user
+        extractedPassword = passwordParts.join(':')
+  
+        cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
+      }
+
+      const encodedUrl = encodeURI(cleanedUrl)
+      const parsed = new ConnectionString(encodedUrl)
+      const parsedUncoded = new ConnectionString(url)
+  
       this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
@@ -325,10 +345,10 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
       if (parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) {
         this.connectionType = 'cockroachdb'
-        if (parsed.params?.options) {
+        if (parsedUncoded.params?.options) {
           // TODO: fix this
           const regex = /--cluster=([A-Za-z0-9\-_]+)/
-          const clusters = parsed.params.options.match(regex)
+          const clusters = parsedUncoded.params.options.match(regex)
           this.options['cluster'] = clusters ? clusters[1] : undefined
         }
       }
@@ -338,8 +358,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       }
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port
-      this.username = parsed.user || this.username
-      this.password = parsed.password || this.password
+      this.username = extractedUser ?? parsed.user
+      this.password = extractedPassword ?? parsed.password
       this.defaultDatabase = parsed.path?.join('/') ?? this.defaultDatabase
       return true
     } catch (ex) {
