@@ -2,10 +2,23 @@
   <div class="license-information card card-flat padding">
     <h3 class="card-title flex flex-middle">
       <span class="expand">{{ license.email }}</span>
-      <a @click.prevent="destroy" class="btn btn-danger btn-icon"><i class="material-icons">delete_outline</i><span>{{ $t('Remove from app') }}</span></a>
+      <a v-if="!licenseStatus.fromFile" @click.prevent="destroy" class="btn btn-danger btn-icon">
+        <i class="material-icons">delete_outline</i>
+        <span>{{ $t('Remove from app') }}</span>
+      </a>
     </h3>
     <div class="card-body">
       <table class="simple-table">
+        <tr>
+          <td>{{ $t('License Type') }} <a href="https://docs.beekeeperstudio.io/">{{ $t('learn more') }}</a></td>
+          <td>{{ licenseStatus.fromFile ? $t("Offline File License") : $t("Online License") }}</td>
+        </tr>
+        <template v-if="licenseStatus.fromFile">
+          <tr>
+            <td>{{ $t('File Path') }}</td>
+            <td>{{ licenseStatus.filePath }}</td>
+          </tr>
+        </template>
         <tr>
           <td>{{ $t('Status') }}</td>
           <td>{{ status }}</td>
@@ -30,6 +43,7 @@
     </div>
   </div>
 </template>
+
 <style scoped>
 table.simple-table {
   width: 100%;
@@ -56,6 +70,7 @@ table.simple-table th {
   text-align: left;
 }
 </style>
+
 <script lang="js">
 export default {
   props: ['license', 'licenseStatus'],
@@ -77,6 +92,5 @@ export default {
       await this.$store.dispatch('licenses/remove', this.license)
     }
   }
-
 }
 </script>

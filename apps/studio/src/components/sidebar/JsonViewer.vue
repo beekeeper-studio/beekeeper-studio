@@ -35,7 +35,7 @@
               v-for="option in menuOptions"
               :key="option.name"
               :toggled="option.checked"
-              togglable
+              :togglable="typeof option.checked !== 'undefined'"
               @click.prevent="option.handler"
             >
               <x-label>{{ option.name }}</x-label>
@@ -44,20 +44,22 @@
         </x-button>
       </div>
     </div>
-    <text-editor
-      :fold-gutter="true"
-      :fold-all="foldAll"
-      :unfold-all="unfoldAll"
-      :value="text"
-      :mode="mode"
-      :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
-      :markers="markers"
-      :plugins="textEditorPlugins"
-      :line-wrapping="wrapText"
-      :line-gutters="lineGutters"
-      :line-numbers="false"
-      :extra-keybindings="disableReplaceKeybindings"
-    />
+    <div class="text-editor-wrapper">
+      <text-editor
+        :fold-gutter="true"
+        :fold-all="foldAll"
+        :unfold-all="unfoldAll"
+        :value="text"
+        :mode="mode"
+        :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
+        :markers="markers"
+        :plugins="textEditorPlugins"
+        :line-wrapping="wrapText"
+        :line-gutters="lineGutters"
+        :line-numbers="false"
+        :extra-keybindings="disableReplaceKeybindings"
+      />
+    </div>
     <div class="empty-state" v-show="empty">
       {{ $t('Open a table to view its data') }}
     </div>
@@ -144,6 +146,9 @@ export default Vue.extend({
       return { name: "javascript", json: true };
     },
     text() {
+      if (this.empty) {
+        return ""
+      }
       return this.sourceMap.json
     },
     debouncedFilter: {
