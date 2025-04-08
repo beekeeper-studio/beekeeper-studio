@@ -213,6 +213,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
     },
     computed: {
       ...mapGetters(['dialectData', 'dialect']),
+      ...mapState({currentDatabase: 'database'}),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
       },
@@ -296,6 +297,9 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }),
     },
     watch: {
+      currentDatabase(){
+        this.filterQuery = null
+      },
       loadedWithPins (loaded, oldloaded) {
         if (loaded && (!oldloaded)) {
           this.$nextTick(() => {
