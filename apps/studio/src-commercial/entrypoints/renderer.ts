@@ -1,3 +1,9 @@
+// Uint8Array pollyfills https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/fromBase64
+import 'core-js/actual/typed-array/from-base64'
+import 'core-js/actual/typed-array/from-hex'
+import 'core-js/actual/typed-array/to-base64'
+import 'core-js/actual/typed-array/to-hex'
+
 import Vue from 'vue'
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
@@ -36,6 +42,7 @@ import { WebPluginManager } from '@/services/plugin/web'
 (async () => {
 
   await window.main.requestPlatformInfo();
+  await window.main.requestBksConfigSource();
   rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
@@ -117,7 +124,10 @@ import { WebPluginManager } from '@/services/plugin/web'
 
 
     Vue.config.productionTip = false
-    Vue.use(VueHotkey)
+    Vue.use(VueHotkey, {
+      "pageup": 33,
+      "pagedown": 34
+    })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)

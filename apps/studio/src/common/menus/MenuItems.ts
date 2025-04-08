@@ -114,7 +114,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     reload: {
       id: 'reload-window',
-      label: "DEV Force Reload",
+      label: "Reload Window",
       accelerator: "CommandOrControl+Shift+R",
       click: actionHandler.reload
     },
@@ -159,13 +159,20 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",
+      accelerator: "Shift+CommandOrControl+Q",
       click: actionHandler.disconnect
     },
-    sidebarToggle: {
+    primarySidebarToggle: {
       id: 'menu-toggle-sidebar',
-      label: 'Toggle Sidebar',
+      label: 'Toggle Primary Sidebar',
       accelerator: "Alt+S",
-      click: actionHandler.toggleSidebar,
+      click: actionHandler.togglePrimarySidebar,
+    },
+    secondarySidebarToggle: {
+      id: 'menu-secondary-sidebar',
+      label: 'Toggle Secondary Sidebar',
+      // accelerator: "Alt+S",
+      click: actionHandler.toggleSecondarySidebar,
     },
     themeToggle: {
       id: "theme-toggle-menu",

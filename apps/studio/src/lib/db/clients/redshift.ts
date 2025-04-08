@@ -1,4 +1,3 @@
-import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
@@ -6,6 +5,7 @@ import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableP
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
+import BksConfig from "@/common/bksConfig";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
@@ -254,8 +254,8 @@ export class RedshiftClient extends PostgresClient {
       password: passwordResolver || server.config.password || undefined,
       database: database.database,
       max: 5, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: globals.psqlTimeout,
-      idleTimeoutMillis: globals.psqlIdleTimeout,
+      connectionTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
+      idleTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
     };
 
     return this.configurePool(config, server, tempUser);

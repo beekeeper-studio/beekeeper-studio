@@ -10,6 +10,7 @@
 </template>
 
 <script lang="ts">
+import "codemirror/addon/display/autorefresh";
 import "codemirror/addon/comment/comment";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/search/search";
@@ -41,10 +42,15 @@ import {
 } from "@/lib/editor/vim";
 import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
+import { EditorMarker, LineGutter } from "@/lib/editor/utils";
+import { TextEditorPlugin } from "@/lib/editor/plugins/TextEditorPlugin";
+import rawLog from '@bksLogger'
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
 }
+
+const log = rawLog.scope('TextEditor')
 
 export default {
   props: [
@@ -74,6 +80,7 @@ export default {
     "bookmarks",
     "foldAll",
     "unfoldAll",
+    "lineGutters",
   ],
   data() {
     return {
@@ -81,8 +88,10 @@ export default {
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
+      activeLineGutters: [],
       wasEditorFocused: false,
       firstInitialization: true,
+      initializedPlugins: [],
     };
   },
   computed: {
@@ -175,11 +184,20 @@ export default {
     bookmarks() {
       this.initializeBookmarks();
     },
+    lineGutters() {
+      this.initializeLineGutters();
+    },
     foldAll() {
       CodeMirror.commands.foldAll(this.editor)
     },
     unfoldAll() {
       CodeMirror.commands.unfoldAll(this.editor)
+    },
+    plugins() {
+      this.destroyPlugins();
+      if (this.editor) {
+        this.initializePlugins(this.editor);
+      }
     },
   },
   methods: {
@@ -198,15 +216,8 @@ export default {
     async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
-      const indicatorOpen = document.createElement("span");
-      indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
-      indicatorOpen.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_down</i>`;
-
-      const indicatorFolded = document.createElement("span");
-      indicatorFolded.classList.add("foldgutter", "btn-fab", "open-close");
-      indicatorFolded.innerHTML = `<i class="dropdown-icon material-icons">keyboard_arrow_right</i>`;
-
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
+        autoRefresh: true,
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
         theme: "monokai",
@@ -217,7 +228,6 @@ export default {
           [this.cmCtrlOrCmd("R")]: "replace",
           [this.cmCtrlOrCmd("Shift-R")]: "replaceAll",
         },
-        // @ts-expect-error not fully typed
         options: {
           closeOnBlur: false,
         },
@@ -227,8 +237,8 @@ export default {
         keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
-          gutters: ["CodeMirror-linenumbers", { className: "CodeMirror-foldgutter", style: "width: 18px" }],
-          foldGutter: { indicatorOpen, indicatorFolded },
+          gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+          foldGutter: true,
         }),
         // Remove JSON root key from folding
         ...(this.removeJsonRootBrackets && {
@@ -343,11 +353,7 @@ export default {
         }
       }
 
-      if (this.plugins) {
-        this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
-          plugin(cm);
-        });
-      }
+      this.initializePlugins(cm)
 
       if (this.firstInitialization && this.focus) {
         cm.focus();
@@ -359,11 +365,12 @@ export default {
       this.$nextTick(() => {
         this.initializeMarkers();
         this.initializeBookmarks();
+        this.initializeLineGutters();
         this.$emit("update:initialized", true);
       })
     },
     initializeMarkers() {
-      const markers = this.markers || [];
+      const markers: EditorMarker[] = this.markers || [];
       if (!this.editor) return;
 
       // Cleanup existing bookmarks
@@ -374,7 +381,8 @@ export default {
         let markInstance: TextMarker;
         if (marker.type === "error") {
           markInstance = this.editor.markText(marker.from, marker.to, {
-            className: "error",
+            className: "bks-error-marker",
+            attributes: { title: marker.message },
           });
         } else if (marker.type === "highlight") {
           markInstance = this.editor.markText(marker.from, marker.to, {
@@ -421,12 +429,53 @@ export default {
         this.bookmarkInstances.push(mark);
       }
     },
+    initializeLineGutters() {
+      const lineGutters = this.lineGutters || [];
+      if (!this.editor) return;
+
+      // Cleanup existing line gutters
+      this.activeLineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.removeLineClass(lineGutter.line, "gutter", "changed");
+      })
+      this.activeLineGutters = []
+
+      lineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.addLineClass(lineGutter.line, "gutter", "changed");
+        this.activeLineGutters.push(lineGutter)
+      })
+    },
+    initializePlugins(editor: CodeMirror.Editor) {
+      this.plugins?.forEach((plugin: ((editor: CodeMirror.Editor) => Function) | TextEditorPlugin) => {
+        try {
+          if (typeof plugin === "function") {
+            const destroy = plugin(editor);
+            this.initializedPlugins.push({ destroy });
+          } else {
+            plugin.initialize(editor);
+            this.initializedPlugins.push(plugin);
+          }
+        } catch (e) {
+          log.error("Error initializing plugin", e)
+        }
+      });
+    },
     destroyEditor() {
+      this.destroyPlugins();
       if (this.editor) {
         this.editor
           .getWrapperElement()
           .parentNode.removeChild(this.editor.getWrapperElement());
       }
+    },
+    destroyPlugins() {
+      this.initializedPlugins.forEach((plugin: TextEditorPlugin) => {
+        try {
+          plugin.destroy()
+        } catch (e) {
+          log.error("Error destroying plugin", e)
+        }
+      })
+      this.initializedPlugins = []
     },
     showContextMenu(event) {
       const hasSelectedText = this.editor.getSelection();
@@ -528,9 +577,18 @@ export default {
         menu.options = menu.options.filter((option) => !option.write);
       }
 
-      const customOptions = this.contextMenuOptions
-        ? this.contextMenuOptions(event, menu.options)
-        : undefined;
+      let customOptions: typeof menu.options | false | undefined;
+
+      for (const plugin of this.initializedPlugins) {
+        if (plugin.beforeOpeningContextMenu) {
+          customOptions = plugin.beforeOpeningContextMenu(event, menu.options)
+        }
+      }
+
+      // FIXME remove this in favor of plugin
+      if (this.contextMenuOptions) {
+        customOptions = this.contextMenuOptions(event, customOptions || menu.options);
+      }
 
       if (customOptions === false) {
         return;

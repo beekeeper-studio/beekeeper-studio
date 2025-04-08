@@ -221,9 +221,9 @@ export default Vue.extend({
       return additional;
     },
     keymap() {
-      return {
-        [this.ctrlOrCmd('f')]: this.focusOnInput,
-      }
+      return this.$vHotkeyKeymap({
+        'tableTable.focusOnFilterInput': this.focusOnInput,
+      });
     },
     externalFilters() {
       return this.reactiveFilters;
@@ -319,13 +319,6 @@ export default Vue.extend({
       },
     },
     filterMode() {
-      this.submit();
-    },
-    filterRaw() {
-      const focusIsOnInput = document.activeElement.isSameNode(this.$refs.valueInput)
-      if (!focusIsOnInput) {
-        this.updateMinimalModeByFilterRaw()
-      }
       this.submit();
     },
     externalFilters() {

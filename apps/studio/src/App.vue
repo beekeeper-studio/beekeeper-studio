@@ -28,6 +28,7 @@
     />
     <dropzone />
     <data-manager />
+    <configuration-warning-modal />
     <enter-license-modal />
     <workspace-sign-in-modal />
     <workspace-create-modal />
@@ -55,6 +56,7 @@ import AutoUpdater from './components/AutoUpdater.vue'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
+import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vue'
 
 import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
 import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
@@ -90,7 +92,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
-    PluginManagerModal,
+    PluginManagerModal, ConfigurationWarningModal,
   },
   data() {
     return {
@@ -208,6 +210,9 @@ export default Vue.extend({
       const isValidDateExpired = compare ? !prev.isValidDateExpired && curr.isValidDateExpired : this.status.isValidDateExpired
       const isSupportDateExpired = compare ? !prev.isSupportDateExpired && curr.isSupportDateExpired : this.status.isSupportDateExpired
       const status = compare ? curr : this.status
+      if (curr?.fromFile && curr?.noLicenseKey) {
+        this.$noty.error(`Something is wrong with your license file: ${curr?.condition.join(", ") }`)
+      }
 
       if (isValidDateExpired) {
         this.$root.$emit(AppEvent.licenseValidDateExpired, status)
