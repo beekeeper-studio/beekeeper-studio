@@ -68,7 +68,13 @@ $button-height:     $statusbar-height * 0.72;
   }
 
 
+  .connection-button-wrapper {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .connection-button {
+    height: 100%;
     > .btn{
       padding: 0;
       margin: 0;
@@ -302,12 +308,15 @@ $button-height:     $statusbar-height * 0.72;
     font-size: 0.85rem;
   }
   .connection-button {
-    margin-left: 0.75rem;
     .material-icons {
       font-size: 20px;
       text-align: center;
+      margin: 0;
+      width: calc(var(--connection-button-icon-width) + 0.2rem);
     }
     > .btn {
+      width: 100%;
+      height: 100%;
       text-align: left;
       border-radius: 0;
       --trigger-effect: none;

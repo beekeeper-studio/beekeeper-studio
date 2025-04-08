@@ -31,7 +31,10 @@
       </div>
       <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
-    <global-status-bar />
+    <global-status-bar
+      :connection-button-width="primarySidebarWidth"
+      :connection-button-icon-width="$bksConfig.ui.layout.primarySidebarMinWidth"
+    />
     <quick-search
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
@@ -67,6 +70,8 @@
         split: null,
         quickSearchShown: false,
         initializing: true,
+        resizeObserver: null,
+        primarySidebarWidth: 0,
       }
       /* eslint-enable */
     },
@@ -156,6 +161,13 @@
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
+        this.resizeObserver = new ResizeObserver((entries) => {
+          const primarySidebar = entries[0]
+          this.primarySidebarWidth = primarySidebar.contentRect.width
+        })
+        this.$nextTick(() => {
+          this.resizeObserver.observe(this.splitElements[0])
+        })
       })
     },
     beforeDestroy() {
@@ -166,6 +178,9 @@
       this.unregisterHandlers(this.rootBindings)
       if(this.split) {
         this.split.destroy()
+      }
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect()
       }
     },
     methods: {

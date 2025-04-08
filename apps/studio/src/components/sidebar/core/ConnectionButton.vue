@@ -1,6 +1,6 @@
 <template>
   <div
-    class="connection-button flex flex-middle"
+    class="connection-button"
     v-if="config"
     :title="$bks.buildConnectionString(config)"
   >
