@@ -161,6 +161,10 @@
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
+        // This is the easiest way to track the width of the primary sidebar
+        // in real time because sidebar can be resized by dragging or clicking
+        // the toggle button. An alternative to this would be assigning the
+        // width on drag and click events.
         this.resizeObserver = new ResizeObserver((entries) => {
           const primarySidebar = entries[0]
           this.primarySidebarWidth = primarySidebar.contentRect.width
