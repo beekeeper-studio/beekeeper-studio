@@ -61,13 +61,10 @@ const SettingStoreModule: Module<State, any> = {
     settings(state) {
       return state.settings
     },
-    themeValue(state, _getters, _rootState, rootGetters) {
+    themeValue(state) {
       const theme = state.settings.theme ? state.settings.theme.value : null;
       if (!theme) return null
-      if (rootGetters.isCommunity && ['system', 'dark', 'light'].includes(theme as string)) {
-        return theme
-      }
-      return rootGetters.isUltimate ? theme : 'system';
+      return theme;
     },
     /** The keymap type to be used in text editor */
     userKeymap(state) {
