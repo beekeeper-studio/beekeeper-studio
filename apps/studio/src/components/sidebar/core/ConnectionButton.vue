@@ -1,41 +1,45 @@
 <template>
-  <x-button
-    menu
-    class="btn btn-flat btn-icon connection-button"
+  <div
+    class="connection-button flex flex-middle"
     v-if="config"
     :title="$bks.buildConnectionString(config)"
   >
-    <i class="material-icons">link</i>
-    <span class="connection-name truncate expand">{{ connectionName }}</span>
-    <span
-      class="connection-type badge truncate"
-      v-tooltip="databaseVersion"
-    >{{ connectionType }}</span>
-    <x-menu>
-      <x-menuitem
-        @click.prevent="disconnect(false)"
-        class="red"
-      >
-        <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
-      </x-menuitem>
-      <x-menuitem @click.prevent="$modal.show('config-save-modal')">
-        <x-label v-if="config.id">
-          <i class="material-icons">edit</i>Edit Connection
-        </x-label>
-        <x-label v-else>
-          <i class="material-icons">save</i>Save Connection
-        </x-label>
-      </x-menuitem>
-      <!-- FIXME: Let's not use connection.connectionType -->
-      <x-menuitem
-        v-if="connection.connectionType === 'libsql' && connection.server.config.libsqlOptions.syncUrl"
-        @click.prevent="syncDatabase"
-      >
-        <x-label>
-          <i class="material-icons">sync</i>Sync Database
-        </x-label>
-      </x-menuitem>
-    </x-menu>
+    <x-button
+      class="btn btn-link btn-icon"
+      menu
+    >
+      <i class="material-icons">link</i>
+      <span class="connection-name truncate expand">{{ connectionName }}</span>
+      <span
+        class="connection-type badge truncate"
+        v-tooltip="databaseVersion"
+      >{{ connectionType }}</span>
+      <x-menu>
+        <x-menuitem
+          @click.prevent="disconnect(false)"
+          class="red"
+        >
+          <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="$modal.show('config-save-modal')">
+          <x-label v-if="config.id">
+            <i class="material-icons">edit</i>Edit Connection
+          </x-label>
+          <x-label v-else>
+            <i class="material-icons">save</i>Save Connection
+          </x-label>
+        </x-menuitem>
+        <!-- FIXME: Let's not use connection.connectionType -->
+        <x-menuitem
+          v-if="connection.connectionType === 'libsql' && connection.server.config.libsqlOptions.syncUrl"
+          @click.prevent="syncDatabase"
+        >
+          <x-label>
+            <i class="material-icons">sync</i>Sync Database
+          </x-label>
+        </x-menuitem>
+      </x-menu>
+    </x-button>
     <portal to="modals">
       <modal
         class="vue-dialog beekeeper-modal save-connection-modal"
@@ -111,7 +115,7 @@
         </form>
       </modal>
     </portal>
-  </x-button>
+  </div>
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex'
