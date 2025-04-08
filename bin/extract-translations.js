@@ -19,6 +19,18 @@ const EXCLUDED_KEYS = [
   'example'
 ];
 
+// Helper function to normalize translation keys
+// Removes escape characters to avoid duplications
+function normalizeTranslationKey(key) {
+  // Replace escaped single and double quotes and other common escapes
+  return key.replace(/\\'/g, "'")
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            .replace(/\\n/g, '\n')
+            .replace(/\\r/g, '\r')
+            .replace(/\\t/g, '\t');
+}
+
 // Helper function to extract i18n translation strings from content
 function extractTranslationKeys(content) {
   const keys = new Set();
@@ -29,7 +41,7 @@ function extractTranslationKeys(content) {
   
   while ((match = simpleRegex.exec(content)) !== null) {
     if (!EXCLUDED_KEYS.includes(match[1])) {
-      keys.add(match[1]);
+      keys.add(normalizeTranslationKey(match[1]));
     }
   }
   
@@ -38,7 +50,7 @@ function extractTranslationKeys(content) {
   while ((match = interpolationRegex.exec(content)) !== null) {
     // Only add if it's not already added by the simpler regex and not excluded
     if (!EXCLUDED_KEYS.includes(match[1])) {
-      keys.add(match[1]);
+      keys.add(normalizeTranslationKey(match[1]));
     }
   }
   
@@ -46,7 +58,7 @@ function extractTranslationKeys(content) {
   const attributeRegex = /v-\w+(?::[^=]+)?=["']\$t\(['"](.+?)['"](?:,\s*\{.+?\})?\)['"]/g;
   while ((match = attributeRegex.exec(content)) !== null) {
     if (!EXCLUDED_KEYS.includes(match[1])) {
-      keys.add(match[1]);
+      keys.add(normalizeTranslationKey(match[1]));
     }
   }
   
@@ -54,7 +66,7 @@ function extractTranslationKeys(content) {
   const jsxRegex = /\{\s*\$t\(['"](.+?)['"]\)\s*\}/g;
   while ((match = jsxRegex.exec(content)) !== null) {
     if (!EXCLUDED_KEYS.includes(match[1])) {
-      keys.add(match[1]);
+      keys.add(normalizeTranslationKey(match[1]));
     }
   }
   
@@ -62,7 +74,7 @@ function extractTranslationKeys(content) {
   const templateLiteralRegex = /\$\{\s*\$t\(['"](.+?)['"]\)\s*\}/g;
   while ((match = templateLiteralRegex.exec(content)) !== null) {
     if (!EXCLUDED_KEYS.includes(match[1])) {
-      keys.add(match[1]);
+      keys.add(normalizeTranslationKey(match[1]));
     }
   }
   
@@ -154,9 +166,14 @@ function updateLocaleFiles(keys) {
       let newKeysCount = 0;
       const newKeys = [];
       
-      // Find new keys
+      // Find new keys, checking both original and normalized versions
       for (const key of keys) {
-        if (!translations[key]) {
+        // Check if the key (or its escaped version) already exists in translations
+        const keyExists = translations[key] !== undefined || 
+                          translations[key.replace(/'/g, "\\'")] !== undefined ||
+                          translations[key.replace(/"/g, '\\"')] !== undefined;
+        
+        if (!keyExists) {
           newKeys.push(key);
           newKeysCount++;
         }

@@ -845,5 +845,10 @@
   "Go to CockroachDB online -> Connect -> parameters only -> copy from \\'options\\'": null,
   "Set \\'domain\\' to be logged in using Windows Integrated Authentication (NTLM)": null,
   "This is the <code>\\'Server name\\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>": null,
-  "This can be found in the <code>\\'Microsoft Entra ID\\'</code> section of Azure, <br/> in the Overview labelled <code>\\'Tenant ID\\'</code>": null
+  "This can be found in the <code>\\'Microsoft Entra ID\\'</code> section of Azure, <br/> in the Overview labelled <code>\\'Tenant ID\\'</code>": null,
+  "License Type": "许可证类型",
+  "learn more": "了解更多",
+  "Offline File License": "离线文件许可证",
+  "Online License": "在线许可证",
+  "File Path": "文件路径"
 }
