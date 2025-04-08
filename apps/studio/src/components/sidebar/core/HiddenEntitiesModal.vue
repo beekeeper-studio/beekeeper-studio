@@ -11,7 +11,7 @@
     >
       <div class="dialog-content">
         <div class="dialog-c-title flex flex-middle">
-          Hidden Entities
+          {{ $t('Hidden Entities') }}
         </div>
         <a
           class="close-btn btn btn-fab"
@@ -29,7 +29,7 @@
             >
               <div>
                 <i
-                  title="Schema"
+                  :title="$t('Schema')"
                   class="schema-icon item-icon material-icons"
                 >folder</i>
                 <span>{{ schema }}</span>
@@ -39,7 +39,7 @@
                 @click="unhideSchema(index)"
                 class="btn btn-flat btn-small"
               >
-                Unhide
+                {{ $t('Unhide') }}
               </button>
             </div>
             <div
@@ -56,14 +56,14 @@
                 @click="unhideEntity(index)"
                 class="btn btn-flat btn-small"
               >
-                Unhide
+                {{ $t('Unhide') }}
               </button>
             </div>
             <span
               class="no-entities"
               v-show="noHidden"
             >
-              No hidden entities
+              {{ $t('No hidden entities') }}
             </span>
           </div>
         </div>

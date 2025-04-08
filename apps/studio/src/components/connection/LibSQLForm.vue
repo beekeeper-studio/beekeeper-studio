@@ -3,31 +3,31 @@
     <div class="alert alert-warning">
       <i class="material-icons">warning</i>
       <span>
-        LibSQL support is still in beta. Please report any problems on <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">our issue tracker</a>.
+        {{ $t('LibSQL support is still in beta. Please report any problems on') }} <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">{{ $t('our issue tracker') }}</a>.
       </span>
     </div>
     <div class="form-group col">
-      <label for="connection-mode">Connection Mode</label>
+      <label for="connection-mode">{{ $t('Connection Mode') }}</label>
       <select id="connection-mode" v-model="config.libsqlOptions.mode">
         <option value="url">
-          URL
+          {{ $t('URL') }}
         </option>
         <option value="file">
-          File
+          {{ $t('File') }}
         </option>
       </select>
     </div>
     <template v-if="config.libsqlOptions.mode === 'url'">
       <div class="form-group col">
         <label for="url" required>
-          Database URL
+          {{ $t('Database URL') }}
           <i
             class="material-icons"
             v-tooltip="{
-              content: `Supports <b>libsql:</b>, <b>http:</b>, <b>https:</b>,
+              content: $t(`Supports <b>libsql:</b>, <b>http:</b>, <b>https:</b>,
                           <b>ws:</b>, <b>wss:</b> and <b>file:</b> URL. Pass
                           <b>:memory:</b> or leave it empty to open an in-memory
-                          database.`,
+                          database.`),
               html: true,
             }"
           >
@@ -43,7 +43,7 @@
         >
       </div>
       <div class="form-group col">
-        <label for="auth-token" required>Authentication Token</label>
+        <label for="auth-token" required>{{ $t('Authentication Token') }}</label>
         <textarea
           id="auth-token"
           class="form-control"
@@ -55,7 +55,7 @@
     </template>
     <template v-if="config.libsqlOptions.mode === 'file'">
       <div class="form-group col">
-        <label for="default-database" required>Database File</label>
+        <label for="default-database" required>{{ $t('Database File') }}</label>
         <file-picker
           v-model="config.defaultDatabase"
           input-id="default-database"
@@ -63,13 +63,13 @@
         <snap-external-warning />
       </div>
     </template>
-    <toggle-form-area title="Embedded Replica">
+    <toggle-form-area :title="$t('Embedded Replica')">
       <div class="alert alert-info">
         <i class="material-icons-outlined">info</i>
-        <span>Make sure your local file has been used for replica or it's a non existing file.</span>
+        <span>{{ $t('Make sure your local file has been used for replica or it\'s a non existing file.') }}</span>
       </div>
       <div class="form-group col">
-        <label for="sync-url" required>Sync URL</label>
+        <label for="sync-url" required>{{ $t('Sync URL') }}</label>
         <input
           id="sync-url"
           class="form-control"
@@ -79,7 +79,7 @@
         >
       </div>
       <div class="form-group col">
-        <label for="auth-token" required>Authentication Token</label>
+        <label for="auth-token" required>{{ $t('Authentication Token') }}</label>
         <textarea
           id="auth-token"
           class="form-control"
@@ -89,7 +89,7 @@
         />
       </div>
       <div class="form-group col">
-        <label for="sync-period" required>Sync Period <span class="hint">(optional, in seconds)</span></label>
+        <label for="sync-period" required>{{ $t('Sync Period') }} <span class="hint">({{ $t('optional, in seconds') }})</span></label>
         <input
           id="sync-period"
           class="form-control"

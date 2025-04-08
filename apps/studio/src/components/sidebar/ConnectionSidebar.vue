@@ -11,7 +11,7 @@
           @click.prevent="$emit('create')"
         >
           <i class="material-icons">add</i>
-          <span>New Connection</span>
+          <span>{{ $t('New Connection') }}</span>
         </a>
       </div>
       <!-- Filter -->
@@ -21,7 +21,7 @@
             <input
               class="filter-input"
               type="text"
-              placeholder="Filter"
+              :placeholder="String($t('Filter'))"
               v-model="connFilter"
             >
             <x-buttons class="filter-actions">
@@ -48,7 +48,7 @@
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  Pinned <span class="badge">{{ (pinnedConnections || []).length }}</span>
+                  {{ $t('Pinned') }} <span class="badge">{{ (pinnedConnections || []).length }}</span>
                 </div>
               </div>
               <span class="expand" />
@@ -59,7 +59,7 @@
             <error-alert
               :error="error"
               v-if="error"
-              title="Problem loading connections"
+              :title="String($t('Problem loading connections'))"
               @close="error = null"
               :closable="true"
             />
@@ -95,14 +95,14 @@
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  Saved <span class="badge">{{ (filteredConnections || []).length }}</span>
+                  {{ $t('Saved') }} <span class="badge">{{ (filteredConnections || []).length }}</span>
                 </div>
                 <span class="expand" />
                 <div class="actions">
                   <a
                     v-if="isCloud"
                     @click.prevent="importFromLocal"
-                    title="Import connections from local workspace"
+                    :title="String($t('Import connections from local workspace'))"
                   ><i class="material-icons">save_alt</i></a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
@@ -129,7 +129,7 @@
             <error-alert
               :error="error"
               v-if="error"
-              title="Problem loading connections"
+              :title="String($t('Problem loading connections'))"
               @close="error = null"
               :closable="true"
             />
@@ -139,7 +139,7 @@
               class="empty"
             >
               <div class="empty-title">
-                No Saved Connections
+                {{ $t('No Saved Connections') }}
               </div>
               <div
                 class="empty-actions"
@@ -148,8 +148,8 @@
                 <a
                   class="btn btn-flat btn-block btn-icon"
                   @click.prevent="importFromLocal"
-                  title="Import connections from local workspace"
-                ><i class="material-icons">save_alt</i> Import</a>
+                  :title="String($t('Import connections from local workspace'))"
+                ><i class="material-icons">save_alt</i> {{ $t('Import') }}</a>
               </div>
             </div>
             <nav
@@ -160,7 +160,7 @@
                 v-for="{ folder, connections } in foldersWithConnections"
                 :key="`${folder.id}-${connections.length}`"
                 :title="`${folder.name} (${connections.length})`"
-                placeholder="No Items"
+                :placeholder="String($t('No Items'))"
                 :expanded-initially="true"
               >
                 <connection-list-item
@@ -203,7 +203,7 @@
           <div class="list-group">
             <div class="list-heading">
               <div class="sub row flex-middle noselect">
-                Recent <span class="badge">{{ usedConfigs.length }}</span>
+                {{ $t('Recent') }} <span class="badge">{{ usedConfigs.length }}</span>
               </div>
             </div>
             <nav class="list-body">

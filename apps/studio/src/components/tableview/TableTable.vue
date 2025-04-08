@@ -24,7 +24,7 @@
         v-show="isEmpty"
         class="empty-placeholder"
       >
-        No Data
+        {{ $t("No Data") }}
       </div>
       <div
         class="table-view-wrapper"
@@ -118,7 +118,7 @@
             class="btn btn-flat"
             @click.prevent="discardChanges"
           >
-            Reset
+            {{ $t('Reset') }}
           </x-button>
           <x-buttons class="pending-changes">
             <x-button
@@ -135,7 +135,7 @@
                 class="badge"
                 v-if="!error"
               ><small>{{ pendingChangesCount }}</small></span>
-              <span>Apply</span>
+              <span>{{ $t('Apply') }}</span>
             </x-button>
             <x-button
               v-if="dialect !== 'mongodb'"
@@ -145,11 +145,11 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="saveChanges">
-                  <x-label>Apply</x-label>
+                  <x-label>{{ $t('Apply') }}</x-label>
                   <x-shortcut value="Control+S" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="copyToSql">
-                  <x-label>Copy to SQL</x-label>
+                  <x-label>{{ $t('Copy to SQL') }}</x-label>
                   <x-shortcut value="Control+Shift+S" />
                 </x-menuitem>
               </x-menu>
@@ -178,13 +178,13 @@
             :title="readOnlyNotice"
           >
             <i class="material-icons-outlined">info</i>
-            <span> Editing Disabled</span>
+            <span> {{ $t('Editing Disabled') }}</span>
           </span>
         </template>
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
+          v-tooltip="`${$t('Refresh Table')} (${$bksConfig.keybindings.tableTable.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -192,7 +192,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${$bksConfig.keybindings.tableTable.addRow})`"
+          v-tooltip="`${$t('Add row')} (${$bksConfig.keybindings.tableTable.addRow})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -209,22 +209,22 @@
             >
               <x-label>
                 <i class="material-icons">{{ this.isCassandra ? 'check' : 'horizontal_rule' }}</i>
-                Allow Filtering
+                {{ $t('Allow Filtering') }}
               </x-label>
             </x-menuitem>
             <x-menuitem @click="exportTable" :disabled="dialectData?.disabledFeatures?.exportTable">
-              <x-label>Export whole table</x-label>
+              <x-label>{{ $t('Export whole table') }}</x-label>
             </x-menuitem>
 
             <x-menuitem @click="exportFiltered" :disabled="dialectData?.disabledFeatures?.exportTable">
-              <x-label>Export filtered view</x-label>
+              <x-label>{{ $t('Export filtered view') }}</x-label>
             </x-menuitem>
             <x-menuitem @click="showColumnFilterModal">
-              <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
+              <x-label>{{ $t('Hide columns') }} ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
             <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile">
               <x-label>
-                Import from file
+                {{ $t('Import from file') }}
                 <i
                   v-if="$store.getters.isCommunity"
                   class="material-icons menu-icon"
@@ -232,7 +232,7 @@
               </x-label>
             </x-menuitem>
             <x-menuitem @click="openQueryTab" :disabled="dialect === 'mongodb'">
-              <x-label>Copy view to SQL</x-label>
+              <x-label>{{ $t('Copy view to SQL') }}</x-label>
             </x-menuitem>
           </x-menu>
         </x-button>
@@ -247,11 +247,10 @@
         <div v-kbd-trap="true">
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Confirmation
+              {{ $t('Confirmation') }}
             </div>
             <div class="modal-form">
-              Sorting or Filtering will discard {{ pendingChangesCount }} pending change(s) to <b>{{ table.name }}</b>.
-              Are you sure?
+              {{ $t('Sorting or Filtering will discard {0} pending change(s) to {1}. Are you sure?', [pendingChangesCount, table.name]) }}
             </div>
           </div>
           <div class="vue-dialog-buttons">
@@ -260,7 +259,7 @@
               type="button"
               @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)"
             >
-              Cancel
+              {{ $t('Cancel') }}
             </button>
             <button
               class="btn btn-primary"
@@ -268,7 +267,7 @@
               @click.prevent="forceFilter"
               autofocus
             >
-              I'm Sure
+              {{ $t("I'm Sure") }}
             </button>
           </div>
         </div>
@@ -354,10 +353,11 @@ export default Vue.extend({
         updates: [],
         deletes: []
       },
+      // @ts-expect-error Fix typings
       paginationStates: [null], // used for pagination that is not based on offsets. Null is always the starter one because that means "just bring back em back from the beginning"
       queryError: null,
       saveError: null,
-      timeAgo: new TimeAgo('en-US'),
+      timeAgo: null,
       lastUpdated: null,
       lastUpdatedText: null,
       // @ts-expect-error Fix typings
@@ -556,7 +556,7 @@ export default Vue.extend({
     },
     openColumnFilterMenuItem() {
       return {
-        label: createMenuItem("Open Column Filter"),
+        label: createMenuItem(this.$t("Open Column Filter").toString()),
         action: this.showColumnFilterModal,
       }
     },
@@ -684,6 +684,8 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
+    // No need to initialize TimeAgo here, watch will execute immediately
+    
     if (this.shouldInitialize) {
       await this.$nextTick(async() => {
         await this.initialize()
@@ -722,7 +724,7 @@ export default Vue.extend({
           if (keyDatas?.length > 0) {
             keyDatas.forEach(keyData => {
               menu.push({
-                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
+                label: createMenuItem(this.$i18n.t("Go to {table} ({column})", {table: keyData.toTable, column: keyData.toColumn}).toString()),
                 action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
@@ -735,7 +737,7 @@ export default Vue.extend({
       const columnMenu = (_e, column: ColumnComponent) => {
         const ranges = (column as any).getRanges();
         const range = _.last(ranges) as RangeComponent;
-        let hideColumnLabel = `Hide ${column.getDefinition().title}`
+        let hideColumnLabel = this.$i18n.t("Hide {title}", {title: column.getDefinition().title}).toString()
 
         if (hideColumnLabel.length > 33) {
           hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
@@ -757,7 +759,7 @@ export default Vue.extend({
             action: () => this.hideColumnByField(column.getField()),
           },
           {
-            label: createMenuItem(`Reset layout`),
+            label: createMenuItem(this.$i18n.t("Reset layout").toString()),
             action: () => column.getTable().setColumnLayout(this.tableColumns),
           },
           this.openColumnFilterMenuItem,
@@ -977,7 +979,7 @@ export default Vue.extend({
         ajaxURL: "http://fake",
         sortMode: 'remote',
         filterMode: 'remote',
-        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
+        dataLoaderError: `<span style="display:inline-block">${this.$t('Error loading data, see error below')}</span>`,
         pagination: true,
         paginationMode: 'remote',
         paginationSize: this.limit,
@@ -1012,16 +1014,16 @@ export default Vue.extend({
         {
           label:
             range.getTopEdge() === range.getBottomEdge()
-              ? createMenuItem("Clone row", "Control+D")
-              : createMenuItem(`Clone rows ${rowRangeLabel}`, "Control+D"),
+              ? createMenuItem(this.$t("Clone row"), "Control+D")
+              : createMenuItem(this.$t(`Clone rows {0}`, [rowRangeLabel]), "Control+D"),
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable,
         },
         {
           label:
             range.getTopEdge() === range.getBottomEdge()
-              ? createMenuItem("Delete row", "Delete")
-              : createMenuItem(`Delete rows ${rowRangeLabel}`, "Delete"),
+              ? createMenuItem(this.$t("Delete row"), "Delete")
+              : createMenuItem(this.$t(`Delete rows {0}`, [rowRangeLabel]), "Delete"),
           action: () => {
             this.tabulator.rowManager.element.focus()
             this.deleteTableSelection(undefined, range)
@@ -1030,7 +1032,7 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: createMenuItem('See details'),
+          label: createMenuItem(this.$t('See details')),
           action: () => {
             this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
             this.trigger(AppEvent.toggleSecondarySidebar, true)
@@ -1044,7 +1046,7 @@ export default Vue.extend({
         .getColumns()
         .every((col) => this.isPrimaryKey(col.getField()));
       return {
-        label: createMenuItem("Set as NULL"),
+        label: createMenuItem(this.$t("Set as NULL")),
         action: () => range.getCells().flat().forEach((cell) => {
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
@@ -1060,11 +1062,11 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>='
       ]
       return {
-        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
+        label: createMenuItem(this.$t("Quick Filter"), "", this.$store.getters.isCommunity),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {
-            label: createMenuItem(`${cell.getField()} ${s} value`),
+            label: createMenuItem(`${cell.getField()} ${s} ${this.$t('value')}`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
               const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
@@ -1091,7 +1093,7 @@ export default Vue.extend({
     openEditorMenu(cell: CellComponent) {
       const isReadOnly = this.isEditorMenuDisabled(cell);
       return {
-        label: createMenuItem(isReadOnly? "View in modal" : "Edit in modal", "Shift + Enter"),
+        label: createMenuItem(isReadOnly? this.$t("View in modal") : this.$t("Edit in modal"), "Shift + Enter"),
         action: () => {
           this.openCellEditorModal(cell, isReadOnly)
         }
@@ -1448,8 +1450,7 @@ export default Vue.extend({
 
         this.saveError = {
           title: ex.message,
-          message: ex.message,
-          ex
+          message: ex.message
         }
         this.$noty.error(ex.message)
 
@@ -1704,7 +1705,7 @@ export default Vue.extend({
     },
     setlastUpdatedText() {
       if (!this.lastUpdated) return null
-      this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
+      this.lastUpdatedText = this.$bks.getTimeAgo().format(this.lastUpdated)
     },
     setQueryError(title, message) {
       this.queryError = {

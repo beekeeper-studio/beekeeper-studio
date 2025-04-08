@@ -1,4 +1,3 @@
-
 <template>
   <nav
     class="flyout-nav"
@@ -20,7 +19,7 @@
         <a
           :class="{selected: menu === selected}"
           @mousedown.prevent="setActive(menu)"
-        ><span class="label">{{ menu.label }}</span></a>
+        ><span class="label">{{ $t(menu.label) }}</span></a>
         <!-- FIRST LEVEL MENU, eg New Window, New Tab -->
         <ul>
           <li
@@ -39,8 +38,8 @@
                 <span 
                   class="material-icons" 
                   v-if="item.checked"
-                >done</span>
-                <span>{{ item.label }}</span>
+                >{{ $t('done') }}</span>
+                <span>{{ $t(item.label) }}</span>
               </span>
               <span class="shortcut">{{ shortcutText(item) }}</span>
             </a>
@@ -61,8 +60,8 @@
                     <span
                       class="material-icons"
                       v-if="subitem.checked"
-                    >done</span>
-                    <span>{{ subitem.label }}</span>
+                    >{{ $t('done') }}</span>
+                    <span>{{ $t(subitem.label) }}</span>
                   </span>
                 </a>
               </li>

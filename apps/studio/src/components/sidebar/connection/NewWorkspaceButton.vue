@@ -8,10 +8,10 @@
       <span class="avatar-btn-link"><i class="material-icons">add</i></span>
       <x-menu v-if="credentials.length && $store.getters.isUltimate">
         <x-menuitem @click.prevent="createWorkspace">
-          <x-label>Create a new workspace</x-label>
+          <x-label>{{ $t('Create a new workspace') }}</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="addWorkspace">
-          <x-label>{{ credentials.length ? 'Sign in to another workspace account' : 'Sign in' }}</x-label>
+          <x-label>{{ credentials.length ? $t('Sign in to another workspace account') : $t('Sign in') }}</x-label>
         </x-menuitem>
       </x-menu>
     </x-button>
@@ -26,7 +26,7 @@ export default Vue.extend({
   computed: {
     ...mapState('credentials', {credentials: 'credentials'}),
     title() {
-      return this.credentials.length ? '' : 'Create Workspace - Please sign in to your workspace account first'
+      return this.credentials.length ? '' : this.$t('Create Workspace - Please sign in to your workspace account first')
     },
   },
   methods: {

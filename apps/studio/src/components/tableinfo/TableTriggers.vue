@@ -13,7 +13,7 @@
         </div>
         <div class="table-subheader">
           <div class="table-title">
-            <h2>Triggers</h2>
+            <h2>{{ $t('Triggers') }}</h2>
           </div>
           <div class="table-actions">
             <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
@@ -67,17 +67,17 @@ export default {
     },
     sqliteTableColumns() {
       return [
-        { field: 'name', title: 'Name', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'sql', title: 'SQL', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
+        { field: 'name', title: this.$t('Name'), tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'sql', title: this.$t('SQL'), tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     normalTableColumns() {
       return [
-        { field: 'name', title: "Name", tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'timing', title: "Timing", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'manipulation', title: "Manipulation", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'condition', title: "Condition", formatter: this.cellFormatter, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
+        { field: 'name', title: this.$t("Name"), tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'timing', title: this.$t("Timing"), cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'manipulation', title: this.$t("Manipulation"), cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'action', title: this.$t("Action"), tooltip: true, widthGrow: 2.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'condition', title: this.$t("Condition"), formatter: this.cellFormatter, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     tableData() {
@@ -99,7 +99,7 @@ export default {
         headerSort: true,
         maxInitialWidth: this.$bksConfig.ui.tableTriggers.maxColumnWidth,
       },
-      placeholder: "No triggers",
+      placeholder: this.$t("No triggers"),
       layout: 'fitColumns'
 
 

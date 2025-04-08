@@ -4,7 +4,7 @@
       <div v-kbd-trap="true">
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Create Collection
+            {{ $t('Create Collection') }}
             <a
               class="close-btn btn btn-fab"
               href="#"
@@ -14,7 +14,7 @@
             </a>
           </div >
           <div class="form-group">
-            <label for="collection-name">Collection Name</label>
+            <label for="collection-name">{{ $t('Collection Name') }}</label>
             <input type="text" id="collection-name" name="collection-name" ref="collectionInput" v-model="collectionName">
           </div>
         </div>
@@ -25,14 +25,14 @@
             ref="cancelBtn"
             @click.prevent="close"
           >
-            Cancel
+            {{ $t('Cancel') }}
           </button>
           <button
             class="btn btn-primary"
             type="button"
             @click="submit"
           >
-            Create
+            {{ $t('Create') }}
           </button>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default Vue.extend({
     async submit() {
       await this.connection.createTable({ table: this.collectionName });
       await this.$store.dispatch('updateTables');
-      this.$noty.success(`${this.collectionName} created`);
+      this.$noty.success(this.$t(`${this.collectionName} created`));
       this.close();
     }
   },

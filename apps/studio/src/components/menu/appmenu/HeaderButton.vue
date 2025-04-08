@@ -4,7 +4,7 @@
       @mousedown.prevent="click"
       class="header-button-button"
     >
-      {{ item.label }}
+      {{ $t(item.label) }}
     </button>
     <div v-show="active">
       <slot />

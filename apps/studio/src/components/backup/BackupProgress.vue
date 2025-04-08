@@ -2,13 +2,13 @@
   <div class="backup-wrapper scrollable">
     <div class="backup-header">
       <h2>
-        {{ isRestore ? 'Restore' : 'Backup' }} Progress
+        {{ isRestore ? $t('Restore') : $t('Backup') }} {{ $t('Progress') }}
       </h2>
     </div>
     <div class="backup-log">
       <div class="beekeeper-log">
         <div class="title">
-          Backup started
+          {{ $t('Backup started') }}
         </div>
         <div class="content">
           {{ commandStart }}
@@ -19,7 +19,7 @@
         class="beekeeper-log"
       >
         <div class="title">
-          Backup ended
+          {{ $t('Backup ended') }}
         </div>
         <div class="content">
           {{ commandEnd }}
@@ -30,7 +30,7 @@
         class="beekeeper-log"
       >
         <div class="title">
-          Time elapsed
+          {{ $t('Time elapsed') }}
         </div>
         <div class="content">
           {{ elapsedTime }}ms
@@ -39,13 +39,13 @@
 
       <div class="system-logs">
         <h3 class="flex">
-          <span class="expand">Logs (last 100 lines)</span>
+          <span class="expand">{{ $t('Logs (last 100 lines)') }}</span>
           <x-buttons>
             <x-button
               @click.prevent="$emit('openLog')"
               class="btn btn-flat btn-small"
             >
-              <x-label>Open Log File</x-label>
+              <x-label>{{ $t('Open Log File') }}</x-label>
             </x-button>
             <x-button
               class="btn btn-flat btn-small"
@@ -54,10 +54,10 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="() => $emit('openLog')">
-                  <x-label>Open Log File</x-label>
+                  <x-label>{{ $t('Open Log File') }}</x-label>
                 </x-menuitem>
                 <x-menuitem @click.prevent="() => $emit('showLog')">
-                  <x-label>Show In Folder</x-label>
+                  <x-label>{{ $t('Show In Folder') }}</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -74,7 +74,7 @@
             <i class="material-icons">arrow_right</i>
           </div>
           <span v-if="logMessages.length > 0">{{ logMessages[logMessages.length - 1] }}</span>
-          <span v-else>The command has not outputted any logs</span>
+          <span v-else>{{ $t('The command has not outputted any logs') }}</span>
         </div>
         <div
           class="log-messages"
@@ -99,7 +99,7 @@
             v-if="logMessages.length == 0"
             class="log"
           >
-            The command has not outputted any logs
+            {{ $t('The command has not outputted any logs') }}
           </div>
         </div>
         <div v-if="failed">
@@ -107,7 +107,7 @@
             @click="$emit('retry')"
             class="btn btn-primary"
           >
-            Retry
+            {{ $t('Retry') }}
           </button>
         </div>
       </div>

@@ -19,14 +19,14 @@
           @click.prevent="disconnect(false)"
           class="red"
         >
-          <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
+          <x-label><i class="material-icons">power_settings_new</i>{{ $t('Disconnect') }}</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="$modal.show('config-save-modal')">
           <x-label v-if="config.id">
-            <i class="material-icons">edit</i>Edit Connection
+            <i class="material-icons">edit</i>{{ $t('Edit Connection') }}
           </x-label>
           <x-label v-else>
-            <i class="material-icons">save</i>Save Connection
+            <i class="material-icons">save</i>{{ $t('Save Connection') }}
           </x-label>
         </x-menuitem>
         <!-- FIXME: Let's not use connection.connectionType -->
@@ -35,7 +35,7 @@
           @click.prevent="syncDatabase"
         >
           <x-label>
-            <i class="material-icons">sync</i>Sync Database
+            <i class="material-icons">sync</i>{{ $t('Sync Database') }}
           </x-label>
         </x-menuitem>
       </x-menu>
@@ -58,7 +58,7 @@
           >
             <i class="material-icons">error_outline</i>
             <div class="alert-body flex-col">
-              <span>Please fix the following errors:</span>
+              <span>{{ $t('Please fix the following errors:') }}</span>
               <ul>
                 <li
                   v-for="(e, i) in errors"
@@ -93,9 +93,9 @@
         >
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Confirm Disconnect
+              {{ $t('Confirm Disconnect') }}
             </div>
-            There are active exports running. Are you sure you want to disconnect?
+            {{ $t('There are active exports running. Are you sure you want to disconnect?') }}
           </div>
           <div class="vue-dialog-buttons">
             <button
@@ -104,13 +104,13 @@
               ref="cancel"
               @click.prevent="$modal.hide('running-exports-modal')"
             >
-              Cancel
+              {{ $t('Cancel') }}
             </button>
             <button
               class="btn btn-danger"
               type="submit"
             >
-              Disconnect
+              {{ $t('Disconnect') }}
             </button>
           </div>
         </form>
@@ -138,7 +138,7 @@ export default {
       ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
       ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
       connectionName() {
-        return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
+        return this.config ? this.$bks.buildConnectionName(this.config) : this.$t('Connection')
       },
       connectionType() {
         return `${this.config.connectionType}`
@@ -156,7 +156,7 @@ export default {
         await this.$store.dispatch('pins/maybeSavePins')
         await this.$store.dispatch('hideEntities/maybeSave')
         this.$modal.hide('config-save-modal')
-        this.$noty.success("Connection Saved")
+        this.$noty.success(this.$t("Connection Saved"))
       } catch (error) {
         this.errors = [error.message]
       }
@@ -172,7 +172,7 @@ export default {
     async syncDatabase() {
       try {
         await this.$store.dispatch('syncDatabase')
-        this.$noty.success("Database Synced")
+        this.$noty.success(this.$t("Database Synced"))
       } catch (error) {
         log.error(error)
         this.$noty.error(error.message)

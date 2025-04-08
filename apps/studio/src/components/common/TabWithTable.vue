@@ -10,12 +10,12 @@
       <div class="alert alert-danger expand">
         <i class="material-icons">error_outline</i>
         <div class="alert-body expand">
-          This table does not exist in the selected database
+          {{ $t("This table does not exist in the selected database") }}
         </div>
         <a
           @click.prevent="$emit('close', tab)"
           class="btn btn-flat"
-        >Close Tab</a>
+        >{{ $t("Close Tab") }}</a>
       </div>
     </div>
     <template v-else>
@@ -42,7 +42,7 @@ export default Vue.extend({
   },
   watch: {
     table() {
-      log.debug("table changed!", this.table)
+      log.debug(this.$t("table changed!"), this.table)
     }
   }
 })

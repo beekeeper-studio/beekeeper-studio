@@ -3,18 +3,17 @@
     <h4
       class="advanced-heading flex"
     >
-      <span class="expand">IAM Authentication</span>
+      <span class="expand">{{ $t('IAM Authentication') }}</span>
     </h4>
     <div class="advanced-body">
       <div class="row gutter">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>
-            Use AWS IAM authentication using credential file to connect with temporary cluster
-            credentials.
+            {{ $t('Use AWS IAM authentication using credential file to connect with temporary cluster credentials.') }}
             <a
               href="https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html"
-            >Amazon Docs</a> - <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rdb">Beekeeper Docs</a>
+            >{{ $t('Amazon Docs') }}</a> - <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rdb">{{ $t('Beekeeper Docs') }}</a>
           </div>
         </div>
       </div>
@@ -23,7 +22,7 @@
           class="advanced-heading flex"
           :class="{enabled: config.redshiftOptions.isServerless}"
         >
-          <span class="expand">Is Serverless Instance</span>
+          <span class="expand">{{ $t('Is Serverless Instance') }}</span>
           <x-switch
             @click.prevent="toggleServerless"
             :toggled="config.redshiftOptions.isServerless"
@@ -31,7 +30,7 @@
         </h4>
       </div>
       <div v-show="isProfileAuth" class="form-group">
-        <label for="awsProfile"> AWS Profile </label>
+        <label for="awsProfile"> {{ $t('AWS Profile') }} </label>
         <input
           name="awsProfile"
           type="text"
@@ -42,7 +41,7 @@
       <template v-show="isKeyAuth" >
         <div class="form-group">
           <label for="Access Key ID">
-            Access Key ID
+            {{ $t('Access Key ID') }}
           </label>
           <input
             type="text"
@@ -52,7 +51,7 @@
         </div>
         <div class="form-group">
           <label for="Secret Access Key">
-            Secret Access Key
+            {{ $t('Secret Access Key') }}
           </label>
           <input
             type="password"
@@ -63,7 +62,7 @@
       </template>
       <div class="form-group">
         <label for="AWS Region">
-          AWS Region
+          {{ $t('AWS Region') }}
         </label>
         <input
           type="text"
@@ -73,7 +72,7 @@
       </div>
       <template v-show="isRedshift">
         <div class="form-group">
-          <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
+          <label for="Cluster Identifier">{{ $t('Cluster Identifier or Workgroup Name') }}</label>
           <input
             type="text"
             class="form-control"
@@ -81,7 +80,7 @@
           >
         </div>
         <div class="form-group">
-          <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
+          <label for="Database Group">{{ $t('Database Group') }} <span class="hint">({{ $t('optional') }})</span></label>
           <input
             type="text"
             class="form-control"
@@ -89,7 +88,7 @@
           >
         </div>
         <div class="form-group">
-          <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
+          <label for="Token Duration">{{ $t('Token Duration') }} <span class="hint">({{ $t('optional, in seconds') }})</span></label>
           <input
             type="text"
             class="form-control"

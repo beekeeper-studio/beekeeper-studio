@@ -1,14 +1,14 @@
 <template>
   <div class="community-overlay">
     <span class="title">
-      <i class="material-icons">stars</i> JSON Row Viewer
+      <i class="material-icons">stars</i> {{ $t('JSON Row Viewer') }}
     </span>
     <div class="body">
       <p>
-        Upgrade required to use the JSON Row Viewer.
+        {{ $t('Upgrade required to use the JSON Row Viewer.') }}
       </p>
       <p>
-        View any row as JSON. Super useful when working with wide tables or complex nested data.
+        {{ $t('View any row as JSON. Super useful when working with wide tables or complex nested data.') }}
       </p>
     </div>
     <upsell-buttons />

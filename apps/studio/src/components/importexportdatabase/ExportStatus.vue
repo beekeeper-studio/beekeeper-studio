@@ -13,7 +13,7 @@
       >
         <i class="material-icons">check_circle</i>
         <div class="with-message">
-          Completed
+          {{ $t('Completed') }}
         </div>
       </div>
       <div
@@ -23,14 +23,14 @@
         <div class="failed status">
           <i class="material-icons">error</i>
           <div class="with-message">
-            Failed
+            {{ $t('Failed') }}
           </div>
         </div>
         <button
           class="warning status"
           @click="$emit('retry', table)"
         >
-          Try Again
+          {{ $t('Try Again') }}
         </button>
       </div>
       <div
@@ -39,7 +39,7 @@
       >
         <div class="pending status">
           <div class="with-message">
-            Pending
+            {{ $t('Pending') }}
           </div>
         </div>
       </div>

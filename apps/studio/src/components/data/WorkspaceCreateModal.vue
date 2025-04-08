@@ -7,11 +7,11 @@
     <form @submit.prevent="submit">
       <div class="dialog-content">
         <div class="dialog-c-title">
-          New Workspace
+          {{ $t('New Workspace') }}
         </div>
         <error-alert :error="error" />
         <div class="form-group">
-          <label for="account">Account</label>
+          <label for="account">{{ $t('Account') }}</label>
           <select name="account" id="account" v-model="selectedBlobId" :disabled="credentials.length === 1">
             <option v-for="cred in credentials" :key="cred.id" :value="cred.id">
               {{ cred.credential.email }}
@@ -19,18 +19,18 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="workspace-name">Workspace Name</label>
-          <input id="workspace-name" name="workspace-name" v-model="workspaceName" type="text" ref="nameInput" placeholder="e.g. Matthew's Workspace">
+          <label for="workspace-name">{{ $t('Workspace Name') }}</label>
+          <input id="workspace-name" name="workspace-name" v-model="workspaceName" type="text" ref="nameInput" :placeholder="$t('e.g. Matthew\'s Workspace')">
         </div>
       </div>
       <div class="vue-dialog-buttons flex-between">
         <span class="left" />
         <span class="right">
           <button class="btn btn-flat" type="button" @click.prevent="close">
-            Cancel
+            {{ $t('Cancel') }}
           </button>
           <button class="btn btn-primary" :disabled="loading" type="submit">
-            {{ loading ? "..." : "Create Workspace" }}
+            {{ loading ? "..." : $t('Create Workspace') }}
           </button>
         </span>
       </div>

@@ -33,7 +33,7 @@
     <a
       @click.prevent="refresh"
       class="nav-item refresh"
-      title="Refresh Workspaces"
+      :title="String($t('Refresh Workspaces'))"
     >
       <span class="avatar"><i class="material-icons">refresh</i></span>
     </a>
@@ -67,18 +67,18 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
   methods: {
     contextOptionsFor(blob: WSWithClient ) {
       const result = [
-        { name: "Manage Workspace", slug: "manage", handler: ({item}) => window.location.href = item.workspace.url}
+        { name: String(this.$t("Manage Workspace")), slug: "manage", handler: ({item}) => window.location.href = item.workspace.url}
       ]
       if (blob.workspace.isOwner) {
         result.push({
-          name: "Rename Workspace",
+          name: String(this.$t("Rename Workspace")),
           slug: 'rename',
           handler: () => this.$root.$emit(AppEvent.promptRenameWorkspace, {
             workspace: blob.workspace,
             client: blob.client,
           }),
         }, {
-          name: "Add Users",
+          name: String(this.$t("Add Users")),
           slug: 'invite',
           handler: ({item}) => window.location.href = `${item.workspace.url}/invitations/new`
         })
@@ -86,9 +86,10 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
       return result
     },
     workspaceTitle(workspace: IWorkspace) {
-      const result = [workspace.name, `(${workspace.level})`]
+      let displayName = workspace.id === -1 ? this.$t('Local Workspace') : workspace.name
+      const result = [displayName, `(${this.$t(workspace.level)})`]
       if (workspace.trialEndsIn) {
-        result.push(`[trial ends ${workspace.trialEndsIn}]`)
+        result.push(`[${this.$t('trial ends')} ${workspace.trialEndsIn}]`)
       }
 
       return result.join(" ")

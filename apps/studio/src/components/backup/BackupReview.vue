@@ -1,19 +1,19 @@
 <template>
   <div class="backup-wrapper small-wrap">
     <h2 class="backup-header">
-      Review Command(s)
+      {{ $t('Review Command(s)') }}
     </h2>
     <div class="backup-content">
       <div class="review-container">
         <div class="card card-flat padding text-center">
           <div class="command-note">
-            Beekeeper Studio will execute the following command. If you would prefer to run the backup yourself, you can copy the command to the clipboard.
+            {{ $t('Beekeeper Studio will execute the following command. If you would prefer to run the backup yourself, you can copy the command to the clipboard.') }}
           </div>
           <button
             @click.prevent="$emit('finish')"
             class="btn btn-primary"
           >
-            <span>Execute {{ isRestore ? 'Restore' : 'Backup' }}</span>
+            <span>{{ $t('Execute') }} {{ isRestore ? $t('Restore') : $t('Backup') }}</span>
           </button>
         </div>
         <div
@@ -31,7 +31,7 @@
         </div>
         <div class="command-note info-alert alert text-info">
           <div class="alert-body">
-            Some arguments are provided as environment variables on execution for security purposes (eg. password).
+            {{ $t('Some arguments are provided as environment variables on execution for security purposes (eg. password).') }}
           </div>
         </div>
       </div>
