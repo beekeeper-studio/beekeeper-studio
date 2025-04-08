@@ -20,11 +20,6 @@
   transition: box-shadow 0.28s ease-in-out;
 }
 
-@mixin dropdown-shadow {
-  box-shadow: 0 1px 4px rgba(black, 0.37) !important;
-}
-
-
 @mixin btn {
   display: inline-flex;
   align-items: center;
@@ -126,12 +121,4 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-@mixin small-wrap {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  max-width: 550px;
-  // max-height: -webkit-fill-available;
 }
