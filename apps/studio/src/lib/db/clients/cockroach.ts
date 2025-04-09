@@ -1,9 +1,9 @@
-import globals from "@/common/globals";
 import pg, { PoolConfig } from "pg";
 import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
+import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from "../backendTypes";
 
 
@@ -19,6 +19,7 @@ export class CockroachClient extends PostgresClient {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      transactions: true
     };
   }
 
@@ -152,10 +153,11 @@ export class CockroachClient extends PostgresClient {
     };
   }
 
-  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<void> {
+  async createDatabase(databaseName: string, charset: string, _collation: string): Promise<string> {
     const sql = `create database ${this.wrapIdentifier(databaseName)} encoding ${this.wrapIdentifier(charset)}`;
 
     await this.driverExecuteSingle(sql);
+    return databaseName;
   }
 
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
@@ -185,9 +187,9 @@ export class CockroachClient extends PostgresClient {
       port: server.config.port || undefined,
       password: server.config.password || undefined,
       database: database.database,
-      max: 5, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: globals.psqlTimeout,
-      idleTimeoutMillis: globals.psqlIdleTimeout,
+      max: BksConfig.db.cockroachdb.maxClient, // max idle connections per time (30 secs)
+      connectionTimeoutMillis: BksConfig.db.cockroachdb.connectionTimeout,
+      idleTimeoutMillis: BksConfig.db.cockroachdb.idleTimeout,
       // not in the typings, but works.
       // @ts-ignore
       options: optionsString

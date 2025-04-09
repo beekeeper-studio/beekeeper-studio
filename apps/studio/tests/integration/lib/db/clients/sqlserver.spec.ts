@@ -50,14 +50,7 @@ function testWith(dockerTag: string, readonly: boolean) {
           "ACCEPT_EULA": "Y"
         })
         .withExposedPorts(1433)
-        .withWaitStrategy(Wait.forHealthCheck())
-        .withHealthCheck({
-          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
-          interval: 5000,
-          timeout: 3000,
-          retries: 10,
-          startPeriod: 7000,
-        })
+        .withWaitStrategy(Wait.forLogMessage("SQL Server is now ready for client connections."))
         .withStartupTimeout(dbtimeout)
         .start()
 

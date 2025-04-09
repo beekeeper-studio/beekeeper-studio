@@ -10,7 +10,6 @@ export default {
   maxColumnWidth: 1000,
   minColumnWidth: 100,
   maxInitialWidth: 500,
-  defaultTableTableSplitSizes: [75, 25],
   maxDetailViewTextLength: 30,
   bigTableColumnWidth: 125,
   maxColumnWidthTableInfo: 300,
@@ -25,7 +24,10 @@ export default {
   clientId: '6eabc37c-bcc5-41fa-9a90-f6c5ab2aabcb',
   iamRefreshTime: 13 * 60 * 1000, // 13 minutes
   iamExpiryTime: 15 * 60 * 1000, // 15 minutes
-  iamRefreshBeforeTime: 2 * 60 * 1000 // 2 minutes
+  iamRefreshBeforeTime: 2 * 60 * 1000, // 2 minutes
+  firebird: {
+    poolSize: 5,
+  },
 }
 
 

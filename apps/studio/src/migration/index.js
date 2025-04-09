@@ -11,6 +11,7 @@ import dev3 from './dev-3'
 import dev4 from './dev-4'
 import dev5 from './dev-5'
 import dev6 from './dev-6'
+import dev7 from './dev-7'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -47,7 +48,12 @@ import lastUsedWorkspace from './20240923_user_settings_default_workspace'
 import userSettingKeymap from './20241017_add_user_setting_keymap'
 import missingUserSettings from './20241017_add_missing_user_settings'
 import useBeta from './20241009_add_beta_toggle'
+import tabHistoryUpdates from './20241116_tab_history_updates'
 import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
+import addNewUrlField from './20250128_add_new_url_field'
+import tabHistoryIndex from './20250211_add_tab_history_index'
+import fixOracleData from './20250225_oracle_default_connection_method'
+import addInstallationId from './20250404_add_installation_id'
 
 import ultimate from './ultimate/index'
 
@@ -74,7 +80,13 @@ const realMigrations = [
   firebirdConnection, exportPath, UserSettingsWindowPosition,
   demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
   maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
-  useBeta, deleteDuplicateConnections
+  useBeta,
+  deleteDuplicateConnections,
+  tabHistoryUpdates,
+  addNewUrlField,
+  tabHistoryIndex,
+  fixOracleData,
+  addInstallationId,
 ]
 
 // fixtures require the models
@@ -83,7 +95,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3, dev4, dev5, dev6,
+  dev1, dev2, dev3, dev4, dev5, dev6, dev7
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

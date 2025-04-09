@@ -60,7 +60,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         knexFilename = ":memory:";
       } else {
         container = await new GenericContainer(
-          "ghcr.io/tursodatabase/libsql-server:latest"
+          "ghcr.io/tursodatabase/libsql-server:v0.24.32"
         )
           .withName(`libsql${options.readOnly ? "-readOnly" : ""}`)
           .withExposedPorts(8080)
@@ -303,7 +303,7 @@ function testReplica(readOnly = false) {
     replicaDir = tmp.dirSync();
 
     container = await new GenericContainer(
-      "ghcr.io/tursodatabase/libsql-server:latest"
+      "ghcr.io/tursodatabase/libsql-server:v0.24.32"
     )
       .withName(`libsql-replica-target`)
       .withExposedPorts(8080)

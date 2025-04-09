@@ -1,3 +1,4 @@
+@use "sass:color";
 
 .flyout-nav {
   ul {
@@ -7,7 +8,7 @@
     display: none;
     list-style-type: none;
     white-space: nowrap;
-    background: lighten($theme-bg, 5%);
+    background: color.adjust($theme-bg, $lightness: 5%);
     border-radius: 6px;
     min-width: 150px;
     @include card-shadow-hover;

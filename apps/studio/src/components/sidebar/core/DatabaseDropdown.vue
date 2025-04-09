@@ -2,7 +2,7 @@
   <div class="fixed">
     <div class="data-select-wrap">
       <p
-        v-if="supportsMultipleDatabase"
+        v-if="!supportsMultipleDatabases"
         class="sqlite-db-name"
         :title="selectedDatabase"
       >
@@ -18,7 +18,7 @@
         class="dropdown-search"
       />
       <a
-        v-if="!supportsMultipleDatabase"
+        v-if="supportsMultipleDatabases"
         class="refresh"
         @click.prevent="refreshDatabases"
         :title="'Refresh Databases'"
@@ -128,13 +128,13 @@
       this.selectedDatabase = this.currentDatabase
     },
     computed: {
-      supportsMultipleDatabase() {
-        return !this.dialect.disabledFeatures?.multipleDatabase
+      supportsMultipleDatabases() {
+        return !this.dialectData.disabledFeatures?.multipleDatabases
       },
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
       },
-      ...mapGetters(['dialect']),
+      ...mapGetters(['dialect', 'dialectData']),
       ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType'}),
     },
     watch: {
@@ -144,7 +144,8 @@
         }
       },
       selectedDatabase() {
-        if (this.selectedDatabase != this.currentDatabase && this.dbs.includes(this.selectedDatabase)) {
+        // mongodb doesn't actually create the db until a collection has been added
+        if (this.selectedDatabase != this.currentDatabase && (this.dbs.includes(this.selectedDatabase) || this.dialect === 'mongodb')) {
           this.$emit('databaseSelected', this.selectedDatabase)
         }
       }

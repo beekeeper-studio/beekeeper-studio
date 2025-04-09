@@ -14,6 +14,7 @@
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
     @update:cursorIndex="$emit('update:cursorIndex', $event)"
+    @update:cursorIndexAnchor="$emit('update:cursorIndexAnchor', $event)"
     @update:initialized="$emit('update:initialized', $event)"
   />
 </template>

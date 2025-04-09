@@ -403,6 +403,10 @@ export function runCommonTests(getUtil, opts = {}) {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
     })
+
+    test("should generate filter query", async () => {
+      await getUtil().getQueryForFilterTest()
+    })
   })
 
   describe("Serialization", () => {
@@ -1026,6 +1030,7 @@ export const itShouldGenerateSQLWithBinary = async function (util) {
 
 export async function prepareImportTests (util) {
   const dialect = util().dialect
+  const schema = util().defaultSchema ?? null
   let tableName = 'importstuff'
 
   const importScriptOptions = {
@@ -1080,12 +1085,13 @@ export async function prepareImportTests (util) {
     ]
   }
   const table = {
-    schema: util().defaultSchema ?? null,
+    schema,
     name: tableName,
     entityType: 'table'
   }
   const formattedData = data.map(d => ({
     table: tableName,
+    schema,
     data: [d]
   }))
 

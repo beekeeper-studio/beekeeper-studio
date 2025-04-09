@@ -47,14 +47,15 @@ export default {
     cellTooltip(_event, cell: CellComponent) {
       let cellValue = cell.getValue()
       if (cellValue instanceof Uint8Array) {
-        cellValue = `${_.truncate(cellValue.toString(), { length: 15 })} (as hex string)`
+        const binaryEncoding = cell.getColumn().getDefinition().formatterParams?.binaryEncoding || 'hex'
+        cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
       }
       const nullValue = emptyResult(cellValue)
       return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void },
+      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string } = {},
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
@@ -69,7 +70,7 @@ export default {
       if (nullValue) {
         return nullValue
       }
-      cellValue = this.niceString(cellValue, true)
+      cellValue = this.niceString(cellValue, true, params.binaryEncoding)
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
 
       // removing the <pre> will break selection / copy paste, see ResultTable

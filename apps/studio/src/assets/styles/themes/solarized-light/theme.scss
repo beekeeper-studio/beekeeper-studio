@@ -1,3 +1,4 @@
+@use "sass:color";
 @import "codemirror/theme/solarized.css";
 
 
@@ -10,10 +11,10 @@ $sidebar-list-icons:       $theme-primary;
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
 $tab-link:                 $sbase4;
-$codemirror-hint-bg:       darken($theme-bg, 2%);
+$codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
-$row-highlight:            darken($query-editor-bg, 3%);
+$row-highlight:            color.adjust($query-editor-bg, $lightness: -3%);
 $row-add:                  $insertedGreen;
 $row-delete:               $removedRed;
 $row-error:                #F9B8B7;
@@ -139,9 +140,9 @@ x-buttons {
 // -----------------------------------------
 .connection-label {
   &.connection-label-color-yellow {
-    background-color: darken($theme-primary, 4%);
+    background-color: color.adjust($theme-primary, $lightness: -4%);
     &:checked {
-      background-color: darken($theme-primary, 4%);
+      background-color: color.adjust($theme-primary, $lightness: -4%);
     }
   }
 }
@@ -249,8 +250,7 @@ x-buttons {
 // -------------------------------
 .tabulator-table {
   .tabulator-row {
-    &.tabulator-row-even,
-    &:nth-child(odd) {
+    &.tabulator-row-even {
       &.inserted,
       &.inserted:hover {
         background: $row-add!important;
@@ -272,19 +272,19 @@ x-buttons {
       &.edited {
         background: $cell-edited;
         &:hover {
-          background: darken($cell-edited, 5%);
+          background: color.adjust($cell-edited, $lightness: -5%);
         }
       }
       &.edit-error {
         background: $cell-error;
         &:hover {
-          background: darken($cell-error, 5%);
+          background: color.adjust($cell-error, $lightness: -5%);
         }
       }
       &.edit-success {
         background: $cell-success;
         &:hover {
-          background: darken($cell-success, 5%);
+          background: color.adjust($cell-success, $lightness: -5%);
         }
       }
       &.foreign-key-button {
@@ -315,7 +315,7 @@ x-buttons {
     .tabulator-col {
       &.foreign-key {
         &:before {
-          color: darken($brand-primary, 6%);
+          color: color.adjust($brand-primary, $lightness: -6%);
         }
       }
       .badge {
@@ -324,19 +324,13 @@ x-buttons {
     }
   }
 }
-.tabulator-row {
-  &:nth-child(odd) {
-    background: rgba($theme-base, 0.025);
-  }
-}
 
 // Table Builder
 // -------------------------
 .table-builder .table-builder-wrap,
 .table-properties .table-properties-wrap {
   .tabulator-row {
-    &.tabulator-row-even,
-    &:nth-child(odd) {
+    &.tabulator-row-even {
       background: rgba($theme-base, 0.06);
     }
     &.inserted {
@@ -381,8 +375,7 @@ x-buttons {
 
   // Field Rows
   .tabulator-row {
-    &.tabulator-row-even,
-    &:nth-child(odd) {
+    &.tabulator-row-even {
       background: rgba($theme-base, 0.05);
     }
     .tabulator-cell {
@@ -485,69 +478,33 @@ x-buttons {
   }
   .tabulator-row {
     &.tabulator-moving {
-      background: lighten($theme-bg, 15%)!important;
+      background: color.adjust($theme-bg, $lightness: 15%)!important;
     }
   }
 }
 
+.BksTextEditor {
+  --bks-text-editor-string-fg-color: #{$brand-success};
+  --bks-text-editor-number-fg-color: #{$brand-warning};
+  --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
+  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-bracket-fg-color: #{$text};
 
-// CodeMirror
-// ----------------------------------
-.CodeMirror-hints {
-  background: darken($theme-bg, 5%)!important;
-  li {
-    &.CodeMirror-hint-active {
-      background: $brand-info;
-      color: white;
-    }
-  }
-}
-
-.cm-s-monokai {
-  span {
-    .cm-string {
-      color: $brand-success;
-    }
-  }
-  .CodeMirror-line {
-    .cm-number {
-      color: $brand-warning;
-    }
-  }
-}
-
-
-.cm-s-monokai {
   font-weight: 500;
-  span.cm-keyword {
-    color: $brand-pink;
-  }
-  span.cm-variable-2 {
-    color: $brand-secondary;
-  }
-  div.CodeMirror-selected {
-    background: rgba($theme-secondary, 0.25);
-  }
-  .CodeMirror-linenumber {
-    color: rgba($theme-base, 0.25);
-  }
-  .CodeMirror-line .cm-number {
-    color: $brand-warning;
-  }
-  .CodeMirror-line .cm-string {
-    color: $brand-success;
-  }
-  .CodeMirror-cursor {
-    border-color: $text-dark;
-  }
-  span.cm-bracket {
-    color: $text;
-  }
+}
+
+.BksTextEditor-hints {
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
+  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
 }
 
 // Noty
 .noty_theme__mint.noty_type__success {
-  color: darken($brand-success, 5%);
+  color: color.adjust($brand-success, $lightness: -5%);
 }
 
 // Switch
@@ -571,7 +528,7 @@ x-switch {
 // Quicksearch
 .quicksearch {
   .quicksearch-bg {
-    background: rgba(darken($theme-bg, 8%), 0.5);
+    background: rgba(color.adjust($theme-bg, $lightness: -8%), 0.5);
   }
 }
 

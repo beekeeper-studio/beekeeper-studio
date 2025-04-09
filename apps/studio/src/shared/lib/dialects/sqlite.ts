@@ -37,6 +37,7 @@ export const SqliteData: DialectData = {
   },
   textEditorMode: "text/x-sqlite",
   disabledFeatures: {
+    shell: true,
     schema: true,
     comments: true,
     alter: {
@@ -51,7 +52,7 @@ export const SqliteData: DialectData = {
     informationSchema: {
       extra: true
     },
-    multipleDatabase: true,
+    multipleDatabases: true,
   },
   notices: {
     infoSchema: "Note: SQLite does not support any column alterations except renaming"

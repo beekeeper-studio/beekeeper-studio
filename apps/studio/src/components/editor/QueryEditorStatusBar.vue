@@ -86,6 +86,7 @@
             <x-label>Download as Markdown</x-label>
           </x-menuitem>
           <span
+            v-if="dialect !== 'mongodb'"
             v-tooltip="{
               content: downloadFullTooltip
             }"
@@ -129,20 +130,25 @@
         <i class="material-icons">settings</i>
         <i class="material-icons">arrow_drop_down</i>
         <x-menu>
-          <x-menuitem disabled>
+          <x-menuitem disabled togglable>
             <x-label>Editor keymap</x-label>
           </x-menuitem>
           <x-menuitem
             :key="t.value"
             v-for="t in keymapTypes"
+            togglable
+            :toggled="t.value === userKeymap"
             @click.prevent="userKeymap = t.value"
           >
+            <x-label>{{ t.name }}</x-label>
+          </x-menuitem>
+          <x-menuitem
+            togglable
+            :toggled="wrapText"
+            @click.prevent="$emit('wrap-text')"
+          >
             <x-label class="flex-between">
-              {{ t.name }}
-              <span
-                class="material-icons"
-                v-if="t.value === userKeymap"
-              >done</span>
+              Wrap Text
             </x-label>
           </x-menuitem>
         </x-menu>
@@ -173,7 +179,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText'],
   components: { Statusbar },
   data() {
     return {
@@ -204,6 +210,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['dialect']),
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
@@ -220,7 +227,7 @@ export default {
     },
     hasUsedDropdown: {
       get() {
-        return this.settings?.hideResultsDropdown.value ?? false
+        return this.settings?.hideResultsDropdown?.value ?? false
       },
       set(value) {
         this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
@@ -260,10 +267,10 @@ export default {
       return `Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)`
     },
     keymap() {
-      const result = {}
-      result['shift+up'] = () => this.changeSelectedResult(-1);
-      result['shift+down'] = () => this.changeSelectedResult(1);
-      return result
+      return this.$vHotkeyKeymap({
+        'queryEditor.selectNextResult': this.changeSelectedResult.bind(this, 1),
+        'queryEditor.selectPreviousResult': this.changeSelectedResult.bind(this, -1),
+      })
     }
   },
   methods: {

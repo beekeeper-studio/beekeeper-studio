@@ -53,3 +53,24 @@ export function removeQueryQuotes(possibleQuery: string, dialect: any): string {
 
   return possibleQuery;
 }
+
+export function isTextSelected(
+  textStart: number,
+  textEnd: number,
+  selectionStart: number,
+  selectionEnd: number
+) {
+  const cursorMin = Math.min(selectionStart, selectionEnd);
+  const cursorMax = Math.max(selectionStart, selectionEnd);
+  const queryMin = Math.min(textStart, textEnd);
+  const queryMax = Math.max(textStart, textEnd);
+  if (
+    (cursorMin >= queryMin && cursorMin <= queryMax) ||
+    (cursorMax > queryMin && cursorMax <= queryMax) ||
+    (cursorMin <= queryMin && cursorMax >= queryMax)
+  ) {
+    return true;
+  }
+  return false;
+}
+

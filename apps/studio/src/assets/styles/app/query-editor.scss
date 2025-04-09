@@ -1,3 +1,4 @@
+@use "sass:color";
 .query-editor {
   position: relative;
   display: flex;
@@ -32,6 +33,34 @@
   .bottom-panel {
     > .layout-center {
       overflow: hidden;
+    }
+  }
+
+  .not-supported {
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    top: var(--header-title-height);
+    backdrop-filter: blur(6px);
+    background-color: rgba($theme-bg, 0.5);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+
+    .title {
+      display: flex;
+      flex-direction: row;
+      font-weight: 700;
+      align-items: center;
+      i.material-icons {
+        margin-right: 0.5rem;
+      }
+    }
+
+    .body {
+      line-height: 1.25;
     }
   }
 
@@ -72,7 +101,7 @@
       padding-top: $gutter-h * 0.5;
       padding-bottom: $gutter-h * 0.5;
       padding-left: ($gutter-h * 1.5);
-      background: lighten($query-editor-bg, 1%);
+      background: color.adjust($query-editor-bg, $lightness: 1%);
     }
     .result-table {
       display: flex;
@@ -102,8 +131,11 @@
 
   }
 
-  .CodeMirror {
-    padding-bottom: 0.25rem;
+  .BksSqlTextEditor {
+    min-height: 0;
+    .CodeMirror {
+      padding-bottom: 0.25rem;
+    }
   }
 
   .CodeMirror-linenumbers {
