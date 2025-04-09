@@ -106,7 +106,7 @@
     "split.js": "^1.6.5",
     "sql-formatter": "~10.7.2",
     "sql-query-identifier": "^2.8.0",
-    "sqlanywhere": "github:beekeeper-studio/node-sqlanywhere",
+    "sqlanywhere": "beekeeper-studio/node-sqlanywhere#79af05a4f7f94cf6dd45ad56448ccc54356dee9a",
     "ssh2": "^1.14.0",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",

@@ -42,14 +42,28 @@ export class SqlAnywhereConn {
     await this.pool.remove(this);
   }
 
-  async query(query: string) {
+  async query(query: string, autoCommit = true) {
     const results = await promisify(
       this.rawConnection.exec.bind(this.rawConnection)
     )(query);
-    await promisify(
+    if (autoCommit) {
+      await promisify(
+        this.rawConnection.commit.bind(this.rawConnection)
+      )();
+    }
+    return results;
+  }
+
+  async commit() {
+    return await promisify(
       this.rawConnection.commit.bind(this.rawConnection)
     )();
-    return results;
+  }
+
+  async rollback() {
+    return await promisify(
+      this.rawConnection.commit.bind(this.rawConnection)
+    )();
   }
 }
 

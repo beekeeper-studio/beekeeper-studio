@@ -1,13 +1,13 @@
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from '@/lib/db/clients/BasicDatabaseClient';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, BksField } from '@/lib/db/models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, BksField, TableInsert, TableUpdate, TableDelete } from '@/lib/db/models';
 import { DatabaseElement, IDbConnectionDatabase } from '@/lib/db/types';
 import { TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import rawLog from '@bksLogger';
 import knexlib from 'knex';
 import { identify } from 'sql-query-identifier';
-import { buildSchemaFilter } from '@/lib/db/clients/utils';
+import { buildDeleteQueries, buildInsertQuery, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from '@/lib/db/clients/utils';
 import { SqlAnywhereData } from '@/shared/lib/dialects/anywhere';
 import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
 import _ from 'lodash';
@@ -300,11 +300,11 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         'NO ACTION' AS on_update,
         'NO ACTION' AS on_delete
       FROM SYSFKEY fk
-      JOIN SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id
+      JOIN SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
       JOIN SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
       JOIN SYSTABLE t_for ON fk.foreign_table_id = t_for.table_id
       JOIN SYSUSER u_for ON t_for.creator = u_for.user_id
-      JOIN SYSIDXCOL ic_pri ON fk.primary_index_id = ic_pri.index_id
+      JOIN SYSIDXCOL ic_pri ON fk.primary_index_id = ic_pri.index_id AND ic_pri.table_id = fk.primary_table_id
       JOIN SYSCOLUMN c_pri ON ic_pri.table_id = c_pri.table_id AND ic_pri.column_id = c_pri.column_id
       JOIN SYSTABLE t_pri ON fk.primary_table_id = t_pri.table_id
       JOIN SYSUSER u_pri ON t_pri.creator = u_pri.user_id
@@ -464,18 +464,235 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   createDatabaseSQL(): Promise<string> {
     throw new Error('Method not implemented.');
   }
-  getTableCreateScript(table: string, schema?: string): Promise<string> {
-    throw new Error('Method not implemented.');
+
+  async getTableCreateScript(table: string, schema?: string): Promise<string> {
+    // Use multiple simpler queries instead of a single complex one
+    
+    // Get table info
+    const tableInfoSql = `
+      SELECT 
+        u.user_name,
+        t.table_name,
+        t.table_id
+      FROM systable t
+      JOIN sysuser u ON t.creator = u.user_id
+      WHERE t.table_name = ${D.escapeString(table, true)}
+        AND u.user_name = ${D.escapeString(schema, true)}
+    `;
+    
+    const tableInfo = await this.driverExecuteSingle(tableInfoSql);
+    if (!tableInfo.rows || tableInfo.rows.length === 0) {
+      return '';
+    }
+    
+    const userName = tableInfo.rows[0].user_name;
+    const tableName = tableInfo.rows[0].table_name;
+    const tableId = tableInfo.rows[0].table_id;
+    
+    // Get column info
+    const columnsSql = `
+      SELECT 
+        c.column_name,
+        d.domain_name,
+        c.width,
+        c.scale,
+        c."nulls",
+        c."default",
+        c.pkey,
+        c.column_id
+      FROM syscolumn c
+      JOIN sysdomain d ON c.domain_id = d.domain_id
+      WHERE c.table_id = ${tableId}
+      ORDER BY c.column_id ASC
+    `;
+    
+    const columnsResult = await this.driverExecuteSingle(columnsSql);
+    const columns = columnsResult.rows;
+    
+    // Get foreign keys
+    const fkSql = `
+      SELECT 
+        c_for.column_name AS foreign_column,
+        u_pri.user_name AS primary_schema,
+        t_pri.table_name AS primary_table,
+        c_pri.column_name AS primary_column
+      FROM sysfkey fk
+      JOIN sysidxcol ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
+      JOIN syscolumn c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
+      JOIN sysidxcol ic_pri ON fk.primary_index_id = ic_pri.index_id AND ic_pri.table_id = fk.primary_table_id
+      JOIN syscolumn c_pri ON ic_pri.table_id = c_pri.table_id AND ic_pri.column_id = c_pri.column_id
+      JOIN systable t_pri ON fk.primary_table_id = t_pri.table_id
+      JOIN sysuser u_pri ON t_pri.creator = u_pri.user_id
+      WHERE fk.foreign_table_id = ${tableId}
+        AND ic_for.sequence = ic_pri.sequence
+    `;
+    
+    const fkResult = await this.driverExecuteSingle(fkSql);
+    const foreignKeys = fkResult.rows;
+    
+    // Build the CREATE TABLE statement
+    
+    // Start with the table name
+    let createSql = `CREATE TABLE ${userName}.${tableName} (\n`;
+    
+    // Add column definitions
+    const columnDefs = columns.map(c => {
+      let dataType = c.domain_name.toLowerCase();
+      
+      // Start with column name
+      let def = `  ${c.column_name} `;
+      
+      // Handle data types correctly based on SQL Anywhere syntax
+      switch (dataType) {
+        case 'char':
+        case 'varchar':
+        case 'binary':
+        case 'varbinary':
+          // Character/binary types need width
+          def += `${dataType}(${c.width})`;
+          break;
+          
+        case 'numeric':
+        case 'decimal':
+          // These types can have precision and scale
+          if (c.width !== null) {
+            def += `${dataType}(${c.width}${c.scale !== null ? `, ${c.scale}` : ''})`;
+          } else {
+            def += dataType;
+          }
+          break;
+          
+        case 'long varchar':
+        case 'text':
+        case 'long binary':
+        case 'image':
+          // These types don't take parameters
+          def += dataType;
+          break;
+          
+        default:
+          // For int, bigint, smallint, tinyint, bit, etc. - no parameters
+          def += dataType;
+      }
+      
+      // Add nullability
+      def += c.nulls === 'N' ? ' NOT NULL' : ' NULL';
+      
+      // Add default if exists
+      if (c.default !== null) {
+        def += ` DEFAULT ${c.default}`;
+      }
+      
+      return def;
+    });
+    
+    createSql += columnDefs.join(',\n');
+    
+    // Add primary key if any
+    const pkColumns = columns.filter(c => c.pkey === 'Y').map(c => c.column_name);
+    if (pkColumns.length > 0) {
+      createSql += ',\n  PRIMARY KEY (' + pkColumns.join(', ') + ')';
+    }
+    
+    // Add foreign keys if any
+    if (foreignKeys.length > 0) {
+      const fkDefs = foreignKeys.map(fk => 
+        `  FOREIGN KEY (${fk.foreign_column}) REFERENCES ${fk.primary_schema}.${fk.primary_table}(${fk.primary_column})`
+      );
+      createSql += ',\n' + fkDefs.join(',\n');
+    }
+    
+    // Close the statement
+    createSql += '\n);';
+    
+    return createSql;
   }
-  getViewCreateScript(view: string, schema?: string): Promise<string[]> {
-    throw new Error('Method not implemented.');
+  async getViewCreateScript(view: string, schema?: string): Promise<string[]> {
+    const sql = `
+      SELECT
+        v.viewtext AS definition
+      FROM SYS.SYSVIEWS v
+      JOIN SYS.SYSUSER u ON v.vcreator = u.user_name
+      WHERE v.viewname = ${D.escapeString(view, true)}
+      AND u.user_name = ${D.escapeString(schema, true)};
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+
+    return rows.map((row) => row.definition);
   }
-  getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]> {
-    throw new Error('Method not implemented.');
+
+  async getRoutineCreateScript(routine: string, _type: string, schema?: string): Promise<string[]> {
+    const sql = `
+      SELECT
+        p.source        AS definition
+      FROM sysprocedure p
+      JOIN sysuser u ON p.creator = u.user_id
+      WHERE p.proc_name = ${D.escapeString(routine, true)}
+        AND u.user_name = ${D.escapeString(schema, true)};
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map((row) => row.definition);
   }
-  executeApplyChanges(changes: TableChanges): Promise<any[]> {
-    throw new Error('Method not implemented.');
+
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+    let results = [];
+
+    await this.runWithConnection(async (connection) => {
+      try {
+        if (changes.inserts && changes.inserts.length > 0) {
+          await this.insertRows(changes.inserts, connection);
+        }
+
+        if (changes.updates && changes.updates.length > 0) {
+          results = await this.updateValues(changes.updates, connection);
+        }
+
+        if (changes.deletes && changes.deletes.length > 0) {
+          await this.deleteRows(changes.deletes, connection);
+        }
+
+        await connection.commit();
+      } catch (ex) {
+        log.error("query exception: ", ex);
+        await connection.rollback();
+        throw ex;
+      }
+    });
+
+    return results;
   }
+
+  async insertRows(inserts: TableInsert[], connection: SqlAnywhereConn) {
+    for (const insert of inserts) {
+      const columns = await this.listTableColumns(
+        insert.table,
+        insert.schema
+      );
+      // not sure if this will work
+      const command = buildInsertQuery(this.knex, insert, { columns });
+      await this.driverExecuteSingle(command, { connection, autoCommit: false });
+    }
+  }
+
+  async updateValues(updates: TableUpdate[], connection: SqlAnywhereConn) {
+    const sql = buildUpdateQueries(this.knex, updates).join(';');
+
+    await this.driverExecuteSingle(sql, { connection, autoCommit: false });
+
+    const updateSql = buildSelectQueriesFromUpdates(this.knex, updates).join(';');
+    const data = await this.driverExecuteSingle(updateSql, { connection, autoCommit: false });
+
+    return [data.rows[0]]
+  }
+
+  async deleteRows(deletes: TableDelete[], connection: SqlAnywhereConn) {
+    const sql = buildDeleteQueries(this.knex, deletes).join(';');
+
+    await this.driverExecuteSingle(sql, { connection, autoCommit: false });
+  }
+
   setTableDescription(table: string, description: string, schema?: string): Promise<string> {
     throw new Error('Method not implemented.');
   }
@@ -548,13 +765,14 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLAnywhereResult | SQLAnywhereResult[]> {
     const conn: SqlAnywhereConn = options.connection ? options.connection : await this.pool.connect();
+    const autoCommit = options.autoCommit ?? true;
 
     const runQuery = async (connection: SqlAnywhereConn) => {
       const queries = this.identifyCommands(q);
       const results: SQLAnywhereResult[] = [];
       for (let query of queries) {
         log.info('EXECUTING QUERY: ', query.text);
-        const result = await connection.query(query.text);
+        const result = await connection.query(query.text, autoCommit);
         log.info('RECEIVED RESULT: ');
 
         if (!result) {
@@ -577,6 +795,15 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       await conn.release()
     }
     return results;
+  }
+
+  async runWithConnection<T>(child: (c: SqlAnywhereConn) => Promise<T>): Promise<T> {
+    const connection = await this.pool.connect();
+    try {
+      return await child(connection)
+    } finally {
+      await connection.release();
+    }
   }
 
   private identifyCommands(queryText: string) {

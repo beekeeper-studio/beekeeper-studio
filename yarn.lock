@@ -12195,7 +12195,7 @@ sql-query-identifier@^2.8.0:
   resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.8.0.tgz#af6e62594d784194b86c87bddc95e5f084223b47"
   integrity sha512-5cfaQCq80pRtLulP0nxw1j8W7m2ytUrbbQNrjszV26D8gTly7FUO3bWwMu6rwF3chY30Xv9Rb/CEzAQhDJ1YgA==
 
-"sqlanywhere@github:beekeeper-studio/node-sqlanywhere":
+sqlanywhere@beekeeper-studio/node-sqlanywhere#79af05a4f7f94cf6dd45ad56448ccc54356dee9a:
   version "2.0.3"
   resolved "https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/79af05a4f7f94cf6dd45ad56448ccc54356dee9a"
   dependencies:
