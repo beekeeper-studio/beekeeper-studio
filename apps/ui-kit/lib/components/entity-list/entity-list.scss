@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
 @use "../../styles/base";
@@ -534,14 +535,14 @@
   z-index: 100;
   position: absolute;
   inset: 0;
-  background-color: rgba(darken($theme-bg, 3%), 0.9);
+  background-color: rgba(color.adjust($theme-bg, $lightness: -3%), 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
 
   .dialog-content {
     position: relative;
-    background-color: lighten($theme-bg, 1%);
+    background-color: color.adjust($theme-bg, $lightness: 1%);
     color: $theme-base;
     border-radius: 8px;
     min-height: 8.5rem;

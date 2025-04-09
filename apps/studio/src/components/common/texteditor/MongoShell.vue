@@ -347,6 +347,7 @@ export default {
 </script>
 
 <style lang="scss">
+@use 'sass:color';
 @import '../../../assets/styles/app/_variables';
  
 .cm-s-monokai .cm-prompt {
@@ -356,7 +357,7 @@ export default {
 
 .text-editor {
   .dropdown-icon:hover {
-    color: lighten($theme-primary, 15%);
+    color: color.adjust($theme-primary, $lightness: 15%);
   }
 }
 
