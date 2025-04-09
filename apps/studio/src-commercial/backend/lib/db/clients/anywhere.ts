@@ -1,0 +1,630 @@
+import { IDbConnectionServer } from '@/lib/db/backendTypes';
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from '@/lib/db/clients/BasicDatabaseClient';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, BksField } from '@/lib/db/models';
+import { DatabaseElement, IDbConnectionDatabase } from '@/lib/db/types';
+import { TableKey } from '@/shared/lib/dialects/models';
+import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
+import rawLog from '@bksLogger';
+import knexlib from 'knex';
+import { identify } from 'sql-query-identifier';
+import { buildSchemaFilter } from '@/lib/db/clients/utils';
+import { SqlAnywhereData } from '@/shared/lib/dialects/anywhere';
+import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
+import _ from 'lodash';
+import { joinFilters } from '@/common/utils';
+
+const D = SqlAnywhereData;
+const log = rawLog.scope('sql-anywhere');
+// only using this for now
+const knex = knexlib({ client: 'mssql' });
+
+// TODO (@day): refactor this
+type SQLAnywhereResult = {
+  data: any[],
+  // Number of changes made by the query
+  rowsAffected: number
+  rows: Record<string, any>[];
+  columns: any[];
+  arrayMode: boolean;
+}
+
+const anywhereContext = {
+  getExecutionContext(): ExecutionContext {
+    return null;
+  },
+  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
+    return null;
+  }
+}
+
+export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
+  pool: SqlAnywherePool;
+  dbConfig: any;
+  version: any;
+
+  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+    super(knex, anywhereContext, server, database);
+    this.dialect = 'mssql';
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
+  }
+
+  async connect(): Promise<void> {
+    await super.connect();
+
+    this.dbConfig = this.configDatabase(this.server, this.database);
+    this.pool = new SqlAnywherePool(this.dbConfig);
+
+    // test connection and get version
+    const conn = await this.pool.connect();
+    const version = await conn.query(`SELECT PROPERTY('ProductVersion') AS version`)
+    this.version = version[0];
+    await conn.release();
+  }
+
+  async disconnect(): Promise<void> {
+    await this.pool.disconnect();
+
+    await super.disconnect();
+  }
+
+  private configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+    // hard coding host/port for now
+    const config: any = {
+      Host: `${server.config.host}:${server.config.port}`,
+      UserId: server.config.user,
+      Password: server.config.password,
+      DatabaseName: database.database
+    };
+
+    return config;
+  }
+
+  getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
+    throw new Error('Method not implemented.');
+  }
+
+  async supportedFeatures(): Promise<SupportedFeatures> {
+    return {
+      customRoutines: true,
+      comments: true,
+      properties: true,
+      partitions: false,
+      editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false,
+      indexNullsNotDistinct: false,
+      transactions: true
+    }
+  }
+
+  async versionString(): Promise<string> {
+    return this.version['version'];
+  }
+
+  async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const sql = `
+      SELECT
+        t.table_name,
+        u.user_name AS table_schema
+      FROM SYS.SYSTABLE t
+      JOIN SYS.SYSUSER u on t.creator = u.user_id
+      WHERE t.table_type != 'VIEW' AND t.table_type != 'MATERIALIZED VIEW'
+      ${schemaFilter ? `AND ${schemaFilter}` : ''}
+      ORDER BY table_schema, table_name;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+
+    return rows.map((item) => ({
+      schema: item.table_schema,
+      name: item.table_name,
+      entityType: 'table'
+    }));
+  }
+
+  async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const sql = `
+      SELECT
+        t.table_name,
+        u.user_name as table_schema
+      FROM SYS.SYSTABLE t
+      JOIN SYS.SYSUSER u ON t.creator = u.user_id
+      WHERE t.table_type = 'VIEW'
+      ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+      ORDER BY table_schema, table_name;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+
+    return rows.map((item) => ({
+      schema: item.table_schema,
+      name: item.table_name,
+      entityType: 'view'
+    }));
+  }
+
+  async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
+    const schemaFilter = buildSchemaFilter(filter, 'u.user_name');
+    const sql = `
+      SELECT 
+        p.proc_id               AS id,
+        u.user_name             AS routine_schema,
+        p.proc_name             AS name,
+        CASE 
+          WHEN (
+            SELECT TOP 1 d.domain_name
+            FROM SYS.SYSPROCPARM pp
+            LEFT JOIN SYS.SYSDOMAIN d ON pp.domain_id = d.domain_id
+            WHERE pp.proc_id = p.proc_id
+              AND pp.parm_name = p.proc_name
+              AND pp.parm_mode_in = 'N'
+              AND pp.parm_mode_out = 'Y'
+          ) IS NOT NULL THEN 'FUNCTION'
+          ELSE 'PROCEDURE'
+        END                     AS routine_type,
+        (
+          SELECT TOP 1 d.domain_name
+          FROM SYS.SYSPROCPARM pp
+          LEFT JOIN SYS.SYSDOMAIN d ON pp.domain_id = d.domain_id
+          WHERE pp.proc_id = p.proc_id
+            AND pp.parm_name = p.proc_name
+            AND pp.parm_mode_in = 'N'
+            AND pp.parm_mode_out = 'Y'
+        )                       AS data_type
+      FROM SYS.SYSPROCEDURE p
+      JOIN SYS.SYSUSER u     ON p.creator = u.user_id
+      LEFT JOIN SYS.SYSOBJECT o ON p.object_id = o.object_id
+      ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+      ORDER BY routine_schema, name;
+    `;
+
+    const paramsSQL = `
+      SELECT
+        u.user_name           AS routine_schema,
+        p.proc_id             AS specific_name,
+        prm.parm_name         AS parameter_name,
+        prm.width             AS char_length,
+        d.domain_name         AS data_type
+      FROM SYS.SYSPROCEDURE p
+      JOIN SYS.SYSUSER u          ON p.creator = u.user_id
+      LEFT JOIN SYS.SYSPROCPARM prm ON p.proc_id = prm.proc_id
+      LEFT JOIN SYS.SYSDOMAIN d ON prm.domain_id = d.domain_id
+      WHERE prm.parm_mode_in = 'Y'
+      ${schemaFilter ? `AND ${schemaFilter}` : ''}
+      ORDER BY routine_schema, specific_name, prm.parm_id;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    const paramsResult = await this.driverExecuteSingle(paramsSQL);
+    const grouped = _.groupBy(paramsResult.rows, 'specific_name');
+    
+    return rows.map((row) => {
+      const params = grouped[row.id] || [];
+      return {
+        schema: row.routine_schema,
+        name: row.name,
+        type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
+        returnType: row.data_type,
+        id: row.id,
+        entityType: 'routine',
+        routineParams: params.map((p) => ({
+          name: p.parameter_name,
+          type: p.data_type,
+          length: p.char_length || undefined
+        }))
+      }
+    });
+  }
+
+  listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]> {
+    throw new Error('Method not implemented.');
+  }
+
+  async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
+    const clauses = [];
+    if (table) clauses.push(`t.table_name = ${D.escapeString(table, true)}`);
+    if (schema) clauses.push(`u.user_name = ${D.escapeString(schema, true)}`);
+    const clause = clauses.length > 0 ? `AND ${clauses.join(" AND ")}` : '';
+    const sql = `
+      SELECT 
+        u.user_name         AS table_schema,
+        t.table_name        AS table_name,
+        c.column_name       AS column_name,
+        c.column_id + 1     AS ordinal_position,
+        c."default"         AS column_default,
+        CASE 
+          WHEN c.nulls = 'Y' THEN 'YES'
+          ELSE 'NO'
+        END                 AS is_nullable,
+        'NO'                AS is_generated,
+        CASE
+          WHEN c.domain_id IN (SELECT domain_id FROM SYS.SYSDOMAIN WHERE domain_name IN ('char', 'varchar', 'binary', 'varbinary')) AND c.width IS NOT NULL THEN
+            d.domain_name || '(' || c.width || ')'
+          WHEN c.domain_id IN (SELECT domain_id FROM SYS.SYSDOMAIN WHERE domain_name IN ('numeric', 'decimal')) AND c.width IS NOT NULL AND c.scale IS NOT NULL THEN
+            d.domain_name || '(' || c.width || ',' || c.scale || ')'
+          ELSE
+            d.domain_name
+        END                 AS data_type
+      FROM SYS.SYSCOLUMN c
+      JOIN SYS.SYSTABLE t ON c.table_id = t.table_id
+      JOIN SYS.SYSUSER u ON t.creator = u.user_id
+      JOIN SYS.SYSDOMAIN d ON c.domain_id = d.domain_id
+      WHERE t.table_type != 'MATERIALIZED VIEW'
+      ${clause}
+      ORDER BY table_schema, table_name, ordinal_position;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+
+    return rows.map((row) => ({
+      schemaName: row.table_schema,
+      tableName: row.table_name,
+      columnName: row.column_name,
+      dataType: row.data_type,
+      ordinalPosition: Number(row.ordinal_position),
+      hasDefault: !_.isNil(row.column_default),
+      nullable: row.is_nullable === 'YES',
+      defaultValue: row.column_default,
+      generated: row.is_generated === 'YES',
+      bksField: this.parseTableColumn(row)
+    }));
+  }
+
+  listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
+    throw new Error('Method not implemented.');
+  }
+  listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
+    throw new Error('Method not implemented.');
+  }
+  listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  getTableReferences(table: string, schema?: string): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+    schema = schema || 'dbo';
+    const sql = `
+      SELECT
+        CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS name,
+        u_pri.user_name AS to_schema,
+        t_pri.table_name AS to_table,
+        c_pri.column_name AS to_column,
+        u_for.user_name AS from_schema,
+        t_for.table_name AS from_table,
+        c_for.column_name AS from_column,
+        CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
+        'NO ACTION' AS on_update,
+        'NO ACTION' AS on_delete
+      FROM SYSFKEY fk
+      JOIN SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id
+      JOIN SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
+      JOIN SYSTABLE t_for ON fk.foreign_table_id = t_for.table_id
+      JOIN SYSUSER u_for ON t_for.creator = u_for.user_id
+      JOIN SYSIDXCOL ic_pri ON fk.primary_index_id = ic_pri.index_id
+      JOIN SYSCOLUMN c_pri ON ic_pri.table_id = c_pri.table_id AND ic_pri.column_id = c_pri.column_id
+      JOIN SYSTABLE t_pri ON fk.primary_table_id = t_pri.table_id
+      JOIN SYSUSER u_pri ON t_pri.creator = u_pri.user_id
+      WHERE t_for.table_name = ${D.escapeString(table, true)}
+      AND u_for.user_name = ${D.escapeString(schema, true)}
+      AND ic_for.sequence = ic_pri.sequence
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    
+    const result = rows.map((row) => ({
+      constraintName: row.name,
+      toTable: row.to_table,
+      toColumn: row.to_column,
+      toSchema: row.to_schema,
+      fromSchema: row.from_schema,
+      fromTable: row.from_table,
+      fromColumn: row.from_column,
+      onUpdate: row.on_update,
+      onDelete: row.on_delete
+    }));
+    
+    log.debug("tableKeys result", result);
+    return result;
+  }
+  async query(queryText: string, _options?: any): Promise<CancelableQuery> {
+    const conn = await this.pool.connect();
+
+    return {
+      execute: async(): Promise<NgQueryResult[]> => {
+        try {
+          return await this.executeQuery(queryText, { connection: conn })
+        } catch (err) {
+          // need to figure out what is thrown when canceled
+          throw err;
+        } finally {
+          await conn.release();
+        }
+      },
+      async cancel() {
+        if (!conn) {
+          throw new Error('Query not ready to be canceled');
+        }
+
+        // only way to cancel a query is to just force a disconnect
+        await conn.disconnect();
+        await conn.drop();
+      }
+    }
+  }
+
+  async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
+    const data = await this.driverExecuteMultiple(queryText, options);
+
+    const commands = this.identifyCommands(queryText).map((item) => item.type);
+
+    return data.map((result, idx) => {
+      const fields = result.rows && result.rows.length ? Object.keys(result.rows[0]).map((k) => ({
+        name: k,
+        id: k
+      })) : undefined;
+
+      return {
+        command: commands[idx],
+        rows: result.rows,
+        fields,
+        rowCount: result.rows?.length || 0,
+        affectedRows: result.rowsAffected
+      }
+    })
+  }
+
+  async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
+    let databases;
+    try {
+      // this is only usable by priveleged users, so we need a fallback
+      databases = await this.driverExecuteSingle("CALL sa_db_info()");
+    } catch {
+      databases = await this.driverExecuteSingle("SELECT DB_NAME() as Alias");
+    }
+
+    return databases.rows.map((db) => db.Alias);
+  }
+
+  getTableProperties(table: string, schema?: string): Promise<TableProperties> {
+    throw new Error('Method not implemented.');
+  }
+  getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+
+  async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const sql = `
+      SELECT
+        t.table_name,
+        u.user_name as table_schema
+      FROM SYS.SYSTABLE t
+      JOIN SYS.SYSUSER u ON t.creator = u.user_id
+      WHERE t.table_type = 'MATERIALIZED VIEW'
+      ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+      ORDER BY table_schema, table_name;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+
+    return rows.map((item) => ({
+      schema: item.table_schema,
+      name: item.table_name,
+      entityType: 'view'
+    }));
+  }
+
+  async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
+    log.debug('finding primary keys for', table, schema);
+    
+    schema = schema || 'dbo';
+    // Simple approach: Get primary key info from syscolumn directly
+    const sql = `
+      SELECT 
+        c.column_name AS COLUMN_NAME,
+        CAST(ROW_NUMBER() OVER (ORDER BY c.column_id) AS INTEGER) AS ORDINAL_POSITION
+      FROM SYSTABLE t
+      JOIN SYSUSER u ON t.creator = u.user_id
+      JOIN SYSCOLUMN c ON t.table_id = c.table_id
+      WHERE t.table_name = ${D.escapeString(table, true)}
+      AND u.user_name = ${D.escapeString(schema, true)}
+      AND c.pkey = 'Y'
+      ORDER BY c.column_id
+    `;
+    
+    const { rows } = await this.driverExecuteSingle(sql);
+    if (!rows || rows.length === 0) return [];
+
+    return rows.map((r) => ({
+      columnName: r.COLUMN_NAME,
+      position: r.ORDINAL_POSITION
+    }));
+  }
+
+  async getPrimaryKey(table: string, schema?: string): Promise<string> {
+    const res = await this.getPrimaryKeys(table, schema);
+    return res.length === 1 ? res[0].columnName : null;
+  }
+  listCharsets(): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  getDefaultCharset(): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  listCollations(charset: string): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  createDatabaseSQL(): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  getTableCreateScript(table: string, schema?: string): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  getViewCreateScript(view: string, schema?: string): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  executeApplyChanges(changes: TableChanges): Promise<any[]> {
+    throw new Error('Method not implemented.');
+  }
+  setTableDescription(table: string, description: string, schema?: string): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  truncateAllTables(schema?: string): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  getTableLength(table: string, schema?: string): Promise<number> {
+    throw new Error('Method not implemented.');
+  }
+
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+    const columns = await this.listTableColumns(table);
+    const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
+    log.info("QUERY HERE: ", query);
+
+    const result = await this.driverExecuteSingle(query);
+    const fields = columns.map((v) => v.bksField).filter((v) => selects && selects.length > 0 ? selects.includes(v.name) : true);
+    const rows = await this.serializeQueryResult(result, fields);
+    return { result: rows, fields };
+  }
+
+  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {
+    const filterString = _.isString(filters) ? `WHERE ${filters}` : this.buildFilterString(filters)
+
+    const orderByString = this.genOrderByString(orderBy)
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
+
+    const selectSQL = `SELECT ${selects.map((s) => this.wrapIdentifier(s)).join(", ")}`
+    const baseSQL = `
+      FROM ${schemaString}${this.wrapIdentifier(table)}
+      ${filterString}
+    `
+
+    const offsetString = (_.isNumber(offset) && _.isNumber(limit)) ?
+      `OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY` : ''
+
+
+    const query = `
+      ${selectSQL} ${baseSQL}
+      ${orderByString}
+      ${offsetString}
+      `
+    return query
+  }
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
+    throw new Error('Method not implemented.');
+  }
+  queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    throw new Error('Method not implemented.');
+  }
+  duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+
+  wrapIdentifier(value: string): string {
+    return D.wrapIdentifier(value);
+  }
+
+  protected async rawExecuteQuery(q: string, options: any): Promise<SQLAnywhereResult | SQLAnywhereResult[]> {
+    const conn: SqlAnywhereConn = options.connection ? options.connection : await this.pool.connect();
+
+    const runQuery = async (connection: SqlAnywhereConn) => {
+      const queries = this.identifyCommands(q);
+      const results: SQLAnywhereResult[] = [];
+      for (let query of queries) {
+        log.info('EXECUTING QUERY: ', query.text);
+        const result = await connection.query(query.text);
+        log.info('RECEIVED RESULT: ');
+
+        if (!result) {
+          continue; // was a DDL statement
+        } else if (typeof result === 'number') {
+          results.push({
+            rowsAffected: result
+          } as SQLAnywhereResult);
+        } else {
+          results.push({
+            rows: result
+          } as SQLAnywhereResult);
+        }
+      }
+      return results;
+    }
+
+    const results = await runQuery(conn);
+    if (!options.connection) {
+      await conn.release()
+    }
+    return results;
+  }
+
+  private identifyCommands(queryText: string) {
+    try {
+      return identify(queryText, { strict: false, dialect: 'mssql' });
+    } catch (err) {
+      return [];
+    }
+  }
+
+  protected parseTableColumn(column: any): BksField {
+    return {
+      name: column.column_name,
+      bksType: column.data_type.includes('varbinary') ? 'BINARY' : 'UNKNOWN',
+    };
+  }
+
+  private genOrderByString(orderBy: OrderBy[]) {
+    if (!orderBy) return ""
+
+    let orderByString = "ORDER BY (SELECT NULL)"
+    if (orderBy && orderBy.length > 0) {
+      orderByString = "ORDER BY " + (orderBy.map((item: {field: any, dir: any}) => {
+        if (_.isObject(item)) {
+          return `${this.wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
+        } else {
+          return this.wrapIdentifier(item)
+        }
+      })).join(",")
+    }
+    return orderByString
+  }
+
+  private buildFilterString(filters: TableFilter[]) {
+    let filterString = ""
+    if (filters && filters.length > 0) {
+      const allFilters = filters.map((item) => {
+        let wrappedValue = _.isArray(item.value) ?
+          `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
+          D.escapeString(item.value, true)
+
+        if (item.type.includes('is')) wrappedValue = 'NULL';
+
+        return `${this.wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
+      })
+      filterString = "WHERE " + joinFilters(allFilters, filters)
+    }
+    return filterString
+  }
+
+}

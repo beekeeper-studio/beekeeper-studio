@@ -274,7 +274,7 @@
         </div>
       </modal>
     </portal>
-    <add-field-modal @done="cellAddCol(undefined, $event)"/>
+    <!-- <add-field-modal @done="cellAddCol(undefined, $event)"/> -->
   </div>
 </template>
 
@@ -299,7 +299,6 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
-import AddFieldModal from '../common/modals/AddFieldModal.vue'
 import EditorModal from './EditorModal.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
@@ -328,7 +327,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, AddFieldModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {

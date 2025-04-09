@@ -219,5 +219,10 @@ export const CLIENTS: ClientConfig[] = [
   {
     key: 'mongodb',
     name: 'MongoDB'
+  },
+  {
+    key: 'sqlanywhere',
+    name: 'SqlAnywhere',
+    defaultPort: 2638
   }
 ];

@@ -11,7 +11,8 @@ export function isUltimateType(s: ConnectionType) {
     'libsql',
     'duckdb',
     'clickhouse',
-    'mongodb'
+    'mongodb',
+    'sqlanywhere'
   ]
   return types.includes(s)
 }
