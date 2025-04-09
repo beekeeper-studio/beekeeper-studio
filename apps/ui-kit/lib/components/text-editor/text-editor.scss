@@ -5,6 +5,7 @@
 @use "../../../../../node_modules/codemirror/addon/search/matchesonscrollbar";
 @use "../../../../../node_modules/codemirror/addon/fold/foldgutter";
 @use "dialog.scss";
+@use 'sass:color';
 @use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 @use "../../styles/base";
@@ -36,7 +37,7 @@
   --bks-text-editor-number-fg-color: #{$brand-warning};
   --bks-text-editor-property-fg-color: #a6e22e;
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
-  --bks-text-editor-string-fg-color: #{darken($brand-success, 20%)};
+  --bks-text-editor-string-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
   --bks-text-editor-tag-fg-color: #f92672;
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-variable-3-fg-color: #66d9ef;
@@ -214,7 +215,7 @@
 }
 
 .BksTextEditor-hints.CodeMirror-hints {
-  --bks-text-editor-context-menu-bg-color: #{darken($theme-bg, 5%)};
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
   --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;

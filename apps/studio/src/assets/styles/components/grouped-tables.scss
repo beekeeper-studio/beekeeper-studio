@@ -1,3 +1,4 @@
+@use "sass:color";
 
 .grouped-table-wrapper {
   margin-top: 1rem;
@@ -25,7 +26,7 @@
           border-bottom: 1px solid rgba($grouped-tables-light, 0.85);
         }
         &.tabulator-group {
-          background: lighten($theme-bg, 2%);
+          background: color.adjust($theme-bg, $lightness: 2%);
           padding-top: 0;
           padding-bottom: 0;
           color: $text-lighter;
