@@ -1,3 +1,4 @@
+@use "sass:color";
 :not(.BksTextEditor) {
   .CodeMirror {
     font-family: $font-family-mono, monospace;
@@ -46,33 +47,33 @@
     }
   }
 
-  // Addon: Hints
-  // --------------------------------------
-  .CodeMirror-hints {
-    font-family: $font-family-mono, monospace;
-    background: lighten($theme-bg, 5%);
-    color: $text-dark;
-    padding: $gutter-h 0;
-    border: 0;
-    border-radius: 6px;
-    @include card-shadow;
-    li {
-      &:hover {
-        background: rgba($theme-base, 0.05);
-      }
-      &.CodeMirror-hint-active {
-        background: darken($theme-secondary, 25%);
-        color: white;
-      }
+}
+// Addon: Hints
+// --------------------------------------
+.CodeMirror-hints {
+  font-family: $font-family-mono, monospace;
+  background: color.adjust($theme-bg, $lightness: 5%);
+  color: $text-dark;
+  padding: $gutter-h 0;
+  border: 0;
+  border-radius: 6px;
+  @include card-shadow;
+  li {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+    }
+    &.CodeMirror-hint-active {
+      background: color.adjust($theme-secondary, $lightness: -25%);
+      color: white;
     }
   }
-  .CodeMirror-hint {
-    padding: ($gutter-h * 0.5) $gutter-h;
-    border-radius: 0;
-    color: $text-dark;
-    cursor: pointer;
-  }
-  .CodeMirror-scrollbar-filler {
-    background-color: transparent;
-  }
+}
+.CodeMirror-hint {
+  padding: ($gutter-h * 0.5) $gutter-h;
+  border-radius: 0;
+  color: $text-dark;
+  cursor: pointer;
+}
+.CodeMirror-scrollbar-filler {
+  background-color: transparent;
 }

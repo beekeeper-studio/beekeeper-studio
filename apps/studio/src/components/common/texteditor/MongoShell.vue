@@ -44,6 +44,7 @@ interface InitializeOptions {
 
 export default {
   props: [
+    "focus",
     "output",
     "vimConfig" // not sure if we need this
   ],
@@ -55,7 +56,8 @@ export default {
       commandHistory: [],
       historyIndex: -1,
       promptLine: 0, // where current prompt starts
-      wasShellFocused: false
+      wasShellFocused: false,
+      firstInitialization: true
     }
   },
   computed: {
@@ -121,11 +123,21 @@ export default {
         this.promptSymbol = v;
         this.resetPrompt();
       })
+    },
+    async focus() {
+      if (!this.shell) return;
+      if (this.focus) {
+        this.shell.focus();
+        await this.$nextTick();
+        this.shell.refresh();
+      } else {
+        this.shell.display.input.blur();
+      }
     }
   },
   methods: {
     focusShell() {
-      if (this.shell && this.autoFocus && this.wasShellFocused) {
+      if (this.shell && this.wasShellFocused) {
         this.shell.focus();
         this.wasShellFocused = false;
       }
@@ -144,6 +156,8 @@ export default {
       }
     },
     async initialize(options: InitializeOptions = {}) {
+      await this.$nextTick();
+
       this.destroyShell();
 
       const indicatorOpen = document.createElement("span");
@@ -249,7 +263,19 @@ export default {
         });
       }
 
+      // set value again cause sometimes it doesn't set
+      //this.setInitialValue(cm);
+
+      if (this.firstInitialization && this.focus) {
+        cm.focus();
+      }
+
       this.shell = cm;
+      this.firstInitialization = false;
+
+      this.$nextTick(() => {
+        this.$emit("initialized");
+      })
     },
     async executeCommand() {
       const doc = this.shell.getDoc();
@@ -302,6 +328,11 @@ export default {
     await this.initialize({
       userKeymap: this.userKeymap,
     });
+
+    if (this.focus) {
+      this.shell.focus();
+    }
+
     window.addEventListener('focus', this.focusShell);
     window.addEventListener('blur', this.handleBlur);
     this.registerHandlers(this.rootBindings);
@@ -316,6 +347,7 @@ export default {
 </script>
 
 <style lang="scss">
+@use 'sass:color';
 @import '../../../assets/styles/app/_variables';
  
 .cm-s-monokai .cm-prompt {
@@ -325,7 +357,7 @@ export default {
 
 .text-editor {
   .dropdown-icon:hover {
-    color: lighten($theme-primary, 15%);
+    color: color.adjust($theme-primary, $lightness: 15%);
   }
 }
 

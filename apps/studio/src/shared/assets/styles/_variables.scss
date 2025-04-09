@@ -1,3 +1,4 @@
+@use "sass:color";
 // Theme
 // -----------------------------
 $theme-bg:               #181818!default;
@@ -32,11 +33,11 @@ $selection:                 rgba($theme-primary, 0.2)!default;
 $input-highlight:           rgba($theme-base, 0.27)!default;
 
 $db-select-text:            white!default;
-$query-editor-bg:           darken($theme-bg, 6%)!default;
+$query-editor-bg:           color.adjust($theme-bg, $lightness: -6%)!default;
 
 $titlebar-bg:               transparent!default;
 $global-sidebar-bg:         transparent!default;
-$sidebar-bg:                darken($theme-bg, 3%)!default;
+$sidebar-bg:                color.adjust($theme-bg, $lightness: -3%)!default;
 $sidebar-heading-bg:        $theme-bg!default;
 $tabs-bg:                   transparent!default;
 $statusbar-bg:              rgba($theme-base, 0.1)!default;

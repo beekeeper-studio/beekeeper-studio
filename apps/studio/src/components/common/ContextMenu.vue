@@ -136,9 +136,10 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
+@use 'sass:color';
 // yuck
 $light-grey: #ecf0f1;
-$grey: darken($light-grey, 15%);
+$grey: color.adjust($light-grey, $lightness: -15%);
 $blue: #007aff;
 $white: #fff;
 $black: #333;

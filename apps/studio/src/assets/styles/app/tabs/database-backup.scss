@@ -1,3 +1,4 @@
+@use "sass:color";
 .backup-stepper-wrapper {
   max-height: 90vh;
   overflow-y: scroll;
@@ -43,7 +44,7 @@
         padding: 2rem;
         width: 100%;
         resize: none;
-        background-color: darken($theme-bg, 2%);
+        background-color: color.adjust($theme-bg, $lightness: -2%);
         display: block;
         position: relative;
         overflow-wrap: break-word;
@@ -57,7 +58,7 @@
 
         .copy-button {
           opacity: 0.5;
-          background-color: lighten($theme-bg, 2%);
+          background-color: color.adjust($theme-bg, $lightness: 2%);
           border-radius: 5px;
           padding-top: 0.25rem;
           border: none;
@@ -71,7 +72,7 @@
           }
 
           &:hover {
-            background-color: lighten($theme-bg, 4%);
+            background-color: color.adjust($theme-bg, $lightness: 4%);
             cursor: pointer;
             margin-bottom: 0.15rem;
             margin-top: -0.15rem;
@@ -110,7 +111,7 @@
     flex-direction: column;
     margin: auto;
     margin-top: 2rem;
-    background-color: darken($theme-bg, 2%);
+    background-color: color.adjust($theme-bg, $lightness: -2%);
 
     .system-logs {
       display: flex;
@@ -140,7 +141,7 @@
 
     .beekeeper-log {
       padding: 1rem;
-      background-color: lighten($theme-bg, 4%);
+      background-color: color.adjust($theme-bg, $lightness: 4%);
       border-radius: 5px;
       // margin-top: 1rem;
       margin-bottom: 1rem;
@@ -225,7 +226,7 @@
       position: absolute;
       top: 0.5rem;
       right: 0.5rem;
-      background: lighten($theme-bg, 1%);
+      background: color.adjust($theme-bg, $lightness: 1%);
       padding: 0;
       color: $text-light;
       border: none;
