@@ -30,7 +30,7 @@
   },
 
   "exclude": [
-    "node_modules", "dist", "dist_electron"
+    "node_modules", "dist", "dist_electron", "../../node_modules"
   ],
   "sourceMapPathOverrides": {
     "src/*": "${webRoot}/apps/studio/src/*"

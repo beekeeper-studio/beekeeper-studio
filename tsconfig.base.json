@@ -21,9 +21,9 @@
     ]
   },
   "exclude": [
-    "packages/**/dist",
+    "apps/**/dist",
     "node_modules",
-    "packages/**/node_modules",
+    "apps/**/node_modules",
     "dist_electron",
     "dist"
   ]

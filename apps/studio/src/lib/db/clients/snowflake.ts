@@ -2,18 +2,24 @@ import { TableKey } from "@/shared/lib/dialects/models";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, BksFieldType } from "../models";
 import { BaseV1DatabaseClient } from "./BaseV1DatabaseClient";
 import { IDbConnectionServer } from "../backendTypes";
-import { IDbConnectionDatabase } from "../types";
+import { IDbConnectionDatabase, IDbConnectionServerConfig } from "../types";
 import { ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import snowflake from 'snowflake-sdk'
 import rawLog from '@bksLogger'
 import { SnowflakeData } from "@/shared/lib/dialects/snowflake";
+import { identify } from 'sql-query-identifier';
+import { errorMessages } from './utils';
 
 const log = rawLog.scope('SnowflakeClient')
 
 interface SnowflakeResult {
   rows: any[]
   arrayMode: boolean
-  columns: any
+  columns: {
+    id: string
+    name: string
+    type?: string
+  }[]
 }
 
 const snowflakeContext = {
@@ -29,7 +35,7 @@ const snowflakeContext = {
 
 export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
 
-  config: any = {}
+  config: IDbConnectionServerConfig
   // pool: snowflake.Pool<snowflake.Connection>
   connection: snowflake.Connection
   connectionId: string
@@ -49,7 +55,8 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
       account: snowflakeOptions.account,
       username: this.config.user,
       password: this.config.password,
-      application: "BEEKEEPERSTUDIO"
+      application: "BEEKEEPERSTUDIO",
+      database: this.database.database
     })
 
     /**
@@ -119,17 +126,50 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
     `;
 
     const result = await this.rawExecuteQuery(sql, {});
-    return Array.isArray(result) ? result[0].rows : result.rows;
+    const rows = Array.isArray(result) ? result[0].rows : result.rows;
+
+    return rows.map(row => ({
+      schema: row.SCHEMA || row.schema,
+      name: row.NAME || row.name,
+      entityType: 'table'
+    }));
   }
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    // throw new Error("Method not implemented.");
-    return []
+    const schemaFilter = filter?.schema
+      ? `AND TABLE_SCHEMA = ${SnowflakeData.escapeString(filter.schema, true)}`
+      : '';
+
+    const sql = `
+      SELECT
+        TABLE_SCHEMA as schema,
+        TABLE_NAME as name
+      FROM INFORMATION_SCHEMA.VIEWS
+      WHERE 1=1
+      ${schemaFilter}
+      ORDER BY TABLE_SCHEMA, TABLE_NAME
+    `;
+
+    try {
+      const result = await this.rawExecuteQuery(sql, {});
+      const rows = Array.isArray(result) ? result[0].rows : result.rows;
+
+      return rows.map(row => ({
+        schema: row.SCHEMA || row.schema,
+        name: row.NAME || row.name,
+        entityType: 'view'
+      }));
+    } catch (error) {
+      log.error('Error listing views', error);
+      return [];
+    }
   }
-  listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    throw new Error("Method not implemented.");
+  async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
+    // TODO: Implement listing of stored procedures, functions and other routines
+    return [];
   }
-  listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]> {
-    throw new Error("Method not implemented.");
+  async listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]> {
+    // TODO: Implement materialized view columns support
+    return [];
   }
   async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
     if (!table) return [];
@@ -179,65 +219,176 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
       return column;
     });
   }
-  listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
-    throw new Error("Method not implemented.");
+  async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
+    // TODO: Implement table triggers listing
+    return [];
   }
-  listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
-    throw new Error("Method not implemented.");
+  async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
+    // TODO: Implement table indexes listing
+    return [];
   }
-  listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
-    throw new Error("Method not implemented.");
+  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
+    const sql = `
+      SELECT
+        SCHEMA_NAME as name
+      FROM INFORMATION_SCHEMA.SCHEMATA
+      WHERE 1=1
+      ORDER BY SCHEMA_NAME
+    `;
+
+    try {
+      const result = await this.rawExecuteQuery(sql, {});
+      const rows = Array.isArray(result) ? result[0].rows : result.rows;
+      return rows.map(row => row.NAME);
+    } catch (error) {
+      log.error('Error listing schemas', error);
+      return [];
+    }
   }
-  getTableReferences(table: string, schema?: string): Promise<string[]> {
-    throw new Error("Method not implemented.");
+  async getTableReferences(table: string, schema?: string): Promise<string[]> {
+    // throw new Error("Method not implemented.");
+    return []
   }
-  getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
-    throw new Error("Method not implemented.");
+  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+    // throw new Error("Method not implemented.");
+    return []
   }
-  executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
-    throw new Error("Method not implemented.");
+  async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
+    try {
+      const statements = identify(queryText, { strict: false, dialect: 'generic' });
+      if (this.violatesReadOnly(statements, options)) {
+        throw new Error(errorMessages.readOnly);
+      }
+
+      log.debug('executing query', { queryText });
+      const result = await this.rawExecuteQuery(queryText, options);
+      const results = Array.isArray(result) ? result : [result];
+
+      return results.map(queryResult => {
+        // Extract column types from the statement result if available
+        const fields = queryResult.columns.map(col => ({
+          name: col.name,
+          id: col.id || col.name,
+          // Include dataType if available from the Snowflake API
+          dataType: col.type || null
+        }));
+
+        return {
+          fields,
+          rows: queryResult.rows,
+          rowCount: queryResult.rows.length,
+          command: 'SELECT', // This is a simplification, should be determined from the query
+        };
+      });
+    } catch (error) {
+      log.error('Error executing query', error);
+      throw error;
+    }
   }
-  listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
-    throw new Error("Method not implemented.");
+  async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
+    const sql = `
+      SHOW DATABASES
+    `;
+
+    try {
+      const result = await this.rawExecuteQuery(sql, {});
+      const rows = Array.isArray(result) ? result[0].rows : result.rows;
+      return rows.map(row => row.name || row.NAME);
+    } catch (error) {
+      log.error('Error listing databases', error);
+      return [];
+    }
   }
-  getTableProperties(table: string, schema?: string): Promise<TableProperties | null> {
-    throw new Error("Method not implemented.");
+  async getTableProperties(table: string, schema?: string): Promise<TableProperties | null> {
+    // TODO: Implement table properties retrieval
+    return null;
   }
-  getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
-    throw new Error("Method not implemented.");
+  async getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
+    // TODO: Implement proper query formatting with schema handling
+    const tableName = schema ? `${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}` : this.wrapIdentifier(table);
+    return `SELECT * FROM ${tableName} LIMIT ${limit}`;
   }
-  listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    throw new Error("Method not implemented.");
+  async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
+    // TODO: Implement materialized views listing for Snowflake
+    // Note: Snowflake doesn't have true materialized views but has similar concepts
+    return [];
   }
-  getPrimaryKey(table: string, schema?: string): Promise<string | null> {
-    throw new Error("Method not implemented.");
+  async getPrimaryKey(table: string, schema?: string): Promise<string | null> {
+    // TODO: Implement primary key retrieval
+    return null;
   }
-  getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
-    throw new Error("Method not implemented.");
+  async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
+    // TODO: Implement primary keys columns retrieval
+    return [];
   }
-  listCharsets(): Promise<string[]> {
-    throw new Error("Method not implemented.");
+  async listCharsets(): Promise<string[]> {
+    // TODO: Implement charsets listing or determine if Snowflake supports this concept
+    return [];
   }
-  getDefaultCharset(): Promise<string> {
-    throw new Error("Method not implemented.");
+  async getDefaultCharset(): Promise<string> {
+    // TODO: Implement default charset retrieval or determine if Snowflake has this concept
+    return '';
   }
-  listCollations(charset: string): Promise<string[]> {
-    throw new Error("Method not implemented.");
+  async listCollations(charset: string): Promise<string[]> {
+    // TODO: Implement collations listing or determine if Snowflake has this concept
+    return [];
   }
-  getTableLength(table: string, schema?: string): Promise<number> {
-    throw new Error("Method not implemented.");
+  async getTableLength(table: string, schema?: string): Promise<number> {
+    // TODO: Implement proper table row count
+    try {
+      const tableName = schema ? `${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}` : this.wrapIdentifier(table);
+      const result = await this.rawExecuteQuery(`SELECT COUNT(1) AS total FROM ${tableName}`, {});
+      const data = Array.isArray(result) ? result[0].rows[0] : result.rows[0];
+      return data.TOTAL || 0;
+    } catch (error) {
+      log.error(`Error getting table length for ${table}`, error);
+      return 0;
+    }
   }
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
-    throw new Error("Method not implemented.");
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+    // TODO: Implement full selectTop functionality with filters
+    const sql = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
+    const results = await this.executeQuery(sql);
+
+    if (!results || !results[0]) {
+      return { result: [], fields: [] };
+    }
+
+    // Create BksFields from the query result
+    const fields: BksField[] = results[0].fields.map(field => {
+      // Check if the field type is binary
+      const isBinary = field.dataType?.toLowerCase() === 'binary' ||
+                      field.dataType?.toLowerCase() === 'varbinary';
+
+      return {
+        name: field.name,
+        bksType: isBinary ? 'BINARY' : 'UNKNOWN'
+      };
+    });
+
+    // Return the correctly structured TableResult
+    return {
+      result: results[0].rows || [],
+      fields: fields
+    };
   }
-  selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {
-    throw new Error("Method not implemented.");
+  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {
+    // TODO: Implement full SQL generation with proper filters and ordering
+    const tableName = schema ? `${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}` : this.wrapIdentifier(table);
+    const selectClause = selects && selects.length > 0 ? selects.join(', ') : '*';
+    const orderByClause = orderBy && orderBy.length > 0
+      ? `ORDER BY ${orderBy.map(item => `${this.wrapIdentifier(item.field)} ${item.dir}`).join(', ')}`
+      : '';
+
+    return `SELECT ${selectClause} FROM ${tableName} ${orderByClause} LIMIT ${limit} OFFSET ${offset}`;
   }
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
+    // TODO: Implement streaming results for large datasets
+    throw new Error("Streaming not yet implemented for Snowflake");
   }
-  queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    // TODO: Implement query streaming for large results
+    throw new Error("Query streaming not yet implemented for Snowflake");
   }
   wrapIdentifier(value: string): string {
     return SnowflakeData.wrapIdentifier(value);
@@ -250,39 +401,70 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
         sqlText: q,
         complete: function (err, stmt, rows) {
           if (err) return reject(err)
+
+          // Extract column information including type data if available
+          const columns = stmt.getColumns().map((c) => {
+            const columnInfo = {
+              id: c.getId(),
+              name: c.getName()
+            };
+
+            // Add type information if available from Snowflake
+            if (c.getType) {
+              try {
+                columnInfo['type'] = c.getType();
+              } catch (e) {
+                log.debug('Failed to get column type', e);
+              }
+            }
+
+            return columnInfo;
+          });
+
           return resolve({
             rows: rows,
             arrayMode: false,
-            columns: stmt.getColumns().map((c) => ({id: c.getId(), name: c.getName()}))
-          })
+            columns: columns
+          });
         }
       });
     });
-    return results
+    return results;
   }
+  protected parseQueryResultColumns(qr: SnowflakeResult): BksField[] {
+    return qr.columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+
+      // Check if the column type is available and is a binary type
+      if (column.type?.toUpperCase() === 'BINARY' || column.type?.toUpperCase() === 'VARBINARY') {
+        bksType = 'BINARY';
+      }
+
+      return {
+        name: column.name,
+        bksType
+      };
+    });
+  }
+
   protected parseTableColumn(column: any): BksField {
-    const { columnName, dataType, nullable, defaultValue, charMaxLength, precision, scale } = column;
+    const { columnName, dataType } = column;
 
-    let type: BksFieldType = 'UNKNOWN';
-    const length = charMaxLength;
-
-    // Map Snowflake data types to BksFieldType
+    // Map Snowflake data types to BksFieldType (only BINARY, UNKNOWN, or OBJECTID are valid)
     // Reference: https://docs.snowflake.com/en/sql-reference/data-types
-    switch (dataType.toUpperCase()) {
+    let bksType: BksFieldType = 'UNKNOWN';
+    switch (dataType?.toUpperCase()) {
       case 'BINARY':
       case 'VARBINARY':
-        type = 'BINARY';
+        bksType = 'BINARY';
         break;
       default:
-        type = 'UNKNOWN'
+        bksType = 'UNKNOWN';
     }
 
     return {
       name: columnName,
-      bksType: type,
-      // length: length || null,
-      // notNull: !nullable,
-      // defaultValue: defaultValue || null,
+      bksType
     };
   }
 

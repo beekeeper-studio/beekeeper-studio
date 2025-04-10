@@ -83,14 +83,14 @@ process.parentPort.on('message', async ({ data, ports }) => {
   switch (type) {
     case 'init':
       if (ports && ports.length > 0) {
-        log.info('RECEIVED PORT: ', ports[0]);
+        log.debug('RECEIVED PORT: ', ports[0]);
         await initState(sId, ports[0]);
       } else {
         await init();
       }
       break;
     case 'close':
-      log.info('REMOVING STATE FOR: ', sId);
+      log.debug('REMOVING STATE FOR: ', sId);
       state(sId).port.close();
       removeState(sId);
       break;
@@ -100,7 +100,7 @@ process.parentPort.on('message', async ({ data, ports }) => {
 })
 
 async function runHandler(id: string, name: string, args: any) {
-  log.info('RECEIVED REQUEST FOR NAME, ID: ', name, id);
+  log.debug('RECEIVED REQUEST FOR NAME, ID: ', name, id);
   const replyArgs: Reply = {
     id,
     type: 'reply',
