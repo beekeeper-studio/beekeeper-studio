@@ -1,3 +1,4 @@
+@use "sass:color";
 
 
 .quicksearch {
@@ -46,7 +47,7 @@
     line-height: $input-height;
     font-size: 1.1rem;
     border-radius: 6px;
-    background: lighten($theme-bg, 5%);
+    background: color.adjust($theme-bg, $lightness: 5%);
     width: 100%;
     @include card-shadow-hover;
   }
@@ -74,7 +75,7 @@
   // Results
   .results {
     margin: 0;
-    background: lighten($theme-bg, 5%);
+    background: color.adjust($theme-bg, $lightness: 5%);
     padding-left: 0;
     border-radius: 6px;
     margin: ($gutter-h * 0.5) 0;
