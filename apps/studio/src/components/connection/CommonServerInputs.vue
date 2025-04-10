@@ -37,14 +37,12 @@
       </div>
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
         <label for="port">Port</label>
-        <input
-          :type="privacyMode ? 'text' : 'number'"
-          class="form-control"
-          name="port"
-          :value="privacyMode ? '******' : config.port"
-          @input="!privacyMode && (config.port = $event.target.value)"
-          :readonly="privacyMode"
-        >
+        <masked-input
+          :value="config.port"
+          :privacyMode="privacyMode"
+          :type="'number'"
+          @input="val => config.port = val"
+        />
       </div>
     </div>
     <div
@@ -53,26 +51,20 @@
     >
       <div class="col s9 form-group">
         <label for="Host">Host</label>
-        <input
-          type="text"
-          class="form-control"
-          @paste="onPaste"
-          name="host"
-          :value="privacyMode ? '******' : config.host"
-          @input="!privacyMode && (config.host = $event.target.value)"
-          :readonly="privacyMode"
-        >
+        <masked-input
+          :value="config.host"
+          :privacyMode="privacyMode"
+          @input="val => config.host = val"
+        />
       </div>
       <div class="col s3 form-group">
         <label for="port">Port</label>
-        <input
-          :type="privacyMode ? 'text' : 'number'"
-          class="form-control"
-          name="port"
-          :value="privacyMode ? '******' : config.port"
-          @input="!privacyMode && (config.port = $event.target.value)"
-          :readonly="privacyMode"
-        >
+        <masked-input
+          :value="config.port"
+          :privacyMode="privacyMode"
+          :type="'number'"
+          @input="val => config.port = val"
+        />
       </div>
     </div>
 
@@ -176,14 +168,11 @@
     <div class="row gutter">
       <div class="col s6 form-group">
         <label for="user">User</label>
-        <input
-          type="text"
-          name="user"
-          :value="privacyMode ? '******' : config.username"
-          @input="!privacyMode && (config.username = $event.target.value)"
-          class="form-control"
-          :readonly="privacyMode"
-        >
+        <masked-input
+          :value="config.username"
+          :privacyMode="privacyMode"
+          @input="val => config.username = val"
+        />
       </div>
       <div class="col s6 form-group">
         <label for="password">Password</label>
@@ -222,6 +211,7 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import { findClient } from '@/lib/db/clients'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
+import MaskedInput from '@/components/MaskedInput.vue'
 import { mapState } from 'vuex'
 
 export default {
@@ -236,7 +226,8 @@ export default {
   components: {
     FilePicker,
     ExternalLink,
-    ToggleFormArea
+    ToggleFormArea,
+    MaskedInput
   },
   data() {
     return {
