@@ -96,6 +96,7 @@ export default {
      * In vim, that would be `:map ; :`.
      */
     vimKeymaps: Array,
+    clipboard: Object as PropType<Clipboard>
   },
   data() {
     return {
@@ -157,7 +158,7 @@ export default {
 
       if (this.keymap === "vim") {
         const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
-        extendVimOnCodeMirror(cmEl, this.vimConfig, this.vimKeymaps);
+        extendVimOnCodeMirror(cmEl, this.vimConfig, this.vimKeymaps, this.clipboard);
       }
     },
     vimKeymaps() {
@@ -380,7 +381,7 @@ export default {
       cmEl.addEventListener("contextmenu", this.showContextMenu);
 
       if (this.keymap === "vim") {
-        extendVimOnCodeMirror(cmEl, this.vimConfig, this.vimKeymaps);
+        extendVimOnCodeMirror(cmEl, this.vimConfig, this.vimKeymaps, this.clipboard);
       }
 
       if (this.plugins) {
