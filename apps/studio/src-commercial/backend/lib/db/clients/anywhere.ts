@@ -110,7 +110,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         u.user_name AS table_schema
       FROM SYS.SYSTABLE t
       JOIN SYS.SYSUSER u on t.creator = u.user_id
-      WHERE t.table_type != 'VIEW' AND t.table_type != 'MATERIALIZED VIEW'
+      WHERE t.table_type != 'VIEW' AND t.table_type != 'MAT VIEW'
       ${schemaFilter ? `AND ${schemaFilter}` : ''}
       ORDER BY table_schema, table_name;
     `;
@@ -219,8 +219,33 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     });
   }
 
-  listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]> {
-    throw new Error('Method not implemented.');
+  async listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]> {
+    const sql = `
+      SELECT
+        u.user_name     AS view_schema,
+        t.table_name    AS view_name,
+        c.column_name   AS column_name,
+        d.domain_name   AS data_type,
+        c.width         AS width,
+        c.scale         AS scale,
+        c."nulls"       AS is_nullable
+      FROM systable t
+      JOIN sysuser u ON t.creator = u.user_id
+      JOIN syscolumn c ON t.table_id = c.table_id
+      LEFT JOIN sysdomain d ON c.domain_id = d.domain_id
+      WHERE t.table_type = 'MAT VIEW'
+        AND t.table_name = ${D.escapeString(table, true)}
+        AND u.user_name = ${D.escapeString(schema, true)}
+      ORDER BY c.column_id;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map((row) => ({
+      schemaName: row.view_schema,
+      tableName: row.view_name,
+      columnName: row.column_name,
+      dataType: row.dataType
+    }));
   }
 
   async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
@@ -252,7 +277,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       JOIN SYS.SYSTABLE t ON c.table_id = t.table_id
       JOIN SYS.SYSUSER u ON t.creator = u.user_id
       JOIN SYS.SYSDOMAIN d ON c.domain_id = d.domain_id
-      WHERE t.table_type != 'MATERIALIZED VIEW'
+      WHERE t.table_type != 'MAT VIEW'
       ${clause}
       ORDER BY table_schema, table_name, ordinal_position;
     `;
@@ -273,18 +298,141 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     }));
   }
 
-  listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
-    throw new Error('Method not implemented.');
+  async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
+    schema = schema || await this.defaultSchema();
+    const sql = `
+      SELECT 
+        COALESCE(tr.trigger_name, 'Trigger_' || tr.trigger_id) AS name,
+        tr.event AS event,
+        tr.trigger_time AS timing,
+        tr.trigger_defn AS definition,
+        t.table_name,
+        u.user_name AS schema_name
+      FROM SYSTRIGGER tr
+      JOIN SYSTABLE t ON tr.table_id = t.table_id
+      JOIN SYSUSER u ON t.creator = u.user_id
+      WHERE t.table_name = ${D.escapeString(table, true)}
+      AND u.user_name = ${D.escapeString(schema, true)}
+      ORDER BY tr.trigger_id
+    `;
+    
+    const { rows } = await this.driverExecuteSingle(sql);
+    
+    if (!rows || rows.length === 0) return [];
+    
+    return rows.map(row => {
+      // Determine the manipulation type (INSERT, UPDATE, DELETE, UPDATE OF columns) from the event
+      let manipulation = '';
+      switch(row.event) {
+        case 'I': manipulation = 'INSERT'; break;
+        case 'U': manipulation = 'UPDATE'; break;
+        case 'D': manipulation = 'DELETE'; break;
+        case 'C': manipulation = 'UPDATE OF COLUMNS'; break;
+        default: manipulation = row.event || ''; 
+      }
+      
+      // Determine the timing (BEFORE, AFTER, INSTEAD OF)
+      let timing = 'BEFORE';
+      switch(row.timing) {
+        case 'A': timing = 'AFTER'; break;
+        case 'B': timing = 'BEFORE'; break;
+        case 'I': timing = 'INSTEAD OF'; break;
+        default: timing = 'BEFORE';
+      }
+      
+      return {
+        name: row.name,
+        timing: timing,
+        manipulation: manipulation,
+        table: row.table_name,
+        schema: row.schema_name,
+        action: row.definition,
+        condition: null
+      };
+    });
   }
-  listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
-    throw new Error('Method not implemented.');
+  
+  async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
+    schema = schema || await this.defaultSchema();
+    const sql = `
+      SELECT 
+        ROW_NUMBER() OVER (ORDER BY iname) AS id,
+        iname AS name,
+        icreator AS schema_name,
+        tname AS table_name,
+        CASE 
+          WHEN indextype = 'Primary Key' THEN 'Y'
+          ELSE 'N'
+        END AS is_primary,
+        CASE 
+          WHEN indextype LIKE '%Unique%' THEN 'Y'
+          ELSE 'N'
+        END AS is_unique,
+        colnames
+      FROM SYS.SYSINDEXES
+      WHERE tname = ${D.escapeString(table, true)}
+      AND icreator = ${D.escapeString(schema, true)}
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    
+    if (!rows || rows.length === 0) return [];
+    
+    return rows.map(row => {
+      // Parse the column information from colnames string
+      // The format is typically "column1 ASC, column2 DESC, ..."
+      const columnParts = row.colnames.split(',').map(part => part.trim());
+      const columns = columnParts.map(part => {
+        const [columnName, orderType] = part.split(/\s+/);
+        return {
+          name: columnName,
+          order: orderType || 'ASC'
+        };
+      });
+      
+      return {
+        id: row.id,
+        name: row.name,
+        schema: row.schema_name,
+        table: row.table_name,
+        primary: row.is_primary === 'Y',
+        unique: row.is_unique === 'Y',
+        columns: columns
+      };
+    });
   }
-  listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
-    throw new Error('Method not implemented.');
+
+  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
+    const sql = `
+      SELECT 
+        user_name AS schema_name
+      FROM SYSUSER
+      WHERE user_name NOT IN ('SYS', 'rs_systabgroup')
+      ORDER BY user_name
+    `;
+    
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map(row => row.schema_name);
   }
-  getTableReferences(table: string, schema?: string): Promise<string[]> {
-    throw new Error('Method not implemented.');
+
+  async getTableReferences(table: string, schema?: string): Promise<string[]> {
+    schema = schema || await this.defaultSchema();
+    const sql = `
+      SELECT DISTINCT
+        t_pri.table_name AS referenced_table
+      FROM SYSFKEY fk
+      JOIN SYSTABLE t_for ON fk.foreign_table_id = t_for.table_id
+      JOIN SYSUSER u_for ON t_for.creator = u_for.user_id
+      JOIN SYSTABLE t_pri ON fk.primary_table_id = t_pri.table_id
+      JOIN SYSUSER u_pri ON t_pri.creator = u_pri.user_id
+      WHERE t_for.table_name = ${D.escapeString(table, true)}
+      AND u_for.user_name = ${D.escapeString(schema, true)}
+    `;
+    
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map(row => row.referenced_table);
   }
+
   async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
     schema = schema || 'dbo';
     const sql = `
@@ -299,15 +447,15 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
         'NO ACTION' AS on_update,
         'NO ACTION' AS on_delete
-      FROM SYSFKEY fk
-      JOIN SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
-      JOIN SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
-      JOIN SYSTABLE t_for ON fk.foreign_table_id = t_for.table_id
-      JOIN SYSUSER u_for ON t_for.creator = u_for.user_id
-      JOIN SYSIDXCOL ic_pri ON fk.primary_index_id = ic_pri.index_id AND ic_pri.table_id = fk.primary_table_id
-      JOIN SYSCOLUMN c_pri ON ic_pri.table_id = c_pri.table_id AND ic_pri.column_id = c_pri.column_id
-      JOIN SYSTABLE t_pri ON fk.primary_table_id = t_pri.table_id
-      JOIN SYSUSER u_pri ON t_pri.creator = u_pri.user_id
+      FROM SYS.SYSFKEY fk
+      JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
+      JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
+      JOIN SYS.SYSTABLE t_for ON fk.foreign_table_id = t_for.table_id
+      JOIN SYS.SYSUSER u_for ON t_for.creator = u_for.user_id
+      JOIN SYS.SYSIDXCOL ic_pri ON fk.primary_index_id = ic_pri.index_id AND ic_pri.table_id = fk.primary_table_id
+      JOIN SYS.SYSCOLUMN c_pri ON ic_pri.table_id = c_pri.table_id AND ic_pri.column_id = c_pri.column_id
+      JOIN SYS.SYSTABLE t_pri ON fk.primary_table_id = t_pri.table_id
+      JOIN SYS.SYSUSER u_pri ON t_pri.creator = u_pri.user_id
       WHERE t_for.table_name = ${D.escapeString(table, true)}
       AND u_for.user_name = ${D.escapeString(schema, true)}
       AND ic_for.sequence = ic_pri.sequence
@@ -389,11 +537,52 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     return databases.rows.map((db) => db.Alias);
   }
 
-  getTableProperties(table: string, schema?: string): Promise<TableProperties> {
-    throw new Error('Method not implemented.');
+  async defaultSchema(): Promise<string | null> {
+    const sql = `SELECT USER_NAME() as schema;`;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows && rows.length > 0 ? rows[0].schema : 'DBA';
   }
-  getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
-    throw new Error('Method not implemented.');
+
+  async getTableProperties(table: string, schema?: string): Promise<TableProperties> {
+    schema = schema ?? await this.defaultSchema();
+    const triggers = await this.listTableTriggers(table, schema);
+    const indexes = await this.listTableIndexes(table, schema);
+    const relations = await this.getTableKeys(table, schema);
+    
+    // Get table size using sa_table_page_usage procedure
+    let size = 0;
+    let indexSize = 0;
+    
+    try {
+      const sizeQuery = `
+        SELECT 
+          PROPERTY('PageSize') * TablePages AS size,
+          PROPERTY('PageSize') * IndexPages AS index_size
+        FROM sa_table_page_usage()
+        WHERE TableName = ${D.escapeString(table, true)}
+      `;
+      
+      const sizeResult = await this.driverExecuteSingle(sizeQuery);
+      if (sizeResult.rows && sizeResult.rows.length > 0) {
+        size = Number(sizeResult.rows[0].size) || 0;
+        indexSize = Number(sizeResult.rows[0].index_size) || 0;
+      }
+    } catch (err) {
+      log.error('Error getting table size', err);
+    }
+
+    return {
+      size,
+      indexSize,
+      triggers,
+      indexes,
+      relations
+    };
+  }
+
+  async getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
+    return `SELECT TOP ${limit} * FROM ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)};`;
   }
 
   async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -404,7 +593,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         u.user_name as table_schema
       FROM SYS.SYSTABLE t
       JOIN SYS.SYSUSER u ON t.creator = u.user_id
-      WHERE t.table_type = 'MATERIALIZED VIEW'
+      WHERE t.table_type = 'MAT VIEW'
       ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
       ORDER BY table_schema, table_name;
     `;
@@ -426,9 +615,9 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       SELECT 
         c.column_name AS COLUMN_NAME,
         CAST(ROW_NUMBER() OVER (ORDER BY c.column_id) AS INTEGER) AS ORDINAL_POSITION
-      FROM SYSTABLE t
-      JOIN SYSUSER u ON t.creator = u.user_id
-      JOIN SYSCOLUMN c ON t.table_id = c.table_id
+      FROM SYS.SYSTABLE t
+      JOIN SYS.SYSUSER u ON t.creator = u.user_id
+      JOIN SYS.SYSCOLUMN c ON t.table_id = c.table_id
       WHERE t.table_name = ${D.escapeString(table, true)}
       AND u.user_name = ${D.escapeString(schema, true)}
       AND c.pkey = 'Y'
@@ -478,12 +667,40 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     return rows.map((c) => c.collation_label);
   }
 
-  createDatabase(databaseName: string, charset: string, collation: string): Promise<string> {
-    throw new Error('Method not implemented.');
+  async createDatabase(databaseName: string, charset?: string, collation?: string): Promise<string> {
+    // Create the database
+    const sql = await this.createDatabaseSQL(databaseName, charset, collation);
+    
+    try {
+      await this.driverExecuteSingle(sql);
+      return databaseName;
+    } catch (err) {
+      log.error('Error creating database:', err);
+      throw err;
+    }
   }
 
-  createDatabaseSQL(): Promise<string> {
-    throw new Error('Method not implemented.');
+  async createDatabaseSQL(databaseName?: string, charset?: string, collation?: string): Promise<string> {
+    databaseName = databaseName || 'newdatabase';
+    
+    // Build the database file path - SQL Anywhere requires a file path
+    // We'll create it in the user's home directory as a default
+    const dbFilePath = `~/sql_anywhere/${databaseName}.db`;
+    
+    // Build the SQL command
+    let sql = `CREATE DATABASE '${dbFilePath}'`;
+    
+    // Add character set if specified
+    if (charset) {
+      sql += ` CHAR SET '${charset}'`;
+    }
+    
+    // Add collation if specified
+    if (collation) {
+      sql += ` NCHAR COLLATION '${collation}'`;
+    }
+    
+    return sql;
   }
 
   async getTableCreateScript(table: string, schema?: string): Promise<string> {
