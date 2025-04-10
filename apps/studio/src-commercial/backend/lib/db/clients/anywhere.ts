@@ -422,7 +422,6 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     log.debug('finding primary keys for', table, schema);
     
     schema = schema || 'dbo';
-    // Simple approach: Get primary key info from syscolumn directly
     const sql = `
       SELECT 
         c.column_name AS COLUMN_NAME,
@@ -449,18 +448,40 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const res = await this.getPrimaryKeys(table, schema);
     return res.length === 1 ? res[0].columnName : null;
   }
-  listCharsets(): Promise<string[]> {
-    throw new Error('Method not implemented.');
+  async listCharsets(): Promise<string[]> {
+    const sql = `
+      SELECT DISTINCT cs_label as character_set FROM SYS.SYSCOLLATIONMAPPINGS;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map((c) => c.character_set);
   }
-  getDefaultCharset(): Promise<string> {
-    throw new Error('Method not implemented.');
+
+  async getDefaultCharset(): Promise<string> {
+    const sql = `
+      SELECT DB_PROPERTY('CharSet') as charset;
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map((c) => c.charset)[0];
   }
-  listCollations(charset: string): Promise<string[]> {
-    throw new Error('Method not implemented.');
+
+  async listCollations(charset: string): Promise<string[]> {
+    const sql = `
+      SELECT
+        collation_label
+      FROM SYS.SYSCOLLATIONMAPPINGS
+      WHERE cs_label = ${D.escapeString(charset, true)};
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+    return rows.map((c) => c.collation_label);
   }
+
   createDatabase(databaseName: string, charset: string, collation: string): Promise<string> {
     throw new Error('Method not implemented.');
   }
+
   createDatabaseSQL(): Promise<string> {
     throw new Error('Method not implemented.');
   }
