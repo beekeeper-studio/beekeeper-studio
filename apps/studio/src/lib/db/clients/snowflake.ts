@@ -1,11 +1,12 @@
 import { TableKey } from "@/shared/lib/dialects/models";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, BksFieldType } from "../models";
 import { BaseV1DatabaseClient } from "./BaseV1DatabaseClient";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import snowflake from 'snowflake-sdk'
 import rawLog from '@bksLogger'
+import { SnowflakeData } from "@/shared/lib/dialects/snowflake";
 
 const log = rawLog.scope('SnowflakeClient')
 
@@ -48,7 +49,7 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
       account: snowflakeOptions.account,
       username: this.config.user,
       password: this.config.password,
-      application: "Beekeeper Studio"
+      application: "BEEKEEPERSTUDIO"
     })
 
     /**
@@ -85,18 +86,44 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
 
   }
 
-  supportedFeatures(): Promise<SupportedFeatures> {
-    throw new Error("Method not implemented.");
+  async supportedFeatures(): Promise<SupportedFeatures> {
+    return {
+      customRoutines: false,
+      comments: false,
+      properties: true,
+      partitions: false,
+      editPartitions: false,
+      backups: false,
+      backDirFormat: false,
+      restore: false,
+      indexNullsNotDistinct: false,
+      transactions: false
+    };
   }
-  versionString(): Promise<string> {
-    throw new Error("Method not implemented.");
+  async versionString(): Promise<string> {
+    return '1.0.0'
   }
-  listTables(filter?: FilterOptions): Promise<TableOrView[]> {
+  async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
+    const schemaFilter = filter?.schema
+      ? `AND TABLE_SCHEMA = ${SnowflakeData.escapeString(filter.schema, true)}`
+      : '';
 
-    throw new Error("Method not implemented.");
+    const sql = `
+      SELECT
+        TABLE_SCHEMA as schema,
+        TABLE_NAME as name
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_TYPE = 'BASE TABLE'
+      ${schemaFilter}
+      ORDER BY TABLE_SCHEMA, TABLE_NAME
+    `;
+
+    const result = await this.rawExecuteQuery(sql, {});
+    return Array.isArray(result) ? result[0].rows : result.rows;
   }
-  listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    throw new Error("Method not implemented.");
+  async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
+    // throw new Error("Method not implemented.");
+    return []
   }
   listRoutines(filter?: FilterOptions): Promise<Routine[]> {
     throw new Error("Method not implemented.");
@@ -104,8 +131,53 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
   listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]> {
     throw new Error("Method not implemented.");
   }
-  listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
-    throw new Error("Method not implemented.");
+  async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
+    if (!table) return [];
+
+    const schemaFilter = schema
+      ? `AND TABLE_SCHEMA = ${SnowflakeData.escapeString(schema, true)}`
+      : '';
+
+    const sql = `
+      SELECT
+        COLUMN_NAME as columnName,
+        DATA_TYPE as dataType,
+        IS_NULLABLE as nullable,
+        CHARACTER_MAXIMUM_LENGTH as charMaxLength,
+        NUMERIC_PRECISION as precision,
+        NUMERIC_SCALE as scale,
+        COLUMN_DEFAULT as defaultValue,
+        ORDINAL_POSITION as ordinalPosition,
+        COMMENT as description
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = ${SnowflakeData.escapeString(table, true)}
+      ${schemaFilter}
+      ORDER BY ORDINAL_POSITION
+    `;
+
+    const result = await this.rawExecuteQuery(sql, {});
+    const rows = Array.isArray(result) ? result[0].rows : result.rows;
+
+    return rows.map(row => {
+      const column: ExtendedTableColumn = {
+        tableName: table,
+        columnName: row.columnName,
+        dataType: row.dataType,
+        nullable: row.nullable === 'YES',
+        defaultValue: row.defaultValue,
+        ordinalPosition: row.ordinalPosition,
+        size: row.charMaxLength,
+        description: row.description,
+        bksField: this.parseTableColumn(row)
+      };
+
+      if (row.precision !== null) {
+        column.numericPrecision = row.precision;
+        column.numericScale = row.scale;
+      }
+
+      return column;
+    });
   }
   listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
     throw new Error("Method not implemented.");
@@ -168,19 +240,16 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
     throw new Error("Method not implemented.");
   }
   wrapIdentifier(value: string): string {
-    throw new Error("Method not implemented.");
+    return SnowflakeData.wrapIdentifier(value);
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SnowflakeResult | SnowflakeResult[]> {
-
-    // 1. Execute query with asyncExec set to true
+    // Execute query
     const results = await new Promise<SnowflakeResult>((resolve, reject) => {
       this.connection.execute({
-        sqlText: 'CALL SYSTEM$WAIT(3, \'SECONDS\')',
-        // asyncExec: true,
-        complete: async function (err, stmt, rows) {
+        sqlText: q,
+        complete: function (err, stmt, rows) {
           if (err) return reject(err)
-          // const queryId =  // Get the query ID
           return resolve({
             rows: rows,
             arrayMode: false,
@@ -190,16 +259,31 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
       });
     });
     return results
-
-    //@ts-ignore
-    // const statement = await this.connection.getResultsFromQueryId({ queryId: queryId })
-
-
-    // 2. Get results using the query ID
-
   }
   protected parseTableColumn(column: any): BksField {
-    throw new Error("Method not implemented.");
+    const { columnName, dataType, nullable, defaultValue, charMaxLength, precision, scale } = column;
+
+    let type: BksFieldType = 'UNKNOWN';
+    const length = charMaxLength;
+
+    // Map Snowflake data types to BksFieldType
+    // Reference: https://docs.snowflake.com/en/sql-reference/data-types
+    switch (dataType.toUpperCase()) {
+      case 'BINARY':
+      case 'VARBINARY':
+        type = 'BINARY';
+        break;
+      default:
+        type = 'UNKNOWN'
+    }
+
+    return {
+      name: columnName,
+      bksType: type,
+      // length: length || null,
+      // notNull: !nullable,
+      // defaultValue: defaultValue || null,
+    };
   }
 
 }

@@ -54,6 +54,7 @@ import addNewUrlField from './20250128_add_new_url_field'
 import tabHistoryIndex from './20250211_add_tab_history_index'
 import fixOracleData from './20250225_oracle_default_connection_method'
 import addInstallationId from './20250404_add_installation_id'
+import addSnowflakeOptions from './20250410_add_snowflake_options'
 
 import ultimate from './ultimate/index'
 
@@ -87,6 +88,7 @@ const realMigrations = [
   tabHistoryIndex,
   fixOracleData,
   addInstallationId,
+  addSnowflakeOptions,
 ]
 
 // fixtures require the models

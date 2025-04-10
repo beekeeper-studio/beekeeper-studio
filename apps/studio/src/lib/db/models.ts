@@ -101,6 +101,10 @@ export interface ExtendedTableColumn extends SchemaItem {
   generated?: boolean
   array?: boolean
   bksField: BksField
+  size?: number
+  description?: string
+  numericPrecision?: number
+  numericScale?: number
 }
 
 export interface PrimaryKeyColumn {

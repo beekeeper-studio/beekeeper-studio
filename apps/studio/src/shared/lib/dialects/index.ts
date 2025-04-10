@@ -11,6 +11,7 @@ import { CassandraData } from './cassandra'
 import { DuckDBData } from "./duckdb";
 import { ClickHouseData } from "./clickhouse";
 import { MongoDBData } from "./mongodb";
+import { SnowflakeData } from "./snowflake";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -38,6 +39,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return ClickHouseData
     case 'mongodb':
       return MongoDBData
+    case 'snowflake':
+      return SnowflakeData
     default:
       return SqliteData
   }

@@ -48,6 +48,7 @@ export default {
       cassandraOptions: config.cassandraOptions,
       bigQueryOptions: config.bigQueryOptions,
       azureAuthOptions: config.azureAuthOptions,
+      snowflakeOptions: config.snowflakeOptions,
       authId: config.authId,
       libsqlOptions: config.libsqlOptions,
       runtimeExtensions: sqliteExtension ? [sqliteExtension] : []
