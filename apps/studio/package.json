@@ -102,6 +102,7 @@
     "reflect-metadata": "^0.1.10",
     "scrollyfills": "^1.0.0",
     "simple-encryptor": "^3.0.0",
+    "snowflake-sdk": "^2.0.3",
     "source-map-support": "^0.5.21",
     "split.js": "^1.6.5",
     "sql-formatter": "~10.7.2",

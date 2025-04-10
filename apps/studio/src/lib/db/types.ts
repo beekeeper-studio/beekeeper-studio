@@ -129,6 +129,10 @@ export interface IDbConnectionServerSSHConfig {
   useAgent: boolean
 }
 
+export interface SnowflakeOptions {
+  account: string
+}
+
 export interface IDbConnectionServerConfig {
   client: Nullable<ConnectionType>,
   url?: string,
@@ -158,6 +162,7 @@ export interface IDbConnectionServerConfig {
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
   azureAuthOptions?: AzureAuthOptions
+  snowflakeOptions?: SnowflakeOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
   runtimeExtensions?: string[]
