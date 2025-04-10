@@ -2,8 +2,8 @@
   <div
     class="connection-button flex flex-middle"
     v-if="config"
-    :title="streamerMode ? 
-      'Connection details hidden by Streamer Mode' : 
+    :title="privacyMode ? 
+      'Connection details hidden by Privacy Mode' : 
       $bks.buildConnectionString(config)"
   >
     <x-button
@@ -139,24 +139,25 @@ export default {
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
-      ...mapGetters({
-        'hasRunningExports': 'exports/hasRunningExports', 
-        'workspace': 'workspace',
-        settings: 'settings/settings',
-      }),
-      streamerMode() {
-        return this.settings?.streamerMode || false
-      },
-      connectionName() {
-        return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
-      },
-      connectionType() {
-        return `${this.config.connectionType}`
-      },
-      databaseVersion() {
-        return this.versionString
-      }
+    ...mapState({
+      config: state => state.usedConfig,
+      connection: state => state.connection,
+      versionString: state => state.versionString
+    }),
+    ...mapState('settings', ['privacyMode']),
+    ...mapGetters({
+      hasRunningExports: 'exports/hasRunningExports',
+      workspace: 'workspace'
+    }),
+    connectionName() {
+      return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
+    },
+    connectionType() {
+      return `${this.config.connectionType}`
+    },
+    databaseVersion() {
+      return this.versionString
+    }
   },
   methods: {
 

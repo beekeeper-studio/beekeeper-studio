@@ -19,19 +19,19 @@
         <div class="subtitle">
           <span
             class="bastion"
-            v-if="this.config.sshBastionHost && !streamerMode"
+            v-if="this.config.sshBastionHost && !privacyMode"
           >
             <span class="truncate">{{ this.config.sshBastionHost }}</span>&nbsp;>&nbsp;
           </span>
           <span
             class="ssh"
-            v-if="this.config.sshHost && !streamerMode"
+            v-if="this.config.sshHost && !privacyMode"
           >
             <span class="truncate">{{ this.config.sshHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
             <span>
-              {{ streamerMode ? '******' : subtitleSimple }}
+              {{ privacyMode ? '******' : subtitleSimple }}
             </span>
           </span>
         </div>
@@ -84,7 +84,7 @@ export default {
     'selectedConfig',
     'showDuplicate',
     'pinned',
-    'streamerMode'
+    'privacyMode'
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
@@ -138,8 +138,8 @@ export default {
       }
     },
     title() {
-      return this.streamerMode ? 
-        'Connection details hidden by Streamer Mode' : 
+      return this.privacyMode ? 
+        'Connection details hidden by Privacy Mode' : 
         this.$bks.buildConnectionString(this.config)
     },
     savedConnection() {

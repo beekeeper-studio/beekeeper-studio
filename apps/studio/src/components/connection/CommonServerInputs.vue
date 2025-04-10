@@ -38,12 +38,12 @@
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
         <label for="port">Port</label>
         <input
-          :type="streamerMode ? 'text' : 'number'"
+          :type="privacyMode ? 'text' : 'number'"
           class="form-control"
           name="port"
-          :value="streamerMode ? '******' : config.port"
-          @input="!streamerMode && (config.port = $event.target.value)"
-          :readonly="streamerMode"
+          :value="privacyMode ? '******' : config.port"
+          @input="!privacyMode && (config.port = $event.target.value)"
+          :readonly="privacyMode"
         >
       </div>
     </div>
@@ -58,20 +58,20 @@
           class="form-control"
           @paste="onPaste"
           name="host"
-          :value="streamerMode ? '******' : config.host"
-          @input="!streamerMode && (config.host = $event.target.value)"
-          :readonly="streamerMode"
+          :value="privacyMode ? '******' : config.host"
+          @input="!privacyMode && (config.host = $event.target.value)"
+          :readonly="privacyMode"
         >
       </div>
       <div class="col s3 form-group">
         <label for="port">Port</label>
         <input
-          :type="streamerMode ? 'text' : 'number'"
+          :type="privacyMode ? 'text' : 'number'"
           class="form-control"
           name="port"
-          :value="streamerMode ? '******' : config.port"
-          @input="!streamerMode && (config.port = $event.target.value)"
-          :readonly="streamerMode"
+          :value="privacyMode ? '******' : config.port"
+          @input="!privacyMode && (config.port = $event.target.value)"
+          :readonly="privacyMode"
         >
       </div>
     </div>
@@ -179,10 +179,10 @@
         <input
           type="text"
           name="user"
-          :value="streamerMode ? '******' : config.username"
-          @input="!streamerMode && (config.username = $event.target.value)"
+          :value="privacyMode ? '******' : config.username"
+          @input="!privacyMode && (config.username = $event.target.value)"
           class="form-control"
-          :readonly="streamerMode"
+          :readonly="privacyMode"
         >
       </div>
       <div class="col s6 form-group">
@@ -222,90 +222,85 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import { findClient } from '@/lib/db/clients'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
-import { mapGetters } from 'vuex'
+import { mapState } from 'vuex'
 
-  export default {
-    props: {
-      config: Object,
-      sslHelp: String,
-      supportComplexSSL: {
-        type: Boolean,
-        default: true
-      }
-    },
-    components: {
-      FilePicker,
-      ExternalLink,
-      ToggleFormArea
-    },
-    data() {
-      return {
-        sslToggled: false,
-        showPassword: false,
-      }
-    },
-    computed: {
-      ...mapGetters({
-        settings: 'settings/settings'
-      }),
-      streamerMode() {
-        return this.settings?.streamerMode || false
-      },
-      hasAdvancedSsl() {
-        return this.config.sslCaFile || this.config.sslCertFile || this.config.sslKeyFile
-      },
-      toggleIcon() {
-        return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
-      },
-      togglePasswordIcon() {
-        return this.showPassword ? "visibility_off" : "visibility"
-      },
-      togglePasswordInputType() {
-        return this.showPassword ? "text" : "password"
-      },
-      supportsSocketPath() {
-        return findClient(this.config.connectionType).supportsSocketPath
-      },
-      supportsSocketPathWithCustomPort() {
-        return findClient(this.config.connectionType).supportsSocketPathWithCustomPort
-      },
-    },
-    methods: {
-      async onPaste(event) {
-        const data = event.clipboardData.getData('text')
-        try {
-          await this.$util.send('appdb/saved/parseUrl', { url: data });
-          event.preventDefault();
-        } catch {
-          return;
-        }
-      },
-      toggleSsl() {
-        this.config.ssl = !this.config.ssl
-
-        // Remove CA file when disabling ssl
-        if (!this.config.ssl) {
-          this.config.sslCaFile = null
-          this.config.sslCertFile = null
-          this.config.sslKeyFile = null
-        }
-      },
-      toggleSslAdvanced() {
-        this.sslToggled = !this.sslToggled;
-      },
-      togglePassword() {
-        this.showPassword = !this.showPassword
-      }
-    },
-    mounted() {
-      this.sslToggled = this.hasAdvancedSsl
+export default {
+  props: {
+    config: Object,
+    sslHelp: String,
+    supportComplexSSL: {
+      type: Boolean,
+      default: true
     }
+  },
+  components: {
+    FilePicker,
+    ExternalLink,
+    ToggleFormArea
+  },
+  data() {
+    return {
+      sslToggled: false,
+      showPassword: false,
+    }
+  },
+  computed: {
+    ...mapState('settings', ['privacyMode']),
+    hasAdvancedSsl() {
+      return this.config.sslCaFile || this.config.sslCertFile || this.config.sslKeyFile
+    },
+    toggleIcon() {
+      return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
+    },
+    togglePasswordIcon() {
+      return this.showPassword ? "visibility_off" : "visibility"
+    },
+    togglePasswordInputType() {
+      return this.showPassword ? "text" : "password"
+    },
+    supportsSocketPath() {
+      return findClient(this.config.connectionType).supportsSocketPath
+    },
+    supportsSocketPathWithCustomPort() {
+      return findClient(this.config.connectionType).supportsSocketPathWithCustomPort
+    },
+  },
+  methods: {
+    async onPaste(event) {
+      const data = event.clipboardData.getData('text')
+      try {
+        await this.$util.send('appdb/saved/parseUrl', { url: data });
+        event.preventDefault();
+      } catch {
+        return;
+      }
+    },
+    toggleSsl() {
+      this.config.ssl = !this.config.ssl
+
+      // Remove CA file when disabling ssl
+      if (!this.config.ssl) {
+        this.config.sslCaFile = null
+        this.config.sslCertFile = null
+        this.config.sslKeyFile = null
+      }
+    },
+    toggleSslAdvanced() {
+      this.sslToggled = !this.sslToggled;
+    },
+    togglePassword() {
+      this.showPassword = !this.showPassword
+    }
+  },
+  mounted() {
+    this.sslToggled = this.hasAdvancedSsl
   }
+}
 </script>
 
 <style lang="scss" scoped>
-  .optional-text {
-    font-style: italic;
-    padding-left: .2rem;
-  }
+.optional-text {
+  font-style: italic;
+  padding-left: .2rem;
+}
 </style>
