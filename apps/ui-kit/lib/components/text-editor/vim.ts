@@ -104,7 +104,7 @@ export class Register {
   }
 }
 
-export function extendVimOnCodeMirror(cmEl: any, vimConfig?: Config, vimKeymaps: IMapping[] = []) {
+export function extendVimOnCodeMirror(cmEl: any, vimConfig?: Config, vimKeymaps: IMapping[] = [], clipboard: Clipboard) {
   const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
 
   if (!codeMirrorVimInstance) {
@@ -124,7 +124,7 @@ export function extendVimOnCodeMirror(cmEl: any, vimConfig?: Config, vimKeymaps:
     try {
       codeMirrorVimInstance.defineRegister(
         "*",
-        new Register(navigator)
+        new Register(clipboard)
       );
     } catch (e) {
       // nothing

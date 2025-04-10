@@ -48,6 +48,7 @@
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :mode="dialectData.textEditorMode"
+        :clipboard="$native.clipboard"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-blur="onTextEditorBlur?.()"
