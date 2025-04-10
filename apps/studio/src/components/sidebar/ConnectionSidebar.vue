@@ -292,7 +292,6 @@ export default {
       foldersError: 'error',
       foldersUnsupported: 'unsupported'
     }),
-    // Map the privacyMode from the Vuex 'settings' module so that the component always reflects it
     ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',

@@ -100,6 +100,7 @@ nav:
     - user_guide/editing-data.md
     - user_guide/data-export.md
     - user_guide/modify-tables.md
+    - user_guide/privacy-mode.md
     - user_guide/entity-relationship-diagrams-erd.md
     - user_guide/backup-restore.md
     - user_guide/cloud-storage-team-workspaces.md
