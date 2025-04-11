@@ -37,6 +37,9 @@ import { keymapTypes } from "@/lib/db/types";
 import { mapGetters, mapState } from 'vuex';
 import { plugins } from "@/lib/editor/utils";
 import { AppEvent } from '@/common/AppEvent';
+import AnsiToHtml from 'ansi-to-html';
+
+const ansiToHtml = new AnsiToHtml();
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -104,7 +107,15 @@ export default {
       const lastLineNum = this.shell.lastLine();
       let output = value.output;
 
-      if (typeof output === 'object') {
+      if (typeof output === 'string' && /\x1b\[[0-9;]*m/.test(output)) {
+        const html = ansiToHtml.toHtml(output);
+
+        const el = document.createElement('pre');
+        el.className = 'ansi-output';
+        el.innerHTML = html;
+
+        this.shell.addLineWidget(lastLineNum, el, { above: false });
+      } else if (typeof output === 'object') {
         try {
           const formattedOutput = JSON.stringify(output, null, 2);
           
@@ -347,6 +358,7 @@ export default {
 </script>
 
 <style lang="scss">
+@use 'sass:color';
 @import '../../../assets/styles/app/_variables';
  
 .cm-s-monokai .cm-prompt {
@@ -356,8 +368,16 @@ export default {
 
 .text-editor {
   .dropdown-icon:hover {
-    color: lighten($theme-primary, 15%);
+    color: color.adjust($theme-primary, $lightness: 15%);
   }
+}
+
+.ansi-output {
+  user-select: text !important;
+  white-space: pre-wrap;
+  color: white;
+  padding: 4px;
+  margin: 0;
 }
 
 </style>

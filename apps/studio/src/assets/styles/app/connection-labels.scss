@@ -1,3 +1,4 @@
+@use "sass:list";
 $color-defaults: (
   red:          $brand-danger,
   orange:       $brand-warning,
@@ -10,7 +11,7 @@ $color-defaults: (
 
 @each $key, $val in $color-defaults {
   .connection-label-color-#{'#{$key}'} {
-    --connection-label-color: #{nth($val, 1)};
+    --connection-label-color: #{list.nth($val, 1)};
   }
 }
 
@@ -26,9 +27,9 @@ $color-defaults: (
 
   @each $key, $val in $color-defaults {
     &.connection-label-color-#{'#{$key}'} {
-      background-color: nth($val, 1);
+      background-color: list.nth($val, 1);
       &:checked {
-        background-color: nth($val, 1);
+        background-color: list.nth($val, 1);
       }
     }
   }
@@ -36,20 +37,20 @@ $color-defaults: (
 .statusbar {
   @each $key, $val in $color-defaults {
     &.#{'#{$key}'} {
-      background-color: rgba(nth($val, 1), 1);
+      background-color: rgba(list.nth($val, 1), 1);
     }
   }
   &.query-meta {
     @each $key, $val in $color-defaults {
       &.#{'#{$key}'} {
-        background-color: rgba(nth($val, 1), 0.85);
+        background-color: rgba(list.nth($val, 1), 0.85);
       }
     }
   }
   &.editing, &.failure {
     @each $key, $val in $color-defaults {
       &.#{'#{$key}'} {
-        background-color: rgba(nth($val, 1), 0.8);
+        background-color: rgba(list.nth($val, 1), 0.8);
       }
     }
   }
@@ -58,7 +59,7 @@ $color-defaults: (
   .statusbar {
     @each $key, $val in $color-defaults {
       &.#{'#{$key}'} {
-        background-color: rgba(nth($val, 1), 0.85);
+        background-color: rgba(list.nth($val, 1), 0.85);
       }
     }
   }

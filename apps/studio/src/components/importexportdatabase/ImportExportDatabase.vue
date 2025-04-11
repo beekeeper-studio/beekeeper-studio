@@ -13,7 +13,7 @@
         :button-portal-target="portalName"
       />
     </div>
-    <status-bar class="import-export__footer">
+    <status-bar class="import-export__footer" :active="active">
       <div class="statusbar-info col flex expand">
         <span
           class="statusbar-item"

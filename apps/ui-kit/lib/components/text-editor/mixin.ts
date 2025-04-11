@@ -21,7 +21,7 @@ import "codemirror/addon/merge/merge";
 import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
-import { setKeybindings, applyConfig, Register, Config } from "./vim";
+import { setKeybindings, Config, extendVimOnCodeMirror } from "./vim";
 import { divider, InternalContextItem, openMenu } from "../context-menu/menu";
 import { writeClipboard, readClipboard } from "../../utils/clipboard";
 import { cmCtrlOrCmd } from "../../utils/platform"
@@ -96,6 +96,7 @@ export default {
      * In vim, that would be `:map ; :`.
      */
     vimKeymaps: Array,
+    clipboard: Object as PropType<Clipboard>
   },
   data() {
     return {
@@ -151,6 +152,14 @@ export default {
     },
     forceInitialize() {
       this.initialize();
+    },
+    keymap() {
+      this.editor.setOption("keyMap", this.keymap);
+
+      if (this.keymap === "vim") {
+        const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
+        extendVimOnCodeMirror(cmEl, this.vimConfig, this.vimKeymaps, this.clipboard);
+      }
     },
     vimKeymaps() {
       if (!this.editor || this.keymap !== 'vim') {
@@ -372,32 +381,7 @@ export default {
       cmEl.addEventListener("contextmenu", this.showContextMenu);
 
       if (this.keymap === "vim") {
-        const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
-
-        if (!codeMirrorVimInstance) {
-          console.error("Could not find code mirror vim instance");
-        } else {
-          if (this.vimConfig) {
-            applyConfig(codeMirrorVimInstance, this.vimConfig);
-          }
-
-          const vimKeymaps = this.vimKeymaps ?? [];
-          if (_.isArray(vimKeymaps)) {
-            setKeybindings(codeMirrorVimInstance, vimKeymaps);
-          } else {
-            console.error("vimKeymaps must be an array");
-          }
-
-          // cm throws if this is already defined, we don't need to handle that case
-          try {
-            codeMirrorVimInstance.defineRegister(
-              "*",
-              new Register(navigator)
-            );
-          } catch (e) {
-            // nothing
-          }
-        }
+        extendVimOnCodeMirror(cmEl, this.vimConfig, this.vimKeymaps, this.clipboard);
       }
 
       if (this.plugins) {

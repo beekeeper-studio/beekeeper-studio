@@ -44,7 +44,7 @@
       </div>
     </div>
     <div class="expand" />
-    <status-bar class="tabulator-footer">
+    <status-bar class="tabulator-footer" :active="active">
       <span class="expand" />
       <div class="col flex-right statusbar-actions">
         <x-buttons class="pending-changes">
