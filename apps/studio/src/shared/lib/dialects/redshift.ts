@@ -31,6 +31,15 @@ export const RedshiftData: DialectData = {
   usesOffsetPagination: true,
   requireDataset: false,
   unwrapIdentifier: (s) => s,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'varchar(max)',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   textEditorMode: "text/x-pgsql",
   disabledFeatures: {
     shell: true,

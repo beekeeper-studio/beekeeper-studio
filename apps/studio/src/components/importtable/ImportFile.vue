@@ -2,7 +2,7 @@
   <div class="import mini-wrap">
     <form class="import-section-wrapper card-flat padding">
       <h3 class="card-title">
-        Import Data Into Table '{{ stepperProps.table }}'
+        Choose file
       </h3>
       <div class="form-group">
         <label for="fileName">Select File To Import (.csv, .xlsx, .json, .jsonl only)</label>
@@ -173,9 +173,10 @@
           <button
             class="btn btn-primary btn-icon"
             type="button"
+            :disabled="!this.fileName"
             @click.prevent="$emit('finish')"
           >
-            <span>Map To Table</span>
+            <span>Select or Create Table</span>
             <span class="material-icons">
               keyboard_arrow_right
             </span>
@@ -212,8 +213,9 @@
         type: Object,
         required: true,
         default: () => ({
-          schema: '',
-          table: ''
+          schema: null,
+          table: null,
+          tabId: null
         })
       }
     },
@@ -257,11 +259,10 @@
           fileType: this.fileType,
         }
 
+        // get the table if it's been pre-selected and is now part of the props!
         this.table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', this.table)
-        importOptions.table = this.table
 
-        this.importerId = await this.$util.send('import/init', { options: importOptions, table: this.table })
+        this.importerId = await this.$util.send('import/init', { options: importOptions })
         this.tabulator = null
         this.isAutodetect = true
         this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerId })
@@ -277,10 +278,6 @@
       }
     },
     methods: {
-      tableKey() {
-        const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
-        return `${schema}${this.stepperProps.table}`
-      },
       async setXLSX() {
         this.sheets = await this.$util.send('import/excel/getSheets', { id: this.importerId })
         this.sheetSelected = this.sheets[0]
@@ -298,12 +295,9 @@
           useHeaders: true
         }
 
-        this.table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', this.table)
-
-        importOptions.table = this.table
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
+        // console.log(await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId }))
         const tableColumns = columns.map(column =>
           ({
             ...column,
@@ -347,6 +341,7 @@
         return Boolean(this.fileName)
       },
       getTable() {
+        if (!this.stepperProps.schema && !this.stepperProps.table) return null
         let foundSchema = ''
         if (this.schemaTables.length > 1) {
           foundSchema = this.schemaTables.find(s => s.schema === this.stepperProps.schema)
@@ -357,7 +352,7 @@
       },
       async onNext() {
         const importData = {
-          table: this.tableKey(),
+          table: `new-import-${this.stepperProps.tabId}`,
           importProcessId: this.importerId,
           importOptions: {
             fileName: this.fileName,
