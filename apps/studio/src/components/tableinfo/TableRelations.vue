@@ -142,10 +142,10 @@ export default Vue.extend({
     hotkeys() {
       if (!this.active) return {}
       return this.$vHotkeyKeymap({
-        'refresh': () => this.$emit('refresh'),
-        'addRow': this.addRow.bind(this),
-        'submitApply': this.submitApply.bind(this),
-        'submitSql': this.submitSql.bind(this)
+        'general.refresh': () => this.$emit('refresh'),
+        'general.addRow': this.addRow.bind(this),
+        'general.save': this.submitApply.bind(this),
+        'general.openInSqlEditor': this.submitSql.bind(this)
       })
     },
     notice() {

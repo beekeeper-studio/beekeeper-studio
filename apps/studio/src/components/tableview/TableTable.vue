@@ -184,7 +184,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
+          v-tooltip="`Refresh Table (${$bksConfig.keybindings.general.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -192,7 +192,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${$bksConfig.keybindings.tableTable.addRow})`"
+          v-tooltip="`Add row (${$bksConfig.keybindings.general.addRow})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
