@@ -1,3 +1,5 @@
+import _ from "lodash";
+
 export type IMapping = {
   mappingMode: string;
   lhs: string;
@@ -102,4 +104,30 @@ export class Register {
   }
 }
 
+export function extendVimOnCodeMirror(cmEl: any, vimConfig?: Config, vimKeymaps: IMapping[] = [], clipboard: Clipboard) {
+  const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
 
+  if (!codeMirrorVimInstance) {
+    console.error("Could not find code mirror vim instance");
+  } else {
+    if (vimConfig) {
+      applyConfig(codeMirrorVimInstance, vimConfig);
+    }
+
+    if (_.isArray(vimKeymaps)) {
+      setKeybindings(codeMirrorVimInstance, vimKeymaps);
+    } else {
+      console.error("vimKeymaps must be an array");
+    }
+
+    // cm throws if this is already defined, we don't need to handle that case
+    try {
+      codeMirrorVimInstance.defineRegister(
+        "*",
+        new Register(clipboard)
+      );
+    } catch (e) {
+      // nothing
+    }
+  }
+}
