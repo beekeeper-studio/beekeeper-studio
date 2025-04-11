@@ -34,21 +34,98 @@ const externals = ['better-sqlite3', 'sqlite3',
       ]
 
 let electron = null
+let isRestarting = false
 /** @type {fs.FSWatcher[]} */
 const configWatchers = {}
 
-const restartElectron = _.debounce(() => {
-  if (electron) {
-    process.kill(electron.pid, 'SIGINT')
-  }
-  // start electron again
-  electron = spawn(electronBin, ['.'], { stdio: 'inherit' })
-  electron.on('exit', (code, signal) => {
-    console.log('electron exited', code, signal)
-    if (!signal) process.exit()
-  })
-  console.log('spawned electron, pid: ', electron.pid)
+// Function to kill the electron process with timeout
+function killElectron() {
+  return new Promise((resolve, reject) => {
+    if (!electron) return resolve();
+    
+    console.log(`Attempting to kill electron process (PID: ${electron.pid})...`);
+    
+    // Set a timeout to force kill if graceful shutdown takes too long
+    const forceKillTimeout = setTimeout(() => {
+      console.log(`Electron didn't exit gracefully, force killing process...`);
+      try {
+        process.kill(electron.pid, 'SIGKILL');
+      } catch (err) {
+        console.log(`Error force killing electron: ${err.message}`);
+      }
+      electron = null;
+      resolve();
+    }, 2000);
+    
+    // Listen for process exit
+    const exitHandler = () => {
+      clearTimeout(forceKillTimeout);
+      electron = null;
+      resolve();
+    };
+    
+    // Try graceful shutdown first
+    try {
+      electron.once('exit', exitHandler);
+      process.kill(electron.pid, 'SIGINT');
+    } catch (err) {
+      console.log(`Error killing electron: ${err.message}`);
+      clearTimeout(forceKillTimeout);
+      electron = null;
+      resolve();
+    }
+  });
+}
 
+// Function to start a new electron process
+function startElectron() {
+  electron = spawn(electronBin, ['.'], { stdio: 'inherit' });
+  console.log(`Spawned electron, pid: ${electron.pid}`);
+  
+  electron.on('error', (err) => {
+    console.error(`Electron spawn error: ${err.message}`);
+    electron = null;
+  });
+  
+  electron.on('exit', (code, signal) => {
+    console.log(`Electron exited with code ${code} and signal ${signal}`);
+    
+    // If electron exits but not due to our restart
+    if (!isRestarting) {
+      if (!signal) {
+        // Normal exit - propagate it
+        process.exit(code);
+      } else {
+        // Abnormal exit
+        console.log(`Electron was terminated by signal ${signal}`);
+        electron = null;
+      }
+    }
+  });
+}
+
+const restartElectron = _.debounce(async () => {
+  // Prevent multiple overlapping restarts
+  if (isRestarting) {
+    console.log('Already restarting, ignoring request');
+    return;
+  }
+  
+  try {
+    isRestarting = true;
+    
+    // Kill existing process if running
+    if (electron) {
+      await killElectron();
+    }
+    
+    // Start a new electron process
+    startElectron();
+  } catch (err) {
+    console.error(`Error during restart: ${err.message}`);
+  } finally {
+    isRestarting = false;
+  }
 }, 500)
 
 function watchConfig(file) {
@@ -66,13 +143,22 @@ function getElectronPlugin(name, action = () => restartElectron()) {
     setup(build) {
       if (!isWatching) return
       build.onStart(() => console.log(`ESBUILD: Building ${name}  🏗`))
-      build.onEnd(() => {
-        console.log(`ESBUILD: Built ${name} ✅`)
-        action()
-        watchConfig('default.config.ini')
-        watchConfig('local.config.ini')
-        watchConfig('system.config.ini')
-      })
+      build.onEnd(result => {
+        if (result.errors.length > 0) {
+          console.error(`ESBUILD: Build failed for ${name} ❌`);
+          result.errors.forEach(error => {
+            console.error(` - ${error.text} (${error.location?.file}:${error.location?.line}:${error.location?.column})`);
+          });
+          // Don't restart electron when there are errors
+          return;
+        }
+        
+        console.log(`ESBUILD: Built ${name} ✅`);
+        action();
+        watchConfig('default.config.ini');
+        watchConfig('local.config.ini');
+        watchConfig('system.config.ini');
+      });
     }
   }
 }
@@ -99,12 +185,40 @@ const commonArgs = {
     plugins: [getElectronPlugin("Main")]
   }
 
-  if(isWatching) {
-    const main = await esbuild.context(mainArgs)
-    Promise.all([main.watch()])
-  } else {
-    Promise.all([
-      esbuild.build(mainArgs),
-    ])
+  try {
+    if(isWatching) {
+      const main = await esbuild.context(mainArgs)
+      await Promise.all([main.watch()])
+      
+      // Start electron for the first time after initial build
+      console.log('Initial build complete, starting Electron...');
+      startElectron();
+      
+      // Handle graceful shutdown
+      process.on('SIGINT', async () => {
+        console.log('Received SIGINT, shutting down...');
+        if (electron) {
+          await killElectron();
+        }
+        process.exit(0);
+      });
+      
+    } else {
+      const results = await Promise.all([
+        esbuild.build(mainArgs),
+      ]);
+      
+      // Check for errors in non-watch mode build
+      const errorCount = results.reduce((count, result) => 
+        count + (result.errors ? result.errors.length : 0), 0);
+      
+      if (errorCount > 0) {
+        console.error('Build failed with errors. Exiting.');
+        process.exit(1);
+      }
+    }
+  } catch (error) {
+    console.error('Build failed with an unexpected error:', error);
+    process.exit(1);
   }
 // launch electron
