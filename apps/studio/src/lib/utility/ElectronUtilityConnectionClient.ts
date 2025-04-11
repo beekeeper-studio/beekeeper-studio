@@ -82,6 +82,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/listTablePartitions', { table, schema });
   }
 
+  async executeCommand(commandText: string): Promise<NgQueryResult[]> {
+    return await Vue.prototype.$util.send('conn/executeCommand', { commandText });
+  }
+
   async query(queryText: string, options?: any): Promise<CancelableQuery> {
     const id = await Vue.prototype.$util.send('conn/query', { queryText, options });
     return {

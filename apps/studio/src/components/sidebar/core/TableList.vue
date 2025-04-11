@@ -126,7 +126,7 @@
           <!-- FIXME (@day): we don't want to have per-db testing in the UI -->
           <button
             @click.prevent="newTable"
-            :title="`New ${this.dialect === 'mongodb' ? 'Collection' : 'Table'}`"
+            :title="`New ${this.connectionType === 'mongodb' ? 'Collection' : 'Table'}`"
             class="create-table"
             :disabled="tablesLoading"
             v-if="canCreateTable"
@@ -261,7 +261,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
           { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
         ]
       },
-      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
+      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures', 'connectionType']),
       ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',

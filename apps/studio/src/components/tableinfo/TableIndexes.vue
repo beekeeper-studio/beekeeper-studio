@@ -166,7 +166,7 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     hasSql() {
       // FIXME (@day): no per db testing
-      return this.dialect !== 'mongodb';
+      return this.connectionType !== 'mongodb';
     },
     enabled() {
       return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
@@ -192,7 +192,7 @@ export default Vue.extend({
 
       let additional = [];
       // FIXME (@day): no per-db testing
-      if (this.dialect === 'mongodb') {
+      if (this.connectionType === 'mongodb') {
         AdditionalMongoOrders.forEach((o) => {
           const add = this.table.columns.map((c) => `${escapeHtml(c.columnName)} ${o.toUpperCase()}`);
           additional.push(...add)
@@ -231,14 +231,14 @@ export default Vue.extend({
       // FIXME (@day): no per-db testing
       const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect != 'mongodb'
       const result = [
-        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}),
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
           editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
-          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell),
+          cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell),
         },
         {
           title: 'Unique',
@@ -271,7 +271,7 @@ export default Vue.extend({
             listOnEmpty: true,
             freetext: true,
           },
-          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
+          cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)
         },
         trashButton(this.removeRow)
       ]

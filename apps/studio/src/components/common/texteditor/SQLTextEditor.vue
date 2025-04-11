@@ -81,17 +81,20 @@ export default Vue.extend({
       const editorPlugins = [
         plugins.autoquote,
         plugins.autoComplete,
-        plugins.autoRemoveQueryQuotes(this.connectionType),
+        plugins.autoRemoveQueryQuotes(this.queryDialect),
         plugins.queryMagic(() => this.defaultSchema, () => this.tables)
       ];
 
       return editorPlugins;
     },
+    queryDialect() {
+      return this.dialectData.queryDialectOverride ?? this.connectionType
+    }
   },
   methods: {
     formatSql() {
       const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.connectionType)),
+        language: FormatterDialect(dialectFor(this.queryDialect)),
       });
       this.$emit("input", formatted);
     },
