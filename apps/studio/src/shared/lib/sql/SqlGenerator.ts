@@ -25,6 +25,7 @@ export class SqlGenerator {
   constructor(dialect: Dialect, connection: GeneratorConnection) {
     this.connection = connection
     this.dialect = dialect
+    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse', 'duckdb'].includes(v)
     this.createKnexLib()
   }
 
@@ -34,8 +35,6 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse', 'duckdb'].includes(v)
-    this.createKnexLib()
   }
 
   public get connection() {

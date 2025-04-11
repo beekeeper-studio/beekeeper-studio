@@ -45,6 +45,7 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
   }
 
   async connect(): Promise<void> {
+    log.info("CONNECT")
     await super.connect()
     // TODO: Set up the connection using a pool instead
     // - but then, how does SSO work?
@@ -174,50 +175,150 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
   async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
     if (!table) return [];
 
-    const schemaFilter = schema
-      ? `AND TABLE_SCHEMA = ${SnowflakeData.escapeString(schema, true)}`
-      : '';
+    // For Snowflake, use the SHOW COLUMNS command which gives better type information
+    // than INFORMATION_SCHEMA.COLUMNS
+    let tableSpec = SnowflakeData.wrapIdentifier(table);
+    if (schema) {
+      tableSpec = `${SnowflakeData.wrapIdentifier(schema)}.${tableSpec}`;
+    }
 
-    const sql = `
-      SELECT
-        COLUMN_NAME as columnName,
-        DATA_TYPE as dataType,
-        IS_NULLABLE as nullable,
-        CHARACTER_MAXIMUM_LENGTH as charMaxLength,
-        NUMERIC_PRECISION as precision,
-        NUMERIC_SCALE as scale,
-        COLUMN_DEFAULT as defaultValue,
-        ORDINAL_POSITION as ordinalPosition,
-        COMMENT as description
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_NAME = ${SnowflakeData.escapeString(table, true)}
-      ${schemaFilter}
-      ORDER BY ORDINAL_POSITION
-    `;
+    const sql = `SHOW COLUMNS IN TABLE ${tableSpec}`;
 
-    const result = await this.rawExecuteQuery(sql, {});
-    const rows = Array.isArray(result) ? result[0].rows : result.rows;
+    try {
+      const result = await this.rawExecuteQuery(sql, {});
+      const rows = Array.isArray(result) ? result[0].rows : result.rows;
 
-    return rows.map(row => {
-      const column: ExtendedTableColumn = {
-        tableName: table,
-        columnName: row.columnName,
-        dataType: row.dataType,
-        nullable: row.nullable === 'YES',
-        defaultValue: row.defaultValue,
-        ordinalPosition: row.ordinalPosition,
-        size: row.charMaxLength,
-        description: row.description,
-        bksField: this.parseTableColumn(row)
-      };
+      // Track position since SHOW COLUMNS doesn't include ordinal position
+      let position = 1;
+      log.info("listTableColumns", rows)
+      return rows.map(row => {
+        // Parse data_type which is a JSON string containing type information
+        let dataTypeInfo: any = {};
+        let dataType = '';
+        let charMaxLength = null;
+        let precision = null;
+        let scale = null;
 
-      if (row.precision !== null) {
-        column.numericPrecision = row.precision;
-        column.numericScale = row.scale;
+        try {
+          // Snowflake returns data_type as a JSON string with type details
+          if (row.data_type) {
+            dataTypeInfo = typeof row.data_type === 'string' ?
+              JSON.parse(row.data_type) : row.data_type;
+
+            // Extract the base type
+            dataType = dataTypeInfo.type || '';
+
+            // Extract length for text/binary fields
+            if (dataTypeInfo.length) {
+              charMaxLength = parseInt(dataTypeInfo.length, 10);
+            }
+
+            // Extract precision/scale for numeric fields
+            if (dataTypeInfo.precision) {
+              precision = parseInt(dataTypeInfo.precision, 10);
+            }
+
+            if (dataTypeInfo.scale) {
+              scale = parseInt(dataTypeInfo.scale, 10);
+            }
+          }
+        } catch (e) {
+          log.error(`Error parsing data type for column ${row.column_name}`, e);
+          dataType = row.data_type || '';
+        }
+
+        // Create the column object with all available information
+        const column: ExtendedTableColumn = {
+          tableName: row.table_name,
+          columnName: row.column_name,
+          dataType: dataType,
+          schemaName: row.schema_name,
+          nullable: row.null === 'true' || row.null === true, // Handles both string and boolean
+          defaultValue: row.default,
+          ordinalPosition: position++,
+          hasDefault: !!row.default,
+          description: row.comment,
+          bksField: this.parseTableColumn({
+            columnName: row.column_name,
+            dataType: dataType
+          })
+        };
+
+        // Add size for character fields
+        if (charMaxLength !== null) {
+          column.size = charMaxLength;
+        }
+
+        // Add precision and scale for numeric fields
+        if (precision !== null) {
+          column.numericPrecision = precision;
+          column.numericScale = scale || 0;
+        }
+
+        return column;
+      });
+    } catch (error) {
+      log.error(`Error listing table columns for ${table}`, error);
+
+      // Fallback to INFORMATION_SCHEMA if SHOW COLUMNS fails
+      log.debug('Falling back to INFORMATION_SCHEMA.COLUMNS');
+
+      const schemaFilter = schema
+        ? `AND TABLE_SCHEMA = ${SnowflakeData.escapeString(schema, true)}`
+        : '';
+
+      const fallbackSql = `
+        SELECT
+          COLUMN_NAME as column_name,
+          DATA_TYPE as data_type,
+          IS_NULLABLE as null?,
+          CHARACTER_MAXIMUM_LENGTH as char_max_length,
+          NUMERIC_PRECISION as precision,
+          NUMERIC_SCALE as scale,
+          COLUMN_DEFAULT as default,
+          ORDINAL_POSITION as ordinal_position,
+          COMMENT as comment,
+          TABLE_NAME as table_name,
+          TABLE_SCHEMA as schema_name
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = ${SnowflakeData.escapeString(table, true)}
+        ${schemaFilter}
+        ORDER BY ORDINAL_POSITION
+      `;
+
+      try {
+        const fallbackResult = await this.rawExecuteQuery(fallbackSql, {});
+        const fallbackRows = Array.isArray(fallbackResult) ? fallbackResult[0].rows : fallbackResult.rows;
+
+        return fallbackRows.map(row => {
+          const column: ExtendedTableColumn = {
+            tableName: row.table_name,
+            columnName: row.column_name,
+            dataType: row.data_type,
+            schemaName: row.schema_name,
+            nullable: row.null === 'YES' || row.null === true,
+            defaultValue: row.default,
+            ordinalPosition: row.ordinal_position,
+            size: row.char_max_length,
+            description: row.comment,
+            bksField: this.parseTableColumn({
+              columnName: row.column_name,
+              dataType: row.data_type
+            })
+          };
+
+          if (row.precision !== null) {
+            column.numericPrecision = row.precision;
+            column.numericScale = row.scale;
+          }
+
+          return column;
+        });
+      } catch (fallbackError) {
+        log.error(`Fallback query also failed for ${table}`, fallbackError);
+        return [];
       }
-
-      return column;
-    });
+    }
   }
   async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
     // TODO: Implement table triggers listing
@@ -396,6 +497,7 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SnowflakeResult | SnowflakeResult[]> {
     // Execute query
+    log.info("ENTERING EXECUTE")
     const results = await new Promise<SnowflakeResult>((resolve, reject) => {
       this.connection.execute({
         sqlText: q,
@@ -429,6 +531,7 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
         }
       });
     });
+    console.log("SNOWFLAKE RESULTS", results)
     return results;
   }
   protected parseQueryResultColumns(qr: SnowflakeResult): BksField[] {

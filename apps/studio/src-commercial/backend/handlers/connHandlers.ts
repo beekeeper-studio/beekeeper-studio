@@ -4,12 +4,15 @@ import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResul
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
-import ConnectionProvider from '../lib/connection-provider'; 
+import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope("connHandlers")
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -148,10 +151,15 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).usedConfig = config;
     state(sId).connection = connection;
     state(sId).database = config.defaultDatabase;
-    state(sId).generator = new SqlGenerator(dialectFor(config.connectionType), {
-      dbConfig: connection.server.config,
-      dbName: connection.database.database
-    });
+    try {
+      state(sId).generator = new SqlGenerator(dialectFor(config.connectionType), {
+        dbConfig: connection.server.config,
+        dbName: connection.database.database
+      });
+
+    } catch (ex) {
+      log.warn("Unable to create a SQLGenerator", ex)
+    }
     state(sId).connectionAbortController = null
   },
 

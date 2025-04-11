@@ -3,6 +3,9 @@ import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('ConnectionProvider')
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
@@ -18,6 +21,8 @@ export default {
       useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
+
+    log.info("SnowflakeClient")
 
     return {
       // @ts-ignore
