@@ -15,12 +15,13 @@ interface State {
   secondarySidebarSize: number;
   secondarySidebarOpen: boolean;
   secondaryActiveTabId?: string;
+  globalSidebarActiveItem: "tables" | "history" | "queries";
 }
 
-const PRIMARY_SIDEBAR_OPEN_KEY = 'primarySidebarOpen'
-const PRIMARY_SIDEBAR_SIZE_KEY = 'primarySidebarOpenSize'
-const SECONDARY_SIDEBAR_OPEN_KEY = 'secondarySidebarOpen'
-const SECONDARY_SIDEBAR_SIZE_KEY = 'secondarySidebarCurrentSize'
+const PRIMARY_SIDEBAR_OPEN_KEY = 'primarySidebarOpen-v2'
+const PRIMARY_SIDEBAR_SIZE_KEY = 'primarySidebarOpenSize-v2'
+const SECONDARY_SIDEBAR_OPEN_KEY = 'secondarySidebarOpen-v2'
+const SECONDARY_SIDEBAR_SIZE_KEY = 'secondarySidebarCurrentSize-v2'
 
 const PRIMARY_SIDEBAR_INITIAL_SIZE = 35 // in percent
 const SECONDARY_SIDEBAR_INITIAL_SIZE = 30 // in percent
@@ -43,6 +44,8 @@ export const SidebarModule: Module<State, RootState> = {
     secondarySidebarOpen: SmartLocalStorage.getBool(SECONDARY_SIDEBAR_OPEN_KEY, false),
     secondarySidebarSize: SmartLocalStorage.getJSON(SECONDARY_SIDEBAR_SIZE_KEY, SECONDARY_SIDEBAR_INITIAL_SIZE),
     secondaryActiveTabId: "json-viewer",
+
+    globalSidebarActiveItem: "tables",
   }),
   getters: {
   },
@@ -53,6 +56,9 @@ export const SidebarModule: Module<State, RootState> = {
     },
     primarySidebarSize(state, size: number) {
       state.primarySidebarSize = size
+    },
+    globalSidebarActiveItem(state, item: "tables" | "history" | "queries") {
+      state.globalSidebarActiveItem = item
     },
 
     // SECONDARY SIDEBAR
@@ -91,6 +97,10 @@ export const SidebarModule: Module<State, RootState> = {
         throw new Error(`Tab ${tabId} does not exist`);
       }
       context.commit("secondaryActiveTabId", tabId);
+    },
+
+    setGlobalSidebarActiveItem(context, item: "tables" | "history" | "queries") {
+      context.commit("globalSidebarActiveItem", item);
     },
   },
 };
