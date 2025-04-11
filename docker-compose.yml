@@ -14,8 +14,13 @@ volumes:
   bigquery:
   firebird:
   mongodb:
+  anywhere:
 
 services:
+  anywhere:
+    image: jaschweder/sybase
+    ports:
+      - 2638:2638
 
   mongodb:
     image: mongo
