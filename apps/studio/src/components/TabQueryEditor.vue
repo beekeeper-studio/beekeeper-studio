@@ -43,10 +43,12 @@
         :vim-config="vimConfig"
         :line-wrapping="wrapText"
         :keymap="userKeymap"
+        :vim-keymaps="vimKeymaps"
         :entities="entities"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :mode="dialectData.textEditorMode"
+        :clipboard="$native.clipboard"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-blur="onTextEditorBlur?.()"
@@ -204,6 +206,7 @@
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
 
@@ -352,6 +355,7 @@
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
+  import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -399,6 +403,7 @@
         containerResizeObserver: null,
         onTextEditorBlur: null,
         wrapText: false,
+        vimKeymaps: [],
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -1047,6 +1052,8 @@
         await this.$nextTick()
         this.focusElement = 'text-editor'
       }
+
+      this.vimKeymaps = await getVimKeymapsFromVimrc()
     },
     beforeDestroy() {
       if(this.split) {

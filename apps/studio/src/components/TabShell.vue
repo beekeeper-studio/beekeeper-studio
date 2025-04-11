@@ -91,6 +91,7 @@
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
   </div>

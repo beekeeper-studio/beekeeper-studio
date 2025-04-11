@@ -65,7 +65,6 @@
         <div class="expand layout-center">
           <shortcut-hints />
         </div>
-        <statusbar class="tabulator-footer" />
       </div>
       <div
         v-for="(tab, idx) in tabItems"
@@ -124,6 +123,7 @@
           v-if="tab.tabType === 'import-export-database'"
           :schema="tab.schemaName"
           :tab="tab"
+          :active="activeTab.id === tab.id"
           @close="close"
         />
         <DatabaseBackup
