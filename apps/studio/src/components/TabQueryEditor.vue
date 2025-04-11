@@ -206,6 +206,7 @@
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
 

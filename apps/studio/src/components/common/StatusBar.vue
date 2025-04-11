@@ -1,13 +1,15 @@
 <template>
-  <footer :class="classes">
-    <slot />
-  </footer>
+  <portal to="global-status-bar">
+    <footer :class="classes" v-if="active">
+      <slot />
+    </footer>
+  </portal>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 export default {
-  props: ['mode'],
+  props: ['mode', 'active'],
   computed: {
     ...mapGetters(['connectionColor']),
     classes() {

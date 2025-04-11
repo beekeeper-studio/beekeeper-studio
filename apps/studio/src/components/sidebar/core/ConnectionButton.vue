@@ -1,6 +1,6 @@
 <template>
   <div
-    class="connection-button flex flex-middle"
+    class="connection-button"
     v-if="config"
     :title="$bks.buildConnectionString(config)"
   >
@@ -40,7 +40,6 @@
         </x-menuitem>
       </x-menu>
     </x-button>
-
     <portal to="modals">
       <modal
         class="vue-dialog beekeeper-modal save-connection-modal"

@@ -53,7 +53,7 @@
 
     <div class="expand" />
 
-    <status-bar class="tabulator-footer">
+    <status-bar class="tabulator-footer" :active="active">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
         <x-button
