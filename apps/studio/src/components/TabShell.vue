@@ -349,6 +349,7 @@ export default Vue.extend({
     clear() {
       this.selectedResult = 0;
       this.results = [];
+      this.selectEditor();
     },
     async submitMongoCommand(command) {
       this.tab.isRunning = true

@@ -55,7 +55,6 @@ export default {
     return {
       shell: null,
       promptSymbol: "mongo> ",
-      commandBuffer: "",
       commandHistory: [],
       historyIndex: -1,
       promptLine: 0, // where current prompt starts
@@ -67,7 +66,7 @@ export default {
     ...mapGetters({ 'userKeymap': 'settings/userKeymap' }),
     ...mapState(['connection']),
     prompt() {
-      const maxLength = 50;
+      const maxLength = 30;
       if (this.promptSymbol.length <= maxLength) return this.promptSymbol;
 
       const startLength = Math.floor((maxLength - 3) / 2);
@@ -170,6 +169,8 @@ export default {
       await this.$nextTick();
 
       this.destroyShell();
+      await this.$nextTick();
+      this.promptLine = 0;
 
       const indicatorOpen = document.createElement("span");
       indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
@@ -274,9 +275,6 @@ export default {
         });
       }
 
-      // set value again cause sometimes it doesn't set
-      //this.setInitialValue(cm);
-
       if (this.firstInitialization && this.focus) {
         cm.focus();
       }
@@ -299,6 +297,7 @@ export default {
       this.historyIndex = this.commandHistory.length;
 
       if (userCommand === "clear") {
+        this.firstInitialization = true;
         this.initialize({ userKeymap: this.userKeymap });
         this.$emit('clear');
         return;
