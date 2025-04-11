@@ -106,8 +106,6 @@ export default {
       const doc = this.shell.getDoc();
       const lastLineNum = this.shell.lastLine();
       let output = value.output;
-      console.log('OUTPUT: ', output)
-      console.log('type: ', typeof output)
 
       if (typeof output === 'string' && /\x1b\[[0-9;]*m/.test(output)) {
         const html = ansiToHtml.toHtml(output);
