@@ -57,7 +57,7 @@
             class="material-icons item-icon database"
             v-else
           >code</i>
-          <span v-html="highlightHistory(blob)" />
+          <span class="truncate" v-html="highlightHistory(blob)" />
         </li>
       </ul>
       <div
