@@ -12,6 +12,7 @@ import { SqlAnywhereData } from '@/shared/lib/dialects/anywhere';
 import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
 import _ from 'lodash';
 import { joinFilters } from '@/common/utils';
+import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
@@ -79,8 +80,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     return config;
   }
 
-  getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
-    throw new Error('Method not implemented.');
+  getBuilder(table: string, schema?: string): ChangeBuilderBase {
+    return new SqlAnywhereChangeBuilder(table, schema || 'dbo', []);
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
@@ -931,23 +932,65 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     await this.driverExecuteSingle(sql, { connection, autoCommit: false });
   }
 
-  setTableDescription(table: string, description: string, schema?: string): Promise<string> {
+  // as far as I can tell, this isn't used anywhere so not going to implement it
+  setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
     throw new Error('Method not implemented.');
   }
-  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
-    throw new Error('Method not implemented.');
+
+  // looks like anywhere doesn't support this
+  async setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
+    return '';
   }
-  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    if ([DatabaseElement.DATABASE, DatabaseElement.SCHEMA].includes(typeOfElement)) {
+      throw new Error(`Cannot drop element type ${typeOfElement}`);
+    }
+    schema = schema ?? await this.defaultSchema();
+
+    let type = D.wrapLiteral(DatabaseElement[typeOfElement]);
+
+    if (typeOfElement === DatabaseElement['MATERIALIZED-VIEW']) {
+      type = 'VIEW';
+    }
+
+    const sql = `DROP ${type} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)};`;
+
+    await this.driverExecuteSingle(sql);
   }
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
-    throw new Error('Method not implemented.');
+
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+    if (typeOfElement !== DatabaseElement.TABLE) return '';
+    schema = schema ?? await this.defaultSchema()
+    return `TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`;
   }
-  truncateAllTables(schema?: string): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async truncateAllTables(schema?: string): Promise<void> {
+    schema = schema ?? await this.defaultSchema();
+    const tables = (await this.listTables({ schema })).map((t) => t.name);
+
+    const truncateAll = tables.map((table) => `
+      TRUNCATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)};
+    `).join('');
+
+    await this.driverExecuteMultiple(truncateAll);
   }
-  getTableLength(table: string, schema?: string): Promise<number> {
-    throw new Error('Method not implemented.');
+
+  async getTableLength(table: string, schema?: string): Promise<number> {
+    const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : '';
+
+    const baseSQL = `
+      FROM ${schemaString}${this.wrapIdentifier(table)}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) as total ${baseSQL};
+    `;
+
+    const countResults = await this.driverExecuteSingle(countQuery);
+    const rowWithTotal = countResults.rows.find((row) => row.total );
+    const totalRecords = rowWithTotal ? rowWithTotal.total : 0;
+    return totalRecords
   }
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
@@ -967,34 +1010,67 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const orderByString = this.genOrderByString(orderBy)
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
 
-    const selectSQL = `SELECT ${selects.map((s) => this.wrapIdentifier(s)).join(", ")}`
+    const offsetString = (_.isNumber(offset) && _.isNumber(limit)) ?
+      `TOP ${limit} START AT ${offset + 1}` : '';
+    const selectsString = selects.map((s) => this.wrapIdentifier(s)).join(", ");
+    const selectSQL = `
+      SELECT ${offsetString} ${selectsString}
+    `;
     const baseSQL = `
       FROM ${schemaString}${this.wrapIdentifier(table)}
       ${filterString}
     `
 
-    const offsetString = (_.isNumber(offset) && _.isNumber(limit)) ?
-      `OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY` : ''
-
-
     const query = `
       ${selectSQL} ${baseSQL}
       ${orderByString}
-      ${offsetString}
-      `
+    `;
     return query
   }
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
-    throw new Error('Method not implemented.');
+
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
+    schema = schema ?? await this.defaultSchema();
+    const columns = await this.listTableColumns(table, schema);
+    const rowCount = await this.getTableLength(table, schema);
+    
+    const conn = await this.pool.connect();
+    
+    // Import SqlAnywhereCursor
+    const { SqlAnywhereCursor } = await import('./anywhere/SqlAnywhereCursor');
+    
+    return {
+      totalRows: Number(rowCount),
+      columns,
+      cursor: new SqlAnywhereCursor(conn, {
+        schema,
+        table,
+        orderBy,
+        filters,
+        chunkSize
+      }, this)
+    };
   }
+
   queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     throw new Error('Method not implemented.');
   }
-  duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema);
+
+    await this.driverExecuteSingle(sql);
   }
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string> {
-    throw new Error('Method not implemented.');
+
+  async duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string> {
+    schema = this.wrapIdentifier(schema ?? await this.defaultSchema());
+    tableName = this.wrapIdentifier(tableName);
+    duplicateTableName = this.wrapIdentifier(duplicateTableName);
+    const sql = `
+      SELECT * INTO ${schema}.${duplicateTableName}
+      FROM ${schema}.${tableName};
+    `;
+
+    return sql;
   }
 
   wrapIdentifier(value: string): string {
@@ -1011,7 +1087,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       for (let query of queries) {
         log.info('EXECUTING QUERY: ', query.text);
         const result = await connection.query(query.text, autoCommit);
-        log.info('RECEIVED RESULT: ');
+        log.info('RECEIVED RESULT: ', result);
 
         if (!result) {
           continue; // was a DDL statement

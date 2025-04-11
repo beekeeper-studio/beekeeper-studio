@@ -147,6 +147,7 @@ export interface DialectData {
     exportTable?: boolean
     createTable?: boolean
     dropTable?: boolean
+    dropSchema?: boolean
     collations?: boolean
     importFromFile?: boolean,
     headerSort?: boolean,
