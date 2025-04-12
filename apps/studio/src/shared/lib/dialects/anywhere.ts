@@ -59,6 +59,7 @@ export const SqlAnywhereData: DialectData = {
       renameSchema: true,
       reorderColumn: true
     },
+    importFromFile: true,
     dropSchema: true,
     informationSchema: {
       extra: true
