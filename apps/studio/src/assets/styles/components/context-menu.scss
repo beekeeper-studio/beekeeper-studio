@@ -1,3 +1,4 @@
+@use "sass:color";
 // Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
 
 .vue-simple-context-menu {
@@ -9,8 +10,6 @@
   list-style: none;
   position: absolute;
   z-index: 1000000;
-  background: lighten($theme-bg, 5%);
-  color: $text;
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
   box-shadow: var(--elevation-5);
@@ -29,16 +28,12 @@
   padding: 0 $gutter-w;
   font-size: 0.9rem;
   min-height: 28px;
-  color: $text-dark;
   cursor: pointer;
   align-items: center;
-  &:hover {
-    background: rgba($theme-base, 0.05);
-  }
   &.disabled {
     pointer-events: none;
-    color: darken($text-dark, 25%);
-    background: darken(rgba($theme-base, 0.05), 25%);
+    color: color.adjust($text-dark, $lightness: -25%);
+    background: color.adjust(rgba($theme-base, 0.05), $lightness: -25%);
   }
   i {
     height: 24px!important;
@@ -49,7 +44,7 @@
   }
   .shortcut {
     padding-left: 5px;
-    color: darken($text-dark, 30%);
+    color: color.adjust($text-dark, $lightness: -30%);
   }
   i.material-icons.menu-icon   {
     margin-right:0!important;
@@ -64,7 +59,6 @@
   box-sizing: border-box;
   background: transparent;
   border: 0;
-  border-top: 1px solid $border-color;
   pointer-events: none;
   + hr, &:last-child {
     display: none;
@@ -75,4 +69,30 @@
 }
 .vue-simple-context-menu li:last-of-type {
   margin-bottom: 0;
+}
+
+// ------ Theme Customization ------
+
+.BksContextMenu-list, .vue-simple-context-menu {
+  background: color.adjust($theme-bg, $lightness: 5%);
+  color: $text;
+}
+
+.BksContextMenu-item, .vue-simple-context-menu__item {
+  color: $text-dark;
+  &.disabled {
+    opacity: 0.5;
+  }
+  &:hover {
+    background: rgba($theme-base, 0.05);
+  }
+}
+
+.BksContextMenu-item-shortcut {
+  color: $text-dark;
+  opacity: 0.5;
+}
+
+.BksContextMenu-item-divider, .vue-simple-context-menu__divider, hr {
+  border-top: 1px solid $border-color;
 }

@@ -34,6 +34,7 @@ body.theme-system {
 }
 
 body.theme-dark {
+  @import './themes/dark/variables.scss';
   @import './app/mixins';
   @import './components/all';
   @import './vendor.scss';
