@@ -1,5 +1,11 @@
 <template>
   <div v-show="azureAuthEnabled" class="host-port-user-password">
+    <div class="alert alert-info">
+      <i class="material-icons-outlined">info</i>
+      <div>
+        You are using azure authentication, depending on the authentication method you might need to configure some existing items first. Please refer to our <a href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid">Beekeeper Docs</a> for more information
+      </div>
+    </div>
     <div
       class="form-group col"
     >
