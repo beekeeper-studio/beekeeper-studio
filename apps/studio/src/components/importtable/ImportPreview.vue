@@ -1,17 +1,19 @@
 <template>
   <section class="import-table-wrapper">
-    <div class="import-section-wrapper preview-stats">
+    <div class="import-section-wrapper">
       <div class="card-flat padding">
         <h3>Table</h3>
         <p>{{ tableName }}</p>
       </div>
-      <div class="card-flat padding">
-        <h3>Columns Mapped:</h3>
-        <p>{{ columnsImportedCount }}</p>
-      </div>
-      <div class="card-flat padding">
-        <h3>Columns Ignored</h3>
-        <p>{{ columnsIgnoredCount }}</p>
+      <div class="preview-column-stats">
+        <div class="card-flat padding">
+          <h3>Columns Mapped</h3>
+          <p>{{ columnsImportedCount }}</p>
+        </div>
+        <div class="card-flat padding">
+          <h3>Columns Ignored</h3>
+          <p>{{ columnsIgnoredCount }}</p>
+        </div>
       </div>
     </div>
     <div ref="tabulator" />
@@ -114,7 +116,7 @@ export default {
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.importKey())
-      this.table = importOptions.table
+      this.table = importOptions.newTable ?? importOptions.table
       this.importOptions = importOptions
       if (!importOptions.importProcessId) {
         this.importerClass = await this.$util.send('import/init', { options: importOptions })
@@ -134,19 +136,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.preview-stats {
+.preview-column-stats {
   display: flex;
   justify-content: space-between;
+  margin-top: 2rem;
   margin-bottom: 2rem;
   > div {
     width: 30%;
      > h3 {
       margin: 0 0 .5rem 0;
-      overflow-wrap: break-word;
     }
     > p {
       margin: 0;
-      overflow-wrap: break-word;
      }
   }
 }
