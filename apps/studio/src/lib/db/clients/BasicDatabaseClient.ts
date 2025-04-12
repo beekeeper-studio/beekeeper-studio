@@ -174,6 +174,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return Promise.resolve([])
   }
 
+  executeCommand(_commandText: string): Promise<NgQueryResult[]> {
+    return Promise.resolve([]);
+  }
+
   abstract query(queryText: string, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;

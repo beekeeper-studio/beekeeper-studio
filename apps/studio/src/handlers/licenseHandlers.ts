@@ -32,7 +32,7 @@ export const LicenseHandlers: ILicenseHandlers = {
     if (offline && offline.isValid) {
       status = offline.toLicenseStatus()
     } else {
-      await LicenseKey.getLicenseStatus();
+      status = await LicenseKey.getLicenseStatus();
     }
     return {
       ...status,
@@ -46,7 +46,10 @@ export const LicenseHandlers: ILicenseHandlers = {
   },
   "license/get": async function () {
     const offline = OfflineLicense.load()
-    if (offline) return [offline.toLicenseKey()]
+    if (offline) {
+      const licenseKey = offline.toLicenseKey();
+      if (licenseKey) return [licenseKey];
+    }
     return await LicenseKey.find();
   },
   "license/wipe": async function() {

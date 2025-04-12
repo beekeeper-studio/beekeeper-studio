@@ -45,7 +45,9 @@
     "@mongosh/browser-runtime-electron": "^3.8.0",
     "@mongosh/service-provider-node-driver": "^3.6.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
+    "@queryleaf/lib": "^0.2.2",
     "@types/ini": "^4.1.0",
+    "ansi-to-html": "^0.7.2",
     "axios": "^1.8.2",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
@@ -128,7 +130,7 @@
     "vuex-persist": "^2.0.1",
     "xel": "beekeeper-studio/xel",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "yargs-parser": "^20.2.7"
+    "yargs-parser": "^21.0.0"
   },
   "devDependencies": {
     "@aws-sdk/types": "^3.127.0",
