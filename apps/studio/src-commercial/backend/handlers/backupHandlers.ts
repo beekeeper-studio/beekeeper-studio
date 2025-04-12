@@ -1,7 +1,7 @@
-import platformInfo from "@/common/platform_info";
 import { Command } from "@/lib/db/models";
 import { spawn } from "child_process";
 import { state } from "@/handlers/handlerState";
+import {whichTool} from "@/lib/db/clients/utils";
 
 const errorMessages = {
   nonZero: 'Command returned non-zero exit code'
@@ -96,34 +96,7 @@ export const BackupHandlers: IBackupHandlers = {
       })
     }
   },
-  'backup/whichDumpTool': async function({ toolName }: { toolName: string }) {
-    const command = `${platformInfo.isWindows ? 'where' : 'which'}`
-
-    return new Promise<string>((resolve, reject) => {
-      const proc = spawn(command, [toolName], { shell: true });
-
-      proc.stdout.on('data', (chunk) => {
-        if (chunk) {
-          const path: string = chunk.toString().trim();
-          resolve(path);
-        }
-      });
-
-      proc.stderr.on('data', (chunk) => {
-        reject(chunk.toString());
-      })
-
-      proc.on('error', (err) => {
-        reject(err);
-      })
-
-      proc.on('close', (code) => {
-        if (code != 0) {
-          reject('ERROR: Command exited with errors');
-        }
-      })
-    })
-  },
+  'backup/whichDumpTool': whichTool,
   'backup/cancelCommand': async function({ sId }: { sId: string }) {
     if (state(sId).backupProc) {
       return state(sId).backupProc.kill();

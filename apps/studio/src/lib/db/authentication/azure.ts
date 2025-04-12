@@ -4,12 +4,14 @@ import {wait} from '@shared/lib/wait';
 import rawLog from '@bksLogger';
 import {TokenCache} from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
-import {AzureAuthType} from '../types';
+import {AzureAuthOptions, AzureAuthType} from '../types';
 import {exec} from 'child_process'
 import {getEntraOptions} from "@/lib/db/clients/utils";
 import {IDbConnectionServer} from "@/lib/db/backendTypes";
+import { promisify } from "util";
 
 const log = rawLog.scope('auth/azure');
+const execAsync = promisify(exec);
 
 type CloudTokenResponse = {
   cloud_token: CloudToken,
@@ -98,13 +100,11 @@ export class AzureAuthService {
 
     const authentication = await this.auth(server.config.azureAuthOptions.azureAuthType, options);
     config.password = authentication.options.token
-    console.log(config)
     config.ssl = {}
     return config;
   }
 
   public async auth(authType: AzureAuthType, options: AuthOptions): Promise<AuthConfig> {
-    console.log(authType);
     this.signal = options.signal;
     switch (authType) {
       case AzureAuthType.AccessToken:
@@ -116,7 +116,7 @@ export class AzureAuthService {
       case AzureAuthType.ServicePrincipalSecret:
         return this.servicePrincipal(options);
       case AzureAuthType.CLI:
-        return await this.getAzureCLIToken();
+        return await this.getAzureCLIToken(options);
       case AzureAuthType.Default:
       default:
         return this.default();
@@ -171,29 +171,26 @@ export class AzureAuthService {
     }
   }
 
-  private async getAzureCLIToken(): Promise<AuthConfig | null> {
-    return new Promise((resolve, reject) => {
-      const command = `az account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
-      exec(command, { encoding: "utf8" }, (error, stdout) => {
-        if (error) {
-          console.error("Error getting token:", error);
-          reject(null);
-          return;
+  private async getAzureCLIToken(options: AzureAuthOptions): Promise<AuthConfig> {
+    const command = `${options?.cliPath || 'az'} account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
+
+    try {
+      const { stdout } = await execAsync(command, { encoding: 'utf8' });
+      const tokenData = JSON.parse(stdout);
+
+      return {
+        type: 'azure-active-directory-default',
+        options: {
+          token: tokenData.accessToken,
         }
-        try {
-          const tokenData = JSON.parse(stdout);
-          resolve(  {
-            type: 'azure-active-directory-default',
-            options: {
-              token: tokenData.accessToken,
-            }
-          });
-        } catch (parseError) {
-          console.error("Error parsing token JSON:", parseError);
-          reject(null);
-        }
-      });
-    });
+      };
+    } catch (error) {
+      log.error("Error getting token:", error);
+      if (error.stderr) {
+        log.error(`StdErr: ${error.stderr}`);
+      }
+      throw error;
+    }
   }
 
   private async accessToken(): Promise<AuthConfig> {
