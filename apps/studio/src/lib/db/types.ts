@@ -99,6 +99,7 @@ export interface AzureAuthOptions {
   tenantId?: string;
   clientSecret?: string;
   msiEndpoint?: string;
+  cliPath?: string;
 }
 export interface LibSQLOptions {
   mode: 'url' | 'file';

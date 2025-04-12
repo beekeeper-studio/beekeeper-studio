@@ -4,6 +4,21 @@
       class="form-group col"
     >
       <div class="form-group">
+        <label for="msiEndpoint">AZ Tool <i
+          class="material-icons"
+          style="padding-left: 0.25rem"
+          v-tooltip="{
+                content: 'You are signing in using the <code>\'Azure CLI\' Beekeeper Studio will attempt to use the AZ tool in path specified.</code>',
+                html: true }"
+        >help_outlined</i></label>
+        <input
+          name="msiEndpoint"
+          type="text"
+          class="form-control"
+          v-model="config.azureAuthOptions.cliPath"
+        >
+      </div>
+      <div class="form-group">
         <label for="server">
           Server <i
           class="material-icons"
@@ -103,26 +118,18 @@
 <script>
 
 import {AzureAuthType} from "@/lib/db/types";
+import {AppEvent} from "@/common/AppEvent";
+import _ from "lodash";
 
 export default {
   props: ['config', 'authType'],
   data() {
     return {
-      azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled
+      azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled,
+      accountName: null
     };
   },
   computed: {
-    // isRedshift(){
-    //   return this.config.connectionType === 'redshift'
-    // },
-    // isKeyAuth() {
-    //   const { redshiftOptions } = this.config
-    //   return redshiftOptions?.authType && redshiftOptions.authType.includes('key')
-    // },
-    // isProfileAuth() {
-    //   const { redshiftOptions } = this.config
-    //   return redshiftOptions?.authType && redshiftOptions.authType.includes('file')
-    // }
     username: {
       get() {
         return this.config.username || this.config.user;
@@ -151,6 +158,19 @@ export default {
     hasAccessTokenCache() {
       return Boolean(this.accountName)
     },
+  },
+  watch: {
+    async authType() {
+      const authId = this.config.azureAuthOptions?.authId || this.config?.authId
+      if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
+        this.accountName = await this.connection.azureGetAccountName(authId);
+      } else {
+        this.accountName = null
+      }
+    },
+    azureAuthEnabled() {
+      this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
+    }
   },
   methods: {
     toggleIAMAuthentication() {
