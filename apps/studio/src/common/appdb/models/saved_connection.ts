@@ -96,6 +96,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'firebird':
         port = 3050
         break
+      case 'sqlanywhere':
+        port = 2638
+        break
       default:
         port = null
     }

@@ -223,6 +223,10 @@ export const CLIENTS: ClientConfig[] = [
   {
     key: 'sqlanywhere',
     name: 'SqlAnywhere',
-    defaultPort: 2638
+    defaultPort: 2638,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath'
+    ]
   }
 ];

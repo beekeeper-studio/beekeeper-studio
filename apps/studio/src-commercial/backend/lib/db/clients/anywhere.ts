@@ -69,13 +69,23 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   private configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    // hard coding host/port for now
-    const config: any = {
-      Host: `${server.config.host}:${server.config.port}`,
+    let config: any = {
       UserId: server.config.user,
-      Password: server.config.password,
-      DatabaseName: database.database
+      Password: server.config.password
     };
+
+    if (/\.db$/.test(database.database)) {
+      config = {
+        ...config,
+        DBF: database.database
+      };
+    } else {
+      config = {
+        ...config,
+        Host: `${server.config.host}:${server.config.port}`,
+        DatabaseName: database.database
+      };
+    }
 
     return config;
   }

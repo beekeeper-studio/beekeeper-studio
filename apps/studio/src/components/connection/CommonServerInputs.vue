@@ -72,7 +72,7 @@
 
     <toggle-form-area
       title="Enable SSL"
-      v-if="supportComplexSSL"
+      v-if="supportComplexSSL && supportsSsl"
     >
       <template v-slot:header>
         <x-switch
@@ -149,7 +149,7 @@
 
     <!-- Simple SSL -->
     <div
-      v-else
+      v-else-if="supportsSsl"
       class="advanced-connection-settings"
     >
       <div class="flex flex-middle">
@@ -247,6 +247,9 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
       },
       togglePasswordInputType() {
         return this.showPassword ? "text" : "password"
+      },
+      supportsSsl() {
+        return findClient(this.config.connectionType).supports('server:ssl');
       },
       supportsSocketPath() {
         return findClient(this.config.connectionType).supportsSocketPath
