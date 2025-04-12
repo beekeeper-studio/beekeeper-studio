@@ -55,8 +55,7 @@
       type="button"
       @click.prevent="$emit('finish')"
     >
-      <span v-if="createTable">Create Table and Review Import</span>
-      <span v-else>Map Columns and Review Import</span>
+      <span>Map Columns and Review Import</span>
       <span class="material-icons">
         keyboard_arrow_right
       </span>
@@ -172,14 +171,16 @@ export default {
         (this.disabledFeatures?.primary ? null : {
           title: 'Primary',
           field: 'primary',
-          tooltip: false,
-          editable: false,
+          headerTooltip: "Select none, one, or multiple primary keys for your table.  ",
+          editor: vueEditor(CheckboxEditorVue),
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
-            editable: false
+            editable: true
           },
+          cellEdited: this.cellEdited,
+          editable: true,
           width: 70,
-          cssClass: 'read-only never-editable',
+          cssClass: 'import-table-column'
         }),
         {
           field: 'trash-button',
@@ -368,9 +369,6 @@ export default {
         this.initialize()
       }
     },
-    async createNewTable () {
-      return await this.$util.send('generator/build', { schema: this.schemaBuilder() });
-    },
     schemaBuilder () {
       const columns = this.tabulator.getData()
         .filter(col => col.tableColumn !== this.ignoreText)
@@ -430,21 +428,7 @@ export default {
       const importOptions =  await this.tablesToImport.get(this.importKey())
 
       if (this.createTable) {
-        try {
-          const schema = this.newTableSchema ?? this.defaultSchema
-          const sql = await this.createNewTable()
-          const runningQuery = await this.connection.query(sql)
-          // spinner start
-          await runningQuery.execute();
-          this.$noty.success(`${this.simpleTableName} created`)
-          await this.$store.dispatch('updateTables')
-          // end spinner
-          await this.$store.dispatch('updateTableColumns', this.getTable({ schema, name: this.newTableName }))
-          importOptions.table = this.getTable({ schema, name: this.newTableName })
-        } catch (err) {
-          this.$noty.error(err.message)
-          throw new Error(err)
-        }
+        importOptions.newTable = this.schemaBuilder()
       }
       
       importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
