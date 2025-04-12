@@ -90,7 +90,7 @@
       </div>
     </div>
 
-    <status-bar :active="active">
+    <status-bar :active="true">
       <div class="statusbar-info col flex expand">
         <span
           class="statusbar-item"
@@ -156,9 +156,9 @@
         importStarted: false,
         importSteps: [
           {
-            component: ImportFile,
-            title: 'Choose File',
-            icon: 'attach_file',
+            component: ImportTable,
+            title: 'Select/Create Table',
+            icon: 'grid_on',
             stepperProps: {
               schema: this.schema,
               table: this.table,
@@ -166,19 +166,19 @@
             },
             completed: false,
             completePrevious: false,
-            nextButtonText: 'Select or Create Table',
+            nextButtonText: 'Choose File',
             nextButtonIcon: 'keyboard_arrow_right'
           },
           {
-            component: ImportTable,
-            title: 'Select/Create Table',
-            icon: 'grid_on',
+            component: ImportFile,
+            title: 'Choose File',
+            icon: 'attach_file',
             stepperProps: {
               tabId: this.tab.id
             },
             completed: false,
-            completePrevious: false,
-            nextButtonText: 'Map to Table',
+            completePrevious: true,
+            nextButtonText: 'Select or Create Table',
             nextButtonIcon: 'keyboard_arrow_right'
           },
           {

@@ -62,9 +62,11 @@ export default {
       type: Object,
       required: true,
       default: () => ({
+        schema: null,
+        table: null,
         tabId: null
       })
-    },
+    }
   },
   data() {
     return {
@@ -76,8 +78,6 @@ export default {
   },
   computed: {
     ...mapGetters(['schemaTables']),
-    ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
-    ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
     isOnlySchema() {
       if (this.schemaTables == null) return false
 
@@ -94,6 +94,16 @@ export default {
     updateTableSwitch() {
       this.createTableFromFile = !this.createTableFromFile
       if (this.createTableFromFile) this.selectedTable = null
+    },
+    getStartingTable() {
+      if (!this.stepperProps.schema && !this.stepperProps.table) return null
+      let foundSchema = ''
+      if (this.schemaTables.length > 1) {
+        foundSchema = this.schemaTables.find(s => s.schema === this.stepperProps.schema)
+      } else {
+        foundSchema = this.schemaTables[0]
+      }
+      return foundSchema.tables.find(t => t.name === this.stepperProps.table)
     },
     getTable() {
       if (!this.selectedTable) return null
@@ -117,43 +127,32 @@ export default {
       }
       return foundSchema.tables.find(t => t.name === tableName)
     },
-    importKey() {
-      return `new-import-${this.stepperProps.tabId}`
-    },
     tableKeyByMatrix({ schema: schemaName = null, name: tableName }){
       const schema = schemaName ? `${schemaName}==|==` : ''
       return `${schema}${tableName}`
     },
     async onFocus () {
-      const importOptions = await this.tablesToImport.get(this.importKey())
-      if (importOptions.importMap && this.importerId && this.tabulator) {
-        this.tabulator.redraw()
-      } else {
-        this.initialize()
-      }
+      // blerk
     },
     async onNext() {
-      const importOptions =  await this.tablesToImport.get(this.importKey())
-
-      if (this.selectedTable) {
-        importOptions.table = this.getTable()
-        // await this.$store.dispatch('updateTableColumns', importOptions.table)
-      } else {
-        importOptions.table = null
-      }
-      
       const importData = {
-        table: this.importKey(),
-        importProcessId: this.importerId,
-        importOptions
+        table: `new-import-${this.stepperProps.tabId}`,
+        importOptions: {
+          newTable: null,
+          table: null
+        }
       }
 
-      this.$store.commit('imports/upsertImport', importData)
+      if (!this.createTableFromFile){
+        importData.importOptions.table = this.getTable()
+      }
+
+      return await this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
-      const importOptions = await this.tablesToImport.get(this.importKey())
-      if (importOptions.table) {
-        this.selectedTable = this.tableKeyByMatrix(importOptions.table)
+      this.selectedTable = this.getStartingTable()
+      if (this.selectedTable != null) {
+        this.selectedTable = this.tableKeyByMatrix(this.selectedTable)
       } else {
         this.createTableFromFile = true
       }
@@ -161,9 +160,6 @@ export default {
   },
   mounted () {
     this.initialize()
-  },
-  unmounted() {
-    if (this.tabulator) this.tabulator.destroy()
   },
   watch: {
     selectedTable () {
