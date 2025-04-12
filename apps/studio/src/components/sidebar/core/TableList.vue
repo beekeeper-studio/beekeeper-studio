@@ -218,6 +218,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
         return !!this.dialectData.disabledFeatures.createTable
       },
       newTableOrCollection() {
+        // FIXME: shouldn't be doing dialect checks like this.
         if (this.dialect === 'mongodb') return 'New Collection'
 
         return 'New Table'
@@ -272,7 +273,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
           this.$refs.tables
         ]
       },
-      async supportsRoutines() {
+      supportsRoutines() {
         return this.supportedFeatures.customRoutines
       },
       canCreateTable() {
@@ -286,7 +287,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
           { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
         ]
       },
-      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
+      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures', 'connectionType']),
       ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',
