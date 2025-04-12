@@ -1,5 +1,5 @@
 import { TableKey } from "@/shared/lib/dialects/models";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, BksFieldType } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, BksFieldType, CancelableQuery, QueryResult } from "../models";
 import { BaseV1DatabaseClient } from "./BaseV1DatabaseClient";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase, IDbConnectionServerConfig } from "../types";
@@ -18,7 +18,7 @@ interface SnowflakeResult {
   columns: {
     id: string
     name: string
-    type?: string
+    dataType?: string
   }[]
 }
 
@@ -354,6 +354,43 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
     // throw new Error("Method not implemented.");
     return []
   }
+
+  async query(text: string, _options: any): Promise<CancelableQuery> {
+    // It executes, but:
+    // TODO: SILENTLY FAILS STILL
+    // TODO: All the results are null!
+
+    let statement: snowflake.RowStatement
+
+    return {
+      cancel: async () => {
+        if (statement) {
+          statement.cancel()
+        }
+      },
+      execute: () => new Promise<QueryResult>((resolve, reject) => {
+        this.connection.execute({
+          sqlText: text, asyncExec: true,
+          complete: async (err, s) => {
+            if (err) return reject(err);
+            const queryId = s.getQueryId()
+            statement = s
+            // @ts-ignore
+            const result = this.connection.getResultsFromQueryId({
+              queryId: queryId,
+              complete: async (err, stmt, rows) => {
+                if (err) return reject(err);
+                return resolve([{
+                  rows, fields: this.statementToColumns(stmt)
+                }])
+              }
+            })
+          }
+        })
+      })
+    }
+  }
+
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     try {
       const statements = identify(queryText, { strict: false, dialect: 'generic' });
@@ -371,7 +408,7 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
           name: col.name,
           id: col.id || col.name,
           // Include dataType if available from the Snowflake API
-          dataType: col.type || null
+          dataType: col.dataType || null
         }));
 
         return {
@@ -495,38 +532,31 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
     return SnowflakeData.wrapIdentifier(value);
   }
 
+
+  protected statementToColumns(statement: snowflake.RowStatement) {
+    const columns = statement.getColumns().map((c) => {
+      const columnInfo = {
+        id: c.getId().toString(),
+        name: c.getName(),
+        dataType: c.getType()
+      };
+      return columnInfo;
+    });
+    return columns
+  }
+
   protected async rawExecuteQuery(q: string, options: any): Promise<SnowflakeResult | SnowflakeResult[]> {
     // Execute query
-    log.info("ENTERING EXECUTE")
     const results = await new Promise<SnowflakeResult>((resolve, reject) => {
       this.connection.execute({
         sqlText: q,
-        complete: function (err, stmt, rows) {
-          if (err) return reject(err)
-
+        complete: (err, stmt, rows) => {
+          if (err) return reject(err);
           // Extract column information including type data if available
-          const columns = stmt.getColumns().map((c) => {
-            const columnInfo = {
-              id: c.getId(),
-              name: c.getName()
-            };
-
-            // Add type information if available from Snowflake
-            if (c.getType) {
-              try {
-                columnInfo['type'] = c.getType();
-              } catch (e) {
-                log.debug('Failed to get column type', e);
-              }
-            }
-
-            return columnInfo;
-          });
-
           return resolve({
             rows: rows,
             arrayMode: false,
-            columns: columns
+            columns: this.statementToColumns(stmt)
           });
         }
       });
