@@ -238,7 +238,9 @@
       }
     },
     computed: {
-      ...mapGetters(['schemaTables']),
+      ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
+      ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
+      ...mapState(['defaultSchema', 'connection']),
       filePickerOptions() {
         return {
           filters: [
@@ -258,9 +260,6 @@
           fileName: this.fileName,
           fileType: this.fileType,
         }
-
-        // get the table if it's been pre-selected and is now part of the props!
-        this.table = this.getTable()
 
         this.importerId = await this.$util.send('import/init', { options: importOptions })
         this.tabulator = null
@@ -297,7 +296,6 @@
 
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
-        // console.log(await this.$util.send('import/generateColumnTypesFromFile', { id: this.importerId }))
         const tableColumns = columns.map(column =>
           ({
             ...column,
@@ -337,20 +335,14 @@
           }
         }
       },
+      importKey() {
+        return `new-import-${this.stepperProps.tabId}`
+      },
       canContinue() {
         return Boolean(this.fileName)
       },
-      getTable() {
-        if (!this.stepperProps.schema && !this.stepperProps.table) return null
-        let foundSchema = ''
-        if (this.schemaTables.length > 1) {
-          foundSchema = this.schemaTables.find(s => s.schema === this.stepperProps.schema)
-        } else {
-          foundSchema = this.schemaTables[0]
-        }
-        return foundSchema.tables.find(t => t.name === this.stepperProps.table)
-      },
       async onNext() {
+        const storeOptions = await this.tablesToImport.get(this.importKey())
         const importData = {
           table: `new-import-${this.stepperProps.tabId}`,
           importProcessId: this.importerId,
@@ -364,7 +356,8 @@
             trimWhitespaces: this.trimWhitespaces,
             useHeaders: true,
             fileType: this.fileType,
-            table: this.table
+            table: storeOptions.table,
+            newTable: storeOptions.newTable
           }
         }
 
