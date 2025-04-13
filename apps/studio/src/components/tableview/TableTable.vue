@@ -1296,7 +1296,7 @@ export default Vue.extend({
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
         pendingUpdates.push(payload)
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
-        this.updateDetailView()
+        this.updateJsonViewer()
       }
     },
     cloneSelection(range?: RangeComponent) {
