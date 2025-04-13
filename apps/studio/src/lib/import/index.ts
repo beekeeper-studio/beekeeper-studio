@@ -30,11 +30,11 @@ export default class Import {
     this.importScriptOptions.userImportOptions = opt
   }
   
-  async importFile() {
+  async importFile(createTableSql = null) {
     this.importScriptOptions.importerOptions = this.getImporterOptions({ isPreview: false });
     this.importScriptOptions.storeValues = { ...this.options };
 
-    await this.connection.importFile(this.table, this.importScriptOptions, this.read.bind(this))
+    await this.connection.importFile(this.table, this.importScriptOptions, this.read.bind(this), createTableSql)
   }
 
   /**

@@ -309,21 +309,17 @@
         this.tab.isRunning = true
         this.importError = null
         try {
+          let sql = null
           this.importStarted = true
           if (isNewTable) {
-            const sql = await this.createNewTable(importOptions.table)
-            const runningQuery = await this.connection.query(sql)
-            await runningQuery.execute();
-            await this.$store.dispatch('updateTables')
+            sql = await this.createNewTable(importOptions.table)
           }
-          const data = await this.$util.send('import/importFile', { id: importerClass })
+          await this.$util.send('import/importFile', { id: importerClass, createTableSql: sql })
           this.timer = `${(new Date() - start) / 1000} seconds`
         } catch (err) {
           this.importError = err.message
-          // if (isNewTable) {
-          //   this.$root.$emit(AppEvent.dropDatabaseElement, { item: importOptions.table, action: 'drop' })
-          // }
         } finally {
+          await this.$store.dispatch('updateTables')
           this.tab.isRunning = false
         }
       }
