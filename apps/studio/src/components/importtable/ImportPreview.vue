@@ -116,7 +116,7 @@ export default {
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.importKey())
-      this.table = importOptions.newTable ?? importOptions.table
+      this.table = importOptions.table
       this.importOptions = importOptions
       if (!importOptions.importProcessId) {
         this.importerClass = await this.$util.send('import/init', { options: importOptions })

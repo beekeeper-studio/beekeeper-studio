@@ -287,26 +287,42 @@
       goBack() {
         this.importStarted = false
       },
+      async createNewTable (newTableSchema) {
+        return await this.$util.send('generator/build', { schema: newTableSchema });
+      },
       async handleImport() {
         const importOptions = await this.tablesToImport.get(this.importKey)
+        const isNewTable = importOptions.createNewTable
+        let importerClass
         this.schema = importOptions.table.schema
         this.table = importOptions.table.name
-        let importerClass
+        this.importTable = importOptions.table
+
         if (!importOptions.importProcessId) {
           importerClass = await this.$util.send('import/init', { options: importOptions })
         } else {
           importerClass = importOptions.importProcessId
         }
+
         const start = new Date()
+
         this.tab.isRunning = true
-        this.importTable = importOptions.table
         this.importError = null
         try {
           this.importStarted = true
+          if (isNewTable) {
+            const sql = await this.createNewTable(importOptions.table)
+            const runningQuery = await this.connection.query(sql)
+            await runningQuery.execute();
+            await this.$store.dispatch('updateTables')
+          }
           const data = await this.$util.send('import/importFile', { id: importerClass })
           this.timer = `${(new Date() - start) / 1000} seconds`
         } catch (err) {
           this.importError = err.message
+          // if (isNewTable) {
+          //   this.$root.$emit(AppEvent.dropDatabaseElement, { item: importOptions.table, action: 'drop' })
+          // }
         } finally {
           this.tab.isRunning = false
         }

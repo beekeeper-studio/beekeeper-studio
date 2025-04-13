@@ -131,14 +131,11 @@ export default {
       const schema = schemaName ? `${schemaName}==|==` : ''
       return `${schema}${tableName}`
     },
-    async onFocus () {
-      // blerk
-    },
     async onNext() {
       const importData = {
         table: `new-import-${this.stepperProps.tabId}`,
         importOptions: {
-          newTable: null,
+          createNewTable: this.createTableFromFile,
           table: null
         }
       }

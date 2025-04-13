@@ -17,7 +17,7 @@ interface ImportOptions {
   importMap: ImportMap[] | null
   sheet: string | null
   runAsUpsert: boolean
-  newTable: TableOrView | null
+  createNewTable: boolean
 }
 
 interface ImportMap {

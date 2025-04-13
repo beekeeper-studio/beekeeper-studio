@@ -357,7 +357,7 @@
             useHeaders: true,
             fileType: this.fileType,
             table: storeOptions.table,
-            newTable: storeOptions.newTable
+            createNewTable: storeOptions.createNewTable
           }
         }
 

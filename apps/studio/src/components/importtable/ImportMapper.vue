@@ -98,7 +98,7 @@ export default {
       ignoreText: 'IGNORE',
       truncateTable: false,
       runAsUpsert: false,
-      createTable: true,
+      createTable: false,
       importOptions: null,
       newTableName: null,
       newTableSchema: null
@@ -427,8 +427,8 @@ export default {
     async onNext() {
       const importOptions =  await this.tablesToImport.get(this.importKey())
 
-      if (this.createTable) {
-        importOptions.newTable = this.schemaBuilder()
+      if (importOptions.createNewTable) {
+        importOptions.table = this.schemaBuilder()
       }
       
       importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
@@ -440,14 +440,15 @@ export default {
         importProcessId: this.importerId,
         importOptions
       }
+      await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
       this.$store.commit('imports/upsertImport', importData)
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.importKey())
-      this.table = this.getTable(importOptions.table)
+      this.createTable = importOptions.createNewTable
 
-      if (this.table) {
-        await this.$store.dispatch('updateTableColumns', this.table)
+      if (!importOptions.createNewTable) {
+        await this.$store.dispatch('updateTableColumns', this.getTable(importOptions.table))
         this.table = this.getTable(importOptions.table)
         const { tableColumnNames, nonNullableColumns } = this.table.columns.reduce((acc, column) => {
           const columnText = [column.columnName, ...this.getColumnAttributes(column)]
@@ -462,7 +463,6 @@ export default {
         }, { tableColumnNames: {}, nonNullableColumns: []})
         this.tableColumnNames = tableColumnNames
         this.nonNullableColumns = nonNullableColumns
-        this.createTable = false
       } else {
         const splitFileName = importOptions.fileName.split('/')
         const [fileName] = splitFileName[splitFileName.length-1].split('.')
