@@ -1,8 +1,8 @@
 <template>
   <div
-    class="connection-button"
     v-if="config"
     :title="$bks.buildConnectionString(config)"
+    :class="classes"
   >
     <x-button
       class="btn btn-link btn-icon"
@@ -135,7 +135,7 @@ export default {
   },
   computed: {
       ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
+      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'connectionColor': 'connectionColor'}),
       connectionName() {
         return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
       },
@@ -144,10 +144,17 @@ export default {
       },
       databaseVersion() {
         return this.versionString
+      },
+      classes() {
+        const result = {
+          'connection-button': true
+        }
+
+        result[this.connectionColor] = true
+        return result;
       }
   },
   methods: {
-
     async save() {
       try {
         this.errors = null
