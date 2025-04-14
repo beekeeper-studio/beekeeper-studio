@@ -458,6 +458,7 @@
           'mariadb': 'mysql',
           'tidb': 'mysql',
           'redshift': 'psql',
+          'mongodb': 'psql'
         }
         return mappings[this.connectionType] || 'generic'
       },
@@ -596,11 +597,14 @@
       entities() {
         return this.tables.map((t: TableOrView) => ({ schema: t.schema, name: t.name }))
       },
+      queryDialect() {
+        return this.dialectData.queryDialectOverride ?? this.connectionType;
+      },
       formatterDialect() {
-        return FormatterDialect(dialectFor(this.connectionType))
+        return FormatterDialect(dialectFor(this.queryDialect))
       },
       identifierDialect() {
-        return findSqlQueryIdentifierDialect(this.connectionType)
+        return findSqlQueryIdentifierDialect(this.queryDialect)
       },
     },
     watch: {

@@ -195,6 +195,7 @@ export interface IBasicDatabaseClient {
   getTableReferences(table: string, schema?: string): Promise<string[]>,
   getTableKeys(table: string, schema?: string): Promise<TableKey[]>,
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
+  executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, options?: any): Promise<CancelableQuery>,
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,

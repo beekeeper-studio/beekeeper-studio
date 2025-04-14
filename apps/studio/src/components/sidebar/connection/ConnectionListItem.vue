@@ -13,22 +13,26 @@
     >
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
-        <div class="title">{{ label }}</div>
+        <div class="title">
+          {{ label }}
+        </div>
         <div class="subtitle">
           <span
             class="bastion"
-            v-if="this.config.sshBastionHost"
+            v-if="this.config.sshBastionHost && !privacyMode"
           >
             <span class="truncate">{{ this.config.sshBastionHost }}</span>&nbsp;>&nbsp;
           </span>
           <span
             class="ssh"
-            v-if="this.config.sshHost"
+            v-if="this.config.sshHost && !privacyMode"
           >
             <span class="truncate">{{ this.config.sshHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
-            <span>{{ subtitleSimple }}</span>
+            <span>
+              {{ privacyMode ? '******' : subtitleSimple }}
+            </span>
           </span>
         </div>
       </div>
@@ -74,7 +78,14 @@ import { isUltimateType } from '@/common/interfaces/IConnection'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
-  props: ['config', 'isRecentList', 'selectedConfig', 'showDuplicate', 'pinned'],
+  props: [
+    'config',
+    'isRecentList',
+    'selectedConfig',
+    'showDuplicate',
+    'pinned',
+    'privacyMode'
+  ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     split: null
@@ -129,7 +140,9 @@ export default {
       }
     },
     title() {
-      return this.$bks.buildConnectionString(this.config)
+      return this.privacyMode ? 
+        'Connection details hidden by Privacy Mode' : 
+        this.$bks.buildConnectionString(this.config)
     },
     savedConnection() {
 
