@@ -79,7 +79,7 @@
                   :testing="testing"
                 />
                 <sql-anywhere-form
-                  v-else-if="config.connectionType === 'sqlanywhere'"
+                  v-else-if="config.connectionType === 'sqlanywhere' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
