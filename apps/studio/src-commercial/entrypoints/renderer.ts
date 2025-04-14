@@ -38,6 +38,7 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
 import { WebPluginManager } from '@/services/plugin/web'
+import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 
 (async () => {
 
@@ -167,7 +168,19 @@ import { WebPluginManager } from '@/services/plugin/web'
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
     try {
-      await new WebPluginManager().initialize();
+      const webPluginManager = new WebPluginManager(Vue.prototype.$util, new PluginStoreService(store))
+      await webPluginManager.initialize()
+      Vue.prototype.$plugin = {
+        getAllEntries: webPluginManager.getAllEntries.bind(webPluginManager),
+        getEnabledPlugins: webPluginManager.getEnabledPlugins.bind(webPluginManager),
+        getRepositoryInfo: webPluginManager.getRepositoryInfo.bind(webPluginManager),
+        install: webPluginManager.install.bind(webPluginManager),
+        uninstall: webPluginManager.uninstall.bind(webPluginManager),
+      };
+      if (window.platformInfo.isDevelopment) {
+        // For debugging
+        window.webPluginManager = webPluginManager;
+      }
     } catch (e) {
       log.error("Error initializing web plugin manager", e)
     }

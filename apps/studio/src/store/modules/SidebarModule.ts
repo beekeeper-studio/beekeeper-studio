@@ -3,13 +3,7 @@ import { Module } from "vuex";
 import { State as RootState } from "../index";
 import { SmartLocalStorage } from "@/common/LocalStorage";
 
-interface SidebarTab {
-  id: string;
-  label: string;
-}
-
 interface State {
-  tabs: SidebarTab[];
   primarySidebarSize: number;
   primarySidebarOpen: boolean;
   secondarySidebarSize: number;
@@ -28,13 +22,6 @@ const SECONDARY_SIDEBAR_INITIAL_SIZE = 30 // in percent
 export const SidebarModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
-    tabs: [
-      {
-        id: "json-viewer",
-        label: "JSON Viewer",
-      },
-    ],
-
     // PRIMARY SIDEBAR
     primarySidebarOpen: SmartLocalStorage.getBool(PRIMARY_SIDEBAR_OPEN_KEY, true),
     primarySidebarSize: SmartLocalStorage.getJSON(PRIMARY_SIDEBAR_SIZE_KEY, PRIMARY_SIDEBAR_INITIAL_SIZE),
@@ -45,6 +32,15 @@ export const SidebarModule: Module<State, RootState> = {
     secondaryActiveTabId: "json-viewer",
   }),
   getters: {
+    tabs: (_state, _getters, rootState) => {
+      return [
+        {
+          id: "json-viewer",
+          name: "JSON Viewer",
+        },
+        ...rootState.plugins.sidebarTabs,
+      ]
+    },
   },
   mutations: {
     // PRIMARY SIDEBAR
@@ -87,7 +83,7 @@ export const SidebarModule: Module<State, RootState> = {
       context.commit('secondarySidebarSize', size)
     },
     setSecondaryActiveTabId(context, tabId: string) {
-      if (!context.state.tabs.find((t) => t.id === tabId)) {
+      if (!context.getters.tabs.find((t) => t.id === tabId)) {
         throw new Error(`Tab ${tabId} does not exist`);
       }
       context.commit("secondaryActiveTabId", tabId);

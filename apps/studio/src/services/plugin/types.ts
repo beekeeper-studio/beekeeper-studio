@@ -9,6 +9,25 @@ export interface CommonPluginInfo {
 export interface Manifest extends CommonPluginInfo {
   version: string;
   minAppVersion: string;
+  capabilities: {
+    views: {
+      sidebars: {
+        id: string;
+        name: string;
+        location: "secondary";
+        /** The path to the entry html file of the sidebar. This is relative to the plugin's root directory. */
+        entry: string;
+      }[];
+    };
+  };
+  settings: {
+    id: string;
+    name: string;
+    type: "string" | "number" | "boolean";
+    description: string;
+    default: string | number | boolean;
+  }[];
+  permissions: unknown[];
 }
 
 /** Info that is obtained from the registry repo a.k.a. beekeeper-studio/beekeeper-studio-plugins. */
@@ -27,8 +46,5 @@ export interface PluginRepositoryInfo {
 
 export interface Release {
   version: string;
-  manifestDownloadUrl: string;
-  scriptDownloadUrl: string;
-  styleDownloadUrl: string;
+  sourceArchiveUrl: string;
 }
-

@@ -9,15 +9,15 @@ import {
 import { Manifest, PluginRegistryEntry, Release } from "./types";
 import platformInfo from "@/common/platform_info";
 import PluginRepositoryService from "./PluginRepositoryService";
+import extract from "extract-zip";
+import * as tar from "tar";
+import { tmpdir } from "os";
 
 const log = rawLog.scope("PluginFileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
-const PLUGIN_SCRIPT_FILENAME = "index.js";
-const PLUGIN_STYLE_FILENAME = "style.css";
-const PLUGIN_MANIFEST_TMP_FILENAME = "manifest.json.tmp";
-const PLUGIN_SCRIPT_TMP_FILENAME = "index.js.tmp";
-const PLUGIN_STYLE_TMP_FILENAME = "style.css.tmp";
+const ARCHIVE_EXTENSION = platformInfo.isWindows ? ".zip" : ".tar.gz";
+const ARCHIVE_TMP_FILENAME = `plugin${ARCHIVE_EXTENSION}.tmp`;
 
 class PluginDownloadError extends Error {
   status: "UNKNOWN" | "NOT_FOUND" | "ABORTED" = "UNKNOWN";
@@ -48,7 +48,7 @@ async function download(options: DownloaderConfig & { signal?: AbortSignal }) {
     options.signal?.addEventListener("abort", downloader.cancel);
     report = await downloader.download().finally(() => {
       options.signal?.removeEventListener("abort", downloader.cancel);
-    });
+    })
     downloadStatus = report.downloadStatus;
   } catch (e) {
     if (e.responseBody) {
@@ -66,10 +66,35 @@ async function download(options: DownloaderConfig & { signal?: AbortSignal }) {
   return report.filePath;
 }
 
+/**
+ * Extract the archive file based on the platform
+ * @param archivePath Path to the archive file
+ * @param extractDir Directory to extract to
+ */
+async function extractArchive(archivePath: string, extractDir: string): Promise<void> {
+  try {
+    if (path.extname(archivePath) === '.zip') {
+      // Use extract-zip for zip archives (Windows)
+      await extract(archivePath, { dir: extractDir });
+    } else {
+      // Use tar for tar.gz archives (Mac/Linux)
+      await tar.extract({
+        file: archivePath,
+        cwd: extractDir,
+        // Strip the top-level directory (GitHub archives have a single directory at the top)
+        strip: 1,
+      });
+    }
+  } catch (error) {
+    log.error(`Error extracting archive: ${error.message}`);
+    throw new Error(`Failed to extract plugin archive: ${error.message}`);
+  }
+}
+
 export default class PluginFileManager {
   constructor(private readonly repositoryService: PluginRepositoryService) {}
 
-  /** Download all plugin files to `directory` */
+  /** Download plugin source archive to `directory` and extract it */
   async download(
     entry: PluginRegistryEntry,
     release: Release,
@@ -80,55 +105,85 @@ export default class PluginFileManager {
     } = {}
   ) {
     const directory = this.getDirectoryOf(entry.id);
+    const tmpDirectory = path.join(tmpdir(), `beekeeper-plugin-${entry.id}-${Date.now()}`);
 
     try {
-      fs.mkdirSync(directory, { recursive: true });
+      // Create temp directory for initial download
+      fs.mkdirSync(tmpDirectory, { recursive: true });
 
       log.debug(
         `Downloading plugin "${entry.id}" version "${release.version}"...`
       );
 
+      // Download the source archive
       log.debug(
-        `Downloading plugin manifest: "${release.manifestDownloadUrl}"...`
+        `Downloading plugin source archive: "${release.sourceArchiveUrl}"...`
       );
-      await download({
-        url: release.manifestDownloadUrl,
-        directory,
+      const archivePath = await download({
+        url: release.sourceArchiveUrl,
+        directory: tmpDirectory,
         signal: options.signal,
-        fileName: options.tmp
-          ? PLUGIN_MANIFEST_TMP_FILENAME
-          : PLUGIN_MANIFEST_FILENAME,
+        fileName: ARCHIVE_TMP_FILENAME,
       });
 
-      log.debug(`Downloading plugin script: "${release.scriptDownloadUrl}"...`);
-      await download({
-        url: release.scriptDownloadUrl,
-        directory,
-        signal: options.signal,
-        fileName: options.tmp
-          ? PLUGIN_SCRIPT_TMP_FILENAME
-          : PLUGIN_SCRIPT_FILENAME,
-      });
+      // Extract the archive to the temp directory
+      log.debug(`Extracting plugin archive...`);
+      await extractArchive(archivePath, tmpDirectory);
 
-      log.debug(`Downloading plugin style: "${release.styleDownloadUrl}"...`);
-      await download({
-        url: release.styleDownloadUrl,
-        directory,
-        signal: options.signal,
-        fileName: options.tmp
-          ? PLUGIN_STYLE_TMP_FILENAME
-          : PLUGIN_STYLE_FILENAME,
-      }).catch((e) => {
-        if (e instanceof PluginDownloadError && e.status === "NOT_FOUND") {
-          log.debug("Plugin style not found. Skipping.");
-          return;
-        }
-        throw e;
-      });
+      // If we're updating, keep in temp directory
+      if (options.tmp) {
+        return tmpDirectory;
+      }
+
+      // Create final directory
+      fs.mkdirSync(directory, { recursive: true });
+
+      // Copy extracted files to final directory
+      // First remove the archive file to not copy it
+      fs.unlinkSync(archivePath);
+
+      // Copy all files from temp to final directory
+      this.copyDirectory(tmpDirectory, directory);
+
+      // Clean up temp directory
+      fs.rmSync(tmpDirectory, { recursive: true, force: true });
     } catch (e) {
-      fs.rmSync(directory, { recursive: true, force: true });
+      // Clean up on error
+      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      if (!options.tmp) {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
       log.debug("Download failed", e);
       throw e;
+    }
+  }
+
+  /**
+   * Copy all files from source to destination directory
+   */
+  private copyDirectory(source: string, destination: string) {
+    // Create destination directory if it doesn't exist
+    if (!fs.existsSync(destination)) {
+      fs.mkdirSync(destination, { recursive: true });
+    }
+
+    // Read the source directory
+    const files = fs.readdirSync(source);
+
+    // Copy each file/directory
+    for (const file of files) {
+      const sourcePath = path.join(source, file);
+      const destPath = path.join(destination, file);
+
+      const stat = fs.statSync(sourcePath);
+
+      if (stat.isDirectory()) {
+        // Recursively copy directories
+        this.copyDirectory(sourcePath, destPath);
+      } else {
+        // Copy files
+        fs.copyFileSync(sourcePath, destPath);
+      }
     }
   }
 
@@ -137,31 +192,28 @@ export default class PluginFileManager {
     release: Release,
     options: { signal?: AbortSignal } = {}
   ) {
-    await this.download(entry, release, { ...options, tmp: true });
+    // Download to temp location
+    const tmpDirectory = await this.download(entry, release, { ...options, tmp: true });
+    const finalDirectory = this.getDirectoryOf(entry.id);
 
-    const directory = this.getDirectoryOf(entry.id);
+    try {
+      // Remove existing plugin directory
+      fs.rmSync(finalDirectory, { recursive: true, force: true });
 
-    // Rename old files
-    fs.rmSync(path.join(directory, PLUGIN_MANIFEST_FILENAME), { force: true });
-    fs.rmSync(path.join(directory, PLUGIN_SCRIPT_FILENAME), { force: true });
-    fs.rmSync(path.join(directory, PLUGIN_STYLE_FILENAME), { force: true });
+      // Create final directory
+      fs.mkdirSync(finalDirectory, { recursive: true });
 
-    // Rename new files
-    fs.renameSync(
-      path.join(directory, PLUGIN_MANIFEST_TMP_FILENAME),
-      path.join(directory, PLUGIN_MANIFEST_FILENAME)
-    );
-    fs.renameSync(
-      path.join(directory, PLUGIN_SCRIPT_TMP_FILENAME),
-      path.join(directory, PLUGIN_SCRIPT_FILENAME)
-    );
-    fs.renameSync(
-      path.join(directory, PLUGIN_STYLE_TMP_FILENAME),
-      path.join(directory, PLUGIN_STYLE_FILENAME)
-    );
+      // Copy all files from temp to final directory
+      this.copyDirectory(tmpDirectory, finalDirectory);
 
-    // Remove temp directory
-    fs.rmSync(path.join(directory, "tmp"), { recursive: true, force: true });
+      // Clean up temp directory
+      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+    } catch (e) {
+      // Clean up on error
+      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      log.debug("Update failed", e);
+      throw e;
+    }
   }
 
   remove(manifest: Manifest) {
@@ -180,26 +232,20 @@ export default class PluginFileManager {
         continue;
       }
 
-      if (
-        !fs.existsSync(
-          path.join(
-            platformInfo.pluginsDirectory,
-            dir,
-            PLUGIN_MANIFEST_FILENAME
-          )
-        ) ||
-        !fs.existsSync(
-          path.join(platformInfo.pluginsDirectory, dir, PLUGIN_SCRIPT_FILENAME)
-        )
-      ) {
-        log.warn(`Found folder without manifest or script: ${dir}. Skipping.`);
+      const manifestPath = path.join(
+        platformInfo.pluginsDirectory,
+        dir,
+        PLUGIN_MANIFEST_FILENAME
+      );
+
+      console.log('MOIASND)IASNOIASND', manifestPath)
+
+      if (!fs.existsSync(manifestPath)) {
+        log.warn(`Found folder without manifest: ${dir}. Skipping.`);
         continue;
       }
 
-      const manifestContent = fs.readFileSync(
-        path.join(platformInfo.pluginsDirectory, dir, PLUGIN_MANIFEST_FILENAME),
-        { encoding: "utf-8" }
-      );
+      const manifestContent = fs.readFileSync(manifestPath, { encoding: "utf-8" });
 
       try {
         manifests.push(JSON.parse(manifestContent));

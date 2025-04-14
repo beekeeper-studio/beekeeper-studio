@@ -21,15 +21,11 @@ export default class PluginRepositoryService {
         repo,
       }
     );
+    
+    // Get the source code archive URL (either tarball or zipball)
     return {
       version: response.data.tag_name,
-      manifestDownloadUrl: response.data.assets.find(
-        (a) => a.name === "manifest.json"
-      ).browser_download_url,
-      scriptDownloadUrl: response.data.assets.find((a) => a.name === "index.js")
-        .browser_download_url,
-      styleDownloadUrl: response.data.assets.find((a) => a.name === "style.css")
-        .browser_download_url,
+      sourceArchiveUrl: response.data.tarball_url || response.data.zipball_url,
     };
   }
 
