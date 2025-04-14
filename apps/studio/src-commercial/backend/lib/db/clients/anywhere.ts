@@ -71,19 +71,27 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   private configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     let config: any = {
       UserId: server.config.user,
-      Password: server.config.password
+      Password: server.config.password,
+      DatabaseName: database.database,
     };
 
-    if (/\.db$/.test(database.database)) {
+    if (server.config.sqlAnywhereOptions.serverName) {
       config = {
         ...config,
-        DBF: database.database
+        ServerName: server.config.sqlAnywhereOptions.serverName
+      };
+    }
+
+    if (server.config.sqlAnywhereOptions.mode === 'file') {
+      config = {
+        ...config,
+        DatabaseFile: server.config.sqlAnywhereOptions.databaseFile,
+        ForceStart: true,
       };
     } else {
       config = {
         ...config,
-        Host: `${server.config.host}:${server.config.port}`,
-        DatabaseName: database.database
+        Host: `${server.config.host}:${server.config.port}`
       };
     }
 

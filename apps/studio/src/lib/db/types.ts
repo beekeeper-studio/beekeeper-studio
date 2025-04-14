@@ -104,6 +104,12 @@ export interface LibSQLOptions {
   syncPeriod?: number;
 }
 
+export interface SQLAnywhereOptions {
+  mode: 'server' | 'file';
+  serverName?: string;
+  databaseFile?: string;
+}
+
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
@@ -161,6 +167,7 @@ export interface IDbConnectionServerConfig {
   azureAuthOptions?: AzureAuthOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
+  sqlAnywhereOptions?: SQLAnywhereOptions
   runtimeExtensions?: string[]
 }
 

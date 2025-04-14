@@ -108,6 +108,8 @@ export default {
         return this.savedConnection.name
       } else if (this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') {
         return window.main.basename(this.config.defaultDatabase)
+      } else if (this.config.connectionType === 'sqlanywhere' && this.config.sqlAnywhereOptions.mode === 'file') {
+        return window.main.basename(this.config.sqlAnywhereOptions.databaseFile);
       }
 
       return this.$bks.simpleConnectionString(this.config)
