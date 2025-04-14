@@ -2171,10 +2171,10 @@ uri-js@^4.2.2:
   dependencies:
     punycode "^2.1.0"
 
-vite@^6.0.14:
-  version "6.0.14"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-6.0.14.tgz#76339651e85871de42e7be37d81a31abb0c374f5"
-  integrity sha512-RPfVU0Z3aFfl5BQG8xgIvuN8PofO6np7PBnurYSwx9hfcK6mjuTC5XQxA65L+pxmVbmT3Swqp9CYqc5VshQIfQ==
+vite@^6.0.15:
+  version "6.0.15"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-6.0.15.tgz#b43167e6bf93195a460424a56bb323abe0bf1cce"
+  integrity sha512-uC/aEgK2B7Ryaznyfj6h1PMUe4G7/6cKG97idqJFcgasmaoIRoemtlDQbsTTb6y5n3ly2L3kTgMR3sso9ASz0g==
   dependencies:
     esbuild "^0.24.2"
     postcss "^8.4.49"
