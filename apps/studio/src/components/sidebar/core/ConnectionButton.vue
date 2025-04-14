@@ -147,7 +147,9 @@ export default {
     ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       hasRunningExports: 'exports/hasRunningExports',
-      workspace: 'workspace', 'connectionColor: 'connectionColor'}),
+      workspace: 'workspace',
+      connectionColor: 'connectionColor'
+    }),
     connectionName() {
       return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
     },

@@ -249,6 +249,9 @@ export default {
     togglePasswordInputType() {
       return this.showPassword ? "text" : "password"
     },
+    supportsSsl() {
+      return findClient(this.config.connectionType).supports('server:ssl')
+    },
     supportsSocketPath() {
       return findClient(this.config.connectionType).supportsSocketPath
     },

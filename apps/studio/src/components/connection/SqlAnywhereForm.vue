@@ -10,19 +10,22 @@
     <common-server-inputs :supportComplexSSL="false" :config="config" v-show="isServer">
       <div class="form-group expand">
         <label for="serverName">Server Name</label>
-        <input type="text" class="form-control" v-model="config.sqlAnywhereOptions.serverName">
+        <masked-input
+          :value="config.sqlAnywhereOptions.serverName"
+          :privacyMode="privacyMode"
+          @input="val => config.sqlAnywhereOptions.serverName = val"
+        />
       </div>
     </common-server-inputs>
     <div v-show="!isServer" class="">
       <div class="row gutter">
         <div class="col s6 form-group">
           <label for="user">User</label>
-          <input
-            type="text"
-            name="user"
-            v-model="config.username"
-            class="form-control"
-          >
+          <masked-input
+            :value="config.username"
+            :privacyMode="privacyMode"
+            @input="val => config.username = val"
+          />
         </div>
         <div class="col s6 form-group">
           <label for="password">Password</label>
@@ -39,7 +42,11 @@
       </div>
       <div class="form-group expand">
         <label for="serverName">Server Name</label>
-        <input type="text" class="form-control" v-model="config.sqlAnywhereOptions.serverName">
+        <masked-input
+          :value="config.sqlAnywhereOptions.serverName"
+          :privacyMode="privacyMode"
+          @input="val => config.sqlAnywhereOptions.serverName = val"
+        />
       </div>
       <div class="form-group expand">
         <label for="databaseName">Database Name</label>
@@ -62,9 +69,11 @@
 <script>
 import CommonServerInputs from './CommonServerInputs.vue'
 import FilePicker from "@/components/common/form/FilePicker.vue"
+import MaskedInput from '@/components/MaskedInput.vue'
+import { mapState } from 'vuex'
 
 export default {
-  components: { CommonServerInputs, FilePicker },
+  components: { CommonServerInputs, FilePicker, MaskedInput },
   props: ['config'],
   data() {
     return {
@@ -72,6 +81,7 @@ export default {
     }
   },
   computed: {
+    ...mapState('settings', ['privacyMode']),
     isServer() {
       return this.config.sqlAnywhereOptions.mode === 'server';
     },
