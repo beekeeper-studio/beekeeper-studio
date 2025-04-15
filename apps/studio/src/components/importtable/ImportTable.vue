@@ -25,11 +25,13 @@
       <h3 class="card-title" v-else>
         Select Table 
       </h3>
-      <form>
+      <form class="schema-toggle-container">
         <toggle-form-area
           v-for="(schemaTable, index) in this.schemaTables" :key="index"
           :title="schemaTable.schema ?? 'Select Table'"
-          :expanded="isOnlySchema"
+          :expanded="isOnlySchema || (stepperProps.schema && schemaTable.schema === stepperProps.schema)"
+          :hide-toggle="isOnlySchema"
+          class="schema-toggle-item"
         >
           <template v-slot:default>
             <div class="import-table-form">
@@ -202,5 +204,27 @@ export default {
   .card-title.decision-break {
     margin: 1rem 0;
     text-align: center;
+  }
+
+  .schema-toggle-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .schema-toggle-item {
+    margin-bottom: .5rem;
+    position: relative;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Ensure the toggle-form area doesn't overlay other content */
+    :deep(.advanced-body) {
+      position: relative;
+      overflow: visible;
+      height: auto !important; /* Override transition height */
+      z-index: 1;
+    }
   }
 </style>
