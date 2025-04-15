@@ -17,6 +17,7 @@ import { LibSQLClient } from "./clients/libsql";
 import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
 import { MongoDBClient } from "./clients/mongodb";
+import { SQLAnywhereClient } from "./clients/anywhere";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -34,7 +35,8 @@ const clients = new Map<ConnectionType, any>([
   ['libsql', LibSQLClient],
   ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
-  ['mongodb', MongoDBClient]
+  ['mongodb', MongoDBClient],
+  ['sqlanywhere', SQLAnywhereClient]
 ], );
 
 

@@ -4,7 +4,6 @@ $button-height:     $statusbar-height * 0.72;
 .global-status-bar {
   display: flex;
   align-items: center;
-  background: $statusbar-bg;
   color: rgba($statusbar-text, 0.87);
   min-height: $statusbar-height;
   height: $statusbar-height;
