@@ -34,10 +34,10 @@
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
-        <!-- TODO (@day): when we have SQL queries for mongo, add an action dropdown here for shell/query tab -->
         <x-button
           class="add-tab-dropdown"
           menu
+          v-if="supportsShell"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
@@ -371,6 +371,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         tabType: this.dbEntityType,
         entityType: this.dbEntityType
       }
+    },
+    supportsShell() {
+      return !this.dialectData.disabledFeatures?.shell;
     },
     titleCaseAction() {
       return _.capitalize(this.dbAction)
