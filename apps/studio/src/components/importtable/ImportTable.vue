@@ -25,17 +25,37 @@
       <h3 class="card-title" v-else>
         Select Table 
       </h3>
+      <div class="fixed">
+        <div class="filter">
+          <div class="filter-wrap">
+            <input
+              class="filter-input"
+              type="text"
+              placeholder="Filter"
+              v-model="filterQuery"
+            >
+            <x-buttons class="filter-actions">
+              <x-button
+                @click="clearFilter"
+                v-if="filterQuery"
+              >
+                <i class="clear material-icons">cancel</i>
+              </x-button>
+            </x-buttons>
+          </div>
+        </div>
+      </div>
       <form class="schema-toggle-container">
         <toggle-form-area
           v-for="(schemaTable, index) in this.schemaTables" :key="index"
           :title="schemaTable.schema ?? 'Select Table'"
           :expanded="isOnlySchema || (stepperProps.schema && schemaTable.schema === stepperProps.schema)"
-          :hide-toggle="isOnlySchema"
           class="schema-toggle-item"
         >
           <template v-slot:default>
             <div class="import-table-form">
-              <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex">
+              <!-- eslint-disable-next-line vue/no-use-v-if-with-v-for -->
+              <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex" v-if="tableData.entityType === 'table'">
                 <input
                   :id="buildTableHTMLId('table', tIndex)"
                   type="radio"
@@ -87,11 +107,22 @@ export default {
     },
     selectedTableName() {
       return this.selectedTable == null ? '' : this.selectedTable.replace('==|==', '.')
-    }
+    },
+    filterQuery: {
+      get() {
+        return this.$store.state.entityFilter.filterQuery
+      },
+      set(newFilter) {
+        this.$store.dispatch('setFilterQuery', newFilter)
+      }
+    },
   },
   methods: {
     buildTableHTMLId(title, index){
       return `${title}-${index}`
+    },
+    clearFilter() {
+      this.filterQuery = null
     },
     updateTableSwitch() {
       this.createTableFromFile = !this.createTableFromFile
@@ -106,6 +137,9 @@ export default {
         foundSchema = this.schemaTables[0]
       }
       return foundSchema.tables.find(t => t.name === this.stepperProps.table)
+    },
+    onFocus(){
+      this.initialize()
     },
     getTable() {
       if (!this.selectedTable) return null
