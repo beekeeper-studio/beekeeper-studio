@@ -21,6 +21,14 @@ yarn lib:dev # build and watch
 yarn test # unit test
 ```
 
+If you want to test the components quickly in the browser, you can run:
+
+```bash
+yarn dev
+```
+
+This will run a local development server with hot reload enabled.
+
 ## License
 
 Beekeeper Studio's UI Kit is dual licensed:
