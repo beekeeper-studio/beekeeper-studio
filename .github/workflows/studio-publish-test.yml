@@ -15,7 +15,7 @@ jobs:
           - name: test
             owner: beekeeper-studio
             repo: test-releases
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       assets_url: ${{ steps.create_release.outputs.assets_url }}
@@ -41,7 +41,7 @@ jobs:
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
   identify_channel:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       channel: ${{steps.extract_channel.outputs.channel}}
       deb_codename: ${{steps.extract_channel.outputs.codename}}
@@ -69,7 +69,7 @@ jobs:
             owner: beekeeper-studio
             repo: test-releases
         os:
-          - name: ubuntu-20.04
+          - name: ubuntu-22.04
             arch: x64
             type: linux
             setup_python: true
@@ -83,10 +83,6 @@ jobs:
           - name: macos-14
             arch: arm64
             type: macos
-        # macos-13 is Intel, macos-14 is arm (obviously)
-        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-        # os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
-        # os: [macos-13, macos-14 ]
 
     steps:
       - name: Import GPG key
