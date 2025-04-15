@@ -64,6 +64,7 @@ export enum AppEvent {
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
   switchingTab = 'switchingTab',
   switchedTab = 'switchedTab',
+  updateQuery = 'updateQuery',
 }
 
 export interface RootBinding {

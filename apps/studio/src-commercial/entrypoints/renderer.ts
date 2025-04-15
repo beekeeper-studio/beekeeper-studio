@@ -171,6 +171,7 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
       const webPluginManager = new WebPluginManager(Vue.prototype.$util, new PluginStoreService(store))
       await webPluginManager.initialize()
       Vue.prototype.$plugin = {
+        handleRequestFromSandbox: webPluginManager.handleRequestFromSandbox.bind(webPluginManager),
         getAllEntries: webPluginManager.getAllEntries.bind(webPluginManager),
         getEnabledPlugins: webPluginManager.getEnabledPlugins.bind(webPluginManager),
         getRepositoryInfo: webPluginManager.getRepositoryInfo.bind(webPluginManager),

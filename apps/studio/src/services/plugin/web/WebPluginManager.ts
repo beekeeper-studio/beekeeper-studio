@@ -1,6 +1,12 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, PluginRegistryEntry, PluginRepositoryInfo } from "../types";
+import {
+  Manifest,
+  PluginRegistryEntry,
+  PluginRepositoryInfo,
+  PluginRequestData,
+  PluginResponseData,
+} from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 
@@ -15,7 +21,7 @@ export default class WebPluginManager {
   constructor(
     private utilityConnection: UtilityConnection,
     private pluginStore: PluginStoreService
-  ) {}
+  ) { }
 
   async initialize() {
     if (this.initialized) {
@@ -96,5 +102,42 @@ export default class WebPluginManager {
     }
     await loader.unload();
     await loader.load();
+  }
+
+  /** Handle messages from iframes */
+  async handleRequestFromSandbox(pluginId: string, data: PluginRequestData) {
+    this.checkPermission(pluginId, data);
+
+    const response: PluginResponseData = {
+      id: data.id,
+    };
+
+    switch (data.name) {
+      case "getTables":
+        response.result = this.pluginStore.getTables();
+        break;
+      case "getColumns":
+        response.result = await this.pluginStore.getColumns(data.args.table);
+        break;
+      case "getConnectionInfo":
+        response.result = this.pluginStore.getConnectionInfo();
+        break;
+      case "getActiveTab":
+        response.result = this.pluginStore.getActiveTab();
+        break;
+      case "updateQueryText":
+        this.pluginStore.updateQueryText(data.args.tabId, data.args.query);
+        break;
+      default:
+        log.warn(`Unknown request: ${data.name}`);
+        response.error = new Error(`Unknown request: ${data.name}`);
+    }
+
+    return response;
+  }
+
+  checkPermission(pluginId: string, data: PluginRequestData) {
+    // do nothing on purpose
+    // if not permitted, throw error
   }
 }
