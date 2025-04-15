@@ -16,6 +16,7 @@
         v-if="!minimalMode"
         @select="handleSelectGlobalSidebarItem"
         :active-item="globalSidebarActiveItem"
+        ref="globalSidebar"
       />
 
       <sidebar
@@ -39,7 +40,7 @@
     </div>
     <global-status-bar
       :connection-button-width="primarySidebarWidth"
-      :connection-button-icon-width="$bksConfig.ui.layout.primarySidebarMinWidth"
+      :connection-button-icon-width="globalSidebarWidth"
     />
     <quick-search
       v-if="quickSearchShown"
@@ -79,6 +80,7 @@
         initializing: true,
         resizeObserver: null,
         primarySidebarWidth: 0,
+        globalSidebarWidth: 0,
       }
       /* eslint-enable */
     },
@@ -174,9 +176,10 @@
         // width on drag and click events.
         this.resizeObserver = new ResizeObserver((entries) => {
           const primarySidebar = entries[0]
-          this.primarySidebarWidth = primarySidebar.contentRect.width
+          this.primarySidebarWidth = this.globalSidebarWidth + primarySidebar.contentRect.width
         })
         this.$nextTick(() => {
+          this.globalSidebarWidth = this.$refs.globalSidebar.$el.offsetWidth
           this.resizeObserver.observe(this.splitElements[0])
         })
       })
