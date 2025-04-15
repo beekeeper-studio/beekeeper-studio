@@ -1,6 +1,7 @@
 .secondary-sidebar {
   display: flex;
   flex-direction: column;
+  z-index: 0;
 
   .sidebar-heading x-tabs {
     padding: 0;

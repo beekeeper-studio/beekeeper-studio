@@ -37,6 +37,10 @@
 
       <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
+    <global-status-bar
+      :connection-button-width="primarySidebarWidth"
+      :connection-button-icon-width="$bksConfig.ui.layout.primarySidebarMinWidth"
+    />
     <quick-search
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
@@ -54,26 +58,27 @@
   import GlobalSidebar from './sidebar/GlobalSidebar.vue'
   import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
-  import Statusbar from './common/StatusBar.vue'
-  import ConnectionButton from './sidebar/core/ConnectionButton.vue'
   import ExportManager from './export/ExportManager.vue'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import LostConnectionModal from './LostConnectionModal.vue'
+  import GlobalStatusBar from './GlobalStatusBar.vue'
   import Vue from 'vue'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalSidebar },
+    components: { CoreSidebar, CoreTabs, Sidebar, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalStatusBar, GlobalSidebar },
     data() {
       /* eslint-disable */
       return {
         split: null,
         quickSearchShown: false,
         initializing: true,
+        resizeObserver: null,
+        primarySidebarWidth: 0,
       }
       /* eslint-enable */
     },
@@ -163,6 +168,17 @@
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
+        // This is the easiest way to track the width of the primary sidebar
+        // in real time because sidebar can be resized by dragging or clicking
+        // the toggle button. An alternative to this would be assigning the
+        // width on drag and click events.
+        this.resizeObserver = new ResizeObserver((entries) => {
+          const primarySidebar = entries[0]
+          this.primarySidebarWidth = primarySidebar.contentRect.width
+        })
+        this.$nextTick(() => {
+          this.resizeObserver.observe(this.splitElements[0])
+        })
       })
     },
     beforeDestroy() {
@@ -173,6 +189,9 @@
       this.unregisterHandlers(this.rootBindings)
       if(this.split) {
         this.split.destroy()
+      }
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect()
       }
     },
     methods: {

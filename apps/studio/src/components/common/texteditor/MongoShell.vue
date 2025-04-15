@@ -37,6 +37,9 @@ import { keymapTypes } from "@/lib/db/types";
 import { mapGetters, mapState } from 'vuex';
 import { plugins } from "@/lib/editor/utils";
 import { AppEvent } from '@/common/AppEvent';
+import AnsiToHtml from 'ansi-to-html';
+
+const ansiToHtml = new AnsiToHtml();
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -52,7 +55,6 @@ export default {
     return {
       shell: null,
       promptSymbol: "mongo> ",
-      commandBuffer: "",
       commandHistory: [],
       historyIndex: -1,
       promptLine: 0, // where current prompt starts
@@ -64,7 +66,7 @@ export default {
     ...mapGetters({ 'userKeymap': 'settings/userKeymap' }),
     ...mapState(['connection']),
     prompt() {
-      const maxLength = 50;
+      const maxLength = 30;
       if (this.promptSymbol.length <= maxLength) return this.promptSymbol;
 
       const startLength = Math.floor((maxLength - 3) / 2);
@@ -104,7 +106,15 @@ export default {
       const lastLineNum = this.shell.lastLine();
       let output = value.output;
 
-      if (typeof output === 'object') {
+      if (typeof output === 'string' && /\x1b\[[0-9;]*m/.test(output)) {
+        const html = ansiToHtml.toHtml(output);
+
+        const el = document.createElement('pre');
+        el.className = 'ansi-output';
+        el.innerHTML = html;
+
+        this.shell.addLineWidget(lastLineNum, el, { above: false });
+      } else if (typeof output === 'object') {
         try {
           const formattedOutput = JSON.stringify(output, null, 2);
           
@@ -159,6 +169,8 @@ export default {
       await this.$nextTick();
 
       this.destroyShell();
+      await this.$nextTick();
+      this.promptLine = 0;
 
       const indicatorOpen = document.createElement("span");
       indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
@@ -263,9 +275,6 @@ export default {
         });
       }
 
-      // set value again cause sometimes it doesn't set
-      //this.setInitialValue(cm);
-
       if (this.firstInitialization && this.focus) {
         cm.focus();
       }
@@ -288,6 +297,7 @@ export default {
       this.historyIndex = this.commandHistory.length;
 
       if (userCommand === "clear") {
+        this.firstInitialization = true;
         this.initialize({ userKeymap: this.userKeymap });
         this.$emit('clear');
         return;
@@ -359,6 +369,14 @@ export default {
   .dropdown-icon:hover {
     color: color.adjust($theme-primary, $lightness: 15%);
   }
+}
+
+.ansi-output {
+  user-select: text !important;
+  white-space: pre-wrap;
+  color: white;
+  padding: 4px;
+  margin: 0;
 }
 
 </style>
