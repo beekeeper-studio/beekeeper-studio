@@ -1,48 +1,77 @@
-
-## Headline Features
-
-1. DuckDB support
-2. Column reordering on the structure view
-3. RPM, Flatpak, and AUR installers for Linux
-
-
-That's right, DuckDB has landed. Using DuckDB you can query a whole range of files - CSV files, Parquet files, or even other databases!
-
-We also have a whole bunch of other great minor features and bug fixes in this release:
-
-## Minor Additions
-
-- Fixed some bugs with Redshift queries
-- Fixed some null serialization issues with binary columns
-- Fixed a bunch of minor SQLite bugs like read-only mode not enabling in some situations
-- No more BigInt truncation
-- Adding databases for SQLite is now working right
-- Fixed a few race conditions causing issues in the query editor and the JSON row viewer
-- Added some missing functionality for Cassandra
-
-
-## Merged PRs
-
-c94dacfc1 Merge pull request #2715 from beekeeper-studio/dependabot/npm_and_yarn/vite-5.4.12
-7dbb63fca Merge pull request #2716 from beekeeper-studio/feat/in-app-registration-form
-01d0746b6 Merge pull request #2723 from MasterOdin/fix-redshift-table-structure
-7cf5a9cea Merge pull request #2309 from beekeeper-studio/feat/duckdb
-10af81ee5 Merge pull request #2721 from beekeeper-studio/fix/sqlite-db-dropdown
-2b7ff8de6 Merge pull request #2651 from beekeeper-studio/more-installers
-46204797f Merge pull request #2720 from MasterOdin/feat-mysql-ed25519
-4d97b9a16 Merge pull request #2717 from MasterOdin/fix-mysql-index-unique
-b8656efe9 Merge pull request #2719 from beekeeper-studio/fix/text-editor-race-cond
-9fe9f8cea Merge pull request #2672 from beekeeper-studio/fix/json-column-json-viewer
-796a9a1fa Merge pull request #2634 from beekeeper-studio/dependabot/npm_and_yarn/nanoid-3.3.8
-1f3c891ad Merge pull request #2707 from MasterOdin/mpeveler/fix-sqlite-readonly
-735d4c974 Merge pull request #2706 from MasterOdin/mpeveler/fix-sqlite-test
-510beaceb Merge pull request #2527 from beekeeper-studio/fix/logging
-7612f0432 Merge pull request #2523 from beekeeper-studio/feature/1341_reorder-columns
-78bf78499 Merge pull request #2687 from beekeeper-studio/fix/bigint-truncation
-18ffeef68 Merge pull request #2688 from beekeeper-studio/fix/binary-null-serialization
-206063dea Merge pull request #2690 from beekeeper-studio/fix/json-view-fold
-fb8b26077 Merge pull request #2686 from beekeeper-studio/bugfix/import-from-file-table-table
-4df7c44a4 Merge pull request #2664 from beekeeper-studio/fix/filter-connections
-1fa15e996 Merge pull request #2674 from anilsenay/cassandra-parse-rows
-21aaf95bc Merge pull request #2678 from beekeeper-studio/fix/add-database
-7d77f8c5d Merge pull request #2680 from beekeeper-studio/fix/json-row-viewer-view
+Using provided tag: v5.1.5
+Using tag: v5.1.5
+552aa7277 Merge pull request #2978 from therealrinku/fix/jsonb-boolean
+58a83c918 Merge pull request #2971 from beekeeper-studio/fix/core-interface-split
+d64de0113 Merge pull request #3013 from beekeeper-studio/fix/anywhere-form
+6d11a7c59 Merge pull request #2992 from beekeeper-studio/feat/anywhere
+b59774bda Merge pull request #3011 from beekeeper-studio/fix/vite-version
+e608f0863 Merge pull request #3007 from beekeeper-studio/bugfix/2936_Copy-As-SQL
+0e60794da Merge pull request #3008 from beekeeper-studio/bugfix/remove-uncalled-function
+608534750 Merge pull request #2934 from thePeras/feat/streamer-mode
+fe7c9dc22 Merge pull request #2946 from beekeeper-studio/feat/mongo-sql-editor
+592cf2f49 Merge pull request #2996 from beekeeper-studio/fix/sqltexteditor-contextmenu
+53130a8e9 Merge pull request #2998 from therealrinku/fix/quick-search-overflow
+b65f2a4aa Merge pull request #2969 from beekeeper-studio/fix/status-bar
+4358465af Merge pull request #2999 from beekeeper-studio/fix/config-keys
+7de56e1e8 Merge pull request #2997 from beekeeper-studio/fix/mongo-ansi
+1266f3de2 Merge pull request #2995 from beekeeper-studio/docs/ui-kit-sqltexteditor
+bf9d7932c Merge pull request #2994 from beekeeper-studio/fix/vim-clipboard
+30caebf0b Merge pull request #2988 from beekeeper-studio/fix/sqltexteditor-syntax-colors
+157ceede9 Merge pull request #2989 from beekeeper-studio/fix/text-editor-vim
+d27d7b0c7 Merge pull request #2979 from TomasSilv/development
+645dbc8b1 Merge pull request #2975 from beekeeper-studio/dependabot/npm_and_yarn/apps/ui-kit/examples/react/vite-6.0.14
+521dd6e3f Merge pull request #2960 from beekeeper-studio/fix/sass
+c87d34520 Merge pull request #2986 from beekeeper-studio/fix/null-license
+ef50e9697 Merge pull request #2860 from beekeeper-studio/oracle-client-fixes
+708273dbb Merge pull request #2944 from therealrinku/fix/clear-table-search
+0b1aee048 Merge pull request #2902 from beekeeper-studio/dependabot/npm_and_yarn/yargs-parser-20.2.9
+2e308ad80 Merge pull request #2967 from beekeeper-studio/fix/mongo-shell
+349226d42 Merge pull request #2955 from beekeeper-studio/fix/free-solarized
+23cac27ce Merge pull request #2671 from beekeeper-studio/file-based-license
+ba16498de Merge pull request #2977 from beekeeper-studio/unique-id
+fcac97301 Merge pull request #2965 from beekeeper-studio/fix/json-viewer
+ba70574c2 Merge pull request #2966 from beekeeper-studio/fix/sqltexteditor-race
+c5aac62ce Merge pull request #2895 from Jvillani-fend/feature/ctrl+pg_tabChange
+ecc34f785 Merge pull request #2928 from thePeras/fix/fk-icon-update
+cd28f3585 Merge pull request #2849 from beekeeper-studio/feat/editable-json-viewer
+222429b95 Merge pull request #2866 from beekeeper-studio/feat/result-table-json-viewer
+1c383b216 Merge pull request #2799 from beekeeper-studio/feat/wrap-text
+f043a9fc1 Merge pull request #2931 from beekeeper-studio/use-ui-kit-sqltexteditor
+1d535392d Merge pull request #2802 from beekeeper-studio/feat/config-binary-encoding
+595100adb Merge pull request #2800 from beekeeper-studio/fix/tabulator-errors
+5e4722b92 Merge pull request #2957 from joaovicente3/fix-foreign-key-button
+12807f0e2 Merge pull request #2949 from therealrinku/fix/raw-filter
+b271b88cc Merge pull request #2875 from beekeeper-studio/dependabot/npm_and_yarn/babel/runtime-7.26.10
+c24f82b62 Merge pull request #2874 from beekeeper-studio/dependabot/npm_and_yarn/babel/helpers-7.26.10
+bb5ae4cc7 Merge pull request #2873 from beekeeper-studio/dependabot/npm_and_yarn/axios-1.8.2
+1fee44c81 Merge pull request #2932 from beekeeper-studio/dependabot/npm_and_yarn/apps/ui-kit/examples/react/vite-6.0.12
+92ddfda3c Merge pull request #2933 from beekeeper-studio/dependabot/npm_and_yarn/vite-5.4.15
+69f8e1b04 Merge pull request #2914 from beekeeper-studio/feat/mongo-editor
+1dbbb4629 Merge pull request #2915 from beekeeper-studio/fix/config-plugin
+5d4ef2658 Merge pull request #2926 from T-MSD/BugFix
+b30c0572f Merge pull request #2938 from therealrinku/fix/excel-export-null-values
+d263ac2f6 Merge pull request #2906 from joao-sntos/fix-bug-import-from-url
+1b67e5bbe Merge pull request #2922 from rajitha-dassanayake/feat/2677
+d8c6c48e7 Merge pull request #2942 from therealrinku/fix/copy-all-shortcut
+e2d22183d Merge pull request #2940 from thePeras/fix/refresh-panel
+855dcf4ee Merge pull request #2917 from Daniel15/patch-1
+a0edb7928 Merge pull request #2930 from beekeeper-studio/update-ui-kits-doc
+e71273810 Merge pull request #2929 from beekeeper-studio/fix/oracle-initial-sort
+39c8474e7 Merge pull request #2924 from therealrinku/fix/highlight-selected-table
+1eb5d68f9 Merge pull request #2896 from beekeeper-studio/fix/json-sidebar-fold-gutter
+fe33fe001 Merge pull request #2881 from beekeeper-studio/feat/mongo-v2
+ec95b4895 Merge pull request #2904 from beekeeper-studio/fix/default-conn-colour
+321e2ca59 Merge pull request #2843 from beekeeper-studio/feat/changed-sign-json-viewer
+89079e5dd Merge pull request #2879 from RodrigoPerestrelo/fix-select-copy-relation-names
+cc96326e3 Merge pull request #2905 from beekeeper-studio/update-ui-kit
+7b48c48ed Merge pull request #2903 from beekeeper-studio/rathboma-patch-6
+820a0294d Merge pull request #2792 from beekeeper-studio/ui-kit-updates
+aa9476d60 Merge pull request #2807 from beekeeper-studio/fix/index-form-validation
+878853195 Merge pull request #2899 from therealrinku/fix/add-row
+89df82507 Merge pull request #2876 from juratjan123/Hint_improve
+7781ce1c0 Merge pull request #1929 from beekeeper-studio/config.ini
+ecafaba7a Merge pull request #2483 from beekeeper-studio/feature/free-reminder
+7f4f865ab Merge pull request #2641 from beekeeper-studio/feature/2379-Tab-History
+90fa41fff Merge pull request #2878 from beekeeper-studio/fix/unsaved-conn-dupes
+0ebb6526c Merge pull request #2880 from drochag/patch-1
+f63c884ae Merge pull request #2853 from beekeeper-studio/rc-51
