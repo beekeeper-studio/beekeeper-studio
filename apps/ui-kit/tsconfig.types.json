@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist",
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true,
+    "noEmitOnError": false
+  },
+  "include": ["lib/index.ts", "lib/types.ts", "lib/components/types.ts", "lib/components/table/types.ts"],
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.spec.ts", "lib/components/sql-text-editor/define.ts"]
+}

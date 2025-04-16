@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { Column, BaseData, TableElement } from "@beekeeperstudio/ui-kit";
 
-export default function BksTable({ columns, data }) {
+interface BksTableProps {
+  columns: Column[];
+  data: BaseData;
+}
+
+export default function BksTable({ columns, data }: BksTableProps) {
   const [initialized, setInitialized] = useState(false);
-  const containerRef = useRef(null);
-  const tableRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const tableRef = useRef<TableElement | null>(null);
 
   useEffect(() => {
-    const table = document.createElement("bks-table");
+    const table = document.createElement("bks-table") as TableElement;
     const listener = () => setInitialized(true);
     table.addEventListener("bks-initialized", listener);
     tableRef.current = table;
@@ -23,7 +29,8 @@ export default function BksTable({ columns, data }) {
   }, []);
 
   useEffect(() => {
-    if (!initialized && !tableRef.current) return;
+    if (!initialized) return;
+    if (!tableRef.current) return;
     tableRef.current.columns = columns;
     tableRef.current.data = data;
   }, [initialized, columns, data]);

@@ -24,7 +24,10 @@
   "main": "./dist/index.js",
   "style": "./dist/style.css",
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
     "./style.css": "./dist/style.css",
     "./table": "./dist/table.js",
     "./entity-list": "./dist/entity-list.js",
@@ -38,9 +41,9 @@
   "scripts": {
     "dev": "vite",
     "lib:dev": "vite build -c vite.config.ts --watch --mode development",
-    "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
+    "lib:types": "tsc -p ./tsconfig.types.json",
     "test": "vitest",
-    "build": "vite build -c vite.config.ts --mode production",
+    "build": "vite build -c vite.config.ts --mode production && yarn lib:types",
     "preview": "vite preview"
   },
   "dependencies": {},
