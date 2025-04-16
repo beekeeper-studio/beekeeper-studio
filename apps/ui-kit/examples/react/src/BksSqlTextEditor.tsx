@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { Entity, SqlTextEditorElement } from "@beekeeperstudio/ui-kit";
 
-export default function BksSqlTextEditor({ entities }) {
+interface BksSqlTextEditorProps {
+  entities: Entity[]
+}
+
+export default function BksSqlTextEditor({ entities }: BksSqlTextEditorProps) {
   const [initialized, setInitialized] = useState(false);
   const [text, setText] = useState("select * from users u\nwhere u.id = 1;");
-  const containerRef = useRef(null);
-  const sqlTextEditorRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const sqlTextEditorRef = useRef<SqlTextEditorElement | null>(null);
 
   function handleInitialized() {
     setInitialized(true);
@@ -32,18 +37,19 @@ export default function BksSqlTextEditor({ entities }) {
     }
 
     return () => {
-      sqlTextEditorRef.current.removeEventListener(
+      sqlTextEditorRef.current!.removeEventListener(
         "bks-value-change",
         handleUpdateValue
       );
       if (containerRef.current) {
-        containerRef.current.removeChild(sqlTextEditorRef.current);
+        containerRef.current.removeChild(sqlTextEditorRef.current!);
       }
     };
   }, []);
 
   useEffect(() => {
     if (!initialized) return;
+    if (!sqlTextEditorRef.current) return;
     sqlTextEditorRef.current.entities = entities;
   }, [initialized, entities]);
 
