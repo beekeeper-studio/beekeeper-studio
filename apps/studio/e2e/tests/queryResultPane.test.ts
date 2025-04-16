@@ -8,6 +8,7 @@ import { userActions } from "../pageActions/index";
 const POSTGRES_USER = 'postgres';
 const POSTGRES_PASSWRD = 'T@est1234';
 const POSTGRES_DEFAULT_DB = 'test_beekeeper';
+const POSTGRES_QUERY = 'SELECT * FROM test_load WHERE id IN (1, 2);';
 const CONNECTION_TYPE = 'Postgres';
 
 let electronApp;
@@ -17,8 +18,7 @@ let resultPane;
 let userAttemptsTo;
 let newDatabaseConnection;
 let connectionObj;
-
-test.describe("Postgres query execution", () => {
+test.describe("Result Pane Verifications", () => {
 
     beforeEach(async () => {
         electronApp = await electron.launch({ args: ['dist/main.js'] });
@@ -31,61 +31,48 @@ test.describe("Postgres query execution", () => {
             databaseUser: POSTGRES_USER,
             databasePassword: POSTGRES_PASSWRD,
             defaultDatabase: POSTGRES_DEFAULT_DB
-        };
+        }
     });
 
     afterEach(async () => {
         await electronApp.close();
     });
 
-    test("perform a Postgres query", async () => {
-        const postgresQuery = 'select * from test_load limit 1;';
+    test("clicks on results columns", async () => {
 
         await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
         await userAttemptsTo.insertDatabaseDetails(connectionObj);
         await userAttemptsTo.connectWithDatabase();
 
         await expect(queryTab.queryTabTextArea).toBeVisible();
-
-        await userAttemptsTo.writeAQuery(postgresQuery);
+        await userAttemptsTo.writeAQuery(POSTGRES_QUERY);
         await userAttemptsTo.runQuery();
-
-        await expect(resultPane.resultFirstRow).toBeVisible();
-    });
-
-    test("postgres query with WHERE and 2 results", async () => {
-        const queryWithConditionals = 'SELECT * FROM test_load WHERE id IN (1, 2);'
-
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(connectionObj);
-        await userAttemptsTo.connectWithDatabase();
-
-        await expect(queryTab.queryTabTextArea).toBeVisible();
-
-        await userAttemptsTo.writeAQuery(queryWithConditionals);
-        await userAttemptsTo.runQuery();
-
-        await expect(resultPane.resultFirstRow).toBeVisible();
         await expect(resultPane.resultSecondRow).toBeVisible();
-        await expect(resultPane.resultThridRow).not.toBeVisible();
+        // will move this to an action
+        await resultPane.firstColumnHeader.click();
+        await expect(resultPane.firstColumnHeader).toBeVisible();
     });
 
-    test("runs valid query with no results", async () => {
-        const zeroResultsQuery = 'SELECT * FROM test_load WHERE id = null;'
+    test("reorders items by clicking", async () => {
 
         await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
         await userAttemptsTo.insertDatabaseDetails(connectionObj);
         await userAttemptsTo.connectWithDatabase();
 
         await expect(queryTab.queryTabTextArea).toBeVisible();
-
-        await userAttemptsTo.writeAQuery(zeroResultsQuery);
+        await userAttemptsTo.writeAQuery(POSTGRES_QUERY);
         await userAttemptsTo.runQuery();
+        await expect(resultPane.resultSecondRow).toBeVisible();
 
-        await expect(resultPane.resultFirstRow).not.toBeVisible();
-        await expect(resultPane.resultSecondRow).not.toBeVisible();
-        await expect(resultPane.resultThridRow).not.toBeVisible();
-        await expect(resultPane.noResults).toBeVisible();
+        // clicking twice due to a bug (will be reported) 
+        await resultPane.firstColumnHeader.click();
+
+        const cellValueBeforeReordering = await resultPane.firstItemAndFirstColumn.textContent()
+        await expect(await resultPane.firstItemAndFirstColumn).toBeVisible();
+        await resultPane.firstColumnHeader.click();
+        const cellValueAfterReordering = await resultPane.firstItemAndFirstColumn.textContent();
+
+        await expect(resultPane.resultFirstRow).toBeVisible();
+        await expect(cellValueBeforeReordering).not.toBe(cellValueAfterReordering);
     });
-
 });

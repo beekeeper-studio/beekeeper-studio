@@ -6,7 +6,7 @@ import { userActions } from "../pageActions/index";
 
 const POSTGRES_CREDENTIALS = {
     databaseUser: 'postgres',
-    databasePassword: '',
+    databasePassword: 'T@est1234',
     defaultDatabase: 'test_beekeeper',
 };
 const CONNECTION_TYPE = 'Postgres';
