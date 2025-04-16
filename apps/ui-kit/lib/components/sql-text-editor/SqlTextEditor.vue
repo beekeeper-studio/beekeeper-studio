@@ -22,6 +22,7 @@ import { Options } from "sql-query-identifier";
 import { Entity } from "../types";
 import ProxyEmit from "../mixins/ProxyEmit";
 import { InternalContextItem, divider } from "../context-menu/menu";
+import { sqlHintEnhancer } from "./sqlHintEnhancer";
 
 export default Vue.extend({
   mixins: [textEditorMixin, ProxyEmit],
@@ -123,6 +124,7 @@ export default Vue.extend({
       autoComplete,
       autoRemoveQueryQuotes(this.identifierDialect),
       querySelection(this.identifierDialect, this.handleQuerySelectionChange),
+      sqlHintEnhancer,
     ]
   }
 });

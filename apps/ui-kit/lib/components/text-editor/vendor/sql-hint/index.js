@@ -14,6 +14,13 @@ import CodeMirror from "codemirror";
 })(function(CodeMirror) {
   "use strict";
 
+  // Define a hook system for the SQL hint plugin
+  // This allows external code to enhance the hint functionality without modifying this file
+  var sqlHintHooks = {
+    beforeGetCompletions: [], // Functions to call before getting completions
+    modifyCompletions: []     // Functions to call to modify the completion list
+  };
+
   var tables;
   var defaultTable;
   var keywords;
@@ -123,6 +130,7 @@ import CodeMirror from "codemirror";
   }
 
   async function nameCompletion(cur, token, result, editor) {
+      console.log('nameCompletion')
     // Try to complete table, column names and return start position of completion
     var useIdentifierQuotes = false;
     var nameParts = [];
@@ -155,6 +163,7 @@ import CodeMirror from "codemirror";
 
     // Try to complete columns
     string = nameParts.pop();
+      console.log(string)
     var table = nameParts.join(".");
 
     var alias = false;
@@ -247,6 +256,16 @@ import CodeMirror from "codemirror";
     return table;
   }
 
+  // Expose the hook system to allow external enhancements
+  CodeMirror.sqlHintHooks = sqlHintHooks;
+
+  // Register a hook helper to add hooks for SQL hint
+  CodeMirror.registerSqlHintHook = function(hookType, fn) {
+    if (sqlHintHooks[hookType]) {
+      sqlHintHooks[hookType].push(fn);
+    }
+  };
+
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
     tables = parseTables(options?.tables)
     var defaultTableName = options?.defaultTable;
@@ -276,6 +295,13 @@ import CodeMirror from "codemirror";
     if (token.end > cur.ch) {
       token.end = cur.ch;
       token.string = token.string.slice(0, cur.ch - token.start);
+    }
+
+    // Run beforeGetCompletions hooks
+    for (var i = 0; i < sqlHintHooks.beforeGetCompletions.length; i++) {
+      var hookResult = sqlHintHooks.beforeGetCompletions[i](editor, cur, token, options);
+      // If any hook returns false, abort the hint process
+      if (hookResult === false) return null;
     }
 
     if (token.string.match(/^[.`"'\w@][\w$#]*$/g)) {
@@ -320,7 +346,18 @@ import CodeMirror from "codemirror";
       dataFrom.ch = await dataFrom.ch
     }
 
-    return {list: result, from: dataFrom, to: Pos(cur.line, end)};
+    var completionResult = {list: result, from: dataFrom, to: Pos(cur.line, end)};
+
+    // Run modifyCompletions hooks to allow external modification of the result
+    for (var i = 0; i < sqlHintHooks.modifyCompletions.length; i++) {
+      var modifiedResult = sqlHintHooks.modifyCompletions[i](completionResult, editor, cur, token);
+      // If hook returns a modified result, use it
+      if (modifiedResult) {
+        completionResult = modifiedResult;
+      }
+    }
+
+    return completionResult;
   });
   CodeMirror.defineOption("getColumns", null);
 });
