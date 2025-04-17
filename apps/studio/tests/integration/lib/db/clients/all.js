@@ -1023,6 +1023,8 @@ export const itShouldGenerateSQLWithBinary = async function (util) {
       `insert into "main"."test_inserts" ("id", "name") values ('\\xDE\\xAD\\xBE\\xEF', 'beef');` +
       `update "main"."test_inserts" set "name" = 'beefy' where "id" = '\\xDE\\xAD\\xBE\\xEF';` +
       `delete from "main"."test_inserts" where "id" = '\\xDE\\xAD\\xBE\\xEF';`,
+    sqlanywhere:
+      `insert into "DBA"."test_inserts" ("id", "name") values`
   }
 
   expect(util.fmt(sql)).toEqual(util.fmt(expectedQueries[util.dialect]))

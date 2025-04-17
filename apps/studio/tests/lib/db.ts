@@ -27,6 +27,7 @@ import { buffer as b, uint8 as u } from '@tests/utils'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
 import { DuckDBBlobValue } from '@duckdb/node-api'
+import Client_Sqlanywhere from '@/shared/lib/knex-anywhere'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -153,6 +154,16 @@ export class DBTestUtil {
           password: config.password,
           connectString: `${config.host}:${config.port}/${config.serviceName}`,
           requestTimeout: 1000
+        }
+      })
+    } else if (config.client === 'sqlanywhere' ) {
+      this.knex = knex({
+        client: Client_Sqlanywhere,
+        connection: {
+          UserId: config.user,
+          Password: config.password,
+          DatabaseName: database,
+          Host: `${config.host}:${config.port}`
         }
       })
     } else {
@@ -448,7 +459,7 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
-    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql', 'duckdb']
+    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql', 'duckdb', 'sqlanywhere']
 
     if (trueFalseDBs.indexOf(this.dbType) !== -1) expect(defaultValues).toEqual([true,  false])
     else expect(defaultValues).toEqual([false, false])
@@ -876,6 +887,7 @@ export class DBTestUtil {
       firebird: "select trim('a') as total, trim('b') as total from rdb$database",
       // Clickhouse doesn't support same column name
       clickhouse: "select 'a' as total, 'b' as total2 from one_record",
+      sqlanywhere: "select 'a' as total, 'b' as total2 from one_record"
     }
     const q = await this.connection.query(sql1[this.dialect] || sql1.common)
     if(!q) throw new Error("connection couldn't run the query")
@@ -894,6 +906,7 @@ export class DBTestUtil {
         common: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
         noArrayMode: [{ id: 'c0', name: 'total' }],
         clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
+        sqlanywhere: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
         oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
         duckdb: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
       }

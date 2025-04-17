@@ -54,6 +54,7 @@ export const SqlAnywhereData: DialectData = {
   disabledFeatures: {
     shell: true,
     comments: true,
+    generatedColumns: true,
     alter: {
       multiStatement: true,
       renameSchema: true,

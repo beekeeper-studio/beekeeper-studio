@@ -8,6 +8,7 @@ import { BigQueryClient } from '../knex-bigquery'
 import { identify } from 'sql-query-identifier'
 import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
+import Client_Sqlanywhere from '@shared/lib/knex-anywhere';
 import Client_Firebird from '@shared/lib/knex-firebird'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 
@@ -34,7 +35,7 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse', 'duckdb'].includes(v)
+    this.isNativeKnex = !['cassandra', 'bigquery', 'firebird', 'clickhouse', 'duckdb', 'sqlanywhere'].includes(v)
     this.createKnexLib()
   }
 
@@ -157,6 +158,9 @@ export class SqlGenerator {
       })
     } else if (this.dialect === 'clickhouse') {
       this.knex = knexlib({ client: ClickhouseKnexClient });
+    } else if (this.dialect === 'sqlanywhere') {
+      // @ts-expect-error Types don't match up exactly
+      this.knex = knexlib({ client: Client_Sqlanywhere })
     }
   }
 

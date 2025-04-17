@@ -13,11 +13,13 @@ import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
 import _ from 'lodash';
 import { joinFilters } from '@/common/utils';
 import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
+import Client_Sqlanywhere from '@/shared/lib/knex-anywhere'; 
+import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
-// only using this for now
-const knex = knexlib({ client: 'mssql' });
+// @ts-expect-error
+const knex = knexlib({ client: Client_Sqlanywhere });
 
 // TODO (@day): refactor this
 type SQLAnywhereResult = {
@@ -42,6 +44,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   pool: SqlAnywherePool;
   dbConfig: any;
   version: any;
+  transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, anywhereContext, server, database);
@@ -699,24 +702,26 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     }
   }
 
-  async createDatabaseSQL(databaseName?: string, charset?: string, collation?: string): Promise<string> {
+  async createDatabaseSQL(databaseName?: string, _charset?: string, collation?: string): Promise<string> {
     databaseName = databaseName || 'newdatabase';
     
     // Build the database file path - SQL Anywhere requires a file path
     // We'll create it in the user's home directory as a default
     const dbFilePath = `~/sql_anywhere/${databaseName}.db`;
+    const user = await this.defaultSchema();
     
     // Build the SQL command
-    let sql = `CREATE DATABASE '${dbFilePath}'`;
-    
-    // Add character set if specified
-    if (charset) {
-      sql += ` CHAR SET '${charset}'`;
-    }
+    let sql = `
+      CREATE DATABASE '${dbFilePath}'
+      DBA USER '${user}'
+      DBA PASSWORD '${this.server.config.password}'
+    `;
     
     // Add collation if specified
     if (collation) {
-      sql += ` NCHAR COLLATION '${collation}'`;
+      sql += `
+        COLLATION '${collation}'
+      `;
     }
     
     return sql;
@@ -1023,6 +1028,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {
+    selects = selects ?? ['*'];
     const filterString = _.isString(filters) ? `WHERE ${filters}` : this.buildFilterString(filters)
 
     const orderByString = this.genOrderByString(orderBy)

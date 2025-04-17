@@ -20,6 +20,7 @@ yarn-error.log
 .secrets
 .env
 .instant/
+.sqlanywhere/
 cli.zip
 apps/studio/test-results
 *.db
