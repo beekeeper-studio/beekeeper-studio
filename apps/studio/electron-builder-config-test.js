@@ -116,7 +116,9 @@ module.exports = {
       'appImage'
     ],
     desktop: {
-      'StartupWMClass': 'beekeeper-studio'
+      entry: {
+        StartupWMClass: 'beekeeper-studio'
+      }
     },
   },
   appImage: {
@@ -126,6 +128,8 @@ module.exports = {
     icon: './public/icons/png/512x512.png',
     target: ['nsis', 'portable'],
     publish: ['github'],
-    sign: "./build/win/sign.js",
+    signtoolOptions: {
+      sign: "./build/win/sign.js"
+    }
   },
 }
