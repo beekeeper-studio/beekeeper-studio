@@ -1,6 +1,7 @@
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from "lodash";
 import globals from '@/common/globals'
+import type { ExtendedTableColumn } from "../db/models";
 
 export interface ExpandablePath {
   path: string[];
@@ -137,3 +138,37 @@ export function eachPaths(
     }
   }
 }
+
+/** Mutate the row data to replace JSON columns with parsed JSON objects */
+export function parseRowDataForJsonViewer(data: Record<string, any>, tableColumns: { field: string, dataType: string }[]) {
+  tableColumns.forEach(column => {
+    const columnValue = data[column.field]
+
+    // Check if the column is a JSON column
+    let isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+    // If the column is not a JSON column, check if it is a JSON string
+    if (!isJsonColumn) {
+      const isColumnHasStringAndNotEmpty = typeof columnValue === 'string' && columnValue.trim() !== ''
+
+      if (isColumnHasStringAndNotEmpty) {
+        const isJsonObjectString = columnValue.startsWith('{') && columnValue.endsWith('}')
+        const isJsonArrayString = columnValue.startsWith('[') && columnValue.endsWith(']')
+
+        if (isJsonObjectString || isJsonArrayString) {
+          isJsonColumn = true
+        }
+      }
+    }
+
+    if (isJsonColumn) {
+      try {
+        data[column.field] = JSON.parse(data[column.field])
+      } catch (e) {
+        console.warn(`Failed to parse JSON for column ${column.field}:`, e)
+      }
+    }
+  })
+  return data
+}
+
