@@ -5,7 +5,7 @@ import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, SQLAnywhereOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -95,6 +95,9 @@ export class DbConnectionBase extends ApplicationEntity {
         break
       case 'firebird':
         port = 3050
+        break
+      case 'sqlanywhere':
+        port = 2638
         break
       default:
         port = null
@@ -204,6 +207,9 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'simple-json', nullable: false })
   libsqlOptions: LibSQLOptions = { mode: 'url' }
+
+  @Column({ type: 'simple-json', nullable: false })
+  sqlAnywhereOptions: SQLAnywhereOptions = { mode: 'server' }
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })

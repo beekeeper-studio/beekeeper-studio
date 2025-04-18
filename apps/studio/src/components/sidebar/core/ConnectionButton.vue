@@ -5,6 +5,7 @@
     :title="privacyMode ? 
       'Connection details hidden by Privacy Mode' : 
       $bks.buildConnectionString(config)"
+    :class="classes"
   >
     <x-button
       class="btn btn-link btn-icon"
@@ -146,7 +147,8 @@ export default {
     ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       hasRunningExports: 'exports/hasRunningExports',
-      workspace: 'workspace'
+      workspace: 'workspace',
+      connectionColor: 'connectionColor'
     }),
     connectionName() {
       return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
@@ -156,6 +158,14 @@ export default {
     },
     databaseVersion() {
       return this.versionString
+    },
+    classes() {
+      const result = {
+        'connection-button': true
+      }
+
+      result[this.connectionColor] = true
+      return result;
     }
   },
   methods: {
