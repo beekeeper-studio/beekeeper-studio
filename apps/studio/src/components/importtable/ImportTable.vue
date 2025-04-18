@@ -49,7 +49,7 @@
         <toggle-form-area
           v-for="(schemaTable, index) in this.schemaTables" :key="index"
           :title="schemaTable.schema ?? 'Select Table'"
-          :expanded="isOnlySchema || (stepperProps.schema && schemaTable.schema === stepperProps.schema)"
+          :expanded="true"
           class="schema-toggle-item"
         >
           <template v-slot:default>
@@ -100,11 +100,6 @@ export default {
   },
   computed: {
     ...mapGetters(['schemaTables']),
-    isOnlySchema() {
-      if (this.schemaTables == null) return false
-
-      return this.schemaTables.length === 1
-    },
     selectedTableName() {
       return this.selectedTable == null ? '' : this.selectedTable.replace('==|==', '.')
     },
@@ -260,5 +255,15 @@ export default {
       height: auto !important; /* Override transition height */
       z-index: 1;
     }
+  }
+
+  .filter-wrap {
+    position: relative;
+  }
+  .filter-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: none;
   }
 </style>
