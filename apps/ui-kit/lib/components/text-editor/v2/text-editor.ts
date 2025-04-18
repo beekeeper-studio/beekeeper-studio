@@ -34,6 +34,15 @@ export class TextEditor {
         this.readOnlyCompartment.of(EditorState.readOnly.of(true)),
         sql(),
         this.lsCompartment.of([]),
+        EditorView.theme({
+          "&": {
+            height: `100%`,
+          },
+          ".cm-scroller": {
+            overflow: "auto",
+            height: "100%"
+          }
+        })
       ],
     });
 
@@ -48,11 +57,6 @@ export class TextEditor {
   }
 
   initializeLSClientConfig(config: LSClientConfiguration) {
-    if (!this.initialized) {
-      console.warn("Text Editor must be initialized first.");
-      return;
-    }
-
     const rootUri = URI.file(config.rootUri).toString();
     const documentUri = URI.file(config.documentUri).toString();
     const transport = new WebSocketTransport("ws://localhost:3000/server");

@@ -7,8 +7,8 @@
 </template>
 
 <script lang="ts">
-import { LSClientConfiguration } from "../lib/components/text-editor-v2";
-import TextEditor from "../lib/components/text-editor-v2/TextEditor.vue";
+import { LSClientConfiguration } from "../lib/components/text-editor";
+import TextEditor from "../lib/components/text-editor/TextEditor.vue";
 
 export default {
   components: { TextEditor },

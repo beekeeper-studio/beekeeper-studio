@@ -12,22 +12,38 @@ export default {
 
   watch: {
     value() {
-      if (this.value !== this.textEditor?.getValue()) {
-        this.textEditor?.setValue(this.value);
-      }
+      if (!this.textEditor) return;
+      this.applyValue();
     },
     readOnly() {
-      this.textEditor?.setReadOnly(this.readOnly);
+      if (!this.textEditor) return;
+      this.applyReadOnly();
     },
     lsClientConfig() {
-      this.textEditor?.initializeLSClientConfig({
-        ...this.lsClientConfig,
-        languageId: this.languageId,
-      })
+      if (!this.textEditor) return;
+      this.applyLSClientConfig();
     },
   },
 
   methods: {
+    applyValue() {
+      if (this.value !== this.textEditor.getValue()) {
+        this.textEditor.setValue(this.value);
+      }
+    },
+    applyReadOnly() {
+      this.textEditor.setReadOnly(this.readOnly);
+    },
+    applyLSClientConfig() {
+      if (this.lsClientConfig) {
+        this.textEditor.initializeLSClientConfig({
+          ...this.lsClientConfig,
+          languageId: this.languageId,
+        })
+      } else {
+        // TODO: Destroy the language server client
+      }
+    },
     initialize() {
       if (this.textEditor) {
         this.textEditor.destroy();
@@ -36,20 +52,13 @@ export default {
 
       const textEditor = new TextEditor();
 
-      textEditor.initialize({
-        parent: this.$refs.editor,
-      });
-
-      textEditor.setValue(this.value);
-      textEditor.setReadOnly(this.readOnly);
-      if (this.lsClientConfig) {
-        textEditor.initializeLSClientConfig({
-          ...this.lsClientConfig,
-          languageId: this.languageId,
-        })
-      }
+      textEditor.initialize({ parent: this.$refs.editor });
 
       this.textEditor = textEditor;
+
+      this.applyValue();
+      this.applyReadOnly();
+      this.applyLSClientConfig();
     },
   },
 

@@ -10,6 +10,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    height: {
+      type: Number,
+      deprecated: true,
+      validator(val) {
+        console.warn("[TextEditor] The 'height' prop is deprecated. Please use CSS to control the height instead.");
+        return true;
+      }
+    },
 
     // ------- New props below
 
@@ -27,7 +35,6 @@ export default {
     // vimConfig: Object as PropType<Config>,
     // lineWrapping: Boolean,
     // columnsGetter: Function,
-    // height: Number,
     // focus: Boolean,
     // contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     // markers: {
