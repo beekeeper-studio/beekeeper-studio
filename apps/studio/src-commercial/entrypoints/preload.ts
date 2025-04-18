@@ -39,6 +39,13 @@ export const api = {
   isReady() {
     ipcRenderer.send('ready');
   },
+  rawInvoke(channel: string, ...args: any[]) {
+    return ipcRenderer.invoke(channel, ...args);
+  },
+  invoke(event: AppEvent, name: string, arg?: any) {
+    if (!Object.values<string>(AppEvent).includes(event)) return;
+    ipcRenderer.invoke(event, name, arg)
+  },
   send(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.send(event, name, arg)

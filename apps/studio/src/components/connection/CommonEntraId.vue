@@ -122,10 +122,10 @@
 
 </template>
 <script>
-
-import {AzureAuthType} from "@/lib/db/types";
-import {AppEvent} from "@/common/AppEvent";
+import { AzureAuthType } from "@/lib/db/types";
+import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
+import { onMounted } from "vue";
 
 export default {
   props: ['config', 'authType'],
@@ -148,14 +148,13 @@ export default {
       }
     },
     showUser() {
-      return [AzureAuthType.Password].includes(this.authType) || [AzureAuthType.CLI].includes(this.authType)
+      return [AzureAuthType.Password, AzureAuthType.CLI].includes(this.authType)
     },
     showPassword() {
       return [AzureAuthType.Password].includes(this.authType)
     },
     showTenantId() {
-      return [AzureAuthType.Password, AzureAuthType.ServicePrincipalSecret]
-        .includes(this.authType)
+      return [AzureAuthType.Password, AzureAuthType.ServicePrincipalSecret].includes(this.authType)
     },
     showClientSecret() {
       return [AzureAuthType.ServicePrincipalSecret].includes(this.authType)
@@ -183,8 +182,7 @@ export default {
   methods: {
     toggleIAMAuthentication() {
       this.azureAuthEnabled = !this.azureAuthEnabled
-      this.config.azureAuthOptions.azureAuthEnabled =
-        this.azureAuthEnabled;
+      this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled;
     },
     async signOut() {
       try {
@@ -199,6 +197,23 @@ export default {
         this.signingOut = false
       }
     },
+    async tryFindAzCli() {
+      if (!this.config.azureAuthOptions.cliPath) {
+        try {
+          const result = await window.main.rawInvoke('which-tool', 'az')
+          if (result.success) {
+            this.config.azureAuthOptions.cliPath = result.path;
+          } else {
+            this.config.azureAuthOptions.cliPath = 'NO CLI FOUND, PLEASE REFER TO DOCS'
+          }
+        } catch (e) {
+          this.config.azureAuthOptions.cliPath = 'NO CLI FOUND, PLEASE REFER TO DOCS'
+        }
+      }
+    }
+  },
+  mounted() {
+    this.tryFindAzCli();
   }
 }
 </script>

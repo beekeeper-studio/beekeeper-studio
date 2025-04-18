@@ -27,6 +27,7 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
+import {whichTool} from "@/lib/db/clients/utils";
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -159,6 +160,15 @@ async function initBasics() {
   })
   return settings
 }
+
+ipcMain.handle('which-tool', async (_event, toolName: string) => {
+  try {
+    const path = await whichTool({ toolName });
+    return { success: true, path };
+  } catch (error) {
+    return { success: false, error: error.toString() };
+  }
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
