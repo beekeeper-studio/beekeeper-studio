@@ -2,12 +2,11 @@ import { LanguageServerClient } from "@marimo-team/codemirror-languageserver";
 import { languageServerWithClient } from "@marimo-team/codemirror-languageserver";
 import { basicSetup } from "codemirror";
 import { EditorView, keymap } from "@codemirror/view";
-import { EditorState } from "@codemirror/state";
+import { EditorState, Extension } from "@codemirror/state";
 import { completionKeymap, startCompletion } from "@codemirror/autocomplete";
 import { URI } from "vscode-uri";
 import { defaultKeymap } from "@codemirror/commands";
 import { WebSocketTransport } from "@open-rpc/client-js";
-import { sql } from "@codemirror/lang-sql";
 import { Compartment } from "@codemirror/state";
 import { LSClientConfiguration } from "./types";
 
@@ -20,6 +19,7 @@ export class TextEditor {
   private view: EditorView;
   private readOnlyCompartment = new Compartment();
   private lsCompartment = new Compartment();
+  private extraCompartment = new Compartment();
 
   initialize(config: TextEditorConfiguration) {
     const state = EditorState.create({
@@ -32,7 +32,6 @@ export class TextEditor {
           { key: "Ctrl-Space", run: startCompletion },
         ]),
         this.readOnlyCompartment.of(EditorState.readOnly.of(true)),
-        sql(),
         this.lsCompartment.of([]),
         EditorView.theme({
           "&": {
@@ -42,7 +41,8 @@ export class TextEditor {
             overflow: "auto",
             height: "100%"
           }
-        })
+        }),
+        this.extraCompartment.of([]),
       ],
     });
 
@@ -128,6 +128,12 @@ export class TextEditor {
 
   getValue() {
     return this.view.state.doc.toString();
+  }
+
+  extend(extensions: Extension) {
+    this.view.dispatch({
+      effects: this.extraCompartment.reconfigure(extensions),
+    });
   }
 
   destroy() {
