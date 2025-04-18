@@ -333,7 +333,7 @@ import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import DetailViewSidebar from '@/components/sidebar/DetailViewSidebar.vue'
 import Split from 'split.js'
-import { ExpandablePath } from '@/lib/data/detail_view'
+import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/detail_view'
 import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
 
 const log = rawLog.scope('TableTable')
@@ -1729,38 +1729,8 @@ export default Vue.extend({
       
       // Clean the data first
       let cleanedData = this.$bks.cleanData(data, this.tableColumns)
-      
-      // Parse JSON columns
-      this.tableColumns.forEach(column => {
-        const columnValue = cleanedData[column.field]
 
-        // Check if the column is a JSON column
-        let isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
-
-        // If the column is not a JSON column, check if it is a JSON string
-        if (!isJsonColumn) {
-          const isColumnHasStringAndNotEmpty = typeof columnValue === 'string' && columnValue.trim() !== ''
-
-          if (isColumnHasStringAndNotEmpty) {
-            const isJsonObjectString = columnValue.startsWith('{') && columnValue.endsWith('}')
-            const isJsonArrayString = columnValue.startsWith('[') && columnValue.endsWith(']')
-
-            if (isJsonObjectString || isJsonArrayString) {
-              isJsonColumn = true
-            }
-          }
-        }
-
-        if (isJsonColumn) {
-          try {
-            cleanedData[column.field] = JSON.parse(cleanedData[column.field])
-          } catch (e) {
-            console.warn(`Failed to parse JSON for column ${column.field}:`, e)
-          }
-        }
-      })
-      
-      this.selectedRowData = cleanedData
+      this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
