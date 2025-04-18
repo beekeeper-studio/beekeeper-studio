@@ -37,6 +37,7 @@
         tabulator: null,
         actualTableHeight: '100%',
         selectedRowData: {},
+        selectedRowPosition: -1,
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
@@ -180,6 +181,9 @@
         const table = 'table-' + this.result.tableName
         const columns = 'columns-' + this.result.fields.reduce((str, field) => `${str},${field.name}`, '')
         return `${workspace}.${connection}.${table}.${columns}`
+      },
+      selectedRowId() {
+        return `${this.tableId ? `${this.tableId}.` : ''}tab-${this.tab.id}.row-${this.selectedRowPosition}`
       },
       rootBindings() {
         return [
@@ -367,20 +371,25 @@
       triggerFocus() {
         this.tabulator.rowManager.getElement().focus();
       },
-      handleRangeChange(ranges) {
-        this.selectedRowData = this.dataToJson(ranges[0].getRows()[0].getData(), true)
+      updateJsonViewerSidebar() {
+        /** @type {import('@/lib/data/jsonViewer').UpdateOptions} */
         const data = {
+          dataId: this.selectedRowId,
           value: this.selectedRowData,
           expandablePaths: [],
+          editablePaths: [],
+          signs: {},
         }
         this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
+      handleRangeChange(ranges) {
+        const row = ranges[0].getRows()[0]
+        this.selectedRowData = this.dataToJson(row.getData(), true)
+        this.selectedRowPosition = row.getPosition()
+        this.updateJsonViewerSidebar()
+      },
       handleTabActive() {
-        const data = {
-          value: this.selectedRowData,
-          expandablePaths: [],
-        }
-        this.trigger(AppEvent.updateJsonViewerSidebar, data)
+        this.updateJsonViewerSidebar()
       },
       handleSwitchedTab(tab) {
         if (tab.id === this.tab.id) {
