@@ -321,6 +321,7 @@ import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath } from '@/lib/data/jsonViewer'
 import { stringToTypedArray } from "@/common/utils";
+import { UpdateOptions } from "@/lib/data/jsonViewer";
 
 const log = rawLog.scope('TableTable')
 
@@ -373,9 +374,9 @@ export default Vue.extend({
       enabledMinimalModeWhileInactive: false,
 
       selectedRow: null,
-      selectedRowPosition: null,
+      selectedRowPosition: -1,
       selectedRowData: {},
-      expandablePaths: {},
+      expandablePaths: [],
     };
   },
   computed: {
@@ -1758,8 +1759,11 @@ export default Vue.extend({
           tableKey: key,
         }))
       this.expandablePaths.push(...cachedExpandablePaths)
-
-      const updatedData = {
+      this.updateJsonViewerSidebar()
+    },
+    updateJsonViewerSidebar() {
+      const updatedData: UpdateOptions = {
+        dataId: this.selectedRowIndex,
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,
@@ -1864,16 +1868,10 @@ export default Vue.extend({
       this.expandablePaths = filteredExpandablePaths
       this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
 
-      const data = {
-        value: this.selectedRowData,
-        expandablePaths: this.expandablePaths,
-        signs: this.selectedRowDataSigns,
-        editablePaths: this.editablePaths,
-      }
-
-      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.updateJsonViewerSidebar()
     },
     handleRangeChange(ranges: RangeComponent[]) {
+      console.log('change bruh')
       this.updateJsonViewer({ range: ranges[0] })
     },
     handleSwitchedTab(tab) {
@@ -1884,13 +1882,7 @@ export default Vue.extend({
       }
     },
     handleTabActive() {
-      const data = {
-        value: this.selectedRowData,
-        expandablePaths: this.expandablePaths,
-        signs: this.selectedRowDataSigns,
-        editablePaths: this.editablePaths,
-      }
-      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.updateJsonViewerSidebar()
       this.registerHandlers([
         {
           event: AppEvent.jsonViewerSidebarExpandPath,

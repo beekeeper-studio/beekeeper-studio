@@ -18,8 +18,8 @@
 <script lang="ts">
 import Vue from "vue";
 import JsonViewer from "./JsonViewer.vue";
+import { UpdateOptions } from "@/lib/data/jsonViewer";
 import { AppEvent } from '@/common/AppEvent'
-import { LineGutter } from "@/lib/editor/utils";
 
 export default Vue.extend({
   name: "JsonViewerSidebar",
@@ -36,14 +36,12 @@ export default Vue.extend({
       expandablePaths: [],
       editablePaths: [],
       signs: {},
+      dataId: -1,
     };
   },
   computed: {
     jsonViewerTitle() {
       return "JSON Viewer";
-    },
-    dataId() {
-      return -1;
     },
     reinitializeJsonViewer() {
       return 0;
@@ -62,9 +60,11 @@ export default Vue.extend({
     handleJsonValueChange(detail: { key: string; value: unknown }) {
       this.trigger(AppEvent.jsonViewerSidebarValueChange, detail)
     },
-    update(options: { value: Record<string, unknown>; expandablePaths: string[], signs: Record<string, LineGutter['type']>, editablePaths: string[] }) {
-      this.value = options.value
+    update(options: UpdateOptions) {
+      this.dataId = options.dataId
+      this.value = options.value ?? ''
       this.expandablePaths = options.expandablePaths
+      this.editablePaths = options.editablePaths
       this.signs = options.signs
     },
     handleSwitchingTab() {
