@@ -496,8 +496,15 @@ export default Vue.extend({
     tableKeys() {
       const result = {}
       this.rawTableKeys.forEach((item) => {
-        if (!result[item.fromColumn]) result[item.fromColumn] = [];
-        result[item.fromColumn].push(item);
+        if (item.isComposite) {
+          item.fromColumn.forEach((col) => {
+            if (!result[col]) result[col] = [];
+            result[col].push(item)
+          })
+        } else {
+          if (!result[item.fromColumn]) result[item.fromColumn] = [];
+          result[item.fromColumn].push(item);
+        }
       })
       return result
     },
@@ -723,8 +730,13 @@ export default Vue.extend({
 
           if (keyDatas?.length > 0) {
             keyDatas.forEach(keyData => {
+              // For composite foreign keys, show all related columns
+              const displayTarget = keyData.isComposite ? 
+                `${keyData.toTable} (${keyData.toColumn.join(', ')})` :
+                `${keyData.toTable} (${keyData.toColumn})`;
+              
               menu.push({
-                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
+                label: createMenuItem(`Go to ${displayTarget}`),
                 action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
@@ -782,10 +794,29 @@ export default Vue.extend({
       let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
       if (hasKeyDatas) {
         const keyData = keyDatas[0][1];
-        if (keyData.length === 1)
-          headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
-        else
-          headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
+        if (keyData.length === 1) {
+          // Handle composite keys
+          if (keyData[0].isComposite) {
+            // Format as: toTable (column1, column2)
+            const compositeColumns = keyData[0].toColumn.join(', ');
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${compositeColumns})`)
+          } else {
+            // Regular single-column foreign key
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
+          }
+        } else {
+          // Multiple foreign keys for the same column
+          headerTooltip += escapeHtml(` -> ${keyData.map(item => {
+            if (item.isComposite) {
+              // Format composite key
+              const compositeColumns = item.toColumn.join(', ');
+              return `${item.toTable}(${compositeColumns})`;
+            } else {
+              // Format regular key
+              return `${item.toTable}(${item.toColumn})`;
+            }
+          }).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
+        }
       } else if (isPK) {
         headerTooltip += ' [Primary Key]'
       }
@@ -834,7 +865,7 @@ export default Vue.extend({
         formatter: this.cellFormatter,
         formatterParams: {
           fk: hasKeyDatas && keyDatas[0][1],
-          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
           isPK: isPK,
           binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
         },
