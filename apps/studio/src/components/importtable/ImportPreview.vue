@@ -67,7 +67,6 @@ export default {
       return this.importOptions?.importMap?.length ?? '-'
     },
     columnsIgnoredCount () {
-      // TODO: table columns doesn't seem to be in "this.table" all the time so this will be 0 - mapped columns. Fix that
       const totalColumns = this.table?.columns?.length ?? 0
       const mappedColumns = this.importOptions?.importMap?.length ?? 0
       return totalColumns - mappedColumns
@@ -112,11 +111,18 @@ export default {
     async onFocus () {
       if (this.importerClass && this.tabulator) {
         this.tabulator.redraw()
+      } else {
+        this.initialize()
       }
     },
     async initialize () {
       const importOptions = await this.tablesToImport.get(this.importKey())
-      this.table = importOptions.table
+      if (!importOptions.createNewTable) {
+        await this.$store.dispatch('updateTableColumns', this.getTable(importOptions.table))
+        this.table = this.getTable(importOptions.table)
+      } else {
+        this.table = importOptions.table
+      }
       this.importOptions = importOptions
       if (!importOptions.importProcessId) {
         this.importerClass = await this.$util.send('import/init', { options: importOptions })

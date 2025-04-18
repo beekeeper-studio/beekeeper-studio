@@ -258,7 +258,7 @@
       async fileName () {
         const importOptions = {
           fileName: this.fileName,
-          fileType: this.fileType,
+          fileType: this.fileType
         }
 
         this.importerId = await this.$util.send('import/init', { options: importOptions })
@@ -342,6 +342,10 @@
         return Boolean(this.fileName)
       },
       async onNext() {
+        if (!this.importerId) {
+          return
+        }
+        
         const storeOptions = await this.tablesToImport.get(this.importKey())
         const importData = {
           table: `new-import-${this.stepperProps.tabId}`,
