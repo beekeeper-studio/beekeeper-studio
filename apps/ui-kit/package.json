@@ -36,7 +36,7 @@
     "./config/context-menu": "./dist/config/context-menu.js"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite -c vite.config.dev.ts",
     "lib:dev": "vite build -c vite.config.ts --watch --mode development",
     "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
     "test": "vitest",
@@ -45,13 +45,17 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@codemirror/lang-sql": "^6.8.0",
+    "@codemirror/state": "^6.5.2",
+    "@marimo-team/codemirror-languageserver": "^1.15.13",
+    "@open-rpc/client-js": "^1.8.1",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.2.0",
     "@vitejs/plugin-vue2": "^2.3.1",
     "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#635e4b427b90e199c273b194cf9db6b744d63e95",
-    "codemirror": "^5.63.1",
+    "codemirror": "^6.0.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
     "lodash": "^4.17.21",

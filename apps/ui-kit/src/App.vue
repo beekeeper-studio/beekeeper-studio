@@ -1,28 +1,36 @@
-<script setup lang="ts">
-</script>
-
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
+  <text-editor
+    :value="value"
+    :ls-client-config="lsClientConfig"
+    @bks-value-change="handleValueChange"
+  />
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+<script lang="ts">
+import { LSClientConfiguration } from "../lib/components/text-editor-v2";
+import TextEditor from "../lib/components/text-editor-v2/TextEditor.vue";
+
+export default {
+  components: { TextEditor },
+  data() {
+    return {
+      value: "select * from",
+    };
+  },
+  computed: {
+    lsClientConfig(): LSClientConfiguration {
+      return {
+        wsUri: "ws://localhost:3000/server",
+        rootUri: __PROJECT_ROOT__ + "/tests/fixtures/",
+        documentUri: __PROJECT_ROOT__ + "/tests/fixtures/test.sql",
+        languageId: "sql",
+      };
+    },
+  },
+  methods: {
+    handleValueChange(detail) {
+      this.value = detail.value;
+    },
+  },
+};
+</script>
