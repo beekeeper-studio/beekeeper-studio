@@ -556,47 +556,83 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
+      WITH fk_constraints AS (
+        SELECT DISTINCT
+          tc.constraint_name,
+          kcu.constraint_schema AS from_schema,
+          kcu.table_name AS from_table,
+          rc.unique_constraint_schema AS to_schema,
+          rc.unique_constraint_name,
+          rc.update_rule,
+          rc.delete_rule
+        FROM
+          information_schema.table_constraints AS tc
+          JOIN information_schema.key_column_usage AS kcu
+            ON tc.constraint_name = kcu.constraint_name
+          JOIN information_schema.referential_constraints AS rc
+            ON rc.constraint_name = tc.constraint_name
+        WHERE
+          tc.constraint_type = 'FOREIGN KEY' AND
+          kcu.table_schema NOT LIKE 'pg_%' AND
+          kcu.table_schema = $2 AND
+          kcu.table_name = $1
+      ),
+      fk_columns AS (
+        SELECT
+          tc.constraint_name,
+          STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
+          ARRAY_AGG(kcu.column_name ORDER BY kcu.ordinal_position) AS from_columns_array,
+          COUNT(kcu.column_name) as column_count
+        FROM
+          information_schema.table_constraints AS tc
+          JOIN information_schema.key_column_usage AS kcu
+            ON tc.constraint_name = kcu.constraint_name
+        WHERE
+          tc.constraint_type = 'FOREIGN KEY' AND
+          kcu.table_schema = $2 AND
+          kcu.table_name = $1
+        GROUP BY
+          tc.constraint_name
+      ),
+      pk_table AS (
+        SELECT DISTINCT
+          fk.unique_constraint_name,
+          kcu.table_name AS to_table
+        FROM
+          fk_constraints AS fk
+          JOIN information_schema.key_column_usage AS kcu
+            ON kcu.constraint_name = fk.unique_constraint_name
+      ),
+      pk_columns AS (
+        SELECT
+          fk.unique_constraint_name,
+          STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS to_column,
+          ARRAY_AGG(kcu.column_name ORDER BY kcu.ordinal_position) AS to_columns_array
+        FROM
+          fk_constraints AS fk
+          JOIN information_schema.key_column_usage AS kcu
+            ON kcu.constraint_name = fk.unique_constraint_name
+        GROUP BY
+          fk.unique_constraint_name
+      )
       SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
-        rc.unique_constraint_schema AS to_schema,
-        tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule,
-        (
-          SELECT STRING_AGG(kcu2.column_name, ',' ORDER BY kcu2.ordinal_position)
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name
-        ) AS to_column,
-        (
-          SELECT kcu2.table_name
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name LIMIT 1
-        ) AS to_table
+        fk.constraint_name,
+        fk.from_schema,
+        fk.from_table,
+        fk.to_schema,
+        fk.update_rule,
+        fk.delete_rule,
+        fc.from_column,
+        fc.from_columns_array,
+        fc.column_count,
+        pt.to_table,
+        pc.to_column,
+        pc.to_columns_array
       FROM
-        information_schema.key_column_usage AS kcu
-        JOIN
-        information_schema.table_constraints AS tc
-      ON
-        tc.constraint_name = kcu.constraint_name
-        JOIN
-        information_schema.referential_constraints AS rc
-        ON
-        rc.constraint_name = kcu.constraint_name
-      WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema NOT LIKE 'pg_%' AND
-        kcu.table_schema = $2 AND
-        kcu.table_name = $1
-      GROUP BY
-        kcu.constraint_schema,
-        kcu.table_name,
-        rc.unique_constraint_schema,
-        rc.unique_constraint_name,
-        tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule;
+        fk_constraints AS fk
+        JOIN fk_columns AS fc ON fk.constraint_name = fc.constraint_name
+        JOIN pk_table AS pt ON fk.unique_constraint_name = pt.unique_constraint_name
+        JOIN pk_columns AS pc ON fk.unique_constraint_name = pc.unique_constraint_name;
     `;
 
     const params = [
@@ -606,17 +642,23 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const data = await this.driverExecuteSingle(sql, { params });
 
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule
-    }));
+    return data.rows.map((row) => {
+      // Determine if this is a composite key (more than one column)
+      const isComposite = row.column_count > 1;
+      
+      return {
+        toTable: row.to_table,
+        toSchema: row.to_schema,
+        toColumn: isComposite ? row.to_columns_array : row.to_column,
+        fromTable: row.from_table,
+        fromSchema: row.from_schema,
+        fromColumn: isComposite ? row.from_columns_array : row.from_column,
+        constraintName: row.constraint_name,
+        onUpdate: row.update_rule,
+        onDelete: row.delete_rule,
+        isComposite: isComposite
+      };
+    });
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
