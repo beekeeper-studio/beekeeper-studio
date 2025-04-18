@@ -2,7 +2,7 @@ import _ from "lodash";
 import CodeMirror, { TextMarker } from "codemirror";
 import { identify, Options } from "sql-query-identifier";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
-import { isTextSelected } from "../entity-list/sql_tools";
+import { isTextSelected } from "../../entity-list/sql_tools";
 
 export interface QuerySelectionChangeParams {
   queries: IdentifyResult[];
