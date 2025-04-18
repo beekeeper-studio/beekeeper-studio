@@ -1,10 +1,20 @@
-import { DialectData } from "./models";
+import { ColumnType, DialectData } from "./models";
+
+const types = [
+  'double', 'string', 'object', 'array', 'binData', 'objectid',
+  'bool', 'date', 'regex', 'javascript', 'int', 'timestamp',
+  'long', 'decimal', 'minKey', 'maxKey', 'number'
+]
 
 export const MongoDBData: DialectData = {
-  columnTypes: [],
+  columnTypes: types.map((t) => new ColumnType(t)),
   usesOffsetPagination: true,
+  queryDialectOverride: 'postgresql',
+  textEditorMode: 'text/x-pgsql',
   disabledFeatures: {
-    queryEditor: true,
+    truncateElement: true,
+    sqlCreate: true,
+    importFromFile: true,
     nullable: true,
     defaultValue: true,
     primary: true,
@@ -26,7 +36,6 @@ export const MongoDBData: DialectData = {
       dropConstraint: true,
       indexes: true,
       renameSchema: true,
-      renameTable: true,
       renameView: true,
       reorderColumn: true
     },

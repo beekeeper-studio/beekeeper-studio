@@ -3,6 +3,7 @@ import esbuild from 'esbuild';
 import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
+import fs from 'fs'
 
 const isWatching = process.argv[2] === 'watch';
 
@@ -26,11 +27,14 @@ const externals = ['better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
         'cassandra-driver', 'mysql2', 'ssh2', 'mysql',
         'oracledb', '@electron/remote', "@google-cloud/bigquery",
-        'pg-query-stream', 'electron', '@duckdb/node-api'
-
+        'pg-query-stream', 'electron', '@duckdb/node-api',
+        '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
+        'mongodb-client-encryption', 'sqlanywhere'
       ]
 
 let electron = null
+/** @type {fs.FSWatcher[]} */
+const configWatchers = {}
 
 const restartElectron = _.debounce(() => {
   if (electron) {
@@ -46,6 +50,14 @@ const restartElectron = _.debounce(() => {
 
 }, 500)
 
+function watchConfig(file) {
+  if (configWatchers[file]) return
+  const watcher = fs.watch(file, () => {
+    console.log(`Detected change in ${file}, rebuilding...`);
+    restartElectron()
+  })
+  configWatchers[file] = watcher
+}
 
 function getElectronPlugin(name, action = () => restartElectron()) {
   return {
@@ -56,6 +68,9 @@ function getElectronPlugin(name, action = () => restartElectron()) {
       build.onEnd(() => {
         console.log(`ESBUILD: Built ${name} ✅`)
         action()
+        watchConfig('default.config.ini')
+        watchConfig('local.config.ini')
+        watchConfig('system.config.ini')
       })
     }
   }

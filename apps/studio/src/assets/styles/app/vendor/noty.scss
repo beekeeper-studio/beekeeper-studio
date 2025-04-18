@@ -1,9 +1,10 @@
+@use "sass:color";
 
 // Note: Mint is the default Noty theme
 // '~noty/themes/mint.scss';
 // --------------------------------------
 .noty_theme__mint.noty_bar {
-  background: lighten($theme-bg, 5%);
+  background: color.adjust($theme-bg, $lightness: 5%);
   border: 0;
   border-radius: 4px;
   @include card-shadow;
@@ -46,15 +47,15 @@
   color: $text-dark;
 }
 .noty_theme__mint.noty_type__warning {
-  color: lighten($brand-warning, 5%);
+  color: color.adjust($brand-warning, $lightness: 5%);
 }
 .noty_theme__mint.noty_type__error {
-  color: lighten($brand-danger, 5%);
+  color: color.adjust($brand-danger, $lightness: 5%);
 }
 .noty_theme__mint.noty_type__info,
 .noty_theme__mint.noty_type__information {
-  color: lighten($brand-info, 5%);
+  color: color.adjust($brand-info, $lightness: 5%);
 }
 .noty_theme__mint.noty_type__success {
-  color: lighten($brand-success, 5%);
+  color: color.adjust($brand-success, $lightness: 5%);
 }

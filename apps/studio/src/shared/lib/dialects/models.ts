@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -42,7 +42,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   oracle: "Oracle Database",
   duckdb: "DuckDB",
   clickhouse: "ClickHouse",
-  mongodb: "MongoDB"
+  mongodb: "MongoDB",
+  sqlanywhere: 'SqlAnywhere'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -50,6 +51,7 @@ export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'sqlserver') return 'mssql'
+  if (d === 'sqlanywhere') return 'mssql';
   if (d === 'sqlite') return 'sqlite3'
   if (d === 'oracle') return 'oracledb'
   if (d === 'cassandra') return 'cassandra-knex'
@@ -89,6 +91,7 @@ export class ColumnType {
 }
 
 export interface DialectData {
+  queryDialectOverride?: string,
   columnTypes?: ColumnType[],
   constraintActions?: string[]
   wrapIdentifier?: (s: string) => string
@@ -101,6 +104,7 @@ export interface DialectData {
   usesOffsetPagination?: boolean
   requireDataset?: boolean,
   disabledFeatures?: {
+    shell?: boolean
     queryEditor?: boolean
     informationSchema?: {
       extra?: boolean
@@ -143,6 +147,8 @@ export interface DialectData {
     truncateElement?: boolean
     exportTable?: boolean
     createTable?: boolean
+    dropTable?: boolean
+    dropSchema?: boolean
     collations?: boolean
     importFromFile?: boolean,
     headerSort?: boolean,
@@ -158,6 +164,8 @@ export interface DialectData {
     binaryColumn?: boolean
     initialSort?: boolean
     multipleDatabase?: boolean
+    sqlCreate?: boolean
+    schemaValidation?: boolean  // Whether schema validation features are disabled
   },
   notices?: {
     infoSchema?: string
@@ -231,6 +239,10 @@ export interface SchemaItemChange {
   newValue: string | boolean | null
 }
 
+export interface CreateTableSpec {
+  table: string
+}
+
 export interface AlterTableSpec {
   table: string
   schema?: string
@@ -257,6 +269,8 @@ export interface AlterPartitionsSpec {
   adds?: PartitionItem[]
   detaches?: string[]
 }
+
+export const AdditionalMongoOrders = [ '2d', '2dsphere', 'text', 'geoHaystack', 'hashed' ];
 
 export interface IndexColumn {
   name: string

@@ -48,15 +48,20 @@ import lastUsedWorkspace from './20240923_user_settings_default_workspace'
 import userSettingKeymap from './20241017_add_user_setting_keymap'
 import missingUserSettings from './20241017_add_missing_user_settings'
 import useBeta from './20241009_add_beta_toggle'
+import tabHistoryUpdates from './20241116_tab_history_updates'
 import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
 import addNewUrlField from './20250128_add_new_url_field'
+import tabHistoryIndex from './20250211_add_tab_history_index'
 import fixOracleData from './20250225_oracle_default_connection_method'
+import addInstallationId from './20250404_add_installation_id'
+import sqlAnywhereOptions from './20250414_add_anywhere_options'
 
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
 import rawLog from "@bksLogger";
+import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder'
 
 
 const logger = rawLog.scope('migrations');
@@ -77,8 +82,14 @@ const realMigrations = [
   firebirdConnection, exportPath, UserSettingsWindowPosition,
   demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
   maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
-  useBeta, deleteDuplicateConnections, addNewUrlField,
+  useBeta,
+  deleteDuplicateConnections,
+  tabHistoryUpdates,
+  addNewUrlField,
+  tabHistoryIndex,
   fixOracleData,
+  addInstallationId,
+  sqlAnywhereOptions
 ]
 
 // fixtures require the models
