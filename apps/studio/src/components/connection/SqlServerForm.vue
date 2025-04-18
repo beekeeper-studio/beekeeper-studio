@@ -76,9 +76,7 @@
         azureAuthEnabled: false,
         authType: 'default',
         authTypes: AzureAuthTypes,
-        accountName: null,
-        signingOut: false,
-        errorSigningOut: null,
+        accountName: null
       }
     },
     watch: {
@@ -107,21 +105,6 @@
       showPassword() {
         return [AzureAuthType.Password].includes(this.authType)
       }
-    },
-    methods: {
-      async signOut() {
-        try {
-          this.signingOut = true
-          await this.connection.azureSignOut(this.config);
-          this.config.authId = null
-          this.accountName = null
-        } catch (e) {
-          this.errorSigningOut = e
-          this.$emit('error', e)
-        } finally {
-          this.signingOut = false
-        }
-      },
     }
   }
 </script>

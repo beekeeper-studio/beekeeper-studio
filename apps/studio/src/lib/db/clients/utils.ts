@@ -126,6 +126,7 @@ export function getEntraOptions(server, extra): AuthOptions {
     tenantId: server.config?.azureAuthOptions.tenantId,
     clientSecret: server.config?.azureAuthOptions.clientSecret,
     msiEndpoint: server.config?.azureAuthOptions.msiEndpoint,
+    cliPath: server.config?.azureAuthOptions.cliPath,
     ...extra
   };
 }

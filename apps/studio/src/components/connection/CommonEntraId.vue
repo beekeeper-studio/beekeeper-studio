@@ -132,7 +132,9 @@ export default {
   data() {
     return {
       azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled,
-      accountName: null
+      accountName: null,
+      signingOut: false,
+      errorSigningOut: null,
     };
   },
   computed: {
@@ -183,7 +185,20 @@ export default {
       this.azureAuthEnabled = !this.azureAuthEnabled
       this.config.azureAuthOptions.azureAuthEnabled =
         this.azureAuthEnabled;
-    }
+    },
+    async signOut() {
+      try {
+        this.signingOut = true
+        await this.connection.azureSignOut(this.config);
+        this.config.authId = null
+        this.accountName = null
+      } catch (e) {
+        this.errorSigningOut = e
+        this.$emit('error', e)
+      } finally {
+        this.signingOut = false
+      }
+    },
   }
 }
 </script>

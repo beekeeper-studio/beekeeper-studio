@@ -51,6 +51,7 @@ export interface AuthOptions {
   tenantId?: string,
   msiEndpoint?: string,
   clientSecret?: string
+  cliPath?: string,
   signal?: AbortSignal
 }
 
@@ -96,7 +97,7 @@ export class AzureAuthService {
   public async configDB(server: IDbConnectionServer, config: any){
     await this.init(server.config.authId)
 
-    const options = getEntraOptions(config, { signal: 0 })
+    const options = getEntraOptions(server, { signal: 0 })
 
     const authentication = await this.auth(server.config.azureAuthOptions.azureAuthType, options);
     config.password = authentication.options.token
@@ -172,7 +173,11 @@ export class AzureAuthService {
   }
 
   private async getAzureCLIToken(options: AzureAuthOptions): Promise<AuthConfig> {
-    const command = `${options?.cliPath || 'az'} account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
+    if(!options?.cliPath){
+      throw new Error('AZ command not specified')
+    }
+
+    const command = `${options?.cliPath} account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
 
     try {
       const { stdout } = await execAsync(command, { encoding: 'utf8' });
