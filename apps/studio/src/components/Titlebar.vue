@@ -27,6 +27,7 @@
             class="btn btn-link"
             @dblclick.prevent.stop
             @click.prevent="togglePrimarySidebar"
+            title="Toggle Primary Sidebar"
             v-if="connected"
           >
             <i
@@ -40,6 +41,7 @@
             class="btn btn-link"
             @dblclick.prevent.stop
             @click.prevent="toggleSecondarySidebar"
+            title="Toggle Secondary Sidebar"
             v-if="connected"
           >
             <i

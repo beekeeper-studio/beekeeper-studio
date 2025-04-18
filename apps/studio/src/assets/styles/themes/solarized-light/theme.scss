@@ -690,3 +690,9 @@ x-switch {
   }
 }
 
+.global-status-bar {
+  .connection-button:not(.default) {
+    color: $sbase4;
+  }
+}
+

@@ -54,12 +54,14 @@ import addNewUrlField from './20250128_add_new_url_field'
 import tabHistoryIndex from './20250211_add_tab_history_index'
 import fixOracleData from './20250225_oracle_default_connection_method'
 import addInstallationId from './20250404_add_installation_id'
+import sqlAnywhereOptions from './20250414_add_anywhere_options'
 
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
 import rawLog from "@bksLogger";
+import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder'
 
 
 const logger = rawLog.scope('migrations');
@@ -87,6 +89,7 @@ const realMigrations = [
   tabHistoryIndex,
   fixOracleData,
   addInstallationId,
+  sqlAnywhereOptions
 ]
 
 // fixtures require the models
