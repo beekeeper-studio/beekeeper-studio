@@ -8,7 +8,7 @@ on:
       - "apps/sqltools/**"
 jobs:
   create_draft_release:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       assets_url: ${{ steps.create_release.outputs.assets_url }}
@@ -36,7 +36,7 @@ jobs:
   # outputs: latest, beta, alpha
   # deb_codename: stable, beta
   identify_channel:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
     outputs:
       channel: ${{steps.extract_channel.outputs.channel}}
       deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
@@ -60,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - name: ubuntu-20.04
+          - name: ubuntu-24.04
             arch: x64
             type: linux
             setup_python: true
