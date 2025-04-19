@@ -1,14 +1,14 @@
-@use "../../../../../node_modules/codemirror/lib/codemirror";
-@use "../../../../../node_modules/codemirror/addon/hint/show-hint";
-@use "../../../../../node_modules/codemirror/theme/xq-light";
-@use "../../../../../node_modules/codemirror/addon/merge/merge";
-@use "../../../../../node_modules/codemirror/addon/search/matchesonscrollbar";
-@use "../../../../../node_modules/codemirror/addon/fold/foldgutter";
+@use "../../../../../../node_modules/codemirror/lib/codemirror";
+@use "../../../../../../node_modules/codemirror/addon/hint/show-hint";
+@use "../../../../../../node_modules/codemirror/theme/xq-light";
+@use "../../../../../../node_modules/codemirror/addon/merge/merge";
+@use "../../../../../../node_modules/codemirror/addon/search/matchesonscrollbar";
+@use "../../../../../../node_modules/codemirror/addon/fold/foldgutter";
 @use "dialog.scss";
 @use 'sass:color';
-@use '../../styles/variables' as *;
-@use '../../styles/mixins' as *;
-@use "../../styles/base";
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+@use "../../../styles/base";
 
 .BksTextEditor {
   --bks-text-editor-activeline-bg-color: #373831;

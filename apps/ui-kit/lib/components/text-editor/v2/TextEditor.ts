@@ -1,23 +1,51 @@
 import { LanguageServerClient } from "@marimo-team/codemirror-languageserver";
 import { languageServerWithClient } from "@marimo-team/codemirror-languageserver";
-import { basicSetup } from "codemirror";
-import { EditorView, keymap } from "@codemirror/view";
-import { EditorState, Extension } from "@codemirror/state";
-import { completionKeymap, startCompletion } from "@codemirror/autocomplete";
+import {
+  EditorView,
+  keymap,
+  highlightSpecialChars,
+  drawSelection,
+  highlightActiveLine,
+  dropCursor,
+  rectangularSelection,
+  crosshairCursor,
+  lineNumbers,
+  highlightActiveLineGutter,
+  ViewUpdate,
+} from "@codemirror/view";
+import { Extension, EditorState } from "@codemirror/state";
+import {
+  defaultHighlightStyle,
+  syntaxHighlighting,
+  indentOnInput,
+  bracketMatching,
+  foldGutter,
+  foldKeymap,
+} from "@codemirror/language";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
+import {
+  autocompletion,
+  completionKeymap,
+  closeBrackets,
+  closeBracketsKeymap,
+} from "@codemirror/autocomplete";
+import { lintKeymap } from "@codemirror/lint";
 import { URI } from "vscode-uri";
-import { defaultKeymap } from "@codemirror/commands";
 import { WebSocketTransport } from "@open-rpc/client-js";
 import { Compartment } from "@codemirror/state";
 import { LSClientConfiguration } from "./types";
 
 interface TextEditorConfiguration {
   parent: HTMLElement;
+  onValueChange: (value: string) => void
 }
 
 export class TextEditor {
   protected view: EditorView;
   private readOnlyCompartment = new Compartment();
   private lsCompartment = new Compartment();
+  private config: TextEditorConfiguration;
 
   initialize(config: TextEditorConfiguration) {
     const state = EditorState.create({
@@ -32,6 +60,7 @@ export class TextEditor {
     });
 
     this.view = view;
+    this.config = config;
   }
 
   initializeLSClientConfig(config: LSClientConfiguration) {
@@ -88,12 +117,33 @@ export class TextEditor {
 
   protected getBaseExtensions(): Extension[] {
     return [
-      basicSetup,
+      lineNumbers(),
+      highlightActiveLineGutter(),
+      highlightSpecialChars(),
+      history(),
+      foldGutter(),
+      drawSelection(),
+      dropCursor(),
+      EditorState.allowMultipleSelections.of(true),
+      indentOnInput(),
+      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      bracketMatching(),
+      closeBrackets(),
+      autocompletion(),
+      rectangularSelection(),
+      crosshairCursor(),
+      highlightActiveLine(),
+      highlightSelectionMatches(),
       keymap.of([
+        ...closeBracketsKeymap,
         ...defaultKeymap,
+        ...searchKeymap,
+        ...historyKeymap,
+        ...foldKeymap,
         ...completionKeymap,
-        { key: "Ctrl-Space", run: startCompletion },
+        ...lintKeymap,
       ]),
+      EditorView.updateListener.of(this.handleUpdate.bind(this)),
       this.readOnlyCompartment.of(EditorState.readOnly.of(true)),
       this.lsCompartment.of([]),
       EditorView.theme({
@@ -106,6 +156,13 @@ export class TextEditor {
         },
       }),
     ];
+  }
+
+  private handleUpdate(update: ViewUpdate) {
+    if (update.docChanged) {
+      const newValue = update.state.doc.toString()
+      this.config.onValueChange(newValue)
+    }
   }
 
   setReadOnly(readOnly: boolean) {

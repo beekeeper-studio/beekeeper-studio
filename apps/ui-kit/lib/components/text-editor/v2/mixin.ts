@@ -69,7 +69,12 @@ export default {
 
       const textEditor: TextEditor = this.constructTextEditor();
 
-      textEditor.initialize({ parent: this.$refs.editor });
+      textEditor.initialize({
+        parent: this.$refs.editor,
+        onValueChange: (value) => {
+          this.$emit("bks-value-change", { value });
+        },
+      });
 
       this.textEditor = textEditor;
 

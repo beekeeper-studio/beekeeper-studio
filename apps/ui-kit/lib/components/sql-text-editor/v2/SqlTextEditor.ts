@@ -3,7 +3,7 @@ import { TextEditor } from "../../text-editor/v2/TextEditor";
 import { sql, SQLConfig } from "@codemirror/lang-sql";
 import { Entity } from "../../types";
 import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
-import { SQLContextAnalyzer } from "./SQLContextAnalyzer";
+import { SQLContextAnalyzer } from "./SqlContextAnalyzer";
 import { buildSchema, columnsToCompletions } from "./utils";
 
 export interface CompletionSource {
