@@ -2,9 +2,10 @@ import { Compartment, Extension } from "@codemirror/state";
 import { TextEditor } from "../../text-editor/v2/TextEditor";
 import { sql, SQLConfig } from "@codemirror/lang-sql";
 import { Entity } from "../../types";
-import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
+import { CompletionContext, CompletionResult, startCompletion } from "@codemirror/autocomplete";
 import { SqlContextAnalyzer } from "./SqlContextAnalyzer";
 import { buildSchema, columnsToCompletions } from "./utils";
+import { EditorView } from "@codemirror/view";
 
 export interface CompletionSource {
   defaultSchema?: string;
@@ -64,6 +65,7 @@ export class SqlTextEditor extends TextEditor {
     return [
       ...baseExtensions,
       this.sqlCompartment.of([this.createSqlExtension()]),
+      EditorView.updateListener.of(this.handleEditorUpdate),
     ];
   }
 
@@ -82,7 +84,35 @@ export class SqlTextEditor extends TextEditor {
     ];
   }
 
-  // --- Autocomplete Handling ---
+  // --- Editor Updates and Autocomplete Handling ---
+
+  /**
+   * Handle editor updates to trigger autocompletion
+   */
+  private handleEditorUpdate = (update: any) => {
+    // Check if typing occurred
+    if (update.docChanged) {
+      let spaceInserted = false;
+
+      update.changes.iterChanges((fromA: any, toA: any, fromB: any, toB: any, inserted: any) => {
+        if (inserted.length === 1 && inserted.text[0] === ' ') {
+          spaceInserted = true;
+        }
+      });
+
+      if (spaceInserted) {
+        const cursor = update.state.selection.main.head;
+        const line = update.state.doc.lineAt(cursor);
+        const textBefore = line.text.slice(0, cursor - line.from);
+
+        // Check if we just typed a space after FROM or JOIN
+        if (/\b(FROM|JOIN)\s$/i.test(textBefore)) {
+          // Trigger autocomplete
+          startCompletion(update.view);
+        }
+      }
+    }
+  };
 
   /**
    * Handle autocomplete context and provide column completions
