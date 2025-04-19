@@ -5,7 +5,7 @@ import getAliases from "./getAliases";
 
 type ColumnsGetter = (entity: Entity) => string[] | Promise<string[]>
 
-export class SQLContextAnalyzer {
+export class SqlContextAnalyzer {
   constructor(private entities: Entity[], private columnsGetter: ColumnsGetter) {
     this.entities = entities;
     this.columnsGetter = columnsGetter;

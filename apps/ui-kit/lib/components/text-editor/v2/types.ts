@@ -7,3 +7,8 @@ export interface LSClientConfiguration {
   documentUri: string;
 }
 
+export type Keymap = "default" | "vim" | "emacs";
+
+export type Keybindings = {
+  [key: string]: () => void;
+};

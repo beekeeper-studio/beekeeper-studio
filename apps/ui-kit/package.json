@@ -56,6 +56,8 @@
     "@marimo-team/codemirror-languageserver": "^1.15.13",
     "@open-rpc/client-js": "^1.8.1",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
+    "@replit/codemirror-emacs": "^6.1.0",
+    "@replit/codemirror-vim": "^6.3.0",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.2.0",

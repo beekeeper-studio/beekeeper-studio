@@ -1,5 +1,6 @@
+import type { CustomMenuItems } from "../../context-menu";
 import { PropType } from "vue";
-import { LSClientConfiguration } from "./types";
+import { Keybindings, Keymap, LSClientConfiguration } from "./types";
 
 export default {
     value: {
@@ -20,6 +21,19 @@ export default {
     },
     focus: Boolean,
     forceInitialize: null,
+    /**
+     * Configure the keymap to use. The default is 'default'. Other possible
+     * values are 'vim', 'emacs'.
+     */
+    keymap: {
+      type: String as PropType<Keymap>,
+      validator(value: Keymap) {
+        // NOTE: compared to v1, this doesn't support 'sublime'
+        return ["default", "vim", "emacs"].includes(value);
+      },
+      default: "default",
+    },
+    lineWrapping: Boolean,
 
     // ------- New props below
 
@@ -29,14 +43,17 @@ export default {
       type: String as PropType<"plaintext" | "sql">,
       default: "plaintext",
     },
+    lineNumbers: {
+      type: Boolean,
+      default: true,
+    },
+    keybindings: Object as PropType<Keybindings>,
+    contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
 
     /** Enable language server support by passing the configuration. */
     lsClientConfig: Object as PropType<Omit<LSClientConfiguration, 'languageId'>>,
 
-    // keybindings: Object as PropType<Record<string, () => void>>,
     // vimConfig: Object as PropType<Config>,
-    // lineWrapping: Boolean,
-    // contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     // markers: {
     //   type: Array,
     //   default: () => [],
@@ -44,25 +61,11 @@ export default {
     // cursor: String,
     // initialized: Boolean,
     // autoFocus: Boolean,
-    // lineNumbers: {
-    //   type: Boolean,
-    //   default: true,
-    // },
     // foldGutter: Boolean,
     // removeJsonRootBrackets: Boolean,
     // bookmarks: Array,
     // foldAll: null,
     // unfoldAll: null,
-    // /**
-    //  * Configure the keymap to use. The default is 'default'. Other possible
-    //  * values are 'vim', 'emacs' and 'sublime'.
-    //  */
-    // keymap: {
-    //   validator(value: string) {
-    //     return ["default", "vim", "emacs", "sublime"].includes(value);
-    //   },
-    //   default: "default",
-    // },
     // /**
     //  * Configure custom key mappings in vim. `vimKeymaps` accepts an array of
     //  * objects that contain the following properties:

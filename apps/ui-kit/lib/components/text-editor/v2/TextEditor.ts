@@ -30,19 +30,25 @@ import {
   closeBrackets,
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
+import { emacs } from "@replit/codemirror-emacs";
+import { vim } from "@replit/codemirror-vim";
 import { lintKeymap } from "@codemirror/lint";
 import { URI } from "vscode-uri";
 import { WebSocketTransport } from "@open-rpc/client-js";
 import { Compartment } from "@codemirror/state";
-import { LSClientConfiguration } from "./types";
+import { Keybindings, Keymap, LSClientConfiguration } from "./types";
 
 interface TextEditorConfiguration {
   parent: HTMLElement;
-  onValueChange: (value: string) => void
+  onValueChange: (value: string) => void;
 }
 
 export class TextEditor {
   protected view: EditorView;
+  private keymapComparment = new Compartment();
+  private lineNumbersCompartment = new Compartment();
+  private extraKeymapCompartment = new Compartment();
+  private lineWrappingCompartment = new Compartment();
   private readOnlyCompartment = new Compartment();
   private lsCompartment = new Compartment();
   private config: TextEditorConfiguration;
@@ -117,7 +123,9 @@ export class TextEditor {
 
   protected getBaseExtensions(): Extension[] {
     return [
-      lineNumbers(),
+      this.extraKeymapCompartment.of([]),
+      this.keymapComparment.of([]),
+      this.lineNumbersCompartment.of(lineNumbers()),
       highlightActiveLineGutter(),
       highlightSpecialChars(),
       history(),
@@ -143,6 +151,7 @@ export class TextEditor {
         ...completionKeymap,
         ...lintKeymap,
       ]),
+      this.lineWrappingCompartment.of([]),
       EditorView.updateListener.of(this.handleUpdate.bind(this)),
       this.readOnlyCompartment.of(EditorState.readOnly.of(true)),
       this.lsCompartment.of([]),
@@ -160,8 +169,8 @@ export class TextEditor {
 
   private handleUpdate(update: ViewUpdate) {
     if (update.docChanged) {
-      const newValue = update.state.doc.toString()
-      this.config.onValueChange(newValue)
+      const newValue = update.state.doc.toString();
+      this.config.onValueChange(newValue);
     }
   }
 
@@ -185,6 +194,53 @@ export class TextEditor {
 
   getValue() {
     return this.view.state.doc.toString();
+  }
+
+  setKeymap(keymap: Keymap) {
+    let extension: Extension = [];
+
+    if (keymap === "vim") {
+      extension = vim();
+    } else if (keymap === "emacs") {
+      extension = emacs();
+    }
+
+    this.view.dispatch({
+      effects: this.keymapComparment.reconfigure(extension),
+    });
+  }
+
+  setKeybindings(keybindings: Keybindings) {
+    const extraKeymap = Object.keys(keybindings).map((key) => ({
+      key,
+      run: () => {
+        keybindings[key]();
+        return true;
+      },
+    }));
+    this.view.dispatch({
+      effects: this.extraKeymapCompartment.reconfigure(keymap.of(extraKeymap)),
+    });
+  }
+
+  setLineWrapping(enabled: boolean) {
+    this.view.dispatch({
+      effects: this.lineWrappingCompartment.reconfigure(
+        enabled ? EditorView.lineWrapping : []
+      ),
+    });
+  }
+
+  setLineNumbers(enabled: boolean) {
+    this.view.dispatch({
+      effects: this.lineNumbersCompartment.reconfigure(
+        enabled ? lineNumbers() : []
+      ),
+    });
+  }
+
+  getSelection(): string {
+    return this.view.state.selection.main.toString();
   }
 
   focus() {

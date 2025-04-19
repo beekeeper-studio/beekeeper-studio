@@ -3,7 +3,7 @@ import { TextEditor } from "../../text-editor/v2/TextEditor";
 import { sql, SQLConfig } from "@codemirror/lang-sql";
 import { Entity } from "../../types";
 import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
-import { SQLContextAnalyzer } from "./SqlContextAnalyzer";
+import { SqlContextAnalyzer } from "./SqlContextAnalyzer";
 import { buildSchema, columnsToCompletions } from "./utils";
 
 export interface CompletionSource {
@@ -17,7 +17,7 @@ export class SqlTextEditor extends TextEditor {
   sqlCompartment: Compartment = new Compartment();
   columnCompletionCompartment: Compartment = new Compartment();
   entities: Entity[] = [];
-  sqlContextAnalyzer: SQLContextAnalyzer;
+  sqlContextAnalyzer: SqlContextAnalyzer;
 
   // --- Public API ---
 
@@ -48,7 +48,7 @@ export class SqlTextEditor extends TextEditor {
    */
   setRequestColumnsListener(listener?: RequestColumnsListener) {
     if (listener) {
-      this.sqlContextAnalyzer = new SQLContextAnalyzer(this.entities, listener);
+      this.sqlContextAnalyzer = new SqlContextAnalyzer(this.entities, listener);
     } else {
       this.sqlContextAnalyzer = null;
     }
