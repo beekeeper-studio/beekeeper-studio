@@ -109,6 +109,8 @@ export default {
       })
     },
     async onFocus () {
+      const importOptions = await this.tablesToImport.get(this.importKey())
+      this.table = importOptions.table
       if (this.importerClass && this.tabulator) {
         this.tabulator.redraw()
       } else {
