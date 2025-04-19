@@ -39,6 +39,15 @@ export const PostgresData: DialectData = {
   usesOffsetPagination: true,
   defaultSchema: 'public',
   requireDataset: false,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'text',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;

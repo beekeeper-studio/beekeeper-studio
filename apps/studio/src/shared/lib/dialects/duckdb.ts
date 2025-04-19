@@ -29,6 +29,15 @@ export const DuckDBData: DialectData = {
   wrapIdentifier: defaultWrapIdentifier,
   usesOffsetPagination: true,
   requireDataset: false,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'varchar',
+    dateType: 'datetime',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
