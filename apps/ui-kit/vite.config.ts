@@ -35,7 +35,7 @@ export default defineConfig({
         "vue/entity-list": resolve(__dirname, "lib/components/entity-list/EntityList.vue"),
         "vue/sql-text-editor": resolve(
           __dirname,
-          "lib/components/sql-text-editor/SqlTextEditor.vue"
+          "lib/components/sql-text-editor/v2/SqlTextEditor.vue"
         ),
         "vue/data-editor": resolve(
           __dirname,
