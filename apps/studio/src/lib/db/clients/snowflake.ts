@@ -371,8 +371,8 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
       execute: () => new Promise<QueryResult>((resolve, reject) => {
         this.connection.execute({
           sqlText: text, asyncExec: true,
-          complete: async (err, s) => {
-            if (err) return reject(err);
+          complete: async (e, s) => {
+            if (e) return reject(e);
             const queryId = s.getQueryId()
             statement = s
             // @ts-ignore
