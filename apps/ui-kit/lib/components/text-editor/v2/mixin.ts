@@ -1,4 +1,4 @@
-import { TextEditor } from "./text-editor";
+import { TextEditor } from "./TextEditor";
 import props from "./props";
 
 export default {
@@ -19,9 +19,17 @@ export default {
       if (!this.textEditor) return;
       this.applyReadOnly();
     },
+    focus() {
+      if (!this.textEditor) return;
+      this.applyFocus();
+    },
     lsClientConfig() {
       if (!this.textEditor) return;
       this.applyLSClientConfig();
+    },
+
+    forceInitialize() {
+      this.initialize();
     },
   },
 
@@ -34,15 +42,24 @@ export default {
     applyReadOnly() {
       this.textEditor.setReadOnly(this.readOnly);
     },
+    applyFocus() {
+      if (this.focus) {
+        this.textEditor.focus();
+      }
+    },
     applyLSClientConfig() {
       if (this.lsClientConfig) {
         this.textEditor.initializeLSClientConfig({
           ...this.lsClientConfig,
           languageId: this.languageId,
-        })
+        });
       } else {
         // TODO: Destroy the language server client
       }
+    },
+
+    constructTextEditor() {
+      return new TextEditor();
     },
     initialize() {
       if (this.textEditor) {
@@ -50,7 +67,7 @@ export default {
         this.textEditor = null;
       }
 
-      const textEditor = new TextEditor();
+      const textEditor: TextEditor = this.constructTextEditor();
 
       textEditor.initialize({ parent: this.$refs.editor });
 
@@ -58,12 +75,15 @@ export default {
 
       this.applyValue();
       this.applyReadOnly();
+      this.applyFocus();
       this.applyLSClientConfig();
+
+      this.initialized?.();
     },
   },
 
-  async mounted() {
-    await this.initialize();
+  mounted() {
+    this.initialize();
   },
 
   beforeDestroy() {

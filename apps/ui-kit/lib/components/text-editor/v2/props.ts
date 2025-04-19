@@ -13,11 +13,13 @@ export default {
     height: {
       type: Number,
       deprecated: true,
-      validator(val) {
+      validator() {
         console.warn("[TextEditor] The 'height' prop is deprecated. Please use CSS to control the height instead.");
         return true;
       }
     },
+    focus: Boolean,
+    forceInitialize: null,
 
     // ------- New props below
 
@@ -34,8 +36,6 @@ export default {
     // keybindings: Object as PropType<Record<string, () => void>>,
     // vimConfig: Object as PropType<Config>,
     // lineWrapping: Boolean,
-    // columnsGetter: Function,
-    // focus: Boolean,
     // contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     // markers: {
     //   type: Array,
@@ -50,7 +50,6 @@ export default {
     // },
     // foldGutter: Boolean,
     // removeJsonRootBrackets: Boolean,
-    // forceInitialize: null,
     // bookmarks: Array,
     // foldAll: null,
     // unfoldAll: null,

@@ -15,35 +15,14 @@ interface TextEditorConfiguration {
 }
 
 export class TextEditor {
-  private initialized = false;
-  private view: EditorView;
+  protected view: EditorView;
   private readOnlyCompartment = new Compartment();
   private lsCompartment = new Compartment();
-  private extraCompartment = new Compartment();
 
   initialize(config: TextEditorConfiguration) {
     const state = EditorState.create({
       doc: "",
-      extensions: [
-        basicSetup,
-        keymap.of([
-          ...defaultKeymap,
-          ...completionKeymap,
-          { key: "Ctrl-Space", run: startCompletion },
-        ]),
-        this.readOnlyCompartment.of(EditorState.readOnly.of(true)),
-        this.lsCompartment.of([]),
-        EditorView.theme({
-          "&": {
-            height: `100%`,
-          },
-          ".cm-scroller": {
-            overflow: "auto",
-            height: "100%"
-          }
-        }),
-        this.extraCompartment.of([]),
-      ],
+      extensions: this.getBaseExtensions(),
     });
 
     // Create editor with the LSP plugin
@@ -53,7 +32,6 @@ export class TextEditor {
     });
 
     this.view = view;
-    this.initialized = true;
   }
 
   initializeLSClientConfig(config: LSClientConfiguration) {
@@ -108,6 +86,28 @@ export class TextEditor {
     });
   }
 
+  protected getBaseExtensions(): Extension[] {
+    return [
+      basicSetup,
+      keymap.of([
+        ...defaultKeymap,
+        ...completionKeymap,
+        { key: "Ctrl-Space", run: startCompletion },
+      ]),
+      this.readOnlyCompartment.of(EditorState.readOnly.of(true)),
+      this.lsCompartment.of([]),
+      EditorView.theme({
+        "&": {
+          height: `100%`,
+        },
+        ".cm-scroller": {
+          overflow: "auto",
+          height: "100%",
+        },
+      }),
+    ];
+  }
+
   setReadOnly(readOnly: boolean) {
     this.view.dispatch({
       effects: this.readOnlyCompartment.reconfigure(
@@ -130,10 +130,8 @@ export class TextEditor {
     return this.view.state.doc.toString();
   }
 
-  extend(extensions: Extension) {
-    this.view.dispatch({
-      effects: this.extraCompartment.reconfigure(extensions),
-    });
+  focus() {
+    this.view.focus();
   }
 
   destroy() {
