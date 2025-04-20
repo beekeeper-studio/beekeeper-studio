@@ -7,6 +7,10 @@ import mixin from "../../text-editor/v2/mixin";
 import props from "./props";
 import { SqlTextEditor } from "./SqlTextEditor";
 import { Entity } from "../../types";
+import {
+  divider,
+  InternalContextItem,
+} from "../../context-menu";
 
 export default {
   mixins: [mixin],
@@ -43,6 +47,25 @@ export default {
         this.columnsGetter(entity.name)
       );
     },
+
+    contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
+      const pivot = items.findIndex((o) => o.id === "find");
+      return [
+        ...items.slice(0, pivot),
+        {
+          label: `Format Query`,
+          id: "text-format",
+          handler: this.formatSql,
+          shortcut: "Shift+F",
+        },
+        divider,
+        ...items.slice(pivot),
+      ];
+    },
+  },
+
+  mounted() {
+    this.internalContextMenuItems = this.contextMenuItemsModifier;
   },
 };
 </script>
