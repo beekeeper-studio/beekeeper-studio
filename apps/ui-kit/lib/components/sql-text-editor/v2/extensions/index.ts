@@ -10,6 +10,6 @@ export { applyDialect } from "./removeQueryQuotes";
  */
 export const extensions = [
   extendedSql(),
-  // removeQueryQuotesExtension(),
-  // triggerAutocompleteExtension(),
+  removeQueryQuotesExtension(),
+  triggerAutocompleteExtension(),
 ];
