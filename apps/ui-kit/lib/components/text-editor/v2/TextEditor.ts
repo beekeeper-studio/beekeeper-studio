@@ -1,62 +1,31 @@
-import { LanguageServerClient } from "@marimo-team/codemirror-languageserver";
-import { languageServerWithClient } from "@marimo-team/codemirror-languageserver";
-import {
-  EditorView,
-  keymap,
-  highlightSpecialChars,
-  drawSelection,
-  highlightActiveLine,
-  dropCursor,
-  rectangularSelection,
-  crosshairCursor,
-  lineNumbers,
-  highlightActiveLineGutter,
-  ViewUpdate,
-} from "@codemirror/view";
+import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
-import {
-  defaultHighlightStyle,
-  syntaxHighlighting,
-  indentOnInput,
-  bracketMatching,
-  foldGutter,
-  foldKeymap,
-} from "@codemirror/language";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
-import {
-  autocompletion,
-  completionKeymap,
-  closeBrackets,
-  closeBracketsKeymap,
-} from "@codemirror/autocomplete";
-import { emacs } from "@replit/codemirror-emacs";
-import { vim } from "@replit/codemirror-vim";
-import { lintKeymap } from "@codemirror/lint";
-import { URI } from "vscode-uri";
-import { WebSocketTransport } from "@open-rpc/client-js";
-import { Compartment } from "@codemirror/state";
 import { Keybindings, Keymap, LSClientConfiguration } from "./types";
+import {
+  extensions,
+  applyKeymap,
+  applyKeybindings,
+  applyLineWrapping,
+  applyLineNumbers,
+  applyReadOnly,
+  applyLanguageServer,
+} from "./extensions";
 
 interface TextEditorConfiguration {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
+  replaceExtensions?: Extension | ((extensions: Extension) => Extension);
 }
 
 export class TextEditor {
   protected view: EditorView;
-  private keymapComparment = new Compartment();
-  private lineNumbersCompartment = new Compartment();
-  private extraKeymapCompartment = new Compartment();
-  private lineWrappingCompartment = new Compartment();
-  private readOnlyCompartment = new Compartment();
-  private lsCompartment = new Compartment();
   private config: TextEditorConfiguration;
 
   initialize(config: TextEditorConfiguration) {
     const state = EditorState.create({
       doc: "",
-      extensions: this.getBaseExtensions(),
+      extensions:
+        this.extendExtensions(config.replaceExtensions) || this.getExtensions(),
     });
 
     // Create editor with the LSP plugin
@@ -69,101 +38,23 @@ export class TextEditor {
     this.config = config;
   }
 
-  initializeLSClientConfig(config: LSClientConfiguration) {
-    const rootUri = URI.file(config.rootUri).toString();
-    const documentUri = URI.file(config.documentUri).toString();
-    const transport = new WebSocketTransport("ws://localhost:3000/server");
-
-    transport.connection.addEventListener("message", function () {
-      if (arguments[0].data) {
-        try {
-          const jsonrpc = JSON.parse(arguments[0].data);
-          if (jsonrpc.method === "workspace/configuration") {
-            transport.connection.send(
-              JSON.stringify({
-                jsonrpc: "2.0",
-                id: jsonrpc.id,
-                result: [null],
-              })
-            );
-          }
-        } catch {
-          // do nothing
-        }
-      }
-    });
-
-    const lsClient = new LanguageServerClient({
-      transport,
-      rootUri,
-      workspaceFolders: [
-        {
-          name: "workspace",
-          uri: rootUri.toString(),
-        },
-      ],
-    });
-
-    const lsExtension = languageServerWithClient({
-      client: lsClient,
-      allowHTMLContent: true,
-      documentUri,
-      languageId: config.languageId,
-      keyboardShortcuts: {
-        rename: "",
-        signatureHelp: "",
-        goToDefinition: "",
-      },
-    });
-
-    this.view.dispatch({
-      effects: this.lsCompartment.reconfigure(lsExtension),
-    });
+  applyLanguageServerClient(config: LSClientConfiguration) {
+    applyLanguageServer(this.view, config);
   }
 
-  protected getBaseExtensions(): Extension[] {
+  extendExtensions(
+    replaceExtensions: TextEditorConfiguration["replaceExtensions"]
+  ) {
+    if (typeof replaceExtensions === "function") {
+      return replaceExtensions(this.getExtensions());
+    }
+    return replaceExtensions;
+  }
+
+  protected getExtensions(): Extension[] {
     return [
-      this.extraKeymapCompartment.of([]),
-      this.keymapComparment.of([]),
-      this.lineNumbersCompartment.of(lineNumbers()),
-      highlightActiveLineGutter(),
-      highlightSpecialChars(),
-      history(),
-      foldGutter(),
-      drawSelection(),
-      dropCursor(),
-      EditorState.allowMultipleSelections.of(true),
-      indentOnInput(),
-      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-      bracketMatching(),
-      closeBrackets(),
-      autocompletion(),
-      rectangularSelection(),
-      crosshairCursor(),
-      highlightActiveLine(),
-      highlightSelectionMatches(),
-      keymap.of([
-        ...closeBracketsKeymap,
-        ...defaultKeymap,
-        ...searchKeymap,
-        ...historyKeymap,
-        ...foldKeymap,
-        ...completionKeymap,
-        ...lintKeymap,
-      ]),
-      this.lineWrappingCompartment.of([]),
+      extensions,
       EditorView.updateListener.of(this.handleUpdate.bind(this)),
-      this.readOnlyCompartment.of(EditorState.readOnly.of(true)),
-      this.lsCompartment.of([]),
-      EditorView.theme({
-        "&": {
-          height: `100%`,
-        },
-        ".cm-scroller": {
-          overflow: "auto",
-          height: "100%",
-        },
-      }),
     ];
   }
 
@@ -175,11 +66,7 @@ export class TextEditor {
   }
 
   setReadOnly(readOnly: boolean) {
-    this.view.dispatch({
-      effects: this.readOnlyCompartment.reconfigure(
-        EditorState.readOnly.of(readOnly)
-      ),
-    });
+    applyReadOnly(this.view, readOnly);
   }
 
   setValue(value: string) {
@@ -197,46 +84,19 @@ export class TextEditor {
   }
 
   setKeymap(keymap: Keymap) {
-    let extension: Extension = [];
-
-    if (keymap === "vim") {
-      extension = vim();
-    } else if (keymap === "emacs") {
-      extension = emacs();
-    }
-
-    this.view.dispatch({
-      effects: this.keymapComparment.reconfigure(extension),
-    });
+    applyKeymap(this.view, keymap);
   }
 
   setKeybindings(keybindings: Keybindings) {
-    const extraKeymap = Object.keys(keybindings).map((key) => ({
-      key,
-      run: () => {
-        keybindings[key]();
-        return true;
-      },
-    }));
-    this.view.dispatch({
-      effects: this.extraKeymapCompartment.reconfigure(keymap.of(extraKeymap)),
-    });
+    applyKeybindings(this.view, keybindings);
   }
 
   setLineWrapping(enabled: boolean) {
-    this.view.dispatch({
-      effects: this.lineWrappingCompartment.reconfigure(
-        enabled ? EditorView.lineWrapping : []
-      ),
-    });
+    applyLineWrapping(this.view, enabled);
   }
 
   setLineNumbers(enabled: boolean) {
-    this.view.dispatch({
-      effects: this.lineNumbersCompartment.reconfigure(
-        enabled ? lineNumbers() : []
-      ),
-    });
+    applyLineNumbers(this.view, enabled);
   }
 
   getSelection(): string {

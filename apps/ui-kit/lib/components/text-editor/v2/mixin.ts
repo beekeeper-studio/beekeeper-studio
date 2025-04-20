@@ -110,6 +110,7 @@ export default {
         onValueChange: (value) => {
           this.$emit("bks-value-change", { value });
         },
+        replaceExtensions: this.replaceExtensions,
       });
 
       this.textEditor = textEditor;

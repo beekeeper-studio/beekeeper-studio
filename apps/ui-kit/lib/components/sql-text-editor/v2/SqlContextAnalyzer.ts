@@ -3,7 +3,7 @@ import { syntaxTree } from "@codemirror/language";
 import { Entity } from "../../types";
 import getAliases from "./getAliases";
 
-type ColumnsGetter = (entity: Entity) => string[] | Promise<string[]>
+export type ColumnsGetter = (entity: Entity) => string[] | Promise<string[]>
 
 export class SqlContextAnalyzer {
   constructor(private entities: Entity[], private columnsGetter: ColumnsGetter) {

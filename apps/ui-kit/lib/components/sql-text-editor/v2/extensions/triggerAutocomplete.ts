@@ -3,10 +3,10 @@
  * when typing specific SQL keywords followed by a space (e.g., 'FROM ' or 'JOIN ').
  */
 import { startCompletion } from "@codemirror/autocomplete";
-import { EditorView } from "@codemirror/view";
+import { EditorView, ViewUpdate } from "@codemirror/view";
 
 export function triggerAutocompleteExtension() {
-  return EditorView.updateListener.of((update: any) => {
+  return EditorView.updateListener.of((update: ViewUpdate) => {
     // Check if typing occurred
     if (update.docChanged) {
       let spaceInserted = false;
