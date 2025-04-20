@@ -11,6 +11,7 @@ import {
   divider,
   InternalContextItem,
 } from "../../context-menu";
+import { format } from "sql-formatter";
 
 export default {
   mixins: [mixin],
@@ -29,6 +30,7 @@ export default {
   },
 
   methods: {
+    // TextEditor overrides
     constructTextEditor() {
       return new SqlTextEditor();
     },
@@ -47,7 +49,6 @@ export default {
         this.columnsGetter(entity.name)
       );
     },
-
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
       const pivot = items.findIndex((o) => o.id === "find");
       return [
@@ -61,6 +62,14 @@ export default {
         divider,
         ...items.slice(pivot),
       ];
+    },
+
+    // Non-TextEditor overrides
+    formatSql() {
+      const formatted = format(this.value, {
+        language: this.formatterDialect,
+      });
+      this.$emit("bks-value-change", { value: formatted });
     },
   },
 

@@ -1,11 +1,12 @@
 import { Compartment, Extension } from "@codemirror/state";
 import { TextEditor } from "../../text-editor/v2/TextEditor";
-import { sql, SQLConfig } from "@codemirror/lang-sql";
 import { Entity } from "../../types";
-import { CompletionContext, CompletionResult, startCompletion } from "@codemirror/autocomplete";
 import { SqlContextAnalyzer } from "./SqlContextAnalyzer";
-import { buildSchema, columnsToCompletions } from "./utils";
-import { EditorView } from "@codemirror/view";
+import { buildSchema } from "./utils";
+import { removeQueryQuotesExtension } from "./extensions/removeQueryQuotes";
+import { Dialect } from "sql-query-identifier";
+import { setSqlContextAnalyzer, sqlExtension } from "./extensions/sql";
+import { triggerAutocompleteExtension } from "./extensions/triggerAutocomplete";
 
 export interface CompletionSource {
   defaultSchema?: string;
@@ -15,10 +16,11 @@ export interface CompletionSource {
 type RequestColumnsListener = (entity: Entity) => string[] | Promise<string[]>;
 
 export class SqlTextEditor extends TextEditor {
-  sqlCompartment: Compartment = new Compartment();
-  columnCompletionCompartment: Compartment = new Compartment();
+  sqlCompartment = new Compartment();
+  removeQueryQuotesCompartment = new Compartment();
+  columnCompletionCompartment = new Compartment();
   entities: Entity[] = [];
-  sqlContextAnalyzer: SqlContextAnalyzer;
+  sqlContextAnalyzer?: SqlContextAnalyzer;
 
   // --- Public API ---
 
@@ -33,13 +35,21 @@ export class SqlTextEditor extends TextEditor {
 
     this.view.dispatch({
       effects: this.sqlCompartment.reconfigure(
-        this.createSqlExtension({
+        sqlExtension({
           defaultSchema: completionSource.defaultSchema,
           schema: buildSchema(
             completionSource.entities,
             completionSource.defaultSchema
           ),
         })
+      ),
+    });
+  }
+
+  setQueryIdentifierDialect(dialect: Dialect) {
+    this.view.dispatch({
+      effects: this.removeQueryQuotesCompartment.reconfigure(
+        removeQueryQuotesExtension(dialect)
       ),
     });
   }
@@ -53,6 +63,10 @@ export class SqlTextEditor extends TextEditor {
     } else {
       this.sqlContextAnalyzer = null;
     }
+
+    this.view.dispatch({
+      effects: setSqlContextAnalyzer.of(this.sqlContextAnalyzer),
+    });
   }
 
   // --- Editor Setup ---
@@ -64,90 +78,9 @@ export class SqlTextEditor extends TextEditor {
     const baseExtensions = super.getBaseExtensions();
     return [
       ...baseExtensions,
-      this.sqlCompartment.of([this.createSqlExtension()]),
-      EditorView.updateListener.of(this.handleEditorUpdate),
+      this.sqlCompartment.of([sqlExtension()]),
+      this.removeQueryQuotesCompartment.of([]),
+      triggerAutocompleteExtension(),
     ];
-  }
-
-  /**
-   * Create SQL language extension with autocomplete support
-   */
-  private createSqlExtension(config?: SQLConfig): Extension {
-    const sqlExtension = sql(config);
-    return [
-      sqlExtension,
-      // Add autocompletion support with our custom source
-      sqlExtension.language.data.of({
-        autocomplete: (context: CompletionContext) =>
-          this.handleCompletionContext(context),
-      }),
-    ];
-  }
-
-  // --- Editor Updates and Autocomplete Handling ---
-
-  /**
-   * Handle editor updates to trigger autocompletion
-   */
-  private handleEditorUpdate = (update: any) => {
-    // Check if typing occurred
-    if (update.docChanged) {
-      let spaceInserted = false;
-
-      update.changes.iterChanges((fromA: any, toA: any, fromB: any, toB: any, inserted: any) => {
-        if (inserted.length === 1 && inserted.text[0] === ' ') {
-          spaceInserted = true;
-        }
-      });
-
-      if (spaceInserted) {
-        const cursor = update.state.selection.main.head;
-        const line = update.state.doc.lineAt(cursor);
-        const textBefore = line.text.slice(0, cursor - line.from);
-
-        // Check if we just typed a space after FROM or JOIN
-        if (/\b(FROM|JOIN)\s$/i.test(textBefore)) {
-          // Trigger autocomplete
-          startCompletion(update.view);
-        }
-      }
-    }
-  };
-
-  /**
-   * Handle autocomplete context and provide column completions
-   */
-  private async handleCompletionContext(
-    context: CompletionContext
-  ): Promise<CompletionResult> {
-    if (!this.sqlContextAnalyzer) {
-      return;
-    }
-
-    const cursor = context.pos;
-    const doc = context.state.doc;
-
-    // Check for dot completion (table.column)
-    let columns: string[]
-
-    const dotColumns = await this.sqlContextAnalyzer.getDotCompletionColumns(context, cursor, doc)
-
-    if (dotColumns) {
-      columns = dotColumns
-    } else if (context.explicit) {
-      let foundColumns = await this.sqlContextAnalyzer.loadColumnsFromQueryContext(context.state, cursor)
-      if (foundColumns) {
-        columns = foundColumns
-      }
-    }
-
-    if (columns && columns.length) {
-      return {
-        from: cursor,
-        options: columnsToCompletions(columns),
-      };
-    }
-
-    return null;
   }
 }

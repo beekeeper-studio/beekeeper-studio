@@ -16,15 +16,14 @@ export default {
     default: "public",
   },
   columnsGetter: Function,
-
-  // formatterDialect: {
-  //   type: String as PropType<FormatOptions['language']>,
-  //   default: "sql",
-  // },
-  // identifierDialect: {
-  //   type: String as PropType<Options['dialect']>,
-  //   default: "generic",
-  // },
+  formatterDialect: {
+    type: String as PropType<FormatOptions['language']>,
+    default: "sql",
+  },
+  identifierDialect: {
+    type: String as PropType<Options['dialect']>,
+    default: "generic",
+  },
 
   // --- replaced with languageId
   // mode: {
