@@ -31,7 +31,6 @@ theme:
     - navigation.footer
     - navigation.top
     - navigation.tabs
-    - navigation.indexes
     - search.suggest
     - search.highlight
     - content.action.edit
