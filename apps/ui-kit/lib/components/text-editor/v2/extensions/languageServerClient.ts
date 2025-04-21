@@ -7,6 +7,7 @@ import {
 import { WebSocketTransport } from "@open-rpc/client-js";
 import { LSClientConfiguration } from "../types";
 import { URI } from "vscode-uri";
+import { SemanticTokensPlugin } from "./semanticTokens";
 
 const lsCompartment = new Compartment();
 
@@ -41,6 +42,10 @@ export function applyLanguageServer(
     }
   });
 
+  const semanticTokensEnabled =
+    typeof config.features?.semanticTokensEnabled === "undefined" ||
+    config.features?.semanticTokensEnabled;
+
   const lsClient = new LanguageServerClient({
     transport,
     rootUri,
@@ -50,7 +55,61 @@ export function applyLanguageServer(
         uri: rootUri.toString(),
       },
     ],
+    capabilities: (defaultCapabilities) => ({
+      ...defaultCapabilities,
+      textDocument: {
+        ...defaultCapabilities.textDocument,
+        ...(semanticTokensEnabled && {
+          semanticTokens: {
+            dynamicRegistration: true,
+            // prettier-ignore
+            tokenTypes: [
+            "namespace", "type", "class", "enum", "interface", "struct",
+            "typeParameter", "parameter", "variable", "property", "enumMember",
+            "event", "function", "method", "macro", "keyword", "modifier",
+            "comment", "string", "number", "regexp", "operator", "decorator"
+          ],
+            // prettier-ignore
+            tokenModifiers: [
+            "declaration", "definition", "readonly", "static", "deprecated",
+            "abstract", "async", "modification", "documentation", "defaultLibrary"
+          ],
+            formats: ["relative"],
+            requests: {
+              range: true,
+              full: {
+                delta: true,
+              },
+            },
+            multilineTokenSupport: true,
+            overlappingTokenSupport: true,
+          },
+        }),
+      },
+    }),
   });
+
+  if (semanticTokensEnabled) {
+    const semanticTokenConfig = {
+      diagnosticsEnabled: false,
+      hoverEnabled: false,
+      completionEnabled: false,
+      definitionEnabled: false,
+      renameEnabled: false,
+      codeActionsEnabled: false,
+      signatureHelpEnabled: false,
+      signatureActivateOnTyping: false,
+    };
+    lsClient.attachPlugin(
+      new SemanticTokensPlugin(
+        lsClient,
+        documentUri,
+        config.languageId,
+        view,
+        semanticTokenConfig
+      )
+    );
+  }
 
   const lsExtension = languageServerWithClient({
     client: lsClient,
@@ -62,6 +121,7 @@ export function applyLanguageServer(
       signatureHelp: "",
       goToDefinition: "",
     },
+    ...config.features,
   });
 
   view.dispatch({

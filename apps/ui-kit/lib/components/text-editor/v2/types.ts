@@ -1,3 +1,5 @@
+import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
+
 export interface LSClientConfiguration {
   /** The WebSocket URI of the language server. For example, `ws://localhost:3000/server` */
   wsUri: string;
@@ -5,6 +7,15 @@ export interface LSClientConfiguration {
   rootUri: string;
   /** The document URI of the current document. For example, `/home/user/tests/test.sql` */
   documentUri: string;
+  /** The language id of the current document. For example, `sql` */
+  languageId: string;
+
+  features?: ExtendedFeatureOptions;
+}
+
+export interface ExtendedFeatureOptions extends FeatureOptions {
+    /** Whether to enable semantic tokens (default: true) */
+  semanticTokensEnabled?: boolean;
 }
 
 export type Keymap = "default" | "vim" | "emacs";

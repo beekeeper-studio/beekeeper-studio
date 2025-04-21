@@ -85,7 +85,7 @@ export default {
     },
     applyLSClientConfig() {
       if (this.lsClientConfig) {
-        this.textEditor.initializeLSClientConfig({
+        this.textEditor.applyLanguageServerClient({
           ...this.lsClientConfig,
           languageId: this.languageId,
         });

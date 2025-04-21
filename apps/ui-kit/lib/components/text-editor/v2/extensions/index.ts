@@ -33,6 +33,7 @@ import { extraKeymap } from "./extraKeymap";
 import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
 import { readOnly } from "./readOnly";
+import { semanticTokens } from "./semanticTokens";
 
 export { applyKeybindings } from "./extraKeymap";
 export { applyKeymap } from "./keymap";
@@ -40,6 +41,7 @@ export { applyLanguageServer } from "./languageServerClient";
 export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
+export { applySemanticTokens, SemanticTokensPlugin } from "./semanticTokens";
 
 export const extensions = [
   extraKeymap(),
@@ -73,6 +75,7 @@ export const extensions = [
   lineWrapping(),
   readOnly(),
   ls(),
+  semanticTokens(),
   EditorView.theme({
     "&": {
       height: `100%`,

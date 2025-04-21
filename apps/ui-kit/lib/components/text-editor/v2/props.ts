@@ -53,7 +53,7 @@ export default {
     default: "plaintext",
   },
   /** Enable language server support by passing the configuration. */
-  lsClientConfig: Object as PropType<Omit<LSClientConfiguration, "languageId">>,
+  lsClientConfig: Object as PropType<LSClientConfiguration>,
   replaceExtensions: Array as PropType<Extension>,
 
   // vimConfig: Object as PropType<Config>,
