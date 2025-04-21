@@ -79,7 +79,7 @@ markdown_extensions:
 
 nav:
   - Introduction:
-    - introduction.md
+    - index.md
     - getting-started-guide.md
   - Installation:
     - installation/index.md
