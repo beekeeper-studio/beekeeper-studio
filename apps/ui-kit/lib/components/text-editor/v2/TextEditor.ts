@@ -1,6 +1,6 @@
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
-import { Keybindings, Keymap, LSClientConfiguration } from "./types";
+import { Keybindings, Keymap, LanguageServerConfiguration } from "./types";
 import {
   extensions,
   applyKeymap,
@@ -8,20 +8,32 @@ import {
   applyLineWrapping,
   applyLineNumbers,
   applyReadOnly,
-  applyLanguageServer,
 } from "./extensions";
+import {
+  formatDocument,
+  formatDocumentRange,
+  ls,
+  requestSemanticTokens,
+} from "./extensions/ls";
+import type * as LSP from "vscode-languageserver-protocol";
 
 interface TextEditorConfiguration {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);
+  lsConfig?: LanguageServerConfiguration;
 }
 
 export class TextEditor {
   protected view: EditorView;
   private config: TextEditorConfiguration;
+  private ls: ReturnType<typeof ls> | null;
 
   initialize(config: TextEditorConfiguration) {
+    if (config.lsConfig) {
+      this.ls = ls(config.lsConfig);
+    }
+
     const state = EditorState.create({
       doc: "",
       extensions:
@@ -38,10 +50,6 @@ export class TextEditor {
     this.config = config;
   }
 
-  applyLanguageServerClient(config: LSClientConfiguration) {
-    applyLanguageServer(this.view, config);
-  }
-
   extendExtensions(
     replaceExtensions: TextEditorConfiguration["replaceExtensions"]
   ) {
@@ -54,6 +62,7 @@ export class TextEditor {
   protected getExtensions(): Extension[] {
     return [
       extensions,
+      this.ls || [],
       EditorView.updateListener.of(this.handleUpdate.bind(this)),
     ];
   }
@@ -101,6 +110,19 @@ export class TextEditor {
 
   getSelection(): string {
     return this.view.state.selection.main.toString();
+  }
+
+  getLsActions() {
+    return {
+      formatDocument: async (options: LSP.FormattingOptions) =>
+        await formatDocument(this.view, options),
+      formatDocumentRange: async (
+        range: LSP.Range,
+        options: LSP.FormattingOptions
+      ) => await formatDocumentRange(this.view, range, options),
+      requestSemanticTokens: async (lastResultId?: string) =>
+        await requestSemanticTokens(this.view, lastResultId),
+    };
   }
 
   focus() {

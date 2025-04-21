@@ -47,10 +47,6 @@ export default {
       if (!this.textEditor) return;
       this.applyKeybindings();
     },
-    lsClientConfig() {
-      if (!this.textEditor) return;
-      this.applyLSClientConfig();
-    },
 
     forceInitialize() {
       this.initialize();
@@ -83,16 +79,6 @@ export default {
     applyKeybindings() {
       this.textEditor.setKeybindings(this.keybindings);
     },
-    applyLSClientConfig() {
-      if (this.lsClientConfig) {
-        this.textEditor.applyLanguageServerClient({
-          ...this.lsClientConfig,
-          languageId: this.languageId,
-        });
-      } else {
-        // TODO: Destroy the language server client
-      }
-    },
 
     constructTextEditor() {
       return new TextEditor();
@@ -111,6 +97,7 @@ export default {
           this.$emit("bks-value-change", { value });
         },
         replaceExtensions: this.replaceExtensions,
+        lsConfig: this.lsConfig,
       });
 
       this.textEditor = textEditor;
@@ -118,7 +105,6 @@ export default {
       this.applyValue();
       this.applyReadOnly();
       this.applyFocus();
-      this.applyLSClientConfig();
       this.applyKeymap();
       this.applyLineWrapping();
       this.applyLineNumbers();
@@ -250,6 +236,10 @@ export default {
         this.contextMenuItems
       );
       openMenu({ event, options: items });
+    },
+
+    getLsActions() {
+      return this.textEditor.getLsActions();
     },
   },
 
