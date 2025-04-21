@@ -1,7 +1,8 @@
 ---
-title: Exporting Data to CSV, JSON, and More
+title: Data Export
 summary: "Export or copy data from your database to CSV, JSON, Excel, and more with a couple of clicks."
 old_url: "https://docs.beekeeperstudio.io/docs/data-export"
+icon: material/export
 ---
 
 There are two ways you can export database data in Beekeeper Studio.
@@ -17,7 +18,7 @@ Beekeeper supports saving data in a number of formats
 
 ## Exporting SQL query results
 
-After running your query in the [SQL Editor](./using-the-sql-editor.md), click the `download` button to export the results in a supported format.
+After running your query in the [SQL Editor](./sql_editor/editor.md), click the `download` button to export the results in a supported format.
 
 ![Click Download](../assets/images/data-export-24.png)
 
