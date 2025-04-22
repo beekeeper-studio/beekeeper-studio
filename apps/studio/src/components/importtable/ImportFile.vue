@@ -176,7 +176,7 @@
             :disabled="!this.fileName"
             @click.prevent="$emit('finish')"
           >
-            <span>Select or Create Table</span>
+            <span>Map to Table</span>
             <span class="material-icons">
               keyboard_arrow_right
             </span>

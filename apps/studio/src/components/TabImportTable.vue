@@ -178,7 +178,7 @@
             },
             completed: false,
             completePrevious: true,
-            nextButtonText: 'Select or Create Table',
+            nextButtonText: 'Map to Table',
             nextButtonIcon: 'keyboard_arrow_right'
           },
           {
@@ -323,54 +323,6 @@
           this.tab.isRunning = false
         }
       }
-    },
-    mounted() {
-      const steps = [{
-        component: ImportFile,
-        title: 'Choose File',
-        icon: 'attach_file',
-        stepperProps: {
-          schema: this.schema,
-          table: this.table,
-          tabId: this.tab.id
-        },
-        completed: false,
-        completePrevious: false,
-        nextButtonText: 'Map to Table',
-        nextButtonIcon: 'keyboard_arrow_right'
-      }]
-      const latterSteps = [
-        {
-          component: ImportMapper,
-          title: 'Map to Table',
-          icon: 'settings',
-          stepperProps: {
-            schema: this.schema,
-            table: this.table,
-            tabId: this.tab.id
-          },
-          completed: false,
-          validateOnNext: true,
-          completePrevious: true,
-          nextButtonText: 'Review & Execute',
-          nextButtonIcon: 'keyboard_arrow_right'
-        },
-        {
-          component: ImportPreview,
-          title: 'Review & Execute',
-          icon: 'check',
-          stepperProps: {
-            schema: this.schema,
-            table: this.table,
-            tabId: this.tab.id
-          },
-          completed: false,
-          completePrevious: true,
-          nextButtonText: 'Run The Import',
-          nextButtonIcon: 'keyboard_arrow_right'
-        }
-      ]
-      this.importSteps = [...steps, ...latterSteps]
     }
   }
 </script>
