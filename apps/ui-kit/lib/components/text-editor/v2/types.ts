@@ -1,7 +1,6 @@
 import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
-import { SemanticTokensThemeOptions } from "./extensions/ls/semanticTokens";
 import { LanguageServerClientWrapper } from "./LanguageServerClientWrapper";
 
 export interface LanguageServerConfiguration {
@@ -17,11 +16,9 @@ export interface LanguageServerConfiguration {
   /** The document URI of the current document. For example, `/home/user/tests/test.sql` */
   documentUri: string;
   /** The language id of the current document. For example, `sql` */
-  languageId: string;
+  languageId?: string;
 
   features?: ExtendedFeatureOptions;
-
-  semanticTokensTheme?: SemanticTokensThemeOptions;
 }
 
 export interface ExtendedFeatureOptions extends FeatureOptions {
@@ -38,6 +35,7 @@ export type Keybindings = {
 export interface TextEditorConfiguration extends ExtensionConfiguration {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
+  languageId: "plaintext" | "sql";
   initialValue?: string;
   focus?: boolean;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);

@@ -18,6 +18,7 @@ import {
   formatDocument,
   formatDocumentRange,
   ls,
+  lsContextFacet,
   requestSemanticTokens,
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
@@ -29,13 +30,15 @@ export class TextEditor {
 
   initialize(config: TextEditorConfiguration) {
     if (config.lsConfig) {
-      this.ls = ls(config.lsConfig);
+      this.ls = ls({
+        ...config.lsConfig,
+        languageId: config.languageId,
+      });
     }
 
     const state = EditorState.create({
       doc: config.initialValue || "",
-      extensions:
-        this.extendExtensions(config) || this.getExtensions(config),
+      extensions: this.extendExtensions(config) || this.getExtensions(config),
     });
 
     const view = new EditorView({ state, parent: config.parent });
@@ -106,6 +109,10 @@ export class TextEditor {
 
   getSelection(): string {
     return this.view.state.selection.main.toString();
+  }
+
+  getLsClient() {
+    return this.view.state.facet(lsContextFacet).client;
   }
 
   getLsActions() {

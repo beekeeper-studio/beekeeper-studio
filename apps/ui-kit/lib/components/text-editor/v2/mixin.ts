@@ -96,6 +96,7 @@ export default {
         onValueChange: (value) => {
           this.$emit("bks-value-change", { value });
         },
+        languageId: this.languageId,
         replaceExtensions: this.replaceExtensions,
         lsConfig: this.lsConfig,
         initialValue: this.value,
@@ -237,9 +238,9 @@ export default {
       openMenu({ event, options: items });
     },
 
-    getLsActions() {
-      return this.textEditor.getLsActions();
-    },
+    getLSClient() {
+      return this.textEditor.getLsClient();
+    }
   },
 
   mounted() {

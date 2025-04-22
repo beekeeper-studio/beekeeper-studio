@@ -244,13 +244,6 @@ export async function requestSemanticTokens(
           view.state.facet(lsContextFacet);
         const capabilities = getCapabilities();
 
-        console.log("[SemanticTokens] Received tokens", {
-          tokenCount: result.data?.length / 5 || 0,
-          resultId: result.resultId,
-          documentUri,
-          lastResultId,
-        });
-
         // Use the capabilities from the getter instead of directly from client.capabilities
         const legend = capabilities?.semanticTokensProvider?.legend;
         if (legend) {
@@ -341,103 +334,44 @@ async function requestFullSemanticTokens(
 }
 
 /**
- * Interface for semantic token theme options
+ * Interface kept for reference, but not used anymore as styling is now handled via CSS
+ * @deprecated Use CSS variables in text-editor.scss instead
  */
-export interface SemanticTokensThemeOptions {
-  // Token type styles with token names as keys
-  tokenTypes?: Record<string, Partial<CSSStyleDeclaration>>;
-  // Token modifier styles with modifier names as keys
-  modifiers?: Record<string, Partial<CSSStyleDeclaration>>;
-}
+export interface SemanticTokensThemeOptions {}
 
 /**
- * Default token type styles
+ * We're not defining default token styles here anymore.
+ * Styles are now defined in text-editor.scss using CSS variables for easy theming.
  */
-const defaultTokenTypeStyles: Record<string, Partial<CSSStyleDeclaration>> = {
-  // Types
-  type: { color: "#4EC9B0" },
-  class: { color: "#4EC9B0" },
-  enum: { color: "#4EC9B0" },
-  interface: { color: "#4EC9B0" },
-  struct: { color: "#4EC9B0" },
-  typeParameter: { color: "#4EC9B0" },
-  // Variables
-  parameter: { color: "#9CDCFE" },
-  variable: { color: "#9CDCFE" },
-  property: { color: "#9CDCFE" },
-  enumMember: { color: "#9CDCFE" },
-  // Functions
-  decorator: { color: "#DCDCAA" },
-  event: { color: "#DCDCAA" },
-  function: { color: "#DCDCAA" },
-  method: { color: "#DCDCAA" },
-  macro: { color: "#DCDCAA" },
-  // Others
-  label: { color: "#C8C8C8" },
-  comment: { color: "#6A9955" },
-  string: { color: "#CE9178" },
-  keyword: { color: "#569CD6" },
-  number: { color: "#B5CEA8" },
-  regexp: { color: "#D16969" },
-  operator: { color: "#D4D4D4" },
-  namespace: { color: "#D4D4D4" },
-};
+const defaultTokenTypeStyles: Record<string, Partial<CSSStyleDeclaration>> = {};
 
 /**
- * Default token modifier styles
+ * Default token modifier styles are now defined in CSS.
  */
-const defaultModifierStyles: Record<string, Partial<CSSStyleDeclaration>> = {
-  static: { fontStyle: "italic" },
-  declaration: { textDecoration: "underline" },
-  deprecated: { textDecoration: "line-through" },
-  readonly: { fontStyle: "italic" },
-};
+const defaultModifierStyles: Record<string, Partial<CSSStyleDeclaration>> = {};
 
 /**
- * Create an extension for semantic tokens with configurable styling
+ * Create an extension for semantic tokens
+ * All styling is now handled via CSS in text-editor.scss
  */
-export function semanticTokens(
-  options?: SemanticTokensThemeOptions
-): Extension {
-  // Merge default styles with provided options
-  const tokenTypeStyles = {
-    ...defaultTokenTypeStyles,
-    ...(options?.tokenTypes || {}),
-  };
-  const modifierStyles = {
-    ...defaultModifierStyles,
-    ...(options?.modifiers || {}),
-  };
-
-  // Create theme styles object
-  const themeStyles: Record<string, Partial<CSSStyleDeclaration>> = {};
-
-  // Add token type styles
-  Object.entries(tokenTypeStyles).forEach(([type, style]) => {
-    themeStyles[`.cm-semanticToken-${type}`] = style;
-  });
-
-  // Add modifier styles
-  Object.entries(modifierStyles).forEach(([modifier, style]) => {
-    themeStyles[`.cm-semanticToken-*-${modifier}`] = style;
-  });
-
+export function semanticTokens(): Extension {
   return [
     semanticTokensField,
     semanticTokensTimerField,
-
-    // Add CSS for semantic token styling with configurable options
-    // @ts-expect-error not sure how to type this
-    EditorView.theme(themeStyles),
 
     // Automatically request semantic tokens on initialization
     ViewPlugin.fromClass(
       class {
         constructor(view: EditorView) {
-          const context = view.state.facet(lsContextFacet);
-          context.client.onReady(() => {
-            requestSemanticTokens(view);
-          });
+          const { getCapabilities, client } = view.state.facet(lsContextFacet);
+          const capabilities = getCapabilities();
+
+          // Only request tokens if semantic tokens provider is available
+          if (capabilities?.semanticTokensProvider) {
+            client.onReady(() => {
+              requestSemanticTokens(view);
+            });
+          }
         }
       }
     ),

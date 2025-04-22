@@ -9,7 +9,7 @@ import { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { buildSchema, columnsToCompletions } from "../utils";
 import { ColumnsGetter, SqlContextAnalyzer } from "../SqlContextAnalyzer";
 import { EditorView } from "@codemirror/view";
-import { Entity } from "lib/components/types";
+import { Entity } from "../../../types";
 import { Compartment } from "@codemirror/state";
 
 const sqlCompartment = new Compartment();

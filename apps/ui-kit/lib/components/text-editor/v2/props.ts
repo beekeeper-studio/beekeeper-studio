@@ -41,7 +41,10 @@ export default {
     type: Boolean,
     default: true,
   },
-  keybindings: Object as PropType<Keybindings>,
+  keybindings: {
+    type: Object as PropType<Keybindings>,
+    default: () => ({})
+  },
   contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
 
   // ------- New props below
@@ -54,7 +57,9 @@ export default {
   },
   /** Enable language server support by passing the configuration. */
   lsConfig: Object as PropType<LanguageServerConfiguration>,
-  replaceExtensions: Array as PropType<Extension>,
+  replaceExtensions: [Array, Function] as PropType<
+    Extension | ((extensions: Extension) => Extension)
+  >,
 
   // vimConfig: Object as PropType<Config>,
   // markers: {

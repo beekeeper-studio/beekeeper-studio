@@ -43,8 +43,7 @@
     "build": "vite build -c vite.config.ts --mode production",
     "preview": "vite preview"
   },
-  "dependencies": {},
-  "devDependencies": {
+  "peerDependencies": {
     "@codemirror/autocomplete": "^6.18.4",
     "@codemirror/commands": "^6.8.1",
     "@codemirror/lang-sql": "^6.8.0",
@@ -53,11 +52,28 @@
     "@codemirror/search": "^6.5.10",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
-    "@marimo-team/codemirror-languageserver": "^1.15.13",
-    "@open-rpc/client-js": "^1.8.1",
-    "@pdanpdan/vue-keyboard-trap": "^1.0.19",
+    "@lezer/highlight": "^1.2.1",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
+    "@marimo-team/codemirror-languageserver": "^1.15.13"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.4",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-sql": "^6.8.0",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/lint": "^6.8.4",
+    "@codemirror/search": "^6.5.10",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.2",
+    "@lezer/highlight": "^1.2.1",
+    "@replit/codemirror-emacs": "^6.1.0",
+    "@replit/codemirror-vim": "^6.3.0",
+    "@marimo-team/codemirror-languageserver": "^1.15.13"
+  },
+  "devDependencies": {
+    "@open-rpc/client-js": "^1.8.1",
+    "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.2.0",

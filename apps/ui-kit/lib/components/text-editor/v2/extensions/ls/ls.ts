@@ -4,9 +4,11 @@ import { URI } from "vscode-uri";
 import { semanticTokens, semanticTokensCapabilities } from "./semanticTokens";
 import { formattingCapabilities, lsFormatting } from "./formatting";
 import _ from "lodash";
-import { Extension, Facet } from "@codemirror/state";
+import { EditorState, Extension, Facet } from "@codemirror/state";
 import { isFeatureEnabled } from "./utils";
 import { LanguageServerClientWrapper } from "../../LanguageServerClientWrapper";
+import { EditorView } from "@codemirror/view";
+import { getCompletionTriggerKind } from "@marimo-team/codemirror-languageserver/dist/plugin";
 
 const TIMEOUT: number = 10000;
 
@@ -90,9 +92,7 @@ export function ls(config: LanguageServerConfiguration): Extension {
     // Extensions of the main language server extension. The order is important!
     lsContextFacet.of(clientContext),
     lsFormatting(),
-    isFeatureEnabled(config, "semanticTokensEnabled")
-      ? semanticTokens(config.semanticTokensTheme)
-      : [],
+    isFeatureEnabled(config, "semanticTokensEnabled") ? semanticTokens() : [],
 
     // Main language server extension
     lsExtension,

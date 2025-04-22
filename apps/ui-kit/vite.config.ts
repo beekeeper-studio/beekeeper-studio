@@ -9,6 +9,10 @@ export default defineConfig({
     alias: {
       vue: "vue/dist/vue.min.js",
     },
+    dedupe: ["@codemirror/state", "@codemirror/view"],
+  },
+  optimizeDeps: {
+    include: ["@codemirror/state", "@codemirror/view"],
   },
   build: {
     lib: {
@@ -18,11 +22,28 @@ export default defineConfig({
       fileName: () => `[name].js`,
     },
     rollupOptions: {
+      external: [
+        "@codemirror/state",
+        "@codemirror/view",
+        "@codemirror/language",
+        "@codemirror/commands",
+        "@codemirror/search",
+        "@codemirror/lint",
+        "@codemirror/lang-sql",
+        "@codemirror/autocomplete",
+        "@lezer/highlight",
+        "@replit/codemirror-emacs",
+        "@replit/codemirror-vim",
+        "@marimo-team/codemirror-languageserver",
+      ],
       input: {
         style: resolve(__dirname, "lib/style.scss"),
-        "index": resolve(__dirname, "lib/components/define.ts"),
-        "table": resolve(__dirname, "lib/components/table/define.ts"),
-        "entity-list": resolve(__dirname, "lib/components/entity-list/define.ts"),
+        index: resolve(__dirname, "lib/components/define.ts"),
+        table: resolve(__dirname, "lib/components/table/define.ts"),
+        "entity-list": resolve(
+          __dirname,
+          "lib/components/entity-list/define.ts"
+        ),
         "sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/define.ts"
@@ -32,7 +53,10 @@ export default defineConfig({
           "lib/components/data-editor/define.ts"
         ),
         "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
-        "vue/entity-list": resolve(__dirname, "lib/components/entity-list/EntityList.vue"),
+        "vue/entity-list": resolve(
+          __dirname,
+          "lib/components/entity-list/EntityList.vue"
+        ),
         "vue/sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/v2/SqlTextEditor.vue"
