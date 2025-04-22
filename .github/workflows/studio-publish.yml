@@ -8,7 +8,7 @@ on:
       - "apps/sqltools/**"
 jobs:
   create_draft_release:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       assets_url: ${{ steps.create_release.outputs.assets_url }}
@@ -36,7 +36,7 @@ jobs:
   # outputs: latest, beta, alpha
   # deb_codename: stable, beta
   identify_channel:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       channel: ${{steps.extract_channel.outputs.channel}}
       deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
@@ -60,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - name: ubuntu-20.04
+          - name: ubuntu-22.04
             arch: x64
             type: linux
             setup_python: true
@@ -83,8 +83,6 @@ jobs:
             type: macos
         # macos-13 is Intel, macos-14 is arm (obviously)
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-        # os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
-        # os: [macos-13, macos-14 ]
 
     steps:
 
