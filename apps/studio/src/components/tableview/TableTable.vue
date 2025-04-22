@@ -1871,7 +1871,6 @@ export default Vue.extend({
       this.updateJsonViewerSidebar()
     },
     handleRangeChange(ranges: RangeComponent[]) {
-      console.log('change bruh')
       this.updateJsonViewer({ range: ranges[0] })
     },
     handleSwitchedTab(tab) {
