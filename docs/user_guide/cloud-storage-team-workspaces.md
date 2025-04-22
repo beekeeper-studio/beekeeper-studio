@@ -2,6 +2,7 @@
 title: Cloud Storage (Team Workspaces)
 summary: "Store your connections and queries in the cloud to work across multiple machines, or collaborate with others."
 old_url: "https://docs.beekeeperstudio.io/docs/cloud-storage-team-workspaces"
+icon: material/cloud-sync
 ---
 
 

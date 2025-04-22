@@ -160,7 +160,14 @@ export default Vue.extend({
       }, 500),
     },
     sourceMap() {
-      return JsonSourceMap.stringify(this.filteredValue, null, 2);
+      let replacedFilteredValue = this.filteredValue;
+      try {
+        // run the replacer on the filteredValue
+        replacedFilteredValue = JSON.parse(JSON.stringify(this.filteredValue, this.replacer));
+      } catch (error) {
+        log.warn("Failed to replace filtered value", error);
+      }
+      return JsonSourceMap.stringify(replacedFilteredValue, null, 2);
     },
     filteredValue() {
       if (this.empty) {
