@@ -10,6 +10,7 @@ import {
   applyColumnsGetter,
   extensions as sqlExtensions,
 } from "./extensions";
+import { ExtensionConfiguration } from "../../text-editor";
 
 export interface CompletionSource {
   defaultSchema?: string;
@@ -46,8 +47,8 @@ export class SqlTextEditor extends TextEditor {
   /**
    * Get base extensions for the editor
    */
-  protected getExtensions(): Extension[] {
-    const baseExtensions = super.getExtensions();
+  protected getExtensions(config: ExtensionConfiguration): Extension[] {
+    const baseExtensions = super.getExtensions(config);
     return [baseExtensions, sqlExtensions];
   }
 }

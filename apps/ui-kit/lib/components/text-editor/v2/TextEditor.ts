@@ -1,6 +1,11 @@
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
-import { Keybindings, Keymap, LanguageServerConfiguration } from "./types";
+import {
+  ExtensionConfiguration,
+  Keybindings,
+  Keymap,
+  TextEditorConfiguration,
+} from "./types";
 import {
   extensions,
   applyKeymap,
@@ -17,13 +22,6 @@ import {
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
 
-interface TextEditorConfiguration {
-  parent: HTMLElement;
-  onValueChange: (value: string) => void;
-  replaceExtensions?: Extension | ((extensions: Extension) => Extension);
-  lsConfig?: LanguageServerConfiguration;
-}
-
 export class TextEditor {
   protected view: EditorView;
   private config: TextEditorConfiguration;
@@ -35,33 +33,31 @@ export class TextEditor {
     }
 
     const state = EditorState.create({
-      doc: "",
+      doc: config.initialValue || "",
       extensions:
-        this.extendExtensions(config.replaceExtensions) || this.getExtensions(),
+        this.extendExtensions(config) || this.getExtensions(config),
     });
 
-    // Create editor with the LSP plugin
-    const view = new EditorView({
-      state,
-      parent: config.parent,
-    });
+    const view = new EditorView({ state, parent: config.parent });
+
+    if (typeof config.focus !== "undefined") {
+      view.focus();
+    }
 
     this.view = view;
     this.config = config;
   }
 
-  extendExtensions(
-    replaceExtensions: TextEditorConfiguration["replaceExtensions"]
-  ) {
-    if (typeof replaceExtensions === "function") {
-      return replaceExtensions(this.getExtensions());
+  extendExtensions(config: TextEditorConfiguration) {
+    if (typeof config.replaceExtensions === "function") {
+      return config.replaceExtensions(this.getExtensions(config));
     }
-    return replaceExtensions;
+    return config.replaceExtensions;
   }
 
-  protected getExtensions(): Extension[] {
+  protected getExtensions(config: ExtensionConfiguration): Extension[] {
     return [
-      extensions,
+      extensions(config),
       this.ls || [],
       EditorView.updateListener.of(this.handleUpdate.bind(this)),
     ];

@@ -1,3 +1,4 @@
+import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
 
@@ -29,3 +30,20 @@ export type Keymap = "default" | "vim" | "emacs";
 export type Keybindings = {
   [key: string]: () => void;
 };
+
+export interface TextEditorConfiguration extends ExtensionConfiguration {
+  parent: HTMLElement;
+  onValueChange: (value: string) => void;
+  initialValue?: string;
+  focus?: boolean;
+  replaceExtensions?: Extension | ((extensions: Extension) => Extension);
+  lsConfig?: LanguageServerConfiguration;
+}
+
+export interface ExtensionConfiguration {
+  readOnly?: boolean;
+  keymap?: Keymap;
+  lineWrapping?: boolean;
+  lineNumbers?: boolean;
+  keybindings?: Keybindings;
+}

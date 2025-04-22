@@ -17,6 +17,8 @@ export interface LSContext {
   client: Client;
   documentUri: string;
   timeout: number;
+  // Added function to get capabilities to avoid race conditions
+  getCapabilities: () => any;
 }
 
 export const lsContextFacet = Facet.define<LSContext, LSContext>({
@@ -88,12 +90,17 @@ export function ls(config: LanguageServerConfiguration): Extension {
     ...features,
   });
 
+  // Store a reference to the initialized LS client for use in the context
+  const clientContext = {
+    client: lsClient.client,
+    documentUri,
+    timeout: TIMEOUT,
+    // Add the capabilities for direct access
+    getCapabilities: () => lsClient.capabilities
+  };
+  
   return [
-    lsContextFacet.of({
-      client: lsClient.client,
-      documentUri,
-      timeout: TIMEOUT,
-    }),
+    lsContextFacet.of(clientContext),
     lsFormatting(),
     isFeatureEnabled(config, "semanticTokensEnabled") ? semanticTokens() : [],
     lsExtension,

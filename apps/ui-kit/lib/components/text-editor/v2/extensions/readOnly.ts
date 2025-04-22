@@ -3,8 +3,12 @@ import { EditorView } from "@codemirror/view";
 
 const readOnlyCompartment = new Compartment();
 
-export function readOnly() {
-  return readOnlyCompartment.of(EditorState.readOnly.of(true));
+export interface ReadOnlyConfiguration {
+  enabled?: boolean;
+}
+
+export function readOnly(config: ReadOnlyConfiguration = { enabled: false }) {
+  return readOnlyCompartment.of(EditorState.readOnly.of(config.enabled));
 }
 
 /**
@@ -15,4 +19,3 @@ export function applyReadOnly(view: EditorView, readOnly: boolean) {
     effects: readOnlyCompartment.reconfigure(EditorState.readOnly.of(readOnly)),
   });
 }
-

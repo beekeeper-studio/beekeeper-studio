@@ -4,10 +4,16 @@ import {
   lineNumbers as originalLineNumbers,
 } from "@codemirror/view";
 
+export interface LineNumbersConfiguration {
+  enabled: boolean;
+}
+
 const lineNumbersCompartment = new Compartment();
 
-export function lineNumbers() {
-  return lineNumbersCompartment.of(originalLineNumbers());
+export function lineNumbers(
+  config: LineNumbersConfiguration = { enabled: true }
+) {
+  return lineNumbersCompartment.of(config.enabled ? originalLineNumbers() : []);
 }
 
 /**

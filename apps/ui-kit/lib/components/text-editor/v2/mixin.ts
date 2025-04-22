@@ -98,17 +98,16 @@ export default {
         },
         replaceExtensions: this.replaceExtensions,
         lsConfig: this.lsConfig,
+        initialValue: this.value,
+        focus: this.focus,
+        readOnly: this.readOnly,
+        keymap: this.keymap,
+        lineWrapping: this.lineWrapping,
+        lineNumbers: this.lineNumbers,
+        keybindings: this.keybindings,
       });
 
       this.textEditor = textEditor;
-
-      this.applyValue();
-      this.applyReadOnly();
-      this.applyFocus();
-      this.applyKeymap();
-      this.applyLineWrapping();
-      this.applyLineNumbers();
-      this.applyKeybindings();
 
       this.initialized?.();
     },

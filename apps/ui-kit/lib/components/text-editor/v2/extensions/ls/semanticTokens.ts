@@ -83,6 +83,9 @@ function createTokenDecorations(
   // Each token is represented by 5 integers: deltaLine, deltaChar, length, tokenType, tokenModifiers
   let previousLine = 0;
   let previousStartChar = 0;
+  // Declare these at the same scope level to avoid reference errors
+  let currentLine = 0;
+  let currentStartChar = 0;
 
   for (let i = 0; i < tokens.data.length; i += 5) {
     const deltaLine = tokens.data[i];
@@ -123,19 +126,27 @@ function createTokenDecorations(
 
     if (from !== undefined && to !== undefined) {
       // Create decoration with appropriate CSS classes for token type and modifiers
+      // Fix class format: use hyphen instead of dot for modifiers to avoid CSS selector issues
+      const tokenClass = `cm-semanticToken-${tokenType}`;
+      const modifierClasses = tokenModifiers
+        .map((mod) => `cm-semanticToken-${tokenType}-${mod}`)
+        .join(" ");
+        
+      const classString = tokenClass + (modifierClasses ? ` ${modifierClasses}` : '');
+      
       const decoration = Decoration.mark({
-        class: `cm-semanticToken-${tokenType} ${tokenModifiers
-          .map((mod) => `cm-semanticToken-${tokenType}.${mod}`)
-          .join(" ")}`,
+        class: classString,
       });
 
       decorations.push(decoration.range(from, to));
     }
+    
+    // Update variables for next iteration at the end of the loop
+    previousLine = currentLine;
+    previousStartChar = currentStartChar;
   }
 
-  // Store current position for next token calculation
-  previousLine = currentLine;
-  previousStartChar = currentStartChar;
+  // Variables are updated within the loop
 
   return RangeSet.of(decorations);
 }
@@ -149,6 +160,8 @@ export async function requestSemanticTokens(
 ) {
   const semanticTokensTimer = view.state.field(semanticTokensTimerField, false);
   const { client, timeout, documentUri } = view.state.facet(lsContextFacet);
+
+  // Request semantic tokens from server
 
   // Clear any pending semantic tokens operations
   if (semanticTokensTimer) {
@@ -166,6 +179,7 @@ export async function requestSemanticTokens(
         client.capabilities?.semanticTokensProvider?.full?.delta
       ) {
         try {
+          // Request semantic tokens delta
           const delta = await client.request(
             {
               method: "textDocument/semanticTokens/full/delta",
@@ -181,9 +195,7 @@ export async function requestSemanticTokens(
           if (delta && "edits" in delta) {
             // In a real implementation we would apply edits to previous tokens
             // For simplicity, we'll request full tokens instead
-            console.log(
-              "Delta tokens received, requesting full tokens instead"
-            );
+            // Delta tokens received, requesting full tokens instead
             result = await requestFullSemanticTokens(
               client,
               documentUri,
@@ -208,12 +220,38 @@ export async function requestSemanticTokens(
 
       // Apply tokens to editor
       if (result) {
-        const legend = client.capabilities?.semanticTokensProvider?.legend;
+        // Get capabilities using the getter function to avoid race conditions
+        const { getCapabilities } = view.state.facet(lsContextFacet);
+        const capabilities = getCapabilities();
+        
+        // Use the capabilities from the getter instead of directly from client.capabilities
+        const legend = capabilities?.semanticTokensProvider?.legend;
         if (legend) {
           view.dispatch({
             effects: addSemanticTokens.of({
               tokens: result,
               legend,
+            }),
+          });
+        } else {
+          // Create a complete fallback legend using the same token types we declare in capabilities
+          const fallbackLegend: LSP.SemanticTokensLegend = {
+            tokenTypes: [
+              "namespace", "type", "class", "enum", "interface", "struct",
+              "typeParameter", "parameter", "variable", "property", "enumMember",
+              "event", "function", "method", "macro", "keyword", "modifier",
+              "comment", "string", "number", "regexp", "operator", "decorator"
+            ],
+            tokenModifiers: [
+              "declaration", "definition", "readonly", "static", "deprecated",
+              "abstract", "async", "modification", "documentation", "defaultLibrary"
+            ]
+          };
+          
+          view.dispatch({
+            effects: addSemanticTokens.of({
+              tokens: result,
+              legend: fallbackLegend,
             }),
           });
         }
@@ -282,11 +320,11 @@ export function semanticTokens(): Extension {
       ".cm-semanticToken-operator": { color: "#D4D4D4" },
       ".cm-semanticToken-namespace": { color: "#D4D4D4" },
 
-      // Modifiers
-      ".cm-semanticToken-*.static": { fontStyle: "italic" },
-      ".cm-semanticToken-*.declaration": { textDecoration: "underline" },
-      ".cm-semanticToken-*.deprecated": { textDecoration: "line-through" },
-      ".cm-semanticToken-*.readonly": { fontStyle: "italic" },
+      // Modifiers - updated to use hyphen instead of dot for modifier names
+      ".cm-semanticToken-*-static": { fontStyle: "italic" },
+      ".cm-semanticToken-*-declaration": { textDecoration: "underline" },
+      ".cm-semanticToken-*-deprecated": { textDecoration: "line-through" },
+      ".cm-semanticToken-*-readonly": { fontStyle: "italic" },
     }),
   ];
 }
