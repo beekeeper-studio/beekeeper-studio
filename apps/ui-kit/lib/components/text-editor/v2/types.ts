@@ -1,6 +1,8 @@
 import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
+import { SemanticTokensThemeOptions } from "./extensions/ls/semanticTokens";
+import { LanguageServerClientWrapper } from "./LanguageServerClientWrapper";
 
 export interface LanguageServerConfiguration {
   /** The WebSocket URI of the language server. For example, `ws://localhost:3000/server` */
@@ -18,6 +20,8 @@ export interface LanguageServerConfiguration {
   languageId: string;
 
   features?: ExtendedFeatureOptions;
+
+  semanticTokensTheme?: SemanticTokensThemeOptions;
 }
 
 export interface ExtendedFeatureOptions extends FeatureOptions {
@@ -46,4 +50,12 @@ export interface ExtensionConfiguration {
   lineWrapping?: boolean;
   lineNumbers?: boolean;
   keybindings?: Keybindings;
+}
+
+export interface LSContext {
+  client: LanguageServerClientWrapper;
+  documentUri: string;
+  timeout: number;
+  // Added function to get capabilities to avoid race conditions
+  getCapabilities: () => any;
 }

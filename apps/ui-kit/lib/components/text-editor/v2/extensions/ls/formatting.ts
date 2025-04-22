@@ -6,9 +6,9 @@ import { posToOffset } from "./utils";
 
 const FORMAT_DEBOUNCE_TIME = 100;
 
-const setFormatTimer = StateEffect.define<number | null>();
+const setFormatTimer = StateEffect.define<NodeJS.Timeout | null>();
 
-const formatTimerField = StateField.define<number | null>({
+const formatTimerField = StateField.define<NodeJS.Timeout | null>({
   create: () => null,
   update(value, tr) {
     for (let effect of tr.effects) {
@@ -41,7 +41,7 @@ export async function formatDocument(
   const timer = setTimeout(async () => {
     try {
       // Request formatting from the language server
-      const edits = await client.request(
+      const edits = await client.rpcClient.request(
         {
           method: "textDocument/formatting",
           params: {
@@ -85,7 +85,7 @@ export async function formatDocumentRange(
   const timer = setTimeout(async () => {
     try {
       // Request range formatting from the language server
-      const edits = await client.request(
+      const edits = await client.rpcClient.request(
         {
           method: "textDocument/rangeFormatting",
           params: {
@@ -94,7 +94,7 @@ export async function formatDocumentRange(
             options: options,
           },
         },
-        timeout
+        typeof timeout === 'number' ? timeout : 30000
       );
 
       // Apply the edits if we got them

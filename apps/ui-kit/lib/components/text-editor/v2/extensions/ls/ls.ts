@@ -1,25 +1,14 @@
-import {
-  LanguageServerClient,
-  languageServerWithClient,
-} from "@marimo-team/codemirror-languageserver";
-import { WebSocketTransport, Client } from "@open-rpc/client-js";
-import { LanguageServerConfiguration } from "../../types";
+import { WebSocketTransport } from "@open-rpc/client-js";
+import { LanguageServerConfiguration, LSContext } from "../../types";
 import { URI } from "vscode-uri";
 import { semanticTokens, semanticTokensCapabilities } from "./semanticTokens";
 import { formattingCapabilities, lsFormatting } from "./formatting";
 import _ from "lodash";
 import { Extension, Facet } from "@codemirror/state";
 import { isFeatureEnabled } from "./utils";
+import { LanguageServerClientWrapper } from "../../LanguageServerClientWrapper";
 
-const TIMEOUT = 10000;
-
-export interface LSContext {
-  client: Client;
-  documentUri: string;
-  timeout: number;
-  // Added function to get capabilities to avoid race conditions
-  getCapabilities: () => any;
-}
+const TIMEOUT: number = 10000;
 
 export const lsContextFacet = Facet.define<LSContext, LSContext>({
   combine: (values) => values[0],
@@ -60,7 +49,7 @@ export function ls(config: LanguageServerConfiguration): Extension {
     transport = config.transport as WebSocketTransport;
   }
 
-  const lsClient = new LanguageServerClient({
+  const client = new LanguageServerClientWrapper({
     transport,
     rootUri,
     workspaceFolders: [{ name: "workspace", uri: rootUri }],
@@ -77,8 +66,7 @@ export function ls(config: LanguageServerConfiguration): Extension {
 
   const features = _.omit(config.features, ["semanticTokensEnabled"]);
 
-  const lsExtension = languageServerWithClient({
-    client: lsClient,
+  const lsExtension = client.extension({
     allowHTMLContent: true,
     documentUri,
     languageId: config.languageId,
@@ -91,18 +79,22 @@ export function ls(config: LanguageServerConfiguration): Extension {
   });
 
   // Store a reference to the initialized LS client for use in the context
-  const clientContext = {
-    client: lsClient.client,
+  const clientContext: LSContext = {
+    client,
     documentUri,
     timeout: TIMEOUT,
-    // Add the capabilities for direct access
-    getCapabilities: () => lsClient.capabilities
+    getCapabilities: () => client.languageServerClient.capabilities,
   };
-  
+
   return [
+    // Extensions of the main language server extension. The order is important!
     lsContextFacet.of(clientContext),
     lsFormatting(),
-    isFeatureEnabled(config, "semanticTokensEnabled") ? semanticTokens() : [],
+    isFeatureEnabled(config, "semanticTokensEnabled")
+      ? semanticTokens(config.semanticTokensTheme)
+      : [],
+
+    // Main language server extension
     lsExtension,
   ];
 }

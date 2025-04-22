@@ -5,7 +5,13 @@ import {
   RangeSet,
   Range,
 } from "@codemirror/state";
-import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
+import {
+  EditorView,
+  Decoration,
+  DecorationSet,
+  ViewPlugin,
+} from "@codemirror/view";
+import Client from "@open-rpc/client-js";
 import type * as LSP from "vscode-languageserver-protocol";
 import { lsContextFacet } from "./ls";
 import { posToOffset } from "./utils";
@@ -15,12 +21,12 @@ const SEMANTIC_TOKENS_THROTTLE_TIME = 500;
 /**
  * StateEffect to set the semantic tokens timer
  */
-const setSemanticTokensTimer = StateEffect.define<number | null>();
+const setSemanticTokensTimer = StateEffect.define<NodeJS.Timeout | null>();
 
 /**
  * StateField to track the semantic tokens timer
  */
-const semanticTokensTimerField = StateField.define<number | null>({
+const semanticTokensTimerField = StateField.define<NodeJS.Timeout | null>({
   create: () => null,
   update(value, tr) {
     for (let effect of tr.effects) {
@@ -39,26 +45,34 @@ const addSemanticTokens = StateEffect.define<{
 }>();
 
 /**
- * StateField to store semantic token decorations
+ * StateField to store semantic token decorations and resultId
  */
-const semanticTokensField = StateField.define<DecorationSet>({
+const semanticTokensField = StateField.define<
+  DecorationSet & { resultId?: string }
+>({
   create() {
-    return Decoration.none;
+    return Object.assign(Decoration.none, { resultId: undefined });
   },
   update(decorations, tr) {
     // Update the decorations when semantic tokens change
     for (const e of tr.effects) {
       if (e.is(addSemanticTokens)) {
-        return createTokenDecorations(
+        const newDecorations = createTokenDecorations(
           tr.state.doc,
           e.value.tokens,
           e.value.legend
         );
+        // Store the resultId with the decorations for future delta requests
+        return Object.assign(newDecorations, {
+          resultId: e.value.tokens.resultId,
+        });
       }
     }
 
     // Otherwise, adjust the decoration positions for document changes
-    return decorations.map(tr.changes);
+    return Object.assign(decorations.map(tr.changes), {
+      resultId: decorations.resultId,
+    });
   },
   provide(field) {
     return EditorView.decorations.from(field);
@@ -83,10 +97,6 @@ function createTokenDecorations(
   // Each token is represented by 5 integers: deltaLine, deltaChar, length, tokenType, tokenModifiers
   let previousLine = 0;
   let previousStartChar = 0;
-  // Declare these at the same scope level to avoid reference errors
-  let currentLine = 0;
-  let currentStartChar = 0;
-
   for (let i = 0; i < tokens.data.length; i += 5) {
     const deltaLine = tokens.data[i];
     const deltaChar = tokens.data[i + 1];
@@ -97,9 +107,8 @@ function createTokenDecorations(
     // Calculate current token position according to LSP spec:
     // - If deltaLine > 0, we've moved to a new line
     // - deltaChar is relative to start of line or previous token's start
-    const currentLine = previousLine + deltaLine;
-    const currentStartChar =
-      deltaLine > 0 ? deltaChar : previousStartChar + deltaChar;
+    const line = previousLine + deltaLine;
+    const startChar = deltaLine > 0 ? deltaChar : previousStartChar + deltaChar;
 
     // Get token type and modifiers
     const tokenType = legend.tokenTypes[tokenTypeIdx] || "unknown";
@@ -116,12 +125,12 @@ function createTokenDecorations(
 
     // Calculate token range
     const from = posToOffset(doc, {
-      line: currentLine,
-      character: currentStartChar,
+      line: line,
+      character: startChar,
     });
     const to = posToOffset(doc, {
-      line: currentLine,
-      character: currentStartChar + length,
+      line: line,
+      character: startChar + length,
     });
 
     if (from !== undefined && to !== undefined) {
@@ -131,19 +140,20 @@ function createTokenDecorations(
       const modifierClasses = tokenModifiers
         .map((mod) => `cm-semanticToken-${tokenType}-${mod}`)
         .join(" ");
-        
-      const classString = tokenClass + (modifierClasses ? ` ${modifierClasses}` : '');
-      
+
+      const classString =
+        tokenClass + (modifierClasses ? ` ${modifierClasses}` : "");
+
       const decoration = Decoration.mark({
         class: classString,
       });
 
       decorations.push(decoration.range(from, to));
     }
-    
+
     // Update variables for next iteration at the end of the loop
-    previousLine = currentLine;
-    previousStartChar = currentStartChar;
+    previousLine = line;
+    previousStartChar = startChar;
   }
 
   // Variables are updated within the loop
@@ -176,11 +186,16 @@ export async function requestSemanticTokens(
       // If we have a lastResultId, try to request delta
       if (
         lastResultId &&
-        client.capabilities?.semanticTokensProvider?.full?.delta
+        client.languageServerClient.capabilities?.semanticTokensProvider
+          ?.full &&
+        typeof client.languageServerClient.capabilities.semanticTokensProvider
+          .full === "object" &&
+        client.languageServerClient.capabilities.semanticTokensProvider.full
+          .delta
       ) {
         try {
           // Request semantic tokens delta
-          const delta = await client.request(
+          const delta = await client.rpcClient.request(
             {
               method: "textDocument/semanticTokens/full/delta",
               params: {
@@ -188,7 +203,7 @@ export async function requestSemanticTokens(
                 previousResultId: lastResultId,
               },
             },
-            timeout
+            typeof timeout === "number" ? timeout : 30000
           );
 
           // If we get delta with edits, process accordingly
@@ -197,7 +212,7 @@ export async function requestSemanticTokens(
             // For simplicity, we'll request full tokens instead
             // Delta tokens received, requesting full tokens instead
             result = await requestFullSemanticTokens(
-              client,
+              client.rpcClient,
               documentUri,
               timeout
             );
@@ -208,22 +223,34 @@ export async function requestSemanticTokens(
           console.error("Error requesting semantic tokens delta:", error);
           // Fall back to full request on error
           result = await requestFullSemanticTokens(
-            client,
+            client.rpcClient,
             documentUri,
-            timeout
+            typeof timeout === "number" ? timeout : 30000
           );
         }
       } else {
         // Request full semantic tokens
-        result = await requestFullSemanticTokens(client, documentUri, timeout);
+        result = await requestFullSemanticTokens(
+          client.rpcClient,
+          documentUri,
+          timeout
+        );
       }
 
       // Apply tokens to editor
       if (result) {
         // Get capabilities using the getter function to avoid race conditions
-        const { getCapabilities } = view.state.facet(lsContextFacet);
+        const { getCapabilities, documentUri } =
+          view.state.facet(lsContextFacet);
         const capabilities = getCapabilities();
-        
+
+        console.log("[SemanticTokens] Received tokens", {
+          tokenCount: result.data?.length / 5 || 0,
+          resultId: result.resultId,
+          documentUri,
+          lastResultId,
+        });
+
         // Use the capabilities from the getter instead of directly from client.capabilities
         const legend = capabilities?.semanticTokensProvider?.legend;
         if (legend) {
@@ -237,17 +264,44 @@ export async function requestSemanticTokens(
           // Create a complete fallback legend using the same token types we declare in capabilities
           const fallbackLegend: LSP.SemanticTokensLegend = {
             tokenTypes: [
-              "namespace", "type", "class", "enum", "interface", "struct",
-              "typeParameter", "parameter", "variable", "property", "enumMember",
-              "event", "function", "method", "macro", "keyword", "modifier",
-              "comment", "string", "number", "regexp", "operator", "decorator"
+              "namespace",
+              "type",
+              "class",
+              "enum",
+              "interface",
+              "struct",
+              "typeParameter",
+              "parameter",
+              "variable",
+              "property",
+              "enumMember",
+              "event",
+              "function",
+              "method",
+              "macro",
+              "keyword",
+              "modifier",
+              "comment",
+              "string",
+              "number",
+              "regexp",
+              "operator",
+              "decorator",
             ],
             tokenModifiers: [
-              "declaration", "definition", "readonly", "static", "deprecated",
-              "abstract", "async", "modification", "documentation", "defaultLibrary"
-            ]
+              "declaration",
+              "definition",
+              "readonly",
+              "static",
+              "deprecated",
+              "abstract",
+              "async",
+              "modification",
+              "documentation",
+              "defaultLibrary",
+            ],
           };
-          
+
           view.dispatch({
             effects: addSemanticTokens.of({
               tokens: result,
@@ -271,9 +325,9 @@ export async function requestSemanticTokens(
  * Request full semantic tokens from the language server
  */
 async function requestFullSemanticTokens(
-  client: any,
+  client: Client,
   documentUri: string,
-  timeout: number
+  timeout: number | NodeJS.Timeout
 ): Promise<LSP.SemanticTokens | null> {
   return await client.request(
     {
@@ -282,49 +336,130 @@ async function requestFullSemanticTokens(
         textDocument: { uri: documentUri },
       },
     },
-    timeout
+    typeof timeout === "number" ? timeout : 30000
   );
 }
 
 /**
- * Create an extension for semantic tokens
+ * Interface for semantic token theme options
  */
-export function semanticTokens(): Extension {
+export interface SemanticTokensThemeOptions {
+  // Token type styles with token names as keys
+  tokenTypes?: Record<string, Partial<CSSStyleDeclaration>>;
+  // Token modifier styles with modifier names as keys
+  modifiers?: Record<string, Partial<CSSStyleDeclaration>>;
+}
+
+/**
+ * Default token type styles
+ */
+const defaultTokenTypeStyles: Record<string, Partial<CSSStyleDeclaration>> = {
+  // Types
+  type: { color: "#4EC9B0" },
+  class: { color: "#4EC9B0" },
+  enum: { color: "#4EC9B0" },
+  interface: { color: "#4EC9B0" },
+  struct: { color: "#4EC9B0" },
+  typeParameter: { color: "#4EC9B0" },
+  // Variables
+  parameter: { color: "#9CDCFE" },
+  variable: { color: "#9CDCFE" },
+  property: { color: "#9CDCFE" },
+  enumMember: { color: "#9CDCFE" },
+  // Functions
+  decorator: { color: "#DCDCAA" },
+  event: { color: "#DCDCAA" },
+  function: { color: "#DCDCAA" },
+  method: { color: "#DCDCAA" },
+  macro: { color: "#DCDCAA" },
+  // Others
+  label: { color: "#C8C8C8" },
+  comment: { color: "#6A9955" },
+  string: { color: "#CE9178" },
+  keyword: { color: "#569CD6" },
+  number: { color: "#B5CEA8" },
+  regexp: { color: "#D16969" },
+  operator: { color: "#D4D4D4" },
+  namespace: { color: "#D4D4D4" },
+};
+
+/**
+ * Default token modifier styles
+ */
+const defaultModifierStyles: Record<string, Partial<CSSStyleDeclaration>> = {
+  static: { fontStyle: "italic" },
+  declaration: { textDecoration: "underline" },
+  deprecated: { textDecoration: "line-through" },
+  readonly: { fontStyle: "italic" },
+};
+
+/**
+ * Create an extension for semantic tokens with configurable styling
+ */
+export function semanticTokens(
+  options?: SemanticTokensThemeOptions
+): Extension {
+  // Merge default styles with provided options
+  const tokenTypeStyles = {
+    ...defaultTokenTypeStyles,
+    ...(options?.tokenTypes || {}),
+  };
+  const modifierStyles = {
+    ...defaultModifierStyles,
+    ...(options?.modifiers || {}),
+  };
+
+  // Create theme styles object
+  const themeStyles: Record<string, Partial<CSSStyleDeclaration>> = {};
+
+  // Add token type styles
+  Object.entries(tokenTypeStyles).forEach(([type, style]) => {
+    themeStyles[`.cm-semanticToken-${type}`] = style;
+  });
+
+  // Add modifier styles
+  Object.entries(modifierStyles).forEach(([modifier, style]) => {
+    themeStyles[`.cm-semanticToken-*-${modifier}`] = style;
+  });
+
   return [
     semanticTokensField,
     semanticTokensTimerField,
-    // Add CSS for semantic token styling
-    EditorView.theme({
-      // Modify these classes to match your color theme
-      ".cm-semanticToken-type": { color: "#4EC9B0" },
-      ".cm-semanticToken-class": { color: "#4EC9B0" },
-      ".cm-semanticToken-enum": { color: "#4EC9B0" },
-      ".cm-semanticToken-interface": { color: "#4EC9B0" },
-      ".cm-semanticToken-struct": { color: "#4EC9B0" },
-      ".cm-semanticToken-typeParameter": { color: "#4EC9B0" },
-      ".cm-semanticToken-parameter": { color: "#9CDCFE" },
-      ".cm-semanticToken-variable": { color: "#9CDCFE" },
-      ".cm-semanticToken-property": { color: "#9CDCFE" },
-      ".cm-semanticToken-enumMember": { color: "#9CDCFE" },
-      ".cm-semanticToken-decorator": { color: "#DCDCAA" },
-      ".cm-semanticToken-event": { color: "#DCDCAA" },
-      ".cm-semanticToken-function": { color: "#DCDCAA" },
-      ".cm-semanticToken-method": { color: "#DCDCAA" },
-      ".cm-semanticToken-macro": { color: "#DCDCAA" },
-      ".cm-semanticToken-label": { color: "#C8C8C8" },
-      ".cm-semanticToken-comment": { color: "#6A9955" },
-      ".cm-semanticToken-string": { color: "#CE9178" },
-      ".cm-semanticToken-keyword": { color: "#569CD6" },
-      ".cm-semanticToken-number": { color: "#B5CEA8" },
-      ".cm-semanticToken-regexp": { color: "#D16969" },
-      ".cm-semanticToken-operator": { color: "#D4D4D4" },
-      ".cm-semanticToken-namespace": { color: "#D4D4D4" },
 
-      // Modifiers - updated to use hyphen instead of dot for modifier names
-      ".cm-semanticToken-*-static": { fontStyle: "italic" },
-      ".cm-semanticToken-*-declaration": { textDecoration: "underline" },
-      ".cm-semanticToken-*-deprecated": { textDecoration: "line-through" },
-      ".cm-semanticToken-*-readonly": { fontStyle: "italic" },
+    // Add CSS for semantic token styling with configurable options
+    // @ts-expect-error not sure how to type this
+    EditorView.theme(themeStyles),
+
+    // Automatically request semantic tokens on initialization
+    ViewPlugin.fromClass(
+      class {
+        constructor(view: EditorView) {
+          const context = view.state.facet(lsContextFacet);
+          context.client.onReady(() => {
+            requestSemanticTokens(view);
+          });
+        }
+      }
+    ),
+
+    // Automatically request semantic tokens on view updates and document changes
+    EditorView.updateListener.of((update) => {
+      // Request tokens on initialization and when the document changes
+      if (
+        update.docChanged ||
+        update.startState.facet(lsContextFacet) !==
+          update.state.facet(lsContextFacet)
+      ) {
+        const { getCapabilities } = update.state.facet(lsContextFacet);
+        const capabilities = getCapabilities();
+
+        // Only request tokens if semantic tokens provider is available
+        if (capabilities?.semanticTokensProvider) {
+          // Get current token resultId from the decorated tokens if available
+          const lastResultId = update.state.field(semanticTokensField).resultId;
+          requestSemanticTokens(update.view, lastResultId);
+        }
+      }
     }),
   ];
 }
