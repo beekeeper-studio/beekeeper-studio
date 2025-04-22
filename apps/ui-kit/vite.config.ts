@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       vue: "vue/dist/vue.min.js",
+      "@": resolve('./lib'),
     },
   },
   build: {
