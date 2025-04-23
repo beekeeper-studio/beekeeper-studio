@@ -380,130 +380,81 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async getTableKeys(table: string, schema?: string) {
-    // Use a CTE approach to properly handle composite keys in SQL Server
+    // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
     const sql = `
-      WITH fk_source_columns AS (
-          SELECT 
-              C.CONSTRAINT_NAME,
-              CU.COLUMN_NAME,
-              CU.ORDINAL_POSITION,
-              C.UNIQUE_CONSTRAINT_NAME,
-              COUNT(*) OVER (PARTITION BY C.CONSTRAINT_NAME) AS column_count
-          FROM 
-              INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
-          INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
-              ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
-          INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
-              ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
-          WHERE 
-              FK.TABLE_NAME = ${D.escapeString(table, true)} 
-              AND FK.TABLE_SCHEMA = ${D.escapeString(schema, true)}
-      ),
-      fk_target_columns AS (
-          SELECT 
-              C.CONSTRAINT_NAME,
-              C.UNIQUE_CONSTRAINT_NAME,
-              KCU.COLUMN_NAME,
-              KCU.ORDINAL_POSITION
-          FROM 
-              INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
-          INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU
-              ON KCU.CONSTRAINT_NAME = C.UNIQUE_CONSTRAINT_NAME
-          WHERE 
-              EXISTS (SELECT 1 FROM fk_source_columns WHERE fk_source_columns.CONSTRAINT_NAME = C.CONSTRAINT_NAME)
-      ),
-      fk_constraints AS (
-          SELECT 
-              FK.CONSTRAINT_NAME AS name,
-              FK.TABLE_SCHEMA AS from_schema,
-              FK.TABLE_NAME AS from_table,
-              PK.TABLE_SCHEMA AS to_schema,
-              PK.TABLE_NAME AS to_table,
-              C.UPDATE_RULE AS on_update,
-              C.DELETE_RULE AS on_delete,
-              FSC.column_count
-          FROM 
-              INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
-          INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
-              ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
-          INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
-              ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
-          INNER JOIN fk_source_columns FSC
-              ON FSC.CONSTRAINT_NAME = C.CONSTRAINT_NAME
-          WHERE 
-              FK.TABLE_NAME = ${D.escapeString(table, true)} 
-              AND FK.TABLE_SCHEMA = ${D.escapeString(schema, true)}
-          GROUP BY
-              FK.CONSTRAINT_NAME,
-              FK.TABLE_SCHEMA,
-              FK.TABLE_NAME,
-              PK.TABLE_SCHEMA,
-              PK.TABLE_NAME,
-              C.UPDATE_RULE,
-              C.DELETE_RULE,
-              FSC.column_count
-      ),
-      fk_source_agg AS (
-          SELECT
-              CONSTRAINT_NAME,
-              STRING_AGG(COLUMN_NAME, ',') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS from_columns
-          FROM
-              fk_source_columns
-          GROUP BY
-              CONSTRAINT_NAME
-      ),
-      fk_target_agg AS (
-          SELECT
-              UNIQUE_CONSTRAINT_NAME,
-              STRING_AGG(COLUMN_NAME, ',') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS to_columns
-          FROM
-              fk_target_columns
-          GROUP BY
-              UNIQUE_CONSTRAINT_NAME
-      )
-      SELECT
-          FC.name,
-          FC.from_schema,
-          FC.from_table,
-          FC.to_schema,
-          FC.to_table,
-          FC.on_update,
-          FC.on_delete,
-          FC.column_count,
-          SRC.from_columns,
-          TGT.to_columns
-      FROM
-          fk_constraints FC
-      JOIN fk_source_agg SRC ON FC.name = SRC.CONSTRAINT_NAME
-      JOIN fk_target_agg TGT ON FC.name = FK_target_columns.CONSTRAINT_NAME
+      SELECT 
+        fk.CONSTRAINT_NAME,
+        fk.TABLE_SCHEMA AS from_schema,
+        fk.TABLE_NAME AS from_table,
+        fkc.COLUMN_NAME AS from_column,
+        fkc.ORDINAL_POSITION AS ordinal_position,
+        pk.TABLE_SCHEMA AS to_schema,
+        pk.TABLE_NAME AS to_table,
+        pkc.COLUMN_NAME AS to_column,
+        rc.UPDATE_RULE AS on_update,
+        rc.DELETE_RULE AS on_delete
+      FROM 
+        INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
+      JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS fk 
+        ON rc.CONSTRAINT_NAME = fk.CONSTRAINT_NAME
+      JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS pk 
+        ON rc.UNIQUE_CONSTRAINT_NAME = pk.CONSTRAINT_NAME
+      JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE fkc 
+        ON fkc.CONSTRAINT_NAME = fk.CONSTRAINT_NAME
+      JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE pkc 
+        ON pkc.CONSTRAINT_NAME = pk.CONSTRAINT_NAME
+        AND pkc.ORDINAL_POSITION = fkc.ORDINAL_POSITION
+      WHERE 
+        fk.TABLE_NAME = ${D.escapeString(table, true)} 
+        AND fk.TABLE_SCHEMA = ${D.escapeString(schema, true)}
+      ORDER BY 
+        fk.CONSTRAINT_NAME, 
+        fkc.ORDINAL_POSITION
     `;
 
     const { data } = await this.driverExecuteSingle(sql);
-
-    const result = data.recordset.map((row) => {
-      const isComposite = row.column_count > 1;
-      const fromColumns = row.from_columns.split(',');
-      const toColumns = row.to_columns.split(',');
+    
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(data.recordset, 'CONSTRAINT_NAME');
+    
+    const result = Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
       
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.CONSTRAINT_NAME,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.on_update,
+          onDelete: row.on_delete,
+          isComposite: false
+        };
+      } 
+      
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
       return {
-        constraintName: row.name,
-        toTable: row.to_table,
-        toColumn: isComposite ? row.to_columns : toColumns[0],
-        toSchema: row.to_schema,
-        fromSchema: row.from_schema,
-        fromTable: row.from_table,
-        fromColumn: isComposite ? row.from_columns : fromColumns[0],
-        onUpdate: row.on_update,
-        onDelete: row.on_delete,
-        isComposite: isComposite,
-        compositeFromColumns: isComposite ? fromColumns : undefined,
-        compositeToColumns: isComposite ? toColumns : undefined
+        constraintName: firstPart.CONSTRAINT_NAME,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.from_column),
+        onUpdate: firstPart.on_update,
+        onDelete: firstPart.on_delete,
+        isComposite: true
       };
     });
     
     this.logger().debug("tableKeys result", result);
     return result;
-  }
   }
 
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string, selects = ['*']) {

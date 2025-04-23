@@ -561,17 +561,38 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
    ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
     `
     const response = await this.driverExecuteSimple(sql)
-    return response.map((row) => ({
-      fromTable: row.TABLE_NAME,
-      fromSchema: row.OWNER,
-      fromColumn: row.COLUMN_NAME,
 
-      toTable: row.R_TABLE_NAME,
-      toColumn: row.R_COLUMN,
-      toSchema: row.R_OWNER,
-      constraintName: row.CONSTRAINT_NAME,
-      onDelete: row.DELETE_RULE
-    }))
+    const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: `${row.CONSTRAINT_NAME}`,
+          toTable: row.R_TABLE_NAME,
+          toColumn: row.R_COLUMN,
+          toSchema: row.R_OWNER,
+          fromTable: row.TABLE_NAME,
+          fromSchema: row.OWNER,
+          fromColumn: row.COLUMN_NAME,
+          isComposite: false
+        }
+      }
+
+      const firstPart = keyParts[0];
+      return {
+        constraintName: `${firstPart.CONSTRAINT_NAME}`,
+        toTable: firstPart.R_TABLE_NAME,
+        toColumn: keyParts.map(p => p.R_COLUMN),
+        toSchema: firstPart.R_OWNER,
+        fromTable: firstPart.TABLE_NAME,
+        fromSchema: firstPart.OWNER,
+        fromColumn: keyParts.map(p => p.COLUMN_NAME),
+        isComposite: true
+      }
+    })
   }
 
 
