@@ -4,11 +4,9 @@ import { URI } from "vscode-uri";
 import { semanticTokens, semanticTokensCapabilities } from "./semanticTokens";
 import { formattingCapabilities, lsFormatting } from "./formatting";
 import _ from "lodash";
-import { EditorState, Extension, Facet } from "@codemirror/state";
+import { Extension, Facet } from "@codemirror/state";
 import { isFeatureEnabled } from "./utils";
 import { LanguageServerClientWrapper } from "../../LanguageServerClientWrapper";
-import { EditorView } from "@codemirror/view";
-import { getCompletionTriggerKind } from "@marimo-team/codemirror-languageserver/dist/plugin";
 
 const TIMEOUT: number = 10000;
 
@@ -85,7 +83,6 @@ export function ls(config: LanguageServerConfiguration): Extension {
     client,
     documentUri,
     timeout: TIMEOUT,
-    getCapabilities: () => client.languageServerClient.capabilities,
   };
 
   return [

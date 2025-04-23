@@ -5,9 +5,13 @@ import {
 import { Client } from "@open-rpc/client-js";
 import { RequestArguments } from "@open-rpc/client-js/build/ClientInterface";
 
+type ReadyCallback = (
+  capabilities: LanguageServerClient["capabilities"]
+) => void;
+
 export class LanguageServerClientWrapper {
   private isReady = false;
-  private callbacks: (() => void)[] = [];
+  private callbacks: ReadyCallback[] = [];
   private timeout: number;
 
   languageServerClient: LanguageServerClient;
@@ -18,14 +22,13 @@ export class LanguageServerClientWrapper {
       timeout: number;
     }
   ) {
-    this.onReady(() => {
+    this.languageServerClient = new LanguageServerClient(options);
+    this.languageServerClient.initializePromise.then(() => {
+      this.callbacks.forEach((callback) =>
+        callback(this.languageServerClient.capabilities)
+      );
       this.isReady = true;
     });
-
-    this.languageServerClient = new LanguageServerClient(options);
-    this.languageServerClient.initializePromise.then(() =>
-      this.dispatchReady()
-    );
     this.rpcClient = this.languageServerClient.client;
   }
 
@@ -48,15 +51,20 @@ export class LanguageServerClientWrapper {
     });
   }
 
-  onReady(callback: () => void) {
+  onReady(callback: ReadyCallback) {
     if (this.isReady) {
-      callback();
+      callback(this.languageServerClient.capabilities);
     } else {
       this.callbacks.push(callback);
     }
   }
 
-  private dispatchReady() {
-    this.callbacks.forEach((callback) => callback());
+  /** Warning: This can return null if the client is not ready yet. */
+  getCapabilities(): LanguageServerClient["capabilities"] | null {
+    return this.languageServerClient.capabilities;
+  }
+
+  get ready() {
+    return this.isReady;
   }
 }

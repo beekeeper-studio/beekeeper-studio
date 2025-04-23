@@ -35,7 +35,7 @@ export type Keybindings = {
 export interface TextEditorConfiguration extends ExtensionConfiguration {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
-  languageId: "plaintext" | "sql";
+  languageId: string;
   initialValue?: string;
   focus?: boolean;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);
@@ -54,6 +54,4 @@ export interface LSContext {
   client: LanguageServerClientWrapper;
   documentUri: string;
   timeout: number;
-  // Added function to get capabilities to avoid race conditions
-  getCapabilities: () => any;
 }

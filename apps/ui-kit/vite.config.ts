@@ -52,6 +52,10 @@ export default defineConfig({
           __dirname,
           "lib/components/data-editor/define.ts"
         ),
+        "text-editor": resolve(
+          __dirname,
+          "lib/components/text-editor/define.ts"
+        ),
         "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
         "vue/entity-list": resolve(
           __dirname,
@@ -64,6 +68,10 @@ export default defineConfig({
         "vue/data-editor": resolve(
           __dirname,
           "lib/components/data-editor/DataEditor.vue"
+        ),
+        "vue/text-editor": resolve(
+          __dirname,
+          "lib/components/text-editor/v2/TextEditor.vue"
         ),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },

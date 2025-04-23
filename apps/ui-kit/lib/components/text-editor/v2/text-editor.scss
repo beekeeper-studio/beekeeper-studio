@@ -4,8 +4,8 @@
 @use 'sass:color';
 
 .BksTextEditor {
-  --bks-text-editor-activeline-bg-color: #{$query-editor-bg};
-  --bks-text-editor-activeline-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.03)};
+  --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.03)};
   --bks-text-editor-atom-fg-color: #ae81ff;
   --bks-text-editor-bg-color: #{$query-editor-bg};
   --bks-text-editor-bracket-fg-color: #{$text};
@@ -27,7 +27,8 @@
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-link-fg-color: #ae81ff;
-  --bks-text-editor-matchingbracket-fg-color: #ffffff;
+  --bks-text-editor-matchingbracket-fg-color: #999977;
+  --bks-text-editor-matchingbracket-bg-color: rgba(153, 153, 119, 0.2);
   --bks-text-editor-number-fg-color: #{$brand-warning};
   --bks-text-editor-property-fg-color: #a6e22e;
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
@@ -35,25 +36,25 @@
   --bks-text-editor-tag-fg-color: #f92672;
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-variable-3-fg-color: #66d9ef;
-  --bks-text-editor-variable-fg-color: #f8f8f2;
-  --bks-text-editor-namespace-fg-color: #D4D4D4;
-  --bks-text-editor-type-fg-color: #4EC9B0;
+  --bks-text-editor-variable-fg-color: #{color.adjust($text-dark, $lightness: -10%)};
+  --bks-text-editor-namespace-fg-color: #7a7a7a;
+  --bks-text-editor-type-fg-color: #00aa66;
   --bks-text-editor-class-fg-color: #4EC9B0;
-  --bks-text-editor-enum-fg-color: #4EC9B0;
-  --bks-text-editor-interface-fg-color: #4EC9B0;
-  --bks-text-editor-struct-fg-color: #4EC9B0;
-  --bks-text-editor-typeParameter-fg-color: #4EC9B0;
-  --bks-text-editor-parameter-fg-color: #9CDCFE;
+  --bks-text-editor-enum-fg-color: #00aa77;
+  --bks-text-editor-interface-fg-color: #00cc88;
+  --bks-text-editor-struct-fg-color: #00bb99;
+  --bks-text-editor-typeParameter-fg-color: #00aaaa;
+  --bks-text-editor-parameter-fg-color: #2288dd;
   --bks-text-editor-property-fg-color: #9CDCFE;
-  --bks-text-editor-enumMember-fg-color: #9CDCFE;
-  --bks-text-editor-decorator-fg-color: #DCDCAA;
-  --bks-text-editor-event-fg-color: #DCDCAA;
-  --bks-text-editor-function-fg-color: #DCDCAA;
-  --bks-text-editor-method-fg-color: #DCDCAA;
-  --bks-text-editor-macro-fg-color: #DCDCAA;
-  --bks-text-editor-label-fg-color: #C8C8C8;
-  --bks-text-editor-regexp-fg-color: #D16969;
-  --bks-text-editor-operator-fg-color: #D4D4D4;
+  --bks-text-editor-enumMember-fg-color: #4488ff;
+  --bks-text-editor-decorator-fg-color: #cc33cc;
+  --bks-text-editor-event-fg-color: #5555ff;
+  --bks-text-editor-function-fg-color: #dcdcaa;
+  --bks-text-editor-method-fg-color: #4488ee;
+  --bks-text-editor-macro-fg-color: #8855dd;
+  --bks-text-editor-label-fg-color: #666666;
+  --bks-text-editor-regexp-fg-color: #ee5555;
+  --bks-text-editor-operator-fg-color: #d4d4d4;
   --bks-text-editor-definition-fg-color: #fd971f;
   --bks-text-editor-variableName-fg-color: #f8f8f2;
   --bks-text-editor-bool-fg-color: #ae81ff;
@@ -81,7 +82,7 @@
     color: var(--bks-text-editor-fg-color);
   }
 
-  // Semantic token styles for v2
+  // Semantic token styles for v2 - using distinct colors in 6-digit hex format
   .cm-semanticToken-namespace { color: var(--bks-text-editor-namespace-fg-color); }
   .cm-semanticToken-type { color: var(--bks-text-editor-type-fg-color); }
   .cm-semanticToken-class { color: var(--bks-text-editor-class-fg-color); }
@@ -139,8 +140,9 @@
   .cm-special-string { color: var(--bks-text-editor-special-string-fg-color); }
 
   // Selection
-  .cm-selectionBackground {
-    background-color: var(--bks-text-editor-selected-bg-color) !important;
+  .cm-selectionBackground,
+  .cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+    background-color: var(--bks-text-editor-selected-bg-color);
   }
 
   // Gutters and line numbers
@@ -167,8 +169,9 @@
   }
 
   // Matching brackets
-  .cm-matchingBracket {
-    color: var(--bks-text-editor-matchingbracket-fg-color) !important;
+  .cm-focused .cm-matchingBracket {
+    color: var(--bks-text-editor-matchingbracket-fg-color);
+    background-color: var(--bks-text-editor-matchingbracket-bg-color);
     text-decoration: underline;
   }
 }

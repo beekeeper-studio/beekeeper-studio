@@ -240,9 +240,8 @@ export async function requestSemanticTokens(
       // Apply tokens to editor
       if (result) {
         // Get capabilities using the getter function to avoid race conditions
-        const { getCapabilities, documentUri } =
-          view.state.facet(lsContextFacet);
-        const capabilities = getCapabilities();
+        const { client } = view.state.facet(lsContextFacet);
+        const capabilities = client.getCapabilities();
 
         // Use the capabilities from the getter instead of directly from client.capabilities
         const legend = capabilities?.semanticTokensProvider?.legend;
@@ -363,15 +362,12 @@ export function semanticTokens(): Extension {
     ViewPlugin.fromClass(
       class {
         constructor(view: EditorView) {
-          const { getCapabilities, client } = view.state.facet(lsContextFacet);
-          const capabilities = getCapabilities();
-
-          // Only request tokens if semantic tokens provider is available
-          if (capabilities?.semanticTokensProvider) {
-            client.onReady(() => {
+          const { client } = view.state.facet(lsContextFacet);
+          client.onReady((capabilities) => {
+            if (capabilities.semanticTokensProvider) {
               requestSemanticTokens(view);
-            });
-          }
+            }
+          });
         }
       }
     ),
@@ -384,8 +380,8 @@ export function semanticTokens(): Extension {
         update.startState.facet(lsContextFacet) !==
           update.state.facet(lsContextFacet)
       ) {
-        const { getCapabilities } = update.state.facet(lsContextFacet);
-        const capabilities = getCapabilities();
+        const { client } = update.state.facet(lsContextFacet);
+        const capabilities = client.getCapabilities();
 
         // Only request tokens if semantic tokens provider is available
         if (capabilities?.semanticTokensProvider) {
