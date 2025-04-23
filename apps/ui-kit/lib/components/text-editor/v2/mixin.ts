@@ -105,6 +105,15 @@ export default {
         onValueChange: (value) => {
           this.$emit("bks-value-change", { value });
         },
+        onFocus: (event) => {
+          this.$emit("bks-focus", event);
+        },
+        onBlur: (event) => {
+          this.$emit("bks-blur", event);
+        },
+        onLspReady: (capabilities) => {
+          this.$emit("bks-lsp-ready", { capabilities });
+        },
         languageId: this.languageId,
         replaceExtensions: this.replaceExtensions,
         lsConfig: this.lsConfig,
@@ -121,7 +130,7 @@ export default {
 
       this.initialized?.();
 
-      this.$emit("bks-initialized");
+      this.$emit("bks-initialized", { editor: textEditor });
     },
 
     showContextMenu(event: Event) {

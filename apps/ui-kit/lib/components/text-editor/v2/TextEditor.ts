@@ -1,4 +1,4 @@
-import { EditorView, ViewUpdate } from "@codemirror/view";
+import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
 import {
   ExtensionConfiguration,
@@ -30,10 +30,13 @@ export class TextEditor {
 
   initialize(config: TextEditorConfiguration) {
     if (config.lsConfig) {
-      this.ls = ls({
-        ...config.lsConfig,
-        languageId: config.languageId,
-      });
+      this.ls = ls(
+        {
+          ...config.lsConfig,
+          languageId: config.languageId,
+        },
+        config.onLspReady
+      );
     }
 
     const state = EditorState.create({
@@ -70,6 +73,19 @@ export class TextEditor {
     if (update.docChanged) {
       const newValue = update.state.doc.toString();
       this.config.onValueChange(newValue);
+    }
+
+    // Handle focus changes
+    if (update.focusChanged) {
+      if (update.view.hasFocus) {
+        if (this.config.onFocus) {
+          this.config.onFocus({ event: new FocusEvent("focus") });
+        }
+      } else {
+        if (this.config.onBlur) {
+          this.config.onBlur({ event: new FocusEvent("blur") });
+        }
+      }
     }
   }
 
@@ -112,7 +128,12 @@ export class TextEditor {
   }
 
   getLsClient() {
-    return this.view.state.facet(lsContextFacet).client;
+    try {
+      return this.view?.state?.facet(lsContextFacet)?.client;
+    } catch (e) {
+      // Client might not be initialized yet
+      return null;
+    }
   }
 
   getLsActions() {

@@ -1,4 +1,4 @@
-import { LanguageServerConfiguration } from "../../types";
+import { ExtendedFeatureOptions, LanguageServerConfiguration } from "../../types";
 
 export function posToOffset(doc, pos) {
   if (pos.line >= doc.lines) {
@@ -15,12 +15,16 @@ export function posToOffset(doc, pos) {
   return offset;
 }
 
+const extendedFeatures: ExtendedFeatureOptions = {
+  semanticTokensEnabled: true,
+}
+
 export function isFeatureEnabled(
   config: LanguageServerConfiguration,
   feature: keyof LanguageServerConfiguration["features"]
 ) {
-  return (
-    typeof config.features?.[feature] === "undefined" ||
-    config.features?.[feature]
-  );
+  if (!config.features) {
+    return extendedFeatures[feature];
+  }
+  return config.features[feature];
 }

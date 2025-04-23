@@ -1,6 +1,6 @@
 # SQL Text Editor
 
-The Text Editor that is specialized for SQL queries.
+The Text Editor that is specialized for SQL queries. It extends the [Text Editor](./text-editor.md) component and inherits all of its properties, events, and functionality including Language Server Protocol support.
 
 ![SQL Text Editor](./assets/images/sql-text-editor.png)
 
@@ -109,13 +109,21 @@ You can customize the appearance of the SQL Text Editor by overriding the CSS va
 }
 ```
 
+## Language Server Protocol Support
+
+As SQL Text Editor inherits from Text Editor, it also supports the Language Server Protocol (LSP). This enables advanced features like SQL-specific autocompletion, diagnostics, and formatting.
+
+For detailed information on how to configure and use Language Server Protocol support, see the [Language Server Protocol documentation](./language-server-protocol.md).
+
 ## API
 
 See the API reference below for more details.
 
 - [SQL Text Editor API][sql-text-editor-api]
+- [Text Editor API][text-editor-api] (inherited properties and methods)
 - [Entity API][entity-api]
 
 [sql-text-editor-api]: ./api/sql-text-editor.md
+[text-editor-api]: ./api/text-editor.md
 [entity-api]: ./api/entity.md
 [context-menu]: ./context-menu.md

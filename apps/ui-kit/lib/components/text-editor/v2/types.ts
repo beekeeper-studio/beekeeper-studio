@@ -36,6 +36,9 @@ export type Keybindings = {
 export interface TextEditorConfiguration extends ExtensionConfiguration {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
+  onFocus?: (event: { event: FocusEvent }) => void;
+  onBlur?: (event: { event: FocusEvent }) => void;
+  onLspReady?: (capabilities: object) => void;
   languageId: string;
   initialValue?: string;
   focus?: boolean;

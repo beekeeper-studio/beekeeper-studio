@@ -7,6 +7,7 @@ import _ from "lodash";
 import { Extension, Facet } from "@codemirror/state";
 import { isFeatureEnabled } from "./utils";
 import { LanguageServerClientWrapper } from "../../LanguageServerClientWrapper";
+import { EditorView, ViewPlugin } from "@codemirror/view";
 
 const TIMEOUT: number = 10000;
 
@@ -14,7 +15,10 @@ export const lsContextFacet = Facet.define<LSContext, LSContext>({
   combine: (values) => values[0],
 });
 
-export function ls(config: LanguageServerConfiguration): Extension {
+export function ls(
+  config: LanguageServerConfiguration,
+  onReady?: (capabilities: object) => void
+): Extension {
   const rootUri = URI.file(config.rootUri).toString();
   const documentUri = URI.file(config.documentUri).toString();
   const timeout = config.timeout ?? TIMEOUT;
@@ -86,7 +90,7 @@ export function ls(config: LanguageServerConfiguration): Extension {
     timeout,
   };
 
-  return [
+  const extensions = [
     // Extensions of the main language server extension. The order is important!
     lsContextFacet.of(clientContext),
     lsFormatting(),
@@ -95,4 +99,21 @@ export function ls(config: LanguageServerConfiguration): Extension {
     // Main language server extension
     lsExtension,
   ];
+
+  if (onReady) {
+    extensions.push(
+      ViewPlugin.fromClass(
+        class {
+          constructor(view: EditorView) {
+            const { client } = view.state.facet(lsContextFacet);
+            client.onReady((capabilities) => {
+              onReady(capabilities);
+            });
+          }
+        }
+      )
+    );
+  }
+
+  return extensions;
 }

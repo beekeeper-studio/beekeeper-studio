@@ -1,0 +1,39 @@
+import '@beekeeperstudio/ui-kit/style.css';
+import '@beekeeperstudio/ui-kit';
+import { getEntities } from "./data.js";
+
+document.addEventListener('DOMContentLoaded', () => {
+  const entities = getEntities();
+  const textEditor = document.querySelector("bks-sql-text-editor");
+  const table = document.querySelector("bks-table");
+  const entityList = document.querySelector("bks-entity-list");
+  const dataEditor = document.querySelector("bks-data-editor");
+
+  textEditor.value = "select * from users u\nwhere u.id = 1;";
+  textEditor.entities = entities;
+
+  table.columns = entities[0].columns;
+  table.data = entities[0].data;
+  console.log(table)
+
+  entityList.entities = entities;
+  entityList.addEventListener("bks-entity-dblclick", (e) => {
+    const idx = entities.findIndex((t) => t === e.detail.entity);
+    if (idx > -1) {
+      table.data = entities[idx].data;
+      table.columns = entities[idx].columns;
+    }
+  });
+
+  dataEditor.entities = entities;
+  dataEditor.addEventListener("bks-query-submit", (event) => {
+    dataEditor.setTable({
+      name: "result",
+      columns: [
+        { field: "id", dataType: "integer" },
+        { field: "name", dataType: "string" },
+      ],
+      data: [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }],
+    });
+  });
+});
