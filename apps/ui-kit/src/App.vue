@@ -113,7 +113,6 @@ console.log(sum(1, 2));`,
       this.value = detail.value;
     },
     async columnsGetter(tableName) {
-      console.log("columnsGetter", tableName);
       function wait(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
       }
@@ -121,10 +120,7 @@ console.log(sum(1, 2));`,
       return ["id", "name", "email", "password"];
     },
     requestColumns(detail) {
-      console.log("requestColumns", detail);
-      // console.trace("requestColumns", detail)
       if (detail.entity.name === "users" && _.isEmpty(detail.entity.columns)) {
-        console.log("push baby");
         this.entities[0].columns.push(
           { field: "id" },
           { field: "name" },
