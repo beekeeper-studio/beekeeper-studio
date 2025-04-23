@@ -536,6 +536,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       a.table_name,
       a.column_name,
       a.constraint_name,
+      a.position,
       c.owner,
       c.delete_rule,
        -- referenced
@@ -543,7 +544,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       c_pk.table_name as R_TABLE_NAME,
       c_pk.constraint_name as R_PK,
       c_pk.owner as R_OWNER,
-      r_a.COLUMN_NAME as R_COLUMN
+      r_a.COLUMN_NAME as R_COLUMN,
+      r_a.position as R_POSITION
   -- constraint columns
   FROM all_cons_columns a
   -- constraint info for those columns
@@ -559,39 +561,50 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   AND c_pk.constraint_type = 'P'
    AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
    ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+  ORDER BY 
+    a.constraint_name,
+    a.position
     `
     const response = await this.driverExecuteSimple(sql)
-
+    
+    // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
-
+    
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
+      
+      // Sort key parts by position to ensure correct column order
+      const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
+      
+      // If there's only one part, return a simple key (backward compatibility)
+      if (sortedKeyParts.length === 1) {
+        const row = sortedKeyParts[0];
         return {
-          constraintName: `${row.CONSTRAINT_NAME}`,
+          constraintName: row.CONSTRAINT_NAME,
           toTable: row.R_TABLE_NAME,
-          toColumn: row.R_COLUMN,
           toSchema: row.R_OWNER,
+          toColumn: row.R_COLUMN,
           fromTable: row.TABLE_NAME,
           fromSchema: row.OWNER,
           fromColumn: row.COLUMN_NAME,
+          onDelete: row.DELETE_RULE,
           isComposite: false
-        }
-      }
-
-      const firstPart = keyParts[0];
+        };
+      } 
+      
+      // If there are multiple parts, it's a composite key
+      const firstPart = sortedKeyParts[0];
       return {
-        constraintName: `${firstPart.CONSTRAINT_NAME}`,
+        constraintName: firstPart.CONSTRAINT_NAME,
         toTable: firstPart.R_TABLE_NAME,
-        toColumn: keyParts.map(p => p.R_COLUMN),
         toSchema: firstPart.R_OWNER,
+        toColumn: _.uniq(sortedKeyParts.map(p => p.R_COLUMN)),
         fromTable: firstPart.TABLE_NAME,
         fromSchema: firstPart.OWNER,
-        fromColumn: keyParts.map(p => p.COLUMN_NAME),
+        fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
+        onDelete: firstPart.DELETE_RULE,
         isComposite: true
-      }
+      };
     })
   }
 

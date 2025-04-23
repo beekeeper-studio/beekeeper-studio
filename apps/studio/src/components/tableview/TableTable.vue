@@ -815,7 +815,7 @@ export default Vue.extend({
               // Format regular key
               return `${item.toTable}(${item.toColumn})`;
             }
-          }).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
+          }).join(', ').replace(/\), (?![\s\S]*\), )/, '), or ')}`)
         }
       } else if (isPK) {
         headerTooltip += ' [Primary Key]'
