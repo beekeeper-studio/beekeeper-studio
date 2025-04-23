@@ -13,8 +13,9 @@ import {
 } from "../../context-menu";
 import { format } from "sql-formatter";
 import ProxyEmit from "../../mixins/ProxyEmit";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
   mixins: [mixin, ProxyEmit],
 
   props,
@@ -77,5 +78,5 @@ export default {
   mounted() {
     this.internalContextMenuItems = this.contextMenuItemsModifier;
   },
-};
+});
 </script>

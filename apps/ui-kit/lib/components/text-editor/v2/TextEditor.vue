@@ -5,8 +5,9 @@
 
 <script lang="ts">
 import mixin from "./mixin";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
   mixins: [mixin],
-};
+});
 </script>
