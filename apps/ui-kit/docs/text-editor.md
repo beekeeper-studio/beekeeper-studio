@@ -2,6 +2,8 @@
 
 A general-purpose text editor with language server protocol (LSP) support.
 
+> **Note:** The text editor component is being upgraded to support LSP integration. Properties marked with ⚠️ are not yet implemented.
+
 ## Basic Usage
 
 ```html
