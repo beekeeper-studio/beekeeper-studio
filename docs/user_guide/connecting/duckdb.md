@@ -1,6 +1,7 @@
 ---
 title: DuckDB
 summary: "Connect to a DuckDB database by double clicking, from the command line, or from the app."
+icon: simple/duckdb
 ---
 
 Connecting to a DuckDB database from the app is straightforward. Simply select DuckDB from the dropdown, choose your DuckDB file, and click `connect`.
