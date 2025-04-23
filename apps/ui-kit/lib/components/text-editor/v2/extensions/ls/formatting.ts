@@ -99,7 +99,7 @@ export async function formatDocumentRange(
 
       // Apply the edits if we got them
       if (edits && edits.length > 0) {
-        this.applyEdits(edits);
+        applyEdits(view, edits);
       }
     } catch (error) {
       console.error("Error formatting document range:", error);
@@ -114,7 +114,7 @@ export async function formatDocumentRange(
  * Apply text edits to the editor
  */
 function applyEdits(view: EditorView, edits: LSP.TextEdit[]) {
-  if (!this.view || !edits || edits.length === 0) return;
+  if (!view || !edits || edits.length === 0) return;
 
   const changes = edits
     .map((edit) => {

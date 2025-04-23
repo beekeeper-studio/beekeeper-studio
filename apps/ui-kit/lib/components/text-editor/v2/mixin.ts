@@ -54,6 +54,15 @@ export default {
   },
 
   methods: {
+    // Exposed to custom element as `.ls()`
+    ls() {
+      const textEditor: TextEditor = this.textEditor;
+      return {
+        getClient: () => textEditor.getLsClient(),
+        ...textEditor.getLsActions(),
+      };
+    },
+
     applyValue() {
       if (this.value !== this.textEditor.getValue()) {
         this.textEditor.setValue(this.value);
@@ -111,6 +120,8 @@ export default {
       this.textEditor = textEditor;
 
       this.initialized?.();
+
+      this.$emit("bks-initialized");
     },
 
     showContextMenu(event: Event) {
@@ -237,10 +248,6 @@ export default {
       );
       openMenu({ event, options: items });
     },
-
-    getLSClient() {
-      return this.textEditor.getLsClient();
-    }
   },
 
   mounted() {

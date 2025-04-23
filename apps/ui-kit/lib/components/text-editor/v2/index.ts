@@ -1,4 +1,8 @@
-import TextEditor from "./TextEditor.vue";
+import Vue from "vue";
+import wrap from "@vue/web-component-wrapper";
+import Component from "./TextEditor.vue";
 
-export { TextEditor };
-export * from "./types";
+export const TextEditor = wrap(Vue, Component, {
+  disableShadowDom: true,
+  exposeMethods: ["ls"],
+}) as unknown as CustomElementConstructor;

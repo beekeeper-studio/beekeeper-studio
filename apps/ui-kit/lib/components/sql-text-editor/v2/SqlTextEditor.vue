@@ -12,9 +12,10 @@ import {
   InternalContextItem,
 } from "../../context-menu";
 import { format } from "sql-formatter";
+import ProxyEmit from "../../mixins/ProxyEmit";
 
 export default {
-  mixins: [mixin],
+  mixins: [mixin, ProxyEmit],
 
   props,
 

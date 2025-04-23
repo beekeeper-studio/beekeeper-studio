@@ -17,6 +17,7 @@ export const lsContextFacet = Facet.define<LSContext, LSContext>({
 export function ls(config: LanguageServerConfiguration): Extension {
   const rootUri = URI.file(config.rootUri).toString();
   const documentUri = URI.file(config.documentUri).toString();
+  const timeout = config.timeout ?? TIMEOUT;
 
   let transport: WebSocketTransport;
   if (_.has(config.transport, "wsUri")) {
@@ -61,7 +62,7 @@ export function ls(config: LanguageServerConfiguration): Extension {
       }
       return capabilities;
     },
-    timeout: TIMEOUT,
+    timeout,
   });
 
   const features = _.omit(config.features, ["semanticTokensEnabled"]);
@@ -82,7 +83,7 @@ export function ls(config: LanguageServerConfiguration): Extension {
   const clientContext: LSContext = {
     client,
     documentUri,
-    timeout: TIMEOUT,
+    timeout,
   };
 
   return [

@@ -107,10 +107,10 @@
   .cm-semanticToken-decorator { color: var(--bks-text-editor-decorator-fg-color); }
 
   // Token modifiers
-  .cm-semanticToken-*-static { font-style: italic; }
-  .cm-semanticToken-*-declaration { text-decoration: underline; }
-  .cm-semanticToken-*-deprecated { text-decoration: line-through; }
-  .cm-semanticToken-*-readonly { font-style: italic; }
+  [class*="cm-semanticToken-"][class*="-static"] { font-style: italic; }
+  [class*="cm-semanticToken-"][class*="-declaration"] { text-decoration: underline; }
+  [class*="cm-semanticToken-"][class*="-deprecated"] { text-decoration: line-through; }
+  [class*="cm-semanticToken-"][class*="-readonly"] { font-style: italic; }
 
   // CodeMirror 6 basic syntax highlighting classes
   .cm-keyword { color: var(--bks-text-editor-keyword-fg-color); }

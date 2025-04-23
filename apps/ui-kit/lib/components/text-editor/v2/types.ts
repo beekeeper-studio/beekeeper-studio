@@ -17,8 +17,9 @@ export interface LanguageServerConfiguration {
   documentUri: string;
   /** The language id of the current document. For example, `sql` */
   languageId?: string;
-
   features?: ExtendedFeatureOptions;
+  /** The timeout for requests to the language server. Defaults to 10000ms. */
+  timeout?: number;
 }
 
 export interface ExtendedFeatureOptions extends FeatureOptions {
