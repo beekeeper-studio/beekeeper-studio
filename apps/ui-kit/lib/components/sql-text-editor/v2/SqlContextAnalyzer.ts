@@ -132,6 +132,9 @@ export class SqlContextAnalyzer {
    * Request columns for a specific table
    */
   private async requestColumns(tableName: string): Promise<string[]> {
+    if (!this.columnsGetter) {
+      return [];
+    }
     const entity = this.entities.find((e) => e.name === tableName);
     if (entity) {
       return await this.columnsGetter(entity);

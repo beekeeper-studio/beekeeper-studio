@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   table.columns = entities[0].columns;
   table.data = entities[0].data;
-  console.log(table)
 
   entityList.entities = entities;
   entityList.addEventListener("bks-entity-dblclick", (e) => {

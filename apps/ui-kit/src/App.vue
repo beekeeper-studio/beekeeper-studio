@@ -144,7 +144,7 @@ console.log(sum(1, 2));`,
   },
 
   mounted() {
-    window.lsClient = this.$refs.textEditor.getLsActions()
+    window.ls = this.$refs.textEditor.ls()
   },
 };
 </script>
