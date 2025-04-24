@@ -39,7 +39,13 @@ export default function BksTextEditor() {
         "bks-value-change",
         handleUpdateValue
       );
-      textEditorRef.current.vueComponent.$destroy()
+      textEditorRef.current.removeEventListener(
+        "bks-initialized",
+        handleInitialized
+      );
+      if (textEditorRef.current.vueComponent) {
+        textEditorRef.current.vueComponent.$destroy();
+      }
       if (containerRef.current) {
         containerRef.current.removeChild(textEditorRef.current);
       }
