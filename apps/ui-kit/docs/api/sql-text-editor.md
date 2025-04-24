@@ -1,6 +1,8 @@
 # SQL Text Editor API
 
-## Properties
+This component inherits all properties, events, and methods from the [Text Editor API](./text-editor.md), including Language Server Protocol support. Below are the SQL-specific properties and events in addition to those inherited.
+
+## SQL-Specific Properties
 
 | Name                | Type                                                      | Description                                                                                                                                                                                                                                                                  | Default      |
 | ------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
@@ -27,12 +29,21 @@
 | `hint`              | `string`                                                  | The hint option to use for autocompletion.                                                                                                                                                                                                                                   | `'sql'`      |
 | `clipboard`         | `Clipboard`                                               | Custom clipboard handler for the editor used in vim. If provided, it must implement a `write` method to copy text to the clipboard. See [MDN Clipboard API](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard) for more details. |
 
-## Events
+## SQL-Specific Events
+
+In addition to the events inherited from the Text Editor, the SQL Text Editor provides:
 
 | Name                         | Description                                      | Event Detail                                                   |
 | ---------------------------- | ------------------------------------------------ | -------------------------------------------------------------- |
-| `bks-value-change`           | Emitted when the SQL query is changed.           | `{ value: string }`                                            |
-| `bks-initialized`            | Emitted when the SQL text editor is initialized. | `{ codemirror: CodeMirror }`                                   |
-| `bks-focus`                  | Emitted when the SQL text editor is focused.     | `{ event: FocusEvent }`                                        |
-| `bks-blur`                   | Emitted when the SQL text editor is blurred.     | `{ event: FocusEvent }`                                        |
 | `bks-query-selection-change` | Emitted when the query selection is changed.     | `{ selectedQuery: IdentifyResult, queries: IdentifyResult[] }` |
+
+## Language Server Protocol Integration
+
+The SQL Text Editor can be configured to use a SQL language server through the Language Server Protocol. This provides features like:
+
+- SQL syntax validation
+- SQL formatting
+- Schema-aware autocompletion
+- SQL query diagnostics
+
+See [Language Server Protocol Support](../language-server-protocol.md) for configuration details.
