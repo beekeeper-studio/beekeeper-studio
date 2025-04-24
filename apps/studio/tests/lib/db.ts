@@ -1835,7 +1835,7 @@ export class DBTestUtil {
     }
 
     // Test composite foreign keys functionality
-    const tableKeys = await this.connection.getTableKeys('composite_child');
+    const tableKeys = await this.connection.getTableKeys('composite_child', this.defaultSchema);
 
     // Check that we have composite keys
     const compositeKey = tableKeys.find(key => key.isComposite === true);

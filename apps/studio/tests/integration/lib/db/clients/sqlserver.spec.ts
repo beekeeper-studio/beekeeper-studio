@@ -165,6 +165,18 @@ function testWith(dockerTag: string, readonly: boolean) {
         // Verify no cross-schema references
         expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
         expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
+        
+        // Clean up created schemas and tables (in reverse order of creation)
+        try {
+          await util.knex.raw(`DROP TABLE schema_test_1.child`);
+          await util.knex.raw(`DROP TABLE schema_test_2.child`);
+          await util.knex.raw(`DROP TABLE schema_test_1.parent`);
+          await util.knex.raw(`DROP TABLE schema_test_2.parent`);
+          await util.knex.raw(`DROP SCHEMA schema_test_1`);
+          await util.knex.raw(`DROP SCHEMA schema_test_2`);
+        } catch (e) {
+          console.warn('Failed to clean up schema test objects:', e);
+        }
       })
     })
 

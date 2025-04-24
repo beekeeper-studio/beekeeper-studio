@@ -382,40 +382,48 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   async getTableKeys(table: string, schema?: string) {
     // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
     const sql = `
-      SELECT 
-        fk.CONSTRAINT_NAME,
-        fk.TABLE_SCHEMA AS from_schema,
-        fk.TABLE_NAME AS from_table,
-        fkc.COLUMN_NAME AS from_column,
-        fkc.ORDINAL_POSITION AS ordinal_position,
-        pk.TABLE_SCHEMA AS to_schema,
-        pk.TABLE_NAME AS to_table,
-        pkc.COLUMN_NAME AS to_column,
-        rc.UPDATE_RULE AS on_update,
-        rc.DELETE_RULE AS on_delete
-      FROM 
-        INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
-      JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS fk 
-        ON rc.CONSTRAINT_NAME = fk.CONSTRAINT_NAME
-      JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS pk 
-        ON rc.UNIQUE_CONSTRAINT_NAME = pk.CONSTRAINT_NAME
-      JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE fkc 
-        ON fkc.CONSTRAINT_NAME = fk.CONSTRAINT_NAME
-      JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE pkc 
-        ON pkc.CONSTRAINT_NAME = pk.CONSTRAINT_NAME
-        AND pkc.ORDINAL_POSITION = fkc.ORDINAL_POSITION
-      WHERE 
-        fk.TABLE_NAME = ${D.escapeString(table, true)} 
-        AND fk.TABLE_SCHEMA = ${D.escapeString(schema, true)}
-      ORDER BY 
-        fk.CONSTRAINT_NAME, 
-        fkc.ORDINAL_POSITION
+      SELECT
+        name = FK.CONSTRAINT_NAME,
+        from_schema = PK.TABLE_SCHEMA,
+        from_table = FK.TABLE_NAME,
+        from_column = CU.COLUMN_NAME,
+        to_schema = PK.TABLE_SCHEMA,
+        to_table = PK.TABLE_NAME,
+        to_column = PT.COLUMN_NAME,
+        constraint_name = C.CONSTRAINT_NAME,
+        on_update = C.UPDATE_RULE,
+        on_delete = C.DELETE_RULE,
+        CU.ORDINAL_POSITION as ordinal_position
+      FROM
+          INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
+      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
+          ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
+      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
+          ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
+      INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
+          ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
+      INNER JOIN (
+                  SELECT
+                      i1.TABLE_NAME,
+                      i2.COLUMN_NAME
+                  FROM
+                      INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
+                  INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
+                      ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
+                  WHERE
+                      i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                ) PT
+          ON PT.TABLE_NAME = PK.TABLE_NAME
+      WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA =${this.wrapValue(schema)}
+      ORDER BY
+        FK.CONSTRAINT_NAME,
+        CU.ORDINAL_POSITION
     `;
 
     const { data } = await this.driverExecuteSingle(sql);
     
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(data.recordset, 'CONSTRAINT_NAME');
+    const groupedKeys = _.groupBy(data.recordset, 'name');
     
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
@@ -424,7 +432,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       if (keyParts.length === 1) {
         const row = keyParts[0];
         return {
-          constraintName: row.CONSTRAINT_NAME,
+          constraintName: row.name,
           toTable: row.to_table,
           toSchema: row.to_schema,
           toColumn: row.to_column,
@@ -437,10 +445,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         };
       } 
       
-      // If there are multiple parts, it's a composite key
+      // If there are multiple parts, it's a composite mekey
       const firstPart = keyParts[0];
       return {
-        constraintName: firstPart.CONSTRAINT_NAME,
+        constraintName: firstPart.name,
         toTable: firstPart.to_table,
         toSchema: firstPart.to_schema,
         toColumn: keyParts.map(p => p.to_column),
