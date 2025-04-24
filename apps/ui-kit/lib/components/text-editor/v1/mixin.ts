@@ -22,11 +22,11 @@ import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
 import { setKeybindings, Config, extendVimOnCodeMirror } from "./vim";
-import { divider, InternalContextItem, openMenu } from "../context-menu/menu";
-import { writeClipboard, readClipboard } from "../../utils/clipboard";
-import { cmCtrlOrCmd } from "../../utils/platform"
+import { divider, InternalContextItem, openMenu } from "../../context-menu/menu";
+import { writeClipboard, readClipboard } from "../../../utils/clipboard";
+import { cmCtrlOrCmd } from "../../../utils/platform"
 import { PropType } from "vue";
-import { CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
+import { CustomMenuItems, useCustomMenuItems } from "../../context-menu/menu";
 
 const hintMap = {
   sql: CodeMirror.hint.sql,

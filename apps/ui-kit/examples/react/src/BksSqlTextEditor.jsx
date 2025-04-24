@@ -36,6 +36,7 @@ export default function BksSqlTextEditor({ entities }) {
         "bks-value-change",
         handleUpdateValue
       );
+      sqlTextEditorRef.current.vueComponent.$destroy();
       if (containerRef.current) {
         containerRef.current.removeChild(sqlTextEditorRef.current);
       }

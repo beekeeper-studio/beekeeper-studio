@@ -1,4 +1,1 @@
-import TextEditor from "./TextEditor.vue";
-
-export { TextEditor };
-export * from "./types";
+export * from "./v2";
