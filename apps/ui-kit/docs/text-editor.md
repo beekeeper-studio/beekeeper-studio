@@ -27,18 +27,7 @@ textEditor.keybindings = {
 
 ## Language Server Protocol Support
 
-The Text Editor supports the Language Server Protocol (LSP), which provides advanced code intelligence features like autocompletion, diagnostics, and more.
-
-```js
-textEditor.lsConfig = {
-  languageId: "javascript",
-  rootUri: "/path/to/project",
-  documentUri: "/path/to/project/file.js",
-  transport: {
-    wsUri: "ws://localhost:3000/lsp",
-  },
-};
-```
+For more information on how to configure and use Language Server Protocol support, see the [Language Server Protocol documentation](./language-server-protocol.md).
 
 ## Replacing Editor Extensions
 

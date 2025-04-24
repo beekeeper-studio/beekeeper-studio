@@ -27,14 +27,14 @@
 
 ### Language Server Configuration
 
-| Name              | Type                                      | Description                                                                                                                            | Default   |
-| ----------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| `languageId`      | `string`                                  | The language identifier (e.g., "javascript", "typescript", "sql").                                                                     | Required  |
-| `rootUri`         | `string`                                  | The root URI of the workspace.                                                                                                         | Required  |
-| `documentUri`     | `string`                                  | The URI of the document being edited.                                                                                                  | Required  |
-| `transport`       | `{ wsUri: string } \| WebSocketTransport` | Transport config for the language server. Can be a plain object with wsUri, or a WebSocketTransport instance from @open-rpc/client-js. | Required  |
-| `features`        | `object`                                  | Configure which LSP features to enable.                                                                                                | See below |
-| `timeout`         | `number`                                  | Timeout for LSP requests in milliseconds.                                                                                              | `10000`   |
+| Name          | Type                                      | Description                                                                                                                            | Default   |
+| ------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `languageId`  | `string`                                  | The language identifier (e.g., "javascript", "typescript", "sql").                                                                     | Required  |
+| `rootUri`     | `string`                                  | The root URI of the workspace.                                                                                                         | Required  |
+| `documentUri` | `string`                                  | The URI of the document being edited.                                                                                                  | Required  |
+| `transport`   | `{ wsUri: string } \| WebSocketTransport` | Transport config for the language server. Can be a plain object with wsUri, or a WebSocketTransport instance from @open-rpc/client-js. | Required  |
+| `features`    | `object`                                  | Configure which LSP features to enable.                                                                                                | See below |
+| `timeout`     | `number`                                  | Timeout for LSP requests in milliseconds.                                                                                              | `10000`   |
 
 #### Features Configuration
 
@@ -49,6 +49,12 @@
 | `renameEnabled`             | `boolean` | Enable rename functionality.              | `true`  |
 | `codeActionsEnabled`        | `boolean` | Enable code actions.                      | `true`  |
 | `signatureActivateOnTyping` | `boolean` | Show signature help while typing.         | `false` |
+
+## Methods
+
+| Name   | Description                                                                                                            | Arguments |
+| ------ | ---------------------------------------------------------------------------------------------------------------------- | --------- |
+| `ls()` | Returns the Language Server Helpers. See [Language Server Helpers](./language-server-helpers.md) for more information. | -         |
 
 ## Events
 

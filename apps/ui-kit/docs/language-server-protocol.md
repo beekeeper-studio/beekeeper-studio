@@ -31,6 +31,33 @@ textEditor.lsConfig = {
 };
 ```
 
+## LSP Helpers
+
+The Text Editor component will automatically send requests to the language server when necessary. But you can also use the LSP helpers to send requests directly:
+
+```js
+textEditor.addEventListener("bks-lsp-ready", async () => {
+  // Get the language server helpers
+  const helpers = textEditor.ls();
+
+  // Request a document formatting and apply it
+  await helpers.formatDocument();
+
+  // Get the language server client
+  const client = helpers.getClient();
+
+  // Request a custom command to the language server
+  await client.request({
+    method: "workspace/executeCommand",
+    params: { command: "fixAllFixableProblems" },
+  });
+})
+```
+
+Make sure that you wait for the `bks-lsp-ready` event before interacting with the language server.
+
+For more information about the helpers, see the [Language Server Helpers API](./api/language-server-helpers.md).
+
 ## Available Features
 
 The LSP integration supports the following features:
@@ -105,4 +132,8 @@ textEditor.lsConfig = {
 
 ## API Reference
 
-For complete details about the LSP configuration options, see the [Text Editor API documentation](./api/text-editor.md).
+See the API reference below for more details.
+
+- [Text Editor API documentation](./api/text-editor.md) for language server configuration.
+- [Language Server Helpers API documentation](./api/language-server-helpers.md).
+- [Language Server Client API documentation](./api/language-server-client.md).

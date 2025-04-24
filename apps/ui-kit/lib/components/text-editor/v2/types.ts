@@ -1,7 +1,7 @@
 import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
-import { LanguageServerClientWrapper } from "./LanguageServerClientWrapper";
+import { LanguageServerClient } from "./LanguageServerClient";
 
 export interface LanguageServerConfiguration {
   /** The WebSocket URI of the language server. For example, `ws://localhost:3000/server` */
@@ -55,7 +55,7 @@ export interface ExtensionConfiguration {
 }
 
 export interface LSContext {
-  client: LanguageServerClientWrapper;
+  client: LanguageServerClient;
   documentUri: string;
   timeout: number;
 }
