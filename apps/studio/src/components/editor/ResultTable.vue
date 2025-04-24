@@ -3,6 +3,35 @@
     class="result-table"
     v-hotkey="keymap"
   >
+    <form 
+      class="table-search-wrapper table-filter"
+      @submit.prevent="searchHandler"
+    >
+      <div class="input-wrapper filter">
+        <input
+          type="text"
+          v-model="filterValue"
+          ref="filterInput"
+          class="form-control filter-value"
+          placeholder="Search Results"
+        >
+        <button
+          type="button"
+          class="clear btn-link"
+          title="clear search filter"
+          @click.prevent="clearSearchFilters"
+        >
+          <i class="material-icons">cancel</i>
+        </button>
+      </div>
+      <button
+        type="submit"
+        class="btn btn-primary btn-fab"
+        title="filter results table"
+      >
+        <i class="material-icons">search</i>
+      </button>
+    </form>
     <div
       ref="tabulator"
       class="spreadsheet-table"
@@ -37,6 +66,7 @@
         tabulator: null,
         actualTableHeight: '100%',
         selectedRowData: {},
+        filterValue: ''
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
@@ -72,6 +102,7 @@
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
+          'tableTable.focusOnFilterInput': this.focusOnFilterInput.bind(this)
         });
       },
       tableData() {
@@ -224,6 +255,25 @@
           },
           onRangeChange: this.handleRangeChange,
         });
+      },
+      focusOnFilterInput() {
+        this.$refs.filterInput.focus()
+      },
+      searchHandler() {
+        this.tabulator.clearFilter()
+
+        const columns = this.tableColumns
+        const filters = columns.map(({field}) => ({
+          type: 'like',
+          value: this.filterValue.trim(),
+          field
+        }))
+
+        this.tabulator.setFilter([filters])
+      },
+      clearSearchFilters() {
+        this.filterValue = ''
+        this.tabulator.clearFilter()
       },
       copySelection() {
         const classes = [...document.activeElement.classList.values()];
@@ -390,3 +440,21 @@
     },
 	}
 </script>
+
+<style lang="scss" scoped>
+  .table-search-wrapper {
+    display: flex;
+    padding: 1rem;
+    justify-content: space-between;
+  }
+
+  .input-wrapper {
+    width: 97%;
+    position: relative;
+    .clear {
+      position: absolute;
+      right: 0;
+      top: 5px;
+    }
+  }
+</style>
