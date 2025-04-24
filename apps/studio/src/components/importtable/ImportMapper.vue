@@ -55,7 +55,7 @@
       type="button"
       @click.prevent="$emit('finish')"
     >
-      <span>Map Columns and Review Import</span>
+      <span>Review &amp; Execute</span>
       <span class="material-icons">
         keyboard_arrow_right
       </span>
