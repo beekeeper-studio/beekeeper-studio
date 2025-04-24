@@ -4,13 +4,22 @@ import { getEntities } from "./data.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   const entities = getEntities();
-  const textEditor = document.querySelector("bks-sql-text-editor");
+  const textEditor = document.createElement("bks-sql-text-editor");
   const table = document.querySelector("bks-table");
   const entityList = document.querySelector("bks-entity-list");
   const dataEditor = document.querySelector("bks-data-editor");
 
-  textEditor.value = "select * from users u\nwhere u.id = 1;";
+  textEditor.value = "select * from users u where u";
   textEditor.entities = entities;
+  textEditor.lsConfig = {
+      languageId: "typescript",
+      transport: {
+        wsUri: "ws://localhost:3000/server",
+      },
+      rootUri: "/home/user/dev/beekeeper-studio/apps/ui-kit/tests/fixtures/",
+      documentUri: "/home/user/dev/beekeeper-studio/apps/ui-kit/tests/fixtures/test.sql",
+    }
+  document.querySelector('#sql-text-editor-card').appendChild(textEditor);
 
   table.columns = entities[0].columns;
   table.data = entities[0].data;

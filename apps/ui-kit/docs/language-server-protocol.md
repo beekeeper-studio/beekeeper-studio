@@ -41,7 +41,7 @@ textEditor.addEventListener("bks-lsp-ready", async () => {
   const helpers = textEditor.ls();
 
   // Request a document formatting and apply it
-  await helpers.formatDocument();
+  await helpers.formatDocument({ tabSize: 2, insertSpaces: true });
 
   // Get the language server client
   const client = helpers.getClient();
