@@ -51,7 +51,7 @@ You can provide either:
 - A function that takes the default list and returns a new list
 - An array of extensions to **fully replace** the default set
 
-````js
+```js
 import { monokai } from '@uiw/codemirror-theme-monokai';
 
 // Modify existing extensions
@@ -67,7 +67,7 @@ textEditor.replaceExtensions = [
   myCustomExtension,
   keymap.of([...customKeymap]),
 ];
-
+```
 
 ## Context Menu
 
