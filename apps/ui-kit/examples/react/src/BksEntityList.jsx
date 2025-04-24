@@ -22,7 +22,9 @@ export default function BksEntityList({ entities, onSelectEntities }) {
           "bks-entity-dblclick",
           handleItemDblClick
         );
-        ref.current.vueComponent.$destroy();
+        if (ref.current.vueComponent) {
+          ref.current.vueComponent.$destroy();
+        }
       }
     };
   }, []);
