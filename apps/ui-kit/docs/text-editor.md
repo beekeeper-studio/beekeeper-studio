@@ -37,13 +37,6 @@ textEditor.lsConfig = {
   transport: {
     wsUri: "ws://localhost:3000/lsp"
   },
-  features: {
-    diagnostics: true,
-    hover: true,
-    completion: true,
-    formatting: true,
-    semanticTokensEnabled: true
-  }
 };
 ```
 

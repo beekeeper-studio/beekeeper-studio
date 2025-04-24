@@ -37,17 +37,17 @@
 
 #### Features Configuration
 
-| Name                    | Type      | Description                                                | Default |
-| ----------------------- | --------- | ---------------------------------------------------------- | ------- |
-| `hover`                 | `boolean` | Enable hover information.                                  | `true`  |
-| `completion`            | `boolean` | Enable code completion.                                    | `true`  |
-| `diagnostics`           | `boolean` | Enable diagnostics (errors, warnings).                     | `true`  |
-| `formatting`            | `boolean` | Enable document formatting.                                | `true`  |
-| `signatureHelp`         | `boolean` | Enable signature help for function calls.                  | `true`  |
-| `references`            | `boolean` | Enable finding references.                                 | `true`  |
-| `documentHighlight`     | `boolean` | Enable highlighting references to the symbol under cursor. | `true`  |
-| `documentSymbol`        | `boolean` | Enable document symbols.                                   | `true`  |
-| `semanticTokensEnabled` | `boolean` | Enable semantic token highlighting.                        | `true`  |
+| Name                        | Type      | Description                               | Default |
+| --------------------------- | --------- | ----------------------------------------- | ------- |
+| `hoverEnabled`              | `boolean` | Enable hover information.                 | `true`  |
+| `completionEnabled`         | `boolean` | Enable code completion.                   | `true`  |
+| `diagnosticsEnabled`        | `boolean` | Enable diagnostics (errors, warnings).    | `true`  |
+| `signatureHelpEnabled`      | `boolean` | Enable signature help for function calls. | `true`  |
+| `semanticTokensEnabled`     | `boolean` | Enable semantic token highlighting.       | `true`  |
+| `definitionEnabled`         | `boolean` | Enable go-to-definition.                  | `true`  |
+| `renameEnabled`             | `boolean` | Enable rename functionality.              | `true`  |
+| `codeActionsEnabled`        | `boolean` | Enable code actions.                      | `true`  |
+| `signatureActivateOnTyping` | `boolean` | Show signature help while typing.         | `false` |
 
 ## Events
 

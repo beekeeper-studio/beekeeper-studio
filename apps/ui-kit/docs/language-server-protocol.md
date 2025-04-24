@@ -28,19 +28,6 @@ textEditor.lsConfig = {
 
   // Optional timeout in milliseconds
   timeout: 10000,
-
-  // Feature configuration
-  features: {
-    diagnostics: true,
-    hover: true,
-    completion: true,
-    formatting: true,
-    signatureHelp: true,
-    references: true,
-    documentHighlight: true,
-    documentSymbol: true,
-    semanticTokensEnabled: false
-  }
 };
 ```
 
