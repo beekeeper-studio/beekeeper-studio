@@ -40,9 +40,6 @@ The LSP integration supports the following features:
 - **Hover Information**: Show documentation and type information when hovering over symbols
 - **Formatting**: Apply code formatting rules from the language server
 - **Signature Help**: Show parameter information for function calls
-- **Find References**: Locate all references to a symbol
-- **Document Highlighting**: Highlight all occurrences of the symbol under cursor
-- **Document Symbols**: Navigate to symbols in the current document
 - **Semantic Tokens**: Enhanced syntax highlighting based on semantic information
 
 ## Example: Using with a JavaScript Language Server
