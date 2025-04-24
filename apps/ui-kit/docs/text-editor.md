@@ -35,10 +35,39 @@ textEditor.lsConfig = {
   rootUri: "/path/to/project",
   documentUri: "/path/to/project/file.js",
   transport: {
-    wsUri: "ws://localhost:3000/lsp"
+    wsUri: "ws://localhost:3000/lsp",
   },
 };
 ```
+
+## Replacing Editor Extensions
+
+You can customize the internal behavior of the editor by replacing or modifying the default [CodeMirror](https://codemirror.net/) extensions using the `replaceExtensions` property. This is useful if you want to inject your own extensions.
+
+### Usage
+
+You can provide either:
+
+- A function that takes the default list and returns a new list
+- An array of extensions to **fully replace** the default set
+
+````js
+import { monokai } from '@uiw/codemirror-theme-monokai';
+
+// Modify existing extensions
+textEditor.replaceExtensions = (defaultExtensions) => {
+  return [
+    ...defaultExtensions,
+    monokai
+  ];
+};
+
+// Replace all default extensions
+textEditor.replaceExtensions = [
+  myCustomExtension,
+  keymap.of([...customKeymap]),
+];
+
 
 ## Context Menu
 
@@ -83,7 +112,7 @@ You can customize the appearance of the Text Editor by overriding the CSS variab
   --bks-text-editor-variable-3-fg-color: #66d9ef;
   --bks-text-editor-variable-fg-color: #f8f8f2;
 }
-```
+````
 
 ## API
 
