@@ -33,7 +33,6 @@
 | `rootUri`         | `string`                                  | The root URI of the workspace.                                                                                                         | Required  |
 | `documentUri`     | `string`                                  | The URI of the document being edited.                                                                                                  | Required  |
 | `transport`       | `{ wsUri: string } \| WebSocketTransport` | Transport config for the language server. Can be a plain object with wsUri, or a WebSocketTransport instance from @open-rpc/client-js. | Required  |
-| `transport.wsUri` | `string`                                  | The WebSocket URI of the language server.                                                                                              | Required  |
 | `features`        | `object`                                  | Configure which LSP features to enable.                                                                                                | See below |
 | `timeout`         | `number`                                  | Timeout for LSP requests in milliseconds.                                                                                              | `10000`   |
 
