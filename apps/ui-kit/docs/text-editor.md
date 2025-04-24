@@ -30,7 +30,7 @@ textEditor.keybindings = {
 The Text Editor supports the Language Server Protocol (LSP), which provides advanced code intelligence features like autocompletion, diagnostics, and more.
 
 ```js
-textEditor.languageServer = {
+textEditor.lsConfig = {
   languageId: "javascript",
   rootUri: "/path/to/project",
   documentUri: "/path/to/project/file.js",

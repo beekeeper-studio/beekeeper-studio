@@ -8,27 +8,27 @@ The Language Server Protocol (LSP) defines a common protocol for communication b
 
 ## Setting Up LSP in the Text Editor
 
-To enable LSP support in the Text Editor component, you need to configure the `languageServer` property:
+To enable LSP support in the Text Editor component, you need to configure the `lsConfig` property:
 
 ```js
-textEditor.languageServer = {
+textEditor.lsConfig = {
   // Language ID (required)
   languageId: "javascript",
-  
+
   // Workspace root URI (required)
   rootUri: "/path/to/project",
-  
+
   // Document URI (required)
   documentUri: "/path/to/project/file.js",
-  
+
   // WebSocket transport (required)
   transport: {
     wsUri: "ws://localhost:3000/lsp"
   },
-  
+
   // Optional timeout in milliseconds
   timeout: 10000,
-  
+
   // Feature configuration
   features: {
     diagnostics: true,
@@ -66,28 +66,22 @@ Here's an example of setting up the Text Editor with a JavaScript language serve
 <bks-text-editor id="js-editor"></bks-text-editor>
 <script>
   const jsEditor = document.getElementById("js-editor");
-  
+
   // Set content
   jsEditor.value = `function hello(name) {
     return "Hello, " + name;
   }`;
-  
+
   // Configure language server
-  jsEditor.languageServer = {
+  jsEditor.lsConfig = {
     languageId: "javascript",
     rootUri: "/path/to/project",
     documentUri: "/path/to/project/script.js",
     transport: {
       wsUri: "ws://localhost:3000/javascript-language-server"
     },
-    features: {
-      diagnostics: true,
-      hover: true,
-      completion: true,
-      formatting: true
-    }
   };
-  
+
   // Listen for LSP ready event
   jsEditor.addEventListener("bks-lsp-ready", (event) => {
     console.log("Language server ready with capabilities:", event.detail.capabilities);
@@ -107,6 +101,23 @@ For example, to set up a JavaScript/TypeScript language server:
    ```
 
 2. Run the language server with WebSocket support (you may need additional tooling to expose the language server over WebSockets).
+
+## Advanced Example: Using WebSocketTransport
+
+For more control over the WebSocket connection, you can use the WebSocketTransport class instead of a plain object with wsUri:
+
+```js
+import { WebSocketTransport } from '@open-rpc/client-js';
+
+const transport = new WebSocketTransport("ws://localhost:3000/server");
+
+textEditor.lsConfig = {
+  languageId: "javascript",
+  rootUri: "/path/to/project",
+  documentUri: "/path/to/project/file.js",
+  transport,
+};
+```
 
 ## API Reference
 
