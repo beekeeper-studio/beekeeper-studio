@@ -18,6 +18,7 @@ export const MongoDBData: DialectData = {
     nullable: true,
     defaultValue: true,
     primary: true,
+    compositeKeys: true,
     comments: true,
     index: {
       id: true,

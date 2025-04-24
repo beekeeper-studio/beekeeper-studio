@@ -78,6 +78,7 @@ export const ClickHouseData: DialectData = {
   disabledFeatures: {
     shell: true,
     triggers: true,
+    compositeKeys: true,
     createIndex: true,
     generatedColumns: true,
     alter: {

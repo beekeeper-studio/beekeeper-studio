@@ -186,7 +186,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       fromColumn: row.from_column,
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
-      onDelete: row.delete_rule
+      onDelete: row.delete_rule,
+      isComposite: false
     }));
   }  
 
