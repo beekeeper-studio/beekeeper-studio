@@ -12,9 +12,10 @@
 </template>
 
 <script lang="ts">
+import Vue from "vue";
 import mixin from "./mixin";
 
-export default {
+export default Vue.extend({
   mixins: [mixin],
-};
+});
 </script>
