@@ -152,8 +152,9 @@ export function parseRowDataForJsonViewer(data: Record<string, any>, tableColumn
       const isColumnHasStringAndNotEmpty = typeof columnValue === 'string' && columnValue.trim() !== ''
 
       if (isColumnHasStringAndNotEmpty) {
-        const isJsonObjectString = columnValue.startsWith('{') && columnValue.endsWith('}')
-        const isJsonArrayString = columnValue.startsWith('[') && columnValue.endsWith(']')
+        const trimmedValue = columnValue.trim()
+        const isJsonObjectString = trimmedValue.startsWith('{') && trimmedValue.endsWith('}')
+        const isJsonArrayString = trimmedValue.startsWith('[') && trimmedValue.endsWith(']')
 
         if (isJsonObjectString || isJsonArrayString) {
           isJsonColumn = true
