@@ -1,15 +1,17 @@
-import { extendedSql } from "./extendedSql";
+import { sqlContextComplete, sqlCompletionSource } from "./sqlContextComplete";
+import { sql } from "./customSql";
 import { removeQueryQuotesExtension } from "./removeQueryQuotes";
-import { triggerAutocompleteExtension } from "./triggerAutocomplete";
 
-export { applySqlExtension, applyEntities, applyColumnsGetter } from "./extendedSql";
+export { applyColumnsGetter } from "./sqlContextComplete";
+export type { ColumnsGetter } from "./sqlContextComplete";
+export { applySqlExtension, applyEntities } from "./customSql";
 export { applyDialect } from "./removeQueryQuotes";
 
 /**
  * Get all base SQL extensions
  */
 export const extensions = [
-  extendedSql(),
+  sql(undefined, sqlCompletionSource),
   removeQueryQuotesExtension(),
-  triggerAutocompleteExtension(),
+  sqlContextComplete(),
 ];

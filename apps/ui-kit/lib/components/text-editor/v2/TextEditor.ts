@@ -30,6 +30,18 @@ export class TextEditor {
 
   initialize(config: TextEditorConfiguration) {
     if (config.lsConfig) {
+      if (!config.lsConfig.rootUri) {
+        throw new Error(
+          "Missing 'rootUri' in lsConfig. This is required to initialize the language server client."
+        );
+      }
+
+      if (!config.lsConfig.documentUri) {
+        throw new Error(
+          "Missing 'documentUri' in lsConfig. This is required to initialize the language server client."
+        );
+      }
+
       this.ls = ls(
         {
           ...config.lsConfig,

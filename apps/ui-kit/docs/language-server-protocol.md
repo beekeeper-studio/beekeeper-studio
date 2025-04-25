@@ -8,41 +8,55 @@ The Language Server Protocol (LSP) defines a common protocol for communication b
 
 ## Setting Up LSP in the Text Editor
 
-To enable LSP support in the Text Editor component, you need to configure the `languageServer` property:
+To enable LSP support in the Text Editor component, you need to configure the `lsConfig` property:
 
 ```js
-textEditor.languageServer = {
+textEditor.lsConfig = {
   // Language ID (required)
   languageId: "javascript",
-  
+
   // Workspace root URI (required)
   rootUri: "/path/to/project",
-  
+
   // Document URI (required)
   documentUri: "/path/to/project/file.js",
-  
+
   // WebSocket transport (required)
   transport: {
     wsUri: "ws://localhost:3000/lsp"
   },
-  
+
   // Optional timeout in milliseconds
   timeout: 10000,
-  
-  // Feature configuration
-  features: {
-    diagnostics: true,
-    hover: true,
-    completion: true,
-    formatting: true,
-    signatureHelp: true,
-    references: true,
-    documentHighlight: true,
-    documentSymbol: true,
-    semanticTokensEnabled: false
-  }
 };
 ```
+
+## LSP Helpers
+
+The Text Editor component will automatically send requests to the language server when necessary. But you can also use the LSP helpers to send requests directly:
+
+```js
+textEditor.addEventListener("bks-lsp-ready", async () => {
+  // Get the language server helpers
+  const helpers = textEditor.ls();
+
+  // Request a document formatting and apply it
+  await helpers.formatDocument({ tabSize: 2, insertSpaces: true });
+
+  // Get the language server client
+  const client = helpers.getClient();
+
+  // Request a custom command to the language server
+  await client.request({
+    method: "workspace/executeCommand",
+    params: { command: "fixAllFixableProblems" },
+  });
+})
+```
+
+Make sure that you wait for the `bks-lsp-ready` event before interacting with the language server.
+
+For more information about the helpers, see the [Language Server Helpers API](./api/language-server-helpers.md).
 
 ## Available Features
 
@@ -53,9 +67,6 @@ The LSP integration supports the following features:
 - **Hover Information**: Show documentation and type information when hovering over symbols
 - **Formatting**: Apply code formatting rules from the language server
 - **Signature Help**: Show parameter information for function calls
-- **Find References**: Locate all references to a symbol
-- **Document Highlighting**: Highlight all occurrences of the symbol under cursor
-- **Document Symbols**: Navigate to symbols in the current document
 - **Semantic Tokens**: Enhanced syntax highlighting based on semantic information
 
 ## Example: Using with a JavaScript Language Server
@@ -66,28 +77,22 @@ Here's an example of setting up the Text Editor with a JavaScript language serve
 <bks-text-editor id="js-editor"></bks-text-editor>
 <script>
   const jsEditor = document.getElementById("js-editor");
-  
+
   // Set content
   jsEditor.value = `function hello(name) {
     return "Hello, " + name;
   }`;
-  
+
   // Configure language server
-  jsEditor.languageServer = {
+  jsEditor.lsConfig = {
     languageId: "javascript",
     rootUri: "/path/to/project",
     documentUri: "/path/to/project/script.js",
     transport: {
       wsUri: "ws://localhost:3000/javascript-language-server"
     },
-    features: {
-      diagnostics: true,
-      hover: true,
-      completion: true,
-      formatting: true
-    }
   };
-  
+
   // Listen for LSP ready event
   jsEditor.addEventListener("bks-lsp-ready", (event) => {
     console.log("Language server ready with capabilities:", event.detail.capabilities);
@@ -108,6 +113,27 @@ For example, to set up a JavaScript/TypeScript language server:
 
 2. Run the language server with WebSocket support (you may need additional tooling to expose the language server over WebSockets).
 
+## Advanced Example: Using WebSocketTransport
+
+For more control over the WebSocket connection, you can use the WebSocketTransport class instead of a plain object with wsUri:
+
+```js
+import { WebSocketTransport } from '@open-rpc/client-js';
+
+const transport = new WebSocketTransport("ws://localhost:3000/server");
+
+textEditor.lsConfig = {
+  languageId: "javascript",
+  rootUri: "/path/to/project",
+  documentUri: "/path/to/project/file.js",
+  transport,
+};
+```
+
 ## API Reference
 
-For complete details about the LSP configuration options, see the [Text Editor API documentation](./api/text-editor.md).
+See the API reference below for more details.
+
+- [Text Editor API documentation](./api/text-editor.md) for language server configuration.
+- [Language Server Helpers API documentation](./api/language-server-helpers.md).
+- [Language Server Client API documentation](./api/language-server-client.md).

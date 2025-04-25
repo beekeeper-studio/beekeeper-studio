@@ -6,7 +6,7 @@ import { formattingCapabilities, lsFormatting } from "./formatting";
 import _ from "lodash";
 import { Extension, Facet } from "@codemirror/state";
 import { isFeatureEnabled } from "./utils";
-import { LanguageServerClientWrapper } from "../../LanguageServerClientWrapper";
+import { LanguageServerClient } from "../../LanguageServerClient";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 
 const TIMEOUT: number = 10000;
@@ -54,7 +54,7 @@ export function ls(
     transport = config.transport as WebSocketTransport;
   }
 
-  const client = new LanguageServerClientWrapper({
+  const client = new LanguageServerClient({
     transport,
     rootUri,
     workspaceFolders: [{ name: "workspace", uri: rootUri }],

@@ -47,9 +47,13 @@ export default Vue.extend({
       });
     },
     applyRequestColumnsListener() {
-      this.textEditor.setRequestColumnsListener((entity: Entity) =>
-        this.columnsGetter(entity.name)
-      );
+      if (this.columnsGetter) {
+        this.textEditor.setRequestColumnsListener((entity: Entity) =>
+          this.columnsGetter(entity.name)
+        );
+      } else {
+        this.textEditor.setRequestColumnsListener(null);
+      }
     },
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
       const pivot = items.findIndex((o) => o.id === "find");
