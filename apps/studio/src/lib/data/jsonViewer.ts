@@ -1,7 +1,10 @@
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from "lodash";
+import rawLog from "@bksLogger";
 import globals from '@/common/globals'
 import type { ExtendedTableColumn } from "../db/models";
+
+const log = rawLog.scope("jsonViewer");
 
 export interface ExpandablePath {
   path: string[];
@@ -166,7 +169,7 @@ export function parseRowDataForJsonViewer(data: Record<string, any>, tableColumn
       try {
         data[column.field] = JSON.parse(data[column.field])
       } catch (e) {
-        console.warn(`Failed to parse JSON for column ${column.field}:`, e)
+        log.warn(`Failed to parse JSON for column ${column.field}:`, e)
       }
     }
   })
