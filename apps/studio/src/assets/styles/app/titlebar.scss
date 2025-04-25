@@ -58,7 +58,7 @@ $titlebar-actions-height:   30px;
   }
   .titlebar-actions {
     margin: -$gutter-h;
-    margin-left: 0;
+    margin-left: auto;
     -webkit-app-region: no-drag;
     &, .window-controls-container {
       display: flex;
@@ -82,6 +82,7 @@ $titlebar-actions-height:   30px;
     .titlebar-actions-extra {
       display: flex;
       gap: 0.5rem;
+      margin-right: 0.75rem;
       & > button {
         height: auto;
         align-self: center;
@@ -92,7 +93,6 @@ $titlebar-actions-height:   30px;
       }
     }
     .window-controls-container  {
-      margin-left: 0.75rem;
       button {
         padding: 0 0.75rem;
         height: $titlebar-actions-height;
