@@ -88,14 +88,14 @@ nav:
   - Connecting To A Database:
     - user_guide/connecting/supported-databases.md
     - Connection Options: user_guide/connecting/connecting.md
-    - user_guide/connecting/sqlite.md
-    - user_guide/connecting/google-bigquery.md
-    - user_guide/connecting/oracle-database.md
-    - user_guide/connecting/amazon-rdb.md
-    - user_guide/connecting/firebird.md
+    - user_guide/connecting/amazon-rds.md
     - user_guide/connecting/clickhouse.md
     - user_guide/connecting/duckdb.md
+    - user_guide/connecting/firebird.md
+    - user_guide/connecting/google-bigquery.md
     - user_guide/connecting/mongodb.md
+    - user_guide/connecting/oracle-database.md
+    - user_guide/connecting/sqlite.md
 
   - Features:
     - user_guide/sql_editor/editor.md
