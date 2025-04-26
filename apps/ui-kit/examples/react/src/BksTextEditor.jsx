@@ -20,7 +20,17 @@ export default function BksTextEditor() {
   useEffect(() => {
     textEditorRef.current = document.createElement("bks-text-editor");
     textEditorRef.current.value = text;
-    
+
+    /* --------- For activating the language server client ------------ */
+    // textEditorRef.current.lsConfig = {
+    //   languageId: "typescript",
+    //   transport: {
+    //     wsUri: "ws://localhost:3000/server",
+    //   },
+    //   rootUri: "/home/user/dev/beekeeper-studio/apps/ui-kit/tests/fixtures/",
+    //   documentUri: "/home/user/dev/beekeeper-studio/apps/ui-kit/tests/fixtures/index.ts",
+    // }
+
     textEditorRef.current.addEventListener(
       "bks-initialized",
       handleInitialized

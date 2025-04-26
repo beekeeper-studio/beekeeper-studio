@@ -1,7 +1,6 @@
 import { Extension } from "@codemirror/state";
 import { TextEditor } from "../../text-editor/v2/TextEditor";
 import { Entity } from "../../types";
-import { ColumnsGetter } from "./SqlContextAnalyzer";
 import { Dialect } from "sql-query-identifier";
 import {
   applySqlExtension,
@@ -9,8 +8,9 @@ import {
   applyEntities,
   applyColumnsGetter,
   extensions as sqlExtensions,
+  ColumnsGetter,
 } from "./extensions";
-import { ExtensionConfiguration } from "../../text-editor";
+import { ExtensionConfiguration } from "../../text-editor/v2/types";
 
 export interface CompletionSource {
   defaultSchema?: string;

@@ -19,13 +19,13 @@ const dialect = StateField.define<Dialect>({
   },
 });
 
-export function applyDialect(view: EditorView, dialectValue: Dialect) {
+function applyDialect(view: EditorView, dialectValue: Dialect) {
   view.dispatch({
     effects: setDialect.of(dialectValue)
   });
 }
 
-export function removeQueryQuotesExtension() {
+function removeQueryQuotesExtension() {
   return [
     dialect,
     EditorView.domEventHandlers({
@@ -48,4 +48,9 @@ export function removeQueryQuotesExtension() {
       },
     })
   ];
+}
+
+export {
+  applyDialect,
+  removeQueryQuotesExtension,
 }
