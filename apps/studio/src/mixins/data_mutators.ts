@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
-import helpers, { escapeHtml } from '@shared/lib/tabulator'
+import helpers, { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
 
@@ -46,18 +46,17 @@ export default {
     },
     cellTooltip(
       _event,
-      cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string } = {},) {
+      cell: CellComponent
+    ) {
+      const params: FormatterParams = cell.getColumn().getDefinition().formatterParams || {}
       let cellValue = cell.getValue()
-      if (cellValue instanceof Uint8Array) {
-        const binaryEncoding = cell.getColumn().getDefinition().formatterParams?.binaryEncoding || 'hex'
-        cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
-      }
 
-      if (
+      if (cellValue instanceof Uint8Array) {
+        const binaryEncoding = params.binaryEncoding || 'hex'
+        cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
+      } else if (
         !params?.fk &&
-        params?.isPK != null &&
-        !params.isPK &&
+        !params?.isPK &&
         _.isInteger(Number(cellValue))
       ) {
         try {

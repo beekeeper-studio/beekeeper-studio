@@ -19,6 +19,13 @@ interface Options extends TabulatorOptions {
   onRangeChange?: (ranges: RangeComponent[]) => void;
 }
 
+interface FormatterParams { 
+  fk?: any[];
+  isPK?: boolean;
+  fkOnClick?: (e: MouseEvent, cell: CellComponent) => void
+  binaryEncoding?: string
+}
+
 export function tabulatorForTableData(
   el: string | HTMLElement,
   options: Options

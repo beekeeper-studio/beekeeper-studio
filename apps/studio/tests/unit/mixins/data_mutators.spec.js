@@ -17,26 +17,42 @@ describe("cellFormatter", () => {
   })
 
   it('tooltip render a unixtime', () => {
+    const params = {
+      formatterParams : {
+        fk: false,
+        fkOnClick: () => null,
+        isPK: false
+      }
+    }
+    const paramsHavePk = {
+      formatterParams : {
+        fk: false,
+        fkOnClick: () => null,
+        isPK: true
+      }
+    }
+
     const input = {
       getValue: () => '8640000000000000',
       getElement: () => document.createElement('a'),
-      getColumn: () => ({ getDefinition: () => ({ binaryEncoding: 'base64' }) }),
+      getColumn: () => ({ getDefinition: () => params }),
+    }
+
+    const inputPK = {
+      getValue: () => '8640000000000000',
+      getElement: () => document.createElement('a'),
+      getColumn: () => ({ getDefinition: () => paramsHavePk}),
     }
 
     const badInput = {
       getValue: () => '8640000000000005',
       getElement: () => document.createElement('a'),
-      getColumn: () => ({ getDefinition: () => ({ binaryEncoding: 'base64' }) }),
+      getColumn: () => ({ getDefinition: () => params }),
     }
 
-    const params = {
-      isPK: false
-    }
-
-    const formatted = mutators.methods.cellTooltip(null, input, params)
-    expect(formatted).toBe('8640000000000000 (+275760-09-13T00:00:00.000Z in unixtime)')
-    expect(mutators.methods.cellTooltip(null, input, { isPK: true })).toBe('8640000000000000')
-    expect(mutators.methods.cellTooltip(null, badInput, params)).toBe('8640000000000005')
+    expect(mutators.methods.cellTooltip(null, input)).toBe('8640000000000000 (+275760-09-13T00:00:00.000Z in unixtime)')
+    expect(mutators.methods.cellTooltip(null, inputPK)).toBe('8640000000000000')
+    expect(mutators.methods.cellTooltip(null, badInput)).toBe('8640000000000005')
   })
 
   it('render tooltip with escaped html', () => {

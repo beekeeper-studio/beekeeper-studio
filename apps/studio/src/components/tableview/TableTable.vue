@@ -315,7 +315,7 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import { escapeHtml } from '@shared/lib/tabulator';
+import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
@@ -805,7 +805,7 @@ export default Vue.extend({
         headerTooltip += `<br/> ${escapeHtml(column.comment)}`
       }
 
-      const formatterParams = {
+      const formatterParams: FormatterParams = {
         fk: hasKeyDatas && keyDatas[0][1],
         fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
         isPK: isPK,
@@ -832,7 +832,7 @@ export default Vue.extend({
         editable: this.cellEditCheck,
         headerSort: !this.dialectData.disabledFeatures.headerSort,
         editor: editorType,
-        tooltip: (e, cell) => this.cellTooltip(e, cell, formatterParams),
+        tooltip: this.cellTooltip,
         contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
         headerContextMenu: columnMenu,
         headerMenu: columnMenu,
