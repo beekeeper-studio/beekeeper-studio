@@ -805,6 +805,13 @@ export default Vue.extend({
         headerTooltip += `<br/> ${escapeHtml(column.comment)}`
       }
 
+      const formatterParams = {
+        fk: hasKeyDatas && keyDatas[0][1],
+        fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+        isPK: isPK,
+        binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+      }
+
       const result = {
         title: column.columnName,
         field: column.columnName,
@@ -825,19 +832,14 @@ export default Vue.extend({
         editable: this.cellEditCheck,
         headerSort: !this.dialectData.disabledFeatures.headerSort,
         editor: editorType,
-        tooltip: this.cellTooltip,
+        tooltip: (e, cell) => this.cellTooltip(e, cell, formatterParams),
         contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
         headerContextMenu: columnMenu,
         headerMenu: columnMenu,
         headerTooltip: headerTooltip,
         cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
-        formatterParams: {
-          fk: hasKeyDatas && keyDatas[0][1],
-          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
-          isPK: isPK,
-          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
-        },
+        formatterParams,
         editorParams: {
           verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
           dataType: column.dataType,
