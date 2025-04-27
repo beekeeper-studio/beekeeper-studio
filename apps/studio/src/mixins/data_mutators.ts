@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
-import helpers, { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
+import { TabulatorFormatterParams } from '@/common/tabulator'
+import helpers, { escapeHtml } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
 
@@ -48,7 +49,7 @@ export default {
       _event,
       cell: CellComponent
     ) {
-      const params: FormatterParams = cell.getColumn().getDefinition().formatterParams || {}
+      const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams || {}
       let cellValue = cell.getValue()
 
       if (cellValue instanceof Uint8Array) {

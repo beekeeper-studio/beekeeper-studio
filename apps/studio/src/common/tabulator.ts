@@ -19,7 +19,7 @@ interface Options extends TabulatorOptions {
   onRangeChange?: (ranges: RangeComponent[]) => void;
 }
 
-interface FormatterParams { 
+export interface TabulatorFormatterParams { 
   fk?: any[];
   isPK?: boolean;
   fkOnClick?: (e: MouseEvent, cell: CellComponent) => void
