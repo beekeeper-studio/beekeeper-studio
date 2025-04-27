@@ -12,6 +12,7 @@ import { DuckDBData } from "./duckdb";
 import { ClickHouseData } from "./clickhouse";
 import { MongoDBData } from "./mongodb";
 import { SnowflakeData } from "./snowflake";
+import { SqlAnywhereData } from "./anywhere";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -41,6 +42,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return MongoDBData
     case 'snowflake':
       return SnowflakeData
+    case 'sqlanywhere':
+      return SqlAnywhereData
     default:
       return SqliteData
   }

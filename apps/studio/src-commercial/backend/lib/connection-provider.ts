@@ -56,6 +56,7 @@ export default {
       snowflakeOptions: config.snowflakeOptions,
       authId: config.authId,
       libsqlOptions: config.libsqlOptions,
+      sqlAnywhereOptions: config.sqlAnywhereOptions,
       runtimeExtensions: sqliteExtension ? [sqliteExtension] : []
     }
   },

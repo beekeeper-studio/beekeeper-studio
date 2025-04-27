@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'snowflake'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'snowflake', 'sqlanywhere'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -43,7 +43,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   duckdb: "DuckDB",
   clickhouse: "ClickHouse",
   mongodb: "MongoDB",
-  snowflake: "Snowflake"
+  snowflake: "Snowflake",
+  sqlanywhere: 'SqlAnywhere',
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -51,6 +52,7 @@ export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'sqlserver') return 'mssql'
+  if (d === 'sqlanywhere') return 'mssql';
   if (d === 'sqlite') return 'sqlite3'
   if (d === 'oracle') return 'oracledb'
   if (d === 'cassandra') return 'cassandra-knex'
@@ -91,6 +93,7 @@ export class ColumnType {
 }
 
 export interface DialectData {
+  queryDialectOverride?: string,
   columnTypes?: ColumnType[],
   constraintActions?: string[]
   wrapIdentifier?: (s: string) => string
@@ -147,6 +150,7 @@ export interface DialectData {
     exportTable?: boolean
     createTable?: boolean
     dropTable?: boolean
+    dropSchema?: boolean
     collations?: boolean
     importFromFile?: boolean,
     headerSort?: boolean,

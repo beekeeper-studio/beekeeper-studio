@@ -73,11 +73,16 @@
                               :testing="testing"
                 />
                 <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config" :testing="testing" />
-                <snowflake-form v-else-if="config.connectionType === 'snowflake' && isUltimate" :config="config" :testing="testing" 
+                <snowflake-form v-else-if="config.connectionType === 'snowflake' && isUltimate" :config="config" :testing="testing"
                                 :connection-type="config.connectionType" @update="config = $event" @update-read-only="config.readOnlyMode = $event"
                 />
                 <duck-db-form
                   v-else-if="config.connectionType === 'duckdb'"
+                  :config="config"
+                  :testing="testing"
+                />
+                <sql-anywhere-form
+                  v-else-if="config.connectionType === 'sqlanywhere' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
@@ -160,6 +165,7 @@ import OracleForm from './connection/OracleForm.vue'
 import MongoDbForm from './connection/MongoDBForm.vue'
 import DuckDbForm from './connection/DuckDBForm.vue'
 import SnowflakeForm from './connection/SnowflakeForm.vue'
+import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -181,12 +187,12 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { 
-    ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, 
-    Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, 
-    ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, 
-    LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, 
-    MongoDbForm, DuckDbForm, SnowflakeForm, ContentPlaceholderHeading,
+  components: {
+    ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm,
+    Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton,
+    ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent,
+    LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm,
+    MongoDbForm, DuckDbForm, SnowflakeForm, ContentPlaceholderHeading, SqlAnywhereForm
   },
 
   data() {

@@ -1,9 +1,9 @@
 ---
-title: Browse and Edit Table Data
+title: Table View
 summary: "View, search, and modify your database table data using our built-in table explorer."
 old_url: "https://docs.beekeeperstudio.io/docs/creating-tables"
+icon: material/table
 ---
-
 
 Double click a table in the left sidebar to open an Excel-like interface for viewing and editing the data. We call this the **Table View**
 
@@ -75,7 +75,7 @@ In general, if you don't have a primary key on your table there is **no reliable
 
 #### A not on secret/internal row identifiers
 
-Some databases provide an internal identifier for rows, but they're not always stable. 
+Some databases provide an internal identifier for rows, but they're not always stable.
 
 The PostgreSQL [ctid](https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID) identifies the physical location of a row, but can change during a vaccum, making it unsuitable as a real row identifier in certain situations.
 

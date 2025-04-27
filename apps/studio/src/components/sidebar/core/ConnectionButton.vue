@@ -2,14 +2,19 @@
   <div
     class="connection-button"
     v-if="config"
-    :title="$bks.buildConnectionString(config)"
+    :title="privacyMode ? 
+      'Connection details hidden by Privacy Mode' : 
+      $bks.buildConnectionString(config)"
+    :class="classes"
   >
     <x-button
       class="btn btn-link btn-icon"
       menu
     >
       <i class="material-icons">link</i>
-      <span class="connection-name truncate expand">{{ connectionName }}</span>
+      <span class="connection-name truncate expand">
+        {{ connectionName }}
+      </span>
       <span
         class="connection-type badge truncate"
         v-tooltip="databaseVersion"
@@ -134,17 +139,34 @@ export default {
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
-      connectionName() {
-        return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
-      },
-      connectionType() {
-        return `${this.config.connectionType}`
-      },
-      databaseVersion() {
-        return this.versionString
+    ...mapState({
+      config: state => state.usedConfig,
+      connection: state => state.connection,
+      versionString: state => state.versionString
+    }),
+    ...mapState('settings', ['privacyMode']),
+    ...mapGetters({
+      hasRunningExports: 'exports/hasRunningExports',
+      workspace: 'workspace',
+      connectionColor: 'connectionColor'
+    }),
+    connectionName() {
+      return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
+    },
+    connectionType() {
+      return `${this.config.connectionType}`
+    },
+    databaseVersion() {
+      return this.versionString
+    },
+    classes() {
+      const result = {
+        'connection-button': true
       }
+
+      result[this.connectionColor] = true
+      return result;
+    }
   },
   methods: {
 

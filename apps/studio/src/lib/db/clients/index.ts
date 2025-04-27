@@ -221,7 +221,17 @@ export const CLIENTS: ClientConfig[] = [
     name: 'MongoDB'
   },
   {
+
     key: 'snowflake',
     name: 'Snowflake',
+  },
+  {
+    key: 'sqlanywhere',
+    name: 'SqlAnywhere',
+    defaultPort: 2638,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath'
+    ]
   }
 ];

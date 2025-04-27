@@ -48,6 +48,7 @@ export interface IConnectionHandlers {
   'conn/getTableReferences': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
+  'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
   'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
   'conn/getCompletions': ({ cmd, sId }: { cmd: string, sId: string }) => Promise<string[]>,
   'conn/getShellPrompt': ({ sId }: { sId: string }) => Promise<string>,
@@ -278,6 +279,11 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/listTablePartitions': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.listTablePartitions(table, schema);
+  },
+
+  'conn/executeCommand': async function({ commandText, sId }: { commandText: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.executeCommand(commandText);
   },
 
   'conn/query': async function({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) {

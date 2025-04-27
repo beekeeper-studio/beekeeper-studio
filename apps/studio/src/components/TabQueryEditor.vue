@@ -49,6 +49,7 @@
         :default-schema="defaultSchema"
         :mode="dialectData.textEditorMode"
         :clipboard="$native.clipboard"
+        :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-blur="onTextEditorBlur?.()"
@@ -356,6 +357,7 @@
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
+  import { monokai } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -458,6 +460,7 @@
           'mariadb': 'mysql',
           'tidb': 'mysql',
           'redshift': 'psql',
+          'mongodb': 'psql'
         }
         return mappings[this.connectionType] || 'generic'
       },
@@ -596,11 +599,22 @@
       entities() {
         return this.tables.map((t: TableOrView) => ({ schema: t.schema, name: t.name }))
       },
+      queryDialect() {
+        return this.dialectData.queryDialectOverride ?? this.connectionType;
+      },
       formatterDialect() {
-        return FormatterDialect(dialectFor(this.connectionType))
+        return FormatterDialect(dialectFor(this.queryDialect))
       },
       identifierDialect() {
-        return findSqlQueryIdentifierDialect(this.connectionType)
+        return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      replaceExtensions() {
+        return (extensions) => {
+          return [
+            ...extensions,
+            monokai,
+          ]
+        }
       },
     },
     watch: {

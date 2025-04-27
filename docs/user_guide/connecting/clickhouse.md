@@ -1,6 +1,7 @@
 ---
 title: ClickHouse
 summary: "How to connect to ClickHouse from Beekeeper Studio"
+icon: simple/clickhouse
 ---
 
 Connecting to a ClickHouse database from Beekeeper Studio is straightforward. Simply select ClickHouse from the dropdown, and fill in the host, port, username, and password fields, then click Connect.

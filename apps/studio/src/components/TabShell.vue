@@ -36,7 +36,7 @@
       ref="bottomPanel"
     >
       <progress-bar
-        @cancel="cancelQuery"
+        :canCancel="false"
         :message="runningText"
         v-if="running"
       />
@@ -83,6 +83,7 @@
       <!-- STATUS BAR -->
       <query-editor-status-bar
         v-model="selectedResult"
+        :hideWrapText="true"
         :results="results"
         :running="running"
         @download="download"
@@ -139,7 +140,6 @@ export default Vue.extend({
         initialized: false,
       },
       mongoOutputResult: null,
-      runningQuery: null,
       error: null,
       errorMarker: null,
       saveError: null,
@@ -321,14 +321,6 @@ export default Vue.extend({
     close() {
       this.$root.$emit(AppEvent.closeTab)
     },
-    async cancelQuery() {
-      if (this.running && this.runningQuery) {
-        this.running = false
-        this.info = 'Command Execution Cancelled'
-        await this.runningQuery.cancel();
-        this.runningQuery = null;
-      }
-    },
     download(format) {
       this.$refs.table.download(format)
     },
@@ -357,6 +349,7 @@ export default Vue.extend({
     clear() {
       this.selectedResult = 0;
       this.results = [];
+      this.selectEditor();
     },
     async submitMongoCommand(command) {
       this.tab.isRunning = true
@@ -365,9 +358,8 @@ export default Vue.extend({
       this.selectedResult = 0
 
       try {
-        this.runningQuery = await this.connection.query(command);
         const cmdStartTime = new Date();
-        const results = await this.runningQuery.execute();
+        const results = await this.connection.executeCommand(command);
         const cmdEndTime = new Date();
 
         // eslint-disable-next-line
