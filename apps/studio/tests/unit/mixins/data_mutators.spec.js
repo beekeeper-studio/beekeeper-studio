@@ -16,7 +16,7 @@ describe("cellFormatter", () => {
 
   })
 
-  it('Should render a unixtime', () => {
+  it('tooltip render a unixtime', () => {
     const input = {
       getValue: () => '8640000000000000',
       getElement: () => document.createElement('a'),
@@ -33,10 +33,10 @@ describe("cellFormatter", () => {
       isPK: false
     }
 
-    const formatted = mutators.methods.cellFormatter(input, params)
-    expect(formatted).toBe('<div class="cell-link-wrapper" title="+275760-09-13T00:00:00.000Z in unixtime">8640000000000000</div>')
-    expect(mutators.methods.cellFormatter(input, { isPK: true })).toBe('<pre>8640000000000000</pre>')
-    expect(mutators.methods.cellFormatter(badInput, params)).toBe('<pre>8640000000000005</pre>')
+    const formatted = mutators.methods.cellTooltip(null, input, params)
+    expect(formatted).toBe('8640000000000000 (+275760-09-13T00:00:00.000Z in unixtime)')
+    expect(mutators.methods.cellTooltip(null, input, { isPK: true })).toBe('8640000000000000')
+    expect(mutators.methods.cellTooltip(null, badInput, params)).toBe('8640000000000005')
   })
 
   it('render tooltip with escaped html', () => {
