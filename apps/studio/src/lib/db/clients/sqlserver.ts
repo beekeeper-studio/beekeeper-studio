@@ -1133,7 +1133,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     config.user = server.config.user;
     config.password = server.config.password;
-    config.port = server.config.port;
+    config.port = Number(server.config.port);
 
     if (server.config.domain) {
       config.domain = server.config.domain
