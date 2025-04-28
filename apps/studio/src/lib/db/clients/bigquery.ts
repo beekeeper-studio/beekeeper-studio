@@ -17,6 +17,7 @@ import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
 const { wrapIdentifier } = BigQueryData;
+import _ from 'lodash';
 const log = rawLog.scope('bigquery')
 
 interface BigQueryResult {
