@@ -102,7 +102,7 @@
       StatusBar,
       UpsellContent
     },
-    props: ['schema', 'tab'],
+    props: ['schema', 'tab', 'active'],
     data() {
       return {
         exportSteps: [
