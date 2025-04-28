@@ -955,7 +955,7 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          const lastQueryText = this.$store.state['data/usedQueries']?.items[0]?.text
+          const lastQueryText = this.$store.state['data/usedQueries']?.items?.[0]?.text
           const isDuplicate = lastQueryText === query
           
           if(!isDuplicate){
