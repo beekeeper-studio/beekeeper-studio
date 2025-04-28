@@ -33,8 +33,9 @@
       </div>
       <sql-text-editor
         :value="unsavedText"
+        :height="editor.height"
         :read-only="editor.readOnly"
-        :is-focused="focusingElement === 'text-editor'"
+        :focus="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
         :identifier-dialect="identifierDialect"
@@ -51,7 +52,6 @@
         :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
-        @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
       />
@@ -207,7 +207,6 @@
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
-        :elapsed-time="elapsedTime"
         :active="active"
       />
     </div>
@@ -356,9 +355,9 @@
   import { TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
-  import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
+  import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
-  import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+  import { monokai } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -393,8 +392,6 @@
         saveError: null,
         info: null,
         split: null,
-        elapsedTime: 0,
-        timerInterval: null,
         tableHeight: 0,
         savePrompt: false,
         lastWord: null,
@@ -422,7 +419,6 @@
 
         individualQueries: [],
         currentlySelectedQuery: null,
-        queryMagic: queryMagicExtension(),
       }
     },
     computed: {
@@ -505,7 +501,7 @@
         return !isEmpty(this.unsavedText)
       },
       hasTitle() {
-        return this.query?.title && this.query.title.replace(/\s+/, '').length > 0
+        return this.query.title && this.query.title.replace(/\s+/, '').length > 0
       },
       splitElements() {
         return [
@@ -550,11 +546,20 @@
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
       keybindings() {
-        const keybindings = this.$CMKeymap({
-          'general.save': this.triggerSave,
-          'queryEditor.submitCurrentQuery': this.submitCurrentQuery,
-          'queryEditor.submitTabQuery': this.submitTabQuery,
-        })
+        const keybindings: any = {
+          "Shift-Ctrl-Enter": this.submitCurrentQuery,
+          "Shift-Cmd-Enter": this.submitCurrentQuery,
+          "Ctrl-Enter": this.submitTabQuery,
+          "Cmd-Enter": this.submitTabQuery,
+          "Ctrl-S": this.triggerSave,
+          "Cmd-S": this.triggerSave,
+          "F5": this.submitTabQuery,
+          "Shift-F5": this.submitCurrentQuery,
+          "Ctrl+I": this.submitQueryToFile,
+          "Cmd+I": this.submitQueryToFile,
+          "Shift+Ctrl+I": this.submitCurrentQueryToFile,
+          "Shift+Cmd+I": this.submitCurrentQueryToFile,
+        }
 
         if(this.userKeymap === "vim") {
           keybindings["Ctrl-Esc"] = this.cancelQuery
@@ -606,14 +611,8 @@
       replaceExtensions() {
         return (extensions) => {
           return [
-            extensions,
-            monokaiInit({
-              settings: {
-                selection: "",
-                selectionMatch: "",
-              },
-            }),
-            this.queryMagic.extensions,
+            ...extensions,
+            monokai,
           ]
         }
       },
@@ -625,13 +624,6 @@
           const [a, b] = this.locationFromPosition(this.queryForExecution, parseInt(this.error.position) - 1, parseInt(this.error.position))
           this.errorMarker = { from: a, to: b, type: 'error' } as EditorMarker
           this.error.marker = {line: b.line + 1, ch: b.ch}
-        }
-      },
-      running() {
-        if (this.running) {
-          this.startTimer();
-        } else {
-          this.stopTimer();
         }
       },
       queryTitle() {
@@ -713,43 +705,47 @@
       initialize() {
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
-        this.query.title = this.activeTab?.title
+        this.query.title = this.activeTab.title
 
         if (this.split) {
           this.split.destroy();
           this.split = null;
         }
 
-        this.initializeQueries()
-        this.tab.unsavedChanges = this.unsavedChanges
-
-        this.split = Split(this.splitElements, {
-          elementStyle: (_dimension, size) => ({
-            'flex-basis': `calc(${size}%)`,
-          }),
-          sizes: [50,50],
-          gutterSize: 8,
-          direction: 'vertical',
-          onDragEnd: () => {
-            this.$nextTick(() => {
-              this.tableHeight = this.$refs.bottomPanel.clientHeight
-              this.updateEditorHeight()
-            })
-          }
-        })
-
-        // Making sure split.js is initialized
         this.$nextTick(() => {
-          this.tableHeight = this.$refs.bottomPanel.clientHeight
-          this.updateEditorHeight()
+          this.initializeQueries()
+          this.tab.unsavedChanges = this.unsavedChanges
+
+          this.split = Split(this.splitElements, {
+            elementStyle: (_dimension, size) => ({
+                'flex-basis': `calc(${size}%)`,
+            }),
+            sizes: [50,50],
+            gutterSize: 8,
+            direction: 'vertical',
+            onDragEnd: () => {
+              this.$nextTick(() => {
+                this.tableHeight = this.$refs.bottomPanel.clientHeight
+                this.updateEditorHeight()
+              })
+            }
+          })
+
+          this.$nextTick(() => {
+            this.tableHeight = this.$refs.bottomPanel.clientHeight
+            this.updateEditorHeight()
+          })
         })
       },
       handleEditorInitialized(detail) {
         this.editor.initialized = true
 
-        // Setup query magic data providers
-        this.queryMagic.setDefaultSchemaGetter(() => this.defaultSchema);
-        this.queryMagic.setTablesGetter(() => this.tables);
+        detail.codemirror.on("cursorActivity", (cm) => {
+          this.editor.selection = cm.getSelection()
+          this.editor.cursorIndex = cm.getDoc().indexFromPos(cm.getCursor())
+        });
+
+        registerQueryMagic(() => this.defaultSchema, () => this.tables, detail.codemirror)
 
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights
@@ -757,9 +753,6 @@
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
         })
-      },
-      handleEditorSelectionChange(detail) {
-        this.editor.selection = detail.value
       },
       saveTab: _.debounce(function() {
         this.$store.dispatch('tabs/save', this.tab)
@@ -962,7 +955,13 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
+          const lastQueryText = this.$store.state['data/usedQueries']?.items[0]?.text
+          const isDuplicate = lastQueryText === query
+          
+          if(!isDuplicate){
+            this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
+          }
+          
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'
@@ -1056,22 +1055,9 @@
         this.individualQueries = queries;
         this.currentlySelectedQuery = selectedQuery;
       },
-      startTimer() {
-        this.elapsedTime = 0;
-        this.timerInterval = setInterval(() => {
-          this.elapsedTime += 1;
-        }, 1000);
-      },
-      stopTimer() {
-        clearInterval(this.timerInterval);
-        this.timerInterval = null;
-      }
     },
     async mounted() {
-      if (this.shouldInitialize) {
-        await this.$nextTick()
-        this.initialize()
-      }
+      if (this.shouldInitialize) this.initialize()
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()
