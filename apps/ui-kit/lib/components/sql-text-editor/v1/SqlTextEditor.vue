@@ -14,13 +14,13 @@
 <script lang="ts">
 import _ from "lodash";
 import Vue from "vue";
-import textEditorMixin from "../text-editor/mixin";
+import textEditorMixin from "../../text-editor/v1/mixin";
 import { format } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { querySelection, QuerySelectionChangeParams } from "./querySelectionPlugin";
-import ProxyEmit from "../mixins/ProxyEmit";
-import { InternalContextItem, divider } from "../context-menu/menu";
-import { props } from "./sql-text-editor";
+import ProxyEmit from "../../mixins/ProxyEmit";
+import { InternalContextItem, divider } from "../../context-menu/menu";
+import props from "../v2/props";
 
 export default Vue.extend({
   mixins: [textEditorMixin, ProxyEmit],
