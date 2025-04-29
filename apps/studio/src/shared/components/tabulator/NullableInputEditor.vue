@@ -23,9 +23,9 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
-import rawLog from 'electron-log'
-import { hexToUint8Array, friendlyUint8Array } from '@/common/utils';
+import rawLog from '@bksLogger'
 import { BksField } from "@/lib/db/models";
+import { typedArrayToString } from "@/common/utils";
 
 const log = rawLog.scope('NullableInputEditor')
 
@@ -118,8 +118,8 @@ export default Vue.extend({
     parseValue() {
       const typeHint = this.params.typeHint;
       const bksField: BksField = this.params.bksField;
-      if (bksField?.bksType === 'BINARY' || ArrayBuffer.isView(this.cell.getValue())) {
-        return friendlyUint8Array(hexToUint8Array(this.value));
+      if (bksField?.bksType === 'BINARY' || _.isTypedArray(this.cell.getValue())) {
+        return typedArrayToString(this.value, this.params.binaryEncoding)
       }
       if (typeof typeHint !== 'string') {
         return this.value
@@ -127,8 +127,8 @@ export default Vue.extend({
       const floatTypes = [
         'float', 'double', 'double precision', 'dec', 'numeric', 'fixed'
       ]
-      if (typeHint.includes('int') && !typeHint.includes('point')) {
-        return parseInt(this.value);
+      if (typeHint.includes('int') && !typeHint.includes('point') && !isNaN(this.value)) {
+        return this.value > Number.MAX_SAFE_INTEGER ? this.value : parseInt(this.value);
       } else if (floatTypes.includes(typeHint)) {
         return parseFloat(this.value);
       } else {

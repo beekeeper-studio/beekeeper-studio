@@ -1,8 +1,9 @@
+@use "sass:color";
 // Theme
 // -----------------------------
 $theme-bg:           #f8f8f8;
 $theme-base:         black;
-$theme-primary:      darken(#fad83b, 10%);
+$theme-primary:      color.adjust(#fad83b, $lightness: -10%);
 $theme-secondary:    #0099ff;
 
 // Colors
@@ -16,7 +17,7 @@ $text-disabled:      rgba($theme-base, 0.37);
 
 $brand-info:         #3498db;
 $brand-success:      #15db95;
-$brand-warning:      #ff8d21;
+$brand-warning:      #dc700c;
 $brand-danger:       #ff5d59;
 $brand-default:      rgba($theme-base, 0.57);
 $brand-purple:       #9858ff;
@@ -33,17 +34,17 @@ $input-highlight:           rgba($theme-base, 0.27);
 
 $db-select-text:            white;
 $query-editor-bg:           white;
-$row-handle-selected: darken($query-editor-bg, 10%);
-$row-handle-hover:          darken($query-editor-bg, 5%);
+$row-handle-selected: color.adjust($query-editor-bg, $lightness: -10%);
+$row-handle-hover:          color.adjust($query-editor-bg, $lightness: -5%);
 
 $titlebar-bg:               transparent;
 $global-sidebar-bg:         transparent;
-$sidebar-bg:                darken($theme-bg, 3%);
+$sidebar-bg:                color.adjust($theme-bg, $lightness: -3%);
 $sidebar-heading-bg:        $theme-bg;
 $tabs-bg:                   transparent;
 $statusbar-bg:              rgba($theme-base, 0.1);
 // $statusbar-bg:             rgba($theme-primary, 0.4);
 $statusbar-text:            $theme-base;
 
-$grouped-tables-base: darken($theme-bg, 2%);
-$grouped-tables-light: darken($grouped-tables-base, 2%);
+$grouped-tables-base: color.adjust($theme-bg, $lightness: -2%);
+$grouped-tables-light: color.adjust($grouped-tables-base, $lightness: -2%);

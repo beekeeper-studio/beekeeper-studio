@@ -35,7 +35,7 @@
     </div>
 
     <div class="expand" />
-    <status-bar class="tablulator-footer">
+    <status-bar class="tablulator-footer" :active="active">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
         <x-button
@@ -128,16 +128,12 @@ export default Vue.extend({
     ...mapState(['supportedFeatures', 'connection']),
     hotkeys() {
       if (!this.active) return {};
-      const result = {};
-      result['f5'] = this.refreshPartitions.bind(this)
-      result[this.ctrlOrCmd('r')] = this.refreshPartitions.bind(this)
-      if (this.editable) {
-        result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-        result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-        result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      }
-
-      return result;
+      return this.$vHotkeyKeymap({
+        'general.refresh': this.refreshPartitions.bind(this),
+        'general.addRow': this.addRow.bind(this),
+        'general.save': this.submitApply.bind(this),
+        'general.openInSqlEditor': this.submitSql.bind(this),
+      })
     },
     hasEdits() {
       return this.editCount > 0;
@@ -217,6 +213,8 @@ export default Vue.extend({
       await this.$emit('refresh');
     },
     async addRow(): Promise<void> {
+      if (!this.editable) return;
+
       const data = this.tabulator.getData();
       const name = `${this.table.name}_partition_${data.length + 1}`;
       const row: RowComponent = await this.tabulator.addRow({name, expression: this.expressionTemplate, num: 0});
@@ -267,6 +265,8 @@ export default Vue.extend({
       };
     },
     async submitApply(): Promise<void> {
+      if (!this.editable) return;
+
       try {
         this.error = null;
         const changes = this.collectChanges();
@@ -282,6 +282,8 @@ export default Vue.extend({
       }
     },
     async submitSql(): Promise<void> {
+      if (!this.editable) return;
+
       try {
         this.error = null;
         const changes = this.collectChanges();

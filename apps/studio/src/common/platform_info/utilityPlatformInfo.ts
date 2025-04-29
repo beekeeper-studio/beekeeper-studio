@@ -1,5 +1,5 @@
 import { IPlatformInfo } from "../IPlatformInfo";
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('utilityPlatformInfo')
 

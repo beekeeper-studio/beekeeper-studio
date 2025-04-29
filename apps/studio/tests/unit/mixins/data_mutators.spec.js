@@ -7,7 +7,7 @@ describe("cellFormatter", () => {
     const input = {
       getValue: () => '<a>foo</a>',
       getElement: () => document.createElement('a'),
-
+      getColumn: () => ({ getDefinition: () => ({ binaryEncoding: 'base64' }) }),
     }
 
     const formatted = mutators.methods.cellFormatter(input)
@@ -20,11 +20,13 @@ describe("cellFormatter", () => {
     const input = {
       getValue: () => '8640000000000000',
       getElement: () => document.createElement('a'),
+      getColumn: () => ({ getDefinition: () => ({ binaryEncoding: 'base64' }) }),
     }
 
     const badInput = {
       getValue: () => '8640000000000005',
       getElement: () => document.createElement('a'),
+      getColumn: () => ({ getDefinition: () => ({ binaryEncoding: 'base64' }) }),
     }
 
     const params = {

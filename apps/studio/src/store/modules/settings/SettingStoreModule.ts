@@ -3,11 +3,13 @@ import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, setVa
 import _ from 'lodash'
 import Vue from 'vue'
 import { Module } from 'vuex'
+import config from "@/config";
 
 
 interface State {
   settings: IGroupedUserSettings,
-  initialized: boolean
+  initialized: boolean,
+  privacyMode: boolean
 }
 
 const M = {
@@ -19,7 +21,8 @@ const SettingStoreModule: Module<State, any> = {
   namespaced: true,
   state: () => ({
     settings: {},
-    initialized: false
+    initialized: false,
+    privacyMode: false
   }),
   mutations: {
     replaceSettings(state, newSettings: TransportUserSetting) {
@@ -33,6 +36,9 @@ const SettingStoreModule: Module<State, any> = {
     },
     setInitialized(state) {
       state.initialized = true;
+    },
+    SET_PRIVACY_MODE(state, value: boolean) {
+      state.privacyMode = value;
     }
   },
   actions: {
@@ -47,26 +53,47 @@ const SettingStoreModule: Module<State, any> = {
     },
     async save(context, { key, value }) {
       if (!key || !value) return;
-      const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
-      if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
-      setValue(setting, value);
-      setting.key = key
-      const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
-      _.merge(setting, newSetting);
-      context.commit(M.ADD, setting)
-    }
+    
+      if (key === 'privacyMode') {
+        const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
+        setting.key = key;
+    
+        if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
+        setValue(setting, value);
+        const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+        _.merge(setting, newSetting);
+        context.commit(M.ADD, setting);
+      }
+      else {
+        const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
+        if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
+        setValue(setting, value);
+        setting.key = key;
+        const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+        _.merge(setting, newSetting);
+        context.commit(M.ADD, setting);
+      }
+    },
+    togglePrivacyMode({ commit, state }) {
+      const newPrivacyMode = !state.privacyMode;
+      commit('SET_PRIVACY_MODE', newPrivacyMode);
+    },
   },
   getters: {
     settings(state) {
       return state.settings
     },
-    themeValue(state, _getters, _rootState, rootGetters) {
+    themeValue(state) {
       const theme = state.settings.theme ? state.settings.theme.value : null;
       if (!theme) return null
-      if (rootGetters.isCommunity && ['system', 'dark', 'light'].includes(theme as string)) {
-        return theme
-      }
-      return rootGetters.isUltimate ? theme : 'system';
+      return theme;
+    },
+    /** The keymap type to be used in text editor */
+    userKeymap(state) {
+      const value = state.settings.keymap?.value as string;
+      return value && config.defaults.keymapTypes.map((k) => k.value).includes(value)
+        ? value
+        : "default";
     },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'

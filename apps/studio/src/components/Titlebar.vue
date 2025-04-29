@@ -21,9 +21,41 @@
       </div>
       <div
         class="titlebar-actions"
-        v-if="!$config.isMac"
       >
-        <template>
+        <div class="titlebar-actions-extra">
+          <button
+            class="btn btn-link"
+            @dblclick.prevent.stop
+            @click.prevent="togglePrimarySidebar"
+            title="Toggle Primary Sidebar"
+            v-if="connected"
+          >
+            <i
+              class="material-symbols-outlined"
+              :style="{
+                'font-variation-settings': primarySidebarOpen ? `'FILL' 1` : `'FILL' 0`
+              }"
+            >dock_to_right</i>
+          </button>
+          <button
+            class="btn btn-link"
+            @dblclick.prevent.stop
+            @click.prevent="toggleSecondarySidebar"
+            title="Toggle Secondary Sidebar"
+            v-if="connected"
+          >
+            <i
+              class="material-symbols-outlined"
+              :style="{
+                'font-variation-settings': secondarySidebarOpen ? `'FILL' 1` : `'FILL' 0`
+              }"
+            >dock_to_left</i>
+          </button>
+        </div>
+        <div
+          v-if="!$config.isMac"
+          class="window-controls-container"
+        >
           <button
             class="btn btn-link"
             id="minimize"
@@ -56,14 +88,15 @@
           >
             <i class="material-icons">clear</i>
           </button>
-        </template>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
+import { AppEvent } from "@/common/AppEvent";
 import AppMenu from './menu/NewAppMenu.vue'
 export default {
   components: { AppMenu },
@@ -74,7 +107,8 @@ export default {
     }
   },
   computed: {
-    ...mapState(['windowTitle'])
+    ...mapState(['windowTitle', 'connected']),
+    ...mapState('sidebar', ['secondarySidebarOpen', 'primarySidebarOpen']),
   },
   mounted() {
     window.main.onMaximize(() => {
@@ -94,6 +128,12 @@ export default {
     }, this.$util.sId);
   },
   methods: {
+    togglePrimarySidebar() {
+      this.trigger(AppEvent.togglePrimarySidebar)
+    },
+    toggleSecondarySidebar() {
+      this.trigger(AppEvent.toggleSecondarySidebar)
+    },
     async minimizeWindow() {
       await window.main.minimizeWindow();
     },

@@ -1,3 +1,4 @@
+@use "sass:color";
 // Original Copyright https://github.com/PygmySlowLoris/vue-stepper
 
 .stepper-box {
@@ -85,7 +86,7 @@
   border: none;
   &.next {
     &.deactivated {
-      background-color: darken($theme-primary, 20%) !important;
+      background-color: color.adjust($theme-primary, $lightness: -20%) !important;
       cursor: not-allowed !important;
     }
   }

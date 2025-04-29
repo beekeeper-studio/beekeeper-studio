@@ -1,4 +1,4 @@
-import { StartedTestContainer } from 'testcontainers'
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { TableInsert } from '../../../../../src/lib/db/models'
@@ -8,6 +8,9 @@ import { safeSqlFormat } from '@/common/utils';
 import _ from 'lodash';
 import { createServer } from '@commercial/backend/lib/db/server'
 import { PostgresTestDriver } from './postgres/container'
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -465,6 +468,64 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       ])
     })
 
+    it("should filter foreign keys by schema when calling getTableKeys", async () => {
+      // Create two schemas with the same table name in each
+      await util.knex.raw(`
+        CREATE SCHEMA schema_test_1;
+        CREATE SCHEMA schema_test_2;
+
+        -- Create parent tables in both schemas
+        CREATE TABLE schema_test_1.parent (
+          id INTEGER PRIMARY KEY,
+          name VARCHAR(100)
+        );
+
+        CREATE TABLE schema_test_2.parent (
+          id INTEGER PRIMARY KEY,
+          name VARCHAR(100)
+        );
+
+        -- Create child tables with the same name in both schemas
+        CREATE TABLE schema_test_1.child (
+          id INTEGER PRIMARY KEY,
+          parent_id INTEGER,
+          description VARCHAR(100),
+          FOREIGN KEY (parent_id) REFERENCES schema_test_1.parent(id)
+        );
+
+        CREATE TABLE schema_test_2.child (
+          id INTEGER PRIMARY KEY,
+          parent_id INTEGER,
+          description VARCHAR(100),
+          FOREIGN KEY (parent_id) REFERENCES schema_test_2.parent(id)
+        );
+      `);
+
+      // Get foreign keys from schema_test_1
+      const keys1 = await util.connection.getTableKeys('child', 'schema_test_1');
+
+      // Get foreign keys from schema_test_2
+      const keys2 = await util.connection.getTableKeys('child', 'schema_test_2');
+
+      // Verify foreign keys from schema_test_1 refer to the correct parent table
+      expect(keys1.length).toBe(1);
+      expect(keys1[0].fromSchema).toBe('schema_test_1');
+      expect(keys1[0].fromTable).toBe('child');
+      expect(keys1[0].toSchema).toBe('schema_test_1');
+      expect(keys1[0].toTable).toBe('parent');
+
+      // Verify foreign keys from schema_test_2 refer to the correct parent table
+      expect(keys2.length).toBe(1);
+      expect(keys2[0].fromSchema).toBe('schema_test_2');
+      expect(keys2[0].fromTable).toBe('child');
+      expect(keys2[0].toSchema).toBe('schema_test_2');
+      expect(keys2[0].toTable).toBe('parent');
+
+      // Verify no cross-schema references (schema_test_1.child shouldn't reference schema_test_2.parent)
+      expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
+      expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
+    })
+
     it("should be able to define array column correctly", async () => {
       const arrayTable = await util.connection.listTableColumns('witharrays');
       const enumTable = await util.connection.listTableColumns('moody_people');
@@ -521,3 +582,64 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+
+describe(`Postgres (custom socket port connection)`, () => {
+  jest.setTimeout(dbtimeout)
+
+  let temp: string;
+  let container: StartedTestContainer;
+  beforeAll(async () => {
+      const startupTimeout = dbtimeout * 2;
+      temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
+      container = await new GenericContainer(`postgres`)
+        .withEnvironment({ "POSTGRES_PASSWORD": "example" })
+        .withHealthCheck({
+          test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d banana > /dev/null"],
+          interval: 2000,
+          timeout: 3000,
+          retries: 10,
+          startPeriod: 5000,
+        })
+        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
+        // .withWaitStrategy(Wait.forHealthCheck())
+        .withBindMounts([{
+          source: path.join(temp, "postgresql"),
+          target: "/var/run/postgresql",
+          mode: "rw"
+        }])
+        .withStartupTimeout(startupTimeout)
+        .withExposedPorts(5433)
+        .withCommand(['postgres', '-p', '5433'])
+        .start()
+  })
+
+  afterAll(async () => {
+    await container?.stop()
+  })
+
+  it("should be able to connect", async () => {
+    const server = createServer({
+      client: 'postgresql',
+      host: 'notarealhost',
+      port: 5433,
+      user: 'postgres',
+      password: 'example',
+      osUser: 'foo',
+      ssh: null,
+      sslCaFile: null,
+      sslCertFile: null,
+      sslKeyFile: null,
+      sslRejectUnauthorized: false,
+      ssl: false,
+      domain: null,
+      socketPath: path.join(temp, "postgresql"),
+      socketPathEnabled: true,
+      readOnlyMode: false,
+    })
+    const connection = server.createConnection()
+    await connection.connect()
+    const results = await connection.executeQuery("SELECT 1 as a")
+    expect(results[0].rows[0]).toEqual({ a: 1 })
+    await connection.disconnect()
+  })
+})

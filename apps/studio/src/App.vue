@@ -28,8 +28,11 @@
     />
     <dropzone />
     <data-manager />
+    <configuration-warning-modal />
     <enter-license-modal />
     <workspace-sign-in-modal />
+    <workspace-create-modal />
+    <workspace-rename-modal />
     <import-queries-modal />
     <import-connections-modal />
     <confirmation-modal-manager />
@@ -52,7 +55,10 @@ import AutoUpdater from './components/AutoUpdater.vue'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
+import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vue'
 
+import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
+import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
 import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
@@ -72,7 +78,7 @@ import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExp
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('app.vue')
 
@@ -83,7 +89,8 @@ export default Vue.extend({
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal,
+    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
+    ConfigurationWarningModal,
   },
   data() {
     return {
@@ -134,6 +141,11 @@ export default Vue.extend({
   async mounted() {
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
+    this.$store.dispatch('licenses/updateAll');
+    this.licenseInterval = setInterval(
+      () => this.$store.dispatch('licenses/updateAll'),
+      globals.licenseCheckInterval
+    )
     const query = querystring.parse(window.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
@@ -196,6 +208,9 @@ export default Vue.extend({
       const isValidDateExpired = compare ? !prev.isValidDateExpired && curr.isValidDateExpired : this.status.isValidDateExpired
       const isSupportDateExpired = compare ? !prev.isSupportDateExpired && curr.isSupportDateExpired : this.status.isSupportDateExpired
       const status = compare ? curr : this.status
+      if (curr?.fromFile && curr?.noLicenseKey) {
+        this.$noty.error(`Something is wrong with your license file: ${curr?.condition.join(", ") }`)
+      }
 
       if (isValidDateExpired) {
         this.$root.$emit(AppEvent.licenseValidDateExpired, status)

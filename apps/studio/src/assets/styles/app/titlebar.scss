@@ -36,13 +36,19 @@ $titlebar-actions-height:   30px;
     margin: -11px 0;
   }
   .titlebar-title {
-    position: absolute;
+    position: relative;
     left: 0;
     right: 0;
     text-align: center;
     color: $text-light;
     font-size: 0.85rem;
     line-height: 2;
+    align-self: flex-start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 25%;
+    margin-right: 10%;
     @media (max-width: 900px) {
       display: none;
     }
@@ -51,10 +57,12 @@ $titlebar-actions-height:   30px;
     -webkit-app-region: no-drag;
   }
   .titlebar-actions {
-    display: flex;
     margin: -$gutter-h;
-    margin-left: 0;
+    margin-left: auto;
     -webkit-app-region: no-drag;
+    &, .window-controls-container {
+      display: flex;
+    }
     button {
       display: flex;
       align-items: center;
@@ -62,8 +70,6 @@ $titlebar-actions-height:   30px;
       border-radius: 0;
       color: $text-light;
       margin: 0;
-      padding: 0 0.75rem;
-      height: $titlebar-actions-height;
       z-index: 10;
       box-shadow: none;
       &:hover {
@@ -71,6 +77,25 @@ $titlebar-actions-height:   30px;
       }
       &:focus {
         background: transparent;
+      }
+    }
+    .titlebar-actions-extra {
+      display: flex;
+      gap: 0.5rem;
+      margin-right: 0.75rem;
+      & > button {
+        height: auto;
+        align-self: center;
+        padding: 0;
+        i {
+          font-size: 1.5rem;
+        }
+      }
+    }
+    .window-controls-container  {
+      button {
+        padding: 0 0.75rem;
+        height: $titlebar-actions-height;
       }
     }
     #maximize {
@@ -113,6 +138,9 @@ $titlebar-actions-height:   30px;
 }
 
 .titlebar-wrapper {
+  padding-bottom: $gutter-h;
+  background-color: var(--bks-titleBar-activeBackground);
+  color: var(--bks-titleBar-activeForeground);
   & .titlebar.windows.fullscreen {
     display: none;
     -webkit-app-region: no-drag;

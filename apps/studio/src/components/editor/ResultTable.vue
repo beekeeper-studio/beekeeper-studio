@@ -19,7 +19,6 @@
   import { dialectFor } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
-  import globals from '@/common/globals'
   import Papa from 'papaparse'
   import { mapState, mapGetters } from 'vuex'
   import { markdownTable } from 'markdown-table'
@@ -28,6 +27,8 @@
   import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
+  import { AppEvent } from "@/common/AppEvent";
+  import XLSX from 'xlsx';
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -35,9 +36,11 @@
       return {
         tabulator: null,
         actualTableHeight: '100%',
+        selectedRowData: {},
+        selectedRowPosition: -1,
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus'],
+    props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -68,9 +71,9 @@
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
       ...mapGetters(['isUltimate']),
       keymap() {
-        const result = {}
-        result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-        return result
+        return this.$vHotkeyKeymap({
+          'queryEditor.copyResultSelection': this.copySelection.bind(this),
+        });
       },
       tableData() {
           return this.dataToTableData(this.result, this.tableColumns)
@@ -79,7 +82,7 @@
           return this.result.truncated
       },
       tableColumns() {
-        const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
+        const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
         const cellMenu = (_e, cell) => {
           return copyActionsMenu({
@@ -93,7 +96,7 @@
           return [
             ...copyActionsMenu({
               ranges: column.getRanges(),
-              table: 'mytable',
+              table: this.result.tableName,
               schema: this.defaultSchema,
             }),
             { separator: true },
@@ -119,6 +122,9 @@
           const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
           const defaults = {
             formatter: this.cellFormatter,
+            formatterParams: {
+              binaryEncoding: this.binaryEncoding,
+            },
           }
 
           const result = {
@@ -133,7 +139,7 @@
             width: columnWidth,
             mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
             formatter: this.cellFormatter,
-            maxInitialWidth: globals.maxColumnWidth,
+            maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
             tooltip: this.cellTooltip,
             contextMenu: cellMenu,
             headerContextMenu: columnMenu,
@@ -176,11 +182,20 @@
         const columns = 'columns-' + this.result.fields.reduce((str, field) => `${str},${field.name}`, '')
         return `${workspace}.${connection}.${table}.${columns}`
       },
+      selectedRowId() {
+        return `${this.tableId ? `${this.tableId}.` : ''}tab-${this.tab.id}.row-${this.selectedRowPosition}`
+      },
+      rootBindings() {
+        return [
+          { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+        ]
+      },
     },
     beforeDestroy() {
       if (this.tabulator) {
         this.tabulator.destroy()
       }
+      this.unregisterHandlers(this.rootBindings)
     },
     async mounted() {
       this.initializeTabulator()
@@ -191,6 +206,10 @@
         }
         this.tabulator.on('tableBuilt', onTableBuilt)
       }
+      if (this.active) {
+        this.handleTabActive()
+      }
+      this.registerHandlers(this.rootBindings)
     },
     methods: {
       initializeTabulator() {
@@ -198,6 +217,8 @@
           this.tabulator.destroy()
         }
         this.tabulator = tabulatorForTableData(this.$refs.tabulator, {
+          table: this.result.tableName,
+          schema: this.result.schema,
           persistenceID: this.tableId,
           data: this.tableData, //link data to table
           columns: this.tableColumns, //define table columns
@@ -205,10 +226,14 @@
           downloadConfig: {
             columnHeaders: true
           },
+          onRangeChange: this.handleRangeChange,
         });
       },
       copySelection() {
-        if (!this.active || !document.activeElement.classList.contains('tabulator-tableholder')) return
+        const classes = [...document.activeElement.classList.values()];
+        const isFocusingTable = classes.some(c => c.startsWith('tabulator'));
+
+        if (!this.active || !isFocusingTable) return
         copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
       },
       dataToJson(rawData, firstObjectOnly) {
@@ -219,23 +244,52 @@
         return firstObjectOnly ? result[0] : result
       },
       download(format) {
-        let formatter = format !== 'md' ? format : (rows, options, setFileContents) => {
-          const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value))
-          setFileContents(markdownTable(values), 'text/markdown')
-        };
+        let formatter = format;
+        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss');
+        const title = this.query.title ? _.snakeCase(this.query.title) : 'query_results';
+
+        if(format === 'md'){
+          formatter = (rows, options, setFileContents) => {
+            const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value));
+            setFileContents(markdownTable(values), 'text/markdown')
+          };
+        }
+
         // Fix Issue #1493 Lost column names in json query download
         // by overriding the tabulator-generated json with ...what cipboard() does, below:
-        formatter = format !== 'json' ? formatter : (rows, options, setFileContents) => {
-          setFileContents(
-            JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
-           )
-        };
-        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
-        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
+        if(format === 'json'){
+          formatter = (rows, options, setFileContents) => {
+             const newValue = JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  ");
+             setFileContents(newValue, 'text/json');
+          };
+        }
 
-        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
-        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
-        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
+        // Fix Issue #2863 replacing null values with empty string
+        if(format === 'xlsx'){
+          formatter = (rows, options, setFileContents) => {
+             const values = rows.map(row => row.columns.map(col => {
+               if(col.value === null){
+                 return '';
+               }
+
+               if(typeof col.value === 'object'){
+                 return JSON.stringify(col.value);
+               }
+
+               return col.value;
+              })
+            );
+
+             const ws = XLSX.utils.aoa_to_sheet(values);
+             const wb = XLSX.utils.book_new();
+
+             XLSX.utils.book_append_sheet(wb, ws, title);
+             const excel = XLSX.write(wb, { type: 'buffer' });
+             setFileContents(excel);
+          }
+        }
+
+        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
       },
       clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")
@@ -317,6 +371,31 @@
       triggerFocus() {
         this.tabulator.rowManager.getElement().focus();
       },
-    }
+      updateJsonViewerSidebar() {
+        /** @type {import('@/lib/data/jsonViewer').UpdateOptions} */
+        const data = {
+          dataId: this.selectedRowId,
+          value: this.selectedRowData,
+          expandablePaths: [],
+          editablePaths: [],
+          signs: {},
+        }
+        this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      },
+      handleRangeChange(ranges) {
+        const row = ranges[0].getRows()[0]
+        this.selectedRowData = this.dataToJson(row.getData(), true)
+        this.selectedRowPosition = row.getPosition()
+        this.updateJsonViewerSidebar()
+      },
+      handleTabActive() {
+        this.updateJsonViewerSidebar()
+      },
+      handleSwitchedTab(tab) {
+        if (tab.id === this.tab.id) {
+          this.handleTabActive()
+        }
+      }
+    },
 	}
 </script>

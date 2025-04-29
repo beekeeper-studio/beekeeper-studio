@@ -8,7 +8,10 @@ import { PostgresData } from "./postgresql";
 import { SqliteData } from "./sqlite";
 import { SqlServerData } from "./sqlserver";
 import { CassandraData } from './cassandra'
+import { DuckDBData } from "./duckdb";
 import { ClickHouseData } from "./clickhouse";
+import { MongoDBData } from "./mongodb";
+import { SqlAnywhereData } from "./anywhere";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -30,8 +33,14 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return BigQueryData
     case 'firebird':
       return FirebirdData
+    case 'duckdb':
+      return DuckDBData
     case 'clickhouse':
       return ClickHouseData
+    case 'mongodb':
+      return MongoDBData
+    case 'sqlanywhere':
+      return SqlAnywhereData
     default:
       return SqliteData
   }

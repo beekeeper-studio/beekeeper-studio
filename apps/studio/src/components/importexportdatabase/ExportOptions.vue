@@ -119,7 +119,7 @@
 import pluralize from 'pluralize'
 import dateFormat from 'dateformat'
 import { mapGetters, mapMutations, mapState } from "vuex"
-import rawlog from 'electron-log'
+import rawlog from '@bksLogger'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "../export/forms"
 import FilePicker from '../common/form/FilePicker.vue'
 const log = rawlog.scope('export/multi-export-manager')

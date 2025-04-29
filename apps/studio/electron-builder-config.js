@@ -3,6 +3,16 @@ const fpmOptions = [
   "--after-install=build/deb-postinstall"
 ]
 
+const rpmFpmOptions = [
+  "--after-install=build/rpm-postinstall"
+]
+
+// FIXME: Get a new certificate with a subject line that is a valid AppX publisher
+// support request open to digicert currently (Feb 2025)
+const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
+
+
+
 module.exports = {
   appId: "io.beekeeperstudio.desktop",
   productName: "Beekeeper Studio",
@@ -29,6 +39,10 @@ module.exports = {
       to: 'demo.db'
     },
     {
+      from: './extra_resources/production_pub.pem',
+      to: 'production_pub.pem'
+    },
+    {
       from: 'build/launcher-script.sh',
       to: 'launcher-script.sh'
     },
@@ -39,7 +53,12 @@ module.exports = {
     {
       from: './public',
       to: 'public'
-    }
+    },
+    {
+      from: ".",
+      to: ".",
+      filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
+    },
   ],
   fileAssociations: [
     {
@@ -56,6 +75,16 @@ module.exports = {
       ext: 'sqlite',
       name: 'SQLite sqlite file',
       mimeType: 'application/vnd.sqlite3'
+    },
+    {
+      ext: 'duckdb',
+      name: 'DuckDB file',
+      mimeType: 'application/vnd.duckdb'
+    },
+    {
+      ext: 'ddb',
+      name: 'DuckDB file',
+      mimeType: 'application/vnd.duckdb'
     }
   ],
   protocols: [
@@ -115,11 +144,15 @@ module.exports = {
     target: [
       'snap',
       'deb',
-      'appImage'
+      'appImage',
+      'rpm',
+      'flatpak',
+      'pacman'
     ],
     desktop: {
       'StartupWMClass': 'beekeeper-studio'
     },
+    publish: ['github']
   },
   deb: {
     publish: [
@@ -129,8 +162,9 @@ module.exports = {
     // when we upgrade Electron we need to check these
     depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libsecret-1-0", "gnupg"]
   },
-  appImage: {
-    publish: ['github'],
+  rpm: {
+    publish: [ 'github' ],
+    fpm: rpmFpmOptions,
   },
   snap: {
     base: 'core22',
@@ -145,11 +179,20 @@ module.exports = {
   },
   win: {
     icon: './public/icons/png/512x512.png',
+    // FIXME: Add AppX/MSIX build back in once certificate issues resolved
     target: ['nsis', 'portable'],
     publish: ['github'],
     sign: "./build/win/sign.js",
   },
   portable: {
     "artifactName": "${productName}-${version}-portable.exe",
+  },
+  nsis: {
+    oneClick: false
+  },
+  appx: {
+    applicationId: "beekeeperstudio",
+    publisher: certSubject.replaceAll('"', "&quot;"),
+    publisherDisplayName: "Beekeeper Studio"
   }
 }

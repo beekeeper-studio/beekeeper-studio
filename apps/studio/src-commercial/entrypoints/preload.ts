@@ -7,10 +7,9 @@ import { homedir } from 'os';
 import tls, { SecureVersion } from 'tls';
 import username from 'username';
 import { execSync } from 'child_process';
-import rawLog from 'electron-log/renderer';
+import 'electron-log/preload';
 import pluralize from 'pluralize';
 
-const log = rawLog.scope('preload.ts');
 
 const electron = require('@electron/remote');
 
@@ -32,6 +31,10 @@ export const api = {
   async requestPlatformInfo() {
     const platformInfo = await ipcRenderer.invoke('platformInfo')
     contextBridge.exposeInMainWorld('platformInfo', platformInfo);
+  },
+  async requestBksConfigSource() {
+    const bksConfigSource = await ipcRenderer.invoke('bksConfigSource')
+    contextBridge.exposeInMainWorld('bksConfigSource', bksConfigSource);
   },
   isReady() {
     ipcRenderer.send('ready');
@@ -157,7 +160,6 @@ export const api = {
   },
   attachPortListener() {
     ipcRenderer.on('port', (event, { sId, utilDied }) => {
-      log.log('Received port in renderer with sId: ', sId);
       window.postMessage({ type: 'port', sId }, '*', event.ports);
 
       if (utilDied) {

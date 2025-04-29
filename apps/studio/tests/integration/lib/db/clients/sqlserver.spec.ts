@@ -30,6 +30,8 @@ function testWith(dockerTag: string, readonly: boolean) {
   describe(`SQL Server [${dockerTag}] - read-only mode? ${readonly}`, () => {
     jest.setTimeout(dbtimeout)
 
+    const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
+
     let container;
     let util
     // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
@@ -38,8 +40,6 @@ function testWith(dockerTag: string, readonly: boolean) {
 
     beforeAll(async () => {
       const timeoutDefault = 5000
-
-      const sqlCmdPath = dockerTag.includes('CU') ? '/opt/mssql-tools' : '/opt/mssql-tools18'
 
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
         // .withResourcesQuota({ memory: 2, cpu: 1 })
@@ -50,14 +50,7 @@ function testWith(dockerTag: string, readonly: boolean) {
           "ACCEPT_EULA": "Y"
         })
         .withExposedPorts(1433)
-        .withWaitStrategy(Wait.forHealthCheck())
-        .withHealthCheck({
-          test: ["CMD-SHELL", `${sqlCmdPath}/bin/sqlcmd -C -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`],
-          interval: 5000,
-          timeout: 3000,
-          retries: 10,
-          startPeriod: 7000,
-        })
+        .withWaitStrategy(Wait.forLogMessage("SQL Server is now ready for client connections."))
         .withStartupTimeout(dbtimeout)
         .start()
 
@@ -111,6 +104,79 @@ function testWith(dockerTag: string, readonly: boolean) {
         const result = await util.connection.selectTop('world', 0, 100, [], [], 'hello')
         expect(result.result.length).toBe(1)
         expect(result.fields.length).toBe(2)
+      })
+      
+      it("should properly filter foreign keys by schema", async () => {
+        // Skip in read-only mode
+        if (readonly) return;
+        
+        // Create test schemas and tables with separate statements
+        await util.knex.raw(`CREATE SCHEMA schema_test_1`);
+        await util.knex.raw(`CREATE SCHEMA schema_test_2`);
+        
+        await util.knex.raw(`
+          CREATE TABLE schema_test_1.parent (
+            id INT PRIMARY KEY
+          )
+        `);
+        
+        await util.knex.raw(`
+          CREATE TABLE schema_test_2.parent (
+            id INT PRIMARY KEY
+          )
+        `);
+        
+        await util.knex.raw(`
+          CREATE TABLE schema_test_1.child (
+            id INT PRIMARY KEY,
+            parent_id INT,
+            CONSTRAINT FK_Child_Parent_1 FOREIGN KEY (parent_id) REFERENCES schema_test_1.parent(id)
+          )
+        `);
+        
+        await util.knex.raw(`
+          CREATE TABLE schema_test_2.child (
+            id INT PRIMARY KEY,
+            parent_id INT,
+            CONSTRAINT FK_Child_Parent_2 FOREIGN KEY (parent_id) REFERENCES schema_test_2.parent(id)
+          )
+        `);
+        
+        // Get foreign keys from schema_test_1
+        const keys1 = await util.connection.getTableKeys('child', 'schema_test_1');
+        
+        // Get foreign keys from schema_test_2
+        const keys2 = await util.connection.getTableKeys('child', 'schema_test_2');
+        
+        // Verify foreign keys from schema_test_1 refer to the correct parent table
+        expect(keys1.length).toBe(1);
+        expect(keys1[0].fromSchema).toBe('schema_test_1');
+        expect(keys1[0].fromTable).toBe('child');
+        expect(keys1[0].toSchema).toBe('schema_test_1');
+        expect(keys1[0].toTable).toBe('parent');
+        
+        // Verify foreign keys from schema_test_2 refer to the correct parent table
+        expect(keys2.length).toBe(1);
+        expect(keys2[0].fromSchema).toBe('schema_test_2');
+        expect(keys2[0].fromTable).toBe('child');
+        expect(keys2[0].toSchema).toBe('schema_test_2');
+        expect(keys2[0].toTable).toBe('parent');
+        
+        // Verify no cross-schema references
+        expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
+        expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
+        
+        // Clean up created schemas and tables (in reverse order of creation)
+        try {
+          await util.knex.raw(`DROP TABLE schema_test_1.child`);
+          await util.knex.raw(`DROP TABLE schema_test_2.child`);
+          await util.knex.raw(`DROP TABLE schema_test_1.parent`);
+          await util.knex.raw(`DROP TABLE schema_test_2.parent`);
+          await util.knex.raw(`DROP SCHEMA schema_test_1`);
+          await util.knex.raw(`DROP SCHEMA schema_test_2`);
+        } catch (e) {
+          console.warn('Failed to clean up schema test objects:', e);
+        }
       })
     })
 

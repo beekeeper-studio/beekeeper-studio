@@ -50,7 +50,9 @@ export const OracleData: DialectData = {
   },
   textEditorMode: "text/x-sql",
   disabledFeatures: {
-     export: {
+    initialSort: true,
+    shell: true,
+    export: {
       sql: true
     },
     informationSchema: {
@@ -58,6 +60,7 @@ export const OracleData: DialectData = {
     },
     alter: {
       renameSchema: true,
+      reorderColumn: true,
     },
   },
   notices: {

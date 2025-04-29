@@ -10,15 +10,13 @@ export default {
   maxColumnWidth: 1000,
   minColumnWidth: 100,
   maxInitialWidth: 500,
-  defaultTableTableSplitSizes: [75, 25],
   maxDetailViewTextLength: 30,
   bigTableColumnWidth: 125,
   maxColumnWidthTableInfo: 300,
   workspaceCheckInterval: 5000, // 5 seconds
   dataCheckInterval: 1000 * 30, // 30 secs
   trialNotificationInterval: 1000 * 60 * 60 * 12, // 12 hours
-  licenseCheckInterval: 1000 * 60, // once per 1 minute
-  licenseUtilityCheckInterval: 1000 * 60 * 10, // once per 10 minutes
+  licenseCheckInterval: 1000 * 60 * 10, // once per 10 minutes
   errorNoticeTimeout: 60 * 1000, // 1 minute
   tableListItemHeight: 22.8, // in pixels
   // for azure auth
@@ -26,7 +24,10 @@ export default {
   clientId: '6eabc37c-bcc5-41fa-9a90-f6c5ab2aabcb',
   iamRefreshTime: 13 * 60 * 1000, // 13 minutes
   iamExpiryTime: 15 * 60 * 1000, // 15 minutes
-  iamRefreshBeforeTime: 2 * 60 * 1000 // 2 minutes
+  iamRefreshBeforeTime: 2 * 60 * 1000, // 2 minutes
+  firebird: {
+    poolSize: 5,
+  },
 }
 
 

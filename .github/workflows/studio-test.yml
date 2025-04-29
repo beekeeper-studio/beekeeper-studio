@@ -15,7 +15,7 @@ on:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       test-chunks: ${{ steps['set-test-chunks'].outputs['test-chunks'] }}
     steps:
@@ -31,7 +31,7 @@ jobs:
         run: echo "::set-output name=test-chunks::$(./bin/get-db-files-as-json.sh)"
   unit:
     name: Non-terrible tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
@@ -56,6 +56,9 @@ jobs:
       - name: Check for license-breaking includes
         run: bin/check-for-src-commercial.sh
 
+      - name: Check for bad log imports
+        run: bin/check-for-electron-log-imports.sh
+
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
@@ -65,7 +68,7 @@ jobs:
 
   integration:
     name: 🥞 ${{ matrix.chunk[0] }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - setup
     strategy:
@@ -81,6 +84,12 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: yarn
+
+      - name: Install libaio (for oracle)
+        run: sudo apt install libaio-dev
+
+      - name: Symlink libaio v1 (for oracle)
+        run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
 
       - name: yarn install (with retry)
         uses: nick-fields/retry@v2
@@ -100,6 +109,32 @@ jobs:
           command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
+
+  codemirror:
+    name: CodeMirror tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v2
+
+    - name: Install Node.js, NPM and Yarn
+      uses: actions/setup-node@v3
+      with:
+        node-version-file: '.nvmrc'
+        cache: yarn
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+      env:
+        npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+    - name: Test
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 20
+        max_attempts: 2
+        on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
+        command: yarn workspace beekeeper-studio run test:codemirror --runInBand --ci
+
   # e2e:
   #   name: E2E tests
   #   runs-on: ubuntu-latest

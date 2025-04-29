@@ -159,7 +159,7 @@ export interface BksField {
   bksType: BksFieldType;
 }
 
-export type BksFieldType = 'BINARY' | 'UNKNOWN';
+export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID';
 
 export interface TableChanges {
   inserts: TableInsert[];
@@ -250,8 +250,9 @@ export interface FieldDescriptor {
 }
 
 export interface NgQueryResult {
-  fields: FieldDescriptor[];
-  rows: any[];
+  output?: any;
+  fields?: FieldDescriptor[];
+  rows?: any[];
   rowCount?: number;
   affectedRows?: number;
   command?: any;
@@ -358,4 +359,12 @@ export interface ImportScriptFunctions {
   commitCommand: (args?: any) => Promise<null|any>
   rollbackCommand: (args?: any) => Promise<null|any>
   finalCommand?: (args?: any) => Promise<any|null>
+}
+
+export interface BuildInsertOptions {
+  columns?: any[],
+  bitConversionFunc?: (value: any) => any
+  runAsUpsert?: boolean
+  primaryKeys?: string[]
+  createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
 }

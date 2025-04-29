@@ -1,3 +1,9 @@
+// Uint8Array pollyfills https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/fromBase64
+import 'core-js/actual/typed-array/from-base64'
+import 'core-js/actual/typed-array/from-hex'
+import 'core-js/actual/typed-array/to-base64'
+import 'core-js/actual/typed-array/to-hex'
+
 import Vue from 'vue'
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
@@ -24,7 +30,7 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
@@ -35,6 +41,7 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
 (async () => {
 
   await window.main.requestPlatformInfo();
+  await window.main.requestBksConfigSource();
   rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
@@ -116,7 +123,10 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
 
 
     Vue.config.productionTip = false
-    Vue.use(VueHotkey)
+    Vue.use(VueHotkey, {
+      "pageup": 33,
+      "pagedown": 34
+    })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)
@@ -145,8 +155,8 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
       if (event.source === window && event.data.type === 'port') {
         const [port] = event.ports;
         const { sId } = event.data;
+        log.log('Received port in renderer with sId: ', sId);
 
-        log.log('GOT PORT: ', port, sId)
         Vue.prototype.$util.setPort(port, sId);
         app.$store.dispatch('settings/initializeSettings');
       }

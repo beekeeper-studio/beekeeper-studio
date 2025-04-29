@@ -51,6 +51,7 @@ export const FirebirdData: DialectData = {
   requireDataset: false,
   textEditorMode: "text/x-sql",
   disabledFeatures: {
+    shell: true,
     backup: true,
     truncateElement: true,
     duplicateTable: true,
@@ -62,7 +63,10 @@ export const FirebirdData: DialectData = {
       renameTable: true,
       renameView: true,
     },
+    multipleDatabases: true,
+    schema: true,
     generatedColumns: true,
+    multipleDatabase: true,
   },
   notices: {},
 };

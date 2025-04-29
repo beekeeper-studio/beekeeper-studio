@@ -134,11 +134,12 @@ import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import TablePartitionsVue from './tableinfo/TablePartitions.vue'
+import TableSchemaValidationVue from './tableinfo/TableSchemaValidation.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import { AppEvent } from '@/common/AppEvent'
-import { mapState } from 'vuex'
-import rawLog from 'electron-log/renderer'
+import { mapState, mapGetters } from 'vuex'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('TabTableProperties')
 export default {
@@ -175,6 +176,7 @@ export default {
           id: 'relations',
           name: "Relations",
           tableOnly: true,
+          needsRelations: true,
           needsProperties: true,
           needsPartitions: false,
           component: TableRelationsVue,
@@ -184,6 +186,7 @@ export default {
           id: 'triggers',
           name: "Triggers",
           tableOnly: true,
+          needsTriggers: true,
           needsProperties: true,
           needsPartitions: false,
           component: TableTriggersVue,
@@ -196,6 +199,15 @@ export default {
           needsProperties: true,
           needsPartitions: true,
           component: TablePartitionsVue,
+          dirty: false
+        },
+        {
+          id: 'schema-validation',
+          name: 'Schema Validation',
+          tableOnly: true,
+          mongoOnly: true,
+          needsProperties: false,
+          component: TableSchemaValidationVue,
           dirty: false
         }
       ],
@@ -217,6 +229,7 @@ export default {
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
+    ...mapGetters(['dialectData', 'dialect']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -246,12 +259,24 @@ export default {
           return false
         }
 
+        if (p.needsRelations && this.dialectData?.disabledFeatures?.relations) {
+          return false
+        }
+
+        if (p.needsTriggers && this.dialectData?.disabledFeatures?.triggers) {
+          return false
+        }
+
         if (p.needsPartitions && (!this.supportedFeatures.partitions ||
           ((!this.supportedFeatures.editPartitions && !this.properties.partitions?.length) ||
           (this.supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
-        if(p.tableOnly) {
+        if (p.mongoOnly && this.dialect !== 'mongodb') {
+          return false
+        }
+        
+        if (p.tableOnly) {
           return isTable
         }
         return true

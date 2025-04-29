@@ -9,7 +9,7 @@ const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs');
 import * as cassandra from 'cassandra-driver';
 import { readFileSync } from "fs";
 import { CassandraChangeBuilder } from "@shared/lib/sql/change_builder/CassandraChangeBuilder";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
@@ -324,7 +324,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Array.from({length: 10}, (_e, i) => `${i + 1}`)
   }
 
-  async createDatabase(databaseName: string, charset: string, collation: string): Promise<void> {
+  async createDatabase(databaseName: string, charset: string, collation: string): Promise<string> {
     const datacenters = this.client.getState().getConnectedHosts().map((h) => h.datacenter);
     // THIS FEELS DUMB, BUT :shrug:
     const strategy = charset, replicationFactor = collation;
@@ -334,6 +334,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     const query = `CREATE KEYSPACE ${this.wrapIdentifier(databaseName)} WITH REPLICATION = {'class': '${strategy}', ${rf}};`
 
     await this.driverExecuteSingle(query);
+    return databaseName;
   }
 
   async createDatabaseSQL(): Promise<string> {

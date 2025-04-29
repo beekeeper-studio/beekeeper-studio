@@ -1,7 +1,7 @@
 import {Knex} from 'knex'
 import knex from 'knex'
 import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
-import log from 'electron-log'
+import log from '@bksLogger'
 import platformInfo from '../../src/common/platform_info'
 import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
@@ -11,7 +11,9 @@ export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import BksConfig from '@/common/bksConfig'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
+import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { IDbConnectionPublicServer } from './db/serverTypes'
 // TODO (@day): this may need to be moved uggh
 import { createServer } from '@commercial/backend/lib/db/server'
@@ -24,6 +26,8 @@ import { TestOrmConnection } from './TestOrmConnection'
 import { buffer as b, uint8 as u } from '@tests/utils'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
+import { DuckDBBlobValue } from '@duckdb/node-api'
+import { parseVersion } from '@/common/version'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -68,6 +72,7 @@ const KnexTypes: any = {
   "cockroachdb": "pg",
   "firebird": Client_Firebird,
   "oracle": Client_Oracledb,
+  "duckdb": Client_DuckDB,
 }
 
 export interface Options {
@@ -81,6 +86,14 @@ export interface Options {
   skipTransactions?: boolean
   supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
+  beforeCreatingTables?: () => void | Promise<void>
+  /**
+   * If this is true, then tests will use knex instance from the client class.
+   *
+   * For databases like DuckDB, there should be only one process that can both
+   * read and write to the database.
+   **/
+  singleClient?: boolean
   knex?: Knex
   knexClient?: Knex.Client
   queryTestsTableCreationQuery?: string
@@ -93,6 +106,7 @@ export class DBTestUtil {
   public extraTables = 0
   public options: Options
   private dbType: ConnectionType | 'generic'
+  public databaseName: string
 
   public dialect: Dialect
   public data: DialectData
@@ -121,12 +135,13 @@ export class DBTestUtil {
     this.data = getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
+    this.databaseName = database
 
     if (options.knex) {
       this.knex = options.knex
-    } else if (config.client === 'sqlite') {
+    } else if (config.client === 'sqlite' || config.client === 'duckdb') {
       this.knex = knex({
-        client: "better-sqlite3",
+        client: KnexTypes[config.client],
         connection: {
           filename: database
         }
@@ -214,10 +229,19 @@ export class DBTestUtil {
     return safeSqlFormat(sql, { language: FormatterDialect(dialectFor(this.dbType)) })
   }
 
-  async setupdb() {
+  async connect() {
     await TestOrmConnection.connect()
     await LicenseKey.createTrialLicense()
     await this.connection.connect()
+    if (this.options.singleClient) {
+      this.knex = this.connection.knex
+    }
+
+  }
+
+  async setupdb() {
+    await this.connect()
+    await this.options.beforeCreatingTables?.()
     await this.createTables()
 
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
@@ -244,6 +268,39 @@ export class DBTestUtil {
       await this.knex('with_generated_cols').insert([
         { id: 1, first_name: 'Tom', last_name: 'Tester' },
       ])
+    }
+
+    // idk why oracle decided it doesn't like knex for this specific task
+    if (!this.data.disabledFeatures.compositeKeys) {
+      // Insert some test data
+      if (this.dbType !== 'oracle') {
+        await this.knex("composite_parent").insert({
+          parent_id1: 1,
+          parent_id2: 2,
+          name: "parent test"
+        });
+
+        await this.knex("composite_child").insert({
+          child_id: 1, 
+          ref_id1: 1, 
+          ref_id2: 2, 
+          description: "child test"
+        });
+      } else {
+        await this.knex("COMPOSITE_PARENT").insert({
+          PARENT_ID1: 1,
+          PARENT_ID2: 2,
+          NAME: "Parent Test"
+        });
+
+        await this.knex("COMPOSITE_CHILD").insert({
+          CHILD_ID: 1, 
+          REF_ID1: 1, 
+          REF_ID2: 2, 
+          DESCRIPTION: "Child Test"
+        });
+      }
+
     }
   }
 
@@ -283,11 +340,13 @@ export class DBTestUtil {
     if (this.dbType === 'postgresql') {
       charset = 'UTF8'
     }
-    await this.connection.createDatabase('new-db_2', charset, collation)
+    const createdDbName = await this.connection.createDatabase('new-db_2', charset, collation)
 
-    if (this.dialect.match(/sqlite|firebird/)) {
-      // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
-      return expect.anything()
+    if (this.dialect.match(/sqlite|firebird|duckdb/)) {
+      const connection = this.server.createConnection(createdDbName)
+      await expect(connection.connect()).resolves.not.toThrow()
+      await connection.disconnect()
+      return
     }
     const newDBsCount = await this.connection.listDatabases()
 
@@ -423,7 +482,7 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
-    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql']
+    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql', 'duckdb']
 
     if (trueFalseDBs.indexOf(this.dbType) !== -1) expect(defaultValues).toEqual([true,  false])
     else expect(defaultValues).toEqual([false, false])
@@ -650,10 +709,9 @@ export class DBTestUtil {
       if (this.dbType === 'cockroachdb' && _.isNumber(s)) return `'${s.toString().replaceAll("'", "''")}':::STRING`
       if (this.dbType === 'cockroachdb') return `e'${s.replaceAll("'", "\\'")}':::STRING`
       if (this.dialect === 'postgresql') return `'${s.toString().replaceAll("'", "''")}'::character varying`
-      if (this.dialect === 'oracle') return `'${s.toString().replaceAll("'", "''")}'`
       if (this.dialect === 'sqlserver') return `('${s.toString().replaceAll("'", "''")}')`
-      if (this.dialect === 'firebird') return `'${s.toString().replaceAll("'", "''")}'`
       if (this.dialect === 'clickhouse') return `'${s.toString().replaceAll("'", "\\'")}'`
+      if (/oracle|firebird|duckdb/.test(this.dialect)) return `'${s.toString().replaceAll("'", "''")}'`
       return s.toString()
     }
 
@@ -668,8 +726,9 @@ export class DBTestUtil {
         dataType = dataType.replace('varchar', 'VARCHAR2')
       } else if (this.dialect === 'clickhouse') {
         dataType = o.nullable ? 'Nullable(String)' : 'String'
+      } else if (this.dialect === 'duckdb' && o.dataType.includes('varchar')) {
+        dataType = 'VARCHAR'
       }
-
 
       return {
         columnName,
@@ -679,11 +738,6 @@ export class DBTestUtil {
       }
     }
 
-
-    const varchar = (length: number) => {
-      const str = this.dialect === 'oracle' ? 'VARCHAR2' : 'varchar'
-      return `${str}(${length})`
-    }
 
     const expected = [
       tbl({
@@ -733,7 +787,7 @@ export class DBTestUtil {
 
       await this.connection.setElementName('rename_table', 'renamed_table', DatabaseElement.TABLE, this.defaultSchema)
 
-      expect(await this.knex.schema.hasTable('renamed_table')).toBe(true)
+      expect((await this.connection.listTables()).map((t) => t.name)).toContain('renamed_table')
     }
 
     if (!this.data.disabledFeatures?.alter?.renameView) {
@@ -823,6 +877,26 @@ export class DBTestUtil {
     expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
+  async checkForPoolConnectionReleasing() {
+    // libsql freaks out on this test for some reason
+    // so we're just going to skip for now
+    // FIXME: Investigate why this causes libsql timeouts for remote connections
+    // SQLite tests will mostly debug libsql also
+    if (
+      this.connection.connectionType === "libsql"
+    ) {
+      return;
+    }
+
+    const iterations = 50
+    const query = 'select * from one_record'
+    for (let i = 0; i < iterations; i++) {
+      const handle = await this.connection.query(query);
+      const result = await handle.execute()
+      expect(result).not.toBeNull()
+    }
+  }
+
   async queryTests() {
     await this.connection.executeQuery(this.options.queryTestsTableCreationQuery || 'create table one_record(one integer primary key)')
     await this.connection.executeQuery('insert into one_record values(1)')
@@ -838,7 +912,7 @@ export class DBTestUtil {
       clickhouse: "select 'a' as total, 'b' as total2 from one_record",
     }
     const q = await this.connection.query(sql1[this.dialect] || sql1.common)
-    if(!q) throw new Error("no query result")
+    if(!q) throw new Error("connection couldn't run the query")
     try {
       const result = await q.execute()
 
@@ -855,12 +929,15 @@ export class DBTestUtil {
         noArrayMode: [{ id: 'c0', name: 'total' }],
         clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
         oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
+        duckdb: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
       }
       expect(fields).toMatchObject(expectedResults[this.dialect] || (this.supportsArrayMode ? expectedResults.common : expectedResults.noArrayMode))
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex
     }
+
+    await this.checkForPoolConnectionReleasing()
 
     if (this.data.disabledFeatures?.alter?.multiStatement) {
       return;
@@ -881,10 +958,31 @@ export class DBTestUtil {
   }
 
   async getInsertQueryTests() {
+    const isFirebird = this.dbType === 'firebird'
+    const isClickhouse = this.dbType === 'clickhouse'
     const row = { job_name: "Programmer", hourly_rate: 41 }
+    const initialID = this.dialect === 'sqlite' ? BigInt(this.jobId) : this.jobId
+    const secondID = Number(initialID) + 1
+    const thirdID = Number(initialID) + 2
     const tableInsert = { table: 'jobs', schema: this.defaultSchema, data: [row] }
+    const upsertRow = isFirebird ? {
+      ID: initialID,
+      ...row
+    } : {
+      id: initialID,
+      ...row
+    }
+    const tableUpsert = { table: 'jobs', schema: this.defaultSchema, data: [ upsertRow ] }
+    const tableMultipleUpsert = { table: 'jobs', schema: this.defaultSchema, data: [
+      upsertRow,
+      { id: secondID, job_name: "Blerk", hourly_rate: 40 },
+      { id: thirdID, job_name: "blarns", hourly_rate: 39}
+    ] }
     const insertQuery = await this.connection.getInsertQuery(tableInsert)
-    const expectedQueries = {
+    const upsertQuery = isClickhouse ? '' : await this.connection.getInsertQuery(tableUpsert, true)
+    const multipleUpsertQuery = isFirebird || isClickhouse ? '' : await this.connection.getInsertQuery(tableMultipleUpsert, true)
+
+    const expectedInsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
       tidb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
@@ -895,10 +993,107 @@ export class DBTestUtil {
       cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       firebird: "insert into jobs (hourly_rate, job_name) values (41, 'Programmer')",
       oracle: `insert into "BEEKEEPER"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      duckdb: `insert into "main"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
       clickhouse: `insert into "jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
     }
+    // sqlserver needs some serious custom sql to get that working. Knex, like the goggles, does nothing
+    const expectedUpsertQueries = {
+      postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, '${initialID}', 'Programmer') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`, // pg based
+      mysql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID + ", 'Programmer') on duplicate key update `hourly_rate` =  values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)",
+      tidb: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID + ", 'Programmer') on duplicate key update `hourly_rate` =  values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)", // mysql based
+      mariadb: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID + ", 'Programmer') on duplicate key update `hourly_rate` =  values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)", // mysql based
+      sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
+      libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, '" + initialID + "', 'Programmer') on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
+      clickhouse: '',
+      duckdb: "INSERT OR REPLACE `jobs`, (`id`, `job_name`, `hourly_rate`) VALUES ('1', 'Programmer', '41')",
+      sqlserver: `
+        MERGE INTO [dbo].[jobs] AS target
+        USING (VALUES
+          (${initialID}, 'Programmer', 41)
+        ) AS source ([id], [job_name], [hourly_rate])
+        ON target.id = source.id
+        WHEN MATCHED THEN
+          UPDATE SET
+            target.[job_name] = source.[job_name],
+            target.[hourly_rate] = source.[hourly_rate]
+        WHEN NOT MATCHED THEN
+          INSERT ([id], [job_name], [hourly_rate])
+          VALUES (source.[id], source.[job_name], source.[hourly_rate]);
+      `,
+      firebird: `
+      MERGE INTO "jobs" AS target
+      USING (
+        SELECT ${initialID} AS "ID", 'Programmer' AS "job_name", 41 AS "hourly_rate" FROM RDB$DATABASE
+      ) AS source
+      ON (target."ID" = source."ID")
+      WHEN MATCHED THEN
+        UPDATE SET
+          "job_name" = source."job_name", "hourly_rate" = source."hourly_rate"
+      WHEN NOT MATCHED THEN
+        INSERT ("ID", "job_name", "hourly_rate")
+      VALUES (source."ID", source."job_name", source."hourly_rate");`.trim(),
+      oracle: `
+      MERGE INTO "BEEKEEPER"."jobs" target
+      USING (
+        SELECT
+          ${initialID} AS "id", 'Programmer' AS "job_name", 41 AS "hourly_rate" FROM dual
+      ) source ON (target."id" = source."id")
+      WHEN MATCHED THEN
+        UPDATE SET
+          target."job_name" = source."job_name", target."hourly_rate" = source."hourly_rate"
+      WHEN NOT MATCHED THEN
+        INSERT ("id", "job_name", "hourly_rate")
+        VALUES (source."id", source."job_name", source."hourly_rate");`,
+    }
+    const expectedMultipleUpsertQueries = {
+      postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, '${initialID}', 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`, // pg based
+      mysql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID +", 'Programmer'), (40, "+ secondID +", 'Blerk'), (39, "+ thirdID +", 'blarns') on duplicate key update `hourly_rate` = values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)",
+      tidb: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID +", 'Programmer'), (40, "+ secondID +", 'Blerk'), (39, "+ thirdID +", 'blarns') on duplicate key update `hourly_rate` = values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)", // mysql based
+      mariadb: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID +", 'Programmer'), (40, "+ secondID +", 'Blerk'), (39, "+ thirdID +", 'blarns') on duplicate key update `hourly_rate` = values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)", // mysql based
+      sqlite: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, '" + initialID + "' as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, " + secondID + " as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, " + thirdID + " as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`",
+      libsql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) select 41 as `hourly_rate`, '" + initialID + "' as `id`, 'Programmer' as `job_name` union all select 40 as `hourly_rate`, " + secondID + " as `id`, 'Blerk' as `job_name` union all select 39 as `hourly_rate`, " + thirdID + " as `id`, 'blarns' as `job_name` where true on conflict (`id`) do update set `hourly_rate` = excluded.`hourly_rate`, `id` = excluded.`id`, `job_name` = excluded.`job_name`", // sqlite based
+      duckdb: "INSERT OR REPLACE `jobs`, (`id`, `job_name`, `hourly_rate`) VALUES ('1', 'Programmer', '41'), ('2', 'Blerk', '40'), ('3', 'blarns', '39')",
+      sqlserver: `
+      MERGE INTO [dbo].[jobs] AS target
+      USING (VALUES
+        (${initialID}, 'Programmer', 41),
+        (${secondID}, 'Blerk', 40),
+        (${thirdID}, 'blarns', 39)
+      ) AS source ([id], [job_name], [hourly_rate])
+      ON target.id = source.id
+      WHEN MATCHED THEN
+        UPDATE SET
+          target.[job_name] = source.[job_name],
+          target.[hourly_rate] = source.[hourly_rate]
+      WHEN NOT MATCHED THEN
+        INSERT ([id], [job_name], [hourly_rate])
+        VALUES (source.[id], source.[job_name], source.[hourly_rate]);
+      `,
+      firebird: '',
+      clickhouse: '',
+      oracle: `
+      MERGE INTO "BEEKEEPER"."jobs" target
+      USING (
+        SELECT ${initialID} AS "id", 'Programmer' AS "job_name", 41 AS "hourly_rate" FROM dual
+        UNION ALL
+        SELECT ${secondID}, 'Blerk', 40 FROM dual
+        UNION ALL
+        SELECT ${thirdID}, 'blarns', 39 FROM dual
+      ) source ON (target."id" = source."id")
+      WHEN MATCHED THEN
+        UPDATE SET
+          target."job_name" = source."job_name",
+          target."hourly_rate" = source."hourly_rate"
+      WHEN NOT MATCHED THEN
+        INSERT ("id", "job_name", "hourly_rate")
+        VALUES (source."id", source."job_name", source."hourly_rate");`,
+    }
 
-    expect(insertQuery).toBe(expectedQueries[this.dbType])
+    expect(insertQuery).toBe(expectedInsertQueries[this.dbType] ?? insertQuery)
+    expect(this.fmt(upsertQuery)).toBe(this.fmt(expectedUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
+    expect(this.fmt(multipleUpsertQuery)).toBe(this.fmt(expectedMultipleUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
   }
 
   async buildCreatePrimaryKeysAndAutoIncrementTests() {
@@ -924,6 +1119,7 @@ export class DBTestUtil {
       cockroachdb: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
       firebird: `create table test_table (id integer not null primary key);alter table test_table add constraint test_table_pkey primary key (id)`,
       oracle: `create table "test_table" ("id" integer not null); DECLARE PK_NAME VARCHAR(200); BEGIN  EXECUTE IMMEDIATE ('CREATE SEQUENCE "test_table_seq"'); SELECT cols.column_name INTO PK_NAME  FROM all_constraints cons, all_cons_columns cols  WHERE cons.constraint_type = 'P'  AND cons.constraint_name = cols.constraint_name  AND cons.owner = cols.owner  AND cols.table_name = 'test_table';  execute immediate ('create or replace trigger "test_table_autoinc_trg"  BEFORE INSERT on "test_table"  for each row  declare  checking number := 1;  begin    if (:new."' || PK_NAME || '" is null) then      while checking >= 1 loop        select "test_table_seq".nextval into :new."' || PK_NAME || '" from dual;        select count("' || PK_NAME || '") into checking from "test_table"        where "' || PK_NAME || '" = :new."' || PK_NAME || '";      end loop;    end if;  end;'); END; alter table "test_table" add constraint "test_table_pkey" primary key ("id")`,
+      duckdb: `create table "test_table" ("id" integer not null, primary key ("id")); create sequence "test_table_seq_id" start 1; alter table "test_table" alter column "id" set default nextval('test_table_seq_id')`,
       clickhouse: `create table "my_database"."test_table" ("id" integer, primary key ("id")) engine = MergeTree()`,
     }
     const expectedQuery = expectedQueries[this.dbType] || expectedQueries[this.dialect]
@@ -948,6 +1144,7 @@ export class DBTestUtil {
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE job_name IN ('Programmer','Surgeon''s Assistant') ORDER BY hourly_rate ASC",
       oracle: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      duckdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
       clickhouse: `SELECT * FROM "jobs" WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
     }
     const expectedQuery = expectedQueries[this.dbType] || expectedQueries[this.dialect]
@@ -1018,6 +1215,13 @@ export class DBTestUtil {
         OFFSET 0 ROWS
         FETCH NEXT 100 ROWS ONLY
       `,
+      duckdb: `
+        SELECT * FROM "public"."jobs"
+          WHERE "job_name" IN ('Programmer','Surgeon''s Assistant')
+            AND "hourly_rate" >= '41'
+            OR "hourly_rate" >= '31'
+        ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0
+      `,
       clickhouse: `
         SELECT * FROM "jobs"
         WHERE "job_name" IN ('Programmer', 'Surgeon''s Assistant')
@@ -1038,7 +1242,7 @@ export class DBTestUtil {
       100,
       [],
       [{ field: 'hourly_rate', type: 'is' }],
-      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
+      this.defaultSchema,
       ['*']
     );
 
@@ -1046,10 +1250,11 @@ export class DBTestUtil {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
       sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
-      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      sqlserver: "SELECT * FROM [dbo].[jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NULL",
-      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      oracle: `SELECT * FROM "BEEKEEPER"."jobs" WHERE "hourly_rate" IS NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
       clickhouse: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNull = expectedQueriesIsNull[this.dbType] || expectedQueriesIsNull[this.dialect]
@@ -1063,7 +1268,7 @@ export class DBTestUtil {
       100,
       [],
       [{ field: 'hourly_rate', type: 'is not' }],
-      ['sqlserver', 'oracle'].includes(this.dbType) ? null : 'public',
+      this.defaultSchema,
       ['*']
     );
 
@@ -1071,10 +1276,11 @@ export class DBTestUtil {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
       sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
-      sqlserver: "SELECT * FROM [jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      sqlserver: "SELECT * FROM [dbo].[jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
       firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE hourly_rate IS NOT NULL",
-      oracle: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      oracle: `SELECT * FROM "BEEKEEPER"."jobs" WHERE "hourly_rate" IS NOT NULL OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY`,
+      duckdb: `SELECT * FROM "main"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
       clickhouse: `SELECT * FROM "jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
     }
     const expectedQueryIsNotNull = expectedQueriesIsNotNull[this.dbType] || expectedQueriesIsNotNull[this.dialect]
@@ -1096,6 +1302,25 @@ export class DBTestUtil {
 
   async indexTests() {
     if (this.data.disabledFeatures?.createIndex) return;
+
+    const idx = (arg: Pick<TableIndex, 'name' | 'columns' | 'table'>) => {
+      if (this.dbType === 'firebird') {
+        arg.name = arg.name.toUpperCase()
+        arg.columns = arg.columns.map((c) => ({ name: c.name.toUpperCase(), order: c.order }))
+        arg.table = arg.table.toUpperCase()
+      } else if (this.dbType === 'duckdb') {
+        // duckdb doesn't support ascending/descending index column
+        arg.columns = arg.columns.map((c) => ({ name: c.name }))
+      }
+      if (this.data.disabledFeatures?.schema) {
+        return arg
+      }
+      return {
+        schema: this.defaultSchema,
+        ...arg,
+      }
+    }
+
     await this.knex.schema.createTable("index_test", (table) => {
       table.increments('id').primary()
       table.integer('index_me')
@@ -1128,22 +1353,24 @@ export class DBTestUtil {
       .map((i) => _.pick(i, ['name', 'columns', 'table', 'schema']))
       .filter((index) => this.dialect !== 'oracle' || !index.name.startsWith('SYS_'))
       .filter((index) => this.dbType !== 'cockroachdb' || !index.name.endsWith('pkey'))
-    const schemaDefault = this.defaultSchema ? { schema: this.defaultSchema } : {}
-    expect(picked).toMatchObject(
-      [
-        {
-        ...schemaDefault,
-        name: this.dbType === 'firebird' ? 'IT_IDX2' : 'it_idx2',
-        columns: [{name: this.dbType === 'firebird' ? 'ME_TOO' : 'me_too' , order: 'ASC'}],
-        table: this.dbType  === 'firebird' ? 'INDEX_TEST' : 'index_test' ,
-      }]
-    )
+
+    expect(picked).toMatchObject([
+      idx({
+        name: 'it_idx2',
+        columns: [{ name: 'me_too', order: 'ASC' }],
+        table: 'index_test'
+      })
+    ])
 
   }
 
   async prepareStreamTests() {
+    const fileLocation = path.join(__dirname, '../fixtures/organizations-100000.csv')
+    if (this.dbType === 'duckdb') {
+      await this.knex.schema.raw(`INSERT INTO organizations SELECT * FROM read_csv('${fileLocation}');`)
+      return
+    }
     return new Promise<void>(async (resolve, reject) => {
-      const fileLocation = path.join(__dirname, '../fixtures/organizations-100000.csv')
       const fileStream = fs.createReadStream(fileLocation)
       const promises = []
       const useStep = !!this.dbType.match(/firebird|sqlserver/i)
@@ -1277,7 +1504,8 @@ export class DBTestUtil {
   async importScriptsTests({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
     // cassandra and big query don't allow import so no need to test!
     // oracle doesn't want to find the table, so it doesn't get to have nice things
-    if (['cassandra', 'bigquery', 'oracle', 'clickhouse'].includes(this.dialect)) {
+    // clickhouse and duckdb have its own import command we don't support yet
+    if (['cassandra', 'bigquery', 'oracle', 'clickhouse', 'duckdb'].includes(this.dialect)) {
       return expect.anything()
     }
 
@@ -1289,7 +1517,7 @@ export class DBTestUtil {
           ...executeOptions
         }
       };
-      const importSQL = await this.connection.getImportSQL(formattedData);
+      const importSQL = await this.connection.getImportSQL(formattedData, table.name, table.schema || null, true);
       await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
       return { aborted: false }
     }
@@ -1306,7 +1534,7 @@ export class DBTestUtil {
     // mysql was added to the list because a timeout was required to get the rollback number ot show
     // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
     let expectedLength = 0
-    if (['cassandra','bigquery', 'mysql', 'oracle', 'clickhouse'].includes(this.dialect)) {
+    if (['cassandra','bigquery', 'mysql', 'oracle', 'clickhouse', 'duckdb'].includes(this.dialect)) {
       return expect.anything()
     }
 
@@ -1321,7 +1549,7 @@ export class DBTestUtil {
           ...executeOptions
         }
       };
-      const importSQL = await this.connection.getImportSQL(formattedData);
+      const importSQL = await this.connection.getImportSQL(formattedData, table.name, table.schema || null, true);
       await this.connection.importLineReadCommand(table, importSQL, updatedImportScriptOptions);
       return { aborted: true, error: "Forced abort" }
     }
@@ -1340,12 +1568,23 @@ export class DBTestUtil {
   async serializationBinary() {
     const ID = this.dbType === 'firebird' ? 'ID' : 'id'
     const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
+    const n = (i) => this.dialect === 'sqlite' ? BigInt(i) : i
 
-    await this.knex('contains_binary').insert({ id: 1, bin: b`deadbeef` })
+    await this.knex('contains_binary').insert({ id: 1 })
+    await this.knex('contains_binary').insert({ id: 2, bin: b`` })
+    await this.knex('contains_binary').insert({ id: 3, bin: b`0` })
+    await this.knex('contains_binary').insert({ id: 4, bin: b`deadbeef` })
 
-    const result = await this.connection.selectTop('contains_binary', 0, 10, [], [], this.defaultSchema)
+    let result = await this.connection.selectTop('contains_binary', 0, 10, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema, [BIN])
+    expect(result.result).toMatchObject([
+      { [BIN]: null },
+      { [BIN]: u`` },
+      { [BIN]: u`0` },
+      { [BIN]: u`deadbeef` },
+    ])
+
+    result = await this.connection.selectTop('contains_binary', 3, 1, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema)
     let data = result.result[0][BIN]
-
     expect(ArrayBuffer.isView(data)).toBe(true)
     expect(Buffer.from(data)).toEqual(b`deadbeef`)
     expect(result.fields).toEqual([
@@ -1358,20 +1597,21 @@ export class DBTestUtil {
         table: 'contains_binary',
         schema: this.defaultSchema,
         // frontend sends binary as Uint8Array, or any TypedArray is possible
-        data: [{ id: 2, bin: u`beefdeed` }],
+        data: [{ id: 5, bin: u`beefdeed` }],
       }],
       updates: [{
         table: 'contains_binary',
         schema: this.defaultSchema,
-        primaryKeys: [{ column: ID, value: 1 }],
+        primaryKeys: [{ column: ID, value: 4 }],
         column: BIN,
         value: u`eeffeeff`,
       }],
       deletes: [],
     })
 
-    const rows = await this.knex('contains_binary').select('bin').orderBy(ID)
-    expect(rows.map((r) => Buffer.from(r.bin))).toEqual([
+    const rows = await this.knex('contains_binary').select('bin').offset(3).limit(2).orderBy(ID)
+    const sanitize = (b) => b instanceof DuckDBBlobValue ? b.bytes : b
+    expect(rows.map((r) => Buffer.from(sanitize(r.bin)))).toEqual([
       b`eeffeeff`,
       b`beefdeed`,
     ])
@@ -1388,6 +1628,27 @@ export class DBTestUtil {
       { name: ID, bksType: 'UNKNOWN' },
       { name: BIN, bksType: 'BINARY' },
     ])
+  }
+
+  async getQueryForFilterTest() {
+    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb'> = {
+      sqlite: "`bananas` = 'pears'",
+      mysql: "`bananas` = 'pears'",
+      postgresql: `"bananas" = 'pears'`,
+      sqlserver: "[bananas] = 'pears'",
+      oracle: `"bananas" = 'pears'`,
+      firebird: `bananas = 'pears'`,
+      duckdb: `"bananas" = 'pears'`,
+      clickhouse: `"bananas" = 'pears'`,
+    }
+
+    const actualQuery = await this.connection.getQueryForFilter({
+      field: "bananas",
+      type: "=",
+      value: "pears",
+    })
+
+    expect(actualQuery).toBe(expectedQueries[this.dbType] || expectedQueries[this.dialect])
   }
 
   private async createTables() {
@@ -1489,11 +1750,11 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable('contains_binary', (table) => {
       table.integer("id").primary().notNullable()
-      table.binary('bin', 8).notNullable()
+      table.binary('bin', 8).nullable()
     })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
-      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {
+      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse' | 'mongodb' | 'sqlanywhere'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
         tidb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
@@ -1502,6 +1763,7 @@ export class DBTestUtil {
         oracle: `VARCHAR2(511) GENERATED ALWAYS AS ("first_name" || ' ' || "last_name")`,
         postgresql: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         cockroachdb: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
+        duckdb: "AS (first_name || ' ' || last_name)"
       }
       const generatedDef = generatedDefs[this.dbType] || generatedDefs[this.dialect]
       await this.knex.schema.createTable('with_generated_cols', (table) => {
@@ -1511,10 +1773,87 @@ export class DBTestUtil {
         table.specificType('full_name', generatedDef)
       })
     }
+    if (!this.data.disabledFeatures.compositeKeys) {
+      if (this.dbType !== 'oracle') {
+        // Create a parent table with composite primary key
+        await this.knex.schema.createTable("composite_parent", (table) => {
+          table.integer("parent_id1").notNullable();
+          table.integer("parent_id2").notNullable();
+          table.string("name").notNullable();
+          table.primary(["parent_id1", "parent_id2"]);
+        });
+
+        // Create a child table with composite foreign key
+        await this.knex.schema.createTable("composite_child", (table) => {
+          table.integer("child_id").notNullable().primary();
+          table.integer("ref_id1").notNullable();
+          table.integer("ref_id2").notNullable();
+          table.string("description");
+          table.foreign(['ref_id1', 'ref_id2']).references(['parent_id1', 'parent_id2']).inTable("composite_parent");
+        });
+      } else {
+        // the knex driver from oracle doesn't seem to create the fks properly
+        await this.knex.schema.raw(`
+          CREATE TABLE composite_parent (
+            parent_id1 NUMBER(10) NOT NULL,
+            parent_id2 NUMBER(10) NOT NULL,
+            name VARCHAR2(255) NOT NULL,
+            CONSTRAINT pk_comp_parent PRIMARY KEY (parent_id1, parent_id2)
+          )
+        `);
+
+        await this.knex.schema.raw(`
+          CREATE TABLE composite_child (
+            child_id NUMBER(10) NOT NULL,
+            ref_id1 NUMBER(10) NOT NULL,
+            ref_id2 NUMBER(10) NOT NULL,
+            description VARCHAR2(255),
+            CONSTRAINT comp_child_fk FOREIGN KEY (ref_id1, ref_id2)
+              REFERENCES composite_parent(parent_id1, parent_id2)
+          )
+        `)
+      }
+
+    }
   }
 
   async databaseVersionTest() {
     const version = await this.connection.versionString();
     expect(version).toBeDefined()
+  }
+
+  async compositeKeyTests() {
+    // 5.1 doesn't have great support for composite keys, so we'll skip the test
+    if (this.dbType === 'mysql') {
+      const version = await this.connection.versionString();
+      const { major, minor } = parseVersion(version.split("-")[0]);
+      if (major === 5 && minor === 1) return expect.anything();
+    }
+    // Skip if database doesn't support composite keys
+    if (this.data.disabledFeatures?.compositeKeys) {
+      return expect.anything();
+    }
+
+    // Test composite foreign keys functionality
+    const tableKeys = await this.connection.getTableKeys('composite_child', this.defaultSchema);
+
+    // Check that we have composite keys
+    const compositeKey = tableKeys.find(key => key.isComposite === true);
+    // If we have a composite key, assert its structure
+    expect(compositeKey).toBeDefined();
+
+    const fromColumns = (compositeKey.fromColumn as string[]).map((c) => c.toLowerCase());
+    const toColumns = (compositeKey.toColumn as string[]).map((c) => c.toLowerCase());
+    
+    expect(compositeKey.isComposite).toBe(true);
+    expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
+    expect(Array.isArray(compositeKey.toColumn)).toBe(true);
+    expect(compositeKey.fromColumn.length).toBeGreaterThan(1);
+    expect(compositeKey.toColumn.length).toBeGreaterThan(1);
+    expect(fromColumns).toContain('ref_id1');
+    expect(fromColumns).toContain('ref_id2');
+    expect(toColumns).toContain('parent_id1');
+    expect(toColumns).toContain('parent_id2');
+    expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
   }
 }

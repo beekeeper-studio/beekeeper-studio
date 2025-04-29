@@ -1,12 +1,12 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, BksField } from '../models';
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField } from '../models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
@@ -102,6 +102,14 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   async defaultSchema(): Promise<string | null> {
     return null
   }
+
+  async getCompletions(_cmd: string): Promise<string[]> {
+    return [];
+  }
+
+  async getShellPrompt(): Promise<string> {
+    return '';
+  }
   // ****************************************************************************
 
   // Connection *****************************************************************
@@ -146,7 +154,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     if (this.server.db[this.database.database]) {
       // delete this.server.db[this.database.database]
     }
-    await this.knex.destroy();
+    await this.knex?.destroy();
   }
   // ****************************************************************************
 
@@ -166,6 +174,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return Promise.resolve([])
   }
 
+  executeCommand(_commandText: string): Promise<NgQueryResult[]> {
+    return Promise.resolve([]);
+  }
+
   abstract query(queryText: string, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
@@ -180,7 +192,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listCharsets(): Promise<string[]>
   abstract getDefaultCharset(): Promise<string>
   abstract listCollations(charset: string): Promise<string[]>
-  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<void>
+  abstract createDatabase(databaseName: string, charset: string, collation: string): Promise<string>
   abstract createDatabaseSQL(): Promise<string>
   abstract getTableCreateScript(table: string, schema?: string): Promise<string>;
   abstract getViewCreateScript(view: string, schema?: string): Promise<string[]>;
@@ -188,6 +200,22 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return [];
   }
   abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
+
+  // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
+  async createTable(_table: CreateTableSpec): Promise<void> {
+    return Promise.resolve();
+  }
+
+  // MongoDB-specific schema validation methods
+  async getCollectionValidation(_collection: string): Promise<any> {
+    log.debug('getCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve(null);
+  }
+
+  async setCollectionValidation(_params: any): Promise<void> {
+    log.debug('setCollectionValidation is only implemented for MongoDB');
+    return Promise.resolve();
+  }
   // ****************************************************************************
 
   // Make Changes ***************************************************************
@@ -256,9 +284,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   async setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
     const sql = await this.setElementNameSql(elementName, newElementName, typeOfElement, schema)
     if (!sql) {
-      throw new Error(`Unsupported element type: ${typeOfElement}`);
+      throw new Error(`Cannot rename element ${elementName} to ${newElementName} of type ${typeOfElement}`);
     }
-    await this.executeQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
@@ -266,11 +294,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    const sql = this.truncateElementSql(elementName, typeOfElement, schema);
+    const sql = await this.truncateElementSql(elementName, typeOfElement, schema);
     if (!sql) {
       throw new Error(`Cannot truncate element ${elementName} of type ${typeOfElement}`);
     }
-    await this.driverExecuteSingle(await this.truncateElementSql(elementName, typeOfElement, schema));
+    await this.driverExecuteSingle(sql);
   }
 
   abstract truncateAllTables(schema?: string): Promise<void>;
@@ -361,10 +389,12 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     })
   }
 
-  async getImportSQL(importedData: any[]): Promise<string | string[]> {
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
     const queries = []
-
-    queries.push(buildInsertQueries(this.knex, importedData).join(';'))
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    const createUpsertFunc = this.createUpsertFunc ?? null
+    queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert, primaryKeys, createUpsertFunc }).join(';'))
     return joinQueries(queries)
   }
   // ****************************************************************************
@@ -379,14 +409,18 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     throw new Error("Not implemented");
   }
 
-  async getInsertQuery(tableInsert: TableInsert): Promise<string> {
+  protected createUpsertFunc: ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string) | null = null
+
+  async getInsertQuery(tableInsert: TableInsert, runAsUpsert = false): Promise<string> {
     const columns = await this.listTableColumns(tableInsert.table, tableInsert.schema);
     tableInsert.data.forEach((row) => {
       Object.keys(row).forEach((key) => {
         row[key] = this.deserializeValue(row[key]);
       })
     })
-    return buildInsertQuery(this.knex, tableInsert, columns);
+    const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)
+    const primaryKeys = primaryKeysPromise.map(v => v.columnName)
+    return buildInsertQuery(this.knex, tableInsert, { columns, runAsUpsert, primaryKeys, createUpsertFunc: this.createUpsertFunc });
   }
 
   abstract wrapIdentifier(value: string): string;
@@ -556,6 +590,27 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     } finally {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
+  }
+
+  async getQueryForFilter(filter: TableFilter): Promise<string> {
+    if (!this.knex) {
+      log.warn("No knex instance found. Cannot get query for filter.");
+      return ""
+    }
+
+    let queryBuilder: Knex.QueryBuilder;
+
+    if (filter.type == 'is') {
+      queryBuilder = this.knex.whereNull(filter.field);
+    } else if (filter.type == 'is not') {
+      queryBuilder = this.knex.whereNotNull(filter.field);
+    } else {
+      queryBuilder = this.knex.where(filter.field, filter.type, filter.value);
+    }
+
+    return queryBuilder.toString()
+      .split("where")[1]
+      .trim();
   }
 
 }

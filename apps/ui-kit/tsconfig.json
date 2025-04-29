@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "vueCompilerOptions": {
+    "target": 2.7
+  },
+  "include": ["lib/**/*"],
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ]
+  }
+}

@@ -27,6 +27,24 @@ describe("Saved Connection", () => {
 
   })
 
+  const urls = [
+    { t: 'sqlite', p: '/a/b/c/database.sqlite3'},
+    { t: 'sqlite', p: '/a/b/c/database.sqlite'},
+    { t: 'sqlite', p: '~/a.db'},
+    { t: 'sqlite', p: 'b.sqlite3'},
+    { t: 'duckdb', p: '/a/b/c.duckdb'},
+    { t: 'duckdb', p: '/a.ddb'},
+    { t: 'duckdb', p: 'a.duckdb'},
+  ]
+
+  urls.forEach(({ t, p}) => {
+    it(`Should resolve '${p}' as '${t}'`, () => {
+      const c = new SavedConnection()
+      c.parse(p)
+      expect(c.connectionType).toBe(t)
+    })
+  })
+
   it("demonstrating new databases for each test", async () => {
     const count = await SavedConnection.count()
     expect(count).toBe(0)
@@ -41,6 +59,52 @@ describe("Saved Connection", () => {
       "some/path.sqlite3": {connectionType: 'sqlite', defaultDatabase: 'some/path.sqlite3'},
       "/Path/to file/with space.sqlite": { connectionType: 'sqlite', defaultDatabase: "/Path/to file/with space.sqlite"},
       "postgresql://database.db": {connectionType: 'postgresql', host: 'database.db'},
+      "mysql://user:p+ssword@localhost/mydatabase": {
+        connectionType: "mysql",
+        username: "user",
+        password: "p+ssword",
+        host: "localhost",
+        defaultDatabase: "mydatabase"
+      },
+      "mysql://user:p@ssword@localhost/mydatabase": {
+        connectionType: "mysql",
+        username: "user",
+        password: "p@ssword",
+        host: "localhost",
+        defaultDatabase: "mydatabase"
+      },
+      "postgresql://matthew:pa+sword@free.1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&options=--cluster%3Dbks-tester-12345": {
+        connectionType: "cockroachdb",
+        username: "matthew",
+        password: "pa+sword",
+        host: "free.1.cockroachlabs.cloud",
+        port: 26257,
+        defaultDatabase: "defaultdb"
+      },
+      "postgresql://matthew:pa@sword@free.1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&options=--cluster%3Dbks-tester-12345": {
+        connectionType: "cockroachdb",
+        username: "matthew",
+        password: "pa@sword",
+        host: "free.1.cockroachlabs.cloud",
+        port: 26257,
+        defaultDatabase: "defaultdb"
+      },
+      "postgresql://user:p+ssword@default.cluster.redshift.amazonaws.com:5439/database": {
+        connectionType: "redshift",
+        username: "user",
+        password: "p+ssword",
+        host: "default.cluster.redshift.amazonaws.com",
+        port: 5439,
+        defaultDatabase: "database"
+      },
+      "postgresql://user:p@ssword@default.cluster.redshift.amazonaws.com:5439/database": {
+        connectionType: "redshift",
+        username: "user",
+        password: "p@ssword",
+        host: "default.cluster.redshift.amazonaws.com",
+        port: 5439,
+        defaultDatabase: "database"
+      },
     }
 
     Object.keys(testCases).forEach(url => {

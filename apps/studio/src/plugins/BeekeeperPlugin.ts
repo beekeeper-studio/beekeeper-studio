@@ -63,8 +63,12 @@ export const BeekeeperPlugin = {
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
-    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
+    if (config.connectionType.match(/sqlite|libsql|duckdb/)) {
       return config.defaultDatabase || "./unknown.db"
+    } else if (config.connectionType === 'mongodb') {
+      return config.url
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -83,12 +87,16 @@ export const BeekeeperPlugin = {
     if (config.socketPathEnabled) return config.socketPath;
 
     let connectionString = `${config.host}:${config.port}`;
-    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
+    if (config.connectionType.match(/sqlite|libsql|duckdb/)) {
       return window.main.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
     } else if (config.connectionType === 'bigquery') {
       connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
+    } else if (config.connectionType === 'mongodb') {
+      return config.url;
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
