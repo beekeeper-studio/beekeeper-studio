@@ -543,6 +543,15 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     it("should be able to list basic indexes", async () => {
       const indexes = await util.connection.listTableIndexes('test_indexes')
       expect(indexes.length).toBe(dockerTag === "9.3" ? 6 : 7)
+      expect(indexes.find((idx) => idx.name === 'single_column').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'multi_column').columns.length).toBe(2)
+      expect(indexes.find((idx) => idx.name === 'single_expression').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'multi_expression').columns.length).toBe(2)
+      expect(indexes.find((idx) => idx.name === 'expression_with_comma').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'expression_with_double_quote').columns.length).toBe(1)
+      if (dockerTag !== "9.3") {
+        expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
+      }
     })
 
     it("Should be able to add comments to columns and retrieve them", async () => {

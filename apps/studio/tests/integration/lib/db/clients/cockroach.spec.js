@@ -56,10 +56,16 @@ describe("CockroachDB Tests", () => {
     runCommonTests(() => util)
   })
 
-  it.only("should be able to list basic indexes", async () => {
+  it("should be able to list basic indexes", async () => {
     const indexes = await util.connection.listTableIndexes('test_indexes')
     // cockroach adds a pkey index
     expect(indexes.length).toBe(8)
+    expect(indexes.find((idx) => idx.name === 'single_column').columns.length).toBe(1)
+    expect(indexes.find((idx) => idx.name === 'multi_column').columns.length).toBe(2)
+    expect(indexes.find((idx) => idx.name === 'single_expression').columns.length).toBe(1)
+    expect(indexes.find((idx) => idx.name === 'multi_expression').columns.length).toBe(2)
+    expect(indexes.find((idx) => idx.name === 'expression_with_comma').columns.length).toBe(1)
+    expect(indexes.find((idx) => idx.name === 'expression_with_double_quote').columns.length).toBe(1)
+    expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
   })
-
 })
