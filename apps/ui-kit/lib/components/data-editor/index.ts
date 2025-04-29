@@ -4,9 +4,11 @@ import Component from "./DataEditor.vue";
 import { props, exposeMethods, ExposedMethods } from "./data-editor";
 import { PropsToType } from "../types";
 
-export type DataEditorElement = HTMLElement & PropsToType<typeof props> & ExposedMethods;
+type DataEditorElement = HTMLElement &
+  PropsToType<typeof props> &
+  ExposedMethods;
 
 export const DataEditorElement = wrap(Vue, Component, {
-    disableShadowDom: true,
-    exposeMethods,
-}) as unknown as CustomElementConstructor;
+  disableShadowDom: true,
+  exposeMethods,
+}) as unknown as DataEditorElement;

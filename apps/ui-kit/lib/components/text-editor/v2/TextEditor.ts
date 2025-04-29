@@ -1,6 +1,7 @@
 import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
 import {
+    ExposedMethods,
   ExtensionConfiguration,
   Keybindings,
   Keymap,
@@ -22,6 +23,8 @@ import {
   requestSemanticTokens,
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
+
+export const exposeMethods = ["ls"] as const;
 
 export class TextEditor {
   protected view: EditorView;
@@ -91,11 +94,11 @@ export class TextEditor {
     if (update.focusChanged) {
       if (update.view.hasFocus) {
         if (this.config.onFocus) {
-          this.config.onFocus({ event: new FocusEvent("focus") });
+          this.config.onFocus(new FocusEvent("focus"));
         }
       } else {
         if (this.config.onBlur) {
-          this.config.onBlur({ event: new FocusEvent("blur") });
+          this.config.onBlur(new FocusEvent("blur"));
         }
       }
     }
@@ -139,26 +142,30 @@ export class TextEditor {
     return this.view.state.selection.main.toString();
   }
 
-  getLsClient() {
+  getLsHelpers(): LanguageServerHelpers {
+    return {
+      getClient: () => this.getLsClient(),
+
+      formatDocument: async (options: LSP.FormattingOptions) =>
+        await formatDocument(this.view, options),
+
+      formatDocumentRange: async (
+        range: LSP.Range,
+        options: LSP.FormattingOptions
+      ) => await formatDocumentRange(this.view, range, options),
+
+      requestSemanticTokens: async (lastResultId?: string) =>
+        await requestSemanticTokens(this.view, lastResultId),
+    };
+  }
+
+  private getLsClient() {
     try {
       return this.view?.state?.facet(lsContextFacet)?.client;
     } catch (e) {
       // Client might not be initialized yet
       return null;
     }
-  }
-
-  getLsActions() {
-    return {
-      formatDocument: async (options: LSP.FormattingOptions) =>
-        await formatDocument(this.view, options),
-      formatDocumentRange: async (
-        range: LSP.Range,
-        options: LSP.FormattingOptions
-      ) => await formatDocumentRange(this.view, range, options),
-      requestSemanticTokens: async (lastResultId?: string) =>
-        await requestSemanticTokens(this.view, lastResultId),
-    };
   }
 
   focus() {

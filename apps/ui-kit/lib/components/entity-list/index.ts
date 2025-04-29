@@ -4,6 +4,8 @@ import Component from "./EntityList.vue";
 import { props } from "./entity-list";
 import { PropsToType } from "../types";
 
-export type EntityListElement = HTMLElement & PropsToType<typeof props>;
+type EntityListElement = HTMLElement & PropsToType<typeof props>;
 
-export const EntityListElement = wrap(Vue, Component, { disableShadowDom: true }) as unknown as EntityListElement;
+export const EntityListElement = wrap(Vue, Component, {
+  disableShadowDom: true,
+}) as unknown as EntityListElement;
