@@ -1,0 +1,25 @@
+{
+  "$schema": "https://pgtools.dev/schemas/0.4.0/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignore": []
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "db": {
+    "host": "localhost",
+    "port": 5434,
+    "username": "postgres",
+    "password": "example",
+    "database": "saklia",
+    "connTimeoutSecs": 10
+  }
+}

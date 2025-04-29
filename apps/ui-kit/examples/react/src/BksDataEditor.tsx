@@ -33,6 +33,7 @@ export default function BksDataEditor({ tables }: BksDataEditorProps) {
           "bks-query-submit",
           handleQuerySubmit
         );
+        ref.current.vueComponent.$destroy();
       }
     };
   }, []);
