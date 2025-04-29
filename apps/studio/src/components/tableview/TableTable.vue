@@ -766,6 +766,7 @@ export default Vue.extend({
         ]
       }
 
+      const { disallowedSortColumns = [] } = this.dialectData
       const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
       // this needs fixing
       // currently it doesn't fetch the right result if you update the PK
@@ -823,7 +824,7 @@ export default Vue.extend({
         resizable: 'header',
         cssClass,
         editable: this.cellEditCheck,
-        headerSort: !this.dialectData.disabledFeatures.headerSort,
+        headerSort: !this.dialectData.disabledFeatures.headerSort && !disallowedSortColumns.includes(column.dataType?.toLowerCase()),
         editor: editorType,
         tooltip: this.cellTooltip,
         contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
@@ -1594,17 +1595,26 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
-      const { usesOffsetPagination } = this.dialectData
+      const { usesOffsetPagination, disallowedSortColumns = [] } = this.dialectData
       log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
       let filters = this.filters
 
+      // Postgres doesn't sort json very well. This will be trying to orderby a json column potentionall and that shouldn't be possible. I say good day
       if (params.sort) {
-        orderBy = params.sort
-      }
+        orderBy = params.sort.reduce((acc, sortObj) => {
+          const found = this.table.columns.find(el => el.columnName.toLowerCase() === sortObj.field.toLowerCase())
 
+          if (!found) return acc
+          if (disallowedSortColumns.includes(found.dataType.toLowerCase())) return acc
+
+          acc.push(sortObj)
+          return acc
+        }, [])
+      }
+      
       if (params.size) {
         limit = params.size
       }
