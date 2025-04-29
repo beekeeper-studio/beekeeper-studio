@@ -147,6 +147,7 @@
           :tab="tab"
           :schema="tab.schemaName"
           :table="tab.tableName"
+          :active="activeTab.id === tab.id"
           :connection="connection"
           @close="close"
         />
