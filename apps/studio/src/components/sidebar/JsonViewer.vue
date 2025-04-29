@@ -160,7 +160,14 @@ export default Vue.extend({
       }, 500),
     },
     sourceMap() {
-      return JsonSourceMap.stringify(this.filteredValue, null, 2);
+      let replacedFilteredValue = this.filteredValue;
+      try {
+        // run the replacer on the filteredValue
+        replacedFilteredValue = JSON.parse(JSON.stringify(this.filteredValue, this.replacer));
+      } catch (error) {
+        log.warn("Failed to replace filtered value", error);
+      }
+      return JsonSourceMap.stringify(replacedFilteredValue, null, 2);
     },
     filteredValue() {
       if (this.empty) {
@@ -343,6 +350,10 @@ export default Vue.extend({
   },
   methods: {
     replacer(_key: string, value: unknown) {
+      // HACK: this is the case in mongodb objectid
+      if (typeof value === "object" && _.isTypedArray((value as any).buffer)) {
+        return typedArrayToString((value as any).buffer, this.binaryEncoding)
+      }
       if (_.isTypedArray(value)) {
         return typedArrayToString(value as ArrayBufferView, this.binaryEncoding)
       }
