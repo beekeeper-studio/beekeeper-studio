@@ -1,6 +1,10 @@
 @use "sass:color";
 
 .flyout-nav {
+  .disabled-app-menu {
+    pointer-events:none;
+    opacity: 0.5;
+  }
   ul {
     position: absolute;
     margin: 0;
