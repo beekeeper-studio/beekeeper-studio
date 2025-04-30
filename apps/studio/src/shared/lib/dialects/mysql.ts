@@ -32,6 +32,7 @@ export const MysqlData: DialectData = {
   editorFriendlyIdentifier: (s) => s,
   escapeString: defaultEscapeString,
   requireDataset: false,
+  disallowedSortColumns: ['json'],
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   },

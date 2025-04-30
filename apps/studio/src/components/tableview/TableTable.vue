@@ -1602,7 +1602,6 @@ export default Vue.extend({
       let orderBy = null;
       let filters = this.filters
 
-      // Postgres doesn't sort json very well. This will be trying to orderby a json column potentionall and that shouldn't be possible. I say good day
       if (params.sort) {
         orderBy = params.sort.reduce((acc, sortObj) => {
           const found = this.table.columns.find(el => el.columnName.toLowerCase() === sortObj.field.toLowerCase())
