@@ -448,8 +448,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
         result['meta+shift+t'] = this.reopenLastClosedTab
-        result['shift+meta+['] = this.previousTab
-        result['shift+meta+]'] = this.nextTab
       }
 
       return result
