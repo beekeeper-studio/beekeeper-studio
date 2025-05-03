@@ -320,7 +320,7 @@ import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumn
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath } from '@/lib/data/jsonViewer'
-import { stringToTypedArray } from "@/common/utils";
+import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 
 const log = rawLog.scope('TableTable')
 
@@ -1583,17 +1583,6 @@ export default Vue.extend({
       }
       this.filters = filters
     },
-    removeUnsortableColumnsFromSortBy(sortParms: any[], disallowedSortColumns = []) {
-      return sortParms.reduce((acc, sortObj) => {
-          const found = this.table.columns.find(el => el.columnName.toLowerCase() === sortObj.field.toLowerCase())
-
-          if (!found) return acc
-          if (disallowedSortColumns.includes(found.dataType.toLowerCase())) return acc
-
-          acc.push(sortObj)
-          return acc
-        }, [])
-    },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
@@ -1606,7 +1595,7 @@ export default Vue.extend({
       let filters = this.filters
 
       if (params.sort) {
-        orderBy = this.removeUnsortableColumnsFromSortBy(params.sort, disallowedSortColumns)
+        orderBy = removeUnsortableColumnsFromSortBy(params.sort,  this.table.columns, disallowedSortColumns)
       }
       
       if (params.size) {
