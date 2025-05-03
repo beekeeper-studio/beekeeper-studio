@@ -1158,15 +1158,19 @@ export default Vue.extend({
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
-        const columnNames = this.table.columns.filter((c) => !c.generated).map((c) => c.columnName)
+        const columnNames = this.table.columns.filter((c) => !c.generated)
         const rowData = item.row.getData()
         const result = {}
-        columnNames.forEach((c) => {
-          const d = rowData[c]
-          if (this.isPrimaryKey(c) && (!d && d != 0)) {
+        columnNames.forEach(({ columnName, dataType }) => {
+          const d = rowData[columnName]
+          if (this.isPrimaryKey(columnName) && (!d && d != 0)) {
             // do nothing
           } else {
-            result[c] = d
+            result[columnName] = d
+            // HACK (azmi): we should handle this from backend with tests instead
+            if (this.dialect === 'postgresql' && dataType === 'jsonb') {
+              result[columnName] = JSON.stringify(d)
+            }
           }
         })
         return {
