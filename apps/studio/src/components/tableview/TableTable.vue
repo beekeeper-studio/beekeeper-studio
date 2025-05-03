@@ -1161,14 +1161,6 @@ export default Vue.extend({
       if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
     },
-    // TODO: this is not attached to anything. but it might be needed?
-    allowHeaderSort(column) {
-      const badStarts = [
-        'json', 'clob'
-      ]
-      if(!column.dataType) return true
-      return !badStarts.find((bad) => column.dataType.toLowerCase().startsWith(bad))
-    },
     slimDataType(dt) {
       if (!dt) return null
       if(dt === 'bit(1)') return dt
@@ -1591,6 +1583,17 @@ export default Vue.extend({
       }
       this.filters = filters
     },
+    removeUnsortableColumnsFromSortBy(sortParms: any[], disallowedSortColumns = []) {
+      return sortParms.reduce((acc, sortObj) => {
+          const found = this.table.columns.find(el => el.columnName.toLowerCase() === sortObj.field.toLowerCase())
+
+          if (!found) return acc
+          if (disallowedSortColumns.includes(found.dataType.toLowerCase())) return acc
+
+          acc.push(sortObj)
+          return acc
+        }, [])
+    },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
@@ -1603,15 +1606,7 @@ export default Vue.extend({
       let filters = this.filters
 
       if (params.sort) {
-        orderBy = params.sort.reduce((acc, sortObj) => {
-          const found = this.table.columns.find(el => el.columnName.toLowerCase() === sortObj.field.toLowerCase())
-
-          if (!found) return acc
-          if (disallowedSortColumns.includes(found.dataType.toLowerCase())) return acc
-
-          acc.push(sortObj)
-          return acc
-        }, [])
+        orderBy = this.removeUnsortableColumnsFromSortBy(params.sort, disallowedSortColumns)
       }
       
       if (params.size) {
