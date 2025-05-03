@@ -43,7 +43,7 @@
       />
     </template>
 
-    <statusbar :mode="statusbarMode">
+    <statusbar :mode="statusbarMode" :active="active">
       <div class="truncate statusbar-info">
         <x-button
           @click.prevent="openProperties"
@@ -184,7 +184,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
+          v-tooltip="`Refresh Table (${$bksConfig.keybindings.general.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -192,7 +192,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${$bksConfig.keybindings.tableTable.addRow})`"
+          v-tooltip="`Add row (${$bksConfig.keybindings.general.addRow})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -231,7 +231,7 @@
                 >stars</i>
               </x-label>
             </x-menuitem>
-            <x-menuitem @click="openQueryTab" :disabled="dialect === 'mongodb'">
+            <x-menuitem @click="openQueryTab">
               <x-label>Copy view to SQL</x-label>
             </x-menuitem>
           </x-menu>
@@ -274,7 +274,7 @@
         </div>
       </modal>
     </portal>
-    <add-field-modal @done="cellAddCol(undefined, $event)"/>
+    <!-- <add-field-modal @done="cellAddCol(undefined, $event)"/> -->
   </div>
 </template>
 
@@ -305,7 +305,6 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
-import AddFieldModal from '../common/modals/AddFieldModal.vue'
 import EditorModal from './EditorModal.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
@@ -334,7 +333,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, AddFieldModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -396,6 +395,9 @@ export default Vue.extend({
     },
     isCassandra() {
       return this.connectionType === 'cassandra'
+    },
+    queryDialect() {
+      return this.dialectData?.queryDialectOverride ?? this.dialect;
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -1345,7 +1347,7 @@ export default Vue.extend({
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
         pendingUpdates.push(payload)
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
-        this.updateDetailView()
+        this.updateJsonViewer()
       }
     },
     cloneSelection(range?: RangeComponent) {
@@ -1486,7 +1488,7 @@ export default Vue.extend({
           deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
-        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
         console.error(ex);
@@ -1621,7 +1623,7 @@ export default Vue.extend({
         this.table.schema,
         selects
       ).then((query: string) => {
-        const language = FormatterDialect(this.dialect);
+        const language = FormatterDialect(this.queryDialect);
         const formatted = safeSqlFormat(query, { language });
         this.$root.$emit(AppEvent.newTab, formatted);
       }).catch((e: unknown) => {

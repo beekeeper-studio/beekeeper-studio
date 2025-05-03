@@ -43,10 +43,13 @@
         :vim-config="vimConfig"
         :line-wrapping="wrapText"
         :keymap="userKeymap"
+        :vim-keymaps="vimKeymaps"
         :entities="entities"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :mode="dialectData.textEditorMode"
+        :clipboard="$native.clipboard"
+        :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-blur="onTextEditorBlur?.()"
@@ -204,6 +207,7 @@
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
 
@@ -352,6 +356,8 @@
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
+  import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
+  import { monokai } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -399,6 +405,7 @@
         containerResizeObserver: null,
         onTextEditorBlur: null,
         wrapText: false,
+        vimKeymaps: [],
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -453,6 +460,7 @@
           'mariadb': 'mysql',
           'tidb': 'mysql',
           'redshift': 'psql',
+          'mongodb': 'psql'
         }
         return mappings[this.connectionType] || 'generic'
       },
@@ -591,11 +599,22 @@
       entities() {
         return this.tables.map((t: TableOrView) => ({ schema: t.schema, name: t.name }))
       },
+      queryDialect() {
+        return this.dialectData.queryDialectOverride ?? this.connectionType;
+      },
       formatterDialect() {
-        return FormatterDialect(dialectFor(this.connectionType))
+        return FormatterDialect(dialectFor(this.queryDialect))
       },
       identifierDialect() {
-        return findSqlQueryIdentifierDialect(this.connectionType)
+        return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      replaceExtensions() {
+        return (extensions) => {
+          return [
+            ...extensions,
+            monokai,
+          ]
+        }
       },
     },
     watch: {
@@ -1043,6 +1062,8 @@
         await this.$nextTick()
         this.focusElement = 'text-editor'
       }
+
+      this.vimKeymaps = await getVimKeymapsFromVimrc()
     },
     beforeDestroy() {
       if(this.split) {

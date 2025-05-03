@@ -91,6 +91,7 @@ declare interface IBksConfig {
         layout: {
             mainContentMinWidth: number;
             primarySidebarMinWidth: number;
+            secondarySidebarMinWidth: number;
         };
         queryEditor: {
             maxResults: number;

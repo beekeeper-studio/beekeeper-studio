@@ -10,21 +10,24 @@
     <div
       v-else
       class="interface-wrap row"
+      ref="splitContainer"
     >
+      <global-sidebar
+        v-if="!minimalMode"
+        @select="handleSelectGlobalSidebarItem"
+        :active-item="globalSidebarActiveItem"
+        ref="globalSidebar"
+      />
+
       <sidebar
         ref="sidebar"
         class="primary-sidebar"
-        :style="{ '--sidebar-min-width': $bksConfig.ui.layout.primarySidebarMinWidth + 'px' }"
       >
         <core-sidebar
           @databaseSelected="databaseSelected"
-          @toggleSidebar="handleToggleOpenPrimarySidebar"
-          :sidebar-shown="primarySidebarOpen"
         />
-        <statusbar>
-          <ConnectionButton />
-        </statusbar>
       </sidebar>
+
       <div
         ref="content"
         class="page-content flex-col main-content"
@@ -32,8 +35,13 @@
       >
         <core-tabs />
       </div>
+
       <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
+    <global-status-bar
+      :connection-button-width="primarySidebarWidth"
+      :connection-button-icon-width="globalSidebarWidth"
+    />
     <quick-search
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
@@ -48,28 +56,31 @@
   import Sidebar from './common/Sidebar.vue'
   import CoreSidebar from './sidebar/CoreSidebar.vue'
   import SecondarySidebar from './sidebar/SecondarySidebar.vue'
+  import GlobalSidebar from './sidebar/GlobalSidebar.vue'
   import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
-  import Statusbar from './common/StatusBar.vue'
-  import ConnectionButton from './sidebar/core/ConnectionButton.vue'
   import ExportManager from './export/ExportManager.vue'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import LostConnectionModal from './LostConnectionModal.vue'
+  import GlobalStatusBar from './GlobalStatusBar.vue'
   import Vue from 'vue'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar },
+    components: { CoreSidebar, CoreTabs, Sidebar, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalStatusBar, GlobalSidebar },
     data() {
       /* eslint-disable */
       return {
         split: null,
         quickSearchShown: false,
         initializing: true,
+        resizeObserver: null,
+        primarySidebarWidth: 0,
+        globalSidebarWidth: 0,
       }
       /* eslint-enable */
     },
@@ -80,6 +91,7 @@
         "primarySidebarSize",
         "secondarySidebarOpen",
         "secondarySidebarSize",
+        "globalSidebarActiveItem",
       ]),
       keymap() {
         return this.$vHotkeyKeymap({
@@ -88,7 +100,7 @@
       },
       splitElements() {
         return [
-          this.$refs.sidebar.$refs.sidebar,
+          this.$refs.sidebar.$el,
           this.$refs.content,
           this.$refs.secondarySidebar.$el
         ]
@@ -105,48 +117,47 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
+          const primarySidebarSize = this.primarySidebarOpen ? this.primarySidebarSize : 0
+          const secondarySidebarSize = this.secondarySidebarOpen ? this.secondarySidebarSize : 0
+          const mainContentSize = 100 - (primarySidebarSize + secondarySidebarSize)
+
           const splitSizes = [
-            this.primarySidebarSize,
-            100 - (this.primarySidebarSize + this.secondarySidebarSize),
-            this.secondarySidebarSize,
+            primarySidebarSize,
+            mainContentSize,
+            secondarySidebarSize,
           ]
 
           this.split = Split(this.splitElements, {
-            snapOffset: [150, 0, 150],
+            snapOffset: [this.$bksConfig.ui.layout.primarySidebarMinWidth, 0, this.$bksConfig.ui.layout.secondarySidebarMinWidth],
             sizes: splitSizes,
-            minSize: [this.$bksConfig.ui.layout.primarySidebarMinWidth, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
+            minSize: [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
             gutterSize: 5,
             elementStyle: (_dimension, elementSize) => ({
-              width: `calc(${elementSize}%)`,
+              width: `${elementSize}%`,
             }),
             gutter: (_index, direction) => {
                 const gutter = document.createElement('div')
                 gutter.className = `gutter gutter-${direction}`
                 return gutter
             },
-            onDragEnd: () => {
-              const [primarySidebarSize, _m, secondarySidebarSize] = this.split.getSizes()
+            onDragEnd: ([primarySidebarSize, _mainContentSize, secondarySidebarSize]) => {
+              // Define a very small threshold to detect if sidebar has effectively zero width
+              // Use a tiny value like 1% to account for any rounding errors
+              const COLLAPSE_THRESHOLD = 1
 
-              // Handle primary sidebar collapse/expand
-              const primarySidebarWidth = this.splitElements[0].offsetWidth
-              const threshold = this.$bksConfig.ui.layout.primarySidebarMinWidth + 5
+              // Check if sidebars are effectively collapsed
+              const primaryOpen = primarySidebarSize > COLLAPSE_THRESHOLD
+              const secondaryOpen = secondarySidebarSize > COLLAPSE_THRESHOLD
 
-              if (primarySidebarWidth <= threshold) {
-                this.setPrimarySidebarOpen(false)
-              } else {
+              this.setPrimarySidebarOpen(primaryOpen)
+              this.setSecondarySidebarOpen(secondaryOpen)
+
+              if (primaryOpen) {
                 this.setPrimarySidebarSize(primarySidebarSize)
-                this.setPrimarySidebarOpen(true)
               }
 
-              // Handle secondary sidebar collapse/expand
-              const secondarySidebarWidth = this.splitElements[2].offsetWidth
-              const secondaryThreshold = 0 + 5
-
-              if (secondarySidebarWidth <= secondaryThreshold) {
-                this.setSecondarySidebarOpen(false)
-              } else {
+              if (secondaryOpen) {
                 this.setSecondarySidebarSize(secondarySidebarSize)
-                this.setSecondarySidebarOpen(true)
               }
             },
           })
@@ -159,6 +170,18 @@
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
+        // This is the easiest way to track the width of the primary sidebar
+        // in real time because sidebar can be resized by dragging or clicking
+        // the toggle button. An alternative to this would be assigning the
+        // width on drag and click events.
+        this.resizeObserver = new ResizeObserver((entries) => {
+          const primarySidebar = entries[0]
+          this.primarySidebarWidth = this.globalSidebarWidth + primarySidebar.contentRect.width
+        })
+        this.$nextTick(() => {
+          this.globalSidebarWidth = this.$refs.globalSidebar.$el.offsetWidth
+          this.resizeObserver.observe(this.splitElements[0])
+        })
       })
     },
     beforeDestroy() {
@@ -170,6 +193,9 @@
       if(this.split) {
         this.split.destroy()
       }
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect()
+      }
     },
     methods: {
       ...mapActions({
@@ -177,6 +203,7 @@
         setPrimarySidebarSize: "sidebar/setPrimarySidebarSize",
         setSecondarySidebarOpen: "sidebar/setSecondarySidebarOpen",
         setSecondarySidebarSize: "sidebar/setSecondarySidebarSize",
+        setGlobalSidebarActiveItem: "sidebar/setGlobalSidebarActiveItem",
       }),
       showQuickSearch() {
         this.quickSearchShown = true
@@ -184,25 +211,85 @@
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
       },
-      handleToggleOpenPrimarySidebar(force?: boolean) {
+      // Normalizes the sizes array to ensure they sum to exactly 100
+      normalizeSizes(sizes: [number, number, number]) {
+        const sum = sizes.reduce((acc, size) => acc + size, 0)
+        if (Math.abs(sum - 100) < 0.001) return sizes // Already very close to 100
+        if (sum === 0) return [0, 100, 0] // Fallback to default distribution
+        return sizes.map((size) => (size / sum) * 100)
+      },
+
+      // Expands a pane to the specified size while respecting minimum widths
+      expandSplitPane(paneIndex: number, targetSize: number) {
+        // size = in percent, width = in pixels
+        const containerSize = this.$refs.splitContainer.offsetWidth
+        const mainContentMinSize = (this.$bksConfig.ui.layout.mainContentMinWidth / containerSize) * 100
+        const primarySidebarMinSize = (this.$bksConfig.ui.layout.primarySidebarMinWidth / containerSize) * 100
+        const secondarySidebarMinSize = (this.$bksConfig.ui.layout.secondarySidebarMinWidth / containerSize) * 100
+
+        // Get current sizes
+        const currentSizes = this.split.getSizes()
+        const updatedSizes = [...currentSizes]
+
+        // Calculate available space and needed space
+        const mainIndex = 1 // Main content is always at index 1
+        const otherPaneIndex = paneIndex === 0 ? 2 : 0 // Other sidebar index
+
+        // Calculate size changes
+        const sizeChange = targetSize - currentSizes[paneIndex]
+        updatedSizes[paneIndex] = targetSize
+
+        // Try to take space from main content first
+        if (currentSizes[mainIndex] - sizeChange >= mainContentMinSize) {
+          // Main content has enough space
+          updatedSizes[mainIndex] = currentSizes[mainIndex] - sizeChange
+        } else {
+          // Main content needs to maintain minimum size
+          updatedSizes[mainIndex] = mainContentMinSize
+
+          // Need to take remaining space from other pane
+          const remainingChange = sizeChange - (currentSizes[mainIndex] - mainContentMinSize)
+          const otherPaneMinSize = otherPaneIndex === 0 ? primarySidebarMinSize : secondarySidebarMinSize
+
+          if (currentSizes[otherPaneIndex] - remainingChange >= otherPaneMinSize) {
+            // Other pane has enough space
+            updatedSizes[otherPaneIndex] = currentSizes[otherPaneIndex] - remainingChange
+          } else {
+            // Other pane needs to maintain minimum size
+            updatedSizes[otherPaneIndex] = otherPaneMinSize
+
+            // If we get here, we need to reduce the target pane's size
+            const totalAvailable = 100 - mainContentMinSize - otherPaneMinSize
+            updatedSizes[paneIndex] = totalAvailable
+          }
+        }
+
+        // Normalize sizes to ensure they sum to 100
+        const normalizedSizes = this.normalizeSizes(updatedSizes as [number, number, number])
+        this.split.setSizes(normalizedSizes)
+
+        if (this.primarySidebarOpen) {
+          this.setPrimarySidebarSize(normalizedSizes[0])
+        }
+        if (this.secondarySidebarOpen) {
+          this.setSecondarySidebarSize(normalizedSizes[2])
+        }
+      },
+      toggleOpenPrimarySidebar(force?: boolean) {
         const open = typeof force === 'undefined'
           ? !this.primarySidebarOpen
           : force
 
         if (open) {
-          const previousSize = this.primarySidebarSize
-          const [primarySidebar, mainContent, secondarySidebar] = this.split.getSizes()
-          const updatedSizes = [
-            primarySidebar + previousSize,
-            mainContent - previousSize,
-            secondarySidebar,
-          ]
-          this.split.setSizes(updatedSizes)
+          this.expandSplitPane(0, this.primarySidebarSize)
         } else {
           this.split.collapse(0)
         }
 
         this.setPrimarySidebarOpen(open)
+      },
+      handleToggleOpenPrimarySidebar() {
+        this.toggleOpenPrimarySidebar()
       },
       handleToggleOpenSecondarySidebar(force?: boolean) {
         const open = typeof force === 'undefined'
@@ -210,19 +297,20 @@
           : force
 
         if (open) {
-          const previousSize = this.secondarySidebarSize
-          const [primarySidebar, mainContent, secondarySidebar] = this.split.getSizes()
-          const updatedSizes = [
-            primarySidebar,
-            mainContent - previousSize,
-            secondarySidebar + previousSize,
-          ]
-          this.split.setSizes(updatedSizes)
+          this.expandSplitPane(2, this.secondarySidebarSize)
         } else {
           this.split.collapse(2)
         }
 
         this.setSecondarySidebarOpen(open)
+      },
+      handleSelectGlobalSidebarItem(item) {
+        if (this.globalSidebarActiveItem === item) {
+          this.toggleOpenPrimarySidebar()
+        } else if(!this.primarySidebarOpen) {
+          this.toggleOpenPrimarySidebar(true)
+        }
+        this.setGlobalSidebarActiveItem(item);
       },
     }
   })

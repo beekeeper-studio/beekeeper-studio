@@ -31,14 +31,18 @@ async function readVimrc(pathToVimrc?: string): Promise<string[]> {
   return [];
 }
 
-export async function setKeybindingsFromVimrc(codeMirrorVimInstance: any): Promise<void> {
+export async function getVimKeymapsFromVimrc(): Promise<IMapping[]> {
   const potentialCommands = await readVimrc();
 
   if (potentialCommands.length === 0) {
     return;
   }
 
-  const mappings = createVimCommands(potentialCommands);
+  return createVimCommands(potentialCommands);
+}
+
+export async function setKeybindingsFromVimrc(codeMirrorVimInstance: any): Promise<void> {
+  const mappings = await getVimKeymapsFromVimrc();
 
   for (let j = 0; j < mappings.length; j++) {
     codeMirrorVimInstance.map(

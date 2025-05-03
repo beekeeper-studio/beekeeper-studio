@@ -34,10 +34,18 @@ $color-defaults: (
     }
   }
 }
-.statusbar {
+.connection-button {
   @each $key, $val in $color-defaults {
     &.#{'#{$key}'} {
       background-color: rgba(list.nth($val, 1), 1);
+    }
+  }
+}
+
+.statusbar {
+  @each $key, $val in $color-defaults {
+    &.#{'#{$key}'} {
+      background-color: rgba(list.nth($val, 1), 0.85);
     }
   }
   &.query-meta {
@@ -51,15 +59,6 @@ $color-defaults: (
     @each $key, $val in $color-defaults {
       &.#{'#{$key}'} {
         background-color: rgba(list.nth($val, 1), 0.8);
-      }
-    }
-  }
-}
-.core-tabs {
-  .statusbar {
-    @each $key, $val in $color-defaults {
-      &.#{'#{$key}'} {
-        background-color: rgba(list.nth($val, 1), 0.85);
       }
     }
   }
