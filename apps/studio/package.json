@@ -45,7 +45,7 @@
     "@mongosh/browser-runtime-electron": "^3.8.0",
     "@mongosh/service-provider-node-driver": "^3.6.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
-    "@queryleaf/lib": "^0.2.2",
+    "@queryleaf/lib": "^0.2.3",
     "@types/ini": "^4.1.0",
     "@uiw/codemirror-theme-monokai": "^4.23.10",
     "ansi-to-html": "^0.7.2",
