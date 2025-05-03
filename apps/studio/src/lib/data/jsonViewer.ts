@@ -65,7 +65,7 @@ export function createTruncatableElement(text: string) {
 
   const more = document.createElement("span");
   more.classList.add("more");
-  more.innerText = "...";
+  more.innerText = "[Show more]";
 
   element.appendChild(more);
   element.appendChild(document.createTextNode('"'))

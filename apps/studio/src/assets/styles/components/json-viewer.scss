@@ -174,3 +174,13 @@
     }
   }
 }
+
+.truncatable-value .more {
+  color: #4da6ff; /* Azul clarinho parecido ao do DevTools */
+  font-size: 1rem; /* Letra mais pequena */
+  font-weight: normal; /* Fonte normal, não bold */
+  cursor: pointer;
+  padding-left: 0.25rem;
+  text-decoration: none; /* Sem sublinhado por defeito */
+  user-select: none; /* Não deixa selecionar o texto */
+}
