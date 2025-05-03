@@ -554,9 +554,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         kcu.column_name,
         kcu.table_schema AS from_schema,
         kcu.table_name AS from_table,
-        ccu.table_schema AS to_schema,
-        ccu.table_name AS to_table,
-        ccu.column_name AS to_column,
+        kcu2.column_name AS to_column,
+        kcu2.table_name AS to_table,
+        rc.unique_constraint_schema AS to_schema,
         rc.update_rule,
         rc.delete_rule,
         kcu.ordinal_position
@@ -565,12 +565,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         JOIN information_schema.key_column_usage AS kcu
           ON tc.constraint_name = kcu.constraint_name
           AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.constraint_column_usage AS ccu
-          ON ccu.constraint_name = tc.constraint_name
-          AND ccu.table_schema = tc.table_schema
         JOIN information_schema.referential_constraints AS rc
           ON rc.constraint_name = tc.constraint_name
           AND rc.constraint_schema = tc.table_schema
+        JOIN information_schema.key_column_usage AS kcu2
+          ON kcu2.constraint_name = rc.unique_constraint_name
+          AND kcu.ordinal_position = kcu2.ordinal_position
+          AND kcu2.constraint_schema = rc.unique_constraint_schema
       WHERE
         tc.constraint_type = 'FOREIGN KEY'
         AND tc.table_schema = $1

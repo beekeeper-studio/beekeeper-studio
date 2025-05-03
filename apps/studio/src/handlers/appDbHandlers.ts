@@ -24,6 +24,9 @@ import rawLog from "@bksLogger"
 const log = rawLog.scope('Appdb handlers');
 
 function defaultTransform<T extends Transport>(obj: T, cls: any) {
+  if (_.isNil(obj)) {
+    return null
+  }
   const newObj = {} as unknown as T;
   return cls.merge(newObj, obj);
 }
