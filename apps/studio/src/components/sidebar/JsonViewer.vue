@@ -351,7 +351,7 @@ export default Vue.extend({
   methods: {
     replacer(_key: string, value: unknown) {
       // HACK: this is the case in mongodb objectid
-      if (typeof value === "object" && _.isTypedArray((value as any).buffer)) {
+      if (value && typeof value === "object" && _.isTypedArray((value as any).buffer)) {
         return typedArrayToString((value as any).buffer, this.binaryEncoding)
       }
       if (_.isTypedArray(value)) {
