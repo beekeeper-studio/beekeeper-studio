@@ -1,5 +1,5 @@
 ---
-title: Connecting To A Database
+title: Supported Databases
 summary: "How to start using Beekeeper Studio with your database of choice."
 old_url: "https://docs.beekeeperstudio.io/docs/first-page"
 ---

@@ -46,6 +46,12 @@ export const api = {
     if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.invoke(event, name, arg)
   },
+  enableConnectionMenuItems(){
+    ipcRenderer.send("enable-connection-menu-items");
+  },
+  disableConnectionMenuItems(){
+    ipcRenderer.send("disable-connection-menu-items");
+  },
   send(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.send(event, name, arg)

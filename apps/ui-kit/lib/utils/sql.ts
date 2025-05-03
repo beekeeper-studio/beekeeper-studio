@@ -1,9 +1,10 @@
 import { identify } from 'sql-query-identifier'
+import { Dialect } from 'sql-query-identifier/lib/defines';
 
 // a function that takes in a string and a dialect,
 // if the string is determined to be most likely a query and it is quoted, we remove the quotes,
 // else we just return the trimmed query
-export function removeQueryQuotes(possibleQuery: string, dialect: any): string {
+export function removeQueryQuotes(possibleQuery: string, dialect: Dialect): string {
   // ensure there's no leading/trailing whitespace before we make our checks
   possibleQuery = possibleQuery.trim();
 
