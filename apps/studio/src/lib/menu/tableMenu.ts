@@ -349,6 +349,10 @@ export function copyActionsMenu(options: {
       action: () => copyRanges({ ranges, type: "plain" }),
     },
     {
+      label: createMenuItem("Copy Column Name"),
+      action: () => copyRanges({ ranges, type: "columnName" }),
+    },
+    {
       label: createMenuItem("Copy as TSV for Excel"),
       action: () => copyRanges({ ranges, type: "tsv" }),
     },
@@ -359,10 +363,6 @@ export function copyActionsMenu(options: {
     {
       label: createMenuItem("Copy as Markdown"),
       action: () => copyRanges({ ranges, type: "markdown" }),
-    },
-    {
-      label: createMenuItem("Copy Column Name"),
-      action: () => copyRanges({ ranges, type: "columnName" }),
     },
     {
       label: createMenuItem("Copy as SQL"),
