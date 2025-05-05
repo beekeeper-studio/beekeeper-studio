@@ -92,3 +92,11 @@ export type TextEditorLSPReadyEvent = CustomEvent<{
   capabilities: object;
 }>;
 
+export interface TextEditorEventMap extends HTMLElementEventMap {
+  "bks-value-change": TextEditorValueChangeEvent;
+  "bks-focus": TextEditorFocusEvent;
+  "bks-blur": TextEditorFocusEvent;
+  "bks-lsp-ready": TextEditorLSPReadyEvent;
+  "bks-initialized": TextEditorInitializedEvent;
+}
+

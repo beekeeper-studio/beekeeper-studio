@@ -10,6 +10,14 @@
     "skipLibCheck": true,
     "noEmitOnError": false
   },
-  "include": ["lib/index.ts", "lib/types.ts", "lib/components/types.ts", "lib/components/table/types.ts"],
+  "include": [
+    "lib/index.ts",
+    "lib/components/types.ts",
+    "lib/components/table/types.ts",
+    "lib/components/entity-list/types.ts",
+    "lib/components/text-editor/v2/types.ts",
+    "lib/components/sql-text-editor/v2/types.ts",
+    "lib/components/data-editor/types.ts"
+  ],
   "exclude": ["node_modules", "**/*.test.ts", "**/*.spec.ts", "lib/components/sql-text-editor/define.ts"]
 }

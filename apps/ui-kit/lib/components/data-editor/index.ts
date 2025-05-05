@@ -2,11 +2,15 @@ import Vue from "vue";
 import wrap from "@vue/web-component-wrapper";
 import Component from "./DataEditor.vue";
 import { props, exposeMethods, ExposedMethods } from "./data-editor";
-import { PropsToType } from "../types";
+import { PropsToType, VueWrapper } from "../utilTypes";
+import { DataEditorEventMap } from "./types";
 
-type DataEditorElement = HTMLElement &
-  PropsToType<typeof props> &
-  ExposedMethods;
+export * from "./types";
+
+export interface DataEditorElement
+  extends PropsToType<typeof props>,
+    ExposedMethods,
+    VueWrapper<DataEditorElement, DataEditorEventMap> {}
 
 export const DataEditorElement = wrap(Vue, Component, {
   disableShadowDom: true,

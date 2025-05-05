@@ -1,10 +1,10 @@
-import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
 import {
-    ExposedMethods,
   ExtensionConfiguration,
   Keybindings,
   Keymap,
+  LanguageServerHelpers,
   TextEditorConfiguration,
 } from "./types";
 import {

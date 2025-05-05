@@ -8,8 +8,8 @@ interface BksSqlTextEditorProps {
 export default function BksSqlTextEditor({ entities }: BksSqlTextEditorProps) {
   const [initialized, setInitialized] = useState(false);
   const [text, setText] = useState("select * from users u\nwhere u.id = 1;");
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const sqlTextEditorRef = useRef<SqlTextEditorElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sqlTextEditorRef = useRef<SqlTextEditorElement>(null as unknown as SqlTextEditorElement);
 
   function handleInitialized() {
     setInitialized(true);
@@ -21,7 +21,7 @@ export default function BksSqlTextEditor({ entities }: BksSqlTextEditorProps) {
   }
 
   useEffect(() => {
-    sqlTextEditorRef.current = document.createElement("bks-sql-text-editor");
+    sqlTextEditorRef.current = document.createElement("bks-sql-text-editor") as SqlTextEditorElement;
     sqlTextEditorRef.current.value = text;
     sqlTextEditorRef.current.addEventListener(
       "bks-initialized",

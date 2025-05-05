@@ -7,10 +7,10 @@ interface BksEntityListProps {
 }
 
 export default function BksEntityList({ entities, onSelectEntity }: BksEntityListProps) {
-  const ref = useRef<EntityListElement | null>(null);
+  const ref = useRef<EntityListElement>(null as unknown as EntityListElement);
 
   function handleItemDblClick(event) {
-    const idx = ref.current!.entities.findIndex(
+    const idx = ref.current.entities.findIndex(
       (entity) => entity === event.detail.entity
     );
     if (idx > -1) {

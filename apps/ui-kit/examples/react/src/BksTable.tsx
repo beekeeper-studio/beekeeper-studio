@@ -8,22 +8,23 @@ interface BksTableProps {
 
 export default function BksTable({ columns, data }: BksTableProps) {
   const [initialized, setInitialized] = useState(false);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const tableRef = useRef<TableElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<TableElement>(null as unknown as TableElement);
 
   useEffect(() => {
-    const table = document.createElement("bks-table") as TableElement;
-    const listener = () => setInitialized(true);
-    table.addEventListener("bks-initialized", listener);
-    tableRef.current = table;
+    tableRef.current = document.createElement("bks-table") as TableElement;
+    const handleInitialized = () => {
+      setInitialized(true);
+    }
+    tableRef.current.addEventListener("bks-initialized", handleInitialized);
     if (containerRef.current) {
-      containerRef.current.appendChild(table);
+      containerRef.current.appendChild(tableRef.current);
     }
     return () => {
-      table.removeEventListener("bks-initialized", listener);
+      tableRef.current.removeEventListener("bks-initialized", handleInitialized);
       tableRef.current.vueComponent.$destroy();
       if (containerRef.current) {
-        containerRef.current.removeChild(table);
+        containerRef.current.removeChild(tableRef.current);
       }
     };
   }, []);

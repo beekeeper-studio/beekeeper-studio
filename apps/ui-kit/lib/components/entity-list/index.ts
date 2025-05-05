@@ -2,9 +2,14 @@ import Vue from "vue";
 import wrap from "@vue/web-component-wrapper";
 import Component from "./EntityList.vue";
 import { props } from "./entity-list";
-import { PropsToType } from "../types";
+import { PropsToType, VueWrapper } from "../utilTypes";
+import { EntityListEventMap } from "./types";
 
-type EntityListElement = HTMLElement & PropsToType<typeof props>;
+export * from "./types";
+
+export interface EntityListElement
+  extends PropsToType<typeof props>,
+    VueWrapper<EntityListElement, EntityListEventMap> {}
 
 export const EntityListElement = wrap(Vue, Component, {
   disableShadowDom: true,

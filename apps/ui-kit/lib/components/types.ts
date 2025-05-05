@@ -1,5 +1,3 @@
-import { PropType } from "vue";
-
 export interface TableColumn {
   /** The key of the column in the data array. */
   field: string;
@@ -42,20 +40,3 @@ interface RoutineParam {
 export interface SchemaEntity extends BaseEntity {
   entityType: 'schema';
 }
-
-type InferPropType<T> =
-  T extends { type: PropType<infer V> } ? V :
-  T extends { type: () => infer V } ? V :
-  T extends { default: infer V } ? V :
-  any;
-
-export type PropsToType<P> = {
-  [K in keyof P]: InferPropType<P[K]>
-}
-
-// make a constant array from object keys
-// credits goes to https://twitter.com/WrocTypeScript/status/1306296710407352321
-export type TupleUnion<U extends string, R extends any[] = []> = {
-  [S in U]: Exclude<U, S> extends never ? [...R, S] : TupleUnion<Exclude<U, S>, [...R, S]>;
-}[U];
-

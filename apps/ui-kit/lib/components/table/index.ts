@@ -2,11 +2,15 @@ import Vue from "vue";
 import wrap from "@vue/web-component-wrapper";
 import Component from "./Table.vue";
 import { props, exposeMethods, ExposedMethods } from "./table";
-import { PropsToType } from "../types";
+import { PropsToType, VueWrapper } from "../utilTypes";
+import { TableEventMap } from "./types";
 
-type TableElement = HTMLElement &
-  PropsToType<typeof props> &
-  ExposedMethods;
+export * from "./types";
+
+export interface TableElement
+  extends PropsToType<typeof props>,
+    ExposedMethods,
+    VueWrapper<TableElement, TableEventMap> {}
 
 export const TableElement = wrap(Vue, Component, {
   disableShadowDom: true,
