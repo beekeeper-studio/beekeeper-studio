@@ -104,6 +104,7 @@ export interface DialectData {
   usesOffsetPagination?: boolean
   requireDataset?: boolean,
   disabledFeatures?: {
+    rawFilters?: boolean
     shell?: boolean
     queryEditor?: boolean
     informationSchema?: {
