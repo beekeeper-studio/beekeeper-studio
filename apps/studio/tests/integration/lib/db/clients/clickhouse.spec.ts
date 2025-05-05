@@ -129,7 +129,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     // Generated columns showing as NULL when browsing but returning values
     // when selected directly.
     // https://github.com/beekeeper-studio/beekeeper-studio/issues/2982
-    it.only("should query table with generated columns", async () => {
+    it("should query table with generated columns", async () => {
       await util.knex.schema.raw(`
         CREATE TABLE ch_generated_column
         (
