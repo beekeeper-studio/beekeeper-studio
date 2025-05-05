@@ -12,6 +12,7 @@ export interface TableElement
     ExposedMethods,
     VueWrapper<TableElement, TableEventMap> {}
 
+// @ts-ignore - Third param is valid in our fork
 export const TableElement = wrap(Vue, Component, {
   disableShadowDom: true,
   exposeMethods,

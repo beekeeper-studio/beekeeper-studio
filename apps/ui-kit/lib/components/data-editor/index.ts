@@ -12,6 +12,7 @@ export interface DataEditorElement
     ExposedMethods,
     VueWrapper<DataEditorElement, DataEditorEventMap> {}
 
+// @ts-ignore - Third param is valid in our fork
 export const DataEditorElement = wrap(Vue, Component, {
   disableShadowDom: true,
   exposeMethods,

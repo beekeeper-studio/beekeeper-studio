@@ -16,6 +16,7 @@ export interface TextEditorElement
     ExposedMethods,
     VueWrapper<TextEditorElement, TextEditorEventMap> {}
 
+// @ts-ignore - Third param is valid in our fork
 export const TextEditorElement = wrap(Vue, Component, {
   disableShadowDom: true,
   exposeMethods,

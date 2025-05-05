@@ -8,9 +8,11 @@
     "declarationDir": "dist",
     "emitDeclarationOnly": true,
     "skipLibCheck": true,
-    "noEmitOnError": false
+    "noEmitOnError": false,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
+    "lib/shims-vue.d.ts",
     "lib/index.ts",
     "lib/components/types.ts",
     "lib/components/table/types.ts",

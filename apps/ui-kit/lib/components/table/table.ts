@@ -3,7 +3,8 @@ import { Column, OrderBy } from "./types";
 //  FIXME cant import Dialect type here
 // import { Dialect } from "@shared/lib/dialects/models";
 type Dialect = unknown;
-import { BaseData, TupleUnion } from "../types";
+import { BaseData } from "../types";
+import { TupleUnion } from "../utilTypes";
 import { CustomMenuItems } from "../context-menu/menu";
 import { Options as TabulatorOptions } from "tabulator-tables";
 import { Tabulator } from "..";

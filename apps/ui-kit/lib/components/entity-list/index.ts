@@ -11,6 +11,7 @@ export interface EntityListElement
   extends PropsToType<typeof props>,
     VueWrapper<EntityListElement, EntityListEventMap> {}
 
+// @ts-ignore - Third param is valid in our fork
 export const EntityListElement = wrap(Vue, Component, {
   disableShadowDom: true,
 }) as unknown as EntityListElement;

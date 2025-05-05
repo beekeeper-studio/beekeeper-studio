@@ -29,6 +29,7 @@ export class LanguageServerClient {
       );
       this.isReady = true;
     });
+    // @ts-ignore - Access private property for compatibility 
     this.rpcClient = this.languageServerClient.client;
   }
 

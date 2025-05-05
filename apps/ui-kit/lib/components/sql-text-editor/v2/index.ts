@@ -16,6 +16,7 @@ export interface SqlTextEditorElement
     ExposedMethods,
     VueWrapper<SqlTextEditorElement, SqlTextEditorEventMap> {}
 
+// @ts-ignore - Third param is valid in our fork
 export const SqlTextEditorElement = wrap(Vue, Component, {
   disableShadowDom: true,
   exposeMethods,
