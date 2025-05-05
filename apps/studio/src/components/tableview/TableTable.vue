@@ -320,7 +320,7 @@ import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumn
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath } from '@/lib/data/jsonViewer'
-import { stringToTypedArray } from "@/common/utils";
+import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 
 const log = rawLog.scope('TableTable')
 
@@ -766,6 +766,7 @@ export default Vue.extend({
         ]
       }
 
+      const { disallowedSortColumns = [] } = this.dialectData
       const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
       // this needs fixing
       // currently it doesn't fetch the right result if you update the PK
@@ -823,7 +824,7 @@ export default Vue.extend({
         resizable: 'header',
         cssClass,
         editable: this.cellEditCheck,
-        headerSort: !this.dialectData.disabledFeatures.headerSort,
+        headerSort: !this.dialectData.disabledFeatures.headerSort && !disallowedSortColumns.includes(column.dataType?.toLowerCase()),
         editor: editorType,
         tooltip: this.cellTooltip,
         contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
@@ -1159,14 +1160,6 @@ export default Vue.extend({
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
       if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
-    },
-    // TODO: this is not attached to anything. but it might be needed?
-    allowHeaderSort(column) {
-      const badStarts = [
-        'json', 'clob'
-      ]
-      if(!column.dataType) return true
-      return !badStarts.find((bad) => column.dataType.toLowerCase().startsWith(bad))
     },
     slimDataType(dt) {
       if (!dt) return null
@@ -1594,7 +1587,7 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
-      const { usesOffsetPagination } = this.dialectData
+      const { usesOffsetPagination, disallowedSortColumns = [] } = this.dialectData
       log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
@@ -1602,9 +1595,9 @@ export default Vue.extend({
       let filters = this.filters
 
       if (params.sort) {
-        orderBy = params.sort
+        orderBy = removeUnsortableColumnsFromSortBy(params.sort,  this.table.columns, disallowedSortColumns)
       }
-
+      
       if (params.size) {
         limit = params.size
       }

@@ -39,6 +39,7 @@ export const PostgresData: DialectData = {
   usesOffsetPagination: true,
   defaultSchema: 'public',
   requireDataset: false,
+  disallowedSortColumns: ['json', 'jsonb', 'geometry', 'bytea', 'xml', 'hstore'],
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
