@@ -25,7 +25,7 @@ export function ls(
 
   let transport: WebSocketTransport;
   if (_.has(config.transport, "wsUri")) {
-    transport = new WebSocketTransport(config.transport.wsUri);
+    transport = new WebSocketTransport(config.transport.wsUri as string);
     transport.connection.addEventListener("message", function () {
       if (arguments[0].data) {
         try {

@@ -1,14 +1,20 @@
 import { useEffect, useRef } from "react";
+import { Entity, EntityListElement } from "@beekeeperstudio/ui-kit";
 
-export default function BksEntityList({ entities, onSelectEntities }) {
-  const ref = useRef(null);
+interface BksEntityListProps {
+  entities: Entity[];
+  onSelectEntity: (idx: number) => void;
+}
+
+export default function BksEntityList({ entities, onSelectEntity }: BksEntityListProps) {
+  const ref = useRef<EntityListElement>(null as unknown as EntityListElement);
 
   function handleItemDblClick(event) {
     const idx = ref.current.entities.findIndex(
       (entity) => entity === event.detail.entity
     );
     if (idx > -1) {
-      onSelectEntities(idx);
+      onSelectEntity(idx);
     }
   }
 
@@ -30,7 +36,7 @@ export default function BksEntityList({ entities, onSelectEntities }) {
   }, []);
 
   useEffect(() => {
-    ref.current.entities = entities;
+    ref.current!.entities = entities;
   }, [entities]);
 
   return <bks-entity-list ref={ref} />;

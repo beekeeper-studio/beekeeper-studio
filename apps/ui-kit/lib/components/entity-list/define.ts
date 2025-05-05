@@ -1,3 +1,3 @@
-import { EntityList } from ".";
+import { EntityListElement } from ".";
 
-window.customElements.define("bks-entity-list", EntityList);
+window.customElements.define("bks-entity-list", EntityListElement);

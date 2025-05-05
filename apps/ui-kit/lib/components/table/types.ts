@@ -1,4 +1,8 @@
-import type { ColumnDefinition } from "tabulator-tables";
+import type {
+  CellComponent,
+  ColumnDefinition,
+  TabulatorFull,
+} from "tabulator-tables";
 import { TableColumn } from "../types";
 
 export interface Column extends TableColumn {
@@ -22,14 +26,35 @@ export interface Column extends TableColumn {
    * In additional to the built-in sorters, if set to `none`, the table will not perform sorting
    * on this column, but it will still display the sort icon, and send the event.
    * */
-  sorter?: ColumnDefinition['sorter'] | 'none';
+  sorter?: ColumnDefinition["sorter"] | "none";
   /** Extend the default column definition. If object is provided, it will be shallow merged
    * with the default column definition. If function is provided, it will be called with the
    * default column definition as argument. The function should return the column definition. */
-  tabulatorColumnDefinition?: Partial<ColumnDefinition> | ((def :ColumnDefinition) => ColumnDefinition)
+  tabulatorColumnDefinition?:
+    | Partial<ColumnDefinition>
+    | ((def: ColumnDefinition) => ColumnDefinition);
 }
 
 export interface OrderBy {
-  dir: 'ASC' | 'DESC';
+  dir: "ASC" | "DESC";
   field: string;
+}
+
+export type ForeignKeyGoToEvent = CustomEvent<{
+  value: string;
+  field: string;
+  cell: CellComponent;
+}>;
+
+export type SortersChangeEvent = CustomEvent<{ sorters: OrderBy[] }>;
+
+export type TableInitializedEvent = CustomEvent<{ tabulator: TabulatorFull }>;
+
+export type RangesChangeEvent = CustomEvent<{ ranges: string[] }>;
+
+export interface TableEventMap extends HTMLElementEventMap {
+  "bks-foreign-key-go-to": ForeignKeyGoToEvent;
+  "bks-sorters-change": SortersChangeEvent;
+  "bks-initialized": TableInitializedEvent;
+  "bks-ranges-change": RangesChangeEvent;
 }

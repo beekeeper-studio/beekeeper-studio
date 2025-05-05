@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getEntities } from "./data";
+import { getEntities, Entity } from "./data";
 import BksTable from "./BksTable";
 import BksTextEditor from "./BksTextEditor";
 import BksSqlTextEditor from "./BksSqlTextEditor";
@@ -7,8 +7,8 @@ import BksEntityList from "./BksEntityList";
 import BksDataEditor from "./BksDataEditor";
 
 export default function Components() {
-  const [entities, setEntities] = useState([]);
-  const [selectedTableIdx, setSelectedTableIdx] = useState(0);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [selectedTableIdx, setSelectedTableIdx] = useState<number>(0);
 
   useEffect(() => {
     const entities = getEntities()
@@ -25,7 +25,7 @@ export default function Components() {
     [entities, selectedTableIdx]
   );
 
-  function handleSelectEntity(idx) {
+  function handleSelectEntity(idx: number): void {
     setSelectedTableIdx(idx);
   }
 
@@ -49,11 +49,11 @@ export default function Components() {
       </div>
       <h2>Data Editor</h2>
       <div className="card">
-        <BksDataEditor entities={entities} />
+        <BksDataEditor tables={entities} />
       </div>
       <h2>CSS Customization</h2>
       <div className="card custom-theme">
-        <BksDataEditor entities={entities} />
+        <BksDataEditor tables={entities} />
       </div>
     </>
   );

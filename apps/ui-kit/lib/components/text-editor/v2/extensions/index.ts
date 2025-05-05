@@ -26,8 +26,6 @@ import {
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap,
-  CompletionContext,
-  CompletionResult,
 } from "@codemirror/autocomplete";
 import { lintKeymap } from "@codemirror/lint";
 import { keymap as specialKeymap } from "./keymap";

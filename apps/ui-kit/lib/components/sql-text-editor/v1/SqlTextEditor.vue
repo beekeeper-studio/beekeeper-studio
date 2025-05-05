@@ -13,47 +13,18 @@
 
 <script lang="ts">
 import _ from "lodash";
-import Vue, { PropType } from "vue";
+import Vue from "vue";
 import textEditorMixin from "../../text-editor/v1/mixin";
-import { format, FormatOptions } from "sql-formatter";
+import { format } from "sql-formatter";
 import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
 import { querySelection, QuerySelectionChangeParams } from "./querySelectionPlugin";
-import { Options } from "sql-query-identifier";
-import { Entity } from "../../types";
 import ProxyEmit from "../../mixins/ProxyEmit";
 import { InternalContextItem, divider } from "../../context-menu/menu";
+import props from "../v2/props";
 
 export default Vue.extend({
   mixins: [textEditorMixin, ProxyEmit],
-  props: {
-    mode: {
-      type: textEditorMixin.props.mode,
-      default: "text/x-sql",
-    },
-    hint: {
-      type: textEditorMixin.props.hint,
-      default: "sql",
-    },
-    /** Entities for autocompletion */
-    entities: {
-      type: Array as PropType<Entity[]>,
-      default() {
-        return [];
-      },
-    },
-    defaultSchema: {
-      type: String,
-      default: "public",
-    },
-    formatterDialect: {
-      type: String as PropType<FormatOptions['language']>,
-      default: "sql",
-    },
-    identifierDialect: {
-      type: String as PropType<Options['dialect']>,
-      default: "generic",
-    },
-  },
+  props,
   computed: {
     hintOptions() {
       // We do this so we can order the autocomplete options

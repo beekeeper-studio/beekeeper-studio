@@ -40,4 +40,3 @@ interface RoutineParam {
 export interface SchemaEntity extends BaseEntity {
   entityType: 'schema';
 }
-

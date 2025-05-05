@@ -339,17 +339,6 @@ async function requestFullSemanticTokens(
 export interface SemanticTokensThemeOptions {}
 
 /**
- * We're not defining default token styles here anymore.
- * Styles are now defined in text-editor.scss using CSS variables for easy theming.
- */
-const defaultTokenTypeStyles: Record<string, Partial<CSSStyleDeclaration>> = {};
-
-/**
- * Default token modifier styles are now defined in CSS.
- */
-const defaultModifierStyles: Record<string, Partial<CSSStyleDeclaration>> = {};
-
-/**
  * Create an extension for semantic tokens
  * All styling is now handled via CSS in text-editor.scss
  */

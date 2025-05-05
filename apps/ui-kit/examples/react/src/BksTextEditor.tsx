@@ -1,24 +1,25 @@
 import { useEffect, useRef, useState } from "react";
+import { TextEditorElement, TextEditorValueChangeEvent } from "@beekeeperstudio/ui-kit";
 
 export default function BksTextEditor() {
   const [initialized, setInitialized] = useState(false);
   const [text, setText] = useState(`function sum(a, b) {
     return a + b;
   }`);
-  const containerRef = useRef(null);
-  const textEditorRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textEditorRef = useRef<TextEditorElement>(null as unknown as TextEditorElement);
 
   function handleInitialized() {
     setInitialized(true);
   }
 
-  function handleUpdateValue(event) {
+  function handleValueChange(event: TextEditorValueChangeEvent) {
     if (text === event.detail.value) return;
     setText(event.detail.value);
   }
 
   useEffect(() => {
-    textEditorRef.current = document.createElement("bks-text-editor");
+    textEditorRef.current = document.createElement("bks-text-editor") as TextEditorElement;
     textEditorRef.current.value = text;
 
     /* --------- For activating the language server client ------------ */
@@ -35,10 +36,6 @@ export default function BksTextEditor() {
       "bks-initialized",
       handleInitialized
     );
-    textEditorRef.current.addEventListener(
-      "bks-value-change",
-      handleUpdateValue
-    );
 
     if (containerRef.current) {
       containerRef.current.appendChild(textEditorRef.current);
@@ -47,7 +44,7 @@ export default function BksTextEditor() {
     return () => {
       textEditorRef.current.removeEventListener(
         "bks-value-change",
-        handleUpdateValue
+        handleValueChange
       );
       textEditorRef.current.removeEventListener(
         "bks-initialized",

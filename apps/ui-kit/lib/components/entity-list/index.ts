@@ -1,5 +1,17 @@
 import Vue from "vue";
 import wrap from "@vue/web-component-wrapper";
 import Component from "./EntityList.vue";
+import { props } from "./entity-list";
+import { PropsToType, VueWrapper } from "../utilTypes";
+import { EntityListEventMap } from "./types";
 
-export const EntityList = wrap(Vue, Component, { disableShadowDom: true }) as unknown as CustomElementConstructor;
+export * from "./types";
+
+export interface EntityListElement
+  extends PropsToType<typeof props>,
+    VueWrapper<EntityListElement, EntityListEventMap> {}
+
+// @ts-ignore - Third param is valid in our fork
+export const EntityListElement = wrap(Vue, Component, {
+  disableShadowDom: true,
+}) as unknown as EntityListElement;
