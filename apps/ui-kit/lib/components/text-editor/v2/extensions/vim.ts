@@ -30,7 +30,7 @@ export function setKeybindings(codeMirrorVimInstance: any, mappings: IMapping[])
   }
 }
 
-type Clipboard = {
+export type Clipboard = {
   writeText(text: string, notify?: boolean): void
   readText(): string
 }
@@ -104,9 +104,7 @@ export class Register {
   }
 }
 
-export function extendVimOnCodeMirror(cmEl: any, vimConfig?: Config, vimKeymaps: IMapping[] = [], clipboard: Clipboard) {
-  const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
-
+export function extendVimOnCodeMirror(codeMirrorVimInstance: any, vimConfig?: Config, vimKeymaps: IMapping[] = [], clipboard: Clipboard) {
   if (!codeMirrorVimInstance) {
     console.error("Could not find code mirror vim instance");
   } else {

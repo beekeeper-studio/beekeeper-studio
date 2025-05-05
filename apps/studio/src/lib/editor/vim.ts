@@ -35,7 +35,7 @@ export async function getVimKeymapsFromVimrc(): Promise<IMapping[]> {
   const potentialCommands = await readVimrc();
 
   if (potentialCommands.length === 0) {
-    return;
+    return [];
   }
 
   return createVimCommands(potentialCommands);

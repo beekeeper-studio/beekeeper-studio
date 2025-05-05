@@ -1,6 +1,7 @@
 import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
+import { VimOptions } from "./extensions/keymap";
 import { LanguageServerClient } from "./LanguageServerClient";
 
 export interface LanguageServerConfiguration {
@@ -49,6 +50,7 @@ export interface TextEditorConfiguration extends ExtensionConfiguration {
 export interface ExtensionConfiguration {
   readOnly?: boolean;
   keymap?: Keymap;
+  vimOptions?: VimOptions;
   lineWrapping?: boolean;
   lineNumbers?: boolean;
   keybindings?: Keybindings;
