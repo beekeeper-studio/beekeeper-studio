@@ -40,6 +40,7 @@ export const DuckDBData: DialectData = {
   disabledFeatures: {
     shell: true,
     triggers: true,
+    compositeKeys: true,
     multipleDatabases: true,
     alter: {
       multiStatement: true,

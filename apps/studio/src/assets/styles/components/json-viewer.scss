@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .json-viewer {
   --header-title-height: 2rem;
   --hoz-gutter: 1rem;
@@ -89,6 +91,10 @@
 
     .CodeMirror-line [role=presentation] > span:not(.cm-property) {
       color: $text-dark;
+    }
+
+    .CodeMirror-code .CodeMirror-line .cm-property {
+      color: #{color.adjust($theme-primary, $lightness: -20%)};
     }
   }
 

@@ -1,6 +1,15 @@
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from "lodash";
 import globals from '@/common/globals'
+import { LineGutter } from "../editor/utils";
+
+export interface UpdateOptions {
+  dataId: number | string;
+  value: Record<string, unknown>;
+  expandablePaths: string[];
+  signs: Record<string, LineGutter["type"]>;
+  editablePaths: string[];
+}
 
 export interface ExpandablePath {
   path: string[];
