@@ -993,6 +993,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         if (!confirmed) return
       }
 
+      this.trigger(AppEvent.closingTab, tab)
+
       if (this.activeTab === tab) {
         if (tab === this.lastTab) {
           this.previousTab()
