@@ -101,7 +101,32 @@ const log = rawLog.scope("json-viewer");
 
 export default Vue.extend({
   components: { TextEditor, JsonViewerUpsell },
-  props: ["value", "hidden", "expandablePaths", "editablePaths", "dataId", "title", "reinitialize", "signs", "binaryEncoding"],
+  props: {
+    value: {
+      type: [Object, Array],
+      default: () => ({})
+    },
+    hidden: {
+      type: Boolean,
+      default: false
+    },
+    expandablePaths: {
+      type: Array,
+      default: () => []
+    },
+    editablePaths: {
+      type: Array,
+      default: () => []
+    },
+    dataId: [String, Number],
+    title: String,
+    reinitialize: null,
+    signs: {
+      type: Object,
+      default: () => ({})
+    },
+    binaryEncoding: String,
+  },
   data() {
     return {
       reinitializeTextEditor: 0,
