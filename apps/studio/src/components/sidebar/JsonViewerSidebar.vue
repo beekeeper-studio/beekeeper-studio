@@ -2,6 +2,7 @@
   <div class="json-viewer-sidebar">
     <json-viewer
       :value="value"
+      :filter="filter"
       :data-id="dataId"
       :hidden="hidden"
       :expandable-paths="expandablePaths"
@@ -10,6 +11,7 @@
       :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       :editable-paths="editablePaths"
       @bks-json-value-change="handleJsonValueChange"
+      @bks-filter-change="handleFilterChange"
       @expandPath="handleExpandPath"
     />
   </div>
@@ -37,6 +39,7 @@ export default Vue.extend({
       editablePaths: [],
       signs: {},
       dataId: -1,
+      filter: "",
     };
   },
   computed: {
@@ -60,6 +63,9 @@ export default Vue.extend({
     handleJsonValueChange(detail: { key: string; value: unknown }) {
       this.trigger(AppEvent.jsonViewerSidebarValueChange, detail)
     },
+    handleFilterChange(detail: { filter: string }) {
+      this.filter = detail.filter
+    },
     update(options: UpdateOptions) {
       this.dataId = options.dataId
       this.value = options.value ?? ''
@@ -73,6 +79,7 @@ export default Vue.extend({
     reset() {
       this.value = {}
       this.expandablePaths = []
+      this.filter = ""
     },
   },
   mounted() {

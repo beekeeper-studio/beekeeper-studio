@@ -19,7 +19,7 @@
           <button
             type="button"
             class="clear btn-link"
-            @click="filter = ''"
+            @click="setFilter('')"
             v-if="filter"
           >
             <i class="material-icons">cancel</i>
@@ -126,11 +126,14 @@ export default Vue.extend({
       default: () => ({})
     },
     binaryEncoding: String,
+    filter: {
+      type: String,
+      default: ""
+    },
   },
   data() {
     return {
       reinitializeTextEditor: 0,
-      filter: "",
       foldAll: 0,
       unfoldAll: 0,
       restoredTruncatedPaths: [],
@@ -181,7 +184,7 @@ export default Vue.extend({
         return this.filter;
       },
       set: _.debounce(function (value) {
-        this.filter = value;
+        this.setFilter(value);
       }, 500),
     },
     sourceMap() {
@@ -386,6 +389,9 @@ export default Vue.extend({
     },
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
+    },
+    setFilter(filter: string) {
+      this.$emit("bks-filter-change", { filter });
     },
     handleEditableRangeChange: _.debounce(function (range, value) {
       this.editableRangeErrors = []
