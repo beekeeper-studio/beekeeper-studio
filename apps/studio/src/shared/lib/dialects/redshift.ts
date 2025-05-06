@@ -30,6 +30,7 @@ export const RedshiftData: DialectData = {
   wrapLiteral: defaultWrapLiteral,
   usesOffsetPagination: true,
   requireDataset: false,
+  disallowedSortColumns: ['json', 'bytea', 'xml', 'hstore'],
   unwrapIdentifier: (s) => s,
   importDataType: {
     stringType: 'varchar(255)',

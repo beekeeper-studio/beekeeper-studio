@@ -46,6 +46,7 @@ export const SqlServerData: DialectData = {
     numberType: 'float',
     defaultType: 'varchar(255)'
   },
+  disallowedSortColumns: ['geometry', 'xml'],
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;

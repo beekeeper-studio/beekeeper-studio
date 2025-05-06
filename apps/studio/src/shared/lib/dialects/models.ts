@@ -113,6 +113,7 @@ export interface DialectData {
   defaultSchema?: string
   usesOffsetPagination?: boolean
   requireDataset?: boolean,
+  disallowedSortColumns?: string[],
   disabledFeatures?: {
     shell?: boolean
     queryEditor?: boolean

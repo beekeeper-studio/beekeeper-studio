@@ -38,6 +38,7 @@ export const SqliteData: DialectData = {
     defaultType: 'varchar(255)'
   },
   requireDataset: false,
+  disallowedSortColumns: ['blob'],
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);

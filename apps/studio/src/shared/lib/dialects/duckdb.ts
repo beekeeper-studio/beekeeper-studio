@@ -38,6 +38,7 @@ export const DuckDBData: DialectData = {
     numberType: 'float',
     defaultType: 'varchar(255)'
   },
+  disallowedSortColumns: ['blob'],
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
