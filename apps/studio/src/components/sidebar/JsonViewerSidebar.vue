@@ -56,6 +56,7 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.updateJsonViewerSidebar, handler: this.update },
+        { event: AppEvent.switchingTab, handler: this.handleSwitchingTab },
         { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
         { event: AppEvent.closingTab, handler: this.handleClosingTab },
       ]
@@ -90,6 +91,9 @@ export default Vue.extend({
     handleFilterChange(detail: { filter: string }) {
       this.filter = detail.filter
     },
+    handleSwitchingTab() {
+      this.reset()
+    },
     handleSwitchedTab() {
       this.loadPersistentState()
     },
@@ -103,6 +107,13 @@ export default Vue.extend({
       this.expandablePaths = options.expandablePaths
       this.editablePaths = options.editablePaths
       this.signs = options.signs
+    },
+    reset() {
+      this.dataId = -1
+      this.value = {}
+      this.expandablePaths = []
+      this.editablePaths = []
+      this.signs = {}
     },
 
     savePersistentState() {
