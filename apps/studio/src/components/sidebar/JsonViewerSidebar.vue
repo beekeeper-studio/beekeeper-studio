@@ -22,6 +22,8 @@ import Vue from "vue";
 import JsonViewer from "./JsonViewer.vue";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 import { AppEvent } from '@/common/AppEvent'
+import { mapState } from 'vuex'
+import { SmartLocalStorage } from '@/common/LocalStorage';
 
 export default Vue.extend({
   name: "JsonViewerSidebar",
@@ -42,7 +44,9 @@ export default Vue.extend({
       filter: "",
     };
   },
+
   computed: {
+    ...mapState('tabs', { 'activeTab': 'active' }),
     jsonViewerTitle() {
       return "JSON Viewer";
     },
@@ -52,10 +56,30 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.updateJsonViewerSidebar, handler: this.update },
-        { event: AppEvent.switchingTab, handler: this.handleSwitchingTab },
+        { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+        { event: AppEvent.closingTab, handler: this.handleClosingTab },
       ]
     },
+
+    isPersistable() {
+      return !!this.activeTab
+    },
+    persistenceID() {
+      return `jsonViewerSidebar-${this.activeTab?.id}`
+    },
+    persistentState() {
+      return {
+        filter: this.filter,
+      }
+    },
   },
+
+  watch: {
+    persistentState() {
+      if (this.isPersistable) this.savePersistentState()
+    },
+  },
+
   methods: {
     handleExpandPath(expandablePaths: string[]) {
       this.trigger(AppEvent.jsonViewerSidebarExpandPath, expandablePaths)
@@ -66,6 +90,13 @@ export default Vue.extend({
     handleFilterChange(detail: { filter: string }) {
       this.filter = detail.filter
     },
+    handleSwitchedTab() {
+      this.loadPersistentState()
+    },
+    handleClosingTab() {
+      this.clearPersistentState()
+    },
+
     update(options: UpdateOptions) {
       this.dataId = options.dataId
       this.value = options.value ?? ''
@@ -73,17 +104,27 @@ export default Vue.extend({
       this.editablePaths = options.editablePaths
       this.signs = options.signs
     },
-    handleSwitchingTab() {
-      this.reset()
+
+    savePersistentState() {
+      SmartLocalStorage.addItem(this.persistenceID, this.persistentState)
     },
-    reset() {
-      this.value = {}
-      this.expandablePaths = []
-      this.filter = ""
+    loadPersistentState() {
+      const state = this.getPersistentState()
+      this.filter = state.filter
+    },
+    getPersistentState() {
+      const state = SmartLocalStorage.getJSON(this.persistenceID, {})
+      return {
+        filter: state.filter || "",
+      }
+    },
+    clearPersistentState() {
+      SmartLocalStorage.removeItem(this.persistenceID)
     },
   },
   mounted() {
     this.registerHandlers(this.rootBindings)
+    this.loadPersistentState()
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
