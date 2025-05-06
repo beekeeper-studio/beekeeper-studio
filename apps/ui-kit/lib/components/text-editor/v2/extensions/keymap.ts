@@ -1,9 +1,12 @@
 import { EditorView } from "@codemirror/view";
 import { Extension, Compartment } from "@codemirror/state";
 import { emacs } from "@replit/codemirror-emacs";
-import { Vim, vim } from "@replit/codemirror-vim";
+import { vim } from "@replit/codemirror-vim";
+import * as VimLib from "@replit/codemirror-vim";
 import { Keymap } from "../types";
 import { Clipboard, Config, extendVimOnCodeMirror, IMapping } from "./vim";
+
+const Vim = VimLib.Vim;
 
 export interface SpecialKeymapConfiguration {
   keymap?: Keymap;

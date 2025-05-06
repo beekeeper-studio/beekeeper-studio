@@ -104,7 +104,7 @@ export class Register {
   }
 }
 
-export function extendVimOnCodeMirror(codeMirrorVimInstance: any, vimConfig?: Config, vimKeymaps: IMapping[] = [], clipboard: Clipboard) {
+export function extendVimOnCodeMirror(codeMirrorVimInstance: any, vimConfig?: Config, vimKeymaps: IMapping[] = [], clipboard?: Clipboard) {
   if (!codeMirrorVimInstance) {
     console.error("Could not find code mirror vim instance");
   } else {
