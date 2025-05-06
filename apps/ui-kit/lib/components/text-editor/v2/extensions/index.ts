@@ -75,7 +75,7 @@ const customHighlightStyle = HighlightStyle.define([
 export function extensions(config: ExtensionConfiguration) {
   return [
     extraKeymap({ keybindings: config.keybindings }),
-    specialKeymap({ keymap: config.keymap }),
+    specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     lineNumbers({ enabled: config.lineNumbers }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),

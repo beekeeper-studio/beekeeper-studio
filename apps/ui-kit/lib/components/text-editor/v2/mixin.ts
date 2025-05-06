@@ -18,6 +18,16 @@ export default {
     };
   },
 
+  computed: {
+    vimOptions() {
+      return {
+        config: this.vimConfig,
+        keymaps: this.vimKeymaps,
+        clipboard: this.clipboard,
+      }
+    },
+  },
+
   watch: {
     value() {
       if (!this.textEditor) return;
@@ -32,6 +42,10 @@ export default {
       this.applyFocus();
     },
     keymap() {
+      if (!this.textEditor) return;
+      this.applyKeymap();
+    },
+    vimOptions() {
       if (!this.textEditor) return;
       this.applyKeymap();
     },
@@ -77,7 +91,7 @@ export default {
       }
     },
     applyKeymap() {
-      this.textEditor.setKeymap(this.keymap);
+      this.textEditor.setKeymap(this.keymap, this.vimOptions);
     },
     applyLineWrapping() {
       this.textEditor.setLineWrapping(this.lineWrapping);
@@ -121,6 +135,7 @@ export default {
         focus: this.focus,
         readOnly: this.readOnly,
         keymap: this.keymap,
+        vimOptions: this.vimOptions,
         lineWrapping: this.lineWrapping,
         lineNumbers: this.lineNumbers,
         keybindings: this.keybindings,
