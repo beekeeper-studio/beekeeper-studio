@@ -6,6 +6,7 @@ volumes:
   mysql8:
   mysql4.1:
   psql96:
+  psql14:
   psql13:
   psql15_load_test_data:
   mariadb:
@@ -71,6 +72,17 @@ services:
     ports:
       - 5434:5432
 
+  psql14:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql14:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5436:5432
   psql13:
     image: postgres:13
     environment:
