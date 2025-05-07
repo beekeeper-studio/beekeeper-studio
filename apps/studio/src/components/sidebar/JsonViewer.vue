@@ -45,12 +45,13 @@
       </div>
     </div>
     <div class="text-editor-wrapper">
+        <!-- :mode="mode" -->
       <text-editor
+        languageId="json"
         :fold-gutter="true"
         :fold-all="foldAll"
         :unfold-all="unfoldAll"
         :value="text"
-        :mode="mode"
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
         :plugins="textEditorPlugins"
@@ -74,7 +75,7 @@
  * dataId:  use this to update the component with new data.
  */
 import Vue from "vue";
-import TextEditor from "@/components/common/texteditor/TextEditor.vue";
+import TextEditor from "@beekeeperstudio/ui-kit/vue/text-editor";
 import {
   ExpandablePath,
   findKeyPosition,
@@ -109,7 +110,12 @@ export default Vue.extend({
       foldAll: 0,
       unfoldAll: 0,
       restoredTruncatedPaths: [],
-      editableRangeErrors: [],
+      editableRangeErrors: [{
+        id: "idk",
+        error: "error me",
+        from: { line: 0, ch: 0 },
+        to: { line: 0, ch: 2 },
+      }],
       disableReplaceKeybindings: {
         [this.cmCtrlOrCmd("R")]: () => false,
         [this.cmCtrlOrCmd("Shift-R")]: () => false,
@@ -359,13 +365,13 @@ export default Vue.extend({
       this.$emit("expandPath", path);
     },
     handleEditableRangeChange: _.debounce(function (range, value) {
-      this.editableRangeErrors = []
-      try {
-        const parsed = JSON.parse(value)
-        this.$emit("bks-json-value-change", {key: range.id, value: parsed});
-      } catch (error) {
-        this.editableRangeErrors.push({ id: range.id, error, from: range.from, to: range.to })
-      }
+      // this.editableRangeErrors = []
+      // try {
+      //   const parsed = JSON.parse(value)
+      //   this.$emit("bks-json-value-change", {key: range.id, value: parsed});
+      // } catch (error) {
+      //   this.editableRangeErrors.push({ id: range.id, error, from: range.from, to: range.to })
+      // }
     }, 250),
   },
 });

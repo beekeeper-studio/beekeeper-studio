@@ -46,6 +46,10 @@ export default {
     default: () => ({})
   },
   contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
+  markers: {
+    type: Array,
+    default: () => [],
+  },
 
   // ------- New props below
 
@@ -62,10 +66,6 @@ export default {
   >,
 
   // vimConfig: Object as PropType<Config>,
-  // markers: {
-  //   type: Array,
-  //   default: () => [],
-  // },
   // cursor: String,
   // initialized: Boolean,
   // autoFocus: Boolean,

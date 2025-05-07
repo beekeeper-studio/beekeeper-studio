@@ -1,6 +1,7 @@
 import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
+import { EditorMarker } from "../v1";
 import { LanguageServerClient } from "./LanguageServerClient";
 
 export interface LanguageServerConfiguration {
@@ -52,6 +53,7 @@ export interface ExtensionConfiguration {
   lineWrapping?: boolean;
   lineNumbers?: boolean;
   keybindings?: Keybindings;
+  markers?: EditorMarker[];
 }
 
 export interface LSContext {

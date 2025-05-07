@@ -42,6 +42,7 @@ export { applyKeymap } from "./keymap";
 export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
+export { applyMarkers } from "./markers";
 
 // Define a custom highlight style that uses CSS classes
 const customHighlightStyle = HighlightStyle.define([
@@ -91,8 +92,10 @@ export function extensions(config: ExtensionConfiguration) {
     autocompletion({
       tooltipClass: () => "BksTextEditor-hints",
       optionClass: (completion: any) => {
-        return completion.type ? `bks-autocomplete-option-${completion.type}` : "";
-      }
+        return completion.type
+          ? `bks-autocomplete-option-${completion.type}`
+          : "";
+      },
     }),
     rectangularSelection(),
     crosshairCursor(),
@@ -107,7 +110,7 @@ export function extensions(config: ExtensionConfiguration) {
       ...completionKeymap,
       ...lintKeymap,
     ]),
-    lineWrapping({  enabled: config.lineWrapping }),
+    lineWrapping({ enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
     EditorView.theme({
       "&": {

@@ -13,6 +13,7 @@ import {
   applyLineWrapping,
   applyLineNumbers,
   applyReadOnly,
+  applyMarkers,
 } from "./extensions";
 import {
   formatDocument,
@@ -22,6 +23,7 @@ import {
   requestSemanticTokens,
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
+import { EditorMarker } from "../v1";
 
 export class TextEditor {
   protected view: EditorView;
@@ -133,6 +135,10 @@ export class TextEditor {
 
   setLineNumbers(enabled: boolean) {
     applyLineNumbers(this.view, enabled);
+  }
+
+  setMarkers(markers: EditorMarker[]) {
+    applyMarkers(this.view, markers);
   }
 
   getSelection(): string {

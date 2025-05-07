@@ -41,11 +41,15 @@ export default {
     },
     lineNumbers() {
       if (!this.textEditor) return;
-      this.applyLineWrapping();
+      this.applyLineNumbers();
     },
     keybindings() {
       if (!this.textEditor) return;
       this.applyKeybindings();
+    },
+    markers() {
+      if (!this.textEditor) return;
+      this.applyMarkers();
     },
 
     forceInitialize() {
@@ -88,6 +92,9 @@ export default {
     applyKeybindings() {
       this.textEditor.setKeybindings(this.keybindings);
     },
+    applyMarkers() {
+      this.textEditor.setMarkers(this.markers);
+    },
 
     constructTextEditor() {
       return new TextEditor();
@@ -124,6 +131,7 @@ export default {
         lineWrapping: this.lineWrapping,
         lineNumbers: this.lineNumbers,
         keybindings: this.keybindings,
+        markers: this.markers,
       });
 
       this.textEditor = textEditor;
