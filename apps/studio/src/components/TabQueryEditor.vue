@@ -43,10 +43,13 @@
         :vim-config="vimConfig"
         :line-wrapping="wrapText"
         :keymap="userKeymap"
+        :vim-keymaps="vimKeymaps"
         :entities="entities"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :mode="dialectData.textEditorMode"
+        :clipboard="$native.clipboard"
+        :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-blur="onTextEditorBlur?.()"
@@ -204,6 +207,7 @@
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
 
@@ -352,6 +356,8 @@
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
+  import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
+  import { monokai } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -398,6 +404,7 @@
         containerResizeObserver: null,
         onTextEditorBlur: null,
         wrapText: false,
+        vimKeymaps: [],
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -452,6 +459,7 @@
           'mariadb': 'mysql',
           'tidb': 'mysql',
           'redshift': 'psql',
+          'mongodb': 'psql'
         }
         return mappings[this.connectionType] || 'generic'
       },
@@ -590,11 +598,22 @@
       entities() {
         return this.tables.map((t: TableOrView) => ({ schema: t.schema, name: t.name }))
       },
+      queryDialect() {
+        return this.dialectData.queryDialectOverride ?? this.connectionType;
+      },
       formatterDialect() {
-        return FormatterDialect(dialectFor(this.connectionType))
+        return FormatterDialect(dialectFor(this.queryDialect))
       },
       identifierDialect() {
-        return findSqlQueryIdentifierDialect(this.connectionType)
+        return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      replaceExtensions() {
+        return (extensions) => {
+          return [
+            ...extensions,
+            monokai,
+          ]
+        }
       },
       unsavedText: {
         get() {
@@ -700,29 +719,28 @@
           this.split = null;
         }
 
+        this.initializeQueries()
+        this.tab.unsavedChanges = this.unsavedChanges
+
+        this.split = Split(this.splitElements, {
+          elementStyle: (_dimension, size) => ({
+            'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [50,50],
+          gutterSize: 8,
+          direction: 'vertical',
+          onDragEnd: () => {
+            this.$nextTick(() => {
+              this.tableHeight = this.$refs.bottomPanel.clientHeight
+              this.updateEditorHeight()
+            })
+          }
+        })
+
+        // Making sure split.js is initialized
         this.$nextTick(() => {
-          this.initializeQueries()
-          this.tab.unsavedChanges = this.unsavedChanges
-
-          this.split = Split(this.splitElements, {
-            elementStyle: (_dimension, size) => ({
-                'flex-basis': `calc(${size}%)`,
-            }),
-            sizes: [50,50],
-            gutterSize: 8,
-            direction: 'vertical',
-            onDragEnd: () => {
-              this.$nextTick(() => {
-                this.tableHeight = this.$refs.bottomPanel.clientHeight
-                this.updateEditorHeight()
-              })
-            }
-          })
-
-          this.$nextTick(() => {
-            this.tableHeight = this.$refs.bottomPanel.clientHeight
-            this.updateEditorHeight()
-          })
+          this.tableHeight = this.$refs.bottomPanel.clientHeight
+          this.updateEditorHeight()
         })
       },
       handleEditorInitialized(detail) {
@@ -1039,7 +1057,10 @@
       },
     },
     async mounted() {
-      if (this.shouldInitialize) this.initialize()
+      if (this.shouldInitialize) {
+        await this.$nextTick()
+        this.initialize()
+      }
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()
@@ -1050,6 +1071,8 @@
         await this.$nextTick()
         this.focusElement = 'text-editor'
       }
+
+      this.vimKeymaps = await getVimKeymapsFromVimrc()
     },
     beforeDestroy() {
       if(this.split) {

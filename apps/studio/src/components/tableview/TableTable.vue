@@ -43,7 +43,7 @@
       />
     </template>
 
-    <statusbar :mode="statusbarMode">
+    <statusbar :mode="statusbarMode" :active="active">
       <div class="truncate statusbar-info">
         <x-button
           @click.prevent="openProperties"
@@ -184,7 +184,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Refresh Table (${$bksConfig.keybindings.tableTable.refresh})`"
+          v-tooltip="`Refresh Table (${$bksConfig.keybindings.general.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -192,7 +192,7 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${$bksConfig.keybindings.tableTable.addRow})`"
+          v-tooltip="`Add row (${$bksConfig.keybindings.general.addRow})`"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -231,7 +231,7 @@
                 >stars</i>
               </x-label>
             </x-menuitem>
-            <x-menuitem @click="openQueryTab" :disabled="dialect === 'mongodb'">
+            <x-menuitem @click="openQueryTab">
               <x-label>Copy view to SQL</x-label>
             </x-menuitem>
           </x-menu>
@@ -274,7 +274,7 @@
         </div>
       </modal>
     </portal>
-    <add-field-modal @done="cellAddCol(undefined, $event)"/>
+    <!-- <add-field-modal @done="cellAddCol(undefined, $event)"/> -->
   </div>
 </template>
 
@@ -299,7 +299,6 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
-import AddFieldModal from '../common/modals/AddFieldModal.vue'
 import EditorModal from './EditorModal.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
@@ -321,14 +320,15 @@ import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumn
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath } from '@/lib/data/jsonViewer'
-import { stringToTypedArray } from "@/common/utils";
+import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
+import { UpdateOptions } from "@/lib/data/jsonViewer";
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, AddFieldModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -374,9 +374,9 @@ export default Vue.extend({
       enabledMinimalModeWhileInactive: false,
 
       selectedRow: null,
-      selectedRowPosition: null,
+      selectedRowPosition: -1,
       selectedRowData: {},
-      expandablePaths: {},
+      expandablePaths: [],
     };
   },
   computed: {
@@ -390,6 +390,9 @@ export default Vue.extend({
     },
     isCassandra() {
       return this.connectionType === 'cassandra'
+    },
+    queryDialect() {
+      return this.dialectData?.queryDialectOverride ?? this.dialect;
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -494,8 +497,15 @@ export default Vue.extend({
     tableKeys() {
       const result = {}
       this.rawTableKeys.forEach((item) => {
-        if (!result[item.fromColumn]) result[item.fromColumn] = [];
-        result[item.fromColumn].push(item);
+        if (item.isComposite) {
+          item.fromColumn.forEach((col) => {
+            if (!result[col]) result[col] = [];
+            result[col].push(item)
+          })
+        } else {
+          if (!result[item.fromColumn]) result[item.fromColumn] = [];
+          result[item.fromColumn].push(item);
+        }
       })
       return result
     },
@@ -721,8 +731,13 @@ export default Vue.extend({
 
           if (keyDatas?.length > 0) {
             keyDatas.forEach(keyData => {
+              // For composite foreign keys, show all related columns
+              const displayTarget = keyData.isComposite ?
+                `${keyData.toTable} (${keyData.toColumn.join(', ')})` :
+                `${keyData.toTable} (${keyData.toColumn})`;
+
               menu.push({
-                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
+                label: createMenuItem(`Go to ${displayTarget}`),
                 action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
@@ -764,6 +779,7 @@ export default Vue.extend({
         ]
       }
 
+      const { disallowedSortColumns = [] } = this.dialectData
       const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
       // this needs fixing
       // currently it doesn't fetch the right result if you update the PK
@@ -780,10 +796,29 @@ export default Vue.extend({
       let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
       if (hasKeyDatas) {
         const keyData = keyDatas[0][1];
-        if (keyData.length === 1)
-          headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
-        else
-          headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
+        if (keyData.length === 1) {
+          // Handle composite keys
+          if (keyData[0].isComposite) {
+            // Format as: toTable (column1, column2)
+            const compositeColumns = keyData[0].toColumn.join(', ');
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${compositeColumns})`)
+          } else {
+            // Regular single-column foreign key
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
+          }
+        } else {
+          // Multiple foreign keys for the same column
+          headerTooltip += escapeHtml(` -> ${keyData.map(item => {
+            if (item.isComposite) {
+              // Format composite key
+              const compositeColumns = item.toColumn.join(', ');
+              return `${item.toTable}(${compositeColumns})`;
+            } else {
+              // Format regular key
+              return `${item.toTable}(${item.toColumn})`;
+            }
+          }).join(', ').replace(/\), (?![\s\S]*\), )/, '), or ')}`)
+        }
       } else if (isPK) {
         headerTooltip += ' [Primary Key]'
       }
@@ -821,7 +856,7 @@ export default Vue.extend({
         resizable: 'header',
         cssClass,
         editable: this.cellEditCheck,
-        headerSort: !this.dialectData.disabledFeatures.headerSort,
+        headerSort: !this.dialectData.disabledFeatures.headerSort && !disallowedSortColumns.includes(column.dataType?.toLowerCase()),
         editor: editorType,
         tooltip: this.cellTooltip,
         contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
@@ -832,7 +867,7 @@ export default Vue.extend({
         formatter: this.cellFormatter,
         formatterParams: {
           fk: hasKeyDatas && keyDatas[0][1],
-          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
           isPK: isPK,
           binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
         },
@@ -1124,15 +1159,19 @@ export default Vue.extend({
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
-        const columnNames = this.table.columns.filter((c) => !c.generated).map((c) => c.columnName)
+        const columnNames = this.table.columns.filter((c) => !c.generated)
         const rowData = item.row.getData()
         const result = {}
-        columnNames.forEach((c) => {
-          const d = rowData[c]
-          if (this.isPrimaryKey(c) && (!d && d != 0)) {
+        columnNames.forEach(({ columnName, dataType }) => {
+          const d = rowData[columnName]
+          if (this.isPrimaryKey(columnName) && (!d && d != 0)) {
             // do nothing
           } else {
-            result[c] = d
+            result[columnName] = d
+            // HACK (azmi): we should handle this from backend with tests instead
+            if (this.dialect === 'postgresql' && dataType === 'jsonb') {
+              result[columnName] = JSON.stringify(d)
+            }
           }
         })
         return {
@@ -1157,14 +1196,6 @@ export default Vue.extend({
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
       if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
-    },
-    // TODO: this is not attached to anything. but it might be needed?
-    allowHeaderSort(column) {
-      const badStarts = [
-        'json', 'clob'
-      ]
-      if(!column.dataType) return true
-      return !badStarts.find((bad) => column.dataType.toLowerCase().startsWith(bad))
     },
     slimDataType(dt) {
       if (!dt) return null
@@ -1293,7 +1324,7 @@ export default Vue.extend({
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
         pendingUpdates.push(payload)
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
-        this.updateDetailView()
+        this.updateJsonViewer()
       }
     },
     cloneSelection(range?: RangeComponent) {
@@ -1434,7 +1465,7 @@ export default Vue.extend({
           deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
-        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
         console.error(ex);
@@ -1569,7 +1600,7 @@ export default Vue.extend({
         this.table.schema,
         selects
       ).then((query: string) => {
-        const language = FormatterDialect(this.dialect);
+        const language = FormatterDialect(this.queryDialect);
         const formatted = safeSqlFormat(query, { language });
         this.$root.$emit(AppEvent.newTab, formatted);
       }).catch((e: unknown) => {
@@ -1592,7 +1623,7 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
-      const { usesOffsetPagination } = this.dialectData
+      const { usesOffsetPagination, disallowedSortColumns = [] } = this.dialectData
       log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
@@ -1600,7 +1631,7 @@ export default Vue.extend({
       let filters = this.filters
 
       if (params.sort) {
-        orderBy = params.sort
+        orderBy = removeUnsortableColumnsFromSortBy(params.sort,  this.table.columns, disallowedSortColumns)
       }
 
       if (params.size) {
@@ -1756,8 +1787,11 @@ export default Vue.extend({
           tableKey: key,
         }))
       this.expandablePaths.push(...cachedExpandablePaths)
-
-      const updatedData = {
+      this.updateJsonViewerSidebar()
+    },
+    updateJsonViewerSidebar() {
+      const updatedData: UpdateOptions = {
+        dataId: this.selectedRowIndex,
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,
@@ -1862,14 +1896,7 @@ export default Vue.extend({
       this.expandablePaths = filteredExpandablePaths
       this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
 
-      const data = {
-        value: this.selectedRowData,
-        expandablePaths: this.expandablePaths,
-        signs: this.selectedRowDataSigns,
-        editablePaths: this.editablePaths,
-      }
-
-      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.updateJsonViewerSidebar()
     },
     handleRangeChange(ranges: RangeComponent[]) {
       this.updateJsonViewer({ range: ranges[0] })
@@ -1882,13 +1909,7 @@ export default Vue.extend({
       }
     },
     handleTabActive() {
-      const data = {
-        value: this.selectedRowData,
-        expandablePaths: this.expandablePaths,
-        signs: this.selectedRowDataSigns,
-        editablePaths: this.editablePaths,
-      }
-      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.updateJsonViewerSidebar()
       this.registerHandlers([
         {
           event: AppEvent.jsonViewerSidebarExpandPath,

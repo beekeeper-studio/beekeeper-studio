@@ -67,6 +67,8 @@ export const BeekeeperPlugin = {
       return config.defaultDatabase || "./unknown.db"
     } else if (config.connectionType === 'mongodb') {
       return config.url
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -93,6 +95,8 @@ export const BeekeeperPlugin = {
       connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
     } else if (config.connectionType === 'mongodb') {
       return config.url;
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`

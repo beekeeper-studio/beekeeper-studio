@@ -61,11 +61,19 @@ export class OfflineLicense {
 
     this.publicKeyPath = keyPath ?? this.defaultKeyPath
     try {
+      log.info("Loading offline license from", this.path)
       if (existsSync(this.path)) {
         this.rawPayload = JSON.parse(readFileSync(this.path, 'utf-8'))
+        log.info("Loaded offline license")
+      } else {
+        log.info("Offline license does not exist", this.path)
       }
+      log.info("Loading public key from", this.publicKeyPath)
       if (existsSync(this.publicKeyPath)) {
         this.publicKey = readFileSync(this.publicKeyPath, 'utf-8')
+        log.info("Loaded public key")
+      } else {
+        log.info("Public key does not exist", this.publicKeyPath)
       }
       this.validateSignature()
       log.info("Validated license - ", this.payload)

@@ -32,6 +32,8 @@ export default {
     let cellValue = value.toString();
     if (_.isTypedArray(value)) {
       cellValue = typedArrayToString(value, binaryEncoding)
+    } else if (_.isTypedArray(value?.buffer)) { // HACK: mongodb sends buffer this way
+      cellValue = typedArrayToString(value.buffer, binaryEncoding)
     } else if (_.isArray(value) || _.isObject(value)) {
       cellValue = JSON.stringify(value)
     }
